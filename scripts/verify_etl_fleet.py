@@ -68,6 +68,7 @@ DEFAULT_SHIP = Path("artifacts/wave-b/ship-gate-matrix.json")
 DEFAULT_GEPA_VS = Path("artifacts/wave-b/gepa-vs-header-n23-valaware.json")
 DEFAULT_GROUNDING = Path("artifacts/wave-b/gold-body-grounding-audit.json")
 DEFAULT_LLM_COMPARE = Path("artifacts/wave-b/constrained-select-header-vs-llm.json")
+DEFAULT_EVIDENCE_DASHBOARD = Path("artifacts/etl/evidence-dashboard.v1.json")
 
 
 def _r(repo: Path, p: Path) -> Path:
@@ -217,6 +218,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--grounding", type=Path, default=DEFAULT_GROUNDING)
     parser.add_argument("--llm-compare", type=Path, default=DEFAULT_LLM_COMPARE)
     parser.add_argument(
+        "--evidence-dashboard",
+        type=Path,
+        default=DEFAULT_EVIDENCE_DASHBOARD,
+        help="Evidence dashboard artifact (resolvability + structure + page/bbox).",
+    )
+    parser.add_argument(
         "--skip-live-pack",
         action="store_true",
         help="Use only on-disk continuity-pack.json (no live compose)",
@@ -319,12 +326,14 @@ def main(argv: list[str] | None = None) -> int:
         }
 
     hold["import_eligible"] = False
+    evidence_dashboard = _load_json(_r(repo, Path(args.evidence_dashboard))) or None
     fleet = build_etl_fleet_package(
         continuity=cont,
         import_hold=hold,
         ship_matrix=matrix_payload,
         quality_n=quality_n,
         grounding=ground,
+        evidence_dashboard=evidence_dashboard,
     )
     payload = fleet.to_dict()
     payload["rescored_quality"] = bool(args.rescore_quality)

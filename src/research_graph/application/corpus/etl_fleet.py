@@ -10,12 +10,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from research_graph.application.corpus.evidence_dashboard import (
+    EvidenceDashboardPackage,
+    build_evidence_dashboard,
+)
 from research_graph.application.corpus.wave_b_quality_n_contract import (
     evaluate_quality_n_contract,
     extract_joined_count,
 )
 
-SCHEMA_VERSION = "etl-fleet.v2"
+SCHEMA_VERSION = "etl-fleet.v3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +29,7 @@ class EtlFleetPackage:
     ship_matrix: dict[str, Any] | None
     import_hold: dict[str, Any]
     quality_n: dict[str, Any] | None
+    evidence_dashboard: dict[str, Any] | None
     alerts: tuple[str, ...]
     diagnostics: tuple[str, ...]
     operator_status: str
@@ -42,15 +47,18 @@ class EtlFleetPackage:
             "ship_matrix": dict(self.ship_matrix) if self.ship_matrix else None,
             "import_hold": dict(self.import_hold),
             "quality_n": dict(self.quality_n) if self.quality_n else None,
+            "evidence_dashboard": (
+                dict(self.evidence_dashboard) if self.evidence_dashboard else None
+            ),
             "alerts": list(self.alerts),
             "diagnostics": list(self.diagnostics),
             "operator_status": self.operator_status,
             "import_eligible": False,
             "graph_writes_allowed": False,
             "note": (
-                "Unattended fleet glue: pack + ship matrix + import-hold + quality n. "
-                "Never expands, never imports. Expand uses default pack refresh. "
-                "Use --rescore-quality for live same-n matrix/grounding."
+                "Unattended fleet glue: pack + ship matrix + import-hold + quality n + "
+                "evidence dashboard. Never expands, never imports. Expand uses default "
+                "pack refresh. Use --rescore-quality for live same-n matrix/grounding."
             ),
         }
 
@@ -62,6 +70,7 @@ def build_etl_fleet_package(
     ship_matrix: Mapping[str, Any] | None = None,
     quality_n: Mapping[str, Any] | None = None,
     grounding: Mapping[str, Any] | None = None,
+    evidence_dashboard: Mapping[str, Any] | None = None,
 ) -> EtlFleetPackage:
     """Pure compose of already-built operator payloads."""
     cont = dict(continuity or {})
@@ -137,6 +146,34 @@ def build_etl_fleet_package(
     hybrid_fraction = dash.get("hybrid_fraction")
     same_inode = dash.get("multi_root_same_inode_count")
     ship_path = (matrix or {}).get("ship_path")
+
+    # Evidence governor (M284): surface resolvability + page/bbox + weak IR.
+    # Accept either a pre-built dashboard package (schema evidence-dashboard.v1)
+    # or raw inputs {resolvability, structure_readiness, chunk_quality_gate}.
+    ev_dict: dict[str, Any] | None = None
+    if evidence_dashboard is not None:
+        raw_ev = dict(evidence_dashboard)
+        if raw_ev.get("schema_version") == "evidence-dashboard.v1" and (
+            "evidence_ready_ok" in raw_ev or "page_or_bbox_count" in raw_ev
+        ):
+            # Already a composed package — pass through, force fail-closed.
+            raw_ev["import_eligible"] = False
+            raw_ev["graph_writes_allowed"] = False
+            ev_dict = raw_ev
+        else:
+            ev_pkg = build_evidence_dashboard(
+                resolvability=raw_ev.get("resolvability"),
+                structure_readiness=raw_ev.get("structure_readiness"),
+                chunk_quality_gate=raw_ev.get("chunk_quality_gate"),
+                allow_char_only_ok=bool(raw_ev.get("allow_char_only_ok", False)),
+                target_rate=float(raw_ev.get("target_rate", 0.95)),
+            )
+            ev_dict = ev_pkg.to_dict()
+        for b in (ev_dict.get("evidence_ready_blockers") or []):
+            alerts.append(f"evidence_blocker:{b}")
+        for a in (ev_dict.get("alerts") or []):
+            alerts.append(f"evidence:{a}")
+
     diagnostics = (
         f"hybrid_found:{hybrid_found}",
         f"hybrid_fraction:{hybrid_fraction}",
@@ -147,6 +184,10 @@ def build_etl_fleet_package(
         f"quality_n_live_all_match:{(qn or {}).get('live_all_match')}",
         f"llm_stale:{(qn or {}).get('llm_stale')}",
         f"quality_n_canonical:{(qn or {}).get('canonical_joined_count')}",
+        f"evidence_metric_mode:{ev_dict.get('metric_mode') if ev_dict else None}",
+        f"evidence_page_or_bbox:{ev_dict.get('page_or_bbox_count') if ev_dict else None}",
+        f"evidence_ready_ok:{ev_dict.get('evidence_ready_ok') if ev_dict else None}",
+        f"evidence_weak_structure_ir:{ev_dict.get('weak_structure_ir') if ev_dict else None}",
         f"alerts:{len(alerts)}",
         "import_write_fail_closed",
         "etl_fleet_only",
@@ -159,6 +200,7 @@ def build_etl_fleet_package(
         ship_matrix=matrix,
         import_hold=hold,
         quality_n=qn,
+        evidence_dashboard=ev_dict,
         alerts=tuple(alerts),
         diagnostics=diagnostics,
         operator_status=status,
