@@ -77,44 +77,44 @@ impl IngestUseCase {
         };
         paper.pdf_hash = Some(parsed.pdf_hash.clone());
 
-        // 4. Write to Samyama Graph
+        // 4. Upsert to Samyama Graph (manual upsert — Samyama MERGE doesn't support inline props)
         let vid = paper.vid.clone();
-        let cypher = format!(
-            r#"CREATE (n:Paper {{
-                vid: "{}",
-                arxiv_id: "{}",
-                title: "{}",
-                pdf_hash: "{}",
-                valid_from: {},
-                schema_version: {},
-                evidence_ready: false,
-                import_eligible: false
-            }})"#,
-            vid,
-            paper.arxiv_id,
-            paper.title.replace('"', "'"),
-            parsed.pdf_hash,
-            paper.valid_from,
-            paper.schema_version,
-        );
 
-        match self.graph_store.query("default", &cypher).await {
-            Ok(result) => {
-                tracing::info!(paper_id, vid = %vid, records = result.records.len(), "Graph written");
-            }
-            Err(e) => {
-                tracing::error!(paper_id, error = %e, "Graph write failed");
-                return Err(anyhow::anyhow!("Graph write failed: {e}"));
-            }
+        // Check if node already exists — return n.vid (returns row if exists, empty if not)
+        let check_cypher = format!(
+            "MATCH (n:Paper {{vid: \"{}\"}}) RETURN n.vid",
+            vid
+        );
+        let check_result = self.graph_store.query_readonly("default", &check_cypher).await?;
+        let exists = !check_result.records.is_empty()
+            && check_result.records[0].first().map(|v| !v.is_null()).unwrap_or(false);
+
+        if exists {
+            // Update existing node
+            let update_cypher = format!(
+                "MATCH (n:Paper {{vid: \"{}\"}}) SET n.title = \"{}\", n.pdf_hash = \"{}\", n.embedding = {}",
+                vid,
+                paper.title.replace('"', "'"),
+                parsed.pdf_hash,
+                serde_json::to_string(&vector)?
+            );
+            self.graph_store.query("default", &update_cypher).await?;
+            tracing::info!(paper_id, vid = %vid, "Graph updated (upsert)");
+        } else {
+            // Create new node
+            let create_cypher = format!(
+                "CREATE (n:Paper {{vid: \"{}\", arxiv_id: \"{}\", title: \"{}\", pdf_hash: \"{}\", valid_from: {}, schema_version: {}, evidence_ready: false, import_eligible: false, embedding: {}}})",
+                vid,
+                paper.arxiv_id,
+                paper.title.replace('"', "'"),
+                parsed.pdf_hash,
+                paper.valid_from,
+                paper.schema_version,
+                serde_json::to_string(&vector)?
+            );
+            self.graph_store.query("default", &create_cypher).await?;
+            tracing::info!(paper_id, vid = %vid, "Graph created (new node)");
         }
-
-        // 5. Store vector
-        let vector_cypher = format!(
-            r#"MATCH (n:Paper {{vid: "{}"}}) SET n.embedding = {}"#,
-            vid,
-            serde_json::to_string(&vector)?
-        );
-        let _ = self.graph_store.query("default", &vector_cypher).await;
 
         Ok(IngestResult {
             paper_id: paper_id.to_string(),
