@@ -171,7 +171,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 **Evidence-ready (engineering):**
 
 - [x] Every hybrid run stores PDF hash + TEI + ODL JSON + ParserRun  *(M274–M276: TEI/ODL layout/ParserRun/canonical; PDF hash via source pipeline when present)*  
-- [~] ≥95% of gold entities/relations on canary resolve to SourceSpan with page **or** justified char-only fallback rate tracked  *(M281 real join rate ~0.68 on m072+hybrid; entities 100% char-grounded; relations weak; target_met false; page/bbox still open)*  
+- [x] ≥95% of gold entities/relations on canary resolve to SourceSpan with page **or** justified char-only fallback rate tracked  *(M282: rate 1.0 char-only after relation id→label; target_met true under real mode; alert char_only_no_page_bbox; page/bbox needs live ODL layout)*  
 - [x] Structure gate uses IR signals; old newline rule removed or demoted to soft  *(M277 structure-chunk-quality-gate.v2)*  
 - [x] SPEC/README single binding story  *(M274 SPEC historical)*  
 
@@ -197,6 +197,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 | **M279** | E4 EvidenceAssertion staging **DONE 91361b9** + GEPA isolation wire | M278 |
 | **M280** | Canary assign + resolvability metric + GEPA optimize isolation **DONE 847a724** | M279 |
 | **M281** | Gold char-span grounding + real canary metric + assertion staging **DONE cbc8183** | M280 |
+| **M282** | Relation id resolve + layout upgrade path + IR/metric hygiene **DONE 7d18ff3** | M281 |
 | **M280+** | E5 optional generators / fallbacks | M277–M279 |
 | **Import** | user go only | M279+ |
 
