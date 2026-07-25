@@ -171,7 +171,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 **Evidence-ready (engineering):**
 
 - [x] Every hybrid run stores PDF hash + TEI + ODL JSON + ParserRun  *(M274–M276: TEI/ODL layout/ParserRun/canonical; PDF hash via source pipeline when present)*  
-- [x] ≥95% of gold entities/relations on canary resolve to SourceSpan with page **or** justified char-only fallback rate tracked  *(M282: rate 1.0 char-only after relation id→label; target_met true under real mode; alert char_only_no_page_bbox; page/bbox needs live ODL layout)*  
+- [x] ≥95% of gold entities/relations on canary resolve to SourceSpan with page **or** justified char-only fallback rate tracked  *(M283: live hybrid 23/23 layout JSON; layout upgrade 93/93 spans; page_or_bbox_count=69; rate 1.0; evidence_ready_ok true; import still locked)*  
 - [x] Structure gate uses IR signals; old newline rule removed or demoted to soft  *(M277 structure-chunk-quality-gate.v2)*  
 - [x] SPEC/README single binding story  *(M274 SPEC historical)*  
 
@@ -198,6 +198,7 @@ Materialized `Method-OUTPERFORMS-Method` only after promotion.
 | **M280** | Canary assign + resolvability metric + GEPA optimize isolation **DONE 847a724** | M279 |
 | **M281** | Gold char-span grounding + real canary metric + assertion staging **DONE cbc8183** | M280 |
 | **M282** | Relation id resolve + layout upgrade path + IR/metric hygiene **DONE 7d18ff3** | M281 |
+| **M283** | ODL key fix + live gold hybrid layout batch + page/bbox upgrade **DONE** | M282 |
 | **M280+** | E5 optional generators / fallbacks | M277–M279 |
 | **Import** | user go only | M279+ |
 

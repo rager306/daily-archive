@@ -45,11 +45,17 @@ def iter_layout_elements(layout: Any) -> list[dict[str, Any]]:
                 node.get("bbox")
                 or node.get("bounding_box")
                 or node.get("boundingBox")
+                or node.get("bounding box")
                 or node.get("box")
             )
             page = node.get("page")
             if page is None:
-                page = node.get("page_number") or node.get("pageIndex")
+                page = (
+                    node.get("page_number")
+                    or node.get("page number")
+                    or node.get("pageIndex")
+                    or node.get("page_index")
+                )
             try:
                 page_i = int(page) if page is not None else None
             except (TypeError, ValueError):

@@ -28,6 +28,47 @@ def _as_bbox(value: Any) -> tuple[float, float, float, float] | None:
         return None
 
 
+def _safe_int_level(node: Mapping[str, Any]) -> int:
+    """ODL may put string roles in ``level`` (e.g. Doctitle); prefer heading level."""
+    for key in ("heading level", "heading_level", "headingLevel", "level"):
+        if key not in node:
+            continue
+        raw = node.get(key)
+        if isinstance(raw, bool):
+            continue
+        if isinstance(raw, int):
+            return raw
+        if isinstance(raw, float):
+            return int(raw)
+        if isinstance(raw, str) and raw.strip().isdigit():
+            return int(raw.strip())
+    return 0
+
+
+def _node_page(node: Mapping[str, Any]) -> int | None:
+    page = (
+        node.get("page")
+        or node.get("page_number")
+        or node.get("page number")
+        or node.get("pageIndex")
+        or node.get("page_index")
+    )
+    try:
+        return int(page) if page is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _node_bbox(node: Mapping[str, Any]) -> tuple[float, float, float, float] | None:
+    return _as_bbox(
+        node.get("bbox")
+        or node.get("bounding_box")
+        or node.get("boundingBox")
+        or node.get("bounding box")
+        or node.get("box")
+    )
+
+
 def _block_kind(node: Mapping[str, Any]) -> str:
     raw = str(
         node.get("type")
@@ -75,17 +116,8 @@ def _walk_layout_blocks(
     if isinstance(node, Mapping):
         text = _text_of(node)
         kind = _block_kind(node)
-        bbox = _as_bbox(
-            node.get("bbox")
-            or node.get("bounding_box")
-            or node.get("boundingBox")
-            or node.get("box")
-        )
-        page = node.get("page") or node.get("page_number") or node.get("pageIndex")
-        try:
-            page_i = int(page) if page is not None else None
-        except (TypeError, ValueError):
-            page_i = None
+        bbox = _node_bbox(node)
+        page_i = _node_page(node)
         element_id = node.get("id") or node.get("element_id") or node.get("uid")
         if text or bbox is not None or kind not in {"other", "paragraph"}:
             counter[0] += 1
@@ -101,11 +133,18 @@ def _walk_layout_blocks(
                     block_id=f"b{counter[0]}",
                     kind=kind,  # type: ignore[arg-type]
                     text=text,
-                    level=int(node.get("level") or 0),
+                    level=_safe_int_level(node),
                     spans=(span,),
                     meta={
                         k: node.get(k)
-                        for k in ("type", "category", "page", "page_number")
+                        for k in (
+                            "type",
+                            "category",
+                            "page",
+                            "page_number",
+                            "page number",
+                            "heading level",
+                        )
                         if k in node
                     },
                 )

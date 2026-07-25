@@ -37,7 +37,15 @@ def count_layout_elements(layout: Any) -> tuple[int, int]:
         nonlocal elements, bboxes
         if isinstance(node, Mapping):
             elements += 1
-            for key in ("bbox", "bounding_box", "boundingBox", "box", "coordinates"):
+            # ODL uses spaced keys: "bounding box", "page number".
+            for key in (
+                "bbox",
+                "bounding_box",
+                "boundingBox",
+                "bounding box",
+                "box",
+                "coordinates",
+            ):
                 if key in node and node[key] is not None:
                     bboxes += 1
                     break
