@@ -562,7 +562,17 @@ def update_index_if_exists(
     index_path = catalog_root / "article_catalog" / "index.json"
     if not index_path.exists():
         return False, None, []
-    scripts_dir = Path(__file__).resolve().parents[3] / "scripts"
+    # Walk up to repo root (src/research_graph/... lives under parents).
+    scripts_dir: Path | None = None
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "scripts" / "verify_m025_article_catalog.py"
+        if candidate.is_file():
+            scripts_dir = parent / "scripts"
+            break
+    if scripts_dir is None:
+        raise ModuleNotFoundError(
+            "verify_m025_article_catalog.py not found under any parent/scripts"
+        )
     if str(scripts_dir) not in sys.path:
         sys.path.insert(0, str(scripts_dir))
     from verify_m025_article_catalog import (  # type: ignore[unresolved-import]  # ty: ignore[unresolved-import]  # pyrefly: ignore  # noqa: PLC0415
