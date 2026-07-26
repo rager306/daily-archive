@@ -71,12 +71,14 @@ jobs:
       - name: Cargo check (workspace)
         run: cargo check --workspace --all-targets
 
-      - name: Cargo clippy (our crates, deny warnings)
+      - name: Cargo clippy (our crates, deny warnings, no-deps)
         run: |
+          # --no-deps: lint only our crates, not vendored Samyama (which has
+          # many pre-existing unused-import warnings we do not own).
           cargo clippy \
             -p da-domain -p da-ports -p da-application \
             -p da-graph -p da-adapters -p da-cli \
-            --all-targets -- -D warnings
+            --all-targets --no-deps -- -D warnings
 
       - name: Hexagonal dependency-direction check
         run: |

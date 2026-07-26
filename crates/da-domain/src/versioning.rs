@@ -43,7 +43,7 @@ impl<T> TemporalRecord<T> {
         self.history
             .iter()
             .rev()
-            .find(|v| v.valid_from <= when && v.valid_to.map_or(true, |to| to > when))
+            .find(|v| v.valid_from <= when && v.valid_to.is_none_or(|to| to > when))
     }
 
     /// Get the current (latest) version.

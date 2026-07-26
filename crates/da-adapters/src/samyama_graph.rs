@@ -147,7 +147,7 @@ impl SamyamaGraphStore {
         let store = self.store.read().await;
         let batch: RecordBatch = self
             .engine
-            .execute(cypher, &*store)
+            .execute(cypher, &store)
             .map_err(|e| GraphStoreError::Query(e.to_string()))?;
 
         // Convert RecordBatch → QueryResult
@@ -162,7 +162,7 @@ impl SamyamaGraphStore {
                     .map(|col| {
                         record
                             .get(col)
-                            .map(|v| value_to_json(v))
+                            .map(value_to_json)
                             .unwrap_or(serde_json::Value::Null)
                     })
                     .collect()
@@ -288,51 +288,20 @@ impl GraphStore for SamyamaGraphStore {
     async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
         let mut buf = Vec::new();
         let store = self.store_read().await;
-        samyama::snapshot::export_tenant(&*store, &mut buf)
+        samyama::snapshot::export_tenant(&store, &mut buf)
             .map_err(|e| GraphStoreError::Storage(e.to_string()))?;
         Ok(buf)
     }
 
     async fn import_snapshot(&self, data: &[u8]) -> GraphResult<()> {
         let mut store = self.store_write().await;
-        samyama::snapshot::import_tenant(&mut *store, &mut std::io::Cursor::new(data))
+        samyama::snapshot::import_tenant(&mut store, &mut std::io::Cursor::new(data))
             .map_err(|e| GraphStoreError::Storage(e.to_string()))?;
         Ok(())
     }
 
     async fn health(&self) -> GraphResult<bool> {
         Ok(true)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_create_node_direct() {
-        let store = SamyamaGraphStore::new();
-        let id = store.create_node_direct("Paper").await;
-        store
-            .set_property_direct(id, "title", PropertyValue::String("Test".into()))
-            .await;
-        assert_eq!(store.node_count().await, 1);
-    }
-
-    #[tokio::test]
-    async fn test_create_edge_direct() {
-        let store = SamyamaGraphStore::new();
-        let a = store.create_node_direct("Author").await;
-        let p = store.create_node_direct("Paper").await;
-        let _edge = store.create_edge_direct(a, p, "AUTHORED").await.unwrap();
-        let neighbors = store.outgoing_neighbors(a).await;
-        assert!(!neighbors.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_health_always_true() {
-        let store = SamyamaGraphStore::new();
-        assert!(store.health().await.unwrap());
     }
 }
 
@@ -454,5 +423,36 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
 
     async fn edge_count(&self) -> usize {
         self.store_read().await.all_edges().len()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_create_node_direct() {
+        let store = SamyamaGraphStore::new();
+        let id = store.create_node_direct("Paper").await;
+        store
+            .set_property_direct(id, "title", PropertyValue::String("Test".into()))
+            .await;
+        assert_eq!(store.node_count().await, 1);
+    }
+
+    #[tokio::test]
+    async fn test_create_edge_direct() {
+        let store = SamyamaGraphStore::new();
+        let a = store.create_node_direct("Author").await;
+        let p = store.create_node_direct("Paper").await;
+        let _edge = store.create_edge_direct(a, p, "AUTHORED").await.unwrap();
+        let neighbors = store.outgoing_neighbors(a).await;
+        assert!(!neighbors.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_health_always_true() {
+        let store = SamyamaGraphStore::new();
+        assert!(store.health().await.unwrap());
     }
 }

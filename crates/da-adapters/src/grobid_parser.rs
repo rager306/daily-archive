@@ -4,9 +4,7 @@
 //! GROBID runs at http://127.0.0.1:8070 (Java service, no API key).
 
 use async_trait::async_trait;
-use da_ports::parser::{
-    CitationEntry, ParseResult, ParsedArticle, ParserError, ParserPort, Section,
-};
+use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 

@@ -13,6 +13,12 @@ cargo fmt -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters 
 echo "=== cargo check --workspace ==="
 cargo check --workspace
 
+echo "=== cargo clippy (our crates, no-deps, deny warnings) ==="
+cargo clippy \
+  -p da-domain -p da-ports -p da-application \
+  -p da-graph -p da-adapters -p da-cli \
+  --all-targets --no-deps -- -D warnings
+
 echo "=== hexagonal dependency direction ==="
 fail=0
 

@@ -129,7 +129,6 @@ impl IngestUseCase {
 
     /// Check infrastructure health.
     pub async fn health_check(&self) -> bool {
-        use da_ports::graph_store::GraphStore;
         self.graph_store.health().await.unwrap_or(false)
     }
 
