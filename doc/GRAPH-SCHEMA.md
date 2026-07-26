@@ -251,3 +251,36 @@ When a citation has a known context/intent, the `cites` edge carries a
 4. **`da extract`** — extract Entity nodes from sections (content layer).
 5. **Idempotent** — `find_node_by_string_property` before create.
 6. **Fail-closed** — `import_eligible=false`, `evidence_ready=false`.
+
+---
+
+## ADHD-derived patterns (D134)
+
+Four patterns from systematic divergent ideation (doc/ADHD-ONTOLOGY-RESEARCH.md):
+
+### 1. retrieval_eligible on ALL nodes
+Every node has `retrieval_eligible: Boolean` (default `false`).
+- `false`: deprecated Concepts, quarantined agent writes, unparsed spans
+- `true`: promoted, live taxonomy nodes
+- All retrieval paths (PPR, BM25+RRF, GNN-rerank, Cypher expand) MUST filter
+  on `retrieval_eligible=true`. This is the "epigenetic silencing" pattern.
+
+### 2. Topic assignment audit trail
+Every `hasTopic` edge carries:
+- `assignment_method`: citation_clustering | LLM_label | ML_classifier
+- `hierarchy_snapshot_id`: points to frozen OpenAlex dump version
+- `score`: confidence (0.0–1.0)
+- `assigned_at`: timestamp
+
+This makes Concept→Topic deprecation remaps reproducible and reversible.
+
+### 3. Provenance ring (future)
+Provenance metadata lives in an append-only `ProvenanceEvent` audit ring.
+Nodes hold only a ring offset pointer, not inline provenance.
+This keeps hot retrieval paths cache-clean.
+
+### 4. Agent quarantine (future)
+RuVector/SONA agent-memory writes land as `QuarantinedAssertion` edges with
+`retrieval_eligible=false`. They cannot seed or expand in retrieval until a
+`PromotionCertificate` (human go or automated ship-gate) flips them to live.
+Two-lane: certified lane (users/PPR) vs quarantine lane (agent rehearsal).
