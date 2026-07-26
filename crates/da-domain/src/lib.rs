@@ -10,6 +10,7 @@
 pub mod article;
 pub mod entity;
 pub mod evidence;
+pub mod healing;
 pub mod paper;
 pub mod relation;
 pub mod schema;
@@ -22,6 +23,9 @@ pub use article::{
 };
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
+pub use healing::{
+    CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
+};
 pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
 pub use schema::{

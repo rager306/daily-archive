@@ -11,3 +11,5 @@ pub mod batch_ingest;
 pub use batch_ingest::{batch_ingest_pdfs, BatchIngestResult};
 pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
+pub mod healing;
+pub use healing::GraphHealingUseCase;
