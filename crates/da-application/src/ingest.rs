@@ -148,7 +148,11 @@ impl IngestUseCase {
                         .await?;
                 }
                 self.graph_store
-                    .create_edge(node_id, cited_node, "CITES")
+                    .create_edge(
+                        node_id,
+                        cited_node,
+                        da_domain::relation::bibliographic::CITES,
+                    )
                     .await?;
                 cites_resolved += 1;
             }

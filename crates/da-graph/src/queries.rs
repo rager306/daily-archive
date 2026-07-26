@@ -38,17 +38,20 @@ impl PaperQueries {
     /// K-hop citation neighborhood (for agent context, ADR-038 tri-source S_kn).
     pub fn citation_neighborhood(vid: &str, max_hops: usize) -> String {
         format!(
-            "MATCH (n:Paper {{vid: \"{}\"}})-[:CITES*1..{}]->(cited:Paper) \
+            "MATCH (n:Paper {{vid: \"{}\"}})-[:{}*1..{}]->(cited:Paper) \
              RETURN DISTINCT cited.vid, cited.arxiv_id, cited.title LIMIT 100",
-            vid, max_hops
+            vid,
+            da_domain::relation::bibliographic::CITES,
+            max_hops
         )
     }
 
     /// Papers citing a given paper (reverse citations).
     pub fn cited_by(vid: &str) -> String {
         format!(
-            "MATCH (citing:Paper)-[:CITES]->(n:Paper {{vid: \"{}\"}}) \
+            "MATCH (citing:Paper)-[:{}]->(n:Paper {{vid: \"{}\"}}) \
              RETURN citing.vid, citing.arxiv_id, citing.title",
+            da_domain::relation::bibliographic::CITES,
             vid
         )
     }

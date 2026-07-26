@@ -17,6 +17,8 @@ Graph import is **fail-closed** (`import_eligible=false`) until explicit human g
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
 | Batch 10-paper canary | **10/10 ok**, ~39s, snapshot exported |
+| Section/citation parsing | Done — TEI sections + citations extracted + persisted |
+| Citation graph (CITES) | Done — Citation nodes + CITES edges for resolvable refs |
 | Snapshot durability | Export + load-snapshot round-trip verified (in-process) |
 | Cross-process live graph | **Not yet** — needs Samyama server mode (Solution A, Phase 3+) |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
@@ -118,6 +120,10 @@ pre-commit run --all-files
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
+| `da query --kind count` | Count Paper nodes (Cypher via da-graph) |
+| `da query --kind by-arxiv --id ID` | Find paper by arxiv_id |
+| `da query --kind citation-hops --id VID --hops 2` | K-hop citation neighborhood |
+| `da query --kind orphans` | Find orphan nodes (no edges) |
 
 ---
 

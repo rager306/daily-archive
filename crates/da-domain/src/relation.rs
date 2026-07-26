@@ -103,6 +103,23 @@ pub struct Relation {
     pub schema_version: u32,
 }
 
+/// Bibliographic edge types — structural metadata, NOT extracted semantic
+/// relations. These are deterministic facts from the source document
+/// (paper A cites paper B), not LLM/GLiNER-extracted relationships.
+///
+/// Separated from RelationType (ADR-038's 18 extracted types) to keep
+/// bibliographic metadata distinct from semantic extraction results.
+pub mod bibliographic {
+    /// Paper A cites paper B (from GROBID parsed references).
+    pub const CITES: &str = "CITES";
+
+    /// Reverse of CITES: paper B is cited by paper A.
+    pub const CITED_BY: &str = "CITED_BY";
+
+    /// Paper A and paper B share an author.
+    pub const CO_AUTHORED: &str = "CO_AUTHORED";
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -126,5 +143,14 @@ mod tests {
         for t in RelationType::all() {
             assert!(!t.as_str().is_empty());
         }
+    }
+
+    #[test]
+    fn test_bibliographic_cites_constant() {
+        // CITES is a bibliographic metadata edge, not an extracted RelationType.
+        // It must be a stable string for graph edge labels.
+        assert_eq!(bibliographic::CITES, "CITES");
+        assert_eq!(bibliographic::CITED_BY, "CITED_BY");
+        assert_eq!(bibliographic::CO_AUTHORED, "CO_AUTHORED");
     }
 }

@@ -18,6 +18,20 @@
 - Integration tests for batch_ingest with mock ports (5 tests, no live services).
 - ADR-INDEX.md + ADR-037 status marked partially superseded by 040/041.
 - README rewritten for Rust v2 (was fully Python-era).
+- **GROBID TEI sections + citations extraction**: `extract_sections` (85 from
+  real paper), `extract_citations` (80 citations with DOI/arXiv id). Closed
+  TODO debt (sections/citations were discarded). 7 new tests.
+- **`da query` CLI command**: count, by-arxiv, by-vid, orphans, without-evidence,
+  citation-hops. Wires da-graph (was dead library).
+- **Sections + citations persisted to graph**: IngestUseCase now writes
+  section_count, citation_count as node properties and creates Citation nodes
+  + CITES edges for resolvable citations. IngestResult reports counts.
+- **Bibliographic edge types in domain**: `bibliographic::CITES` / `CITED_BY` /
+  `CO_AUTHORED` constants in da-domain. Separated from ADR-038's 18 extracted
+  RelationTypes. da-graph queries now reference the domain constant.
+- Clippy clean across all crates; CI clippy uses `--no-deps` (vendor Samyama
+  has pre-existing warnings we don't own).
+- Pre-commit cargo-fmt now auto-formats (was failing on `--check`).
 
 ### Hygiene (earlier)
 
