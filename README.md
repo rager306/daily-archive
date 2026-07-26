@@ -122,6 +122,10 @@ pre-commit run --all-files
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
+| `da schema-init` | Initialize all graph indexes |
+| `da heal --op silence` | Silence a node (D135) |
+| `da heal --op correct` | Correct a property (D135) |
+| `da heal --op merge` | Merge duplicates (D135) |
 | `da query --kind count` | Count Paper nodes (Cypher via da-graph) |
 | `da query --kind by-arxiv --id ID` | Find paper by arxiv_id |
 | `da query --kind citation-hops --id VID --hops 2` | K-hop citation neighborhood |
@@ -193,6 +197,9 @@ archive/                # Rename shims only (not runtime)
 | `doc/adr/ADR-041-…` | Embedded Cypher + HOT path + access tiers |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
 | `doc/GRAPH-SCHEMA.md` | Graph schema (nodes, edges, indexes) |
+| `doc/ONTOLOGY-ALIGNMENT.md` | FaBiO/CiTO/OpenAlex alignment |
+| `doc/GRAPH-HEALING-SCENARIOS.md` | Correct, merge, silence, migrate |
+| `doc/ADHD-ONTOLOGY-RESEARCH.md` | Divergent ideation results |
 | `doc/REPO-HYGIENE.md` | Garbage policy |
 | `CHANGELOG.md` | Recent changes |
 | `legacy/README.md` (if present) | Frozen Python evidence path |

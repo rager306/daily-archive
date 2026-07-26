@@ -86,6 +86,37 @@ enum Commands {
         #[arg(long, default_value = "1024")]
         dimensions: usize,
     },
+
+    /// Heal/repair graph nodes (silence, correct, merge)
+    Heal {
+        /// Operation: silence, unsilence, correct, merge
+        #[arg(long)]
+        op: String,
+
+        /// Node VID to heal
+        #[arg(long)]
+        vid: String,
+
+        /// Node label (Entity, Paper, etc.)
+        #[arg(long, default_value = "Entity")]
+        label: String,
+
+        /// For correct: property key to fix
+        #[arg(long)]
+        key: Option<String>,
+
+        /// For correct: new value
+        #[arg(long)]
+        value: Option<String>,
+
+        /// For merge: VID of the node to keep
+        #[arg(long)]
+        keep: Option<String>,
+
+        /// Reason for the healing operation
+        #[arg(long, default_value = "manual")]
+        reason: String,
+    },
 }
 
 fn main() {
@@ -150,6 +181,29 @@ fn main() {
         }
         Commands::SchemaInit { dimensions } => {
             schema_init(dimensions);
+        }
+        Commands::Heal {
+            op,
+            vid,
+            label,
+            key,
+            value,
+            keep,
+            reason,
+        } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                heal_graph(
+                    &op,
+                    &vid,
+                    &label,
+                    key.as_deref(),
+                    value.as_deref(),
+                    keep.as_deref(),
+                    &reason,
+                )
+                .await;
+            });
         }
     }
 }
@@ -556,4 +610,62 @@ fn schema_init(dimensions: usize) {
         }
         println!("  Schema ready — load data with `da batch-ingest` / `da extract`");
     });
+}
+
+async fn heal_graph(
+    op: &str,
+    vid: &str,
+    label: &str,
+    key: Option<&str>,
+    value: Option<&str>,
+    keep: Option<&str>,
+    reason: &str,
+) {
+    use da_adapters::SamyamaGraphStore;
+    use da_application::GraphHealingUseCase;
+    use da_domain::healing::HealingActor;
+
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = GraphHealingUseCase::new(graph_store);
+    let actor = HealingActor::Human("cli".to_string());
+
+    let result = match op {
+        "silence" => use_case.silence(vid, label, reason, actor).await.map(|_| {
+            println!("✅ Silenced: {vid} ({label})");
+            println!("   Reason: {reason}");
+        }),
+        "unsilence" => use_case.unsilence(vid, label, actor).await.map(|_| {
+            println!("✅ Un-silenced: {vid} ({label}) — retrieval_eligible restored");
+        }),
+        "correct" => {
+            let key = key.unwrap_or("label");
+            let value = value.unwrap_or("");
+            use_case
+                .correct(vid, label, key, value, reason, actor)
+                .await
+                .map(|_| {
+                    println!("✅ Corrected: {vid}.{key} → {value}");
+                })
+        }
+        "merge" => {
+            let keep_vid = keep.unwrap_or_else(|| {
+                eprintln!("❌ --keep required for merge");
+                std::process::exit(1);
+            });
+            use_case.merge(keep_vid, vid, reason, actor).await.map(|_| {
+                println!("✅ Merged: {vid} → {keep_vid}");
+                println!("   SUPERSEDES edge created");
+            })
+        }
+        _ => {
+            eprintln!("❌ Unknown heal op: {op}");
+            eprintln!("   Available: silence, unsilence, correct, merge");
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(e) = result {
+        eprintln!("❌ Heal failed: {e:#}");
+        std::process::exit(1);
+    }
 }

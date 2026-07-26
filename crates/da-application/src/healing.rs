@@ -140,7 +140,11 @@ impl GraphHealingUseCase {
 
         // Create SUPERSEDES edge: merge → keep
         self.graph_store
-            .create_edge(merge_id, keep_id, "SUPERSEDES")
+            .create_edge(
+                merge_id,
+                keep_id,
+                da_domain::relation::bibliographic::SUPERSEDES,
+            )
             .await?;
 
         let provenance = ProvenanceEvent::new(

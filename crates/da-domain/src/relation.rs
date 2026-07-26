@@ -122,6 +122,13 @@ pub mod bibliographic {
     /// Paper mentions an entity (extracted from paper text).
     /// Links Paper nodes to Entity nodes extracted from their sections.
     pub const MENTIONS: &str = "MENTIONS";
+
+    /// Entity A is superseded by Entity B (merge scenario, D135).
+    /// The superseded node gets retrieval_eligible=false.
+    pub const SUPERSEDES: &str = "SUPERSEDES";
+
+    /// Entity A was split into Entity B (split scenario, D135).
+    pub const SPLITS: &str = "SPLITS";
 }
 
 /// Schema definition for Citation nodes (GRAPH-SCHEMA.md).
@@ -183,5 +190,7 @@ mod tests {
         assert_eq!(bibliographic::CITED_BY, "CITED_BY");
         assert_eq!(bibliographic::CO_AUTHORED, "CO_AUTHORED");
         assert_eq!(bibliographic::MENTIONS, "MENTIONS");
+        assert_eq!(bibliographic::SUPERSEDES, "SUPERSEDES");
+        assert_eq!(bibliographic::SPLITS, "SPLITS");
     }
 }
