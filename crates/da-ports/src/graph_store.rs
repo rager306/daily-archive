@@ -147,4 +147,15 @@ pub trait DirectGraphStore: GraphStore {
 
     /// Count edges in the graph.
     async fn edge_count(&self) -> usize;
+
+    /// Find a node by label + string property value (HOT path).
+    /// Returns the first matching NodeId, or None.
+    /// O(n) scan — suitable for Phase 2 scale (≤10k nodes).
+    /// For production scale, use a property index (Phase 5+).
+    async fn find_node_by_string_property(
+        &self,
+        label: &str,
+        key: &str,
+        value: &str,
+    ) -> Option<u64>;
 }

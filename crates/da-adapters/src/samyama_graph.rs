@@ -424,6 +424,24 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
     async fn edge_count(&self) -> usize {
         self.store_read().await.all_edges().len()
     }
+
+    async fn find_node_by_string_property(
+        &self,
+        label: &str,
+        key: &str,
+        value: &str,
+    ) -> Option<u64> {
+        let store = self.store_read().await;
+        let label = Label::new(label);
+        for node in store.get_nodes_by_label(&label) {
+            if let Some(prop) = node.properties.get(key) {
+                if prop.as_string() == Some(value) {
+                    return Some(node.id.0);
+                }
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]

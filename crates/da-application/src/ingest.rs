@@ -124,29 +124,47 @@ impl IngestUseCase {
 
         // 6. Create CITES edges for citations with resolvable arxiv_ids
         // (enables citation graph traversal — ADR-038 S_kn tri-source)
+        // Idempotent: reuses existing Citation node if one with same arxiv_id exists.
         let mut cites_resolved = 0usize;
+        let now_ts = chrono::Utc::now().timestamp();
         for citation in &parsed.citations {
             if let Some(ref arxiv_id) = citation.arxiv_id {
-                // Check if cited paper already exists in graph
                 let cited_vid = vid::paper_vid(arxiv_id);
-                // Create Citation node + CITES edge
-                let cited_node = self.graph_store.create_node("Citation").await?;
-                self.graph_store
-                    .set_node_property_string(cited_node, "vid", cited_vid)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(cited_node, "arxiv_id", arxiv_id.clone())
-                    .await?;
-                if let Some(ref title) = citation.title {
-                    self.graph_store
-                        .set_node_property_string(cited_node, "title", title.clone())
-                        .await?;
-                }
-                if let Some(ref doi) = citation.doi {
-                    self.graph_store
-                        .set_node_property_string(cited_node, "doi", doi.clone())
-                        .await?;
-                }
+                // Check if Citation node already exists (idempotent)
+                let cited_node = match self
+                    .graph_store
+                    .find_node_by_string_property("Citation", "arxiv_id", arxiv_id)
+                    .await
+                {
+                    Some(existing) => existing,
+                    None => {
+                        // Create new Citation node
+                        let new_node = self.graph_store.create_node("Citation").await?;
+                        self.graph_store
+                            .set_node_property_string(new_node, "vid", cited_vid)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(new_node, "arxiv_id", arxiv_id.clone())
+                            .await?;
+                        if let Some(ref title) = citation.title {
+                            self.graph_store
+                                .set_node_property_string(new_node, "title", title.clone())
+                                .await?;
+                        }
+                        if let Some(ref doi) = citation.doi {
+                            self.graph_store
+                                .set_node_property_string(new_node, "doi", doi.clone())
+                                .await?;
+                        }
+                        self.graph_store
+                            .set_node_property_int(new_node, "valid_from", now_ts)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(new_node, "schema_version", 1)
+                            .await?;
+                        new_node
+                    }
+                };
                 self.graph_store
                     .create_edge(
                         node_id,

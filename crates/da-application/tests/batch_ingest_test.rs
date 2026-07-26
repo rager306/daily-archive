@@ -80,6 +80,8 @@ impl Embedder for MockEmbedder {
 struct MockGraphStore {
     nodes: Arc<AtomicUsize>,
     snapshot_calls: Arc<AtomicUsize>,
+    // Track string properties for find_node_by_string_property testing
+    props: std::sync::Mutex<std::collections::HashMap<(u64, String), String>>,
 }
 
 #[async_trait]
@@ -133,10 +135,14 @@ impl DirectGraphStore for MockGraphStore {
     }
     async fn set_node_property_string(
         &self,
-        _node_id: u64,
-        _key: &str,
-        _value: String,
+        node_id: u64,
+        key: &str,
+        value: String,
     ) -> Result<(), GraphStoreError> {
+        self.props
+            .lock()
+            .unwrap()
+            .insert((node_id, key.to_string()), value);
         Ok(())
     }
     async fn set_node_property_int(
@@ -187,6 +193,20 @@ impl DirectGraphStore for MockGraphStore {
     async fn edge_count(&self) -> usize {
         0
     }
+    async fn find_node_by_string_property(
+        &self,
+        _label: &str,
+        key: &str,
+        value: &str,
+    ) -> Option<u64> {
+        let props = self.props.lock().unwrap();
+        for ((node_id, k), v) in props.iter() {
+            if k == key && v == value {
+                return Some(*node_id);
+            }
+        }
+        None
+    }
 }
 
 fn make_ingest(fail_on: Vec<String>) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
@@ -209,6 +229,7 @@ fn make_ingest_with_citations(
         Box::new(MockGraphStore {
             nodes: nodes.clone(),
             snapshot_calls: snapshot_calls.clone(),
+            props: std::sync::Mutex::new(std::collections::HashMap::new()),
         }),
     );
     (ingest, nodes, snapshot_calls)
@@ -339,4 +360,35 @@ async fn test_ingest_citations_create_cites_edges() {
     assert_eq!(result.total_sections, 1);
     // 1 Paper node + 2 Citation nodes = 3 total
     assert_eq!(nodes.load(Ordering::SeqCst), 3);
+}
+
+#[tokio::test]
+async fn test_ingest_citation_dedup_shared_reference() {
+    // Two papers citing the same arxiv_id should create ONE Citation node
+    // with TWO CITES edges (idempotent creation).
+    use da_ports::parser::CitationEntry;
+    let shared_citation = CitationEntry {
+        raw_text: "Shared ref".to_string(),
+        doi: None,
+        arxiv_id: Some("2301.09999".to_string()),
+        title: Some("Shared Paper".to_string()),
+    };
+    let (ingest, nodes, _snapshot_calls) =
+        make_ingest_with_citations(vec![], vec![shared_citation.clone()]);
+    let pdfs = vec![
+        ("paper1.pdf".to_string(), "2401.00001".to_string()),
+        ("paper2.pdf".to_string(), "2401.00002".to_string()),
+    ];
+
+    let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
+
+    assert_eq!(result.ok, 2);
+    assert_eq!(result.total_cites_resolved, 2); // both papers cite it
+                                                // 2 Paper nodes + 1 Citation node (deduped!) = 3 total
+    assert_eq!(
+        nodes.load(Ordering::SeqCst),
+        3,
+        "expected dedup: 2 Paper + 1 Citation = 3 nodes, got {}",
+        nodes.load(Ordering::SeqCst)
+    );
 }
