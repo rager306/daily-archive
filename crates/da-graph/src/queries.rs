@@ -19,18 +19,18 @@ impl PaperQueries {
 
     /// Count all Paper nodes.
     pub fn count_all() -> String {
-        "MATCH (n:Paper) RETURN count(n)".to_string()
+        "MATCH (n:Paper) WHERE n.retrieval_eligible = true RETURN count(n)".to_string()
     }
 
     /// Find papers without embeddings (for backfill).
     pub fn without_embedding() -> String {
-        "MATCH (n:Paper) WHERE n.embedding IS NULL RETURN n.vid, n.arxiv_id".to_string()
+        "MATCH (n:Paper) WHERE n.retrieval_eligible = true AND n.embedding IS NULL RETURN n.vid, n.arxiv_id".to_string()
     }
 
     /// Find papers with stale schema_version (for migration).
     pub fn stale_schema(current_version: u32) -> String {
         format!(
-            "MATCH (n:Paper) WHERE n.schema_version < {} RETURN n.vid, n.schema_version",
+            "MATCH (n:Paper) WHERE n.retrieval_eligible = true AND n.schema_version < {} RETURN n.vid, n.schema_version",
             current_version
         )
     }
@@ -39,6 +39,7 @@ impl PaperQueries {
     pub fn citation_neighborhood(vid: &str, max_hops: usize) -> String {
         format!(
             "MATCH (n:Paper {{vid: \"{}\"}})-[:{}*1..{}]->(cited:Paper) \
+             WHERE cited.retrieval_eligible = true \
              RETURN DISTINCT cited.vid, cited.arxiv_id, cited.title LIMIT 100",
             vid,
             da_domain::relation::bibliographic::CITES,
@@ -50,6 +51,7 @@ impl PaperQueries {
     pub fn cited_by(vid: &str) -> String {
         format!(
             "MATCH (citing:Paper)-[:{}]->(n:Paper {{vid: \"{}\"}}) \
+             WHERE citing.retrieval_eligible = true \
              RETURN citing.vid, citing.arxiv_id, citing.title",
             da_domain::relation::bibliographic::CITES,
             vid

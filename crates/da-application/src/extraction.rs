@@ -120,6 +120,9 @@ impl ExtractionUseCase {
                     self.graph_store
                         .set_node_property_bool(new_node, "import_eligible", false)
                         .await?;
+                    self.graph_store
+                        .set_node_property_bool(new_node, "retrieval_eligible", true)
+                        .await?;
                     new_node
                 }
             };

@@ -42,9 +42,11 @@ impl NodeSchemaDef for SectionSchema {
     }
 }
 
-// ─── Concept (SKOS / OpenAlex Concept) ───
+// ─── Concept (DEPRECATED — OpenAlex Concepts replaced by Topics) ───
 
-/// A research concept from OpenAlex concept hierarchy (levels 0–4).
+/// A deprecated OpenAlex Concept. Kept for historical audit but NOT used for
+/// retrieval (retrieval_eligible=false). Replaced by Topic system.
+/// See doc/ADHD-ONTOLOGY-RESEARCH.md (D134 epigenetic deprecation pattern).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Concept {
     pub vid: crate::vid::Vid,
@@ -53,6 +55,7 @@ pub struct Concept {
     pub wikidata: Option<String>,
     pub openalex_id: Option<String>,
     pub works_count: u64,
+    pub retrieval_eligible: bool, // always false for deprecated Concepts
 }
 
 pub struct ConceptSchema;
@@ -66,6 +69,7 @@ impl NodeSchemaDef for ConceptSchema {
             ("vid", FieldType::String),
             ("label", FieldType::String),
             ("level", FieldType::Integer),
+            ("retrieval_eligible", FieldType::Boolean),
         ]
     }
     fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
@@ -77,7 +81,11 @@ impl NodeSchemaDef for ConceptSchema {
     }
 }
 
-// ─── Topic (OpenAlex Topic) ───
+// ─── Topic (OpenAlex Topic — live taxonomy, 4-level hierarchy) ───
+//
+// OpenAlex Topics replace deprecated Concepts. Hierarchy:
+//   4 domains → 26 fields → 254 subfields → ~4,500 topics
+// Each Work is assigned topics via citation clustering + LLM labeling.
 
 /// An OpenAlex topic — grouped concept cluster (domain → field → subfield → topic).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,6 +113,7 @@ impl NodeSchemaDef for TopicSchema {
             ("field", FieldType::String),
             ("subfield", FieldType::String),
             ("openalex_id", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
         ]
     }
 }
@@ -134,7 +143,10 @@ impl NodeSchemaDef for CategorySchema {
         ]
     }
     fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
-        vec![("name", FieldType::String)]
+        vec![
+            ("name", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+        ]
     }
 }
 
@@ -164,6 +176,7 @@ impl NodeSchemaDef for AuthorSchema {
             ("orcid", FieldType::String),
             ("openalex_id", FieldType::String),
             ("works_count", FieldType::Integer),
+            ("retrieval_eligible", FieldType::Boolean),
         ]
     }
 }
@@ -194,6 +207,7 @@ impl NodeSchemaDef for InstitutionSchema {
             ("country", FieldType::String),
             ("ror", FieldType::String),
             ("openalex_id", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
         ]
     }
 }

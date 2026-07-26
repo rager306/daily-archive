@@ -56,6 +56,13 @@
   schema registry (all_node_schemas/schema_for_label). SchemaInitializer: 7
   indexes (was 3). `da schema init` CLI creates all indexes via HOT path.
   Ingest now validates Paper properties against schema before writing.
+- **Topics replace Concepts + retrieval_eligible (D134)**: OpenAlex Concepts
+  DEPRECATED — replaced by Topics (4 domains → 26 fields → 254 subfields → ~4500 topics).
+  Concept nodes kept but retrieval_eligible=false (epigenetic silencing).
+  retrieval_eligible added to ALL node schemas (Paper, Citation, Entity, Topic,
+  Concept, Author, Institution, Category). Ingest/extract set retrieval_eligible=true
+  on created nodes. da-graph queries filter on retrieval_eligible=true (count_all,
+  without_embedding, stale_schema, citation_neighborhood, cited_by).
 - **Schema redesigned with article spine (D132 revised)**: user pointed out the
   schema was missing topics, keywords, sections, categories — the article
   "обвязка". GRAPH-SCHEMA.md now defines 9 node types: Paper, Section, Keyword,

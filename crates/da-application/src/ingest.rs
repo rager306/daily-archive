@@ -116,6 +116,9 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_bool(node_id, "import_eligible", false) // D127: always false
             .await?;
+        self.graph_store
+            .set_node_property_bool(node_id, "retrieval_eligible", true) // D134: live for retrieval
+            .await?;
 
         // Section + citation metadata (enables Phase 3 extraction queries)
         let section_count = parsed.sections.len();
@@ -171,6 +174,9 @@ impl IngestUseCase {
                             .await?;
                         self.graph_store
                             .set_node_property_int(new_node, "schema_version", 1)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(new_node, "retrieval_eligible", true)
                             .await?;
                         new_node
                     }
