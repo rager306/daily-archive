@@ -1,231 +1,166 @@
-# daily-archive
+# daily-archive v2
 
-Local-first **Universal Knowledge Base** for scientific papers (first domain): ingest PDFs → hybrid body → constrained extraction → review gates → graph **only with explicit authorization**.
+Local-first **scientific knowledge engine**: ingest PDFs → extract structure →
+embed → write to a durable knowledge graph (Samyama) → agent retrieval.
+Graph import is **fail-closed** (`import_eligible=false`) until explicit human go (D127).
 
-Runtime package: **`research_graph`** (`src/research_graph/`).  
-Legacy `arxiv_archive` is **not** on the import path (`archive/` = rename history only).
-
-Agent lookup map: `AGENTS.md` (local; often gitignored). Hygiene: `doc/REPO-HYGIENE.md`.
+**Runtime:** Rust workspace under `crates/` (hexagonal / onion).  
+**Frozen evidence:** Python stack under `legacy/` (M274–M284, Wave B, hybrid bodies).  
+**Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–041).
 
 ---
 
-## Current state (2026-07-24)
+## Current state (2026-07-26)
 
 | Area | Status |
 |------|--------|
-| Hybrid bodies | **81 / 230 ≈ 35.2%** (residual ≥ 0.35 met) |
-| Deploy extract | **`header_priority`** constrained select |
-| GEPA / LLM | Compare / offline only — **not** promoted |
-| Structure continuous gate | **pass** → `ready_for_structure_review` |
-| Import / graph write | **locked** (`import_eligible=false`) |
-| Import-hold hits | **0** |
-| Multi-root identical | hardlinked; **same_inode = 20** |
-| Fleet soft debt | stale LLM compare **n=20** vs live **n=23** |
+| Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
+| Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
+| Batch 10-paper canary | **10/10 ok**, ~39s, snapshot exported |
+| Snapshot durability | Export + load-snapshot round-trip verified (in-process) |
+| Cross-process live graph | **Not yet** — needs Samyama server mode (Solution A, Phase 3+) |
+| Import / graph write | **Locked** (`import_eligible=false`, D127) |
+| Phase 3 extraction (GLiNER) | Not started |
+| Agent layer (RuVector/SONA) | Vendored, not wired |
 
-Live evidence:
+Architecture:
 
-```text
-artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md
-artifacts/etl/EVIDENCE-TRACE-AND-VERIFICATION-ROADMAP.md  # evidence-trace + verification next wave
-artifacts/etl/continuity-pack.json
-artifacts/etl/fleet-report.json
-artifacts/wave-b/ship-gate-matrix.json
+```
+crates/
+  da-domain/        # pure types: Paper, Entity, Evidence, VID, schema
+  da-ports/         # traits: GraphStore, DirectGraphStore, ParserPort, Embedder, …
+  da-application/   # use cases: IngestUseCase, batch_ingest_pdfs
+  da-graph/         # Cypher query builders + schema DDL (no Samyama SDK)
+  da-adapters/      # GROBID, FdApiEmbedder, SamyamaGraphStore
+  da-cli/           # binary `da`
+```
+
+Dependency direction (enforced by CI):
+
+```
+da-domain  ──►  (no infra)
+da-ports   ──►  da-domain
+da-application / da-graph  ──►  da-domain, da-ports  (no da-adapters)
+da-adapters  ──►  da-domain, da-ports, samyama
+da-cli       ──►  all of the above
 ```
 
 ---
 
-## Architecture
-
-### Knowledge pipeline (product layers)
-
-```mermaid
-flowchart LR
-  SRC[Source<br/>catalog PDF/HTML] --> PAR[Parser<br/>GROBID + ODL hybrid]
-  PAR --> STR[Structure<br/>chunks / quality gate]
-  STR --> EXT[Extraction<br/>constrained select]
-  EXT --> GRF[Graph<br/>Falkor target]
-  GRF --> REV[Review<br/>fail-closed]
-  REV --> AGT[Agents<br/>SymFSM deferred]
-
-  EXT -. deploy .-> HDR[header_priority]
-  EXT -. compare only .-> LLM[LLM / GEPA]
-  GRF -. locked .-> LOCK[import_eligible=false]
-```
-
-### Hexagonal / onion package (code)
-
-```mermaid
-flowchart TB
-  CLI[cli / scripts operators]
-  WF[workflows composition]
-  APP[application use-cases]
-  DOM[domain ports + schema]
-  INF[infrastructure adapters]
-
-  CLI --> WF
-  CLI --> APP
-  WF --> APP
-  WF --> INF
-  APP --> DOM
-  INF --> DOM
-  INF -. implements ports .-> DOM
-```
-
-| Layer | Path | Rule |
-|-------|------|------|
-| Domain | `src/research_graph/domain/` | pure types / ports |
-| Application | `src/research_graph/application/` | pure use-cases preferred |
-| Infrastructure | `src/research_graph/infrastructure/` | IO: parsers, LLM, DB |
-| Workflows | `src/research_graph/workflows/` | composition / sidecars |
-| CLI / scripts | `cli/`, `scripts/verify_*.py` | thin operators |
-
-Onion guard: `uv run python scripts/verify_onion_layering.py`.
-
-### ETL / Wave B data plane (what runs day-to-day)
-
-```mermaid
-flowchart TB
-  CAT[data/article_catalog] --> PDF[source PDF]
-  PDF --> HYB[hybrid body<br/>runs-live* / expand]
-  HYB --> PACK[continuity pack]
-  PACK --> FLEET[etl fleet]
-  HYB --> JOIN[gold hybrid join n=23]
-  JOIN --> HDR[header_priority select]
-  JOIN --> GEPA[GEPA offline spike]
-  JOIN --> GRND[grounding audit]
-  HDR --> MX[ship gate matrix]
-  GEPA --> MX
-  GRND --> MX
-  FLEET --> MX
-  FLEET --> HOLD[import-hold inventory]
-  HYB --> CGATE[structure chunk quality gate]
-  CGATE --> SREADY[structure readiness]
-
-  MX -->|ship_path| DEPLOY[header deploy]
-  MX -.->|no promote| GEPA
-  HOLD -->|hits=0| LOCK[import false]
-```
-
-### Safety gates
-
-```mermaid
-flowchart TD
-  A[Any operator / batch] --> B{body evidence OK?}
-  B -->|no| D[hybrid_deferred / no claim]
-  B -->|yes| C{import_eligible?}
-  C -->|always false today| E[artifacts only]
-  C -->|future user go| F[pilot write path]
-  G[GEPA/LLM metrics] --> H{same-n + dual F1 + val_gap?}
-  H -->|no| I[header remains ship_path]
-  H -->|yes| J[optional promote candidate]
-```
-
-Binding ADRs: `doc/adr/ADR-INDEX.md`  
-(ADR-008/009 hybrid, ADR-023 layers, ADR-034 onion, ADR-035 write governance, ADR-036 preprocess).
-
----
-
-## Problems (open residual)
-
-```mermaid
-mindmap
-  root((Open residual))
-    Quality
-      Entity F1 ~0.50 on n=23
-      Relation F1 ~0.26 ceiling
-      GEPA val-aware loses header
-      LLM compare stale n=20
-    Scale
-      ~135 missing hybrid with local PDF
-      Stretch fraction 0.50 optional
-    Storage
-      multi_root path count still 20
-      hardlink done same_inode 20
-    Process
-      Import locked by policy
-      Optional YAKE / soft_signal triage
-```
-
-| ID | Severity | Problem | Symptom | Next lever |
-|----|----------|---------|---------|------------|
-| **Q1** | high | Weak relations | relation F1 ~0.26 | better entity pick + relation candidates |
-| **Q2** | high | Weak entities on full gold join | header entity ~0.50 n=23 | header heuristics / candidates |
-| **Q3** | med | Metric n-mix residual | LLM artifact n=20 vs live 23 | same-n LLM rescore or drop from hard path |
-| **Q4** | med | GEPA overfit vs underfit tradeoff | promote blocked | type priors, not paper-id TYPE_HINT flood |
-| **X1** | low–med | Idle PDF queue | ~135 with PDF, no hybrid | gated expand batches |
-| **S1** | low | Multi-root paths remain | path count 20 after hardlink | optional path prune flag |
-| **L1** | policy | No graph import | import_eligible false | **explicit user go only** |
-
-**Not import-ready** until: same-n quality contract clean for deploy claims, agreed dual-F1 floor, structure not red, **and** user yes.
-
----
-
-## Daily operators
+## Quick start
 
 ```bash
-# Dashboards
-uv run python scripts/verify_etl_continuity_pack.py
-uv run python scripts/verify_etl_fleet.py
-uv run python scripts/verify_etl_fleet.py --rescore-quality
+# Build
+cargo build -p da-cli
 
-# Hybrid expand (pack refresh default ON)
-uv run python scripts/verify_hybrid_expand_batch.py --help
+# Health (GROBID :8070, fd_api embedder, Samyama embedded)
+./target/debug/da health
 
-# Wave B quality
-uv run python scripts/verify_wave_b_ship_gate_matrix.py
-uv run python scripts/verify_wave_b_gepa_vs_header.py
+# Single paper (HOT path, in-memory — data lost on exit)
+./target/debug/da ingest --pdf path/to/paper.pdf --id 1206.6423
 
-# Structure
-uv run python scripts/verify_structure_chunk_quality_gate.py
-uv run python scripts/verify_structure_readiness_package.py
+# Batch + snapshot (durable backup)
+./target/debug/da batch-ingest \
+  --ids 1206.6423,1606.01540,1612.00341 \
+  --output data/samyama/batch.sgsnap
 
-# Safety
-uv run python scripts/verify_import_hold_inventory.py
-uv run python scripts/verify_onion_layering.py
+# Restore snapshot into this process
+./target/debug/da load-snapshot --input data/samyama/batch.sgsnap
+./target/debug/da graph-stats
 ```
 
-### Hybrid sidecars
+### Sidecars
 
 ```bash
+# GROBID CRF
 docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
-curl -sS http://127.0.0.1:8070/api/isalive
-uv sync --extra hybrid
+curl -sS http://127.0.0.1:8070/api/isalive   # true
 
-uv run python -m research_graph article run path/to/paper.pdf --mode hybrid \
-  -o artifacts/single-article/demo
+# Embedder: fd_api on :8000 with FD_API_KEY in .env
+# Env template: .env.example (GROBID_*, FD_API_*, SAMYAMA_*)
 ```
-
-`hybrid_claimed_success` needs body evidence, not merely “container up”. Details: `.docker/README.md`.
 
 ---
 
 ## Development
 
 ```bash
-uv sync
-uv run pytest tests/ -q
-uv run ruff check src/ tests/
-uv run python scripts/verify_onion_layering.py
-uv run python scripts/verify_import_hold_inventory.py
+# Format + compile + hexagonal check + unit tests
+bash scripts/verify_rust_architecture.sh
+
+# Or piece-wise (preferred — avoids rocksdb test-profile rebuild):
+cargo fmt -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli
+cargo check --workspace
+cargo test -p da-domain --lib
+cargo test -p da-graph --lib
+cargo test -p da-application --tests
+cargo test -p da-adapters --lib
+
+# Pre-commit (cargo fmt + cargo check)
+pre-commit install
+pre-commit run --all-files
 ```
+
+> **Gotcha:** `cargo test --workspace` is slow, not hung. Samyama’s
+> `librocksdb-sys` rebuilds for the test profile (multiple fingerprints,
+> minutes each). Prefer per-package `cargo test -p …`. Concurrent cargo
+> processes block on `target/` lock — cancel background cargo jobs first.
+
+---
+
+## CLI commands
+
+| Command | Purpose |
+|---------|---------|
+| `da health` | GROBID / embedder / Samyama health |
+| `da version` | Version + ADR pin |
+| `da ingest --pdf … --id …` | Single-paper HOT path |
+| `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
+| `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
+| `da graph-stats` | Node/edge counts |
+
+---
+
+## Persistence model (ADR-041)
+
+| Solution | Mode | Persistence | Status |
+|----------|------|:-----------:|--------|
+| **B: Batch + snapshot** | Embedded HOT path | `.sgsnap` export | **Current** (Phase 2) |
+| **A: Server daemon** | RemoteClient / RESP | RocksDB + WAL | Phase 3+ |
+| **C: Embedded + PersistenceManager** | Embedded HOT | RocksDB + WAL | Phase 5 optional |
+
+Snapshot is a **backup/restore** mechanism, not live multi-process store.
+Details: `doc/PERSISTENCE-ANALYSIS.md`.
+
+---
+
+## Architecture guardrail (CI)
+
+`.github/workflows/architecture-guardrail.yml` enforces:
+
+1. `cargo fmt` (our crates only)
+2. `cargo check --workspace`
+3. `cargo clippy -p da-* -- -D warnings`
+4. Hexagonal dependency direction (no infra in domain/ports; no adapters in application/graph)
+
+Local mirror: `scripts/verify_rust_architecture.sh`.
 
 ---
 
 ## Layout
 
 ```text
-src/research_graph/     # runtime (domain/application/infrastructure/workflows/cli)
-scripts/                # verify_* operators
-tests/
-doc/adr/                # binding ADRs
-artifacts/etl/          # pack, fleet, structure, readiness matrix
-artifacts/wave-b/       # ship matrix, GEPA, grounding, stamp
-data/article_catalog/   # canonical PDFs + catalog
-archive/                # rename shims only (not runtime)
+crates/                 # Rust workspace (runtime)
+legacy/                 # Frozen Python research_graph + tests + scripts
+doc/adr/                # Binding ADRs (037–041 + INDEX)
+doc/PERSISTENCE-ANALYSIS.md
+data/article_catalog/   # Canonical PDFs
+data/samyama/           # Snapshots (.sgsnap)
 .docker/                # GROBID / ODL compose
+scripts/                # verify_rust_architecture.sh
+artifacts/              # Historical Python evidence (ETL, Wave B)
+archive/                # Rename shims only (not runtime)
 ```
-
-Local scratch (gitignored): `mutants/`, `tmp/`, `.gsd-backups/`, hybrid `runs-live*` workdirs.
 
 ---
 
@@ -233,10 +168,11 @@ Local scratch (gitignored): `mutants/`, `tmp/`, `.gsd-backups/`, hybrid `runs-li
 
 | Item | Status |
 |------|--------|
-| Production Falkor / graph import | Locked without user go |
-| GEPA/LLM as deploy select | Staged offline only |
-| SymFSM production agents | ADR-026 directional |
-| Hybrid stretch 0.50 / YAKE default-on | Optional |
+| Production graph import | Locked without human go (D127) |
+| Cross-process live graph | Needs Samyama server (Solution A) |
+| GLiNER 2 extraction | Phase 3 |
+| RuVector agent brain (SONA/GNN) | Vendored, not wired |
+| DSPy / optimizers | Guarded until Stage 2+ metrics |
 
 ---
 
@@ -244,9 +180,11 @@ Local scratch (gitignored): `mutants/`, `tmp/`, `.gsd-backups/`, hybrid `runs-li
 
 | Doc | Purpose |
 |-----|---------|
-| `AGENTS.md` | Agent map: what/where (local) |
-| `artifacts/etl/ETL-READINESS-MATRIX-ROADMAP.md` | Residual matrix + roadmap |
-| `doc/REPO-HYGIENE.md` | Garbage policy + truth paths |
-| `doc/adr/ADR-INDEX.md` | Binding ADRs |
-| `doc/SPEC.md` | Spec |
+| `doc/adr/ADR-INDEX.md` | Binding ADRs + supersession chain |
+| `doc/adr/ADR-040-…` | Tech stack lock (Samyama + RuVector + RVF) |
+| `doc/adr/ADR-041-…` | Embedded Cypher + HOT path + access tiers |
+| `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
+| `doc/REPO-HYGIENE.md` | Garbage policy |
 | `CHANGELOG.md` | Recent changes |
+| `legacy/README.md` (if present) | Frozen Python evidence path |
+| `.agents/skills/samyama/SKILL.md` | Samyama integration skill |
