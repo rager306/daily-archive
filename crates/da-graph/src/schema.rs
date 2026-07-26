@@ -1,7 +1,10 @@
 //! Schema initialization and versioning for Samyama graph.
 //!
-//! ADR-040 §11: schema-as-code. This module generates Cypher DDL
-//! for creating indexes and initial schema setup.
+//! ADR-040 §11 + GRAPH-SCHEMA.md: schema-as-code. This module generates
+//! Cypher DDL for creating indexes. The single source of truth is
+//! doc/GRAPH-SCHEMA.md; this module mirrors it in code.
+//!
+//! Run `da schema init` before any data load to create all indexes.
 
 /// Current schema version (ADR-040 §11.2).
 /// Increment when schema changes require migration.
@@ -11,9 +14,22 @@ pub const CURRENT_SCHEMA_VERSION: u32 = 1;
 pub type SchemaVersion = u32;
 
 /// Schema initializer — generates Cypher for index creation.
+/// Mirrors doc/GRAPH-SCHEMA.md §Indexes.
 pub struct SchemaInitializer;
 
 impl SchemaInitializer {
+    // ─── Paper indexes ───
+
+    /// Cypher to create a unique property index on Paper.vid.
+    pub fn create_paper_vid_index() -> String {
+        "CREATE INDEX paper_vid IF NOT EXISTS FOR (n:Paper) ON (n.vid)".to_string()
+    }
+
+    /// Cypher to create a property index on Paper.arxiv_id.
+    pub fn create_paper_arxiv_id_index() -> String {
+        "CREATE INDEX paper_arxiv_id IF NOT EXISTS FOR (n:Paper) ON (n.arxiv_id)".to_string()
+    }
+
     /// Cypher to create a vector index on Paper.embedding.
     pub fn create_paper_vector_index(dimensions: usize) -> String {
         format!(
@@ -24,22 +40,43 @@ impl SchemaInitializer {
         )
     }
 
-    /// Cypher to create a property index on Paper.vid (for fast lookups).
-    pub fn create_paper_vid_index() -> String {
-        "CREATE INDEX paper_vid IF NOT EXISTS FOR (n:Paper) ON (n.vid)".to_string()
+    // ─── Citation indexes ───
+
+    /// Cypher to create a unique property index on Citation.vid.
+    pub fn create_citation_vid_index() -> String {
+        "CREATE INDEX citation_vid IF NOT EXISTS FOR (n:Citation) ON (n.vid)".to_string()
     }
 
-    /// Cypher to create a property index on Paper.arxiv_id.
-    pub fn create_paper_arxiv_id_index() -> String {
-        "CREATE INDEX paper_arxiv_id IF NOT EXISTS FOR (n:Paper) ON (n.arxiv_id)".to_string()
+    /// Cypher to create a property index on Citation.arxiv_id.
+    pub fn create_citation_arxiv_id_index() -> String {
+        "CREATE INDEX citation_arxiv_id IF NOT EXISTS FOR (n:Citation) ON (n.arxiv_id)".to_string()
     }
 
-    /// All schema initialization Cypher statements in order.
+    // ─── Entity indexes ───
+
+    /// Cypher to create a unique property index on Entity.vid.
+    pub fn create_entity_vid_index() -> String {
+        "CREATE INDEX entity_vid IF NOT EXISTS FOR (n:Entity) ON (n.vid)".to_string()
+    }
+
+    /// Cypher to create a property index on Entity.entity_type.
+    pub fn create_entity_type_index() -> String {
+        "CREATE INDEX entity_type IF NOT EXISTS FOR (n:Entity) ON (n.entity_type)".to_string()
+    }
+
+    /// All schema initialization Cypher statements in order (GRAPH-SCHEMA.md).
     pub fn all_init_statements(dimensions: usize) -> Vec<String> {
         vec![
+            // Paper
             Self::create_paper_vid_index(),
             Self::create_paper_arxiv_id_index(),
             Self::create_paper_vector_index(dimensions),
+            // Citation
+            Self::create_citation_vid_index(),
+            Self::create_citation_arxiv_id_index(),
+            // Entity
+            Self::create_entity_vid_index(),
+            Self::create_entity_type_index(),
         ]
     }
 }
@@ -63,7 +100,20 @@ mod tests {
     #[test]
     fn test_all_init_statements() {
         let stmts = SchemaInitializer::all_init_statements(1024);
-        assert_eq!(stmts.len(), 3);
+        // 3 Paper + 2 Citation + 2 Entity = 7 indexes
+        assert_eq!(stmts.len(), 7);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
+    }
+
+    #[test]
+    fn test_citation_indexes() {
+        assert!(SchemaInitializer::create_citation_vid_index().contains("Citation"));
+        assert!(SchemaInitializer::create_citation_arxiv_id_index().contains("arxiv_id"));
+    }
+
+    #[test]
+    fn test_entity_indexes() {
+        assert!(SchemaInitializer::create_entity_vid_index().contains("Entity"));
+        assert!(SchemaInitializer::create_entity_type_index().contains("entity_type"));
     }
 }

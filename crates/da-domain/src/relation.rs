@@ -124,6 +124,31 @@ pub mod bibliographic {
     pub const MENTIONS: &str = "MENTIONS";
 }
 
+/// Schema definition for Citation nodes (GRAPH-SCHEMA.md).
+pub struct CitationSchema;
+
+impl crate::schema::NodeSchemaDef for CitationSchema {
+    fn label(&self) -> &'static str {
+        "Citation"
+    }
+
+    fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        vec![
+            ("vid", crate::schema::FieldType::String),
+            ("valid_from", crate::schema::FieldType::DateTime),
+        ]
+    }
+
+    fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        vec![
+            ("arxiv_id", crate::schema::FieldType::String),
+            ("title", crate::schema::FieldType::String),
+            ("doi", crate::schema::FieldType::String),
+            ("schema_version", crate::schema::FieldType::Integer),
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

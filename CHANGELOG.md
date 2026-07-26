@@ -49,6 +49,13 @@
   Added Model entity extraction (GPT-4, LLaMA, Claude, Gemini, Mistral, Qwen,
   DeepSeek, GLM, BERT, T5, BLOOM). Recall: 2→3 entities on paper 2602.11757.
   2 new tests (extended section classification, model extraction).
+- **Graph schema design (D132)**: doc/GRAPH-SCHEMA.md — single source of truth
+  for all node types (Paper, Citation, Entity, Author, Evidence), edge types
+  (CITES, MENTIONS, AUTHORED, HAS_EVIDENCE + 18 extracted), properties, indexes.
+  Schema-as-code: PaperSchema/EntitySchema updated, CitationSchema added,
+  schema registry (all_node_schemas/schema_for_label). SchemaInitializer: 7
+  indexes (was 3). `da schema init` CLI creates all indexes via HOT path.
+  Ingest now validates Paper properties against schema before writing.
 
 ### Hygiene (earlier)
 

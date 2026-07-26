@@ -60,9 +60,16 @@ impl crate::schema::NodeSchemaDef for EntitySchema {
 
     fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
         vec![
+            ("section", crate::schema::FieldType::String),
+            ("char_start", crate::schema::FieldType::Integer),
+            ("char_end", crate::schema::FieldType::Integer),
+            ("surface", crate::schema::FieldType::String),
             ("description", crate::schema::FieldType::String),
             ("confidence", crate::schema::FieldType::Float),
+            ("valid_from", crate::schema::FieldType::DateTime),
             ("schema_version", crate::schema::FieldType::Integer),
+            ("evidence_ready", crate::schema::FieldType::Boolean),
+            ("import_eligible", crate::schema::FieldType::Boolean),
         ]
     }
 }

@@ -79,6 +79,13 @@ enum Commands {
         #[arg(long)]
         id: String,
     },
+
+    /// Initialize graph schema (indexes) before loading data
+    SchemaInit {
+        /// Vector dimensions for Paper.embedding index
+        #[arg(long, default_value = "1024")]
+        dimensions: usize,
+    },
 }
 
 fn main() {
@@ -140,6 +147,9 @@ fn main() {
             rt.block_on(async {
                 extract_entities(&id).await;
             });
+        }
+        Commands::SchemaInit { dimensions } => {
+            schema_init(dimensions);
         }
     }
 }
@@ -465,4 +475,76 @@ async fn extract_entities(paper_id: &str) {
             std::process::exit(1);
         }
     }
+}
+
+fn schema_init(dimensions: usize) {
+    // GRAPH-SCHEMA.md: create all indexes via HOT path (direct API), not Cypher.
+    // Samyama property indexes use IndexManager::create_index, not CREATE INDEX DDL.
+    println!("daily-archive v2 — schema initialization");
+    println!(
+        "  Schema version: {}",
+        da_graph::schema::CURRENT_SCHEMA_VERSION
+    );
+
+    // Property indexes: (label, property)
+    let property_indexes = [
+        ("Paper", "vid"),
+        ("Paper", "arxiv_id"),
+        ("Citation", "vid"),
+        ("Citation", "arxiv_id"),
+        ("Entity", "vid"),
+        ("Entity", "entity_type"),
+    ];
+    // Vector indexes: (label, property, dimensions)
+    let vector_indexes = [("Paper", "embedding", dimensions)];
+
+    println!(
+        "  Indexes to create: {} property + {} vector",
+        property_indexes.len(),
+        vector_indexes.len()
+    );
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        use da_adapters::SamyamaGraphStore;
+        use da_ports::graph_store::{GraphStore, VectorMetric};
+        let store = SamyamaGraphStore::from_env();
+        let mut ok = 0;
+        let mut fail = 0;
+
+        for (label, property) in &property_indexes {
+            match store.create_property_index(label, property).await {
+                Ok(()) => {
+                    println!("    [property] {label}.{property}");
+                    ok += 1;
+                }
+                Err(e) => {
+                    fail += 1;
+                    eprintln!("  ❌ Property index {label}.{property} failed: {e}");
+                }
+            }
+        }
+
+        for (label, property, dims) in &vector_indexes {
+            match store
+                .create_vector_index(label, property, *dims, VectorMetric::Cosine)
+                .await
+            {
+                Ok(()) => {
+                    println!("    [vector] {label}.{property} (dim={dims}, cosine)");
+                    ok += 1;
+                }
+                Err(e) => {
+                    fail += 1;
+                    eprintln!("  ❌ Vector index {label}.{property} failed: {e}");
+                }
+            }
+        }
+
+        println!("  Result: {ok} created, {fail} failed");
+        if fail > 0 {
+            std::process::exit(1);
+        }
+        println!("  Schema ready — load data with `da batch-ingest` / `da extract`");
+    });
 }

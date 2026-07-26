@@ -18,7 +18,9 @@ pub mod vid;
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
 pub use paper::{Paper, PaperSchema, PaperStatus};
-pub use relation::{bibliographic, Relation, RelationType, RELATION_TYPES};
-pub use schema::{Field, FieldType, NodeSchemaDef, SchemaError};
+pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
+pub use schema::{
+    all_node_schemas, schema_for_label, Field, FieldType, NodeSchemaDef, SchemaError,
+};
 pub use versioning::{TemporalRecord, Versioned};
 pub use vid::{entity_vid, paper_vid, Vid};

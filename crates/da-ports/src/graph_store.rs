@@ -47,6 +47,10 @@ pub trait GraphStore: Send + Sync {
         metric: VectorMetric,
     ) -> GraphResult<()>;
 
+    /// Create a property index for a label + property (HOT path).
+    /// Used by `da schema init` to create all indexes before loading.
+    async fn create_property_index(&self, label: &str, property: &str) -> GraphResult<()>;
+
     /// Vector similarity search.
     async fn vector_search(
         &self,

@@ -107,6 +107,9 @@ impl GraphStore for MockGraphStore {
     ) -> GraphResult<()> {
         Ok(())
     }
+    async fn create_property_index(&self, _label: &str, _property: &str) -> GraphResult<()> {
+        Ok(())
+    }
     async fn vector_search(
         &self,
         _label: &str,

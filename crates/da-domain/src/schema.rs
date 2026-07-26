@@ -136,3 +136,63 @@ pub trait NodeSchemaDef {
 /// Current schema version (ADR-040 §11.2).
 /// Incremented when schema changes require migration.
 pub const CURRENT_SCHEMA_VERSION: u32 = 1;
+
+/// Registry of all node schema definitions (GRAPH-SCHEMA.md).
+/// Loading code validates against these before writing.
+pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
+    vec![
+        Box::new(crate::paper::PaperSchema),
+        Box::new(crate::relation::CitationSchema),
+        Box::new(crate::entity::EntitySchema),
+    ]
+}
+
+/// Find a schema by its label.
+pub fn schema_for_label(label: &str) -> Option<Box<dyn NodeSchemaDef>> {
+    all_node_schemas().into_iter().find(|s| s.label() == label)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_all_node_schemas_has_three_types() {
+        let schemas = all_node_schemas();
+        assert_eq!(schemas.len(), 3);
+        let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
+        assert!(labels.contains(&"Paper"));
+        assert!(labels.contains(&"Citation"));
+        assert!(labels.contains(&"Entity"));
+    }
+
+    #[test]
+    fn test_schema_for_label() {
+        let paper = schema_for_label("Paper");
+        assert!(paper.is_some());
+        assert_eq!(paper.unwrap().label(), "Paper");
+
+        let unknown = schema_for_label("Unknown");
+        assert!(unknown.is_none());
+    }
+
+    #[test]
+    fn test_paper_schema_validates_with_required_fields() {
+        use std::collections::HashMap;
+        let schema = crate::paper::PaperSchema;
+        let mut props = HashMap::new();
+        props.insert("vid".to_string(), serde_json::json!("vid:paper:123"));
+        props.insert("arxiv_id".to_string(), serde_json::json!("1234.5678"));
+        props.insert("title".to_string(), serde_json::json!("Test"));
+        props.insert("valid_from".to_string(), serde_json::json!(1234567890));
+        assert!(schema.validate(&props).is_ok());
+    }
+
+    #[test]
+    fn test_paper_schema_rejects_missing_required() {
+        use std::collections::HashMap;
+        let schema = crate::paper::PaperSchema;
+        let props = HashMap::new(); // missing all required
+        assert!(schema.validate(&props).is_err());
+    }
+}

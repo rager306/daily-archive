@@ -24,6 +24,7 @@ Graph import is **fail-closed** (`import_eligible=false`) until explicit human g
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Phase 3 extraction (GLiNER) | Not started |
 | Phase 3 rule-based extraction | **Started** — Extractor port + RuleBasedExtractor + ExtractionUseCase |
+| Graph schema design | **Done** — doc/GRAPH-SCHEMA.md, schema-as-code, `da schema init` |
 | Agent layer (RuVector/SONA) | Vendored, not wired |
 
 Architecture:
@@ -191,6 +192,7 @@ archive/                # Rename shims only (not runtime)
 | `doc/adr/ADR-040-…` | Tech stack lock (Samyama + RuVector + RVF) |
 | `doc/adr/ADR-041-…` | Embedded Cypher + HOT path + access tiers |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
+| `doc/GRAPH-SCHEMA.md` | Graph schema (nodes, edges, indexes) |
 | `doc/REPO-HYGIENE.md` | Garbage policy |
 | `CHANGELOG.md` | Recent changes |
 | `legacy/README.md` (if present) | Frozen Python evidence path |

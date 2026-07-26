@@ -6,6 +6,7 @@
 //! ADR-039: Lifecycle — starts as [proposed], needs canary-10 validation.
 
 use da_domain::paper::Paper;
+use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
@@ -76,6 +77,15 @@ impl IngestUseCase {
         let paper = Paper::new(paper_id, &parsed.title);
         let vid_str = vid::paper_vid(paper_id);
         let now = chrono::Utc::now().timestamp();
+
+        // 3b. Validate against schema before writing (GRAPH-SCHEMA.md)
+        let paper_schema = da_domain::paper::PaperSchema;
+        let mut paper_props = std::collections::HashMap::new();
+        paper_props.insert("vid".to_string(), serde_json::json!(vid_str));
+        paper_props.insert("arxiv_id".to_string(), serde_json::json!(paper.arxiv_id));
+        paper_props.insert("title".to_string(), serde_json::json!(paper.title));
+        paper_props.insert("valid_from".to_string(), serde_json::json!(now));
+        paper_schema.validate(&paper_props)?;
 
         // 4. HOT PATH: Direct GraphStore API — create Paper node
         let node_id = self.graph_store.create_node("Paper").await?;

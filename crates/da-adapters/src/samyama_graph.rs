@@ -262,6 +262,16 @@ impl GraphStore for SamyamaGraphStore {
         Ok(())
     }
 
+    async fn create_property_index(&self, label: &str, property: &str) -> GraphResult<()> {
+        let store = self.store_read().await;
+        store.property_index.create_index(
+            samyama::graph::types::Label::new(label),
+            property.to_string(),
+        );
+        tracing::info!(label, property, "Property index created");
+        Ok(())
+    }
+
     async fn vector_search(
         &self,
         label: &str,
