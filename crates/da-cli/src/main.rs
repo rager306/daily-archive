@@ -57,6 +57,21 @@ enum Commands {
 
     /// Show graph statistics (node/edge counts)
     GraphStats,
+
+    /// Query the knowledge graph (Cypher via da-graph builders)
+    Query {
+        /// Query type: count, by-arxiv, by-vid, sections, orphans, without-evidence
+        #[arg(long)]
+        kind: String,
+
+        /// Paper arxiv_id or VID (for by-arxiv, by-vid, citation-hops)
+        #[arg(long)]
+        id: Option<String>,
+
+        /// Max citation hops (for citation-hops)
+        #[arg(long, default_value = "2")]
+        hops: usize,
+    },
 }
 
 fn main() {
@@ -105,6 +120,12 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 graph_stats().await;
+            });
+        }
+        Commands::Query { kind, id, hops } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                query_graph(&kind, id.as_deref(), hops).await;
             });
         }
     }
@@ -276,5 +297,80 @@ async fn graph_stats() {
     println!("  Edges: {}", edges);
     if nodes == 0 {
         println!("  ⚠  Graph is empty (in-memory store reset). Use `da load-snapshot` to restore.");
+    }
+}
+
+async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
+    use da_graph::{EntityQueries, PaperQueries};
+
+    // Build the Cypher via da-graph query builders
+    let cypher = match kind {
+        "count" => PaperQueries::count_all(),
+        "by-arxiv" => {
+            let aid = match id {
+                Some(a) => a,
+                None => {
+                    eprintln!("❌ --id required for by-arxiv");
+                    std::process::exit(1);
+                }
+            };
+            PaperQueries::find_by_arxiv_id(aid)
+        }
+        "by-vid" => {
+            let vid = match id {
+                Some(v) => v,
+                None => {
+                    eprintln!("❌ --id required for by-vid");
+                    std::process::exit(1);
+                }
+            };
+            PaperQueries::find_by_vid(vid)
+        }
+        "orphans" => EntityQueries::orphans(),
+        "without-evidence" => {
+            let label = id.unwrap_or("Paper");
+            EntityQueries::without_evidence(label)
+        }
+        "citation-hops" => {
+            let vid = match id {
+                Some(v) => v,
+                None => {
+                    eprintln!("❌ --id required for citation-hops");
+                    std::process::exit(1);
+                }
+            };
+            PaperQueries::citation_neighborhood(vid, hops)
+        }
+        _ => {
+            eprintln!("❌ Unknown query kind: {kind}");
+            eprintln!(
+                "   Available: count, by-arxiv, by-vid, orphans, without-evidence, citation-hops"
+            );
+            std::process::exit(1);
+        }
+    };
+
+    println!("Query kind: {kind}");
+    println!("Cypher: {cypher}");
+
+    // Execute via SamyamaGraphStore (WARM path — embedded Cypher)
+    use da_adapters::SamyamaGraphStore;
+    use da_ports::graph_store::GraphStore;
+    let store = SamyamaGraphStore::from_env();
+    match store.query_readonly("daily_archive", &cypher).await {
+        Ok(result) => {
+            println!("Columns: {:?}", result.columns);
+            println!("Records: {}", result.records.len());
+            for (i, row) in result.records.iter().take(10).enumerate() {
+                println!("  [{i}] {row:?}");
+            }
+            if result.records.len() > 10 {
+                println!("  ... ({} more)", result.records.len() - 10);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Query failed: {e}");
+            std::process::exit(1);
+        }
     }
 }
