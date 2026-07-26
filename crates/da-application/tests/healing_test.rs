@@ -152,6 +152,13 @@ impl DirectGraphStore for MockGraphStore {
             .map(|(source, _, edge_type)| (*source, edge_type.clone()))
             .collect()
     }
+    async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
+        self.props
+            .lock()
+            .unwrap()
+            .get(&(node_id, key.to_string()))
+            .cloned()
+    }
 }
 
 fn make_store() -> MockGraphStore {
@@ -255,6 +262,7 @@ async fn test_correct_updates_property() {
         .unwrap();
 
     assert_eq!(result.key, "label");
+    assert_eq!(result.old_value, "GPT"); // captured from graph, not "unknown"
     assert_eq!(result.new_value, "GPT-4");
     assert_eq!(
         result.provenance.operation,

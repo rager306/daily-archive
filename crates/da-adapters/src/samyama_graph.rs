@@ -465,6 +465,14 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
         }
         result
     }
+
+    async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
+        let store = self.store_read().await;
+        store
+            .get_node(NodeId(node_id))
+            .and_then(|node| node.properties.get(key))
+            .and_then(|prop| prop.as_string().map(|s| s.to_string()))
+    }
 }
 
 #[cfg(test)]

@@ -78,9 +78,12 @@ impl GraphHealingUseCase {
             .await
             .ok_or_else(|| anyhow::anyhow!("Node {vid} not found (label={label})"))?;
 
-        // Note: we can't read the old value via DirectGraphStore (no get_property).
-        // In production, this would use a read API. For now, old_value is "unknown".
-        let old_value = "unknown".to_string();
+        // Read old value before overwriting (D135 audit trail)
+        let old_value = self
+            .graph_store
+            .get_node_property_string(node_id, key)
+            .await
+            .unwrap_or_else(|| "(null)".to_string());
 
         self.graph_store
             .set_node_property_string(node_id, key, new_value.to_string())

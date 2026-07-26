@@ -213,6 +213,9 @@ impl DirectGraphStore for MockGraphStore {
     async fn get_incoming_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
         Vec::new()
     }
+    async fn get_node_property_string(&self, _node_id: u64, _key: &str) -> Option<String> {
+        None
+    }
 }
 
 fn make_ingest(fail_on: Vec<String>) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
