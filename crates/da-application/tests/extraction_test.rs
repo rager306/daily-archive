@@ -168,6 +168,9 @@ impl DirectGraphStore for MockGraphStore {
         }
         None
     }
+    async fn get_incoming_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
+        Vec::new()
+    }
 }
 
 fn make_parsed() -> ParsedArticle {

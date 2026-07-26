@@ -162,4 +162,8 @@ pub trait DirectGraphStore: GraphStore {
         key: &str,
         value: &str,
     ) -> Option<u64>;
+
+    /// Get all incoming edges to a node (for merge edge redirect, D135).
+    /// Returns Vec of (source_node_id, edge_type).
+    async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)>;
 }

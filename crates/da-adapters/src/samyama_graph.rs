@@ -452,6 +452,19 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
         }
         None
     }
+
+    async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
+        let store = self.store_read().await;
+        let nid = NodeId(node_id);
+        let neighbors = store.get_incoming_neighbor_slice(nid);
+        let mut result = Vec::new();
+        for (source_id, edge_id) in neighbors {
+            if let Some(edge) = store.get_edge(*edge_id) {
+                result.push((source_id.0, edge.edge_type.as_str().to_string()));
+            }
+        }
+        result
+    }
 }
 
 #[cfg(test)]

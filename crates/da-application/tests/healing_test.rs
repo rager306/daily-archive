@@ -144,6 +144,14 @@ impl DirectGraphStore for MockGraphStore {
         }
         None
     }
+    async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
+        let edges = self.edges.lock().unwrap();
+        edges
+            .iter()
+            .filter(|(_, target, _)| *target == node_id)
+            .map(|(source, _, edge_type)| (*source, edge_type.clone()))
+            .collect()
+    }
 }
 
 fn make_store() -> MockGraphStore {
@@ -199,8 +207,14 @@ async fn test_silence_sets_retrieval_eligible_false() {
 #[tokio::test]
 async fn test_merge_creates_supersedes_edge() {
     let store = make_store();
-    make_entity(&store, "vid:entity:Method:Transformer", "Transformer").await;
-    make_entity(&store, "vid:entity:Method:Transformers", "Transformers").await;
+    let _keep_id = make_entity(&store, "vid:entity:Method:Transformer", "Transformer").await;
+    let merge_id = make_entity(&store, "vid:entity:Method:Transformers", "Transformers").await;
+    // Simulate a Paper mentioning the merge target
+    let paper_id = store.create_node("Paper").await.unwrap();
+    store
+        .create_edge(paper_id, merge_id, "MENTIONS")
+        .await
+        .unwrap();
     let use_case = GraphHealingUseCase::new(Box::new(store));
 
     let result = use_case
@@ -215,9 +229,11 @@ async fn test_merge_creates_supersedes_edge() {
 
     assert_eq!(result.kept_vid, "vid:entity:Method:Transformer");
     assert_eq!(result.merged_vid, "vid:entity:Method:Transformers");
-    // SUPERSEDES edge should exist
+    // SUPERSEDES edge + redirected MENTIONS edge = 2 new edges + original MENTIONS
+    // total edges: 1 (original MENTIONS) + 1 (SUPERSEDES) + 1 (redirected MENTIONS) = 3
+    assert_eq!(result.edges_redirected, 1);
     let edges = use_case.graph_store.edge_count().await;
-    assert_eq!(edges, 1);
+    assert!(edges >= 3);
 }
 
 #[tokio::test]

@@ -147,6 +147,20 @@ impl GraphHealingUseCase {
             )
             .await?;
 
+        // Redirect incoming edges: for each edge (source → merge_id),
+        // create a parallel edge (source → keep_id) so queries find the kept node.
+        let incoming = self.graph_store.get_incoming_edges(merge_id).await;
+        let mut redirected = 0;
+        for (source_id, edge_type) in &incoming {
+            // Don't redirect SUPERSEDES edges
+            if edge_type != da_domain::relation::bibliographic::SUPERSEDES {
+                self.graph_store
+                    .create_edge(*source_id, keep_id, edge_type)
+                    .await?;
+                redirected += 1;
+            }
+        }
+
         let provenance = ProvenanceEvent::new(
             HealingOperation::Merge,
             actor,
@@ -157,13 +171,14 @@ impl GraphHealingUseCase {
         tracing::info!(
             keep_vid = vid_keep,
             merge_vid = vid_merge,
+            edges_redirected = redirected,
             "Entities merged"
         );
 
         Ok(MergeResult {
             kept_vid: vid_keep.to_string(),
             merged_vid: vid_merge.to_string(),
-            edges_redirected: 0, // edge redirect not yet implemented
+            edges_redirected: redirected,
             provenance,
         })
     }
