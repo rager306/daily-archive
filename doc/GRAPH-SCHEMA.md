@@ -1,51 +1,41 @@
 # Graph Schema Design
 
-**Status:** Binding (D132, revised)
+**Status:** Binding (D132 + D133 — ontology-aligned three-layer architecture)
 **Date:** 2026-07-26
-**Implements:** ADR-040 §11 (schema-as-code), ADR-038 (entity/relation types),
-legacy ADR-028 (typed knowledge schema), legacy CanonicalDocument IR.
+**Alignment:** FaBiO (structural types) + CiTO (citation types) + OpenAlex (metadata backbone)
+**Design doc:** doc/ONTOLOGY-ALIGNMENT.md
 
-This document is the **single source of truth** for the daily-archive v2
-knowledge graph schema. It captures the full article structure ("обвязка
-статьи"): topics, keywords, sections, categories, authors, citations,
-entities, and evidence. Loading code MUST validate against this schema.
-
----
-
-## Design principles
-
-1. **Article-first**: the graph models the article's own structure (sections,
-   keywords, topics, categories) BEFORE extracted entities. The article is
-   the spine; entities hang off it.
-2. **Schema-as-code** (ADR-040 §11): schema lives in Rust types, not DDL.
-3. **VID is identity** (ADR-037 §5): every node has a `vid` (SHA256-derived).
-4. **Temporality** (ADR-037 §6): `valid_from` / `valid_to` / `superseded_by`.
-5. **Fail-closed import** (D127): `import_eligible=false` until human go.
-6. **Two edge families**: bibliographic (structural) + extracted (semantic).
+The graph uses a **three-layer hybrid architecture**:
+1. **Metadata** (OpenAlex): Work, Author, Institution, Concept, Topic
+2. **Structure** (GROBID/S2ORC): Section, Figure, Table, Equation
+3. **Content** (extraction): Entity (Method, Dataset, ...), Relation
 
 ---
 
-## Node types
+## Layer 1: Metadata (OpenAlex backbone)
 
-### Article spine (the "обвязка")
+### Work (FaBiO: fabio:Article / fabio:Preprint)
 
-#### 1. Paper
-A scientific paper — the root of the article subgraph.
+A scientific work. Generalized from `Paper` to support papers, preprints,
+textbooks, code repos, tech docs.
 
 | Property | Type | Required | Description |
 |----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:paper:<arxiv_id>` |
-| `arxiv_id` | String | ✅ | arXiv identifier |
-| `title` | String | ✅ | Paper title |
-| `abstract_text` | String | | Abstract |
+| `vid` | String | ✅ | `vid:work:<arxiv_id>` |
+| `arxiv_id` | String | | arXiv identifier |
 | `doi` | String | | DOI |
+| `openalex_id` | String | | OpenAlex Work ID (W...) |
+| `title` | String | ✅ | Work title |
+| `abstract_text` | String | | Abstract |
+| `work_type` | String | ✅ | article / preprint / book / textbook / code_repo / tech_doc |
+| `publication_date` | String | | YYYY-MM-DD |
+| `primary_category` | String | | arXiv primary category |
+| `oa_status` | String | | open / closed / green / gold |
 | `pdf_hash` | String | | SHA256 of source PDF |
-| `primary_category` | String | | arXiv primary category (e.g. cs.CL) |
-| `published_at` | DateTime | | Publication date |
-| `ingested_at` | DateTime | | Ingest timestamp |
 | `section_count` | Integer | | Parsed section count |
-| `citation_count` | Integer | | Parsed citation count |
-| `keyword_count` | Integer | | Extracted keyword count |
+| `reference_count` | Integer | | Parsed citation count |
+| `concept_count` | Integer | | OpenAlex concepts linked |
+| `cited_by_count` | Integer | | OpenAlex citation count |
 | `valid_from` | DateTime | ✅ | Ingest timestamp |
 | `valid_to` | DateTime | | Set when superseded |
 | `schema_version` | Integer | | Schema version |
@@ -53,111 +43,104 @@ A scientific paper — the root of the article subgraph.
 | `import_eligible` | Boolean | | D127 — always false |
 | `embedding` | Vector(1024) | | bge-m3 abstract embedding |
 
-**Indexes:** `vid` (unique), `arxiv_id`, `primary_category`, `embedding` (vector)
+**Indexes:** `vid` (unique), `arxiv_id`, `doi`, `primary_category`, `embedding` (vector)
+**Edges:** `authoredBy` (→ Author), `hasConcept` (→ Concept), `hasTopic` (→ Topic),
+`hasPart` (→ Section), `cites` (→ Work via CiTO), `mentions` (→ Entity)
 
-#### 2. Section
-A structural section of a paper (from GROBID TEI `<div><head>`).
+### Author (FaBiO: foaf:Person + pro:author)
 
 | Property | Type | Required | Description |
 |----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:section:<paper_id>:<order>` |
+| `vid` | String | ✅ | `vid:author:<name>` or `vid:author:<orcid>` |
+| `name` | String | ✅ | Display name |
+| `orcid` | String | | ORCID iD |
+| `openalex_id` | String | | OpenAlex Author ID (A...) |
+| `works_count` | Integer | | Total works (OpenAlex) |
+
+**Indexes:** `vid` (unique), `orcid`, `name`
+**Edges:** `authoredBy` (Author → Work), `affiliatedWith` (→ Institution)
+
+### Institution (FaBiO: foaf:Organization)
+
+| Property | Type | Required | Description |
+|----------|------|:--------:|-------------|
+| `vid` | String | ✅ | `vid:inst:<ror>` or `vid:inst:<name>` |
+| `name` | String | ✅ | Institution name |
+| `country` | String | | Country code |
+| `ror` | String | | ROR ID |
+| `openalex_id` | String | | OpenAlex Institution ID (I...) |
+
+**Indexes:** `vid` (unique), `ror`, `name`
+**Edges:** `affiliatedWith` (Author → Institution)
+
+### Concept (SKOS: skos:Concept / OpenAlex Concept)
+
+A research concept from the OpenAlex concept hierarchy (levels 0–4).
+
+| Property | Type | Required | Description |
+|----------|------|:--------:|-------------|
+| `vid` | String | ✅ | `vid:concept:<openalex_id>` |
+| `label` | String | ✅ | Concept label |
+| `level` | Integer | ✅ | Hierarchy level (0=root … 4=leaf) |
+| `wikidata` | String | | Wikidata Q-ID |
+| `openalex_id` | String | | OpenAlex Concept ID (C...) |
+| `works_count` | Integer | | Works tagged with this concept |
+
+**Indexes:** `vid` (unique), `label`, `openalex_id`
+**Edges:** `hasConcept` (Work → Concept), `broader` (Concept → Concept), `narrower` (Concept → Concept)
+
+### Topic (FaBiO: fabio:Subject / OpenAlex Topic)
+
+An OpenAlex topic — a grouped concept cluster (domain → field → subfield → topic).
+
+| Property | Type | Required | Description |
+|----------|------|:--------:|-------------|
+| `vid` | String | ✅ | `vid:topic:<openalex_id>` |
+| `label` | String | ✅ | Topic label |
+| `domain` | String | | Top-level domain |
+| `field` | String | | Field within domain |
+| `subfield` | String | | Subfield within field |
+| `openalex_id` | String | | OpenAlex Topic ID (T...) |
+
+**Indexes:** `vid` (unique), `label`, `openalex_id`
+**Edges:** `hasTopic` (Work → Topic)
+
+---
+
+## Layer 2: Structure (GROBID / S2ORC)
+
+### Section (FaBiO: fabio:DocumentObject)
+
+| Property | Type | Required | Description |
+|----------|------|:--------:|-------------|
+| `vid` | String | ✅ | `vid:section:<work_id>:<order>` |
 | `title` | String | ✅ | Section heading |
-| `level` | Integer | ✅ | Heading level (1, 2, 3...) |
+| `level` | Integer | ✅ | Heading depth (1, 2, 3...) |
 | `order` | Integer | ✅ | Position in document |
 | `text` | String | | Section body text |
 | `char_count` | Integer | | Text length |
-| `paper_id` | String | ✅ | Parent paper arxiv_id |
+| `work_vid` | String | ✅ | Parent Work VID |
 
-**Indexes:** `vid` (unique), `paper_id`
-**Edges:** `HAS_SECTION` (Paper → Section)
+**Indexes:** `vid` (unique), `work_vid`
+**Edges:** `hasPart` (Work → Section), `foundIn` (Entity → Section)
 
-#### 3. Keyword
-A YAKE-extracted keyword from the paper.
+---
 
-| Property | Type | Required | Description |
-|----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:keyword:<paper_id>:<normalized>` |
-| `keyword` | String | ✅ | Keyword text |
-| `score` | Float | ✅ | YAKE score (lower = better) |
-| `language` | String | | Language code (en, etc.) |
-| `paper_id` | String | ✅ | Parent paper |
+## Layer 3: Content (domain extraction)
 
-**Indexes:** `vid` (unique), `keyword`
-**Edges:** `HAS_KEYWORD` (Paper → Keyword)
+### Entity (ADR-028 typed schema, NOT in FaBiO)
 
-#### 4. Topic
-A research topic/theme the paper is about (derived from categories + keywords + title).
-
-| Property | Type | Required | Description |
-|----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:topic:<normalized>` |
-| `label` | String | ✅ | Topic label (e.g. "prompt optimization") |
-| `source` | String | ✅ | How derived: category / keyword / title |
-| `confidence` | Float | | 0.0–1.0 |
-
-**Indexes:** `vid` (unique), `label`
-**Edges:** `ABOUT` (Paper → Topic)
-
-#### 5. Category
-An arXiv category (cs.CL, cs.CV, stat.ML, ...).
-
-| Property | Type | Required | Description |
-|----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:category:<code>` |
-| `code` | String | ✅ | Category code (cs.CL) |
-| `name` | String | | Human-readable name |
-| `is_primary` | Boolean | ✅ | Primary category? |
-
-**Indexes:** `vid` (unique), `code`
-**Edges:** `IN_CATEGORY` (Paper → Category)
-
-#### 6. Author
-A paper author.
-
-| Property | Type | Required | Description |
-|----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:author:<name>` |
-| `name` | String | ✅ | Author full name |
-| `email` | String | | Email if available |
-| `affiliation` | String | | Institution |
-
-**Indexes:** `vid` (unique), `name`
-**Edges:** `AUTHORED` (Author → Paper)
-
-#### 7. Citation
-A cited reference (from GROBID parsed references).
-
-| Property | Type | Required | Description |
-|----------|------|:--------:|-------------|
-| `vid` | String | ✅ | `vid:paper:<arxiv_id>` or `vid:citation:<hash>` |
-| `arxiv_id` | String | | arXiv id if resolvable |
-| `title` | String | | Title of cited work |
-| `doi` | String | | DOI |
-| `raw_text` | String | | Raw reference text |
-| `valid_from` | DateTime | ✅ | Creation timestamp |
-| `schema_version` | Integer | | Schema version |
-
-**Indexes:** `vid` (unique), `arxiv_id`
-**Edges:** `CITES` (Paper → Citation)
-
-### Extracted content
-
-#### 8. Entity
-An extracted entity (ADR-038 Module B + legacy ADR-028 typed schema).
-
-Entity types (closed vocabulary):
-- **Concrete**: Method, Dataset, Metric, Task, Baseline, Model, Figure, Table,
-  Equation, Concept, Implementation, Theorem, Definition
-- **Abstract**: Problem, Motivation, Gap, Contribution, Hypothesis, Finding,
-  Mechanism, Limitation, FutureWork
+Entity types (22, closed vocabulary):
+- **Concrete (13)**: Method, Dataset, Metric, Task, Baseline, Model, Figure, Table, Equation, Concept, Implementation, Theorem, Definition
+- **Abstract (9)**: Problem, Motivation, Gap, Contribution, Hypothesis, Finding, Mechanism, Limitation, FutureWork
 
 | Property | Type | Required | Description |
 |----------|------|:--------:|-------------|
 | `vid` | String | ✅ | `vid:entity:<type>:<label>` |
 | `label` | String | ✅ | Surface label |
-| `entity_type` | String | ✅ | EntityType (closed vocabulary above) |
+| `entity_type` | String | ✅ | EntityType (closed vocabulary) |
 | `section_vid` | String | | Section where found |
-| `char_start` | Integer | | Char offset in section |
+| `char_start` | Integer | | Char offset |
 | `char_end` | Integer | | Char offset end |
 | `surface` | String | | Exact surface text |
 | `description` | String | | Optional description |
@@ -168,97 +151,103 @@ Entity types (closed vocabulary):
 | `import_eligible` | Boolean | | D127 — always false |
 
 **Indexes:** `vid` (unique), `entity_type`
-**Edges:** `MENTIONS` (Paper → Entity), `MENTIONS_IN_SECTION` (Section → Entity)
+**Edges:** `mentions` (Work → Entity), `foundIn` (Entity → Section),
+27 extracted relation types (Entity → Entity)
 
-#### 9. Evidence (future — Phase 3 Slice 3)
-An evidence assertion linking a claim to an immutable source artifact.
+### Reference (FaBiO: fabio:BibliographicReference)
+
+A citation entry from the reference list. May resolve to a Work (if OpenAlex
+or arXiv match is found) or remain a stub.
 
 | Property | Type | Required | Description |
 |----------|------|:--------:|-------------|
-| `vid` | String | ✅ | Evidence ID |
-| `claim` | String | ✅ | The claim |
-| `span_type` | String | ✅ | PageBbox / CharOnly / Tei |
-| `page` | Integer | | Page number |
-| `char_start` | Integer | | Char offset |
-| `char_end` | Integer | | Char offset end |
-| `artifact_hash` | String | ✅ | SHA256 of artifact |
-| `artifact_path` | String | ✅ | Path to artifact |
-| `epistemic_status` | String | ✅ | Verified / Staged / Pending |
-| `created_at` | DateTime | ✅ | Creation timestamp |
+| `vid` | String | ✅ | `vid:ref:<hash>` |
+| `raw_text` | String | ✅ | Raw reference text |
+| `arxiv_id` | String | | Resolved arXiv id |
+| `doi` | String | | Resolved DOI |
+| `title` | String | | Title of cited work |
+| `resolved_work_vid` | String | | VID of resolved Work (if any) |
+| `valid_from` | DateTime | ✅ | Creation timestamp |
 
-**Indexes:** `vid` (unique), `artifact_hash`
-**Edges:** `HAS_EVIDENCE` (Entity → Evidence)
+**Indexes:** `vid` (unique), `arxiv_id`, `doi`
+**Edges:** `cites` (Work → Reference/Work, with CiTO citation type)
 
 ---
 
-## Edge types
+## Edge types (complete)
 
-### Bibliographic / structural (article spine)
+### Layer 1: Metadata edges
 
-| Edge | From → To | Description | Status |
-|------|-----------|-------------|--------|
-| `HAS_SECTION` | Paper → Section | Paper has a section | schema only |
-| `HAS_KEYWORD` | Paper → Keyword | Paper has a keyword | schema only |
-| `ABOUT` | Paper → Topic | Paper is about a topic | schema only |
-| `IN_CATEGORY` | Paper → Category | Paper in arXiv category | schema only |
-| `AUTHORED` | Author → Paper | Author wrote paper | schema only |
-| `CITES` | Paper → Citation | Paper cites a reference | ✅ implemented |
-| `MENTIONS` | Paper → Entity | Paper mentions an entity | ✅ implemented |
-| `MENTIONS_IN_SECTION` | Section → Entity | Entity found in section | schema only |
-| `HAS_EVIDENCE` | Entity → Evidence | Entity grounded by evidence | future |
+| Edge | CiTO/FaBiO | From → To | Description |
+|------|-----------|-----------|-------------|
+| `authoredBy` | `pro:author` | Work → Author | Author wrote work |
+| `affiliatedWith` | `schema:affiliation` | Author → Institution | Author at institution |
+| `hasConcept` | `dcterms:subject` | Work → Concept | Work tagged with concept |
+| `hasTopic` | `fabio:hasSubject` | Work → Topic | Work belongs to topic |
+| `broader` | `skos:broader` | Concept → Concept | Broader concept (hierarchy) |
+| `narrower` | `skos:narrower` | Concept → Concept | Narrower concept |
+| `cites` | `cito:cites` | Work → Work/Reference | Citation (typed via property) |
 
-### Extracted / semantic (ADR-038 + legacy ADR-028, 27 types)
+### Layer 2: Structure edges
 
-| Group | Types |
-|-------|-------|
-| Controlled (6) | BuildsOn, UsesComponent, AlternativeTo, Solves, AppliedTo, Targets |
-| Causal (5) | Causes, Enables, Inhibits, Modulates, CorrelatedWith |
-| Composition (5) | UsesTechnique, ConsistsOf, Implements, Combines, Requires |
-| Comparison (7) | DerivedFrom, DiffersFrom, HasLimitation, AddressesProblem, MotivatedBy, HasProperty, SubsetOf |
-| Citation argumentative (3) | Supports, Contrasts, Extends |
+| Edge | FaBiO | From → To | Description |
+|------|-------|-----------|-------------|
+| `hasPart` | `frbr:part` | Work → Section | Work contains section |
 
-All extracted edges: Entity → Entity, with `confidence` + `source_spans`.
-**Status:** not yet extracted (Phase 3 Slice 4+).
+### Layer 3: Content edges
 
----
+| Edge | Source | From → To | Description |
+|------|--------|-----------|-------------|
+| `mentions` | extraction | Work → Entity | Work mentions entity |
+| `foundIn` | extraction | Entity → Section | Entity in section |
+| `BUILDS_ON` | ADR-028 | Entity → Entity | Entity builds on entity |
+| `USES_METHOD_IN` | CiTO | Entity → Entity | Uses method from |
+| ...25 more | ADR-028/CiTO | Entity → Entity | Typed relations |
 
-## Indexes (complete list)
+### CiTO citation typing (property on `cites` edge)
 
-| Index | Type | On | Purpose |
-|-------|------|----|---------|
-| `paper_vid` | property (unique) | Paper.vid | VID lookup |
-| `paper_arxiv_id` | property | Paper.arxiv_id | arxiv lookup |
-| `paper_category` | property | Paper.primary_category | category filter |
-| `paper_embedding` | vector (cosine, 1024) | Paper.embedding | semantic search |
-| `section_vid` | property (unique) | Section.vid | section lookup |
-| `section_paper` | property | Section.paper_id | sections by paper |
-| `keyword_vid` | property (unique) | Keyword.vid | keyword lookup |
-| `keyword_text` | property | Keyword.keyword | keyword search |
-| `topic_vid` | property (unique) | Topic.vid | topic lookup |
-| `topic_label` | property | Topic.label | topic search |
-| `category_vid` | property (unique) | Category.vid | category lookup |
-| `category_code` | property | Category.code | category by code |
-| `author_vid` | property (unique) | Author.vid | author lookup |
-| `author_name` | property | Author.name | author search |
-| `citation_vid` | property (unique) | Citation.vid | citation lookup |
-| `citation_arxiv_id` | property | Citation.arxiv_id | citation by arxiv |
-| `entity_vid` | property (unique) | Entity.vid | entity lookup |
-| `entity_type` | property | Entity.entity_type | filter by type |
+When a citation has a known context/intent, the `cites` edge carries a
+`citation_type` property from CiTO:
+`agreesWith`, `disagreesWith`, `discusses`, `extends`, `usesMethodIn`,
+`usesDataFrom`, `obtainsBackgroundFrom`, `critiques`, `includesExcerptFrom`, etc.
 
 ---
 
-## Schema version
+## Indexes (complete — 21 indexes)
 
-Current: `1`. Increment when schema changes require migration.
+| Index | Type | On |
+|-------|------|----|
+| `work_vid` | unique | Work.vid |
+| `work_arxiv_id` | property | Work.arxiv_id |
+| `work_doi` | property | Work.doi |
+| `work_category` | property | Work.primary_category |
+| `work_embedding` | vector(1024) | Work.embedding |
+| `author_vid` | unique | Author.vid |
+| `author_orcid` | property | Author.orcid |
+| `author_name` | property | Author.name |
+| `institution_vid` | unique | Institution.vid |
+| `institution_ror` | property | Institution.ror |
+| `concept_vid` | unique | Concept.vid |
+| `concept_label` | property | Concept.label |
+| `concept_openalex` | property | Concept.openalex_id |
+| `topic_vid` | unique | Topic.vid |
+| `topic_label` | property | Topic.label |
+| `section_vid` | unique | Section.vid |
+| `section_work` | property | Section.work_vid |
+| `entity_vid` | unique | Entity.vid |
+| `entity_type` | property | Entity.entity_type |
+| `reference_vid` | unique | Reference.vid |
+| `reference_doi` | property | Reference.doi |
 
 ---
 
 ## Loading contract
 
-1. **`da schema init`** — create all indexes BEFORE any data load.
-2. **Ingest** — write Paper + Section + Keyword + Category + Author + Citation
-   nodes (the full article spine), validate against schema.
-3. **Extract** — write Entity nodes, link to Paper (MENTIONS) and Section
-   (MENTIONS_IN_SECTION), validate against schema.
-4. **Idempotent** — `find_node_by_string_property` before `create_node`.
-5. **Fail-closed** — `import_eligible=false`, `evidence_ready=false`.
+1. **`da schema init`** — create all 21 indexes.
+2. **`da enrich --from openalex`** (Phase A) — fetch Work + Author + Institution +
+   Concept + Topic from OpenAlex API. **Replaces** YAKE keywords, category
+   guessing, author parsing, citation resolution.
+3. **`da ingest`** — parse PDF via GROBID, write Section nodes (structure layer).
+4. **`da extract`** — extract Entity nodes from sections (content layer).
+5. **Idempotent** — `find_node_by_string_property` before create.
+6. **Fail-closed** — `import_eligible=false`, `evidence_ready=false`.

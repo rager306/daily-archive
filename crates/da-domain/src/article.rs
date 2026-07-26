@@ -1,14 +1,14 @@
-//! Article structure types (GRAPH-SCHEMA.md article spine).
+//! Article structure types — ontology-aligned (D133).
 //!
-//! Section, Keyword, Topic, Category — the "обвязка статьи" that wraps
-//! the paper before extracted entities.
+//! FaBiO + OpenAlex aligned types for the graph metadata and structure layers.
+//! These replace the ad-hoc Keyword/Topic from v1 with curated OpenAlex concepts.
 
 use crate::schema::{FieldType, NodeSchemaDef};
 use serde::{Deserialize, Serialize};
 
-// ─── Section ───
+// ─── Section (FaBiO: DocumentObject) ───
 
-/// A structural section of a paper (from GROBID TEI `<div><head>`).
+/// A structural section of a work (from GROBID TEI `<div><head>`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Section {
     pub vid: crate::vid::Vid,
@@ -16,10 +16,9 @@ pub struct Section {
     pub level: u32,
     pub order: u32,
     pub text: String,
-    pub paper_id: String,
+    pub work_vid: String,
 }
 
-/// Schema definition for Section nodes.
 pub struct SectionSchema;
 
 impl NodeSchemaDef for SectionSchema {
@@ -32,7 +31,7 @@ impl NodeSchemaDef for SectionSchema {
             ("title", FieldType::String),
             ("level", FieldType::Integer),
             ("order", FieldType::Integer),
-            ("paper_id", FieldType::String),
+            ("work_vid", FieldType::String),
         ]
     }
     fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
@@ -43,50 +42,54 @@ impl NodeSchemaDef for SectionSchema {
     }
 }
 
-// ─── Keyword ───
+// ─── Concept (SKOS / OpenAlex Concept) ───
 
-/// A YAKE-extracted keyword.
+/// A research concept from OpenAlex concept hierarchy (levels 0–4).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Keyword {
+pub struct Concept {
     pub vid: crate::vid::Vid,
-    pub keyword: String,
-    pub score: f64,
-    pub language: String,
-    pub paper_id: String,
+    pub label: String,
+    pub level: u32,
+    pub wikidata: Option<String>,
+    pub openalex_id: Option<String>,
+    pub works_count: u64,
 }
 
-/// Schema definition for Keyword nodes.
-pub struct KeywordSchema;
+pub struct ConceptSchema;
 
-impl NodeSchemaDef for KeywordSchema {
+impl NodeSchemaDef for ConceptSchema {
     fn label(&self) -> &'static str {
-        "Keyword"
+        "Concept"
     }
     fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
         vec![
             ("vid", FieldType::String),
-            ("keyword", FieldType::String),
-            ("score", FieldType::Float),
-            ("paper_id", FieldType::String),
+            ("label", FieldType::String),
+            ("level", FieldType::Integer),
         ]
     }
     fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
-        vec![("language", FieldType::String)]
+        vec![
+            ("wikidata", FieldType::String),
+            ("openalex_id", FieldType::String),
+            ("works_count", FieldType::Integer),
+        ]
     }
 }
 
-// ─── Topic ───
+// ─── Topic (OpenAlex Topic) ───
 
-/// A research topic/theme.
+/// An OpenAlex topic — grouped concept cluster (domain → field → subfield → topic).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Topic {
     pub vid: crate::vid::Vid,
     pub label: String,
-    pub source: String, // category / keyword / title
-    pub confidence: f32,
+    pub domain: Option<String>,
+    pub field: Option<String>,
+    pub subfield: Option<String>,
+    pub openalex_id: Option<String>,
 }
 
-/// Schema definition for Topic nodes.
 pub struct TopicSchema;
 
 impl NodeSchemaDef for TopicSchema {
@@ -94,20 +97,21 @@ impl NodeSchemaDef for TopicSchema {
         "Topic"
     }
     fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
-        vec![
-            ("vid", FieldType::String),
-            ("label", FieldType::String),
-            ("source", FieldType::String),
-        ]
+        vec![("vid", FieldType::String), ("label", FieldType::String)]
     }
     fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
-        vec![("confidence", FieldType::Float)]
+        vec![
+            ("domain", FieldType::String),
+            ("field", FieldType::String),
+            ("subfield", FieldType::String),
+            ("openalex_id", FieldType::String),
+        ]
     }
 }
 
-// ─── Category ───
+// ─── Category (arXiv category) ───
 
-/// An arXiv category.
+/// An arXiv category (cs.CL, cs.CV, stat.ML, ...).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Category {
     pub vid: crate::vid::Vid,
@@ -116,7 +120,6 @@ pub struct Category {
     pub is_primary: bool,
 }
 
-/// Schema definition for Category nodes.
 pub struct CategorySchema;
 
 impl NodeSchemaDef for CategorySchema {
@@ -135,6 +138,98 @@ impl NodeSchemaDef for CategorySchema {
     }
 }
 
+// ─── Author (FOAF: Person + PRO: author role) ───
+
+/// A paper author (disambiguated via OpenAlex/ORCID when available).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Author {
+    pub vid: crate::vid::Vid,
+    pub name: String,
+    pub orcid: Option<String>,
+    pub openalex_id: Option<String>,
+    pub works_count: u64,
+}
+
+pub struct AuthorSchema;
+
+impl NodeSchemaDef for AuthorSchema {
+    fn label(&self) -> &'static str {
+        "Author"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("name", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("orcid", FieldType::String),
+            ("openalex_id", FieldType::String),
+            ("works_count", FieldType::Integer),
+        ]
+    }
+}
+
+// ─── Institution (FOAF: Organization) ───
+
+/// A research institution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Institution {
+    pub vid: crate::vid::Vid,
+    pub name: String,
+    pub country: Option<String>,
+    pub ror: Option<String>,
+    pub openalex_id: Option<String>,
+}
+
+pub struct InstitutionSchema;
+
+impl NodeSchemaDef for InstitutionSchema {
+    fn label(&self) -> &'static str {
+        "Institution"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("name", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("country", FieldType::String),
+            ("ror", FieldType::String),
+            ("openalex_id", FieldType::String),
+        ]
+    }
+}
+
+// ─── Reference (FaBiO: BibliographicReference) ───
+
+/// A citation entry from the reference list. May resolve to a Work.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Reference {
+    pub vid: crate::vid::Vid,
+    pub raw_text: String,
+    pub arxiv_id: Option<String>,
+    pub doi: Option<String>,
+    pub title: Option<String>,
+    pub resolved_work_vid: Option<String>,
+}
+
+pub struct ReferenceSchema;
+
+impl NodeSchemaDef for ReferenceSchema {
+    fn label(&self) -> &'static str {
+        "Reference"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("raw_text", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("arxiv_id", FieldType::String),
+            ("doi", FieldType::String),
+            ("title", FieldType::String),
+            ("resolved_work_vid", FieldType::String),
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,21 +238,20 @@ mod tests {
     fn test_section_schema() {
         let s = SectionSchema;
         assert_eq!(s.label(), "Section");
-        assert!(s.required_fields().iter().any(|(n, _)| *n == "paper_id"));
+        assert!(s.required_fields().iter().any(|(n, _)| *n == "work_vid"));
     }
 
     #[test]
-    fn test_keyword_schema() {
-        let s = KeywordSchema;
-        assert_eq!(s.label(), "Keyword");
-        assert!(s.required_fields().iter().any(|(n, _)| *n == "score"));
+    fn test_concept_schema() {
+        let s = ConceptSchema;
+        assert_eq!(s.label(), "Concept");
+        assert!(s.required_fields().iter().any(|(n, _)| *n == "level"));
     }
 
     #[test]
     fn test_topic_schema() {
         let s = TopicSchema;
         assert_eq!(s.label(), "Topic");
-        assert!(s.required_fields().iter().any(|(n, _)| *n == "source"));
     }
 
     #[test]
@@ -165,5 +259,26 @@ mod tests {
         let s = CategorySchema;
         assert_eq!(s.label(), "Category");
         assert!(s.required_fields().iter().any(|(n, _)| *n == "code"));
+    }
+
+    #[test]
+    fn test_author_schema() {
+        let s = AuthorSchema;
+        assert_eq!(s.label(), "Author");
+        assert!(s.optional_fields().iter().any(|(n, _)| *n == "orcid"));
+    }
+
+    #[test]
+    fn test_institution_schema() {
+        let s = InstitutionSchema;
+        assert_eq!(s.label(), "Institution");
+        assert!(s.optional_fields().iter().any(|(n, _)| *n == "ror"));
+    }
+
+    #[test]
+    fn test_reference_schema() {
+        let s = ReferenceSchema;
+        assert_eq!(s.label(), "Reference");
+        assert!(s.required_fields().iter().any(|(n, _)| *n == "raw_text"));
     }
 }

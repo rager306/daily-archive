@@ -17,7 +17,8 @@ pub mod versioning;
 pub mod vid;
 
 pub use article::{
-    Category, CategorySchema, Keyword, KeywordSchema, Section, SectionSchema, Topic, TopicSchema,
+    Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
+    InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
 };
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
