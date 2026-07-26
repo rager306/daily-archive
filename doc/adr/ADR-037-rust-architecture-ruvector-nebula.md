@@ -1,6 +1,6 @@
 # ADR-037: Rust Architecture — Daily-Archive v2 (RuVector + Samyama Graph)
 
-**Status:** Accepted (binding)
+**Status:** Accepted (binding) — partially superseded by ADR-040 (graph choice: NebulaGraph → Samyama Graph; schema: nGQL → Cypher) and ADR-041 (embedded Cypher + HOT path). Architecture layers (§2), parsers (§4.1), and RuVector agent brain remain binding.
 **Date:** 2026-07-25
 **Deciders:** human
 **Replaces in Rust project:** ADR-023 (Python 7-layer), ADR-022 (FalkorDB), ADR-016 (NetworkX intermediate). Python ADRs remain valid for the frozen `legacy/` codebase.
