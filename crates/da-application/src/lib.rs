@@ -7,3 +7,5 @@
 pub mod ingest;
 
 pub use ingest::IngestUseCase;
+pub mod batch_ingest;
+pub use batch_ingest::{batch_ingest_pdfs, BatchIngestResult};

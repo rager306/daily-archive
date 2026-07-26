@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 /// daily-archive v2 — scientific knowledge engine
@@ -31,6 +32,17 @@ enum Commands {
         #[arg(long)]
         id: String,
     },
+
+    /// Batch ingest multiple PDFs in one process (HOT path + snapshot export)
+    BatchIngest {
+        /// Comma-separated arxiv IDs to ingest
+        #[arg(long)]
+        ids: String,
+
+        /// Output snapshot path (.sgsnap)
+        #[arg(long)]
+        output: Option<String>,
+    },
 }
 
 fn main() {
@@ -61,6 +73,12 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 ingest_pdf(&pdf, &id).await;
+            });
+        }
+        Commands::BatchIngest { ids, output } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                batch_ingest(&ids, output.as_deref()).await;
             });
         }
     }
@@ -111,6 +129,65 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
         }
         Err(e) => {
             eprintln!("❌ Ingest failed: {e:#}");
+            std::process::exit(1);
+        }
+    }
+}
+
+
+async fn batch_ingest(ids_str: &str, output: Option<&str>) {
+    use da_adapters::{SamyamaGraphStore, GrobidParser, FdApiEmbedder};
+    use da_application::batch_ingest_pdfs;
+    use da_ports::parser::ParserPort;
+    use da_ports::embedder::Embedder;
+    use da_ports::graph_store::DirectGraphStore;
+
+    let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
+    let pdfs: Vec<(String, String)> = ids.iter().filter_map(|pid| {
+        let pdf = std::process::Command::new("find")
+            .args(["data/article_catalog", "-name", &format!("{}.pdf", pid)])
+            .output().ok()?
+            .stdout;
+        let pdf_path = String::from_utf8(pdf).ok()?.trim().to_string();
+        if pdf_path.is_empty() { return None; }
+        Some((pdf_path, pid.to_string()))
+    }).collect();
+
+    if pdfs.is_empty() {
+        eprintln!("No PDFs found for IDs: {}", ids_str);
+        std::process::exit(1);
+    }
+
+    println!("Batch ingesting {} papers (HOT path)...", pdfs.len());
+
+    let parser = GrobidParser::from_env();
+    let embedder = FdApiEmbedder::from_env();
+    let graph_store = SamyamaGraphStore::new();
+
+    let snapshot_path = output.map(PathBuf::from);
+
+    let result = batch_ingest_pdfs(
+        &parser,
+        &embedder,
+        &graph_store,
+        &pdfs,
+        snapshot_path.as_deref(),
+    ).await;
+
+    match result {
+        Ok(r) => {
+            println!("✅ Batch complete: {}/{} ok, {} fail, {}ms", r.ok, r.total, r.fail, r.duration_ms);
+            println!("   Body chars: {}", r.total_body_chars);
+            println!("   Nodes in graph: {}", graph_store.node_count().await);
+            if let Some(ref path) = r.snapshot_path {
+                println!("   Snapshot: {}", path);
+            }
+            for (pid, err) in &r.errors {
+                println!("   FAIL {}: {}", pid, err);
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Batch failed: {e:#}");
             std::process::exit(1);
         }
     }
