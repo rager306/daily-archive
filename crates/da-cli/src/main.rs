@@ -43,6 +43,16 @@ enum Commands {
         #[arg(long)]
         output: Option<String>,
     },
+
+    /// Load a snapshot file into the graph (restore durability)
+    LoadSnapshot {
+        /// Path to .sgsnap file
+        #[arg(long)]
+        input: String,
+    },
+
+    /// Show graph statistics (node/edge counts)
+    GraphStats,
 }
 
 fn main() {
@@ -79,6 +89,18 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 batch_ingest(&ids, output.as_deref()).await;
+            });
+        }
+        Commands::LoadSnapshot { input } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                load_snapshot(&input).await;
+            });
+        }
+        Commands::GraphStats => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                graph_stats().await;
             });
         }
     }
@@ -190,5 +212,47 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
             eprintln!("❌ Batch failed: {e:#}");
             std::process::exit(1);
         }
+    }
+}
+
+async fn load_snapshot(input: &str) {
+    use da_adapters::SamyamaGraphStore;
+    use da_ports::graph_store::GraphStore;
+
+    let data = match std::fs::read(input) {
+        Ok(d) => d,
+        Err(e) => {
+            eprintln!("❌ Cannot read snapshot {input}: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    println!("Loading snapshot: {} ({} bytes)...", input, data.len());
+    let graph = SamyamaGraphStore::from_env();
+    match graph.import_snapshot(&data).await {
+        Ok(()) => {
+            let nodes = graph.node_count().await;
+            println!("✅ Snapshot loaded — {} nodes now in graph", nodes);
+        }
+        Err(e) => {
+            eprintln!("❌ Snapshot load failed: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
+async fn graph_stats() {
+    use da_adapters::SamyamaGraphStore;
+    use da_application::IngestUseCase;
+    use da_adapters::{GrobidParser, FdApiEmbedder};
+
+    let graph = SamyamaGraphStore::from_env();
+    let nodes = graph.node_count().await;
+    let edges = graph.edge_count().await;
+    println!("daily-archive v2 — graph statistics");
+    println!("  Nodes: {}", nodes);
+    println!("  Edges: {}", edges);
+    if nodes == 0 {
+        println!("  ⚠  Graph is empty (in-memory store reset). Use `da load-snapshot` to restore.");
     }
 }

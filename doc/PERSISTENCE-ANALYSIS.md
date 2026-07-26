@@ -181,3 +181,36 @@ Switch to server mode when:
 - Multiple processes need to access the same graph
 - Data must persist between CLI invocations
 - Agent layer needs live graph access during ingest
+
+## Round-trip verification (2026-07-26)
+
+Tested snapshot export → import round-trip with `da` CLI:
+
+```
+$ da batch-ingest --ids 1206.6423,1606.01540 --output /tmp/test.sgsnap
+   Nodes in graph: 2
+   Snapshot: /tmp/test.sgsnap (536 bytes)
+
+$ da graph-stats          # fresh process
+  Nodes: 0                # ← in-memory store reset (expected)
+
+$ da load-snapshot --input /tmp/test.sgsnap
+✅ Snapshot loaded — 2 nodes now in graph   # ← import works in-process
+
+$ da graph-stats          # fresh process again
+  Nodes: 0                # ← data not persisted across processes
+```
+
+**Conclusion:** Snapshot round-trip works (export → import → nodes visible
+in same process). But cross-process durability still requires Solution A
+(Samyama server with RocksDB) or Solution C (embedded PersistenceManager).
+Snapshot is a **backup/restore** mechanism, not live persistence.
+
+### Current CLI commands
+
+| Command | Purpose | Persistence |
+|---------|---------|:-----------:|
+| `da batch-ingest --ids ... --output f.sgsnap` | Ingest + export snapshot | export only |
+| `da load-snapshot --input f.sgsnap` | Restore snapshot into process | in-process |
+| `da graph-stats` | Show node/edge counts | read-only |
+| `da health` | Infrastructure check | read-only |
