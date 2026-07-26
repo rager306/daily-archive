@@ -1,8 +1,8 @@
 //! Entity types (ADR-038 Module B — Textually Mentioned).
 
-use serde::{Deserialize, Serialize};
-use crate::vid::Vid;
 use crate::evidence::SourceSpan;
+use crate::vid::Vid;
+use serde::{Deserialize, Serialize};
 
 /// Entity types we extract from papers.
 /// ADR-038 §2 Module B: Task, Method, Dataset, Model, Metric, Baseline.
@@ -46,7 +46,9 @@ pub struct Entity {
 pub struct EntitySchema;
 
 impl crate::schema::NodeSchemaDef for EntitySchema {
-    fn label(&self) -> &'static str { "Entity" }
+    fn label(&self) -> &'static str {
+        "Entity"
+    }
 
     fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
         vec![

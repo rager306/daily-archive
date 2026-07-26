@@ -10,12 +10,12 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use da_application::{batch_ingest_pdfs, ingest::IngestUseCase};
-use da_ports::embedder::{Embedder, EmbedResult};
+use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::graph_store::{
     DirectGraphStore, GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric,
     VectorSearchResult,
 };
-use da_ports::parser::{ParseResult, ParserPort, ParsedArticle};
+use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
 
 // ---------- Mock Parser ----------
 
@@ -248,7 +248,9 @@ async fn test_batch_ingest_snapshot_export() {
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
     let tmp = tempfile::NamedTempFile::new().unwrap();
 
-    let result = batch_ingest_pdfs(&ingest, &pdfs, Some(tmp.path())).await.unwrap();
+    let result = batch_ingest_pdfs(&ingest, &pdfs, Some(tmp.path()))
+        .await
+        .unwrap();
 
     assert_eq!(result.ok, 1);
     assert!(result.snapshot_path.is_some());
@@ -280,5 +282,8 @@ async fn test_batch_ingest_import_eligible_always_false() {
     let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
 
     assert!(result.ok > 0);
-    assert!(!result.import_eligible, "D127 violated: import_eligible must be false");
+    assert!(
+        !result.import_eligible,
+        "D127 violated: import_eligible must be false"
+    );
 }

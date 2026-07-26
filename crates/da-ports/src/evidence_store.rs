@@ -28,10 +28,7 @@ pub trait EvidenceStore: Send + Sync {
         assertion: &EvidenceAssertion,
     ) -> EvidenceResult<EvidenceId>;
 
-    async fn get_assertions(
-        &self,
-        node_vid: &str,
-    ) -> EvidenceResult<Vec<EvidenceAssertion>>;
+    async fn get_assertions(&self, node_vid: &str) -> EvidenceResult<Vec<EvidenceAssertion>>;
 
     async fn has_resolvable_evidence(&self, node_vid: &str) -> EvidenceResult<bool>;
 

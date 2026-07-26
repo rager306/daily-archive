@@ -1,14 +1,24 @@
 name: Architecture Guardrail
 
-# Daily-archive architecture guardrail (per M044 / D079 and M045 / D080).
+# Daily-archive v2 architecture guardrail (Rust, hexagonal/onion).
+# Replaces the Python M044/M045 guardrail (broken after Python→Rust rewrite:
+# referenced scripts/ that moved to legacy/ and a root pyproject.toml that
+# no longer exists). See ADR-040 §2 and decision D131.
 #
-# This workflow runs on every push and pull_request to master.
-# It enforces the binding safety contract before any code change can
-# be merged: M044 architecture guardrail (mandatory) and M045
-# trajectory check (advisory, surfaces drift).
+# This workflow enforces the binding safety contract for the Rust layout:
+#   1. Workspace compiles (cargo check --workspace)
+#   2. Code is formatted (cargo fmt --check)
+#   3. No clippy warnings in our crates (cargo clippy -p da-* -- -D warnings)
+#   4. Dependency direction is clean (hexagonal layering):
+#        da-domain  → (no infra deps: no reqwest/tokio/samyama/ruvector)
+#        da-ports   → da-domain only (no infra deps)
+#        da-application → da-domain, da-ports (no da-adapters, no infra)
+#        da-graph   → da-domain, da-ports (no da-adapters, no infra)
+#        da-adapters → da-domain, da-ports, samyama (infrastructure)
+#        da-cli     → da-domain, da-ports, da-application, da-adapters
+#      Rule: an inner layer must not depend on an outer layer.
 #
-# If M044 fails, the PR cannot be merged. M045 drift is reported
-# as a workflow annotation but does not block.
+# Runs on every push and pull_request to master.
 
 on:
   push:
@@ -17,7 +27,6 @@ on:
     branches: [master, main]
   workflow_dispatch:
 
-# Cancel previous runs on the same ref to save CI minutes.
 concurrency:
   group: architecture-guardrail-${{ github.ref }}
   cancel-in-progress: true
@@ -26,123 +35,72 @@ permissions:
   contents: read
 
 jobs:
-  m044-guardrail:
-    name: M044 Architecture Guardrail (mandatory)
+  rust-guardrail:
+    name: Rust Architecture Guardrail (mandatory)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          # Samyama/RuVector are vendored under /root/vendor-source on the
+          # dev host; on CI they are separate repos. For now this guardrail
+          # runs only on self-hosted (vendor paths) — see repository_dispatch.
+          submodules: recursive
 
-      - name: Install uv
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cargo fmt check
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          cargo fmt \
+            -p da-domain -p da-ports -p da-application \
+            -p da-graph -p da-adapters -p da-cli \
+            -- --check
 
-      - name: Sync dependencies
-        run: uv sync --frozen
+      - name: Cargo check (workspace)
+        run: cargo check --workspace --all-targets
 
-      - name: Run D086 onion layering guard
+      - name: Cargo clippy (our crates, deny warnings)
         run: |
-          uv run python scripts/verify_onion_layering.py --json
+          cargo clippy \
+            -p da-domain -p da-ports -p da-application \
+            -p da-graph -p da-adapters -p da-cli \
+            --all-targets -- -D warnings
 
-      - name: Run M044 architecture guardrail
-        id: m044
+      - name: Hexagonal dependency-direction check
         run: |
-          uv run python scripts/verify_m044_sidecar_architecture_guardrail.py
-        # exit code 0 = pass, 1 = fail (mandatory)
+          # Inner layers must not depend on outer layers or infrastructure.
+          # da-domain and da-ports: no infra crates allowed.
+          set -euo pipefail
+          echo "Checking da-domain has no infrastructure dependencies..."
+          ! grep -E 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' crates/da-domain/Cargo.toml || {
+            echo "ERROR: da-domain must not depend on infrastructure crates"; exit 1; }
+          echo "Checking da-ports has no infrastructure dependencies..."
+          ! grep -E 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' crates/da-ports/Cargo.toml || {
+            echo "ERROR: da-ports must not depend on infrastructure crates"; exit 1; }
+          echo "Checking da-application does not depend on da-adapters..."
+          ! grep -E 'da-adapters' crates/da-application/Cargo.toml || {
+            echo "ERROR: da-application must not depend on da-adapters (hexagonal violation)"; exit 1; }
+          echo "Checking da-graph does not depend on da-adapters..."
+          ! grep -E 'da-adapters' crates/da-graph/Cargo.toml || {
+            echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"; exit 1; }
+          echo "Hexagonal dependency direction: PASS"
 
-      - name: Run write-path inventory drift check
-        run: |
-          CANONICAL_BASELINE="data/architecture-assessment/write-path-inventory-canonical.json"
-          if [ ! -s "$CANONICAL_BASELINE" ]; then
-            echo "missing canonical write-path inventory baseline: $CANONICAL_BASELINE" >&2
-            exit 1
-          fi
-          CURRENT_JSON="$(mktemp)"
-          CURRENT_MD="$(mktemp)"
-          DELTA_MD="$(mktemp)"
-          trap 'rm -f "$CURRENT_JSON" "$CURRENT_MD" "$DELTA_MD"' EXIT
-          uv run python scripts/inventory_write_paths.py \
-            --json "$CURRENT_JSON" \
-            --markdown "$CURRENT_MD" \
-            --delta-from "$CANONICAL_BASELINE" \
-            --delta-markdown "$DELTA_MD"
-          uv run python - "$CURRENT_JSON" "$DELTA_MD" <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-
-          current = json.loads(Path(sys.argv[1]).read_text())
-          delta_text = Path(sys.argv[2]).read_text()
-          categories = current["summary"]["by_category"]
-          assert categories.get("unknown", 0) == 0, categories
-          assert categories.get("shared-state", 0) == 0, categories
-          forbidden = [line for line in delta_text.splitlines() if line.startswith("|") and not line.endswith("| +0 |")]
-          forbidden = [line for line in forbidden if not line.startswith("| Category ") and not line.startswith("|---")]
-          assert "Total delta: `+0`" in delta_text, delta_text
-          assert not forbidden, forbidden
-          print("write-path inventory strict drift: pass")
-          print("write-path inventory guardrails: unknown=0 shared-state=0")
-          PY
-
-      - name: Upload M044 evidence on success
+      - name: Guardrail evidence
         if: success()
         run: |
-          mkdir -p artifacts/m044-grobid-architecture-guardrail
-          echo "M044 architecture guardrail passed on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            > artifacts/m044-grobid-architecture-guardrail/ci-run.txt
-          cat artifacts/m044-grobid-architecture-guardrail/ci-run.txt
-
-  m045-trajectory:
-    name: M045 Trajectory Check (advisory)
-    runs-on: ubuntu-latest
-    # Only run if M044 passes.
-    needs: m044-guardrail
-    continue-on-error: true
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-
-      - name: Sync dependencies
-        run: uv sync --frozen
-
-      - name: Run M045 trajectory check
-        id: m045
-        run: |
-          uv run python scripts/check_project_trajectory.py \
-            --output-dir artifacts/m045-project-trajectory/ci-run
-          # Always exits 0 unless the report verdict is "blocked" (high drift).
-
-      - name: Annotate drift
-        if: always()
-        run: |
-          if [ -f artifacts/m045-project-trajectory/ci-run/trajectory-report.md ]; then
-            VERDICT=$(grep -E "^- Verdict:" artifacts/m045-project-trajectory/ci-run/trajectory-report.md | head -1 || true)
-            echo "::notice::Trajectory check: ${VERDICT}"
-          else
-            echo "::warning::Trajectory report not produced."
-          fi
-
-      - name: Upload M045 trajectory report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trajectory-report
-          path: artifacts/m045-project-trajectory/ci-run/trajectory-report.{json,md}
-          if-no-files-found: ignore
-          retention-days: 14
+          mkdir -p artifacts/architecture-guardrail
+          echo "Rust architecture guardrail passed on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > artifacts/architecture-guardrail/ci-run.txt
+          cat artifacts/architecture-guardrail/ci-run.txt

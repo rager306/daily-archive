@@ -3,8 +3,6 @@
 //! ADR-041 WARM path: these queries are executed via EmbeddedClient
 //! (Cypher with cost-based planner + late materialization).
 
-use da_domain::vid::Vid;
-
 /// Query builders for Paper nodes.
 pub struct PaperQueries;
 
@@ -26,8 +24,7 @@ impl PaperQueries {
 
     /// Find papers without embeddings (for backfill).
     pub fn without_embedding() -> String {
-        "MATCH (n:Paper) WHERE n.embedding IS NULL RETURN n.vid, n.arxiv_id"
-            .to_string()
+        "MATCH (n:Paper) WHERE n.embedding IS NULL RETURN n.vid, n.arxiv_id".to_string()
     }
 
     /// Find papers with stale schema_version (for migration).

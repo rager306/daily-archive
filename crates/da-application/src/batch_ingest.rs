@@ -5,8 +5,8 @@
 //!
 //! Reuses the same ingest logic as IngestUseCase — no duplication.
 
-use std::path::Path;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BatchIngestResult {
@@ -48,7 +48,6 @@ pub async fn batch_ingest_pdfs(
     }
 
     let snapshot_path = if let Some(path) = snapshot_output {
-        use da_ports::graph_store::GraphStore;
         match ingest.graph_store.export_snapshot().await {
             Ok(data) => {
                 if let Some(parent) = path.parent() {

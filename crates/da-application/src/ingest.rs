@@ -7,9 +7,9 @@
 
 use da_domain::paper::Paper;
 use da_domain::vid;
-use da_ports::parser::ParserPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
+use da_ports::parser::ParserPort;
 use serde::{Deserialize, Serialize};
 
 /// Ingest pipeline dependencies (injected ports).

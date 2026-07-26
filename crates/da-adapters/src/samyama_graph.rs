@@ -7,14 +7,16 @@
 //!   COLD:  Cypher via HTTP RemoteClient — 5-15ms (CLI/external only)
 
 use async_trait::async_trait;
-use da_ports::graph_store::{GraphStore, GraphStoreError, GraphResult, QueryResult, VectorMetric, VectorSearchResult};
+use da_ports::graph_store::{
+    GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric, VectorSearchResult,
+};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 // Re-export Samyama types for callers
-pub use samyama::graph::store::GraphStore as SamyamaStore;
 pub use samyama::graph::property::PropertyValue;
-pub use samyama::graph::types::{NodeId, EdgeId, Label, EdgeType};
+pub use samyama::graph::store::GraphStore as SamyamaStore;
+pub use samyama::graph::types::{EdgeId, EdgeType, Label, NodeId};
 pub use samyama::query::RecordBatch;
 
 /// Samyama Graph embedded adapter.
@@ -43,8 +45,8 @@ impl SamyamaGraphStore {
     }
 
     pub fn from_env() -> Self {
-        let tenant = std::env::var("SAMYAMA_DEFAULT_TENANT")
-            .unwrap_or_else(|_| "default".to_string());
+        let tenant =
+            std::env::var("SAMYAMA_DEFAULT_TENANT").unwrap_or_else(|_| "default".to_string());
         let mut s = Self::new();
         s.tenant = tenant;
         s
@@ -67,12 +69,7 @@ impl SamyamaGraphStore {
     }
 
     /// Direct property set (HOT path — no Cypher).
-    pub async fn set_property_direct(
-        &self,
-        node_id: NodeId,
-        key: &str,
-        value: PropertyValue,
-    ) {
+    pub async fn set_property_direct(&self, node_id: NodeId, key: &str, value: PropertyValue) {
         let mut store = self.store_write().await;
         let _ = store.set_node_property(&self.tenant, node_id, key.to_string(), value);
     }
@@ -163,7 +160,10 @@ impl SamyamaGraphStore {
                 columns
                     .iter()
                     .map(|col| {
-                        record.get(col).map(|v| value_to_json(v)).unwrap_or(serde_json::Value::Null)
+                        record
+                            .get(col)
+                            .map(|v| value_to_json(v))
+                            .unwrap_or(serde_json::Value::Null)
                     })
                     .collect()
             })
@@ -218,7 +218,12 @@ fn property_to_json(pv: &PropertyValue) -> serde_json::Value {
             }
             serde_json::Value::Object(m)
         }
-        PropertyValue::Duration { months, days, seconds, nanos } => serde_json::json!({
+        PropertyValue::Duration {
+            months,
+            days,
+            seconds,
+            nanos,
+        } => serde_json::json!({
             "months": months, "days": days, "seconds": seconds, "nanos": nanos,
         }),
     }
@@ -400,7 +405,11 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
     ) -> Result<u64, GraphStoreError> {
         let mut store = self.store_write().await;
         store
-            .create_edge(NodeId::new(source), NodeId::new(target), EdgeType::new(edge_type))
+            .create_edge(
+                NodeId::new(source),
+                NodeId::new(target),
+                EdgeType::new(edge_type),
+            )
             .map(|eid| eid.as_u64())
             .map_err(|e| GraphStoreError::Storage(e.to_string()))
     }

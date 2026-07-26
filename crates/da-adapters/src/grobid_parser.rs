@@ -4,7 +4,9 @@
 //! GROBID runs at http://127.0.0.1:8070 (Java service, no API key).
 
 use async_trait::async_trait;
-use da_ports::parser::{ParserPort, ParserError, ParseResult, ParsedArticle, Section, CitationEntry};
+use da_ports::parser::{
+    CitationEntry, ParseResult, ParsedArticle, ParserError, ParserPort, Section,
+};
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
@@ -48,10 +50,10 @@ impl GrobidParser {
             .mime_str("application/pdf")
             .map_err(|e| ParserError::ParseFailed(e.to_string()))?;
 
-        let form = reqwest::multipart::Form::new()
-            .part("input", part);
+        let form = reqwest::multipart::Form::new().part("input", part);
 
-        let resp = self.client
+        let resp = self
+            .client
             .post(&url)
             .multipart(form)
             .send()
@@ -59,7 +61,10 @@ impl GrobidParser {
             .map_err(|e| ParserError::Unavailable(e.to_string()))?;
 
         if !resp.status().is_success() {
-            return Err(ParserError::ParseFailed(format!("GROBID HTTP {}", resp.status())));
+            return Err(ParserError::ParseFailed(format!(
+                "GROBID HTTP {}",
+                resp.status()
+            )));
         }
 
         let tei_xml = resp
@@ -129,7 +134,7 @@ impl GrobidParser {
 
     /// Extract SHA256 hash of PDF bytes.
     fn pdf_hash(pdf_bytes: &[u8]) -> String {
-        use sha2::{Sha256, Digest};
+        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(pdf_bytes);
         hex::encode(hasher.finalize())
@@ -189,8 +194,12 @@ mod tests {
     #[test]
     fn test_extract_title_with_attributes() {
         // GROBID TEI uses attributes: <title level="a" type="main">
-        let tei = r#"<title level="a" type="main">A Joint Model of Language and Perception</title>"#;
-        assert_eq!(GrobidParser::extract_title(tei), "A Joint Model of Language and Perception");
+        let tei =
+            r#"<title level="a" type="main">A Joint Model of Language and Perception</title>"#;
+        assert_eq!(
+            GrobidParser::extract_title(tei),
+            "A Joint Model of Language and Perception"
+        );
     }
 
     #[test]

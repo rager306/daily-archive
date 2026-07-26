@@ -1,0 +1,26 @@
+# Pre-commit hooks for daily-archive v2 (Rust).
+# Install: pre-commit install
+# Run all: pre-commit run --all-files
+#
+# After the Python→Rust rewrite the previous Python hooks (verify_onion_layering,
+# M044 sidecar guardrail) no longer apply. This config enforces Rust hygiene only.
+# Architecture direction is enforced by CI (.github/workflows/architecture-guardrail.yml).
+
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli -- --check
+        language: system
+        pass_filenames: false
+        types: [rust]
+        stages: [pre-commit]
+
+      - id: cargo-check
+        name: cargo check (workspace)
+        entry: cargo check --workspace
+        language: system
+        pass_filenames: false
+        types: [rust]
+        stages: [pre-commit]

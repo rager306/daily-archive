@@ -3,7 +3,7 @@
 //! Every entity gets a deterministic SHA256 ID from its canonical form.
 //! This enables O(|K|) hash joins — no false merges across sources.
 
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 
 /// A stable vertex ID (SHA256 hex, 64 chars).
 pub type Vid = String;
@@ -60,6 +60,9 @@ mod tests {
 
     #[test]
     fn test_different_types_different_vid() {
-        assert_ne!(entity_vid("Method", "Transformer"), entity_vid("Model", "Transformer"));
+        assert_ne!(
+            entity_vid("Method", "Transformer"),
+            entity_vid("Model", "Transformer")
+        );
     }
 }

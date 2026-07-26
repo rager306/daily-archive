@@ -3,14 +3,14 @@
 //! ADR-037 §2: Ports layer depends on Domain only.
 //! These traits define the boundaries between our application and external systems.
 
-pub mod graph_store;
-pub mod evidence_store;
 pub mod embedder;
-pub mod parser;
+pub mod evidence_store;
+pub mod graph_store;
 pub mod llm_client;
+pub mod parser;
 
-pub use graph_store::{GraphStore, DirectGraphStore};
-pub use evidence_store::EvidenceStore;
 pub use embedder::Embedder;
+pub use evidence_store::EvidenceStore;
+pub use graph_store::{DirectGraphStore, GraphStore};
+pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};
 pub use parser::ParserPort;
-pub use llm_client::{LLMClient, ChatMessage, ChatResponse, ChatOptions};

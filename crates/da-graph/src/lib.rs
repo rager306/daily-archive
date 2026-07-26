@@ -10,5 +10,5 @@
 pub mod queries;
 pub mod schema;
 
-pub use queries::{PaperQueries, EntityQueries, RelationQueries};
+pub use queries::{EntityQueries, PaperQueries, RelationQueries};
 pub use schema::{SchemaInitializer, SchemaVersion};

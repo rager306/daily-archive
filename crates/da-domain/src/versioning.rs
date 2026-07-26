@@ -3,8 +3,8 @@
 //! Samyama MVCC is for concurrency control, not temporal queries.
 //! We implement data-level temporality via Versioned<T> + SUPERSEDES edges.
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// A versioned value with temporal bounds.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,7 +40,8 @@ impl<T> TemporalRecord<T> {
 
     /// Get the version effective at a point in time (bi-temporal query).
     pub fn as_of(&self, when: DateTime<Utc>) -> Option<&Versioned<T>> {
-        self.history.iter()
+        self.history
+            .iter()
             .rev()
             .find(|v| v.valid_from <= when && v.valid_to.map_or(true, |to| to > when))
     }
@@ -75,7 +76,6 @@ impl<T> TemporalRecord<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Duration;
 
     #[test]
     fn test_new_has_one_version() {

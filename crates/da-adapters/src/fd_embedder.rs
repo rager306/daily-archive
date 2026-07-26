@@ -7,7 +7,7 @@
 //! silent zero-vector degradation. Always verify with live embed smoke test.
 
 use async_trait::async_trait;
-use da_ports::embedder::{Embedder, EmbedderError, EmbedResult};
+use da_ports::embedder::{EmbedResult, Embedder, EmbedderError};
 use serde::{Deserialize, Serialize};
 
 const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8000/v1/embeddings";
@@ -100,7 +100,9 @@ impl Embedder for FdApiEmbedder {
             .await
             .map_err(|e| EmbedderError::EmbedFailed(format!("parse: {e}")))?;
 
-        let vec = embed_resp.data.into_iter()
+        let vec = embed_resp
+            .data
+            .into_iter()
             .next()
             .map(|d| d.embedding)
             .ok_or_else(|| EmbedderError::EmbedFailed("empty response".into()))?;
@@ -110,7 +112,7 @@ impl Embedder for FdApiEmbedder {
         if norm < 0.001 {
             return Err(EmbedderError::EmbedFailed(
                 "zero-vector detected (check FD_API_KEY — stale key causes silent degradation)"
-                    .into()
+                    .into(),
             ));
         }
 

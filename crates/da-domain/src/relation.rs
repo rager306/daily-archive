@@ -3,9 +3,9 @@
 //! 7 causal types deferred (need GRPO/causal models, no GPU).
 //! 18 adopted across 4 groups.
 
-use serde::{Deserialize, Serialize};
-use crate::vid::Vid;
 use crate::evidence::SourceSpan;
+use crate::vid::Vid;
+use serde::{Deserialize, Serialize};
 
 /// Relation types adopted from Agents-K1 (18 of 25).
 /// 7 causal types deferred: MOTIVATED_BY, HAS_PROPERTY, SUBSET_OF,

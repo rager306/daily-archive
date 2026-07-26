@@ -1,7 +1,7 @@
 //! Paper types (ADR-038 Module A — Factual/Metadata).
 
-use serde::{Deserialize, Serialize};
 use crate::vid::Vid;
+use serde::{Deserialize, Serialize};
 
 /// Publication status of a paper.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -66,7 +66,9 @@ impl Paper {
 pub struct PaperSchema;
 
 impl crate::schema::NodeSchemaDef for PaperSchema {
-    fn label(&self) -> &'static str { "Paper" }
+    fn label(&self) -> &'static str {
+        "Paper"
+    }
 
     fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
         vec![
