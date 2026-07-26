@@ -56,6 +56,15 @@
   schema registry (all_node_schemas/schema_for_label). SchemaInitializer: 7
   indexes (was 3). `da schema init` CLI creates all indexes via HOT path.
   Ingest now validates Paper properties against schema before writing.
+- **Schema redesigned with article spine (D132 revised)**: user pointed out the
+  schema was missing topics, keywords, sections, categories — the article
+  "обвязка". GRAPH-SCHEMA.md now defines 9 node types: Paper, Section, Keyword,
+  Topic, Category, Author, Citation, Entity, Evidence. EntityType expanded from
+  6 to 22 (concrete: Method/Dataset/Metric/Task/Baseline/Model/Figure/Table/
+  Equation/Concept/Implementation/Theorem/Definition; abstract: Problem/
+  Motivation/Gap/Contribution/Hypothesis/Finding/Mechanism/Limitation/FutureWork).
+  New da-domain/article.rs: Section, Keyword, Topic, Category + schemas.
+  SchemaInitializer: 15 indexes (was 7). `da schema init` creates all.
 
 ### Hygiene (earlier)
 

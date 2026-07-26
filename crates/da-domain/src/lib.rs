@@ -7,6 +7,7 @@
 //! ADR-038 §2: 5-module schema (A-E), 18 relation types.
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
+pub mod article;
 pub mod entity;
 pub mod evidence;
 pub mod paper;
@@ -15,6 +16,9 @@ pub mod schema;
 pub mod versioning;
 pub mod vid;
 
+pub use article::{
+    Category, CategorySchema, Keyword, KeywordSchema, Section, SectionSchema, Topic, TopicSchema,
+};
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
 pub use paper::{Paper, PaperSchema, PaperStatus};

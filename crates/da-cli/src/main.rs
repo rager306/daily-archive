@@ -490,10 +490,19 @@ fn schema_init(dimensions: usize) {
     let property_indexes = [
         ("Paper", "vid"),
         ("Paper", "arxiv_id"),
+        ("Paper", "primary_category"),
         ("Citation", "vid"),
         ("Citation", "arxiv_id"),
         ("Entity", "vid"),
         ("Entity", "entity_type"),
+        ("Section", "vid"),
+        ("Section", "paper_id"),
+        ("Keyword", "vid"),
+        ("Keyword", "keyword"),
+        ("Topic", "vid"),
+        ("Topic", "label"),
+        ("Category", "vid"),
+        ("Category", "code"),
     ];
     // Vector indexes: (label, property, dimensions)
     let vector_indexes = [("Paper", "embedding", dimensions)];

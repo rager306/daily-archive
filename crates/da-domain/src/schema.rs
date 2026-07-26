@@ -142,6 +142,10 @@ pub const CURRENT_SCHEMA_VERSION: u32 = 1;
 pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
     vec![
         Box::new(crate::paper::PaperSchema),
+        Box::new(crate::article::SectionSchema),
+        Box::new(crate::article::KeywordSchema),
+        Box::new(crate::article::TopicSchema),
+        Box::new(crate::article::CategorySchema),
         Box::new(crate::relation::CitationSchema),
         Box::new(crate::entity::EntitySchema),
     ]
@@ -157,11 +161,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_node_schemas_has_three_types() {
+    fn test_all_node_schemas_has_seven_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 3);
+        assert_eq!(schemas.len(), 7);
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         assert!(labels.contains(&"Paper"));
+        assert!(labels.contains(&"Section"));
+        assert!(labels.contains(&"Keyword"));
+        assert!(labels.contains(&"Topic"));
+        assert!(labels.contains(&"Category"));
         assert!(labels.contains(&"Citation"));
         assert!(labels.contains(&"Entity"));
     }

@@ -64,6 +64,46 @@ impl SchemaInitializer {
         "CREATE INDEX entity_type IF NOT EXISTS FOR (n:Entity) ON (n.entity_type)".to_string()
     }
 
+    // ─── Section indexes ───
+
+    pub fn create_section_vid_index() -> String {
+        "CREATE INDEX section_vid IF NOT EXISTS FOR (n:Section) ON (n.vid)".to_string()
+    }
+
+    pub fn create_section_paper_index() -> String {
+        "CREATE INDEX section_paper IF NOT EXISTS FOR (n:Section) ON (n.paper_id)".to_string()
+    }
+
+    // ─── Keyword indexes ───
+
+    pub fn create_keyword_vid_index() -> String {
+        "CREATE INDEX keyword_vid IF NOT EXISTS FOR (n:Keyword) ON (n.vid)".to_string()
+    }
+
+    pub fn create_keyword_text_index() -> String {
+        "CREATE INDEX keyword_text IF NOT EXISTS FOR (n:Keyword) ON (n.keyword)".to_string()
+    }
+
+    // ─── Topic indexes ───
+
+    pub fn create_topic_vid_index() -> String {
+        "CREATE INDEX topic_vid IF NOT EXISTS FOR (n:Topic) ON (n.vid)".to_string()
+    }
+
+    pub fn create_topic_label_index() -> String {
+        "CREATE INDEX topic_label IF NOT EXISTS FOR (n:Topic) ON (n.label)".to_string()
+    }
+
+    // ─── Category indexes ───
+
+    pub fn create_category_vid_index() -> String {
+        "CREATE INDEX category_vid IF NOT EXISTS FOR (n:Category) ON (n.vid)".to_string()
+    }
+
+    pub fn create_category_code_index() -> String {
+        "CREATE INDEX category_code IF NOT EXISTS FOR (n:Category) ON (n.code)".to_string()
+    }
+
     /// All schema initialization Cypher statements in order (GRAPH-SCHEMA.md).
     pub fn all_init_statements(dimensions: usize) -> Vec<String> {
         vec![
@@ -77,6 +117,18 @@ impl SchemaInitializer {
             // Entity
             Self::create_entity_vid_index(),
             Self::create_entity_type_index(),
+            // Section
+            Self::create_section_vid_index(),
+            Self::create_section_paper_index(),
+            // Keyword
+            Self::create_keyword_vid_index(),
+            Self::create_keyword_text_index(),
+            // Topic
+            Self::create_topic_vid_index(),
+            Self::create_topic_label_index(),
+            // Category
+            Self::create_category_vid_index(),
+            Self::create_category_code_index(),
         ]
     }
 }
@@ -100,8 +152,8 @@ mod tests {
     #[test]
     fn test_all_init_statements() {
         let stmts = SchemaInitializer::all_init_statements(1024);
-        // 3 Paper + 2 Citation + 2 Entity = 7 indexes
-        assert_eq!(stmts.len(), 7);
+        // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category = 15
+        assert_eq!(stmts.len(), 15);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 

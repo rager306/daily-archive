@@ -1,20 +1,44 @@
-//! Entity types (ADR-038 Module B — Textually Mentioned).
+//! Entity types (ADR-038 Module B + legacy ADR-028 typed schema).
+//!
+//! Two families (GRAPH-SCHEMA.md):
+//! - Concrete: Method, Dataset, Metric, Task, Baseline, Model, Figure, Table,
+//!   Equation, Concept, Implementation, Theorem, Definition
+//! - Abstract: Problem, Motivation, Gap, Contribution, Hypothesis, Finding,
+//!   Mechanism, Limitation, FutureWork
 
 use crate::evidence::SourceSpan;
 use crate::vid::Vid;
 use serde::{Deserialize, Serialize};
 
 /// Entity types we extract from papers.
-/// ADR-038 §2 Module B: Task, Method, Dataset, Model, Metric, Baseline.
+/// Closed vocabulary (ADR-028 §2.1 + ADR-038 Module B).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub enum EntityType {
+    // Concrete (Module B)
     Task,
     Method,
     Dataset,
     Model,
     Metric,
     Baseline,
+    Figure,
+    Table,
+    Equation,
+    Concept,
+    Implementation,
+    Theorem,
+    Definition,
+    // Abstract (Module C — ADR-028)
+    Problem,
+    Motivation,
+    Gap,
+    Contribution,
+    Hypothesis,
+    Finding,
+    Mechanism,
+    Limitation,
+    FutureWork,
 }
 
 impl EntityType {
@@ -26,7 +50,76 @@ impl EntityType {
             EntityType::Model => "Model",
             EntityType::Metric => "Metric",
             EntityType::Baseline => "Baseline",
+            EntityType::Figure => "Figure",
+            EntityType::Table => "Table",
+            EntityType::Equation => "Equation",
+            EntityType::Concept => "Concept",
+            EntityType::Implementation => "Implementation",
+            EntityType::Theorem => "Theorem",
+            EntityType::Definition => "Definition",
+            EntityType::Problem => "Problem",
+            EntityType::Motivation => "Motivation",
+            EntityType::Gap => "Gap",
+            EntityType::Contribution => "Contribution",
+            EntityType::Hypothesis => "Hypothesis",
+            EntityType::Finding => "Finding",
+            EntityType::Mechanism => "Mechanism",
+            EntityType::Limitation => "Limitation",
+            EntityType::FutureWork => "FutureWork",
         }
+    }
+
+    /// All entity types (closed vocabulary).
+    pub fn all() -> &'static [EntityType] {
+        &[
+            EntityType::Task,
+            EntityType::Method,
+            EntityType::Dataset,
+            EntityType::Model,
+            EntityType::Metric,
+            EntityType::Baseline,
+            EntityType::Figure,
+            EntityType::Table,
+            EntityType::Equation,
+            EntityType::Concept,
+            EntityType::Implementation,
+            EntityType::Theorem,
+            EntityType::Definition,
+            EntityType::Problem,
+            EntityType::Motivation,
+            EntityType::Gap,
+            EntityType::Contribution,
+            EntityType::Hypothesis,
+            EntityType::Finding,
+            EntityType::Mechanism,
+            EntityType::Limitation,
+            EntityType::FutureWork,
+        ]
+    }
+
+    /// Is this a concrete (Module B) entity type?
+    pub fn is_concrete(&self) -> bool {
+        matches!(
+            self,
+            EntityType::Task
+                | EntityType::Method
+                | EntityType::Dataset
+                | EntityType::Model
+                | EntityType::Metric
+                | EntityType::Baseline
+                | EntityType::Figure
+                | EntityType::Table
+                | EntityType::Equation
+                | EntityType::Concept
+                | EntityType::Implementation
+                | EntityType::Theorem
+                | EntityType::Definition
+        )
+    }
+
+    /// Is this an abstract (Module C) entity type?
+    pub fn is_abstract(&self) -> bool {
+        !self.is_concrete()
     }
 }
 
