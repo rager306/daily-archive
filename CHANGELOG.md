@@ -32,6 +32,14 @@
 - Clippy clean across all crates; CI clippy uses `--no-deps` (vendor Samyama
   has pre-existing warnings we don't own).
 - Pre-commit cargo-fmt now auto-formats (was failing on `--check`).
+- **Idempotent Citation nodes**: `find_node_by_string_property` added to
+  DirectGraphStore trait. Ingest now checks for existing Citation before
+  creating, preventing duplicate nodes when multiple papers cite the same
+  reference. Citation nodes now get valid_from + schema_version.
+- **Phase 3 extraction started**: Extractor port (da-ports), RuleBasedExtractor
+  adapter (da-adapters, section heuristics + keyword patterns), ExtractionUseCase
+  (da-application, parse → extract → write Entity nodes). `da extract --id` CLI.
+  Idempotent Entity node creation. 9 new tests. End-to-end: 2602.11757 → 2 entities.
 
 ### Hygiene (earlier)
 

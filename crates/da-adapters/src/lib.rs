@@ -5,8 +5,10 @@
 
 pub mod fd_embedder;
 pub mod grobid_parser;
+pub mod rule_extractor;
 pub mod samyama_graph;
 
 pub use fd_embedder::FdApiEmbedder;
 pub use grobid_parser::GrobidParser;
+pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;

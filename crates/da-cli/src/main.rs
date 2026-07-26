@@ -72,6 +72,13 @@ enum Commands {
         #[arg(long, default_value = "2")]
         hops: usize,
     },
+
+    /// Extract entities from an ingested paper (Phase 3 rule-based)
+    Extract {
+        /// Paper arxiv_id to extract from
+        #[arg(long)]
+        id: String,
+    },
 }
 
 fn main() {
@@ -126,6 +133,12 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 query_graph(&kind, id.as_deref(), hops).await;
+            });
+        }
+        Commands::Extract { id } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                extract_entities(&id).await;
             });
         }
     }
@@ -380,6 +393,75 @@ async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
         }
         Err(e) => {
             eprintln!("❌ Query failed: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
+async fn extract_entities(paper_id: &str) {
+    use da_adapters::{GrobidParser, RuleBasedExtractor, SamyamaGraphStore};
+    use da_application::ExtractionUseCase;
+    use da_ports::parser::ParserPort;
+
+    // Find the PDF
+    let pdf = std::process::Command::new("find")
+        .args([
+            "data/article_catalog",
+            "-name",
+            &format!("{}.pdf", paper_id),
+        ])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    let pdf_path = match pdf {
+        Some(p) => p,
+        None => {
+            eprintln!("❌ PDF not found for {paper_id}");
+            std::process::exit(1);
+        }
+    };
+
+    println!("Extracting entities from {paper_id}...");
+
+    // Parse via GROBID
+    let parser = GrobidParser::from_env();
+    let parsed = match parser.parse_pdf(&pdf_path, paper_id).await {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("❌ Parse failed: {e}");
+            std::process::exit(1);
+        }
+    };
+    println!(
+        "   Parsed: {} sections, {} chars",
+        parsed.sections.len(),
+        parsed.body_text.len()
+    );
+
+    // Extract via rule-based extractor
+    let extractor = Box::new(RuleBasedExtractor::new());
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = ExtractionUseCase::new(extractor, graph_store);
+
+    match use_case.extract_from_parsed(&parsed).await {
+        Ok(result) => {
+            println!("✅ Extracted {} entities", result.entities_extracted);
+            // Group by type
+            let mut by_type: std::collections::HashMap<&str, usize> =
+                std::collections::HashMap::new();
+            for t in &result.entity_types {
+                *by_type.entry(t.as_str()).or_default() += 1;
+            }
+            for (t, count) in &by_type {
+                println!("   {t}: {count}");
+            }
+            println!("   Graph nodes written: {}", result.graph_node_ids.len());
+        }
+        Err(e) => {
+            eprintln!("❌ Extraction failed: {e:#}");
             std::process::exit(1);
         }
     }

@@ -23,6 +23,7 @@ Graph import is **fail-closed** (`import_eligible=false`) until explicit human g
 | Cross-process live graph | **Not yet** — needs Samyama server mode (Solution A, Phase 3+) |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Phase 3 extraction (GLiNER) | Not started |
+| Phase 3 rule-based extraction | **Started** — Extractor port + RuleBasedExtractor + ExtractionUseCase |
 | Agent layer (RuVector/SONA) | Vendored, not wired |
 
 Architecture:

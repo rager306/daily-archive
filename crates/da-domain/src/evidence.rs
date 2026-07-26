@@ -102,7 +102,7 @@ mod tests {
             char_end: None,
             surface: None,
             artifact_role: "odl_layout".to_string(),
-            artifact_hash: "abc123".to_string().to_string(),
+            artifact_hash: "abc123".to_string(),
             justified_char_only: false,
         };
         assert!(span.has_page_or_bbox());
@@ -115,7 +115,7 @@ mod tests {
             char_end: Some(10),
             surface: Some("test".to_string()),
             artifact_role: "hybrid_body".to_string(),
-            artifact_hash: "abc123".to_string().to_string(),
+            artifact_hash: "abc123".to_string(),
             justified_char_only: true,
         };
         assert!(!char_only.has_page_or_bbox());
