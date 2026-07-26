@@ -14,9 +14,9 @@ use serde::{Deserialize, Serialize};
 
 /// Ingest pipeline dependencies (injected ports).
 pub struct IngestUseCase {
-    parser: Box<dyn ParserPort>,
-    embedder: Box<dyn Embedder>,
-    graph_store: Box<dyn DirectGraphStore>,
+    pub parser: Box<dyn ParserPort>,
+    pub embedder: Box<dyn Embedder>,
+    pub graph_store: Box<dyn DirectGraphStore>,
 }
 
 /// Result of ingesting one paper.

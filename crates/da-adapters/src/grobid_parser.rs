@@ -71,17 +71,18 @@ impl GrobidParser {
     }
 
     /// Extract title from TEI XML.
+    /// Handles both `<title>Text</title>` and `<title level="a" type="main">Text</title>`.
     fn extract_title(tei: &str) -> String {
-        // Simple TEI title extraction
         if let Some(start) = tei.find("<title") {
-            if let Some(content_start) = tei[start..].find('>') {
-                let after = &tei[start + content_start + 1..];
+            // Find the closing > of the opening tag (may have attributes)
+            if let Some(tag_end) = tei[start..].find('>') {
+                let after = &tei[start + tag_end + 1..];
                 if let Some(end) = after.find("</title>") {
-                    return after[..end].trim().to_string();
+                    return Self::strip_xml_tags(&after[..end]);
                 }
             }
         }
-        "Unknown Title".to_string()
+        String::new()
     }
 
     /// Extract abstract from TEI XML.
@@ -183,6 +184,13 @@ mod tests {
     fn test_extract_title() {
         let tei = r#"<TEI><teiHeader><fileDesc><titleStmt><title>Seq2Seq Models</title></titleStmt></fileDesc></teiHeader></TEI>"#;
         assert_eq!(GrobidParser::extract_title(tei), "Seq2Seq Models");
+    }
+
+    #[test]
+    fn test_extract_title_with_attributes() {
+        // GROBID TEI uses attributes: <title level="a" type="main">
+        let tei = r#"<title level="a" type="main">A Joint Model of Language and Perception</title>"#;
+        assert_eq!(GrobidParser::extract_title(tei), "A Joint Model of Language and Perception");
     }
 
     #[test]

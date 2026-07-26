@@ -137,7 +137,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
 
 async fn batch_ingest(ids_str: &str, output: Option<&str>) {
     use da_adapters::{SamyamaGraphStore, GrobidParser, FdApiEmbedder};
-    use da_application::batch_ingest_pdfs;
+    use da_application::{batch_ingest_pdfs, IngestUseCase};
     use da_ports::parser::ParserPort;
     use da_ports::embedder::Embedder;
     use da_ports::graph_store::DirectGraphStore;
@@ -160,16 +160,16 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
 
     println!("Batch ingesting {} papers (HOT path)...", pdfs.len());
 
-    let parser = GrobidParser::from_env();
-    let embedder = FdApiEmbedder::from_env();
-    let graph_store = SamyamaGraphStore::new();
+    let parser = Box::new(GrobidParser::from_env());
+    let embedder = Box::new(FdApiEmbedder::from_env());
+    let graph_store = Box::new(SamyamaGraphStore::new());
+
+    let ingest = IngestUseCase::new(parser, embedder, graph_store);
 
     let snapshot_path = output.map(PathBuf::from);
 
     let result = batch_ingest_pdfs(
-        &parser,
-        &embedder,
-        &graph_store,
+        &ingest,
         &pdfs,
         snapshot_path.as_deref(),
     ).await;
@@ -178,7 +178,7 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
         Ok(r) => {
             println!("✅ Batch complete: {}/{} ok, {} fail, {}ms", r.ok, r.total, r.fail, r.duration_ms);
             println!("   Body chars: {}", r.total_body_chars);
-            println!("   Nodes in graph: {}", graph_store.node_count().await);
+            println!("   Nodes in graph: {}", ingest.graph_stats().await.0);
             if let Some(ref path) = r.snapshot_path {
                 println!("   Snapshot: {}", path);
             }
