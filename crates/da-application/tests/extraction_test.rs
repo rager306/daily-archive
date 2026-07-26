@@ -36,6 +36,7 @@ impl Extractor for MockExtractor {
 struct MockGraphStore {
     nodes: Arc<AtomicUsize>,
     props: Mutex<std::collections::HashMap<(u64, String), String>>,
+    edges: Mutex<Vec<(u64, u64, String)>>, // (source, target, edge_type)
 }
 
 #[async_trait]
@@ -116,10 +117,14 @@ impl DirectGraphStore for MockGraphStore {
     }
     async fn create_edge(
         &self,
-        _source: u64,
-        _target: u64,
-        _edge_type: &str,
+        source: u64,
+        target: u64,
+        edge_type: &str,
     ) -> Result<u64, GraphStoreError> {
+        self.edges
+            .lock()
+            .unwrap()
+            .push((source, target, edge_type.to_string()));
         Ok(0)
     }
     async fn add_vector(
@@ -144,7 +149,7 @@ impl DirectGraphStore for MockGraphStore {
         self.nodes.load(Ordering::SeqCst)
     }
     async fn edge_count(&self) -> usize {
-        0
+        self.edges.lock().unwrap().len()
     }
     async fn find_node_by_string_property(
         &self,
@@ -185,6 +190,7 @@ fn make_store() -> (Arc<AtomicUsize>, MockGraphStore) {
     let store = MockGraphStore {
         nodes: nodes.clone(),
         props: Mutex::new(std::collections::HashMap::new()),
+        edges: Mutex::new(Vec::new()),
     };
     (nodes, store)
 }
@@ -270,4 +276,70 @@ async fn test_extraction_no_entities() {
     assert_eq!(result.entities_extracted, 0);
     assert!(result.graph_node_ids.is_empty());
     assert_eq!(nodes.load(Ordering::SeqCst), 0);
+}
+
+#[tokio::test]
+async fn test_extraction_links_entities_to_paper_via_mentions() {
+    // When a Paper node exists (by arxiv_id), extraction should create
+    // MENTIONS edges from Paper to each Entity.
+    let entities = vec![
+        ExtractedEntity {
+            label: "TestMethod".to_string(),
+            entity_type: EntityType::Method,
+            section_title: "Method".to_string(),
+            char_start: 0,
+            char_end: 10,
+            surface: "TestMethod".to_string(),
+        },
+        ExtractedEntity {
+            label: "WMT".to_string(),
+            entity_type: EntityType::Dataset,
+            section_title: "Datasets".to_string(),
+            char_start: 0,
+            char_end: 3,
+            surface: "WMT".to_string(),
+        },
+    ];
+    let (nodes, store) = make_store();
+    // Pre-create a Paper node with arxiv_id property
+    let paper_node = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.entities_extracted, 2);
+    // 1 Paper + 2 Entity = 3 nodes
+    assert_eq!(nodes.load(Ordering::SeqCst), 3);
+    // 2 MENTIONS edges (Paper → each Entity)
+    let edges = use_case.graph_store.edge_count().await;
+    assert_eq!(edges, 2, "expected 2 MENTIONS edges, got {edges}");
+}
+
+#[tokio::test]
+async fn test_extraction_no_mentions_when_paper_absent() {
+    // If no Paper node exists, entities are created but no MENTIONS edges.
+    let entities = vec![ExtractedEntity {
+        label: "TestMethod".to_string(),
+        entity_type: EntityType::Method,
+        section_title: "Method".to_string(),
+        char_start: 0,
+        char_end: 10,
+        surface: "TestMethod".to_string(),
+    }];
+    let (nodes, store) = make_store();
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.entities_extracted, 1);
+    assert_eq!(nodes.load(Ordering::SeqCst), 1); // 1 Entity, no Paper
+    let edges = use_case.graph_store.edge_count().await;
+    assert_eq!(edges, 0, "no MENTIONS edges when Paper absent");
 }

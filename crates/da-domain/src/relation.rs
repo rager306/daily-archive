@@ -118,6 +118,10 @@ pub mod bibliographic {
 
     /// Paper A and paper B share an author.
     pub const CO_AUTHORED: &str = "CO_AUTHORED";
+
+    /// Paper mentions an entity (extracted from paper text).
+    /// Links Paper nodes to Entity nodes extracted from their sections.
+    pub const MENTIONS: &str = "MENTIONS";
 }
 
 #[cfg(test)]
@@ -152,5 +156,6 @@ mod tests {
         assert_eq!(bibliographic::CITES, "CITES");
         assert_eq!(bibliographic::CITED_BY, "CITED_BY");
         assert_eq!(bibliographic::CO_AUTHORED, "CO_AUTHORED");
+        assert_eq!(bibliographic::MENTIONS, "MENTIONS");
     }
 }

@@ -33,6 +33,7 @@ impl ExtractionUseCase {
 
     /// Extract entities from a parsed article and write Entity nodes to graph.
     /// ADR-038: entities are textually mentioned, grounded to source spans.
+    /// Links each Entity to the Paper via MENTIONS edge (bibliographic).
     pub async fn extract_from_parsed(
         &self,
         parsed: &ParsedArticle,
@@ -53,10 +54,17 @@ impl ExtractionUseCase {
             "Entities extracted"
         );
 
-        // 3. Write Entity nodes to graph (HOT path)
+        // 3. Find the Paper node by arxiv_id (to link entities via MENTIONS)
+        let paper_node_id = self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", &parsed.paper_id)
+            .await;
+
+        // 4. Write Entity nodes to graph (HOT path) + MENTIONS edges
         let now = chrono::Utc::now().timestamp();
         let mut node_ids = Vec::new();
         let mut entity_types = Vec::new();
+        let mut mentions_edges = 0usize;
         for ext in &extracted {
             let entity_vid = vid::entity_vid(ext.entity_type.as_str(), &ext.label);
             // Idempotent: check if entity already exists
@@ -90,6 +98,16 @@ impl ExtractionUseCase {
                             )
                             .await?;
                     }
+                    // Source span (for evidence grounding — Phase 3 Slice 3+)
+                    self.graph_store
+                        .set_node_property_int(new_node, "char_start", ext.char_start as i64)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(new_node, "char_end", ext.char_end as i64)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(new_node, "surface", ext.surface.clone())
+                        .await?;
                     self.graph_store
                         .set_node_property_int(new_node, "valid_from", now)
                         .await?;
@@ -105,9 +123,28 @@ impl ExtractionUseCase {
                     new_node
                 }
             };
+            // Link Entity to Paper via MENTIONS edge (if Paper node exists)
+            if let Some(paper_id) = paper_node_id {
+                self.graph_store
+                    .create_edge(
+                        paper_id,
+                        node_id,
+                        da_domain::relation::bibliographic::MENTIONS,
+                    )
+                    .await?;
+                mentions_edges += 1;
+            }
             node_ids.push(node_id);
             entity_types.push(ext.entity_type.as_str().to_string());
         }
+
+        tracing::info!(
+            paper_id = %parsed.paper_id,
+            entities = extracted.len(),
+            mentions_edges,
+            paper_linked = paper_node_id.is_some(),
+            "Extraction complete"
+        );
 
         Ok(ExtractionResult {
             paper_id: parsed.paper_id.clone(),

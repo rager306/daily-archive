@@ -40,6 +40,10 @@
   adapter (da-adapters, section heuristics + keyword patterns), ExtractionUseCase
   (da-application, parse → extract → write Entity nodes). `da extract --id` CLI.
   Idempotent Entity node creation. 9 new tests. End-to-end: 2602.11757 → 2 entities.
+- **MENTIONS edges + source spans**: extraction now links Entity nodes to Paper
+  via MENTIONS edge (finds Paper by arxiv_id). Entity nodes store char_start,
+  char_end, surface for evidence grounding. 2 new tests (mentions linked,
+  no-mentions-when-paper-absent).
 
 ### Hygiene (earlier)
 
