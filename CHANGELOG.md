@@ -44,6 +44,11 @@
   via MENTIONS edge (finds Paper by arxiv_id). Entity nodes store char_start,
   char_end, surface for evidence grounding. 2 new tests (mentions linked,
   no-mentions-when-paper-absent).
+- **Extraction recall improved**: classify_section now matches EVALUATION SETUP,
+  RESULTS AND ANALYSIS, MODELS AND INFERENCE PARAMETERS, ALGORITHM/METHODOLOGY.
+  Added Model entity extraction (GPT-4, LLaMA, Claude, Gemini, Mistral, Qwen,
+  DeepSeek, GLM, BERT, T5, BLOOM). Recall: 2→3 entities on paper 2602.11757.
+  2 new tests (extended section classification, model extraction).
 
 ### Hygiene (earlier)
 

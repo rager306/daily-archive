@@ -17,21 +17,31 @@ impl RuleBasedExtractor {
     }
 
     /// Classify a section title to an entity type.
-    /// e.g. "Datasets" → Dataset, "Methods" → Method.
+    /// e.g. "Datasets" → Dataset, "Methods" → Method, "Evaluation Setup" → Metric.
     fn classify_section(title: &str) -> Option<EntityType> {
         let lower = title.to_lowercase();
         if lower.contains("dataset") || lower.contains("corpus") {
             Some(EntityType::Dataset)
-        } else if lower.contains("method") || lower.contains("approach") || lower.contains("model")
-        {
-            if lower.contains("model") {
-                Some(EntityType::Model)
-            } else {
-                Some(EntityType::Method)
-            }
         } else if lower.contains("baseline") {
             Some(EntityType::Baseline)
-        } else if lower.contains("metric") || lower.contains("evaluation") {
+        } else if lower.contains("method")
+            || lower.contains("approach")
+            || lower.contains("algorithm")
+            || lower.contains("methodology")
+        {
+            Some(EntityType::Method)
+        } else if lower.contains("model")
+            || lower.contains("inference")
+            || lower.contains("parameter")
+        {
+            Some(EntityType::Model)
+        } else if lower.contains("metric")
+            || lower.contains("evaluation")
+            || lower.contains("result")
+            || lower.contains("experiment")
+            || lower.contains("setup")
+            || lower.contains("analysis")
+        {
             Some(EntityType::Metric)
         } else if lower.contains("task") || lower.contains("problem") {
             Some(EntityType::Task)
@@ -91,6 +101,31 @@ impl RuleBasedExtractor {
                         let s = pos.saturating_sub(10);
                         let e = (pos + pattern.len() + 10).min(text.len());
                         results.push((s, e, text[s..e].trim().to_string()));
+                    }
+                }
+            }
+            EntityType::Model => {
+                // Named models: GPT-4, LLaMA, Claude, Gemini, etc.
+                let model_patterns = [
+                    "gpt-4", "gpt-3.5", "gpt-4o", "llama", "claude", "gemini", "mistral", "qwen",
+                    "deepseek", "glm", "bert", "t5", "bloom",
+                ];
+                let lower = text.to_lowercase();
+                for pattern in &model_patterns {
+                    let mut start = 0;
+                    while let Some(pos) = lower[start..].find(pattern) {
+                        let abs = start + pos;
+                        // Extract the model name (up to next space or 15 chars)
+                        let remainder = &text[abs..];
+                        let end = remainder
+                            .find(|c: char| !c.is_alphanumeric() && c != '-' && c != '.')
+                            .unwrap_or(remainder.len())
+                            .min(15);
+                        let label = &remainder[..end];
+                        if !label.is_empty() {
+                            results.push((abs, abs + end, label.to_string()));
+                        }
+                        start = abs + pattern.len();
                     }
                 }
             }
@@ -179,6 +214,27 @@ mod tests {
     }
 
     #[test]
+    fn test_classify_section_extended() {
+        // Real GROBID section titles from paper 2507.19457
+        assert_eq!(
+            RuleBasedExtractor::classify_section("EVALUATION SETUP"),
+            Some(EntityType::Metric)
+        );
+        assert_eq!(
+            RuleBasedExtractor::classify_section("RESULTS AND ANALYSIS"),
+            Some(EntityType::Metric)
+        );
+        assert_eq!(
+            RuleBasedExtractor::classify_section("MODELS AND INFERENCE PARAMETERS"),
+            Some(EntityType::Model)
+        );
+        assert_eq!(
+            RuleBasedExtractor::classify_section("ALGORITHM AND METHODOLOGY DETAILS"),
+            Some(EntityType::Method)
+        );
+    }
+
+    #[test]
     fn test_extract_candidates_propose() {
         let text = "In this paper we propose GeoRLE, a novel approach for layout analysis.";
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
@@ -193,6 +249,30 @@ mod tests {
         assert!(!candidates.is_empty());
         // Should find "dataset" and "corpus" mentions
         assert!(candidates.iter().any(|(_, _, l)| l.contains("PubMed")));
+    }
+
+    #[test]
+    fn test_extract_candidates_models() {
+        let text = "We compare GPT-4, Llama-3, Claude-3, and Gemini across tasks.";
+        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Model);
+        assert!(!candidates.is_empty());
+        let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
+        assert!(
+            labels.iter().any(|l| l.to_lowercase().contains("gpt-4")),
+            "got: {labels:?}"
+        );
+        assert!(
+            labels.iter().any(|l| l.to_lowercase().contains("llama")),
+            "got: {labels:?}"
+        );
+        assert!(
+            labels.iter().any(|l| l.to_lowercase().contains("claude")),
+            "got: {labels:?}"
+        );
+        assert!(
+            labels.iter().any(|l| l.to_lowercase().contains("gemini")),
+            "got: {labels:?}"
+        );
     }
 
     #[tokio::test]
