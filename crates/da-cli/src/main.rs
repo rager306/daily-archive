@@ -68,13 +68,13 @@ fn main() {
 
 async fn check_health() {
     use da_adapters::{SamyamaGraphStore, GrobidParser, FdApiEmbedder};
-    use da_ports::embedder::Embedder;
     use da_ports::graph_store::GraphStore;
 
-    // Samyama
+    // Samyama (embedded)
     let graph = SamyamaGraphStore::from_env();
-    let graph_ok = da_ports::graph_store::GraphStore::health(&graph).await.unwrap_or(false);
-    println!("  Samyama Graph:  {}", if graph_ok { "✅ healthy" } else { "❌ down" });
+    let graph_ok = GraphStore::health(&graph).await.unwrap_or(false);
+    let nodes = graph.node_count().await;
+    println!("  Samyama Graph:  {} ({} nodes)", if graph_ok { "✅ healthy" } else { "❌ down" }, nodes);
 
     // GROBID
     let grobid = GrobidParser::from_env();
@@ -83,7 +83,7 @@ async fn check_health() {
 
     // Embedder
     let embedder = FdApiEmbedder::from_env();
-    println!("  Embedder:       {} (model: {})", da_ports::embedder::Embedder::model_id(&embedder), "configured");
+    println!("  Embedder:       {} (dim: {})", embedder.model_id(), embedder.dimensions());
 }
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str) {

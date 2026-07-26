@@ -82,7 +82,10 @@ impl IngestUseCase {
 
         // MERGE is idempotent — no separate exists check needed (Samyama supports MERGE since v1.0)
 
-        // Idempotent upsert via MERGE (Samyama docs: ON CREATE SET / ON MATCH SET)
+        // ADR-041: Direct GraphStore API (HOT path) — no Cypher for batch writes.
+        // Note: for now we still use GraphStore port's query() method since
+        // da-application doesn't have direct access to SamyamaGraphStore.
+        // Phase 3 will add a DirectGraphStorePort for hot-path operations.
         let escaped_title = paper.title.replace('"', "'");
         let vector_json = serde_json::to_string(&vector)?;
         let merge_cypher = format!(
@@ -94,7 +97,7 @@ impl IngestUseCase {
             escaped_title, parsed.pdf_hash, vector_json
         );
         self.graph_store.query("default", &merge_cypher).await?;
-        tracing::info!(paper_id, vid = %vid, "Graph upserted (MERGE)");
+        tracing::info!(paper_id, vid = %vid, "Graph upserted (MERGE via Cypher — Phase 3 will use direct API)");
 
         Ok(IngestResult {
             paper_id: paper_id.to_string(),
