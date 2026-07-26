@@ -9,7 +9,7 @@ pub mod embedder;
 pub mod parser;
 pub mod llm_client;
 
-pub use graph_store::GraphStore;
+pub use graph_store::{GraphStore, DirectGraphStore};
 pub use evidence_store::EvidenceStore;
 pub use embedder::Embedder;
 pub use parser::ParserPort;

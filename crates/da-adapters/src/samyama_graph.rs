@@ -330,3 +330,120 @@ mod tests {
         assert!(store.health().await.unwrap());
     }
 }
+
+// ─── DirectGraphStore implementation (ADR-041 HOT path) ────
+
+#[async_trait]
+impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
+    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
+        let mut store = self.store_write().await;
+        let id = store.create_node(Label::new(label));
+        Ok(id.as_u64())
+    }
+
+    async fn set_node_property_string(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: String,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_node_property(
+                &self.tenant,
+                NodeId::new(node_id),
+                key.to_string(),
+                PropertyValue::String(value),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn set_node_property_int(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: i64,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_node_property(
+                &self.tenant,
+                NodeId::new(node_id),
+                key.to_string(),
+                PropertyValue::Integer(value),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn set_node_property_bool(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: bool,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_node_property(
+                &self.tenant,
+                NodeId::new(node_id),
+                key.to_string(),
+                PropertyValue::Boolean(value),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn create_edge(
+        &self,
+        source: u64,
+        target: u64,
+        edge_type: &str,
+    ) -> Result<u64, GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .create_edge(NodeId::new(source), NodeId::new(target), EdgeType::new(edge_type))
+            .map(|eid| eid.as_u64())
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn add_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError> {
+        let store = self.store_read().await;
+        store
+            .vector_index
+            .add_vector(label, property, NodeId::new(node_id), &vector)
+            .map_err(|e| GraphStoreError::Vector(e.to_string()))
+    }
+
+    async fn vector_search_direct(
+        &self,
+        label: &str,
+        property: &str,
+        query: &[f32],
+        k: usize,
+    ) -> Result<Vec<(u64, f32)>, GraphStoreError> {
+        let store = self.store_read().await;
+        store
+            .vector_index
+            .search(label, property, query, k)
+            .map(|results| {
+                results
+                    .into_iter()
+                    .map(|(nid, score)| (nid.as_u64(), score))
+                    .collect()
+            })
+            .map_err(|e| GraphStoreError::Vector(e.to_string()))
+    }
+
+    async fn node_count(&self) -> usize {
+        self.store_read().await.all_nodes().len()
+    }
+
+    async fn edge_count(&self) -> usize {
+        self.store_read().await.all_edges().len()
+    }
+}

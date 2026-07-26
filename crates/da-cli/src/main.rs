@@ -96,6 +96,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
     let graph_store = Box::new(SamyamaGraphStore::from_env());
+    // DirectGraphStore is implemented by SamyamaGraphStore (ADR-041 HOT path)
 
     let use_case = IngestUseCase::new(parser, embedder, graph_store);
 
@@ -105,7 +106,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
             println!("   Title:    {}", result.title);
             println!("   Body:     {} chars", result.body_chars);
             println!("   Vector:   {}d", result.vector_dimensions);
-            println!("   Graph:    {}", if result.graph_written { "written" } else { "failed" });
+            println!("   Graph:    {}", result.graph_node_id.map(|_n| "written").unwrap_or("failed"));
             println!("   Import:   {} (D127)", if result.import_eligible { "eligible" } else { "locked" });
         }
         Err(e) => {

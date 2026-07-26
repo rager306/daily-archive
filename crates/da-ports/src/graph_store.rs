@@ -82,3 +82,69 @@ pub struct VectorSearchResult {
     pub score: f32,
     pub properties: serde_json::Value,
 }
+
+/// Direct GraphStore API for HOT path operations (ADR-041).
+/// EmbeddedClient implementations provide this; HTTP-only clients don't.
+/// Use for: ingest (batch writes), vector insert, direct node/edge creation.
+/// Latency: 0.01-0.1ms per operation (no Cypher parse/plan overhead).
+#[async_trait]
+pub trait DirectGraphStore: GraphStore {
+    /// Create a node with a label. Returns internal NodeId.
+    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError>;
+
+    /// Set a string property on a node.
+    async fn set_node_property_string(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: String,
+    ) -> Result<(), GraphStoreError>;
+
+    /// Set an integer property on a node.
+    async fn set_node_property_int(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: i64,
+    ) -> Result<(), GraphStoreError>;
+
+    /// Set a boolean property on a node.
+    async fn set_node_property_bool(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: bool,
+    ) -> Result<(), GraphStoreError>;
+
+    /// Create a directed edge between two nodes.
+    async fn create_edge(
+        &self,
+        source: u64,
+        target: u64,
+        edge_type: &str,
+    ) -> Result<u64, GraphStoreError>;
+
+    /// Add a vector to a node's vector index.
+    async fn add_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError>;
+
+    /// Direct vector search (no Cypher).
+    async fn vector_search_direct(
+        &self,
+        label: &str,
+        property: &str,
+        query: &[f32],
+        k: usize,
+    ) -> Result<Vec<(u64, f32)>, GraphStoreError>;
+
+    /// Count nodes in the graph.
+    async fn node_count(&self) -> usize;
+
+    /// Count edges in the graph.
+    async fn edge_count(&self) -> usize;
+}
