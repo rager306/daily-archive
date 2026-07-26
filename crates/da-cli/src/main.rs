@@ -68,6 +68,7 @@ fn main() {
 
 async fn check_health() {
     use da_adapters::{SamyamaGraphStore, GrobidParser, FdApiEmbedder};
+    use da_ports::embedder::Embedder;
     use da_ports::graph_store::GraphStore;
 
     // Samyama (embedded)
@@ -83,7 +84,7 @@ async fn check_health() {
 
     // Embedder
     let embedder = FdApiEmbedder::from_env();
-    println!("  Embedder:       {} (dim: {})", embedder.model_id(), embedder.dimensions());
+    println!("  Embedder:       {} (dim: {})", Embedder::model_id(&embedder), Embedder::dimensions(&embedder));
 }
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
