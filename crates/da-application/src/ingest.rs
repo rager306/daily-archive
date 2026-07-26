@@ -25,6 +25,9 @@ pub struct IngestResult {
     pub paper_id: String,
     pub title: String,
     pub body_chars: usize,
+    pub section_count: usize,
+    pub citation_count: usize,
+    pub cites_resolved: usize, // citations with a resolvable arxiv_id
     pub vector_dimensions: usize,
     pub graph_node_id: Option<u64>,
     pub import_eligible: bool, // always false (D127)
@@ -104,16 +107,61 @@ impl IngestUseCase {
             .set_node_property_bool(node_id, "import_eligible", false) // D127: always false
             .await?;
 
+        // Section + citation metadata (enables Phase 3 extraction queries)
+        let section_count = parsed.sections.len();
+        let citation_count = parsed.citations.len();
+        self.graph_store
+            .set_node_property_int(node_id, "section_count", section_count as i64)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node_id, "citation_count", citation_count as i64)
+            .await?;
+
         // 5. HOT PATH: Add vector to index
         self.graph_store
             .add_vector("Paper", "embedding", node_id, vector.clone())
             .await?;
+
+        // 6. Create CITES edges for citations with resolvable arxiv_ids
+        // (enables citation graph traversal — ADR-038 S_kn tri-source)
+        let mut cites_resolved = 0usize;
+        for citation in &parsed.citations {
+            if let Some(ref arxiv_id) = citation.arxiv_id {
+                // Check if cited paper already exists in graph
+                let cited_vid = vid::paper_vid(arxiv_id);
+                // Create Citation node + CITES edge
+                let cited_node = self.graph_store.create_node("Citation").await?;
+                self.graph_store
+                    .set_node_property_string(cited_node, "vid", cited_vid)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(cited_node, "arxiv_id", arxiv_id.clone())
+                    .await?;
+                if let Some(ref title) = citation.title {
+                    self.graph_store
+                        .set_node_property_string(cited_node, "title", title.clone())
+                        .await?;
+                }
+                if let Some(ref doi) = citation.doi {
+                    self.graph_store
+                        .set_node_property_string(cited_node, "doi", doi.clone())
+                        .await?;
+                }
+                self.graph_store
+                    .create_edge(node_id, cited_node, "CITES")
+                    .await?;
+                cites_resolved += 1;
+            }
+        }
 
         tracing::info!(
             paper_id,
             node_id,
             vid = %vid_str,
             vector_dim = vector.len(),
+            section_count,
+            citation_count,
+            cites_resolved,
             "Graph written (HOT path — direct API, no Cypher)"
         );
 
@@ -121,6 +169,9 @@ impl IngestUseCase {
             paper_id: paper_id.to_string(),
             title: paper.title.clone(),
             body_chars: parsed.body_text.len(),
+            section_count,
+            citation_count,
+            cites_resolved,
             vector_dimensions: vector.len(),
             graph_node_id: Some(node_id),
             import_eligible: false, // D127: always false

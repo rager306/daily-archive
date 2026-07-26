@@ -20,12 +20,14 @@ use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
 // ---------- Mock Parser ----------
 
 struct MockParser {
-    fail_on: Vec<String>, // paper_ids that should fail
+    fail_on: Vec<String>,                            // paper_ids that should fail
+    citations: Vec<da_ports::parser::CitationEntry>, // citations to include
 }
 
 #[async_trait]
 impl ParserPort for MockParser {
     async fn parse_pdf(&self, _pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
+        use da_ports::parser::Section;
         if self.fail_on.iter().any(|f| f == paper_id) {
             return Err(da_ports::parser::ParserError::ParseFailed(format!(
                 "forced failure for {paper_id}"
@@ -36,8 +38,12 @@ impl ParserPort for MockParser {
             title: format!("Title of {paper_id}"),
             abstract_text: format!("Abstract of {paper_id}"),
             body_text: "x".repeat(1000),
-            sections: vec![],
-            citations: vec![],
+            sections: vec![Section {
+                title: "Introduction".to_string(),
+                text: "intro text".to_string(),
+                level: 1,
+            }],
+            citations: self.citations.clone(),
             layout_json: None,
             tei_xml: None,
             pdf_hash: format!("hash_{paper_id}"),
@@ -184,11 +190,18 @@ impl DirectGraphStore for MockGraphStore {
 }
 
 fn make_ingest(fail_on: Vec<String>) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
+    make_ingest_with_citations(fail_on, vec![])
+}
+
+fn make_ingest_with_citations(
+    fail_on: Vec<String>,
+    citations: Vec<da_ports::parser::CitationEntry>,
+) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
     let nodes = Arc::new(AtomicUsize::new(0));
     let snapshot_calls = Arc::new(AtomicUsize::new(0));
     let embed_calls = Arc::new(AtomicUsize::new(0));
     let ingest = IngestUseCase::new(
-        Box::new(MockParser { fail_on }),
+        Box::new(MockParser { fail_on, citations }),
         Box::new(MockEmbedder {
             dims: 1024,
             call_count: embed_calls.clone(),
@@ -216,9 +229,12 @@ async fn test_batch_ingest_all_success() {
     assert_eq!(result.ok, 3);
     assert_eq!(result.fail, 0);
     assert_eq!(result.total_body_chars, 3000);
+    assert_eq!(result.total_sections, 3); // 1 section per paper
+    assert_eq!(result.total_citations, 0);
+    assert_eq!(result.total_cites_resolved, 0);
     assert!(result.errors.is_empty());
     assert!(!result.import_eligible); // D127
-    assert_eq!(nodes.load(Ordering::SeqCst), 3); // 3 nodes created
+    assert_eq!(nodes.load(Ordering::SeqCst), 3); // 3 Paper nodes created
     assert_eq!(snapshot_calls.load(Ordering::SeqCst), 0); // no snapshot (None)
 }
 
@@ -286,4 +302,41 @@ async fn test_batch_ingest_import_eligible_always_false() {
         !result.import_eligible,
         "D127 violated: import_eligible must be false"
     );
+}
+
+#[tokio::test]
+async fn test_ingest_citations_create_cites_edges() {
+    // Citations with arxiv_id should create Citation nodes + CITES edges
+    use da_ports::parser::CitationEntry;
+    let citations = vec![
+        CitationEntry {
+            raw_text: "Smith et al 2023".to_string(),
+            doi: Some("10.1000/a".to_string()),
+            arxiv_id: Some("2301.00001".to_string()),
+            title: Some("Cited Paper A".to_string()),
+        },
+        CitationEntry {
+            raw_text: "Jones 2022".to_string(),
+            doi: None,
+            arxiv_id: Some("2201.00002".to_string()),
+            title: Some("Cited Paper B".to_string()),
+        },
+        CitationEntry {
+            raw_text: "No id ref".to_string(),
+            doi: None,
+            arxiv_id: None, // no arxiv_id — should NOT create a Citation node
+            title: None,
+        },
+    ];
+    let (ingest, nodes, _snapshot_calls) = make_ingest_with_citations(vec![], citations);
+    let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
+
+    let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
+
+    assert_eq!(result.ok, 1);
+    assert_eq!(result.total_citations, 3);
+    assert_eq!(result.total_cites_resolved, 2); // only 2 have arxiv_id
+    assert_eq!(result.total_sections, 1);
+    // 1 Paper node + 2 Citation nodes = 3 total
+    assert_eq!(nodes.load(Ordering::SeqCst), 3);
 }

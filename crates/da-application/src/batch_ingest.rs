@@ -14,6 +14,9 @@ pub struct BatchIngestResult {
     pub ok: usize,
     pub fail: usize,
     pub total_body_chars: usize,
+    pub total_sections: usize,
+    pub total_citations: usize,
+    pub total_cites_resolved: usize,
     pub duration_ms: u64,
     pub snapshot_path: Option<String>,
     pub errors: Vec<(String, String)>,
@@ -29,6 +32,9 @@ pub async fn batch_ingest_pdfs(
     let mut ok = 0;
     let mut fail = 0;
     let mut total_body_chars = 0;
+    let mut total_sections = 0;
+    let mut total_citations = 0;
+    let mut total_cites_resolved = 0;
     let mut errors = Vec::new();
 
     for (pdf_path, paper_id) in pdfs {
@@ -36,6 +42,9 @@ pub async fn batch_ingest_pdfs(
             Ok(result) => {
                 ok += 1;
                 total_body_chars += result.body_chars;
+                total_sections += result.section_count;
+                total_citations += result.citation_count;
+                total_cites_resolved += result.cites_resolved;
                 tracing::info!(paper_id, "Ingested OK");
             }
             Err(e) => {
@@ -80,6 +89,9 @@ pub async fn batch_ingest_pdfs(
         ok,
         fail,
         total_body_chars,
+        total_sections,
+        total_citations,
+        total_cites_resolved,
         duration_ms,
         snapshot_path,
         errors,

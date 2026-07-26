@@ -184,6 +184,11 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
                 "   Graph:    {}",
                 result.graph_node_id.map(|_n| "written").unwrap_or("failed")
             );
+            println!("   Sections: {}", result.section_count);
+            println!(
+                "   Citations: {} ({} resolved)",
+                result.citation_count, result.cites_resolved
+            );
             println!(
                 "   Import:   {} (D127)",
                 if result.import_eligible {
@@ -245,6 +250,11 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
                 r.ok, r.total, r.fail, r.duration_ms
             );
             println!("   Body chars: {}", r.total_body_chars);
+            println!("   Sections:   {}", r.total_sections);
+            println!(
+                "   Citations:  {} ({} resolved)",
+                r.total_citations, r.total_cites_resolved
+            );
             println!("   Nodes in graph: {}", ingest.graph_stats().await.0);
             if let Some(ref path) = r.snapshot_path {
                 println!("   Snapshot: {}", path);
