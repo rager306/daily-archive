@@ -23,6 +23,36 @@ pub struct PendingTask {
 pub enum TaskType {
     /// Paper not yet indexed by OpenAlex — retry enrichment later.
     OpenAlexEnrich,
+    /// New paper to ingest (HIGH priority, ADR-037 §4.3).
+    Ingest,
+    /// Re-parse a failed paper (HIGH priority).
+    Reparse,
+    /// Extract entities from an ingested paper (MED priority).
+    Extract,
+    /// Re-embed stale embeddings (LOW priority).
+    EmbedStale,
+    /// Write accumulated data to graph (LOW priority).
+    GraphWrite,
+}
+
+impl TaskType {
+    /// Priority level from ADR-037 §4.3.
+    pub fn priority(&self) -> TaskPriority {
+        match self {
+            TaskType::Ingest | TaskType::Reparse => TaskPriority::High,
+            TaskType::Extract | TaskType::OpenAlexEnrich => TaskPriority::Medium,
+            TaskType::EmbedStale | TaskType::GraphWrite => TaskPriority::Low,
+        }
+    }
+}
+
+/// Priority level for task scheduling (ADR-037 §4.3).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum TaskPriority {
+    Low,
+    Medium,
+    High,
 }
 
 /// Task lifecycle state.
@@ -206,4 +236,21 @@ mod tests {
         task.complete(now);
         assert_eq!(task.status, TaskStatus::Completed);
     }
+}
+
+#[test]
+fn test_task_priority_from_type() {
+    assert_eq!(TaskType::Ingest.priority(), TaskPriority::High);
+    assert_eq!(TaskType::Reparse.priority(), TaskPriority::High);
+    assert_eq!(TaskType::Extract.priority(), TaskPriority::Medium);
+    assert_eq!(TaskType::OpenAlexEnrich.priority(), TaskPriority::Medium);
+    assert_eq!(TaskType::EmbedStale.priority(), TaskPriority::Low);
+    assert_eq!(TaskType::GraphWrite.priority(), TaskPriority::Low);
+}
+
+#[test]
+fn test_priority_ordering() {
+    assert!(TaskPriority::High > TaskPriority::Medium);
+    assert!(TaskPriority::Medium > TaskPriority::Low);
+    assert!(TaskPriority::High > TaskPriority::Low);
 }
