@@ -20,7 +20,7 @@ impl RuleBasedExtractor {
     /// e.g. "Datasets" → Dataset, "Methods" → Method, "Evaluation Setup" → Metric.
     fn classify_section(title: &str) -> Option<EntityType> {
         let lower = title.to_lowercase();
-        if lower.contains("dataset") || lower.contains("corpus") {
+        if lower.contains("dataset") || lower.contains("corpus") || lower.contains("benchmark") {
             Some(EntityType::Dataset)
         } else if lower.contains("baseline") {
             Some(EntityType::Baseline)
@@ -79,17 +79,56 @@ impl RuleBasedExtractor {
         // Pattern 2: Section-type-specific keywords
         match entity_type {
             EntityType::Dataset => {
-                // "on the X dataset" / "using X"
-                for pattern in &["dataset", "corpus", "benchmark"] {
+                // Pattern: well-known dataset names (direct match)
+                let known_datasets = [
+                    "HotpotQA",
+                    "LiveBench",
+                    "MATH",
+                    "GSM8K",
+                    "MBPP",
+                    "HumanEval",
+                    "SQuAD",
+                    "WMT",
+                    "ImageNet",
+                    "CIFAR",
+                    "MNIST",
+                    "AGNews",
+                    "TriviaQA",
+                    "NaturalQuestions",
+                    "DROP",
+                    "BoolQ",
+                ];
+                for ds in &known_datasets {
+                    let mut start = 0;
+                    while let Some(pos) = text[start..].find(ds) {
+                        let abs = start + pos;
+                        results.push((abs, abs + ds.len(), ds.to_string()));
+                        start = abs + ds.len();
+                    }
+                }
+                // Pattern: capitalized word before "dataset/benchmark/evaluated on"
+                for pattern in &["dataset", "corpus", "benchmark", "evaluated on"] {
                     let lower = text.to_lowercase();
                     let mut start = 0;
                     while let Some(pos) = lower[start..].find(pattern) {
                         let abs = start + pos;
-                        // Take 40 chars around the keyword
-                        let s = abs.saturating_sub(20);
-                        let e = (abs + 20).min(text.len());
-                        let surface = &text[s..e];
-                        results.push((s, e, surface.trim().to_string()));
+                        let before_start = abs.saturating_sub(30);
+                        let before = text.get(before_start..abs).unwrap_or("");
+                        let caps: Vec<&str> = before
+                            .split_whitespace()
+                            .filter(|w| {
+                                w.chars()
+                                    .next()
+                                    .map(|c| c.is_uppercase() && w.len() > 2)
+                                    .unwrap_or(false)
+                            })
+                            .collect();
+                        if let Some(name) = caps.last() {
+                            let name_start =
+                                before.rfind(name).map(|p| before_start + p).unwrap_or(abs);
+                            let name_end = name_start + name.len();
+                            results.push((name_start, name_end, name.to_string()));
+                        }
                         start = abs + pattern.len();
                     }
                 }
@@ -247,8 +286,20 @@ mod tests {
         let text = "We evaluate on the PubMed dataset and the arXiv corpus.";
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
         assert!(!candidates.is_empty());
-        // Should find "dataset" and "corpus" mentions
+        // Should find "PubMed" from capitalized word before "dataset"
         assert!(candidates.iter().any(|(_, _, l)| l.contains("PubMed")));
+    }
+
+    #[test]
+    fn test_extract_candidates_known_datasets() {
+        // Known dataset names should be extracted directly
+        let text = "We evaluate on HotpotQA, LiveBench, and MATH benchmarks.";
+        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+        assert!(!candidates.is_empty());
+        let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
+        assert!(labels.contains(&"HotpotQA"), "got: {labels:?}");
+        assert!(labels.contains(&"LiveBench"), "got: {labels:?}");
+        assert!(labels.contains(&"MATH"), "got: {labels:?}");
     }
 
     #[test]
