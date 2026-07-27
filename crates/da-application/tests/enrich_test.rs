@@ -248,13 +248,19 @@ async fn test_enrich_writes_topics_and_authors() {
 }
 
 #[tokio::test]
-async fn test_enrich_not_found_errors() {
+async fn test_enrich_not_found_creates_pending_stub() {
+    // When OpenAlex has no data, enrich should NOT fail — it should create
+    // a pending stub with openalex_pending=true (lazy load pattern).
     let openalex = Box::new(MockOpenAlex { work: None });
     let store = make_store();
     let use_case = EnrichUseCase::new(openalex, Box::new(store));
 
-    let result = use_case.enrich_by_arxiv_id("9999.99999").await;
-    assert!(result.is_err());
+    let result = use_case.enrich_by_arxiv_id("9999.99999").await.unwrap();
+
+    assert!(result.openalex_pending);
+    assert_eq!(result.topics_written, 0);
+    assert_eq!(result.authors_written, 0);
+    assert_eq!(result.title, "(pending OpenAlex)");
 }
 
 #[tokio::test]

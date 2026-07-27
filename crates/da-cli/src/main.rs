@@ -708,15 +708,21 @@ async fn enrich_from_openalex(arxiv_id: &str) {
 
     match use_case.enrich_by_arxiv_id(arxiv_id).await {
         Ok(result) => {
-            println!("✅ Enriched: {}", result.title);
-            println!("   OpenAlex ID: {}", result.openalex_id);
-            if let Some(ref doi) = result.doi {
-                println!("   DOI: {doi}");
+            if result.openalex_pending {
+                println!("⏳ Pending: OpenAlex has no data for {arxiv_id}");
+                println!("   Paper marked openalex_pending=true");
+                println!("   Re-run enrich later when OpenAlex indexes this paper");
+            } else {
+                println!("✅ Enriched: {}", result.title);
+                println!("   OpenAlex ID: {}", result.openalex_id);
+                if let Some(ref doi) = result.doi {
+                    println!("   DOI: {doi}");
+                }
+                println!("   Topics: {}", result.topics_written);
+                println!("   Authors: {}", result.authors_written);
+                println!("   Concepts: {} (deprecated)", result.concepts_written);
+                println!("   Cited by: {}", result.cited_by_count);
             }
-            println!("   Topics: {}", result.topics_written);
-            println!("   Authors: {}", result.authors_written);
-            println!("   Concepts: {} (deprecated)", result.concepts_written);
-            println!("   Cited by: {}", result.cited_by_count);
         }
         Err(e) => {
             eprintln!("❌ Enrich failed: {e:#}");
@@ -737,6 +743,7 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     let use_case = EnrichUseCase::new(openalex, graph_store);
 
     let mut ok = 0;
+    let mut pending = 0;
     let mut fail = 0;
     let mut total_topics = 0;
     let mut total_authors = 0;
@@ -744,13 +751,18 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     for arxiv_id in &ids {
         match use_case.enrich_by_arxiv_id(arxiv_id).await {
             Ok(result) => {
-                println!(
-                    "  ✅ {}: {} topics, {} authors",
-                    arxiv_id, result.topics_written, result.authors_written
-                );
-                total_topics += result.topics_written;
-                total_authors += result.authors_written;
-                ok += 1;
+                if result.openalex_pending {
+                    println!("  ⏳ {}: pending (not in OpenAlex yet)", arxiv_id);
+                    pending += 1;
+                } else {
+                    println!(
+                        "  ✅ {}: {} topics, {} authors",
+                        arxiv_id, result.topics_written, result.authors_written
+                    );
+                    total_topics += result.topics_written;
+                    total_authors += result.authors_written;
+                    ok += 1;
+                }
             }
             Err(e) => {
                 println!("  ❌ {}: {e}", arxiv_id);
@@ -760,9 +772,10 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     }
 
     println!(
-        "\nBatch enrich complete: {}/{} ok, {} fail, {} topics, {} authors",
+        "\nBatch enrich complete: {}/{} enriched, {} pending, {} fail, {} topics, {} authors",
         ok,
         ids.len(),
+        pending,
         fail,
         total_topics,
         total_authors

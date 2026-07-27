@@ -24,6 +24,8 @@ pub struct EnrichResult {
     pub doi: Option<String>,
     pub cited_by_count: u32,
     pub openalex_id: String,
+    /// True when OpenAlex had no data — stub created with GROBID-only metadata.
+    pub openalex_pending: bool,
 }
 
 impl EnrichUseCase {
@@ -35,15 +37,31 @@ impl EnrichUseCase {
     }
 
     /// Fetch metadata from OpenAlex and write Topic/Author nodes to graph.
+    /// Lazy load: if OpenAlex has no data, creates stub with openalex_pending=true.
     pub async fn enrich_by_arxiv_id(&self, arxiv_id: &str) -> anyhow::Result<EnrichResult> {
         tracing::info!(arxiv_id, "Fetching OpenAlex metadata");
 
-        let work = self
-            .openalex
-            .fetch_by_arxiv_id(arxiv_id)
-            .await
-            .map_err(|e| anyhow::anyhow!("OpenAlex fetch failed: {e}"))?;
+        let fetch_result = self.openalex.fetch_by_arxiv_id(arxiv_id).await;
 
+        match fetch_result {
+            Ok(work) => self.enrich_from_work(arxiv_id, work).await,
+            Err(da_ports::openalex::OpenAlexError::NotFound(_)) => {
+                tracing::warn!(
+                    arxiv_id,
+                    "OpenAlex has no data — creating stub with openalex_pending=true"
+                );
+                self.create_pending_stub(arxiv_id).await
+            }
+            Err(e) => Err(anyhow::anyhow!("OpenAlex fetch failed: {e}")),
+        }
+    }
+
+    /// Enrich from a successfully fetched OpenAlex work.
+    async fn enrich_from_work(
+        &self,
+        arxiv_id: &str,
+        work: da_ports::openalex::OpenAlexWork,
+    ) -> anyhow::Result<EnrichResult> {
         let now = chrono::Utc::now().timestamp();
         let mut topics_written = 0;
         let mut authors_written = 0;
@@ -182,6 +200,35 @@ impl EnrichUseCase {
             doi: work.doi,
             cited_by_count: work.cited_by_count,
             openalex_id: work.id,
+            openalex_pending: false,
+        })
+    }
+
+    /// Create a stub Work node when OpenAlex has no data.
+    /// Marks the Paper node with openalex_pending=true for later enrichment.
+    async fn create_pending_stub(&self, arxiv_id: &str) -> anyhow::Result<EnrichResult> {
+        // Find the Paper node (created by ingest) and mark it pending
+        if let Some(paper_id) = self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
+            .await
+        {
+            self.graph_store
+                .set_node_property_bool(paper_id, "openalex_pending", true)
+                .await?;
+            tracing::info!(arxiv_id, paper_id, "Paper marked openalex_pending=true");
+        }
+
+        Ok(EnrichResult {
+            arxiv_id: arxiv_id.to_string(),
+            title: "(pending OpenAlex)".to_string(),
+            topics_written: 0,
+            authors_written: 0,
+            concepts_written: 0,
+            doi: None,
+            cited_by_count: 0,
+            openalex_id: String::new(),
+            openalex_pending: true,
         })
     }
 }
