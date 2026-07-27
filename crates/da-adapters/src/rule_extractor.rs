@@ -168,6 +168,54 @@ impl RuleBasedExtractor {
                     }
                 }
             }
+            EntityType::Method => {
+                // Pattern: all-caps acronyms 3-6 chars (GEPA, GRPO, RLVR, BERT)
+                // Also section title as method name
+                for word in text.split_whitespace() {
+                    let clean: String = word.chars().filter(|c| c.is_alphabetic()).collect();
+                    if clean.len() >= 3
+                        && clean.len() <= 6
+                        && clean.to_uppercase() == clean
+                        && clean.chars().all(|c| c.is_uppercase())
+                    {
+                        // Skip common English words that happen to be all-caps
+                        let lower = clean.to_lowercase();
+                        if matches!(
+                            lower.as_str(),
+                            "the"
+                                | "and"
+                                | "for"
+                                | "not"
+                                | "all"
+                                | "new"
+                                | "use"
+                                | "via"
+                                | "two"
+                                | "one"
+                                | "our"
+                                | "can"
+                                | "may"
+                                | "any"
+                                | "how"
+                                | "why"
+                                | "see"
+                                | "set"
+                                | "get"
+                                | "let"
+                                | "put"
+                                | "add"
+                                | "run"
+                                | "try"
+                                | "end"
+                        ) {
+                            continue;
+                        }
+                        if let Some(pos) = text.find(word) {
+                            results.push((pos, pos + word.len(), clean.clone()));
+                        }
+                    }
+                }
+            }
             _ => {}
         }
 
@@ -366,4 +414,15 @@ mod tests {
         let extractor = RuleBasedExtractor::new();
         assert_eq!(extractor.name(), "rule-based");
     }
+}
+
+#[test]
+fn test_extract_method_acronyms() {
+    let text = "We propose GEPA and compare with GRPO and RLVR baselines.";
+    let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+    assert!(!candidates.is_empty());
+    let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
+    assert!(labels.contains(&"GEPA"), "got: {labels:?}");
+    assert!(labels.contains(&"GRPO"), "got: {labels:?}");
+    assert!(labels.contains(&"RLVR"), "got: {labels:?}");
 }
