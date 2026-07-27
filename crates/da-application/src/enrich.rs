@@ -11,6 +11,8 @@ use da_ports::openalex::OpenAlexClient;
 pub struct EnrichUseCase {
     pub openalex: Box<dyn OpenAlexClient>,
     pub graph_store: Box<dyn DirectGraphStore>,
+    /// Optional scheduler for auto-registering pending tasks.
+    pub scheduler: Option<crate::scheduler::FileScheduler>,
 }
 
 /// Result of enriching one work.
@@ -33,7 +35,14 @@ impl EnrichUseCase {
         Self {
             openalex,
             graph_store,
+            scheduler: None,
         }
+    }
+
+    /// Attach a scheduler for auto-registering pending tasks on NotFound.
+    pub fn with_scheduler(mut self, scheduler: crate::scheduler::FileScheduler) -> Self {
+        self.scheduler = Some(scheduler);
+        self
     }
 
     /// Fetch metadata from OpenAlex and write Topic/Author nodes to graph.
@@ -217,6 +226,15 @@ impl EnrichUseCase {
                 .set_node_property_bool(paper_id, "openalex_pending", true)
                 .await?;
             tracing::info!(arxiv_id, paper_id, "Paper marked openalex_pending=true");
+        }
+
+        // Auto-register in scheduler queue for retry (if scheduler attached)
+        if let Some(ref scheduler) = self.scheduler {
+            if let Err(e) = scheduler.add_pending(arxiv_id) {
+                tracing::warn!(arxiv_id, error = %e, "Failed to add to scheduler queue (non-fatal)");
+            } else {
+                tracing::info!(arxiv_id, "Auto-registered in scheduler queue for retry");
+            }
         }
 
         Ok(EnrichResult {

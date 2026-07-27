@@ -303,3 +303,39 @@ async fn test_enrich_dedup_same_topic() {
     // Should still work (creates new nodes since vid doesn't match)
     assert!(result.topics_written > 0);
 }
+
+#[tokio::test]
+async fn test_enrich_not_found_auto_registers_in_scheduler() {
+    use da_application::FileScheduler;
+    use tempfile::tempdir;
+
+    let dir = tempdir().unwrap();
+    let scheduler = FileScheduler::new(dir.path());
+
+    let openalex = Box::new(MockOpenAlex { work: None });
+    let store = make_store();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store)).with_scheduler(scheduler);
+
+    let result = use_case.enrich_by_arxiv_id("9999.99999").await.unwrap();
+
+    assert!(result.openalex_pending);
+
+    // Verify task was auto-registered in scheduler queue
+    let queue = use_case.scheduler.as_ref().unwrap().load_queue();
+    assert_eq!(queue.len(), 1);
+    assert_eq!(queue[0].arxiv_id, "9999.99999");
+    assert_eq!(queue[0].status, da_domain::scheduler::TaskStatus::Pending);
+}
+
+#[tokio::test]
+async fn test_enrich_not_found_without_scheduler_still_works() {
+    // Without scheduler attached, enrich should still create pending stub
+    let openalex = Box::new(MockOpenAlex { work: None });
+    let store = make_store();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+
+    let result = use_case.enrich_by_arxiv_id("9999.99999").await.unwrap();
+
+    assert!(result.openalex_pending);
+    assert!(use_case.scheduler.is_none());
+}

@@ -711,13 +711,14 @@ async fn heal_graph(
 
 async fn enrich_from_openalex(arxiv_id: &str) {
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
-    use da_application::EnrichUseCase;
+    use da_application::{EnrichUseCase, FileScheduler};
 
     println!("Enriching {arxiv_id} from OpenAlex...");
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
     let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let use_case = EnrichUseCase::new(openalex, graph_store);
+    let scheduler = FileScheduler::new(std::path::Path::new("data/scheduler"));
+    let use_case = EnrichUseCase::new(openalex, graph_store).with_scheduler(scheduler);
 
     match use_case.enrich_by_arxiv_id(arxiv_id).await {
         Ok(result) => {
@@ -746,14 +747,15 @@ async fn enrich_from_openalex(arxiv_id: &str) {
 
 async fn batch_enrich_from_openalex(ids_str: &str) {
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
-    use da_application::EnrichUseCase;
+    use da_application::{EnrichUseCase, FileScheduler};
 
     let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
     println!("Batch enriching {} papers from OpenAlex...", ids.len());
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
     let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let use_case = EnrichUseCase::new(openalex, graph_store);
+    let scheduler = FileScheduler::new(std::path::Path::new("data/scheduler"));
+    let use_case = EnrichUseCase::new(openalex, graph_store).with_scheduler(scheduler);
 
     let mut ok = 0;
     let mut pending = 0;
