@@ -14,6 +14,10 @@
   Lazy load: new papers get pending stub with `openalex_pending=true`.
 - **Extraction evaluation (D136)**: P/R/F1 framework + gold-standard fixture
   for 2507.19457. Baseline: P=0.778 R=0.438 F1=0.560 (rule-based).
+- **Extraction recall improvement**: dataset name extraction (16 known datasets
+  + capitalized-before-keyword pattern), method acronym extraction (GEPA/GRPO/
+  RLVR), stopword filter for common tech acronyms (LLM/AI/NPU/etc.).
+  Final: P=0.632 R=0.750 F1=0.686. Rule-based ceiling reached.
 - **Graph healing (D135)**: 7 operations (correct, merge, split, silence,
   migrate, rollback, repair_cites). GraphHealingUseCase + `da heal` CLI.
   Merge with edge redirect, correct with old_value audit trail.
