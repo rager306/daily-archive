@@ -199,7 +199,7 @@ impl RuleBasedExtractor {
                             | "sum" | "abs" | "log" | "exp" | "sin" | "cos"
                             | "tan" | "div" | "mod" | "rem" | "ref" | "out"
                             | "its" | "per" | "non" | "but" | "has" | "was"
-                            | "had" | "did" | "yes" | "out" | "now" | "way"
+                            | "had" | "did" | "yes" | "now" | "way"
                         ) {
                             continue;
                         }
