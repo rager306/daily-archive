@@ -15,3 +15,5 @@ pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;
 pub use enrich::{EnrichResult, EnrichUseCase};
+pub mod scheduler;
+pub use scheduler::{FileScheduler, SchedulerRunResult, TaskResult};

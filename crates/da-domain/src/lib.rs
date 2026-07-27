@@ -14,6 +14,7 @@ pub mod evidence;
 pub mod healing;
 pub mod paper;
 pub mod relation;
+pub mod scheduler;
 pub mod schema;
 pub mod versioning;
 pub mod vid;
@@ -30,6 +31,7 @@ pub use healing::{
 };
 pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
+pub use scheduler::{PendingTask, RetryPolicy, TaskStatus, TaskType};
 pub use schema::{
     all_node_schemas, schema_for_label, Field, FieldType, NodeSchemaDef, SchemaError,
 };

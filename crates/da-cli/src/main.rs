@@ -131,6 +131,13 @@ enum Commands {
         #[arg(long)]
         ids: String,
     },
+
+    /// Run scheduler — process pending OpenAlex enrichment tasks
+    SchedulerRun {
+        /// Queue directory (default: data/scheduler)
+        #[arg(long, default_value = "data/scheduler")]
+        queue_dir: String,
+    },
 }
 
 fn main() {
@@ -229,6 +236,12 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 batch_enrich_from_openalex(&ids).await;
+            });
+        }
+        Commands::SchedulerRun { queue_dir } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                run_scheduler(&queue_dir).await;
             });
         }
     }
@@ -780,4 +793,96 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
         total_topics,
         total_authors
     );
+}
+
+async fn run_scheduler(queue_dir: &str) {
+    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_application::{EnrichUseCase, FileScheduler};
+    use std::path::Path;
+
+    let scheduler = FileScheduler::new(Path::new(queue_dir));
+
+    // Check if queue exists
+    let queue = scheduler.load_queue();
+    if queue.is_empty() {
+        println!("Scheduler: no pending tasks in {queue_dir}");
+        return;
+    }
+
+    let pending: Vec<_> = queue
+        .iter()
+        .filter(|t| t.status == da_domain::scheduler::TaskStatus::Pending)
+        .collect();
+    println!(
+        "Scheduler: {} total tasks, {} pending",
+        queue.len(),
+        pending.len()
+    );
+
+    let openalex = Box::new(OpenAlexHttpAdapter::new());
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = EnrichUseCase::new(openalex, graph_store);
+
+    let now = chrono::Utc::now().timestamp();
+    let policy = da_domain::scheduler::RetryPolicy::default();
+    let mut tasks = scheduler.load_queue();
+    let mut completed = 0;
+    let mut still_pending = 0;
+    let mut failed = 0;
+    let mut details = Vec::new();
+
+    let due: Vec<usize> = tasks
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| {
+            t.status == da_domain::scheduler::TaskStatus::Pending && t.next_retry <= now
+        })
+        .map(|(i, _)| i)
+        .collect();
+
+    println!("Scheduler: {} tasks due now", due.len());
+
+    for idx in due {
+        let arxiv_id = tasks[idx].arxiv_id.clone();
+        match use_case.enrich_by_arxiv_id(&arxiv_id).await {
+            Ok(r) => {
+                if r.openalex_pending {
+                    tasks[idx].record_retry(&policy, now);
+                    if tasks[idx].status == da_domain::scheduler::TaskStatus::Failed {
+                        failed += 1;
+                    } else {
+                        still_pending += 1;
+                    }
+                    details.push((
+                        arxiv_id,
+                        "pending".to_string(),
+                        "not in OpenAlex".to_string(),
+                    ));
+                } else {
+                    tasks[idx].complete(now);
+                    completed += 1;
+                    details.push((
+                        arxiv_id,
+                        "completed".to_string(),
+                        format!("{} topics, {} authors", r.topics_written, r.authors_written),
+                    ));
+                }
+            }
+            Err(e) => {
+                tasks[idx].record_retry(&policy, now);
+                still_pending += 1;
+                details.push((arxiv_id.clone(), "error".to_string(), format!("{e:#}")));
+            }
+        }
+    }
+
+    scheduler.save_queue(&tasks).ok();
+
+    println!("\nScheduler run complete:");
+    println!("  Completed: {completed}");
+    println!("  Still pending: {still_pending}");
+    println!("  Failed (max retries): {failed}");
+    for (id, status, msg) in &details {
+        println!("    {id} [{status}]: {msg}");
+    }
 }
