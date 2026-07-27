@@ -72,6 +72,25 @@
   Motivation/Gap/Contribution/Hypothesis/Finding/Mechanism/Limitation/FutureWork).
   New da-domain/article.rs: Section, Keyword, Topic, Category + schemas.
   SchemaInitializer: 15 indexes (was 7). `da schema init` creates all.
+- **Graph healing scenarios (D135)**: 7 operations (correct, merge, split,
+  silence, migrate, rollback, repair_cites). GraphHealingUseCase implements
+  silence, unsilence, correct, merge with ProvenanceEvent audit trail.
+  da-domain/healing.rs: HealingOperation, HealingActor, ProvenanceEvent,
+  MergeResult/SilenceResult/CorrectResult. `da heal` CLI wired. SUPERSEDES/
+  SPLITS bibliographic constants.
+- **Merge edge redirect**: incoming edges now redirected to kept node via
+  get_incoming_edges on DirectGraphStore. edges_redirected in MergeResult
+  reflects actual count (was always 0).
+- **Correct operation audit trail**: get_node_property_string on
+  DirectGraphStore reads old value before overwriting. ProvenanceEvent
+  captures actual old→new change (was hardcoded "unknown").
+- **ADHD ontology research (D134)**: 5 parallel cognitive frames via ADHD skill
+  + jina/exa/gitnexus MCP. 30 ideas, 3 deepened. 4 patterns adopted:
+  retrieval_eligible, assignment_method, provenance ring, agent quarantine.
+  CRITICAL: OpenAlex Concepts DEPRECATED → Topics.
+- **Ontology-aligned schema (D133)**: FaBiO + CiTO + OpenAlex three-layer
+  architecture. doc/ONTOLOGY-ALIGNMENT.md maps daily-archive to established
+  ontologies. doc/ADHD-ONTOLOGY-RESEARCH.md documents divergent ideation.
 
 ### Hygiene (earlier)
 
