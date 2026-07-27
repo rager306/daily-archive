@@ -9,6 +9,7 @@
 
 pub mod article;
 pub mod entity;
+pub mod eval;
 pub mod evidence;
 pub mod healing;
 pub mod paper;
@@ -22,6 +23,7 @@ pub use article::{
     InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
 };
 pub use entity::{Entity, EntitySchema, EntityType};
+pub use eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
