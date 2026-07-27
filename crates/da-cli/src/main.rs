@@ -796,14 +796,67 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
 }
 
 async fn run_scheduler(_queue_dir: &str) {
+    // D135: scheduler state must survive restart.
+    // Load snapshot → process due tasks → save snapshot.
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
     use da_application::{EnrichUseCase, GraphScheduler};
+    use da_ports::graph_store::GraphStore;
+    use std::path::PathBuf;
 
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let scheduler = GraphScheduler::new(graph_store);
+    let snapshot_path = PathBuf::from("data/samyama/scheduler-state.sgsnap");
 
-    // Load due tasks from graph
-    let due_tasks = scheduler.load_due_tasks().await;
+    // Single shared store for both scheduler and enrich
+    let shared_store = SamyamaGraphStore::from_env();
+
+    // Restore state from snapshot
+    if snapshot_path.exists() {
+        match std::fs::read(&snapshot_path) {
+            Ok(data) => {
+                if let Err(e) = GraphStore::import_snapshot(&shared_store, &data).await {
+                    eprintln!("Warning: snapshot restore failed: {e} — starting fresh");
+                } else {
+                    println!("Scheduler: restored state from {}", snapshot_path.display());
+                }
+            }
+            Err(e) => eprintln!("Warning: cannot read snapshot: {e}"),
+        }
+    }
+
+    // Load due tasks from the restored graph
+    let due_tasks = {
+        let scheduler = GraphScheduler::new(Box::new(SamyamaGraphStore::from_env()));
+        // Problem: new store instance is empty. Need to use shared_store.
+        // But GraphScheduler takes Box<dyn DirectGraphStore> (owned).
+        // Solution: query shared_store directly.
+        drop(scheduler);
+        // Query SchedulerTask nodes directly
+        use da_ports::graph_store::DirectGraphStore;
+        let now = chrono::Utc::now().timestamp();
+        let nodes = DirectGraphStore::get_nodes_by_label(&shared_store, "SchedulerTask").await;
+        let mut due = Vec::new();
+        for node_id in nodes {
+            let status =
+                DirectGraphStore::get_node_property_string(&shared_store, node_id, "status")
+                    .await
+                    .unwrap_or_default();
+            if status != "pending" {
+                continue;
+            }
+            let next_retry =
+                DirectGraphStore::get_node_property_int(&shared_store, node_id, "next_retry")
+                    .await
+                    .unwrap_or(0);
+            if next_retry <= now {
+                if let Some(arxiv_id) =
+                    DirectGraphStore::get_node_property_string(&shared_store, node_id, "arxiv_id")
+                        .await
+                {
+                    due.push((node_id, arxiv_id));
+                }
+            }
+        }
+        due
+    };
 
     if due_tasks.is_empty() {
         println!("Scheduler: no due tasks in graph");
@@ -812,30 +865,101 @@ async fn run_scheduler(_queue_dir: &str) {
 
     println!("Scheduler: {} tasks due now", due_tasks.len());
 
-    // Create separate enrich use case for processing
-    let openalex = Box::new(OpenAlexHttpAdapter::new());
-    let enrich_store = Box::new(SamyamaGraphStore::from_env());
-    let use_case = EnrichUseCase::new(openalex, enrich_store);
+    if due_tasks.is_empty() {
+        println!("Scheduler: no due tasks");
+    } else {
+        println!("Scheduler: {} tasks due now", due_tasks.len());
+    }
 
+    // Process due tasks using shared_store for both enrich and scheduler updates
+    use da_ports::graph_store::DirectGraphStore;
     let now = chrono::Utc::now().timestamp();
+    let policy = da_domain::scheduler::RetryPolicy::default();
     let mut completed = 0;
     let mut still_pending = 0;
     let mut failed = 0;
     let mut details = Vec::new();
 
     for (node_id, arxiv_id) in &due_tasks {
+        // Enrich using shared store
+        let openalex = Box::new(OpenAlexHttpAdapter::new());
+        // Clone shared_store for enrich (Samyama in-memory is per-instance)
+        // In Phase 3+ (server mode), both will share the same persistent store
+        let enrich_store = Box::new(SamyamaGraphStore::from_env());
+        let use_case = EnrichUseCase::new(openalex, enrich_store);
+
         match use_case.enrich_by_arxiv_id(arxiv_id).await {
             Ok(r) => {
                 if r.openalex_pending {
-                    scheduler.record_retry(*node_id, now).await.ok();
-                    failed += 1;
+                    // Record retry on shared_store
+                    let retry_count = DirectGraphStore::get_node_property_int(
+                        &shared_store,
+                        *node_id,
+                        "retry_count",
+                    )
+                    .await
+                    .unwrap_or(0);
+                    let new_count = retry_count + 1;
+                    DirectGraphStore::set_node_property_int(
+                        &shared_store,
+                        *node_id,
+                        "retry_count",
+                        new_count,
+                    )
+                    .await
+                    .ok();
+                    DirectGraphStore::set_node_property_int(
+                        &shared_store,
+                        *node_id,
+                        "last_retry",
+                        now,
+                    )
+                    .await
+                    .ok();
+                    if policy.should_give_up(new_count as u32) {
+                        DirectGraphStore::set_node_property_string(
+                            &shared_store,
+                            *node_id,
+                            "status",
+                            "failed".to_string(),
+                        )
+                        .await
+                        .ok();
+                        failed += 1;
+                    } else {
+                        let next = policy.next_retry_ts(new_count as u32, now);
+                        DirectGraphStore::set_node_property_int(
+                            &shared_store,
+                            *node_id,
+                            "next_retry",
+                            next,
+                        )
+                        .await
+                        .ok();
+                        still_pending += 1;
+                    }
                     details.push((
                         arxiv_id.clone(),
                         "pending".to_string(),
                         "not in OpenAlex".to_string(),
                     ));
                 } else {
-                    scheduler.complete_task(*node_id, now).await.ok();
+                    DirectGraphStore::set_node_property_string(
+                        &shared_store,
+                        *node_id,
+                        "status",
+                        "completed".to_string(),
+                    )
+                    .await
+                    .ok();
+                    DirectGraphStore::set_node_property_int(
+                        &shared_store,
+                        *node_id,
+                        "last_retry",
+                        now,
+                    )
+                    .await
+                    .ok();
                     completed += 1;
                     details.push((
                         arxiv_id.clone(),
@@ -845,11 +969,22 @@ async fn run_scheduler(_queue_dir: &str) {
                 }
             }
             Err(e) => {
-                scheduler.record_retry(*node_id, now).await.ok();
                 still_pending += 1;
                 details.push((arxiv_id.clone(), "error".to_string(), format!("{e:#}")));
             }
         }
+    }
+
+    // Save state to snapshot for restart recovery
+    if let Some(parent) = snapshot_path.parent() {
+        std::fs::create_dir_all(parent).ok();
+    }
+    match GraphStore::export_snapshot(&shared_store).await {
+        Ok(data) => {
+            std::fs::write(&snapshot_path, &data).ok();
+            println!("Scheduler: state saved to {}", snapshot_path.display());
+        }
+        Err(e) => eprintln!("Warning: snapshot save failed: {e}"),
     }
 
     println!("\nScheduler run complete:");
