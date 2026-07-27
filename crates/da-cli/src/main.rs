@@ -124,6 +124,13 @@ enum Commands {
         #[arg(long)]
         id: String,
     },
+
+    /// Batch enrich multiple papers from OpenAlex
+    BatchEnrich {
+        /// Comma-separated arXiv IDs
+        #[arg(long)]
+        ids: String,
+    },
 }
 
 fn main() {
@@ -216,6 +223,12 @@ fn main() {
             let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 enrich_from_openalex(&id).await;
+            });
+        }
+        Commands::BatchEnrich { ids } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                batch_enrich_from_openalex(&ids).await;
             });
         }
     }
@@ -710,4 +723,48 @@ async fn enrich_from_openalex(arxiv_id: &str) {
             std::process::exit(1);
         }
     }
+}
+
+async fn batch_enrich_from_openalex(ids_str: &str) {
+    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_application::EnrichUseCase;
+
+    let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
+    println!("Batch enriching {} papers from OpenAlex...", ids.len());
+
+    let openalex = Box::new(OpenAlexHttpAdapter::new());
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = EnrichUseCase::new(openalex, graph_store);
+
+    let mut ok = 0;
+    let mut fail = 0;
+    let mut total_topics = 0;
+    let mut total_authors = 0;
+
+    for arxiv_id in &ids {
+        match use_case.enrich_by_arxiv_id(arxiv_id).await {
+            Ok(result) => {
+                println!(
+                    "  ✅ {}: {} topics, {} authors",
+                    arxiv_id, result.topics_written, result.authors_written
+                );
+                total_topics += result.topics_written;
+                total_authors += result.authors_written;
+                ok += 1;
+            }
+            Err(e) => {
+                println!("  ❌ {}: {e}", arxiv_id);
+                fail += 1;
+            }
+        }
+    }
+
+    println!(
+        "\nBatch enrich complete: {}/{} ok, {} fail, {} topics, {} authors",
+        ok,
+        ids.len(),
+        fail,
+        total_topics,
+        total_authors
+    );
 }
