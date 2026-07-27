@@ -24,6 +24,7 @@ Graph import is **fail-closed** (`import_eligible=false`) until explicit human g
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Phase 3 extraction (GLiNER) | Not started |
 | Phase 3 rule-based extraction | **Started** — Extractor port + RuleBasedExtractor + ExtractionUseCase |
+| OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors, concepts from OpenAlex API |
 | Graph schema design | **Done** — doc/GRAPH-SCHEMA.md, schema-as-code, `da schema init` |
 | Agent layer (RuVector/SONA) | Vendored, not wired |
 
@@ -126,6 +127,7 @@ pre-commit run --all-files
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |
 | `da heal --op merge` | Merge duplicates (D135) |
+| `da enrich --id <arxiv_id>` | Fetch metadata from OpenAlex (topics, authors) |
 | `da query --kind count` | Count Paper nodes (Cypher via da-graph) |
 | `da query --kind by-arxiv --id ID` | Find paper by arxiv_id |
 | `da query --kind citation-hops --id VID --hops 2` | K-hop citation neighborhood |

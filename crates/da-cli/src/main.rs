@@ -117,6 +117,13 @@ enum Commands {
         #[arg(long, default_value = "manual")]
         reason: String,
     },
+
+    /// Enrich paper metadata from OpenAlex (topics, authors, concepts)
+    Enrich {
+        /// arXiv ID to enrich
+        #[arg(long)]
+        id: String,
+    },
 }
 
 fn main() {
@@ -140,7 +147,7 @@ fn main() {
         Commands::Version => {
             println!("daily-archive v2.0.0 (Rust)");
             println!("ADR-037/038/039/040/041 — Samyama Graph + RuVector + RVF");
-            println!("Phase: scaffolding + ingest pipeline + snapshot durability");
+            println!("Phase: ingest + extraction + healing + schema + enrich");
         }
         Commands::Ingest { pdf, id } => {
             println!("Ingesting: {} → {}", pdf, id);
@@ -203,6 +210,12 @@ fn main() {
                     &reason,
                 )
                 .await;
+            });
+        }
+        Commands::Enrich { id } => {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                enrich_from_openalex(&id).await;
             });
         }
     }
@@ -667,5 +680,34 @@ async fn heal_graph(
     if let Err(e) = result {
         eprintln!("❌ Heal failed: {e:#}");
         std::process::exit(1);
+    }
+}
+
+async fn enrich_from_openalex(arxiv_id: &str) {
+    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_application::EnrichUseCase;
+
+    println!("Enriching {arxiv_id} from OpenAlex...");
+
+    let openalex = Box::new(OpenAlexHttpAdapter::new());
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = EnrichUseCase::new(openalex, graph_store);
+
+    match use_case.enrich_by_arxiv_id(arxiv_id).await {
+        Ok(result) => {
+            println!("✅ Enriched: {}", result.title);
+            println!("   OpenAlex ID: {}", result.openalex_id);
+            if let Some(ref doi) = result.doi {
+                println!("   DOI: {doi}");
+            }
+            println!("   Topics: {}", result.topics_written);
+            println!("   Authors: {}", result.authors_written);
+            println!("   Concepts: {} (deprecated)", result.concepts_written);
+            println!("   Cited by: {}", result.cited_by_count);
+        }
+        Err(e) => {
+            eprintln!("❌ Enrich failed: {e:#}");
+            std::process::exit(1);
+        }
     }
 }

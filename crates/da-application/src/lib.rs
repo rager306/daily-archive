@@ -13,3 +13,5 @@ pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub mod healing;
 pub use healing::GraphHealingUseCase;
+pub mod enrich;
+pub use enrich::{EnrichResult, EnrichUseCase};
