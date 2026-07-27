@@ -128,6 +128,8 @@ pre-commit run --all-files
 | `da heal --op correct` | Correct a property (D135) |
 | `da heal --op merge` | Merge duplicates (D135) |
 | `da enrich --id <arxiv_id>` | Fetch metadata from OpenAlex (topics, authors) |
+| `da batch-enrich --ids a,b,c` | Batch OpenAlex enrichment |
+| `da scheduler run` | Process pending OpenAlex retry tasks (graph-persisted) |
 | `da query --kind count` | Count Paper nodes (Cypher via da-graph) |
 | `da query --kind by-arxiv --id ID` | Find paper by arxiv_id |
 | `da query --kind citation-hops --id VID --hops 2` | K-hop citation neighborhood |

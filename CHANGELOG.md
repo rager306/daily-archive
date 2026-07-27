@@ -4,6 +4,20 @@
 
 ### Rust v2 (2026-07-26)
 
+- **Scheduler (D135, ADR-037 §4.3)**: Graph-based lazy-load scheduler for
+  OpenAlex enrichment. Pending tasks stored as SchedulerTask nodes in Samyama
+  Graph (not JSONL — ADR-040 compliance). Exponential backoff (1d→3d→9d→27d).
+  State restores from snapshot on process restart. 6 TaskType variants aligned
+  with ADR-037 priority queue design. CLI: `da scheduler run`.
+- **OpenAlex adapter (D133)**: `da enrich --id` and `da batch-enrich --ids`
+  fetch curated metadata (topics, authors, concepts) from OpenAlex API.
+  Lazy load: new papers get pending stub with `openalex_pending=true`.
+- **Extraction evaluation (D136)**: P/R/F1 framework + gold-standard fixture
+  for 2507.19457. Baseline: P=0.778 R=0.438 F1=0.560 (rule-based).
+- **Graph healing (D135)**: 7 operations (correct, merge, split, silence,
+  migrate, rollback, repair_cites). GraphHealingUseCase + `da heal` CLI.
+  Merge with edge redirect, correct with old_value audit trail.
+
 - **Architecture guardrail CI rewritten** for Rust hexagonal layout (D131).
   Old Python M044/M045 workflow was broken after Python→legacy move
   (`scripts/` and root `pyproject.toml` gone). New workflow: cargo fmt/check/clippy
