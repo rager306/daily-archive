@@ -473,6 +473,23 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
             .and_then(|node| node.properties.get(key))
             .and_then(|prop| prop.as_string().map(|s| s.to_string()))
     }
+
+    async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64> {
+        let store = self.store_read().await;
+        store
+            .get_node(NodeId(node_id))
+            .and_then(|node| node.properties.get(key))
+            .and_then(|prop| prop.as_integer())
+    }
+
+    async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
+        let store = self.store_read().await;
+        store
+            .get_nodes_by_label(&Label::new(label))
+            .iter()
+            .map(|n| n.id.0)
+            .collect()
+    }
 }
 
 #[cfg(test)]

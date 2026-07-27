@@ -174,6 +174,12 @@ impl DirectGraphStore for MockGraphStore {
     async fn get_node_property_string(&self, _node_id: u64, _key: &str) -> Option<String> {
         None
     }
+    async fn get_node_property_int(&self, _node_id: u64, _key: &str) -> Option<i64> {
+        None
+    }
+    async fn get_nodes_by_label(&self, _label: &str) -> Vec<u64> {
+        Vec::new()
+    }
 }
 
 fn make_parsed() -> ParsedArticle {

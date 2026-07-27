@@ -11,8 +11,6 @@ use da_ports::openalex::OpenAlexClient;
 pub struct EnrichUseCase {
     pub openalex: Box<dyn OpenAlexClient>,
     pub graph_store: Box<dyn DirectGraphStore>,
-    /// Optional scheduler for auto-registering pending tasks.
-    pub scheduler: Option<crate::scheduler::FileScheduler>,
 }
 
 /// Result of enriching one work.
@@ -35,14 +33,7 @@ impl EnrichUseCase {
         Self {
             openalex,
             graph_store,
-            scheduler: None,
         }
-    }
-
-    /// Attach a scheduler for auto-registering pending tasks on NotFound.
-    pub fn with_scheduler(mut self, scheduler: crate::scheduler::FileScheduler) -> Self {
-        self.scheduler = Some(scheduler);
-        self
     }
 
     /// Fetch metadata from OpenAlex and write Topic/Author nodes to graph.
@@ -216,6 +207,7 @@ impl EnrichUseCase {
     /// Create a stub Work node when OpenAlex has no data.
     /// Marks the Paper node with openalex_pending=true for later enrichment.
     async fn create_pending_stub(&self, arxiv_id: &str) -> anyhow::Result<EnrichResult> {
+        let now = chrono::Utc::now().timestamp();
         // Find the Paper node (created by ingest) and mark it pending
         if let Some(paper_id) = self
             .graph_store
@@ -228,14 +220,26 @@ impl EnrichUseCase {
             tracing::info!(arxiv_id, paper_id, "Paper marked openalex_pending=true");
         }
 
-        // Auto-register in scheduler queue for retry (if scheduler attached)
-        if let Some(ref scheduler) = self.scheduler {
-            if let Err(e) = scheduler.add_pending(arxiv_id) {
-                tracing::warn!(arxiv_id, error = %e, "Failed to add to scheduler queue (non-fatal)");
-            } else {
-                tracing::info!(arxiv_id, "Auto-registered in scheduler queue for retry");
-            }
-        }
+        // Auto-register SchedulerTask node in graph (ADR-040: Samyama sole store)
+        let policy = da_domain::scheduler::RetryPolicy::default();
+        let task = da_domain::scheduler::PendingTask::new_openalex_enrich(arxiv_id, &policy, now);
+        let task_node = self.graph_store.create_node("SchedulerTask").await?;
+        self.graph_store
+            .set_node_property_string(task_node, "arxiv_id", arxiv_id.to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(task_node, "task_type", "openalex_enrich".to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(task_node, "status", "pending".to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_int(task_node, "retry_count", task.retry_count as i64)
+            .await?;
+        self.graph_store
+            .set_node_property_int(task_node, "next_retry", task.next_retry)
+            .await?;
+        tracing::info!(arxiv_id, task_node, "SchedulerTask created in graph");
 
         Ok(EnrichResult {
             arxiv_id: arxiv_id.to_string(),

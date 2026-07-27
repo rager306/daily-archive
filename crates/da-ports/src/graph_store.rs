@@ -170,4 +170,11 @@ pub trait DirectGraphStore: GraphStore {
     /// Read a string property from a node (for healing audit trail, D135).
     /// Returns None if the node or property doesn't exist.
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String>;
+
+    /// Read an integer property from a node (for scheduler queue).
+    async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64>;
+
+    /// Get all node IDs with a given label (for scheduler queue scan).
+    /// O(n) scan — suitable for Phase 2 scale.
+    async fn get_nodes_by_label(&self, label: &str) -> Vec<u64>;
 }

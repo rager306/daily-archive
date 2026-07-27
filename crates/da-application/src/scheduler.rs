@@ -1,41 +1,21 @@
-//! Scheduler use case — processes pending lazy-load tasks with retry.
+//! Graph-based scheduler for lazy-loaded metadata (D135 + ADR-040).
 //!
-//! File-based pending queue (survives process restarts).
-//! Integrates with EnrichUseCase for OpenAlex retries.
+//! Pending tasks stored as SchedulerTask nodes in Samyama Graph (not JSONL).
+//! Aligns with ADR-040 §1: "Samyama Graph sole KG+vector+persist".
 
-use da_domain::scheduler::{PendingTask, RetryPolicy, TaskStatus};
-use std::path::{Path, PathBuf};
+use da_domain::scheduler::{PendingTask, RetryPolicy};
+use da_ports::graph_store::DirectGraphStore;
 
-/// Result of a scheduler run.
-#[derive(Debug, Clone)]
-pub struct SchedulerRunResult {
-    pub total_pending: usize,
-    pub due_now: usize,
-    pub completed: usize,
-    pub still_pending: usize,
-    pub failed: usize,
-    pub details: Vec<TaskResult>,
+/// Scheduler that persists pending tasks in the graph (SchedulerTask nodes).
+pub struct GraphScheduler {
+    pub graph_store: Box<dyn DirectGraphStore>,
+    pub policy: RetryPolicy,
 }
 
-/// Result of processing one task.
-#[derive(Debug, Clone)]
-pub struct TaskResult {
-    pub arxiv_id: String,
-    pub status: String,
-    pub message: String,
-}
-
-/// File-based scheduler that manages pending OpenAlex enrichment tasks.
-pub struct FileScheduler {
-    queue_path: PathBuf,
-    policy: RetryPolicy,
-}
-
-impl FileScheduler {
-    pub fn new(queue_dir: &Path) -> Self {
-        std::fs::create_dir_all(queue_dir).ok();
+impl GraphScheduler {
+    pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
         Self {
-            queue_path: queue_dir.join("openalex_pending.jsonl"),
+            graph_store,
             policy: RetryPolicy::default(),
         }
     }
@@ -45,219 +25,138 @@ impl FileScheduler {
         self
     }
 
-    /// Add a paper to the pending queue (lazy load registration).
-    pub fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
+    /// Add a paper to the pending queue (creates SchedulerTask node).
+    pub async fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
         let now = chrono::Utc::now().timestamp();
-        let task = PendingTask::new_openalex_enrich(arxiv_id, &self.policy, now);
 
-        let line = serde_json::to_string(&task)?;
-        std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&self.queue_path)?
-            .write_all(line.as_bytes())?;
-        std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&self.queue_path)?
-            .write_all(b"\n")?;
-
-        tracing::info!(
-            arxiv_id,
-            next_retry = task.next_retry,
-            "Task added to pending queue"
-        );
-        Ok(())
-    }
-
-    /// Load all tasks from the queue file.
-    pub fn load_queue(&self) -> Vec<PendingTask> {
-        if !self.queue_path.exists() {
-            return Vec::new();
-        }
-        let content = std::fs::read_to_string(&self.queue_path).unwrap_or_default();
-        content
-            .lines()
-            .filter(|l| !l.is_empty())
-            .filter_map(|l| serde_json::from_str::<PendingTask>(l).ok())
-            .collect()
-    }
-
-    /// Save the full queue back to file.
-    pub fn save_queue(&self, tasks: &[PendingTask]) -> anyhow::Result<()> {
-        let content: String = tasks
-            .iter()
-            .map(|t| serde_json::to_string(t).unwrap_or_default())
-            .collect::<Vec<_>>()
-            .join("\n");
-        std::fs::write(&self.queue_path, content + "\n")?;
-        Ok(())
-    }
-
-    /// Process all due tasks. Returns summary of what happened.
-    pub async fn run<F, Fut>(&self, process_fn: F) -> anyhow::Result<SchedulerRunResult>
-    where
-        F: Fn(String) -> Fut,
-        Fut: std::future::Future<Output = Result<String, String>>,
-    {
-        let now = chrono::Utc::now().timestamp();
-        let mut tasks = self.load_queue();
-        let total_pending = tasks
-            .iter()
-            .filter(|t| t.status == TaskStatus::Pending)
-            .count();
-
-        let due: Vec<usize> = tasks
-            .iter()
-            .enumerate()
-            .filter(|(_, t)| self.policy.is_due(t, now))
-            .map(|(i, _)| i)
-            .collect();
-
-        let due_count = due.len();
-        let mut completed = 0;
-        let mut failed = 0;
-        let mut details = Vec::new();
-
-        for idx in due {
-            let task = &mut tasks[idx];
-            match process_fn(task.arxiv_id.clone()).await {
-                Ok(msg) => {
-                    task.complete(now);
-                    completed += 1;
-                    details.push(TaskResult {
-                        arxiv_id: task.arxiv_id.clone(),
-                        status: "completed".to_string(),
-                        message: msg,
-                    });
-                }
-                Err(msg) => {
-                    task.record_retry(&self.policy, now);
-                    if task.status == TaskStatus::Failed {
-                        failed += 1;
-                    }
-                    details.push(TaskResult {
-                        arxiv_id: task.arxiv_id.clone(),
-                        status: if task.status == TaskStatus::Failed {
-                            "failed".to_string()
-                        } else {
-                            "still_pending".to_string()
-                        },
-                        message: msg,
-                    });
-                }
+        // Skip if already pending
+        if let Some(existing) = self
+            .graph_store
+            .find_node_by_string_property("SchedulerTask", "arxiv_id", arxiv_id)
+            .await
+        {
+            let status = self
+                .graph_store
+                .get_node_property_string(existing, "status")
+                .await
+                .unwrap_or_default();
+            if status == "pending" {
+                tracing::info!(arxiv_id, "Task already pending — skipping");
+                return Ok(());
             }
         }
 
-        self.save_queue(&tasks)?;
+        let task = PendingTask::new_openalex_enrich(arxiv_id, &self.policy, now);
+        let node = self.graph_store.create_node("SchedulerTask").await?;
 
-        let still_pending = total_pending
-            .saturating_sub(completed)
-            .saturating_sub(failed);
+        self.graph_store
+            .set_node_property_string(node, "arxiv_id", arxiv_id.to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "task_type", "openalex_enrich".to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "status", "pending".to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "retry_count", task.retry_count as i64)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "next_retry", task.next_retry)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "added_at", task.added_at)
+            .await?;
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", false)
+            .await?;
 
-        Ok(SchedulerRunResult {
-            total_pending,
-            due_now: due_count,
-            completed,
-            still_pending,
-            failed,
-            details,
-        })
-    }
-}
-
-use std::io::Write;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::tempdir;
-
-    #[tokio::test]
-    async fn test_add_and_load() {
-        let dir = tempdir().unwrap();
-        let sched = FileScheduler::new(dir.path());
-        sched.add_pending("2401.00001").unwrap();
-
-        let queue = sched.load_queue();
-        assert_eq!(queue.len(), 1);
-        assert_eq!(queue[0].arxiv_id, "2401.00001");
-        assert_eq!(queue[0].status, TaskStatus::Pending);
+        tracing::info!(arxiv_id, node_id = node, "SchedulerTask created in graph");
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn test_run_completes_successful_task() {
-        let dir = tempdir().unwrap();
-        let sched = FileScheduler::new(dir.path());
-        sched.add_pending("2401.00001").unwrap();
+    /// Load all due pending tasks (next_retry <= now, status=pending).
+    pub async fn load_due_tasks(&self) -> Vec<(u64, String)> {
+        let now = chrono::Utc::now().timestamp();
+        let nodes = self.graph_store.get_nodes_by_label("SchedulerTask").await;
 
-        // Make task immediately due by manipulating next_retry
-        let mut tasks = sched.load_queue();
-        tasks[0].next_retry = 0; // due immediately
-        sched.save_queue(&tasks).unwrap();
+        let mut due = Vec::new();
+        for node_id in nodes {
+            let status = self
+                .graph_store
+                .get_node_property_string(node_id, "status")
+                .await
+                .unwrap_or_default();
+            if status != "pending" {
+                continue;
+            }
+            let next_retry = self
+                .graph_store
+                .get_node_property_int(node_id, "next_retry")
+                .await
+                .unwrap_or(0);
+            if next_retry <= now {
+                if let Some(arxiv_id) = self
+                    .graph_store
+                    .get_node_property_string(node_id, "arxiv_id")
+                    .await
+                {
+                    due.push((node_id, arxiv_id));
+                }
+            }
+        }
+        due
+    }
 
-        let result = sched
-            .run(|arxiv_id: String| async move {
-                let id = arxiv_id.to_string();
-                Ok(format!("enriched {id}"))
-            })
+    /// Record a retry attempt for a task.
+    pub async fn record_retry(&self, node_id: u64, now: i64) -> anyhow::Result<()> {
+        let retry_count: i64 = self
+            .graph_store
+            .get_node_property_int(node_id, "retry_count")
             .await
-            .unwrap();
+            .unwrap_or(0);
+        let new_count = retry_count + 1;
 
-        assert_eq!(result.completed, 1);
-        assert_eq!(result.total_pending, 1);
-        assert_eq!(result.details.len(), 1);
-        assert_eq!(result.details[0].status, "completed");
+        self.graph_store
+            .set_node_property_int(node_id, "retry_count", new_count)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node_id, "last_retry", now)
+            .await?;
+
+        if self.policy.should_give_up(new_count as u32) {
+            self.graph_store
+                .set_node_property_string(node_id, "status", "failed".to_string())
+                .await?;
+            tracing::warn!(
+                node_id,
+                retry_count = new_count,
+                "SchedulerTask failed (max retries)"
+            );
+        } else {
+            let next = self.policy.next_retry_ts(new_count as u32, now);
+            self.graph_store
+                .set_node_property_int(node_id, "next_retry", next)
+                .await?;
+            tracing::info!(
+                node_id,
+                retry_count = new_count,
+                next_retry = next,
+                "SchedulerTask retry scheduled"
+            );
+        }
+        Ok(())
     }
 
-    #[tokio::test]
-    async fn test_run_records_retry_on_failure() {
-        let dir = tempdir().unwrap();
-        let sched = FileScheduler::new(dir.path());
-        sched.add_pending("2401.00001").unwrap();
-
-        let mut tasks = sched.load_queue();
-        tasks[0].next_retry = 0;
-        sched.save_queue(&tasks).unwrap();
-
-        let result = sched
-            .run(|_| async { Err("still not in OpenAlex".to_string()) })
-            .await
-            .unwrap();
-
-        assert_eq!(result.completed, 0);
-        assert_eq!(result.still_pending, 1);
-        assert_eq!(result.details[0].status, "still_pending");
-
-        // Verify retry count incremented
-        let queue = sched.load_queue();
-        assert_eq!(queue[0].retry_count, 1);
-    }
-
-    #[tokio::test]
-    async fn test_run_skips_not_due_tasks() {
-        let dir = tempdir().unwrap();
-        let sched = FileScheduler::new(dir.path());
-        sched.add_pending("2401.00001").unwrap();
-
-        // Task not due (next_retry is in the future)
-        let result = sched
-            .run(|_| async { Ok("should not reach".to_string()) })
-            .await
-            .unwrap();
-
-        assert_eq!(result.due_now, 0);
-        assert_eq!(result.completed, 0);
-    }
-
-    #[tokio::test]
-    async fn test_empty_queue() {
-        let dir = tempdir().unwrap();
-        let sched = FileScheduler::new(dir.path());
-
-        let result = sched.run(|_| async { Ok("ok".to_string()) }).await.unwrap();
-
-        assert_eq!(result.total_pending, 0);
-        assert_eq!(result.completed, 0);
+    /// Mark task as completed.
+    pub async fn complete_task(&self, node_id: u64, now: i64) -> anyhow::Result<()> {
+        self.graph_store
+            .set_node_property_string(node_id, "status", "completed".to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_int(node_id, "last_retry", now)
+            .await?;
+        tracing::info!(node_id, "SchedulerTask completed");
+        Ok(())
     }
 }

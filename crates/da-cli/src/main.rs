@@ -711,14 +711,13 @@ async fn heal_graph(
 
 async fn enrich_from_openalex(arxiv_id: &str) {
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
-    use da_application::{EnrichUseCase, FileScheduler};
+    use da_application::EnrichUseCase;
 
     println!("Enriching {arxiv_id} from OpenAlex...");
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
     let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let scheduler = FileScheduler::new(std::path::Path::new("data/scheduler"));
-    let use_case = EnrichUseCase::new(openalex, graph_store).with_scheduler(scheduler);
+    let use_case = EnrichUseCase::new(openalex, graph_store);
 
     match use_case.enrich_by_arxiv_id(arxiv_id).await {
         Ok(result) => {
@@ -747,15 +746,14 @@ async fn enrich_from_openalex(arxiv_id: &str) {
 
 async fn batch_enrich_from_openalex(ids_str: &str) {
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
-    use da_application::{EnrichUseCase, FileScheduler};
+    use da_application::EnrichUseCase;
 
     let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
     println!("Batch enriching {} papers from OpenAlex...", ids.len());
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
     let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let scheduler = FileScheduler::new(std::path::Path::new("data/scheduler"));
-    let use_case = EnrichUseCase::new(openalex, graph_store).with_scheduler(scheduler);
+    let use_case = EnrichUseCase::new(openalex, graph_store);
 
     let mut ok = 0;
     let mut pending = 0;
@@ -797,88 +795,62 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     );
 }
 
-async fn run_scheduler(queue_dir: &str) {
+async fn run_scheduler(_queue_dir: &str) {
     use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
-    use da_application::{EnrichUseCase, FileScheduler};
-    use std::path::Path;
+    use da_application::{EnrichUseCase, GraphScheduler};
 
-    let scheduler = FileScheduler::new(Path::new(queue_dir));
+    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let scheduler = GraphScheduler::new(graph_store);
 
-    // Check if queue exists
-    let queue = scheduler.load_queue();
-    if queue.is_empty() {
-        println!("Scheduler: no pending tasks in {queue_dir}");
+    // Load due tasks from graph
+    let due_tasks = scheduler.load_due_tasks().await;
+
+    if due_tasks.is_empty() {
+        println!("Scheduler: no due tasks in graph");
         return;
     }
 
-    let pending: Vec<_> = queue
-        .iter()
-        .filter(|t| t.status == da_domain::scheduler::TaskStatus::Pending)
-        .collect();
-    println!(
-        "Scheduler: {} total tasks, {} pending",
-        queue.len(),
-        pending.len()
-    );
+    println!("Scheduler: {} tasks due now", due_tasks.len());
 
+    // Create separate enrich use case for processing
     let openalex = Box::new(OpenAlexHttpAdapter::new());
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
-    let use_case = EnrichUseCase::new(openalex, graph_store);
+    let enrich_store = Box::new(SamyamaGraphStore::from_env());
+    let use_case = EnrichUseCase::new(openalex, enrich_store);
 
     let now = chrono::Utc::now().timestamp();
-    let policy = da_domain::scheduler::RetryPolicy::default();
-    let mut tasks = scheduler.load_queue();
     let mut completed = 0;
     let mut still_pending = 0;
     let mut failed = 0;
     let mut details = Vec::new();
 
-    let due: Vec<usize> = tasks
-        .iter()
-        .enumerate()
-        .filter(|(_, t)| {
-            t.status == da_domain::scheduler::TaskStatus::Pending && t.next_retry <= now
-        })
-        .map(|(i, _)| i)
-        .collect();
-
-    println!("Scheduler: {} tasks due now", due.len());
-
-    for idx in due {
-        let arxiv_id = tasks[idx].arxiv_id.clone();
-        match use_case.enrich_by_arxiv_id(&arxiv_id).await {
+    for (node_id, arxiv_id) in &due_tasks {
+        match use_case.enrich_by_arxiv_id(arxiv_id).await {
             Ok(r) => {
                 if r.openalex_pending {
-                    tasks[idx].record_retry(&policy, now);
-                    if tasks[idx].status == da_domain::scheduler::TaskStatus::Failed {
-                        failed += 1;
-                    } else {
-                        still_pending += 1;
-                    }
+                    scheduler.record_retry(*node_id, now).await.ok();
+                    failed += 1;
                     details.push((
-                        arxiv_id,
+                        arxiv_id.clone(),
                         "pending".to_string(),
                         "not in OpenAlex".to_string(),
                     ));
                 } else {
-                    tasks[idx].complete(now);
+                    scheduler.complete_task(*node_id, now).await.ok();
                     completed += 1;
                     details.push((
-                        arxiv_id,
+                        arxiv_id.clone(),
                         "completed".to_string(),
                         format!("{} topics, {} authors", r.topics_written, r.authors_written),
                     ));
                 }
             }
             Err(e) => {
-                tasks[idx].record_retry(&policy, now);
+                scheduler.record_retry(*node_id, now).await.ok();
                 still_pending += 1;
                 details.push((arxiv_id.clone(), "error".to_string(), format!("{e:#}")));
             }
         }
     }
-
-    scheduler.save_queue(&tasks).ok();
 
     println!("\nScheduler run complete:");
     println!("  Completed: {completed}");

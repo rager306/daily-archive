@@ -159,6 +159,12 @@ impl DirectGraphStore for MockGraphStore {
             .get(&(node_id, key.to_string()))
             .cloned()
     }
+    async fn get_node_property_int(&self, _node_id: u64, _key: &str) -> Option<i64> {
+        None
+    }
+    async fn get_nodes_by_label(&self, _label: &str) -> Vec<u64> {
+        Vec::new()
+    }
 }
 
 fn make_store() -> MockGraphStore {
