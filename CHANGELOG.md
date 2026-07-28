@@ -68,6 +68,10 @@
   Honest corpus (12 modern papers, 96 gold): P=0.639 R=0.979 F1=0.774
   (Micro); P=0.671 R=0.967 F1=0.782 (Macro). Only 2 FN remain
   (multi-word methods: self-evolving memory, generalization).
+- **Entity-level dedup bugfix**: section-classified extraction could add the
+  same (label, type) pair from multiple sections before global `seen` was
+  initialized. Real symptom: duplicate `[Dataset] HotpotQA` in 2507.19457.
+  Added final post-pass retain collapsing duplicates; 123 tests green.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
