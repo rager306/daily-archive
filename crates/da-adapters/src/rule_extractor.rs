@@ -97,6 +97,8 @@ impl RuleBasedExtractor {
         let mut results = Vec::new();
 
         // Pattern 1: "we propose X" / "we use X" / "we present X" (case-insensitive)
+        // Extract only the first capitalized word after the pattern — not the
+        // full sentence (which creates noisy long phrase labels).
         for pattern in &["we propose ", "we present ", "we introduce ", "we use "] {
             let lower_text = text.to_lowercase();
             let mut start = 0;
@@ -105,11 +107,21 @@ impl RuleBasedExtractor {
                 if abs >= text.len() {
                     break;
                 }
-                // Extract the next ~60 chars or until period
+                // Extract the first word (up to next space, comma, or 30 chars)
                 let remainder = &text[abs..];
-                let end = remainder.find('.').unwrap_or(remainder.len()).min(60);
+                let end = remainder
+                    .find(|c: char| c.is_whitespace() || c == ',' || c == '.')
+                    .unwrap_or(remainder.len().min(30));
                 let candidate = remainder[..end].trim();
-                if !candidate.is_empty() && candidate.len() > 2 {
+                // Only accept if it starts with uppercase (proper noun / method name)
+                if !candidate.is_empty()
+                    && candidate.len() > 2
+                    && candidate
+                        .chars()
+                        .next()
+                        .map(|c| c.is_uppercase())
+                        .unwrap_or(false)
+                {
                     let label_end = abs + end;
                     results.push((abs, label_end, candidate.to_string()));
                 }
@@ -120,7 +132,11 @@ impl RuleBasedExtractor {
         // Pattern 2: Section-type-specific keywords
         match entity_type {
             EntityType::Dataset => {
-                // Pattern: well-known dataset names (direct match)
+                // Pattern: well-known dataset names (direct match only).
+                // The previous "capitalized word before dataset/benchmark" heuristic
+                // produced high false positive rates (long phrase labels like
+                // "150 examples for training" classified as Dataset entities).
+                // Unknown dataset discovery requires GLiNER or curated lists.
                 let known_datasets = [
                     "HotpotQA",
                     "LiveBench",
@@ -158,67 +174,14 @@ impl RuleBasedExtractor {
                         start = abs + ds.len();
                     }
                 }
-                // Pattern: capitalized word before "dataset/benchmark/evaluated on"
-                for pattern in &["dataset", "corpus", "benchmark", "evaluated on"] {
-                    let lower = text.to_lowercase();
-                    let mut start = 0;
-                    while let Some(pos) = lower[start..].find(pattern) {
-                        let abs = start + pos;
-                        let before_start = abs.saturating_sub(30);
-                        let before = text.get(before_start..abs).unwrap_or("");
-                        let caps: Vec<&str> = before
-                            .split_whitespace()
-                            .filter(|w| {
-                                w.chars()
-                                    .next()
-                                    .map(|c| c.is_uppercase() && w.len() > 2)
-                                    .unwrap_or(false)
-                            })
-                            .collect();
-                        if let Some(name) = caps.last() {
-                            let name_start =
-                                before.rfind(name).map(|p| before_start + p).unwrap_or(abs);
-                            let name_end = name_start + name.len();
-                            results.push((name_start, name_end, name.to_string()));
-                        }
-                        start = abs + pattern.len();
-                    }
-                }
             }
             EntityType::Metric => {
-                for pattern in &["accuracy", "precision", "recall", "f1", "bleu", "rouge"] {
-                    let lower = text.to_lowercase();
-                    if let Some(pos) = lower.find(pattern) {
-                        let s = pos.saturating_sub(10);
-                        let e = (pos + pattern.len() + 10).min(text.len());
-                        results.push((s, e, text[s..e].trim().to_string()));
-                    }
-                }
+                // Metric extraction is handled by the global pass in extract().
+                // No section-specific extraction needed here.
             }
             EntityType::Model => {
-                // Named models: GPT-4, LLaMA, Claude, Gemini, etc.
-                let model_patterns = [
-                    "gpt-4", "gpt-3.5", "gpt-4o", "llama", "claude", "gemini", "mistral", "qwen",
-                    "deepseek", "glm", "bert", "t5", "bloom",
-                ];
-                let lower = text.to_lowercase();
-                for pattern in &model_patterns {
-                    let mut start = 0;
-                    while let Some(pos) = lower[start..].find(pattern) {
-                        let abs = start + pos;
-                        // Extract the model name (up to next space or 15 chars)
-                        let remainder = &text[abs..];
-                        let end = remainder
-                            .find(|c: char| !c.is_alphanumeric() && c != '-' && c != '.')
-                            .unwrap_or(remainder.len())
-                            .min(15);
-                        let label = &remainder[..end];
-                        if !label.is_empty() {
-                            results.push((abs, abs + end, label.to_string()));
-                        }
-                        start = abs + pattern.len();
-                    }
-                }
+                // Model extraction is handled by the global model pass in extract().
+                // No section-specific extraction needed here.
             }
             EntityType::Method => {
                 // Use the same known-methods whitelist as the global pass.
@@ -297,7 +260,7 @@ impl Extractor for RuleBasedExtractor {
             }
         }
 
-        // Global Method acronym pass: scan ALL sections for all-caps method acronyms.
+        // Global Method acronym pass: scan ALL sections for known method acronyms.
         // Methods are often introduced in Abstract/Introduction (unclassified sections)
         // but not repeated in Method sections. Without this pass, GSEM/GEPA/GRPO-like
         // names in Abstract would be missed.
@@ -318,6 +281,129 @@ impl Extractor for RuleBasedExtractor {
                         surface: text[char_start.min(text.len())..char_end.min(text.len())]
                             .to_string(),
                     });
+                }
+            }
+        }
+
+        // Global Dataset pass: scan ALL sections for known dataset names.
+        // Datasets are mentioned throughout the paper, not just in Dataset sections.
+        let known_dataset_names = [
+            "HotpotQA",
+            "LiveBench",
+            "MATH",
+            "GSM8K",
+            "MBPP",
+            "HumanEval",
+            "SQuAD",
+            "WMT",
+            "ImageNet",
+            "CIFAR",
+            "MNIST",
+            "AGNews",
+            "TriviaQA",
+            "NaturalQuestions",
+            "DROP",
+            "BoolQ",
+            "MMLU",
+            "MMLU-Pro",
+            "BBH",
+            "ARC",
+            "HellaSwag",
+            "TruthfulQA",
+            "AGIEval",
+            "WinoGrande",
+            "PIQA",
+            "OpenBookQA",
+        ];
+        for (title, text) in sections {
+            let lower = text.to_lowercase();
+            for ds in &known_dataset_names {
+                let ds_lower = ds.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower[start..].find(&ds_lower) {
+                    let abs = start + pos;
+                    let key = ds_lower.clone();
+                    if !seen_lower.contains(&key) {
+                        seen_lower.insert(key);
+                        entities.push(ExtractedEntity {
+                            label: ds.to_string(),
+                            entity_type: EntityType::Dataset,
+                            section_title: title.clone(),
+                            char_start: abs,
+                            char_end: abs + ds.len(),
+                            surface: ds.to_string(),
+                        });
+                    }
+                    start = abs + ds.len();
+                }
+            }
+        }
+
+        // Global Model pass: scan ALL sections for known model names.
+        // Models are mentioned in Related Work, Experiments, etc.
+        // Uses canonical names (not greedy extraction) to avoid duplicate
+        // variants like GPT-4.1, GPT-4.1-Mini, GPT-4.1-Mini.
+        let known_models = [
+            "GPT-4", "GPT-3.5", "GPT-4o", "LLaMA", "Claude", "Gemini", "Mistral", "Qwen",
+            "DeepSeek", "GLM", "BERT", "T5", "BLOOM",
+        ];
+        for (title, text) in sections {
+            let lower = text.to_lowercase();
+            for canonical in &known_models {
+                let pattern = canonical.to_lowercase();
+                if lower.contains(&pattern) {
+                    let key = pattern.clone();
+                    if !seen_lower.contains(&key) {
+                        let pos = lower.find(&pattern).unwrap_or(0);
+                        seen_lower.insert(key);
+                        entities.push(ExtractedEntity {
+                            label: canonical.to_string(),
+                            entity_type: EntityType::Model,
+                            section_title: title.clone(),
+                            char_start: pos,
+                            char_end: pos + canonical.len(),
+                            surface: canonical.to_string(),
+                        });
+                    }
+                }
+            }
+        }
+
+        // Global Metric pass: scan ALL sections for known metric names.
+        // Metrics (accuracy, F1, etc.) appear in various sections, not just
+        // Evaluation/Results.
+        let known_metrics = [
+            "accuracy",
+            "precision",
+            "recall",
+            "F1",
+            "BLEU",
+            "ROUGE",
+            "AUC",
+            "MSE",
+            "RMSE",
+            "MAE",
+        ];
+        for (title, text) in sections {
+            let lower = text.to_lowercase();
+            for metric in &known_metrics {
+                let metric_lower = metric.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower[start..].find(&metric_lower) {
+                    let abs = start + pos;
+                    let key = metric_lower.clone();
+                    if !seen_lower.contains(&key) {
+                        seen_lower.insert(key);
+                        entities.push(ExtractedEntity {
+                            label: metric.to_string(),
+                            entity_type: EntityType::Metric,
+                            section_title: title.clone(),
+                            char_start: abs,
+                            char_end: abs + metric.len(),
+                            surface: metric.to_string(),
+                        });
+                    }
+                    start = abs + metric.len();
                 }
             }
         }
@@ -390,11 +476,14 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_dataset() {
-        let text = "We evaluate on the PubMed dataset and the arXiv corpus.";
+        // Direct match of known datasets is the primary pattern.
+        // The heuristic "capitalized word before dataset keyword" was removed
+        // (too many false positives — long phrase labels).
+        let text = "We evaluate on the PubMed dataset and the HotpotQA benchmark.";
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
         assert!(!candidates.is_empty());
-        // Should find "PubMed" from capitalized word before "dataset"
-        assert!(candidates.iter().any(|(_, _, l)| l.contains("PubMed")));
+        // HotpotQA is in known_datasets
+        assert!(candidates.iter().any(|(_, _, l)| l == "HotpotQA"));
     }
 
     #[test]
@@ -411,25 +500,42 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_models() {
+        // Model extraction is now handled by the global pass in extract(),
+        // not by section-classified extract_candidates. This test verifies
+        // that extract_candidates for Model returns empty (no false positives).
         let text = "We compare GPT-4, Llama-3, Claude-3, and Gemini across tasks.";
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Model);
-        assert!(!candidates.is_empty());
-        let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
         assert!(
-            labels.iter().any(|l| l.to_lowercase().contains("gpt-4")),
-            "got: {labels:?}"
+            candidates.is_empty(),
+            "Model extraction should be global, not section-classified"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_extract_models_global() {
+        // Models should be extracted via global pass regardless of section type.
+        let extractor = RuleBasedExtractor::new();
+        let sections = vec![(
+            "Related Work".to_string(),
+            "We compare GPT-4, LLaMA-3, Claude-3, and Gemini across tasks.".to_string(),
+        )];
+        let entities = extractor.extract(&sections).await.unwrap();
+        let labels: Vec<&str> = entities.iter().map(|e| e.label.as_str()).collect();
+        assert!(
+            labels.contains(&"GPT-4"),
+            "GPT-4 should be found, got: {labels:?}"
         );
         assert!(
-            labels.iter().any(|l| l.to_lowercase().contains("llama")),
-            "got: {labels:?}"
+            labels.contains(&"LLaMA"),
+            "LLaMA should be found, got: {labels:?}"
         );
         assert!(
-            labels.iter().any(|l| l.to_lowercase().contains("claude")),
-            "got: {labels:?}"
+            labels.contains(&"Claude"),
+            "Claude should be found, got: {labels:?}"
         );
         assert!(
-            labels.iter().any(|l| l.to_lowercase().contains("gemini")),
-            "got: {labels:?}"
+            labels.contains(&"Gemini"),
+            "Gemini should be found, got: {labels:?}"
         );
     }
 

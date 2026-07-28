@@ -18,6 +18,12 @@
   + capitalized-before-keyword pattern), method acronym extraction (GEPA/GRPO/
   RLVR), stopword filter for common tech acronyms (LLM/AI/NPU/etc.).
   Final: P=0.632 R=0.750 F1=0.686. Rule-based ceiling reached.
+- **Extraction refactored to global passes**: section-classified extraction
+  replaced with global passes for Method/Dataset/Model/Metric. Known-name
+  whitelists with case-insensitive search. Canonical model names prevent
+  duplicate variants (GPT-4.1, GPT-4.1-Mini, etc.). Real eval script replaces
+  hardcoded estimates. Gold standard verified against GROBID TEI full text.
+  2507.19457: P=0.542 R=1.000 F1=0.743 (1 FN: prompt optimization).
 - **Graph healing (D135)**: 7 operations (correct, merge, split, silence,
   migrate, rollback, repair_cites). GraphHealingUseCase + `da heal` CLI.
   Merge with edge redirect, correct with old_value audit trail.
