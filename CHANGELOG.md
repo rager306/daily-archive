@@ -4,6 +4,12 @@
 
 ### Rust v2 (2026-07-26)
 
+- **Repository hygiene**: removed orphan root `uv.lock` (no root `pyproject.toml`
+  after Python→Rust migration) and Python-era cache dirs (`.pytest_cache/`,
+  `.ruff_cache/`, `.hypothesis/`, `.gremlins_cache/`, `.bg-shell/`, `tmp/`,
+  `coverage/` — 15MB moved to `/tmp/daily-archive-stale/`). Updated
+  `.docker/README.md` and local `AGENTS.md` to remove stale Python probes
+  and reflect the Rust runtime (`da_adapters::GrobidParser`).
 - **Code quality refactoring (rule_extractor.rs)**: Extracted 6 canonical
   whitelists (KNOWN_METHODS, KNOWN_DATASETS, KNOWN_MODELS, KNOWN_METRICS,
   TASK_PHRASES, TASK_ACRONYMS) as module-level constants — single source of
