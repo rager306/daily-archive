@@ -1,7 +1,7 @@
 //! Entity types (ADR-038 Module B + legacy ADR-028 typed schema).
 //!
 //! Two families (GRAPH-SCHEMA.md):
-//! - Concrete: Method, Dataset, Metric, Task, Baseline, Model, Figure, Table,
+//! - Concrete: Method, Dataset, Metric, Task, Model, Figure, Table,
 //!   Equation, Concept, Implementation, Theorem, Definition
 //! - Abstract: Problem, Motivation, Gap, Contribution, Hypothesis, Finding,
 //!   Mechanism, Limitation, FutureWork
@@ -21,7 +21,6 @@ pub enum EntityType {
     Dataset,
     Model,
     Metric,
-    Baseline,
     Figure,
     Table,
     Equation,
@@ -49,7 +48,6 @@ impl EntityType {
             EntityType::Dataset => "Dataset",
             EntityType::Model => "Model",
             EntityType::Metric => "Metric",
-            EntityType::Baseline => "Baseline",
             EntityType::Figure => "Figure",
             EntityType::Table => "Table",
             EntityType::Equation => "Equation",
