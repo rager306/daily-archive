@@ -129,13 +129,16 @@ impl ExtractionMetrics {
 
         for (gi, g) in gold.iter().enumerate() {
             let g_label = g.label.to_lowercase();
+            let g_type = g.entity_type.to_lowercase();
             // Find best predicted match: prefer exact, then substring.
-            // First pass: exact label match (case-insensitive).
+            // Both passes require entity_type to match — a Method prediction
+            // must not match a Task/Model gold even if labels overlap.
+            // First pass: exact label match (case-insensitive) + type match.
             for (pi, p) in predicted.iter().enumerate() {
                 if matched_pred[pi] {
                     continue;
                 }
-                if p.label.to_lowercase() == g_label {
+                if p.label.to_lowercase() == g_label && p.entity_type.to_lowercase() == g_type {
                     matched_gold[gi] = true;
                     matched_pred[pi] = true;
                     tp += 1;
@@ -145,9 +148,12 @@ impl ExtractionMetrics {
             if matched_gold[gi] {
                 continue;
             }
-            // Second pass: fuzzy substring match.
+            // Second pass: fuzzy substring match + type match.
             for (pi, p) in predicted.iter().enumerate() {
                 if matched_pred[pi] {
+                    continue;
+                }
+                if p.entity_type.to_lowercase() != g_type {
                     continue;
                 }
                 let p_label = p.label.to_lowercase();
@@ -339,6 +345,38 @@ mod tests {
         assert_eq!(m.false_negatives, 0);
         assert_eq!(m.recall, 1.0, "recall must not exceed 1.0");
         assert!((m.precision - 0.333).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_fuzzy_matches_type_only() {
+        // Fuzzy matching must respect entity_type. A Method prediction must not
+        // match a Task gold, even if its label is a substring of the gold label.
+        let gold = vec![
+            GoldEntity {
+                label: "prompt optimization".to_string(),
+                entity_type: "Task".to_string(),
+                section: None,
+            },
+            GoldEntity {
+                label: "GPT-4".to_string(),
+                entity_type: "Model".to_string(),
+                section: None,
+            },
+        ];
+        let predicted = vec![
+            PredictedEntity {
+                label: "PRO".to_string(),
+                entity_type: "Method".to_string(),
+            },
+            PredictedEntity {
+                label: "GPT".to_string(),
+                entity_type: "Method".to_string(),
+            },
+        ];
+        let m = ExtractionMetrics::evaluate_fuzzy(&gold, &predicted);
+        assert_eq!(m.true_positives, 0, "type mismatch must not count as TP");
+        assert_eq!(m.false_negatives, 2);
+        assert_eq!(m.recall, 0.0);
     }
 
     #[test]
