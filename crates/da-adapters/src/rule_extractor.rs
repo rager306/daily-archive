@@ -92,8 +92,6 @@ impl RuleBasedExtractor {
         let lower = title.to_lowercase();
         if lower.contains("dataset") || lower.contains("corpus") || lower.contains("benchmark") {
             Some(EntityType::Dataset)
-        } else if lower.contains("baseline") {
-            Some(EntityType::Baseline)
         } else if lower.contains("method")
             || lower.contains("approach")
             || lower.contains("algorithm")
@@ -545,7 +543,8 @@ mod tests {
         );
         assert_eq!(
             RuleBasedExtractor::classify_section("Baselines"),
-            Some(EntityType::Baseline)
+            None,
+            "'baseline' has no extraction branch — must return None"
         );
         assert_eq!(
             RuleBasedExtractor::classify_section("Evaluation Metrics"),
@@ -796,6 +795,40 @@ mod tests {
         let sections: Vec<(String, String)> = vec![];
         let entities = extractor.extract(&sections).await.unwrap();
         assert!(entities.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_global_entity_dedup_cross_type_paths() {
+        // Regression: global Metric pass must deduplicate across sections via
+        // the shared `seen` HashSet. F1 appearing in two Metric-titled sections
+        // should produce ONE [Metric] F1 entity, not two.
+        let extractor = RuleBasedExtractor::new();
+        let sections = vec![
+            (
+                "Results".to_string(),
+                "F1 score reached 0.87, accuracy 92%.".to_string(),
+            ),
+            (
+                "Appendix B Evaluation".to_string(),
+                "We also report F1 = 0.86 and accuracy = 91%.".to_string(),
+            ),
+        ];
+        let entities = extractor.extract(&sections).await.unwrap();
+        let metrics: Vec<&str> = entities
+            .iter()
+            .filter(|e| e.entity_type == EntityType::Metric)
+            .map(|e| e.label.as_str())
+            .collect();
+        assert_eq!(
+            metrics.iter().filter(|&&m| m == "F1").count(),
+            1,
+            "F1 duplicated, got: {metrics:?}"
+        );
+        assert_eq!(
+            metrics.iter().filter(|&&m| m == "accuracy").count(),
+            1,
+            "accuracy duplicated, got: {metrics:?}"
+        );
     }
 
     #[test]
