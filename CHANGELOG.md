@@ -34,8 +34,9 @@
     falsely matches "prompt optimization" Task.
   - Dedup key changed to (label, type) — GRPO can be both Dataset (noisy
     section heuristic) and Method (whitelist canonical), independently.
-  Honest corpus (12 modern papers, 96 gold): P=0.571 R=0.958 F1=0.716
-  (Micro); P=0.599 R=0.942 F1=0.721 (Macro).
+  Honest corpus (12 modern papers, 96 gold): P=0.566 R=0.979 F1=0.718
+  (Micro); P=0.595 R=0.967 F1=0.725 (Macro). Only 2 FN remain
+  (multi-word methods: self-evolving memory, generalization).
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
