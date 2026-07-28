@@ -24,6 +24,11 @@
   duplicate variants (GPT-4.1, GPT-4.1-Mini, etc.). Real eval script replaces
   hardcoded estimates. Gold standard verified against GROBID TEI full text.
   2507.19457: P=0.542 R=1.000 F1=0.743 (1 FN: prompt optimization).
+- **Gold-standard corpus expanded to 8 papers**: 6 new fixtures added
+  (2412.15118, 2505.10571, 1409.0473, 2602.06052, 2510.11967, 2310.06770).
+  Each entity text-verified via GROBID TEI keyword scan. Batch evaluation
+  script runs extraction on all fixtures and reports corpus-level metrics.
+  Corpus: Micro P=0.575 R=0.783 F1=0.663 | Macro P=0.559 R=0.809 F1=0.647.
 - **Graph healing (D135)**: 7 operations (correct, merge, split, silence,
   migrate, rollback, repair_cites). GraphHealingUseCase + `da heal` CLI.
   Merge with edge redirect, correct with old_value audit trail.
