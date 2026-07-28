@@ -219,6 +219,57 @@ impl RuleBasedExtractor {
                     }
                 }
             }
+            EntityType::Task => {
+                // Known task phrases + acronyms. Case-insensitive with word
+                // boundary to avoid substring false positives.
+                let task_phrases = ["prompt optimization", "preference optimization"];
+                let task_acronyms = ["RLHF", "RAG"];
+                let lower = text.to_lowercase();
+                for phrase in &task_phrases {
+                    let p_lower = phrase.to_lowercase();
+                    let mut start = 0;
+                    while let Some(pos) = lower[start..].find(&p_lower) {
+                        let abs = start + pos;
+                        let before_ok = abs == 0
+                            || !text
+                                .as_bytes()
+                                .get(abs - 1)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        let after_pos = abs + phrase.len();
+                        let after_ok = after_pos >= text.len()
+                            || !text
+                                .as_bytes()
+                                .get(after_pos)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        if before_ok && after_ok {
+                            results.push((abs, after_pos, phrase.to_string()));
+                        }
+                        start = after_pos;
+                    }
+                }
+                for acr in &task_acronyms {
+                    let a_lower = acr.to_lowercase();
+                    let mut start = 0;
+                    while let Some(pos) = lower[start..].find(&a_lower) {
+                        let abs = start + pos;
+                        let before_ok = abs == 0
+                            || !text
+                                .as_bytes()
+                                .get(abs - 1)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        let after_pos = abs + acr.len();
+                        let after_ok = after_pos >= text.len()
+                            || !text
+                                .as_bytes()
+                                .get(after_pos)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        if before_ok && after_ok {
+                            results.push((abs, after_pos, acr.to_string()));
+                        }
+                        start = after_pos;
+                    }
+                }
+            }
             _ => {}
         }
 
@@ -437,6 +488,80 @@ impl Extractor for RuleBasedExtractor {
                         });
                     }
                     start = abs + metric.len();
+                }
+            }
+        }
+
+        // Global Task pass: scan ALL sections for known task phrases/acronyms.
+        // Tasks are mentioned throughout the paper, not just in Task sections.
+        let task_phrases = ["prompt optimization", "preference optimization"];
+        let task_acronyms = ["RLHF", "RAG"];
+        for (title, text) in sections {
+            let lower = text.to_lowercase();
+            for phrase in &task_phrases {
+                let p_lower = phrase.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower[start..].find(&p_lower) {
+                    let abs = start + pos;
+                    let before_ok = abs == 0
+                        || !text
+                            .as_bytes()
+                            .get(abs - 1)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    let after_pos = abs + phrase.len();
+                    let after_ok = after_pos >= text.len()
+                        || !text
+                            .as_bytes()
+                            .get(after_pos)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    if before_ok && after_ok {
+                        let key = (p_lower.clone(), "task".to_string());
+                        if !seen.contains(&key) {
+                            seen.insert(key);
+                            entities.push(ExtractedEntity {
+                                label: phrase.to_string(),
+                                entity_type: EntityType::Task,
+                                section_title: title.clone(),
+                                char_start: abs,
+                                char_end: after_pos,
+                                surface: phrase.to_string(),
+                            });
+                        }
+                    }
+                    start = after_pos;
+                }
+            }
+            for acr in &task_acronyms {
+                let a_lower = acr.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower[start..].find(&a_lower) {
+                    let abs = start + pos;
+                    let before_ok = abs == 0
+                        || !text
+                            .as_bytes()
+                            .get(abs - 1)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    let after_pos = abs + acr.len();
+                    let after_ok = after_pos >= text.len()
+                        || !text
+                            .as_bytes()
+                            .get(after_pos)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    if before_ok && after_ok {
+                        let key = (a_lower.clone(), "task".to_string());
+                        if !seen.contains(&key) {
+                            seen.insert(key);
+                            entities.push(ExtractedEntity {
+                                label: acr.to_string(),
+                                entity_type: EntityType::Task,
+                                section_title: title.clone(),
+                                char_start: abs,
+                                char_end: after_pos,
+                                surface: acr.to_string(),
+                            });
+                        }
+                    }
+                    start = after_pos;
                 }
             }
         }
@@ -714,6 +839,46 @@ async fn test_extract_method_case_insensitive() {
     assert!(
         labels.contains(&"CoT"),
         "CoT should be found case-insensitively, got: {labels:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_extract_task_phrases_global() {
+    // Task entities (prompt optimization, RLHF, RAG) should be extracted via
+    // global pass regardless of section type. "prompt optimization" is a gold
+    // entity in 2507.19457 but was never extracted (no Task branch existed).
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![
+        (
+            "Abstract".to_string(),
+            "We study prompt optimization and compare with RLHF baselines.".to_string(),
+        ),
+        (
+            "Introduction".to_string(),
+            "RAG and question answering are common tasks.".to_string(),
+        ),
+    ];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let tasks: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Task)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        tasks.contains(&"prompt optimization"),
+        "prompt optimization should be Task, got: {tasks:?}"
+    );
+    assert!(
+        tasks.contains(&"RLHF"),
+        "RLHF should be Task, got: {tasks:?}"
+    );
+    assert!(tasks.contains(&"RAG"), "RAG should be Task, got: {tasks:?}");
+    // "question answering" is a generic NLP term, not in the narrow task
+    // whitelist (it caused too many false positives). Verify it is NOT
+    // extracted as a Task entity.
+    assert!(
+        !tasks.contains(&"question answering"),
+        "question answering should NOT be extracted (too generic), got: {tasks:?}"
     );
 }
 
