@@ -28,11 +28,18 @@
   (2412.15118, 2505.10571, 1409.0473, 2602.06052, 2510.11967, 2310.06770).
   Each entity text-verified via GROBID TEI keyword scan. Batch evaluation
   script runs extraction on all fixtures and reports corpus-level metrics.
-  Corpus: Micro P=0.572 R=0.948 F1=0.714 | Macro P=0.600 R=0.931 F1=0.719.
+- **Evaluation framework hardening** (3 fixes):
+  - Recall >1.0 bug fixed — one-to-one greedy matching in fuzzy eval.
+  - Entity_type now checked in fuzzy matching — "PRO" Method no longer
+    falsely matches "prompt optimization" Task.
+  - Dedup key changed to (label, type) — GRPO can be both Dataset (noisy
+    section heuristic) and Method (whitelist canonical), independently.
+  Honest corpus (12 modern papers, 96 gold): P=0.571 R=0.958 F1=0.716
+  (Micro); P=0.599 R=0.942 F1=0.721 (Macro).
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
-  SWE-Bench), added 6 August 2026 LLM/agent papers covering GEPA/GRPO/RLVR,
-  harness engineering, world models, multimodal benchmarks. Total: 12
-  text-verified fixtures (Dec 2024 – Jun 2026), 96 gold entities.
+  SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
+  covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
+  benchmarks. Total: 12 text-verified fixtures, 96 gold entities.
 - **Case-insensitive method extraction**: GROBID normalizes acronym casing
   (ppo, Cot, Gpt-4). Global method pass now uses case-insensitive search
   with canonical uppercase labels. Fixes PPO/DPO/CoT false negatives.
