@@ -50,6 +50,47 @@ impl RuleBasedExtractor {
         }
     }
 
+    /// Global Method acronym extractor — scans text for KNOWN method acronyms.
+    /// Used to find method acronyms (GSEM, GEPA, GRPO, RLVR) that appear in
+    /// Abstract/Introduction (unclassified sections) rather than Method sections.
+    /// Restricted to a whitelist to avoid false positives from all-caps scan.
+    fn extract_method_acronyms_global(text: &str) -> Vec<(usize, usize, String)> {
+        let mut results = Vec::new();
+        // Known method acronyms in RL/optimization/prompt-engineering literature.
+        // Whitelist-based to keep precision high (global scan of all all-caps words
+        // produced 20+ false positives per paper).
+        let known_methods = [
+            // RL / optimization methods
+            "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER",
+            // Prompt optimization / memory
+            "GSEM", "PEM", "OPRO", "PRO", "EoT", // Reasoning
+            "CoT", "ToT",
+        ];
+        for method in &known_methods {
+            let mut start = 0;
+            while let Some(pos) = text[start..].find(method) {
+                let abs = start + pos;
+                // Check word boundary: previous and next chars must not be alphanumeric
+                let before_ok = abs == 0
+                    || !text
+                        .as_bytes()
+                        .get(abs - 1)
+                        .is_some_and(|b| (*b as char).is_alphanumeric());
+                let after_pos = abs + method.len();
+                let after_ok = after_pos >= text.len()
+                    || !text
+                        .as_bytes()
+                        .get(after_pos)
+                        .is_some_and(|b| (*b as char).is_alphanumeric());
+                if before_ok && after_ok {
+                    results.push((abs, abs + method.len(), method.to_string()));
+                }
+                start = abs + method.len();
+            }
+        }
+        results
+    }
+
     /// Extract candidate entity labels from section text using heuristics.
     /// Looks for capitalized phrases, quoted terms, and "we propose X" patterns.
     fn extract_candidates(text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
@@ -97,6 +138,17 @@ impl RuleBasedExtractor {
                     "NaturalQuestions",
                     "DROP",
                     "BoolQ",
+                    // LLM evaluation benchmarks
+                    "MMLU",
+                    "MMLU-Pro",
+                    "BBH",
+                    "ARC",
+                    "HellaSwag",
+                    "TruthfulQA",
+                    "AGIEval",
+                    "WinoGrande",
+                    "PIQA",
+                    "OpenBookQA",
                 ];
                 for ds in &known_datasets {
                     let mut start = 0;
@@ -169,43 +221,32 @@ impl RuleBasedExtractor {
                 }
             }
             EntityType::Method => {
-                // Pattern: all-caps acronyms 3-6 chars (GEPA, GRPO, RLVR, BERT)
-                // Also section title as method name
-                for word in text.split_whitespace() {
-                    let clean: String = word.chars().filter(|c| c.is_alphabetic()).collect();
-                    if clean.len() >= 3
-                        && clean.len() <= 6
-                        && clean.to_uppercase() == clean
-                        && clean.chars().all(|c| c.is_uppercase())
-                    {
-                        // Skip common English words that happen to be all-caps
-                        let lower = clean.to_lowercase();
-                        if matches!(
-                            lower.as_str(),
-                            // Common English all-caps words
-                            "the" | "and" | "for" | "not" | "all" | "new" | "use"
-                            | "via" | "two" | "one" | "our" | "can" | "may"
-                            | "any" | "how" | "why" | "see" | "set" | "get"
-                            | "let" | "put" | "add" | "run" | "try" | "end"
-                            // Common tech acronyms (not method names)
-                            | "llm" | "ai" | "ml" | "nlp" | "cl" | "cv"
-                            | "api" | "sdk" | "http" | "url" | "uri" | "xml"
-                            | "gpu" | "cpu" | "ram" | "ssd" | "hdd" | "ios"
-                            | "npu" | "tpu" | "gpt" | "pdf" | "png" | "svg"
-                            | "gif" | "jpg" | "css" | "sql" | "ssh" | "tcp"
-                            | "udp" | "dns" | "cdn" | "roi" | "kpi" | "sla"
-                            | "usa" | "uk" | "eu" | "rpg" | "fps" | "rts"
-                            | "tab" | "esc" | "del" | "avg" | "min" | "max"
-                            | "sum" | "abs" | "log" | "exp" | "sin" | "cos"
-                            | "tan" | "div" | "mod" | "rem" | "ref" | "out"
-                            | "its" | "per" | "non" | "but" | "has" | "was"
-                            | "had" | "did" | "yes" | "now" | "way"
-                        ) {
-                            continue;
+                // Use the same known-methods whitelist as the global pass.
+                // Blind all-caps scan produced too many false positives (87 Methods
+                // in one paper). Whitelist keeps precision high.
+                let known_methods = [
+                    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER", "GSEM", "PEM", "OPRO",
+                    "PRO", "EoT", "BERT", "GPT", "T5", "BART", "CoT", "ToT",
+                ];
+                for method in &known_methods {
+                    let mut start = 0;
+                    while let Some(pos) = text[start..].find(method) {
+                        let abs = start + pos;
+                        let before_ok = abs == 0
+                            || !text
+                                .as_bytes()
+                                .get(abs - 1)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        let after_pos = abs + method.len();
+                        let after_ok = after_pos >= text.len()
+                            || !text
+                                .as_bytes()
+                                .get(after_pos)
+                                .is_some_and(|b| (*b as char).is_alphanumeric());
+                        if before_ok && after_ok {
+                            results.push((abs, abs + method.len(), method.to_string()));
                         }
-                        if let Some(pos) = text.find(word) {
-                            results.push((pos, pos + word.len(), clean.clone()));
-                        }
+                        start = abs + method.len();
                     }
                 }
             }
@@ -246,6 +287,31 @@ impl Extractor for RuleBasedExtractor {
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: entity_type.clone(),
+                        section_title: title.clone(),
+                        char_start,
+                        char_end,
+                        surface: text[char_start.min(text.len())..char_end.min(text.len())]
+                            .to_string(),
+                    });
+                }
+            }
+        }
+
+        // Global Method acronym pass: scan ALL sections for all-caps method acronyms.
+        // Methods are often introduced in Abstract/Introduction (unclassified sections)
+        // but not repeated in Method sections. Without this pass, GSEM/GEPA/GRPO-like
+        // names in Abstract would be missed.
+        let mut seen_lower: std::collections::HashSet<String> =
+            entities.iter().map(|e| e.label.to_lowercase()).collect();
+        for (title, text) in sections {
+            let acronyms = Self::extract_method_acronyms_global(text);
+            for (char_start, char_end, label) in acronyms {
+                let key = label.to_lowercase();
+                if !seen_lower.contains(&key) {
+                    seen_lower.insert(key);
+                    entities.push(ExtractedEntity {
+                        label,
+                        entity_type: EntityType::Method,
                         section_title: title.clone(),
                         char_start,
                         char_end,
@@ -418,4 +484,50 @@ fn test_extract_method_acronyms() {
     assert!(labels.contains(&"GEPA"), "got: {labels:?}");
     assert!(labels.contains(&"GRPO"), "got: {labels:?}");
     assert!(labels.contains(&"RLVR"), "got: {labels:?}");
+}
+
+#[test]
+fn test_extract_known_llm_benchmarks() {
+    // LLM evaluation benchmarks should be extracted directly
+    let text = "We evaluate on MMLU, MMLU-Pro, BBH, ARC, HellaSwag, and TruthfulQA.";
+    let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+    assert!(!candidates.is_empty());
+    let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
+    assert!(labels.contains(&"MMLU"), "got: {labels:?}");
+    assert!(labels.contains(&"BBH"), "got: {labels:?}");
+    assert!(labels.contains(&"ARC"), "got: {labels:?}");
+    assert!(labels.contains(&"HellaSwag"), "got: {labels:?}");
+    assert!(labels.contains(&"TruthfulQA"), "got: {labels:?}");
+}
+
+#[tokio::test]
+async fn test_extract_global_acronym_from_abstract() {
+    // GSEM is a method acronym that appears in Abstract (unclassified section).
+    // Without global acronym pass, it would be missed.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![
+        (
+            "Abstract".to_string(),
+            "We propose GSEM, a generalizable self-evolving memory system.".to_string(),
+        ),
+        (
+            "Introduction".to_string(),
+            "Prompt optimization is a challenging task. LLM and NLP are hot topics.".to_string(),
+        ),
+    ];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let labels: Vec<&str> = entities.iter().map(|e| e.label.as_str()).collect();
+    assert!(
+        labels.contains(&"GSEM"),
+        "GSEM should be found via global acronym pass, got: {labels:?}"
+    );
+    // LLM and NLP should be filtered as tech stopwords
+    assert!(
+        !labels.contains(&"LLM"),
+        "LLM should be filtered, got: {labels:?}"
+    );
+    assert!(
+        !labels.contains(&"NLP"),
+        "NLP should be filtered, got: {labels:?}"
+    );
 }
