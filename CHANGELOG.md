@@ -29,6 +29,15 @@
   Each entity text-verified via GROBID TEI keyword scan. Batch evaluation
   script runs extraction on all fixtures and reports corpus-level metrics.
   Corpus: Micro P=0.575 R=0.783 F1=0.663 | Macro P=0.559 R=0.809 F1=0.647.
+- **Case-insensitive method extraction**: GROBID normalizes acronym casing
+  (ppo, Cot, Gpt-4). Global method pass now uses case-insensitive search
+  with canonical uppercase labels. Fixes PPO/DPO/CoT false negatives.
+- **Gold-standard verification hardened**: each entity now verified as
+  STANDALONE WORD in GROBID body sections (not references, not substrings).
+  Removed 28 false gold entities (e.g., PPO in "support", GPT-4 in references).
+  Corpus: 83 → 55 verified gold entities. Recall now ~1.0 (2 FN: multi-word
+  methods beyond acronym whitelist). Precision ~0.49 — limited by incomplete
+  gold (extractor finds real entities not yet annotated).
 - **Graph healing (D135)**: 7 operations (correct, merge, split, silence,
   migrate, rollback, repair_cites). GraphHealingUseCase + `da heal` CLI.
   Merge with edge redirect, correct with old_value audit trail.

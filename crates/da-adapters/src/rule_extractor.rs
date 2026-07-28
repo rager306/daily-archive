@@ -66,9 +66,11 @@ impl RuleBasedExtractor {
             "GSEM", "PEM", "OPRO", "PRO", "EoT", // Reasoning
             "CoT", "ToT",
         ];
+        let lower_text = text.to_lowercase();
         for method in &known_methods {
+            let method_lower = method.to_lowercase();
             let mut start = 0;
-            while let Some(pos) = text[start..].find(method) {
+            while let Some(pos) = lower_text[start..].find(&method_lower) {
                 let abs = start + pos;
                 // Check word boundary: previous and next chars must not be alphanumeric
                 let before_ok = abs == 0
@@ -83,6 +85,7 @@ impl RuleBasedExtractor {
                         .get(after_pos)
                         .is_some_and(|b| (*b as char).is_alphanumeric());
                 if before_ok && after_ok {
+                    // Use canonical uppercase form as the label
                     results.push((abs, abs + method.len(), method.to_string()));
                 }
                 start = abs + method.len();
@@ -187,13 +190,16 @@ impl RuleBasedExtractor {
                 // Use the same known-methods whitelist as the global pass.
                 // Blind all-caps scan produced too many false positives (87 Methods
                 // in one paper). Whitelist keeps precision high.
+                // Case-insensitive search: GROBID may normalize casing (ppo, Cot).
                 let known_methods = [
                     "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER", "GSEM", "PEM", "OPRO",
                     "PRO", "EoT", "BERT", "GPT", "T5", "BART", "CoT", "ToT",
                 ];
+                let lower_text = text.to_lowercase();
                 for method in &known_methods {
+                    let method_lower = method.to_lowercase();
                     let mut start = 0;
-                    while let Some(pos) = text[start..].find(method) {
+                    while let Some(pos) = lower_text[start..].find(&method_lower) {
                         let abs = start + pos;
                         let before_ok = abs == 0
                             || !text
@@ -590,6 +596,32 @@ fn test_extract_method_acronyms() {
     assert!(labels.contains(&"GEPA"), "got: {labels:?}");
     assert!(labels.contains(&"GRPO"), "got: {labels:?}");
     assert!(labels.contains(&"RLVR"), "got: {labels:?}");
+}
+
+#[tokio::test]
+async fn test_extract_method_case_insensitive() {
+    // GROBID may lowercase or mix-case method acronyms (ppo, Cot, Gpt-4).
+    // The extractor must find them regardless of casing and canonicalize
+    // to uppercase form in the label.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "Abstract".to_string(),
+        "We compare ppo and dpo baselines with our cot approach.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let labels: Vec<&str> = entities.iter().map(|e| e.label.as_str()).collect();
+    assert!(
+        labels.contains(&"PPO"),
+        "PPO should be found case-insensitively, got: {labels:?}"
+    );
+    assert!(
+        labels.contains(&"DPO"),
+        "DPO should be found case-insensitively, got: {labels:?}"
+    );
+    assert!(
+        labels.contains(&"CoT"),
+        "CoT should be found case-insensitively, got: {labels:?}"
+    );
 }
 
 #[test]
