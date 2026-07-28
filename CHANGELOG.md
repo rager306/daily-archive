@@ -28,7 +28,7 @@
   (2412.15118, 2505.10571, 1409.0473, 2602.06052, 2510.11967, 2310.06770).
   Each entity text-verified via GROBID TEI keyword scan. Batch evaluation
   script runs extraction on all fixtures and reports corpus-level metrics.
-  Corpus: Micro P=0.591 R=0.979 F1=0.737 | Macro P=0.618 R=0.967 F1=0.743.
+  Corpus: Micro P=0.572 R=0.948 F1=0.714 | Macro P=0.600 R=0.931 F1=0.719.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 August 2026 LLM/agent papers covering GEPA/GRPO/RLVR,
   harness engineering, world models, multimodal benchmarks. Total: 12
