@@ -10,6 +10,10 @@
   `coverage/` — 15MB moved to `/tmp/daily-archive-stale/`). Updated
   `.docker/README.md` and local `AGENTS.md` to remove stale Python probes
   and reflect the Rust runtime (`da_adapters::GrobidParser`).
+- **Dead code removal**: deleted unused `da-domain/versioning.rs` module
+  (`TemporalRecord`/`Versioned` — 0 callers, 112 lines) and
+  `EntityType::Baseline` variant (0 callers after classifier removal).
+  GitNexus impact confirmed LOW risk for both. Tests: 89+ green.
 - **Code quality refactoring (rule_extractor.rs)**: Extracted 6 canonical
   whitelists (KNOWN_METHODS, KNOWN_DATASETS, KNOWN_MODELS, KNOWN_METRICS,
   TASK_PHRASES, TASK_ACRONYMS) as module-level constants — single source of
