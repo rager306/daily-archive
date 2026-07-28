@@ -172,33 +172,41 @@ impl RuleBasedExtractor {
         // Pattern 1: "we propose X" / "we use X" / "we present X" (case-insensitive)
         // Extract only the first capitalized word after the pattern — not the
         // full sentence (which creates noisy long phrase labels).
-        for pattern in &["we propose ", "we present ", "we introduce ", "we use "] {
-            let lower_text = text.to_lowercase();
-            let mut start = 0;
-            while let Some(pos) = lower_text[start..].find(pattern) {
-                let abs = start + pos + pattern.len();
-                if abs >= text.len() {
-                    break;
+        //
+        // TYPE RESTRICTION: only fire for Method and Task entity types. For
+        // Dataset/Metric/Model sections, "we use X" does not introduce a new
+        // entity of that type (e.g., "we use GRPO" in a Benchmarks section
+        // must NOT add GRPO as a Dataset — the global Method pass will add it
+        // with its canonical Method type).
+        if matches!(entity_type, EntityType::Method | EntityType::Task) {
+            for pattern in &["we propose ", "we present ", "we introduce ", "we use "] {
+                let lower_text = text.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower_text[start..].find(pattern) {
+                    let abs = start + pos + pattern.len();
+                    if abs >= text.len() {
+                        break;
+                    }
+                    // Extract the first word (up to next space, comma, or 30 chars)
+                    let remainder = &text[abs..];
+                    let end = remainder
+                        .find(|c: char| c.is_whitespace() || c == ',' || c == '.')
+                        .unwrap_or(remainder.len().min(30));
+                    let candidate = remainder[..end].trim();
+                    // Only accept if it starts with uppercase (proper noun / method name)
+                    if !candidate.is_empty()
+                        && candidate.len() > 2
+                        && candidate
+                            .chars()
+                            .next()
+                            .map(|c| c.is_uppercase())
+                            .unwrap_or(false)
+                    {
+                        let label_end = abs + end;
+                        results.push((abs, label_end, candidate.to_string()));
+                    }
+                    start = abs + 1;
                 }
-                // Extract the first word (up to next space, comma, or 30 chars)
-                let remainder = &text[abs..];
-                let end = remainder
-                    .find(|c: char| c.is_whitespace() || c == ',' || c == '.')
-                    .unwrap_or(remainder.len().min(30));
-                let candidate = remainder[..end].trim();
-                // Only accept if it starts with uppercase (proper noun / method name)
-                if !candidate.is_empty()
-                    && candidate.len() > 2
-                    && candidate
-                        .chars()
-                        .next()
-                        .map(|c| c.is_uppercase())
-                        .unwrap_or(false)
-                {
-                    let label_end = abs + end;
-                    results.push((abs, label_end, candidate.to_string()));
-                }
-                start = abs + 1;
             }
         }
 
@@ -577,6 +585,31 @@ mod tests {
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
         assert!(!candidates.is_empty());
         assert!(candidates[0].2.contains("GeoRLE"));
+    }
+
+    #[test]
+    fn test_propose_pattern_type_restricted() {
+        // Pattern 1 ("we use X") should NOT fire for Dataset/Metric entity types.
+        // "we use GRPO" in a Benchmarks section must not add GRPO as a Dataset.
+        // Previously, Pattern 1 was type-agnostic, causing GRPO/GPT-4/etc to be
+        // mistyped when they appeared in non-Method sections with "we use".
+        let text = "Policy RL training, we use GRPO to let the model learn.";
+        let ds_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+        let metric_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Metric);
+        assert!(
+            !ds_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
+            "GRPO should NOT be a Dataset candidate, got: {ds_candidates:?}"
+        );
+        assert!(
+            !metric_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
+            "GRPO should NOT be a Metric candidate, got: {metric_candidates:?}"
+        );
+        // But Method type should still extract it
+        let method_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+        assert!(
+            method_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
+            "GRPO should be a Method candidate, got: {method_candidates:?}"
+        );
     }
 
     #[test]
