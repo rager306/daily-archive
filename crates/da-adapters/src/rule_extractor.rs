@@ -8,6 +8,77 @@ use async_trait::async_trait;
 use da_domain::entity::EntityType;
 use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 
+// ============================================================================
+// Canonical whitelists — single source of truth for entity-type patterns.
+// Used by both extract_candidates (section-classified) and the global passes
+// in extract(). Adding a new entity = add it here once.
+// ============================================================================
+
+/// Known method acronyms in RL / optimization / prompt-engineering literature.
+const KNOWN_METHODS: &[&str] = &[
+    // RL / optimization methods
+    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER",
+    // Prompt optimization / memory
+    "GSEM", "PEM", "OPRO", "PRO", "EoT", // Reasoning
+    "CoT", "ToT",
+];
+
+/// Known dataset names (direct match, case-insensitive, word-boundary).
+const KNOWN_DATASETS: &[&str] = &[
+    "HotpotQA",
+    "LiveBench",
+    "MATH",
+    "GSM8K",
+    "MBPP",
+    "HumanEval",
+    "SQuAD",
+    "WMT",
+    "ImageNet",
+    "CIFAR",
+    "MNIST",
+    "AGNews",
+    "TriviaQA",
+    "NaturalQuestions",
+    "DROP",
+    "BoolQ",
+    "MMLU",
+    "MMLU-Pro",
+    "BBH",
+    "ARC",
+    "HellaSwag",
+    "TruthfulQA",
+    "AGIEval",
+    "WinoGrande",
+    "PIQA",
+    "OpenBookQA",
+];
+
+/// Canonical model names. Prevents duplicate variants (GPT-4.1, GPT-4.1-Mini).
+const KNOWN_MODELS: &[&str] = &[
+    "GPT-4", "GPT-3.5", "GPT-4o", "LLaMA", "Claude", "Gemini", "Mistral", "Qwen", "DeepSeek",
+    "GLM", "BERT", "T5", "BLOOM",
+];
+
+/// Known metrics (direct match, case-insensitive, word-boundary).
+const KNOWN_METRICS: &[&str] = &[
+    "accuracy",
+    "precision",
+    "recall",
+    "F1",
+    "BLEU",
+    "ROUGE",
+    "AUC",
+    "MSE",
+    "RMSE",
+    "MAE",
+];
+
+/// Known multi-word task phrases.
+const TASK_PHRASES: &[&str] = &["prompt optimization", "preference optimization"];
+
+/// Known task acronyms.
+const TASK_ACRONYMS: &[&str] = &["RLHF", "RAG"];
+
 /// Rule-based extractor using section titles + keyword heuristics.
 pub struct RuleBasedExtractor;
 
@@ -50,6 +121,23 @@ impl RuleBasedExtractor {
         }
     }
 
+    /// Check that [start, end) in text is bounded by non-alphanumeric chars
+    /// (or string edges). Prevents substring false positives like "arc" in
+    /// "architecture", "ppo" in "support", "drop" in "dropout".
+    fn word_boundary(text: &str, start: usize, end: usize) -> bool {
+        let before_ok = start == 0
+            || !text
+                .as_bytes()
+                .get(start - 1)
+                .is_some_and(|b| (*b as char).is_alphanumeric());
+        let after_ok = end >= text.len()
+            || !text
+                .as_bytes()
+                .get(end)
+                .is_some_and(|b| (*b as char).is_alphanumeric());
+        before_ok && after_ok
+    }
+
     /// Global Method acronym extractor — scans text for KNOWN method acronyms.
     /// Used to find method acronyms (GSEM, GEPA, GRPO, RLVR) that appear in
     /// Abstract/Introduction (unclassified sections) rather than Method sections.
@@ -59,36 +147,18 @@ impl RuleBasedExtractor {
         // Known method acronyms in RL/optimization/prompt-engineering literature.
         // Whitelist-based to keep precision high (global scan of all all-caps words
         // produced 20+ false positives per paper).
-        let known_methods = [
-            // RL / optimization methods
-            "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER",
-            // Prompt optimization / memory
-            "GSEM", "PEM", "OPRO", "PRO", "EoT", // Reasoning
-            "CoT", "ToT",
-        ];
         let lower_text = text.to_lowercase();
-        for method in &known_methods {
+        for method in KNOWN_METHODS {
             let method_lower = method.to_lowercase();
             let mut start = 0;
             while let Some(pos) = lower_text[start..].find(&method_lower) {
                 let abs = start + pos;
-                // Check word boundary: previous and next chars must not be alphanumeric
-                let before_ok = abs == 0
-                    || !text
-                        .as_bytes()
-                        .get(abs - 1)
-                        .is_some_and(|b| (*b as char).is_alphanumeric());
-                let after_pos = abs + method.len();
-                let after_ok = after_pos >= text.len()
-                    || !text
-                        .as_bytes()
-                        .get(after_pos)
-                        .is_some_and(|b| (*b as char).is_alphanumeric());
-                if before_ok && after_ok {
+                let end = abs + method.len();
+                if Self::word_boundary(text, abs, end) {
                     // Use canonical uppercase form as the label
-                    results.push((abs, abs + method.len(), method.to_string()));
+                    results.push((abs, end, method.to_string()));
                 }
-                start = abs + method.len();
+                start = end;
             }
         }
         results
@@ -140,36 +210,7 @@ impl RuleBasedExtractor {
                 // produced high false positive rates (long phrase labels like
                 // "150 examples for training" classified as Dataset entities).
                 // Unknown dataset discovery requires GLiNER or curated lists.
-                let known_datasets = [
-                    "HotpotQA",
-                    "LiveBench",
-                    "MATH",
-                    "GSM8K",
-                    "MBPP",
-                    "HumanEval",
-                    "SQuAD",
-                    "WMT",
-                    "ImageNet",
-                    "CIFAR",
-                    "MNIST",
-                    "AGNews",
-                    "TriviaQA",
-                    "NaturalQuestions",
-                    "DROP",
-                    "BoolQ",
-                    // LLM evaluation benchmarks
-                    "MMLU",
-                    "MMLU-Pro",
-                    "BBH",
-                    "ARC",
-                    "HellaSwag",
-                    "TruthfulQA",
-                    "AGIEval",
-                    "WinoGrande",
-                    "PIQA",
-                    "OpenBookQA",
-                ];
-                for ds in &known_datasets {
+                for ds in KNOWN_DATASETS {
                     let mut start = 0;
                     while let Some(pos) = text[start..].find(ds) {
                         let abs = start + pos;
@@ -191,82 +232,48 @@ impl RuleBasedExtractor {
                 // Blind all-caps scan produced too many false positives (87 Methods
                 // in one paper). Whitelist keeps precision high.
                 // Case-insensitive search: GROBID may normalize casing (ppo, Cot).
-                let known_methods = [
-                    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER", "GSEM", "PEM", "OPRO",
-                    "PRO", "EoT", "BERT", "GPT", "T5", "BART", "CoT", "ToT",
-                ];
                 let lower_text = text.to_lowercase();
-                for method in &known_methods {
+                for method in KNOWN_METHODS {
                     let method_lower = method.to_lowercase();
                     let mut start = 0;
                     while let Some(pos) = lower_text[start..].find(&method_lower) {
                         let abs = start + pos;
-                        let before_ok = abs == 0
-                            || !text
-                                .as_bytes()
-                                .get(abs - 1)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        let after_pos = abs + method.len();
-                        let after_ok = after_pos >= text.len()
-                            || !text
-                                .as_bytes()
-                                .get(after_pos)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        if before_ok && after_ok {
-                            results.push((abs, abs + method.len(), method.to_string()));
+                        let end = abs + method.len();
+                        if Self::word_boundary(text, abs, end) {
+                            results.push((abs, end, method.to_string()));
                         }
-                        start = abs + method.len();
+                        start = end;
                     }
                 }
             }
             EntityType::Task => {
                 // Known task phrases + acronyms. Case-insensitive with word
                 // boundary to avoid substring false positives.
-                let task_phrases = ["prompt optimization", "preference optimization"];
-                let task_acronyms = ["RLHF", "RAG"];
+                let task_phrases = TASK_PHRASES;
+                let task_acronyms = TASK_ACRONYMS;
                 let lower = text.to_lowercase();
-                for phrase in &task_phrases {
+                for phrase in task_phrases {
                     let p_lower = phrase.to_lowercase();
                     let mut start = 0;
                     while let Some(pos) = lower[start..].find(&p_lower) {
                         let abs = start + pos;
-                        let before_ok = abs == 0
-                            || !text
-                                .as_bytes()
-                                .get(abs - 1)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        let after_pos = abs + phrase.len();
-                        let after_ok = after_pos >= text.len()
-                            || !text
-                                .as_bytes()
-                                .get(after_pos)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        if before_ok && after_ok {
-                            results.push((abs, after_pos, phrase.to_string()));
+                        let end = abs + phrase.len();
+                        if Self::word_boundary(text, abs, end) {
+                            results.push((abs, end, phrase.to_string()));
                         }
-                        start = after_pos;
+                        start = end;
                     }
                 }
-                for acr in &task_acronyms {
+                for acr in task_acronyms {
                     let a_lower = acr.to_lowercase();
                     let mut start = 0;
                     while let Some(pos) = lower[start..].find(&a_lower) {
                         let abs = start + pos;
-                        let before_ok = abs == 0
-                            || !text
-                                .as_bytes()
-                                .get(abs - 1)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        let after_pos = abs + acr.len();
-                        let after_ok = after_pos >= text.len()
-                            || !text
-                                .as_bytes()
-                                .get(after_pos)
-                                .is_some_and(|b| (*b as char).is_alphanumeric());
-                        if before_ok && after_ok {
-                            results.push((abs, after_pos, acr.to_string()));
+                        let end = abs + acr.len();
+                        if Self::word_boundary(text, abs, end) {
+                            results.push((abs, end, acr.to_string()));
                         }
-                        start = after_pos;
+                        start = end;
                     }
                 }
             }
@@ -356,55 +363,15 @@ impl Extractor for RuleBasedExtractor {
 
         // Global Dataset pass: scan ALL sections for known dataset names.
         // Datasets are mentioned throughout the paper, not just in Dataset sections.
-        let known_dataset_names = [
-            "HotpotQA",
-            "LiveBench",
-            "MATH",
-            "GSM8K",
-            "MBPP",
-            "HumanEval",
-            "SQuAD",
-            "WMT",
-            "ImageNet",
-            "CIFAR",
-            "MNIST",
-            "AGNews",
-            "TriviaQA",
-            "NaturalQuestions",
-            "DROP",
-            "BoolQ",
-            "MMLU",
-            "MMLU-Pro",
-            "BBH",
-            "ARC",
-            "HellaSwag",
-            "TruthfulQA",
-            "AGIEval",
-            "WinoGrande",
-            "PIQA",
-            "OpenBookQA",
-        ];
         for (title, text) in sections {
             let lower = text.to_lowercase();
-            for ds in &known_dataset_names {
+            for ds in KNOWN_DATASETS {
                 let ds_lower = ds.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&ds_lower) {
                     let abs = start + pos;
-                    // Word boundary check: prevent substring matches like
-                    // "arc" in "architecture", "drop" in "dropout".
-                    let before_ok = abs == 0
-                        || !text
-                            .as_bytes()
-                            .get(abs - 1)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    let after_pos = abs + ds.len();
-                    let after_ok = after_pos >= text.len()
-                        || !text
-                            .as_bytes()
-                            .get(after_pos)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    if before_ok && after_ok {
+                    let end = abs + ds.len();
+                    if Self::word_boundary(text, abs, end) {
                         let key = (ds_lower.clone(), "dataset".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -427,13 +394,9 @@ impl Extractor for RuleBasedExtractor {
         // Models are mentioned in Related Work, Experiments, etc.
         // Uses canonical names (not greedy extraction) to avoid duplicate
         // variants like GPT-4.1, GPT-4.1-Mini, GPT-4.1-Mini.
-        let known_models = [
-            "GPT-4", "GPT-3.5", "GPT-4o", "LLaMA", "Claude", "Gemini", "Mistral", "Qwen",
-            "DeepSeek", "GLM", "BERT", "T5", "BLOOM",
-        ];
         for (title, text) in sections {
             let lower = text.to_lowercase();
-            for canonical in &known_models {
+            for canonical in KNOWN_MODELS {
                 let pattern = canonical.to_lowercase();
                 if lower.contains(&pattern) {
                     let key = (pattern.clone(), "model".to_string());
@@ -456,21 +419,9 @@ impl Extractor for RuleBasedExtractor {
         // Global Metric pass: scan ALL sections for known metric names.
         // Metrics (accuracy, F1, etc.) appear in various sections, not just
         // Evaluation/Results.
-        let known_metrics = [
-            "accuracy",
-            "precision",
-            "recall",
-            "F1",
-            "BLEU",
-            "ROUGE",
-            "AUC",
-            "MSE",
-            "RMSE",
-            "MAE",
-        ];
         for (title, text) in sections {
             let lower = text.to_lowercase();
-            for metric in &known_metrics {
+            for metric in KNOWN_METRICS {
                 let metric_lower = metric.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&metric_lower) {
@@ -494,27 +445,17 @@ impl Extractor for RuleBasedExtractor {
 
         // Global Task pass: scan ALL sections for known task phrases/acronyms.
         // Tasks are mentioned throughout the paper, not just in Task sections.
-        let task_phrases = ["prompt optimization", "preference optimization"];
-        let task_acronyms = ["RLHF", "RAG"];
+        let task_phrases = TASK_PHRASES;
+        let task_acronyms = TASK_ACRONYMS;
         for (title, text) in sections {
             let lower = text.to_lowercase();
-            for phrase in &task_phrases {
+            for phrase in task_phrases {
                 let p_lower = phrase.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&p_lower) {
                     let abs = start + pos;
-                    let before_ok = abs == 0
-                        || !text
-                            .as_bytes()
-                            .get(abs - 1)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    let after_pos = abs + phrase.len();
-                    let after_ok = after_pos >= text.len()
-                        || !text
-                            .as_bytes()
-                            .get(after_pos)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    if before_ok && after_ok {
+                    let end = abs + phrase.len();
+                    if Self::word_boundary(text, abs, end) {
                         let key = (p_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -523,31 +464,21 @@ impl Extractor for RuleBasedExtractor {
                                 entity_type: EntityType::Task,
                                 section_title: title.clone(),
                                 char_start: abs,
-                                char_end: after_pos,
+                                char_end: end,
                                 surface: phrase.to_string(),
                             });
                         }
                     }
-                    start = after_pos;
+                    start = end;
                 }
             }
-            for acr in &task_acronyms {
+            for acr in task_acronyms {
                 let a_lower = acr.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&a_lower) {
                     let abs = start + pos;
-                    let before_ok = abs == 0
-                        || !text
-                            .as_bytes()
-                            .get(abs - 1)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    let after_pos = abs + acr.len();
-                    let after_ok = after_pos >= text.len()
-                        || !text
-                            .as_bytes()
-                            .get(after_pos)
-                            .is_some_and(|b| (*b as char).is_alphanumeric());
-                    if before_ok && after_ok {
+                    let end = abs + acr.len();
+                    if Self::word_boundary(text, abs, end) {
                         let key = (a_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -556,12 +487,12 @@ impl Extractor for RuleBasedExtractor {
                                 entity_type: EntityType::Task,
                                 section_title: title.clone(),
                                 char_start: abs,
-                                char_end: after_pos,
+                                char_end: end,
                                 surface: acr.to_string(),
                             });
                         }
                     }
-                    start = after_pos;
+                    start = end;
                 }
             }
         }
@@ -577,6 +508,22 @@ impl Extractor for RuleBasedExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_word_boundary_standalone() {
+        // Standalone words: word_boundary returns true.
+        assert!(RuleBasedExtractor::word_boundary("hello ARC world", 6, 9));
+        assert!(RuleBasedExtractor::word_boundary("ARC world", 0, 3));
+        assert!(RuleBasedExtractor::word_boundary("hello ARC", 6, 9));
+    }
+
+    #[test]
+    fn test_word_boundary_substring_rejected() {
+        // Substring matches (arc in architecture, drop in dropout) → false.
+        assert!(!RuleBasedExtractor::word_boundary("architecture", 0, 3));
+        assert!(!RuleBasedExtractor::word_boundary("dropout", 0, 4));
+        assert!(!RuleBasedExtractor::word_boundary("support", 3, 6));
+    }
 
     #[test]
     fn test_classify_section() {

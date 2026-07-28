@@ -4,6 +4,17 @@
 
 ### Rust v2 (2026-07-26)
 
+- **Code quality refactoring (rule_extractor.rs)**: Extracted 6 canonical
+  whitelists (KNOWN_METHODS, KNOWN_DATASETS, KNOWN_MODELS, KNOWN_METRICS,
+  TASK_PHRASES, TASK_ACRONYMS) as module-level constants — single source of
+  truth for section-classified and global passes. Added `word_boundary(text,
+  start, end)` helper eliminating 7× duplicated before_ok/after_ok blocks.
+  Removed ~140 lines of duplicate code. Metrics unchanged (P=0.573 R=0.979
+  F1=0.723), 100 tests green.
+- **Task extraction (EntityType::Task)**: whitelist-based extraction for
+  "prompt optimization", "preference optimization", "RLHF", "RAG". Narrow
+  whitelist avoids generic-task FP (summarization/code generation). Recall
+  0.958→0.979 (prompt optimization now found in 2507.19457).
 - **Scheduler (D135, ADR-037 §4.3)**: Graph-based lazy-load scheduler for
   OpenAlex enrichment. Pending tasks stored as SchedulerTask nodes in Samyama
   Graph (not JSONL — ADR-040 compliance). Exponential backoff (1d→3d→9d→27d).
