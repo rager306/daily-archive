@@ -28,7 +28,11 @@
   (2412.15118, 2505.10571, 1409.0473, 2602.06052, 2510.11967, 2310.06770).
   Each entity text-verified via GROBID TEI keyword scan. Batch evaluation
   script runs extraction on all fixtures and reports corpus-level metrics.
-  Corpus: Micro P=0.575 R=0.783 F1=0.663 | Macro P=0.559 R=0.809 F1=0.647.
+  Corpus: Micro P=0.591 R=0.979 F1=0.737 | Macro P=0.618 R=0.967 F1=0.743.
+- **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
+  SWE-Bench), added 6 August 2026 LLM/agent papers covering GEPA/GRPO/RLVR,
+  harness engineering, world models, multimodal benchmarks. Total: 12
+  text-verified fixtures (Dec 2024 – Jun 2026), 96 gold entities.
 - **Case-insensitive method extraction**: GROBID normalizes acronym casing
   (ppo, Cot, Gpt-4). Global method pass now uses case-insensitive search
   with canonical uppercase labels. Fixes PPO/DPO/CoT false negatives.
