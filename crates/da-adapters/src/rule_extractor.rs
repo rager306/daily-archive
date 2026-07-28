@@ -270,14 +270,26 @@ impl Extractor for RuleBasedExtractor {
         // Methods are often introduced in Abstract/Introduction (unclassified sections)
         // but not repeated in Method sections. Without this pass, GSEM/GEPA/GRPO-like
         // names in Abstract would be missed.
-        let mut seen_lower: std::collections::HashSet<String> =
-            entities.iter().map(|e| e.label.to_lowercase()).collect();
+        // Dedup key is (label_lowercase, type_lowercase) — the same surface label
+        // can legitimately appear under different types (e.g. "GRPO" as Method
+        // via whitelist vs as Dataset via section-title heuristic). Using a
+        // composite key lets the global passes add the canonical-type version
+        // even when a section pass already added a wrong-type version.
+        let mut seen: std::collections::HashSet<(String, String)> = entities
+            .iter()
+            .map(|e| {
+                (
+                    e.label.to_lowercase(),
+                    format!("{:?}", e.entity_type).to_lowercase(),
+                )
+            })
+            .collect();
         for (title, text) in sections {
             let acronyms = Self::extract_method_acronyms_global(text);
             for (char_start, char_end, label) in acronyms {
-                let key = label.to_lowercase();
-                if !seen_lower.contains(&key) {
-                    seen_lower.insert(key);
+                let key = (label.to_lowercase(), "method".to_string());
+                if !seen.contains(&key) {
+                    seen.insert(key);
                     entities.push(ExtractedEntity {
                         label,
                         entity_type: EntityType::Method,
@@ -342,9 +354,9 @@ impl Extractor for RuleBasedExtractor {
                             .get(after_pos)
                             .is_some_and(|b| (*b as char).is_alphanumeric());
                     if before_ok && after_ok {
-                        let key = ds_lower.clone();
-                        if !seen_lower.contains(&key) {
-                            seen_lower.insert(key);
+                        let key = (ds_lower.clone(), "dataset".to_string());
+                        if !seen.contains(&key) {
+                            seen.insert(key);
                             entities.push(ExtractedEntity {
                                 label: ds.to_string(),
                                 entity_type: EntityType::Dataset,
@@ -373,10 +385,10 @@ impl Extractor for RuleBasedExtractor {
             for canonical in &known_models {
                 let pattern = canonical.to_lowercase();
                 if lower.contains(&pattern) {
-                    let key = pattern.clone();
-                    if !seen_lower.contains(&key) {
+                    let key = (pattern.clone(), "model".to_string());
+                    if !seen.contains(&key) {
                         let pos = lower.find(&pattern).unwrap_or(0);
-                        seen_lower.insert(key);
+                        seen.insert(key);
                         entities.push(ExtractedEntity {
                             label: canonical.to_string(),
                             entity_type: EntityType::Model,
@@ -412,9 +424,9 @@ impl Extractor for RuleBasedExtractor {
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&metric_lower) {
                     let abs = start + pos;
-                    let key = metric_lower.clone();
-                    if !seen_lower.contains(&key) {
-                        seen_lower.insert(key);
+                    let key = (metric_lower.clone(), "metric".to_string());
+                    if !seen.contains(&key) {
+                        seen.insert(key);
                         entities.push(ExtractedEntity {
                             label: metric.to_string(),
                             entity_type: EntityType::Metric,
@@ -557,6 +569,72 @@ mod tests {
         assert!(
             labels.contains(&"Gemini"),
             "Gemini should be found, got: {labels:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_known_method_overrides_section_classification() {
+        // Regression test: GRPO is a known Method. Even if it appears inside a
+        // section titled "Benchmarks" (classified as Dataset), the extractor
+        // must label it as Method — whitelist canonical types override noisy
+        // section-title heuristics.
+        let extractor = RuleBasedExtractor::new();
+        let sections = vec![
+            (
+                "Experiment Setup Benchmarks".to_string(),
+                "We compare GRPO, PPO, and DPO baselines.".to_string(),
+            ),
+            (
+                "Experiments".to_string(),
+                "GPT-4 and Qwen are used for evaluation.".to_string(),
+            ),
+        ];
+        let entities = extractor.extract(&sections).await.unwrap();
+        let methods: Vec<&str> = entities
+            .iter()
+            .filter(|e| e.entity_type == EntityType::Method)
+            .map(|e| e.label.as_str())
+            .collect();
+        let datasets: Vec<&str> = entities
+            .iter()
+            .filter(|e| e.entity_type == EntityType::Dataset)
+            .map(|e| e.label.as_str())
+            .collect();
+        // Known methods should appear as Method, not Dataset
+        assert!(
+            methods.contains(&"GRPO"),
+            "GRPO should be Method, got methods: {methods:?}"
+        );
+        assert!(
+            methods.contains(&"PPO"),
+            "PPO should be Method, got methods: {methods:?}"
+        );
+        assert!(
+            methods.contains(&"DPO"),
+            "DPO should be Method, got methods: {methods:?}"
+        );
+        // And NOT duplicated/retyped as Dataset
+        assert!(
+            !datasets.contains(&"GRPO"),
+            "GRPO should not be Dataset, got datasets: {datasets:?}"
+        );
+        assert!(
+            !datasets.contains(&"PPO"),
+            "PPO should not be Dataset, got datasets: {datasets:?}"
+        );
+        // Known models should appear as Model regardless of section title
+        let models: Vec<&str> = entities
+            .iter()
+            .filter(|e| e.entity_type == EntityType::Model)
+            .map(|e| e.label.as_str())
+            .collect();
+        assert!(
+            models.contains(&"GPT-4"),
+            "GPT-4 should be Model, got models: {models:?}"
+        );
+        assert!(
+            models.contains(&"Qwen"),
+            "Qwen should be Model, got models: {models:?}"
         );
     }
 
