@@ -499,6 +499,21 @@ impl Extractor for RuleBasedExtractor {
             }
         }
 
+        // Final entity-level dedup: collapse any same (label, type) pairs
+        // that may have been added by multiple section-classified passes
+        // before `seen` was initialized. Without this pass, HotpotQA appearing
+        // in two Dataset-classified sections would yield two [Dataset] HotpotQA
+        // entities — inflating predicted count and FP without changing TP.
+        let mut seen_final: std::collections::HashSet<(String, String)> =
+            std::collections::HashSet::new();
+        entities.retain(|e| {
+            let key = (
+                e.label.to_lowercase(),
+                format!("{:?}", e.entity_type).to_lowercase(),
+            );
+            seen_final.insert(key)
+        });
+
         Ok(entities)
     }
 
@@ -953,6 +968,38 @@ fn test_extract_known_llm_benchmarks() {
     assert!(labels.contains(&"ARC"), "got: {labels:?}");
     assert!(labels.contains(&"HellaSwag"), "got: {labels:?}");
     assert!(labels.contains(&"TruthfulQA"), "got: {labels:?}");
+}
+
+#[tokio::test]
+async fn test_duplicate_entity_across_sections_deduped() {
+    // Regression: section-classified extraction can add the SAME (label, type)
+    // pair from MULTIPLE sections BEFORE `seen` is initialized. Example:
+    // HotpotQA appears in both "E.1 Benchmarks" AND "G Datasets" → two
+    // [Dataset] HotpotQA entities. Final post-pass dedup collapses them.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![
+        (
+            "E.1 Benchmarks".to_string(),
+            "We evaluate on HotpotQA.".to_string(),
+        ),
+        (
+            "G Datasets".to_string(),
+            "HotpotQA is a benchmark dataset.".to_string(),
+        ),
+    ];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let datasets: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Dataset)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert_eq!(
+        datasets.iter().filter(|&&d| d == "HotpotQA").count(),
+        1,
+        "HotpotQA must not appear twice, got datasets: {datasets:?}"
+    );
+    // No extra entities — "best" and bare "dataset" prose are not in whitelist.
+    assert_eq!(entities.len(), 1);
 }
 
 #[tokio::test]
