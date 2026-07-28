@@ -328,17 +328,32 @@ impl Extractor for RuleBasedExtractor {
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&ds_lower) {
                     let abs = start + pos;
-                    let key = ds_lower.clone();
-                    if !seen_lower.contains(&key) {
-                        seen_lower.insert(key);
-                        entities.push(ExtractedEntity {
-                            label: ds.to_string(),
-                            entity_type: EntityType::Dataset,
-                            section_title: title.clone(),
-                            char_start: abs,
-                            char_end: abs + ds.len(),
-                            surface: ds.to_string(),
-                        });
+                    // Word boundary check: prevent substring matches like
+                    // "arc" in "architecture", "drop" in "dropout".
+                    let before_ok = abs == 0
+                        || !text
+                            .as_bytes()
+                            .get(abs - 1)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    let after_pos = abs + ds.len();
+                    let after_ok = after_pos >= text.len()
+                        || !text
+                            .as_bytes()
+                            .get(after_pos)
+                            .is_some_and(|b| (*b as char).is_alphanumeric());
+                    if before_ok && after_ok {
+                        let key = ds_lower.clone();
+                        if !seen_lower.contains(&key) {
+                            seen_lower.insert(key);
+                            entities.push(ExtractedEntity {
+                                label: ds.to_string(),
+                                entity_type: EntityType::Dataset,
+                                section_title: title.clone(),
+                                char_start: abs,
+                                char_end: abs + ds.len(),
+                                surface: ds.to_string(),
+                            });
+                        }
                     }
                     start = abs + ds.len();
                 }
@@ -636,6 +651,42 @@ fn test_extract_known_llm_benchmarks() {
     assert!(labels.contains(&"ARC"), "got: {labels:?}");
     assert!(labels.contains(&"HellaSwag"), "got: {labels:?}");
     assert!(labels.contains(&"TruthfulQA"), "got: {labels:?}");
+}
+
+#[tokio::test]
+async fn test_dataset_word_boundary_no_substring_match() {
+    // Datasets like ARC, DROP must NOT match as substrings of other words.
+    // "arc" in "architecture", "drop" in "dropout".
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "Introduction".to_string(),
+        "We use an agentic architecture with dropout layers.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let labels: Vec<&str> = entities.iter().map(|e| e.label.as_str()).collect();
+    assert!(
+        !labels.contains(&"ARC"),
+        "ARC must not match 'arc' in 'architecture', got: {labels:?}"
+    );
+    assert!(
+        !labels.contains(&"DROP"),
+        "DROP must not match 'drop' in 'dropout', got: {labels:?}"
+    );
+    // But real standalone mentions should still match
+    let sections2 = vec![(
+        "Experiments".to_string(),
+        "We evaluate on ARC and DROP benchmarks.".to_string(),
+    )];
+    let entities2 = extractor.extract(&sections2).await.unwrap();
+    let labels2: Vec<&str> = entities2.iter().map(|e| e.label.as_str()).collect();
+    assert!(
+        labels2.contains(&"ARC"),
+        "standalone ARC should match, got: {labels2:?}"
+    );
+    assert!(
+        labels2.contains(&"DROP"),
+        "standalone DROP should match, got: {labels2:?}"
+    );
 }
 
 #[tokio::test]

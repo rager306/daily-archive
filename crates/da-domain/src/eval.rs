@@ -116,32 +116,52 @@ impl ExtractionMetrics {
 /// Useful for comparing "GPT-4" (gold) vs "gpt-4" (predicted).
 impl ExtractionMetrics {
     pub fn evaluate_fuzzy(gold: &[GoldEntity], predicted: &[PredictedEntity]) -> Self {
+        // One-to-one matching: each gold entity is matched by at most one
+        // predicted entity, and each predicted entity matches at most one gold.
+        // This prevents recall > 1.0 when multiple predicted variants (GPT-4,
+        // gpt-4, Gpt-4) all match the same gold entity.
+        //
+        // Greedy strategy: for each gold entity, find the first unused predicted
+        // entity that fuzzy-matches (substring either direction, case-insensitive).
+        let mut matched_gold = vec![false; gold.len()];
+        let mut matched_pred = vec![false; predicted.len()];
         let mut tp = 0usize;
-        let mut fp = 0usize;
 
-        for pred in predicted {
-            let pred_label = pred.label.to_lowercase();
-            let matched = gold.iter().any(|g| {
-                let g_label = g.label.to_lowercase();
-                g_label.contains(&pred_label) || pred_label.contains(&g_label)
-            });
-            if matched {
-                tp += 1;
-            } else {
-                fp += 1;
+        for (gi, g) in gold.iter().enumerate() {
+            let g_label = g.label.to_lowercase();
+            // Find best predicted match: prefer exact, then substring.
+            // First pass: exact label match (case-insensitive).
+            for (pi, p) in predicted.iter().enumerate() {
+                if matched_pred[pi] {
+                    continue;
+                }
+                if p.label.to_lowercase() == g_label {
+                    matched_gold[gi] = true;
+                    matched_pred[pi] = true;
+                    tp += 1;
+                    break;
+                }
+            }
+            if matched_gold[gi] {
+                continue;
+            }
+            // Second pass: fuzzy substring match.
+            for (pi, p) in predicted.iter().enumerate() {
+                if matched_pred[pi] {
+                    continue;
+                }
+                let p_label = p.label.to_lowercase();
+                if g_label.contains(&p_label) || p_label.contains(&g_label) {
+                    matched_gold[gi] = true;
+                    matched_pred[pi] = true;
+                    tp += 1;
+                    break;
+                }
             }
         }
 
-        let fn_count = gold
-            .iter()
-            .filter(|g| {
-                let g_label = g.label.to_lowercase();
-                !predicted.iter().any(|p| {
-                    let p_label = p.label.to_lowercase();
-                    g_label.contains(&p_label) || p_label.contains(&g_label)
-                })
-            })
-            .count();
+        let fp = predicted.len() - tp;
+        let fn_count = gold.len() - tp;
 
         let precision = if predicted.is_empty() {
             0.0
@@ -285,6 +305,80 @@ mod tests {
         let m = ExtractionMetrics::evaluate_fuzzy(&gold, &predicted);
         assert_eq!(m.true_positives, 1);
         assert_eq!(m.precision, 1.0);
+    }
+
+    #[test]
+    fn test_fuzzy_one_to_one_no_duplicate_tp() {
+        // Multiple predicted entities matching the SAME gold entity must NOT
+        // all count as TP. One-to-one matching: each gold entity is matched
+        // by at most one predicted entity.
+        // Before fix: 3 predicted "gpt-4" variants → tp=3, recall=3.0 (impossible).
+        // After fix: 3 predicted → tp=1, fp=2, recall=1.0.
+        let gold = vec![GoldEntity {
+            label: "GPT-4".to_string(),
+            entity_type: "Model".to_string(),
+            section: None,
+        }];
+        let predicted = vec![
+            PredictedEntity {
+                label: "GPT-4".to_string(),
+                entity_type: "Model".to_string(),
+            },
+            PredictedEntity {
+                label: "gpt-4".to_string(),
+                entity_type: "Model".to_string(),
+            },
+            PredictedEntity {
+                label: "Gpt-4".to_string(),
+                entity_type: "Model".to_string(),
+            },
+        ];
+        let m = ExtractionMetrics::evaluate_fuzzy(&gold, &predicted);
+        assert_eq!(m.true_positives, 1, "only one TP for one gold entity");
+        assert_eq!(m.false_positives, 2, "remaining 2 are FP");
+        assert_eq!(m.false_negatives, 0);
+        assert_eq!(m.recall, 1.0, "recall must not exceed 1.0");
+        assert!((m.precision - 0.333).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_fuzzy_recall_never_exceeds_one() {
+        // Recall > 1.0 is mathematically impossible. Verify the metric
+        // enforces this invariant even with many overlapping predictions.
+        let gold = vec![
+            GoldEntity {
+                label: "GPT-4".to_string(),
+                entity_type: "Model".to_string(),
+                section: None,
+            },
+            GoldEntity {
+                label: "BERT".to_string(),
+                entity_type: "Model".to_string(),
+                section: None,
+            },
+        ];
+        let predicted = vec![
+            PredictedEntity {
+                label: "gpt-4".to_string(),
+                entity_type: "Model".to_string(),
+            },
+            PredictedEntity {
+                label: "GPT-4".to_string(),
+                entity_type: "Model".to_string(),
+            },
+            PredictedEntity {
+                label: "bert".to_string(),
+                entity_type: "Model".to_string(),
+            },
+            PredictedEntity {
+                label: "BERT".to_string(),
+                entity_type: "Model".to_string(),
+            },
+        ];
+        let m = ExtractionMetrics::evaluate_fuzzy(&gold, &predicted);
+        assert!(m.recall <= 1.0, "recall {} must be <= 1.0", m.recall);
+        assert_eq!(m.true_positives, 2, "one TP per gold entity");
+        assert_eq!(m.false_positives, 2);
     }
 
     #[test]
