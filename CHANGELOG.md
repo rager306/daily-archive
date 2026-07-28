@@ -14,6 +14,13 @@
   fires only for Method+Task entity types. Previously it fired for all types,
   causing GRPO to be mistyped as Dataset when it appeared in Benchmarks-titled
   sections with "we use GRPO". Precision 0.573→0.610, F1 0.723→0.752.
+- **Scheduler associate functions refactor**: `GraphScheduler::add_pending_to`,
+  `load_due_tasks_from`, `record_retry_on`, `complete_task_on` accept
+  `&dyn DirectGraphStore` so CLI can use a single shared Samyama store.
+  Struct API (`GraphScheduler::new(...).load_due_tasks()`) kept as thin wrapper
+  for future Phase 3+ server-mode ownership patterns. Removed ~100 lines of
+  inline `DirectGraphStore` duplication from CLI's `run_scheduler`; covered
+  by 6 TDD tests.
 - **Task extraction (EntityType::Task)**: whitelist-based extraction for
   "prompt optimization", "preference optimization", "RLHF", "RAG". Narrow
   whitelist avoids generic-task FP (summarization/code generation). Recall

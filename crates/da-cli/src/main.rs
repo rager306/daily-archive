@@ -822,41 +822,8 @@ async fn run_scheduler(_queue_dir: &str) {
         }
     }
 
-    // Load due tasks from the restored graph
-    let due_tasks = {
-        let scheduler = GraphScheduler::new(Box::new(SamyamaGraphStore::from_env()));
-        // Problem: new store instance is empty. Need to use shared_store.
-        // But GraphScheduler takes Box<dyn DirectGraphStore> (owned).
-        // Solution: query shared_store directly.
-        drop(scheduler);
-        // Query SchedulerTask nodes directly
-        use da_ports::graph_store::DirectGraphStore;
-        let now = chrono::Utc::now().timestamp();
-        let nodes = DirectGraphStore::get_nodes_by_label(&shared_store, "SchedulerTask").await;
-        let mut due = Vec::new();
-        for node_id in nodes {
-            let status =
-                DirectGraphStore::get_node_property_string(&shared_store, node_id, "status")
-                    .await
-                    .unwrap_or_default();
-            if status != "pending" {
-                continue;
-            }
-            let next_retry =
-                DirectGraphStore::get_node_property_int(&shared_store, node_id, "next_retry")
-                    .await
-                    .unwrap_or(0);
-            if next_retry <= now {
-                if let Some(arxiv_id) =
-                    DirectGraphStore::get_node_property_string(&shared_store, node_id, "arxiv_id")
-                        .await
-                {
-                    due.push((node_id, arxiv_id));
-                }
-            }
-        }
-        due
-    };
+    // Load due tasks from the restored graph via GraphScheduler associate fn
+    let due_tasks = GraphScheduler::load_due_tasks_from(&shared_store).await;
 
     if due_tasks.is_empty() {
         println!("Scheduler: no due tasks in graph");
@@ -872,12 +839,11 @@ async fn run_scheduler(_queue_dir: &str) {
     }
 
     // Process due tasks using shared_store for both enrich and scheduler updates
-    use da_ports::graph_store::DirectGraphStore;
     let now = chrono::Utc::now().timestamp();
     let policy = da_domain::scheduler::RetryPolicy::default();
     let mut completed = 0;
     let mut still_pending = 0;
-    let mut failed = 0;
+    let failed = 0; // tracked inside GraphScheduler::record_retry_on
     let mut details = Vec::new();
 
     for (node_id, arxiv_id) in &due_tasks {
@@ -891,75 +857,19 @@ async fn run_scheduler(_queue_dir: &str) {
         match use_case.enrich_by_arxiv_id(arxiv_id).await {
             Ok(r) => {
                 if r.openalex_pending {
-                    // Record retry on shared_store
-                    let retry_count = DirectGraphStore::get_node_property_int(
-                        &shared_store,
-                        *node_id,
-                        "retry_count",
-                    )
-                    .await
-                    .unwrap_or(0);
-                    let new_count = retry_count + 1;
-                    DirectGraphStore::set_node_property_int(
-                        &shared_store,
-                        *node_id,
-                        "retry_count",
-                        new_count,
-                    )
-                    .await
-                    .ok();
-                    DirectGraphStore::set_node_property_int(
-                        &shared_store,
-                        *node_id,
-                        "last_retry",
-                        now,
-                    )
-                    .await
-                    .ok();
-                    if policy.should_give_up(new_count as u32) {
-                        DirectGraphStore::set_node_property_string(
-                            &shared_store,
-                            *node_id,
-                            "status",
-                            "failed".to_string(),
-                        )
+                    GraphScheduler::record_retry_on(&shared_store, &policy, *node_id, now)
                         .await
                         .ok();
-                        failed += 1;
-                    } else {
-                        let next = policy.next_retry_ts(new_count as u32, now);
-                        DirectGraphStore::set_node_property_int(
-                            &shared_store,
-                            *node_id,
-                            "next_retry",
-                            next,
-                        )
-                        .await
-                        .ok();
-                        still_pending += 1;
-                    }
+                    still_pending += 1;
                     details.push((
                         arxiv_id.clone(),
                         "pending".to_string(),
                         "not in OpenAlex".to_string(),
                     ));
                 } else {
-                    DirectGraphStore::set_node_property_string(
-                        &shared_store,
-                        *node_id,
-                        "status",
-                        "completed".to_string(),
-                    )
-                    .await
-                    .ok();
-                    DirectGraphStore::set_node_property_int(
-                        &shared_store,
-                        *node_id,
-                        "last_retry",
-                        now,
-                    )
-                    .await
-                    .ok();
+                    GraphScheduler::complete_task_on(&shared_store, *node_id, now)
+                        .await
+                        .ok();
                     completed += 1;
                     details.push((
                         arxiv_id.clone(),
