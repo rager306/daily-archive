@@ -17,9 +17,8 @@ use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 /// Known method acronyms in RL / optimization / prompt-engineering literature.
 const KNOWN_METHODS: &[&str] = &[
     // RL / optimization methods
-    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", "SILVER",
-    // Prompt optimization / memory
-    "GSEM", "PEM", "OPRO", "PRO", "EoT", // Reasoning
+    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", // Prompt optimization / memory
+    "GSEM", "PEM", "OPRO", "EoT", // Reasoning
     "CoT", "ToT",
 ];
 
@@ -101,17 +100,14 @@ impl RuleBasedExtractor {
             || lower.contains("methodology")
         {
             Some(EntityType::Method)
-        } else if lower.contains("model")
+        } else if (lower.contains("model") && !lower.contains("world model"))
             || lower.contains("inference")
-            || lower.contains("parameter")
         {
             Some(EntityType::Model)
         } else if lower.contains("metric")
             || lower.contains("evaluation")
             || lower.contains("result")
             || lower.contains("experiment")
-            || lower.contains("setup")
-            || lower.contains("analysis")
         {
             Some(EntityType::Metric)
         } else if lower.contains("task") || lower.contains("problem") {
@@ -580,6 +576,30 @@ mod tests {
     }
 
     #[test]
+    fn test_classify_section_noise_reduction() {
+        // Regression: "parameter" used to classify as Model, but in LLM papers
+        // "parameter" usually means training hyperparameters, not an LLM model.
+        assert_eq!(
+            RuleBasedExtractor::classify_section("Parameter Change Analysis"),
+            None,
+            "'parameter' must not classify as Model (hyperparameters, not LLM)"
+        );
+        // "World Model Learning" is an architecture concept, not an LLM model
+        // entity section — must not classify as Model.
+        assert_eq!(
+            RuleBasedExtractor::classify_section("Reinforcement World Model Learning"),
+            None,
+            "'world model' section must not classify as Model"
+        );
+        // "analysis" alone is too noisy to imply a Metrics section.
+        assert_eq!(
+            RuleBasedExtractor::classify_section("Weight Change Analysis"),
+            None,
+            "'analysis' alone must not classify as Metric"
+        );
+    }
+
+    #[test]
     fn test_extract_candidates_propose() {
         let text = "In this paper we propose GeoRLE, a novel approach for layout analysis.";
         let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
@@ -819,6 +839,32 @@ async fn test_extract_method_case_insensitive() {
     assert!(
         labels.contains(&"CoT"),
         "CoT should be found case-insensitively, got: {labels:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_generic_acronyms_not_extracted_as_methods() {
+    // Regression: "PRO methodology" and "silver bullet" were previously
+    // extracted as Method entities because PRO and SILVER were on the
+    // KNOWN_METHODS whitelist despite being ordinary English words.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "Method".to_string(),
+        "We propose a PRO methodology with silver-standard annotations.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let methods: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        !methods.contains(&"PRO"),
+        "'PRO' must not be extracted as Method (generic English word), got: {methods:?}"
+    );
+    assert!(
+        !methods.contains(&"SILVER"),
+        "'SILVER' must not be extracted as Method (common English adjective), got: {methods:?}"
     );
 }
 

@@ -68,59 +68,6 @@ impl EntityType {
             EntityType::FutureWork => "FutureWork",
         }
     }
-
-    /// All entity types (closed vocabulary).
-    pub fn all() -> &'static [EntityType] {
-        &[
-            EntityType::Task,
-            EntityType::Method,
-            EntityType::Dataset,
-            EntityType::Model,
-            EntityType::Metric,
-            EntityType::Baseline,
-            EntityType::Figure,
-            EntityType::Table,
-            EntityType::Equation,
-            EntityType::Concept,
-            EntityType::Implementation,
-            EntityType::Theorem,
-            EntityType::Definition,
-            EntityType::Problem,
-            EntityType::Motivation,
-            EntityType::Gap,
-            EntityType::Contribution,
-            EntityType::Hypothesis,
-            EntityType::Finding,
-            EntityType::Mechanism,
-            EntityType::Limitation,
-            EntityType::FutureWork,
-        ]
-    }
-
-    /// Is this a concrete (Module B) entity type?
-    pub fn is_concrete(&self) -> bool {
-        matches!(
-            self,
-            EntityType::Task
-                | EntityType::Method
-                | EntityType::Dataset
-                | EntityType::Model
-                | EntityType::Metric
-                | EntityType::Baseline
-                | EntityType::Figure
-                | EntityType::Table
-                | EntityType::Equation
-                | EntityType::Concept
-                | EntityType::Implementation
-                | EntityType::Theorem
-                | EntityType::Definition
-        )
-    }
-
-    /// Is this an abstract (Module C) entity type?
-    pub fn is_abstract(&self) -> bool {
-        !self.is_concrete()
-    }
 }
 
 /// An entity extracted from a paper (Module B).

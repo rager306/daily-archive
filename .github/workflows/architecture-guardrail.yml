@@ -85,17 +85,24 @@ jobs:
           # Inner layers must not depend on outer layers or infrastructure.
           # da-domain and da-ports: no infra crates allowed.
           set -euo pipefail
+          # Helper: scan only [dependencies], never [dev-dependencies].
+          grep_deps() {
+            awk '/^\[dependencies\]$/ {in_deps=1;next}
+                 /^\[/ && $0!="[dependencies]" {in_deps=0}
+                 in_deps {print}' "$1" | grep -E "$2";
+          }
+
           echo "Checking da-domain has no infrastructure dependencies..."
-          ! grep -E 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' crates/da-domain/Cargo.toml || {
+          ! grep_deps crates/da-domain/Cargo.toml 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' || {
             echo "ERROR: da-domain must not depend on infrastructure crates"; exit 1; }
           echo "Checking da-ports has no infrastructure dependencies..."
-          ! grep -E 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' crates/da-ports/Cargo.toml || {
+          ! grep_deps crates/da-ports/Cargo.toml 'reqwest|tokio|samyama|ruvector|hyper|axum|actix' || {
             echo "ERROR: da-ports must not depend on infrastructure crates"; exit 1; }
           echo "Checking da-application does not depend on da-adapters..."
-          ! grep -E 'da-adapters' crates/da-application/Cargo.toml || {
+          ! grep_deps crates/da-application/Cargo.toml 'da-adapters' || {
             echo "ERROR: da-application must not depend on da-adapters (hexagonal violation)"; exit 1; }
           echo "Checking da-graph does not depend on da-adapters..."
-          ! grep -E 'da-adapters' crates/da-graph/Cargo.toml || {
+          ! grep_deps crates/da-graph/Cargo.toml 'da-adapters' || {
             echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"; exit 1; }
           echo "Hexagonal dependency direction: PASS"
 
