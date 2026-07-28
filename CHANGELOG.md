@@ -9,8 +9,11 @@
   TASK_PHRASES, TASK_ACRONYMS) as module-level constants — single source of
   truth for section-classified and global passes. Added `word_boundary(text,
   start, end)` helper eliminating 7× duplicated before_ok/after_ok blocks.
-  Removed ~140 lines of duplicate code. Metrics unchanged (P=0.573 R=0.979
-  F1=0.723), 100 tests green.
+  Removed ~140 lines of duplicate code.
+- **Pattern 1 type restriction bugfix**: "we propose/use X" extraction now
+  fires only for Method+Task entity types. Previously it fired for all types,
+  causing GRPO to be mistyped as Dataset when it appeared in Benchmarks-titled
+  sections with "we use GRPO". Precision 0.573→0.610, F1 0.723→0.752.
 - **Task extraction (EntityType::Task)**: whitelist-based extraction for
   "prompt optimization", "preference optimization", "RLHF", "RAG". Narrow
   whitelist avoids generic-task FP (summarization/code generation). Recall
