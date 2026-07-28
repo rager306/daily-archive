@@ -1,4 +1,8 @@
-# Parser sidecars (GROBID / OpenDataLoader)
+# Parser sidecars (GROBID)
+
+GROBID TEI output is consumed by the Rust adapter `da_adapters::GrobidParser`
+(`crates/da-adapters/src/grobid_parser.rs`). Python `research_graph.*` paths
+are frozen under `legacy/` and are not on the runtime path.
 
 ## Quick start
 
@@ -14,18 +18,12 @@ docker compose -f .docker/docker-compose.yml --env-file .env up -d grobid
 # 3) Wait until alive
 curl -sS http://127.0.0.1:8070/api/isalive
 # expected: true
-
-# 4) (Optional) warm OpenDataLoader workspace container
-docker compose -f .docker/docker-compose.yml --env-file .env --profile odl up -d opendataloader
-
-# 5) Host Python ODL library (preferred for hybrid runtime)
-uv pip install opendataloader-pdf
 ```
 
 Stop:
 
 ```bash
-docker compose -f .docker/docker-compose.yml --env-file .env --profile odl down
+docker compose -f .docker/docker-compose.yml --env-file .env down
 ```
 
 ## Env keys
@@ -46,14 +44,28 @@ GROBID has **no API key** in the default CRF image. Do not invent secrets.
 
 ## Hybrid runtime behavior
 
-- Default hybrid path is **injectable** and fail-closed.
-- When live mode is enabled, the parser probes `GROBID_URL/api/isalive`.
-- If down and auto-start is enabled, it runs compose for `grobid` and waits.
-- OpenDataLoader is **library mode** (import `opendataloader_pdf`); the compose `odl` profile is optional workspace only.
-- `hybrid_claimed_success` still requires body evidence (M212), not merely “container up”.
+- The Rust `GrobidParser` (`da_adapters::GrobidParser::from_env()`) probes
+  `GROBID_URL/api/isalive` on construction and before each parse.
+- If auto-start is enabled, the CLI / use-case layer may `compose up -d grobid`
+  and wait up to `GROBID_START_TIMEOUT_SECONDS`.
+- GROBID TEI XML is parsed by `grobid_parser.rs::extract_sections` into
+  `ParsedArticle`/`Section` domain types (see `da-domain::article`).
+- Do not treat sidecar TEI/markdown as graph truth — the `RuleBasedExtractor`
+  consumes parsed sections and emits canonical `Entity` nodes into Samyama
+  Graph.
 
-## Health probe
+## Health probe (Rust)
 
 ```bash
-uv run python -c "from research_graph.infrastructure.corpus.parsing.sidecar_services import probe_parser_sidecars; import json; print(json.dumps(probe_parser_sidecars(), indent=2))"
+# Quick health check via the Rust CLI
+cargo run -p da-cli -- health
+
+# Or directly test the parser adapter
+cargo run -p da-cli --example eval_extract -- 2507.19457
+```
+
+Legacy Python probe (frozen, not on runtime path):
+
+```bash
+# legacy/scripts/ — for reference only, requires legacy/.venv
 ```
