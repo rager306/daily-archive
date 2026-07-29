@@ -12,6 +12,10 @@ use da_ports::parser::ParsedArticle;
 pub struct ExtractionUseCase {
     pub extractor: Box<dyn Extractor>,
     pub graph_store: Box<dyn DirectGraphStore>,
+    /// Optional embedder for entity label embeddings (Phase 3 GNN readiness).
+    /// When Some, each unique entity label gets a bge-m3 embedding written
+    /// to the Entity node's vector index.
+    pub embedder: Option<Box<dyn da_ports::embedder::Embedder>>,
 }
 
 /// Result of extracting entities from one paper.
@@ -28,7 +32,14 @@ impl ExtractionUseCase {
         Self {
             extractor,
             graph_store,
+            embedder: None,
         }
+    }
+
+    /// Attach an embedder for entity label embeddings (Phase 3).
+    pub fn with_embedder(mut self, embedder: Box<dyn da_ports::embedder::Embedder>) -> Self {
+        self.embedder = Some(embedder);
+        self
     }
 
     /// Extract entities from a parsed article and write Entity nodes to graph.
@@ -147,10 +158,47 @@ impl ExtractionUseCase {
             entity_types.push(ext.entity_type.as_str().to_string());
         }
 
+        // Phase 3: Embed entity labels if embedder is available.
+        // Each unique entity label gets a bge-m3 embedding stored as a vector
+        // on the Entity node. This enables GNN similarity search and PPR.
+        let mut embeddings_written = 0usize;
+        if let Some(ref embedder) = self.embedder {
+            let mut seen_labels: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
+            for (i, ext) in extracted.iter().enumerate() {
+                let label_key = ext.label.to_lowercase();
+                if seen_labels.contains(&label_key) {
+                    continue; // skip duplicate labels
+                }
+                seen_labels.insert(label_key);
+
+                let node_id = node_ids.get(i).copied();
+                if let Some(nid) = node_id {
+                    match embedder.embed(&ext.label).await {
+                        Ok(vec) => {
+                            if let Err(e) = self
+                                .graph_store
+                                .add_vector("Entity", "embedding", nid, vec)
+                                .await
+                            {
+                                tracing::warn!(node_id = nid, error = %e, "Entity embedding write failed");
+                            } else {
+                                embeddings_written += 1;
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!(label = %ext.label, error = %e, "Entity embed failed");
+                        }
+                    }
+                }
+            }
+        }
+
         tracing::info!(
             paper_id = %parsed.paper_id,
             entities = extracted.len(),
             mentions_edges,
+            embeddings_written,
             paper_linked = paper_node_id.is_some(),
             "Extraction complete"
         );
