@@ -12,6 +12,34 @@ The graph uses a **three-layer hybrid architecture**:
 
 ---
 
+## Layer 0: Source Provenance (multi-source federation)
+
+Tracks where data came from. Every Work links to exactly one Source via `FROM_SOURCE`.
+
+### Source
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `vid` | String | ✅ | `vid:source:<code>` |
+| `code` | String | ✅ | `arxiv` / `textbook` / `stanford` / `openalex` / `crossref` |
+| `source_type` | String | ✅ | `pdf` / `html` / `markdown` / `api_json` |
+| `domain` | String | ✅ | `scientific_paper` / `textbook` / `lecture_notes` / `code_repo` |
+| `reliability_tier` | Integer | | 1=curated, 2=extracted, 3=user |
+| `access_method` | String | | `grobid` / `html_parser` / `openalex_api` |
+| `retrieval_eligible` | Boolean | | D134: on ALL nodes |
+
+**Indexes:** `vid` (unique), `code`, `domain`
+
+### FROM_SOURCE edge (Work → Source)
+
+Every Work links to exactly one Source. Enables:
+- `MATCH (w:Work)-[:FROM_SOURCE]->(s:Source {code:'arxiv'})` — filter by source
+- `MATCH (w:Work)-[:FROM_SOURCE]->(s:Source {domain:'textbook'})` — filter by domain
+
+**Implemented in:** `crates/da-domain/src/source.rs` (SourceSchema + constants)
+
+---
+
 ## Layer 1: Metadata (OpenAlex backbone)
 
 ### Work (FaBiO: fabio:Article / fabio:Preprint)

@@ -102,6 +102,10 @@
   KNOWN_METHODS; GraphSAGE to KNOWN_METHOD_PHRASES. FP risk validated
   (0/20 LLM papers contain these). GNN textbook extraction: 4→8 entities.
   Corpus P=0.770 R=0.999 F1=0.870.
+- **Phase 2: Multi-source eval corpus**. 104 sources (100 arxiv PDF + 4 GNN
+  textbook HTML). eval_batch now auto-detects PDF (GROBID) vs HTML (HtmlParser).
+  GNN textbook: 0 FN (100% recall on HTML sources).
+  GRAPH-SCHEMA.md updated with Layer 0 Source node + FROM_SOURCE edge.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
