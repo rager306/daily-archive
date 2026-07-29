@@ -95,11 +95,13 @@
   actual P/R/F1 metrics (ExtractionMetrics::evaluate_fuzzy). Previously
   display used type-agnostic matching which could disagree with metric
   counts.
-- **Corpus expanded to 100 papers**: 46 new automated gold-standard fixtures
-  (54→100). 731 gold entities total. Corpus-level metrics:
-  P=0.775 R=0.999 F1=0.873 (Micro); P=0.798 R=0.998 F1=0.877 (Macro).
-  Precision +3% from more complete gold annotation.
-  Statistically significant validation on 100 modern arxiv papers.
+- **Phase 2: HTML parser adapter**. HtmlParser implements ParserPort for non-PDF
+  sources (textbook chapters). ParserPort extended with parse_html() default.
+  GNN textbook (4 chapters, HTML) now ingestible through Rust pipeline.
+- **Phase 2: Cross-domain GNN entities**. Added GCN, GAT, GIN, MPNN, GNN to
+  KNOWN_METHODS; GraphSAGE to KNOWN_METHOD_PHRASES. FP risk validated
+  (0/20 LLM papers contain these). GNN textbook extraction: 4→8 entities.
+  Corpus P=0.770 R=0.999 F1=0.870.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
