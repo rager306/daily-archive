@@ -38,6 +38,8 @@ impl NodeSchemaDef for SectionSchema {
         vec![
             ("text", FieldType::String),
             ("char_count", FieldType::Integer),
+            // Phase 3 GNN readiness — section text embedding
+            ("embedding", FieldType::Vector),
         ]
     }
 }
@@ -253,6 +255,19 @@ mod tests {
         let s = SectionSchema;
         assert_eq!(s.label(), "Section");
         assert!(s.required_fields().iter().any(|(n, _)| *n == "work_vid"));
+    }
+
+    #[test]
+    fn test_section_schema_has_embedding_field() {
+        // Phase 3 GNN readiness: Section nodes must support vector embeddings
+        // for section-level similarity search.
+        let s = SectionSchema;
+        let optional = s.optional_fields();
+        let names: Vec<&str> = optional.iter().map(|(n, _)| *n).collect();
+        assert!(
+            names.contains(&"embedding"),
+            "SectionSchema must have 'embedding' field for GNN readiness, got: {names:?}"
+        );
     }
 
     #[test]
