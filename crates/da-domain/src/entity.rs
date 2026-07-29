@@ -109,6 +109,9 @@ impl crate::schema::NodeSchemaDef for EntitySchema {
             ("evidence_ready", crate::schema::FieldType::Boolean),
             ("import_eligible", crate::schema::FieldType::Boolean),
             ("retrieval_eligible", crate::schema::FieldType::Boolean),
+            // Phase 3: GNN readiness — entity label embedding (bge-m3 1024d)
+            ("embedding", crate::schema::FieldType::Vector),
+            ("domain_tags", crate::schema::FieldType::String),
         ]
     }
 }
@@ -123,5 +126,40 @@ mod tests {
         let json = serde_json::to_string(&t).unwrap();
         let back: EntityType = serde_json::from_str(&json).unwrap();
         assert_eq!(t, back);
+    }
+
+    #[test]
+    fn test_entity_schema_has_embedding_field() {
+        // Phase 3 GNN readiness: Entity nodes must support vector embeddings
+        use crate::schema::NodeSchemaDef;
+        let schema = EntitySchema;
+        let optional = schema.optional_fields();
+        let names: Vec<&str> = optional.iter().map(|(n, _)| *n).collect();
+        assert!(
+            names.contains(&"embedding"),
+            "EntitySchema must have 'embedding' optional field for GNN readiness, got: {names:?}"
+        );
+        // Verify it's Vector type
+        let embedding_field = optional.iter().find(|(n, _)| *n == "embedding");
+        assert!(embedding_field.is_some(), "embedding field must exist");
+        let (_, ftype) = embedding_field.unwrap();
+        assert_eq!(
+            *ftype,
+            crate::schema::FieldType::Vector,
+            "embedding field must be Vector type"
+        );
+    }
+
+    #[test]
+    fn test_entity_schema_has_domain_tags() {
+        // Cross-domain support: Entity nodes carry domain_tags for filtering
+        use crate::schema::NodeSchemaDef;
+        let schema = EntitySchema;
+        let optional = schema.optional_fields();
+        let names: Vec<&str> = optional.iter().map(|(n, _)| *n).collect();
+        assert!(
+            names.contains(&"domain_tags"),
+            "EntitySchema must have 'domain_tags' for cross-domain support"
+        );
     }
 }
