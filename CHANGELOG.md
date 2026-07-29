@@ -76,6 +76,10 @@
   in Method+Task sections no longer claims known model names (GPT-4,
   Claude, etc.) as Method/Task candidates. Cross-whitelist check prevents
   wrong-type duplicates before they form. 124 tests green.
+- **TaskType::as_str() bugfix**: hardcoded "openalex_enrich" in scheduler
+  replaced with `task.task_type.as_str()` → "open_alex_enrich". Old
+  hardcoded value diverged from serde snake_case serialization, which
+  would break future graph-property vs JSON comparisons. 125 tests green.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
