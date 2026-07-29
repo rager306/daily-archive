@@ -19,7 +19,8 @@ const KNOWN_METHODS: &[&str] = &[
     // RL / optimization methods
     "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", // Prompt optimization / memory
     "GSEM", "PEM", "OPRO", "EoT", // Reasoning
-    "CoT", "ToT",
+    "CoT", "ToT", // GNN architectures (cross-domain: ONTOLOGY-DESIGN Phase 2)
+    "GCN", "GAT", "GIN", "MPNN", "GNN",
 ];
 
 /// Known multi-word method phrases (case-insensitive, word-boundary).
@@ -34,6 +35,8 @@ const KNOWN_METHOD_PHRASES: &[&str] = &[
     "self-evolving memory",
     "chain-of-thought reasoning",
     "in-context learning",
+    // GNN-specific phrases (cross-domain: ONTOLOGY-DESIGN Phase 2)
+    "GraphSAGE",
 ];
 
 /// Known dataset names (direct match, case-insensitive, word-boundary).
@@ -1102,6 +1105,40 @@ fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
     assert!(
         overlap.is_empty(),
         "Method and Task acronyms overlap: {overlap:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_gnn_entities_extracted_from_textbook_content() {
+    // Cross-domain validation: GNN-specific methods (GCN, GAT, GraphSAGE)
+    // should be extractable from textbook HTML content.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "Graph Neural Networks".to_string(),
+        "We compare GCN, GAT, and GraphSAGE architectures. GNN models use message passing."
+            .to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let methods: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        methods.contains(&"GCN"),
+        "GCN should be Method, got: {methods:?}"
+    );
+    assert!(
+        methods.contains(&"GAT"),
+        "GAT should be Method, got: {methods:?}"
+    );
+    assert!(
+        methods.contains(&"GNN"),
+        "GNN should be Method, got: {methods:?}"
+    );
+    assert!(
+        methods.contains(&"GraphSAGE"),
+        "GraphSAGE should be Method, got: {methods:?}"
     );
 }
 
