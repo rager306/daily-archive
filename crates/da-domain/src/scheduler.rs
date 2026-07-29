@@ -36,6 +36,19 @@ pub enum TaskType {
 }
 
 impl TaskType {
+    /// Canonical string representation for graph node property `task_type`.
+    /// MUST match `#[serde(rename_all = "snake_case")]` serialization.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TaskType::OpenAlexEnrich => "open_alex_enrich",
+            TaskType::Ingest => "ingest",
+            TaskType::Reparse => "reparse",
+            TaskType::Extract => "extract",
+            TaskType::EmbedStale => "embed_stale",
+            TaskType::GraphWrite => "graph_write",
+        }
+    }
+
     /// Priority level from ADR-037 §4.3.
     pub fn priority(&self) -> TaskPriority {
         match self {
@@ -185,6 +198,21 @@ mod tests {
         assert_eq!(task.status, TaskStatus::Pending);
         assert_eq!(task.retry_count, 0);
         assert_eq!(task.next_retry, now + 86400); // 1 day later
+    }
+
+    #[test]
+    fn test_task_type_as_str_matches_serde_snake_case() {
+        // as_str() MUST match serde rename_all="snake_case" serialization.
+        // If these diverge, graph node properties won't match serialized
+        // PendingTask JSON, breaking scheduler queries.
+        let tt = TaskType::OpenAlexEnrich;
+        let json = serde_json::to_string(&tt).unwrap();
+        // serde produces "open_alex_enrich" (quoted JSON string)
+        assert_eq!(json, "\"open_alex_enrich\"");
+        // as_str() returns the same string without quotes
+        assert_eq!(tt.as_str(), "open_alex_enrich");
+        // NOT "openalex_enrich" (the old hardcoded value — missing underscore)
+        assert_ne!(tt.as_str(), "openalex_enrich");
     }
 
     #[test]

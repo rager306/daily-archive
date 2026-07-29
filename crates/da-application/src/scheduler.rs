@@ -86,7 +86,7 @@ impl GraphScheduler {
             .set_node_property_string(node, "arxiv_id", arxiv_id.to_string())
             .await?;
         store
-            .set_node_property_string(node, "task_type", "openalex_enrich".to_string())
+            .set_node_property_string(node, "task_type", task.task_type.as_str().to_string())
             .await?;
         store
             .set_node_property_string(node, "status", "pending".to_string())
