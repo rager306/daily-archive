@@ -82,6 +82,10 @@
   would break future graph-property vs JSON comparisons. Both code paths
   (scheduler add_pending_to + enrich create_pending_stub) now consistent.
   125 tests green.
+- **Governor CLI: eval_batch pre-commit hook**. Non-blocking informational
+  check that runs the 12-paper extraction eval after every Rust file commit.
+  Closes the biggest process gap: metrics were previously estimated "by eye".
+  Use `SKIP=eval-baseline-check` for fast commits.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
