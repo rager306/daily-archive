@@ -158,12 +158,8 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_bool(section_node, "retrieval_eligible", true)
                 .await?;
-            // Truncate text to 10000 chars to avoid oversized properties
-            let text_trunc = if section.text.len() > 10000 {
-                &section.text[..10000]
-            } else {
-                &section.text
-            };
+            // Truncate text to ~10000 bytes, UTF-8 safe (avoid mid-char panic)
+            let text_trunc = section.text.get(..10000).unwrap_or(&section.text);
             self.graph_store
                 .set_node_property_string(section_node, "text", text_trunc.to_string())
                 .await?;
