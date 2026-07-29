@@ -43,8 +43,17 @@ pub struct CitationEntry {
     pub title: Option<String>,
 }
 
-/// Parser port — GROBID HTTP + ODL subprocess implement this.
+/// Parser port — GROBID HTTP + HTML parser implement this.
 #[async_trait]
 pub trait ParserPort: Send + Sync {
+    /// Parse a PDF file into a ParsedArticle (GROBID path).
     async fn parse_pdf(&self, pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle>;
+
+    /// Parse an HTML file into a ParsedArticle (textbook/lecture path).
+    /// Default implementation returns Unavailable — adapters override.
+    async fn parse_html(&self, _html_path: &str, _paper_id: &str) -> ParseResult<ParsedArticle> {
+        Err(ParserError::Unavailable(
+            "HTML parsing not supported by this parser".to_string(),
+        ))
+    }
 }
