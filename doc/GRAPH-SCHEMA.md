@@ -158,8 +158,8 @@ An OpenAlex topic — a grouped concept cluster (domain → field → subfield �
 
 ### Entity (ADR-028 typed schema, NOT in FaBiO)
 
-Entity types (22, closed vocabulary):
-- **Concrete (13)**: Method, Dataset, Metric, Task, Baseline, Model, Figure, Table, Equation, Concept, Implementation, Theorem, Definition
+Entity types (21, closed vocabulary):
+- **Concrete (12)**: Method, Dataset, Metric, Task, Model, Figure, Table, Equation, Concept, Implementation, Theorem, Definition
 - **Abstract (9)**: Problem, Motivation, Gap, Contribution, Hypothesis, Finding, Mechanism, Limitation, FutureWork
 
 | Property | Type | Required | Description |
@@ -173,13 +173,15 @@ Entity types (22, closed vocabulary):
 | `surface` | String | | Exact surface text |
 | `description` | String | | Optional description |
 | `confidence` | Float | | Extraction confidence |
+| `embedding` | Vector(1024) | | bge-m3 label embedding (Phase 3 GNN) |
+| `domain_tags` | String | | Cross-domain tags (e.g., "rl,nlp,gnn") |
 | `valid_from` | DateTime | ✅ | Extraction timestamp |
 | `schema_version` | Integer | | Schema version |
 | `evidence_ready` | Boolean | | Has grounded evidence |
 | `import_eligible` | Boolean | | D127 — always false |
 
-**Indexes:** `vid` (unique), `entity_type`
-**Edges:** `mentions` (Work → Entity), `foundIn` (Entity → Section),
+**Indexes:** `vid` (unique), `entity_type`, `embedding` (vector)
+**Edges:** `mentions` (Work → Entity, weight=1.0), `foundIn` (Entity → Section),
 27 extracted relation types (Entity → Entity)
 
 ### Reference (FaBiO: fabio:BibliographicReference)

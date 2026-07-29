@@ -110,6 +110,10 @@
   `set_edge_property_float` and `set_edge_property_string`. MENTIONS edges
   now carry `weight=1.0` (rule-based confidence). Enables PPR and GNN
   message passing via RuVector Tier 2. GRAPH-SCHEMA.md updated.
+- **Phase 3: Entity embedding + domain_tags schema**. EntitySchema
+  optional_fields extended with `embedding` (Vector, bge-m3 1024d) and
+  `domain_tags` (String, cross-domain filtering). fd_api embedder
+  confirmed alive at :8000.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides
