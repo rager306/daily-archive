@@ -5,7 +5,7 @@
 //!
 //! Usage: cargo run -p da-cli --example eval_batch
 
-use da_adapters::{GrobidParser, RuleBasedExtractor};
+use da_adapters::{GrobidParser, HtmlParser, RuleBasedExtractor};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
@@ -53,7 +53,7 @@ async fn main() {
         let gold: GoldFile = serde_json::from_str(&gold_json).unwrap();
         let paper_id = gold.paper_id.clone();
 
-        // Find PDF
+        // Find PDF first, then HTML fallback (multi-source: ONTOLOGY-DESIGN Phase 2)
         let pdf = std::process::Command::new("find")
             .args(["data/article_catalog", "-name", &format!("{paper_id}.pdf")])
             .output()
@@ -62,22 +62,44 @@ async fn main() {
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
 
-        let pdf_path = match pdf {
-            Some(p) => p,
-            None => {
-                eprintln!("⚠ {paper_id}: PDF not found, skipping");
-                continue;
-            }
-        };
+        let html = std::process::Command::new("find")
+            .args(["data/article_catalog", "-name", "chapter.html"])
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| {
+                let lines: Vec<&str> = s.trim().lines().collect();
+                lines
+                    .iter()
+                    .find(|l| l.contains(&paper_id))
+                    .map(|l| l.to_string())
+            })
+            .flatten()
+            .filter(|s| !s.is_empty());
 
-        // Parse via GROBID
-        let parser = GrobidParser::from_env();
-        let parsed = match parser.parse_pdf(&pdf_path, &paper_id).await {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("⚠ {paper_id}: GROBID failed: {e}");
-                continue;
+        let parsed = if let Some(pdf_path) = pdf {
+            // Parse via GROBID (PDF path)
+            let parser = GrobidParser::from_env();
+            match parser.parse_pdf(&pdf_path, &paper_id).await {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("⚠ {paper_id}: GROBID failed: {e}");
+                    continue;
+                }
             }
+        } else if let Some(html_path) = html {
+            // Parse via HtmlParser (HTML path — textbooks, lectures)
+            let parser = HtmlParser::new();
+            match parser.parse_html(&html_path, &paper_id).await {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("⚠ {paper_id}: HTML parse failed: {e}");
+                    continue;
+                }
+            }
+        } else {
+            eprintln!("⚠ {paper_id}: no PDF or HTML found, skipping");
+            continue;
         };
 
         // Extract
