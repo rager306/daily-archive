@@ -124,9 +124,11 @@ async fn main() {
     println!("\n=== Missed entities (false negatives) ===");
     for g in &gold.entities {
         let g_label = g.label.to_lowercase();
+        let g_type = g.entity_type.to_lowercase();
         let matched = predicted.iter().any(|p| {
             let p_label = p.label.to_lowercase();
-            g_label.contains(&p_label) || p_label.contains(&g_label)
+            g_type == p.entity_type.to_lowercase()
+                && (g_label.contains(&p_label) || p_label.contains(&g_label))
         });
         if !matched {
             println!("  ❌ {} ({})", g.label, g.entity_type);
@@ -137,9 +139,11 @@ async fn main() {
     println!("\n=== Spurious entities (false positives) ===");
     for p in &predicted {
         let p_label = p.label.to_lowercase();
+        let p_type = p.entity_type.to_lowercase();
         let matched = gold.entities.iter().any(|g| {
             let g_label = g.label.to_lowercase();
-            g_label.contains(&p_label) || p_label.contains(&g_label)
+            p_type == g.entity_type.to_lowercase()
+                && (g_label.contains(&p_label) || p_label.contains(&g_label))
         });
         if !matched {
             println!("  ⚠ [{}] {}", p.entity_type, p.label);

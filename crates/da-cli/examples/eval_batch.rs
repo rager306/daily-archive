@@ -105,15 +105,16 @@ async fn main() {
 
         let metrics = ExtractionMetrics::evaluate_fuzzy(&gold.entities, &predicted);
 
-        // Collect FN labels
+        // Collect FN labels (type-checked, consistent with evaluate_fuzzy)
         let false_negatives: Vec<String> = gold
             .entities
             .iter()
             .filter(|g| {
                 let gl = g.label.to_lowercase();
+                let gt = g.entity_type.to_lowercase();
                 !predicted.iter().any(|p| {
                     let pl = p.label.to_lowercase();
-                    gl.contains(&pl) || pl.contains(&gl)
+                    gt == p.entity_type.to_lowercase() && (gl.contains(&pl) || pl.contains(&gl))
                 })
             })
             .map(|g| format!("{} ({})", g.label, g.entity_type))
