@@ -137,4 +137,47 @@ mod tests {
         let q = PaperQueries::stale_schema(2);
         assert!(q.contains("n.schema_version < 2"));
     }
+
+    #[test]
+    fn test_find_by_arxiv_id() {
+        let q = PaperQueries::find_by_arxiv_id("2507.19457");
+        assert!(q.contains("MATCH (n:Paper {arxiv_id: \"2507.19457\"})"));
+    }
+
+    #[test]
+    fn test_count_all_filters_retrieval_eligible() {
+        // D134: retrieval_eligible must be on ALL nodes — count_all must filter.
+        let q = PaperQueries::count_all();
+        assert!(q.contains("n.retrieval_eligible = true"));
+        assert!(q.contains("count(n)"));
+    }
+
+    #[test]
+    fn test_without_embedding() {
+        let q = PaperQueries::without_embedding();
+        assert!(q.contains("n.embedding IS NULL"));
+        assert!(q.contains("n.retrieval_eligible = true"));
+    }
+
+    #[test]
+    fn test_cited_by() {
+        let q = PaperQueries::cited_by("vid:abc");
+        assert!(q.contains("-[:CITES]->"));
+        assert!(q.contains("vid: \"vid:abc\""));
+        assert!(q.contains("citing.retrieval_eligible = true"));
+    }
+
+    #[test]
+    fn test_by_label() {
+        let q = EntityQueries::by_label("Method");
+        assert!(q.contains("MATCH (n:Method)"));
+        assert!(q.contains("n.confidence"));
+    }
+
+    #[test]
+    fn test_relation_by_type() {
+        let q = RelationQueries::by_type("CITES");
+        assert!(q.contains("-[r:CITES]->"));
+        assert!(q.contains("r.confidence"));
+    }
 }
