@@ -22,6 +22,17 @@ const KNOWN_METHODS: &[&str] = &[
     "CoT", "ToT",
 ];
 
+/// Known multi-word method phrases (case-insensitive, word-boundary).
+/// These are compound method names that cannot be captured by the
+/// all-caps acronym whitelist — they appear as lowercase/titlecase
+/// phrases in paper body text.
+const KNOWN_METHOD_PHRASES: &[&str] = &[
+    "self-evolving memory",
+    "chain-of-thought reasoning",
+    "in-context learning",
+    "retrieval-augmented generation",
+];
+
 /// Known dataset names (direct match, case-insensitive, word-boundary).
 const KNOWN_DATASETS: &[&str] = &[
     "HotpotQA",
@@ -378,6 +389,37 @@ impl Extractor for RuleBasedExtractor {
                         surface: text[char_start.min(text.len())..char_end.min(text.len())]
                             .to_string(),
                     });
+                }
+            }
+        }
+
+        // Global Method phrase pass: scan ALL sections for known multi-word
+        // method phrases (self-evolving memory, chain-of-thought reasoning).
+        // These are compound method names that cannot be captured by the
+        // all-caps acronym pass — they appear as lowercase/titlecase phrases.
+        for (title, text) in sections {
+            let lower = text.to_lowercase();
+            for phrase in KNOWN_METHOD_PHRASES {
+                let p_lower = phrase.to_lowercase();
+                let mut start = 0;
+                while let Some(pos) = lower[start..].find(&p_lower) {
+                    let abs = start + pos;
+                    let end = abs + phrase.len();
+                    if Self::word_boundary(text, abs, end) {
+                        let key = (p_lower.clone(), "method".to_string());
+                        if !seen.contains(&key) {
+                            seen.insert(key);
+                            entities.push(ExtractedEntity {
+                                label: phrase.to_string(),
+                                entity_type: EntityType::Method,
+                                section_title: title.clone(),
+                                char_start: abs,
+                                char_end: end,
+                                surface: phrase.to_string(),
+                            });
+                        }
+                    }
+                    start = end;
                 }
             }
         }
@@ -958,6 +1000,43 @@ async fn test_generic_acronyms_not_extracted_as_methods() {
     assert!(
         !methods.contains(&"SILVER"),
         "'SILVER' must not be extracted as Method (common English adjective), got: {methods:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_multi_word_method_phrase_extraction() {
+    // Wave 1: multi-word method phrases like "self-evolving memory" are
+    // compound names that cannot be captured by the all-caps acronym
+    // whitelist. They appear as lowercase/titlecase phrases in body text.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "Method".to_string(),
+        "We propose a self-evolving memory system for agents.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let methods: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        methods.contains(&"self-evolving memory"),
+        "'self-evolving memory' should be extracted as Method, got: {methods:?}"
+    );
+    // Also test case-insensitive: "Self-Evolving Memory" (title case)
+    let sections2 = vec![(
+        "Abstract".to_string(),
+        "Self-Evolving Memory enables agents to learn from experience.".to_string(),
+    )];
+    let entities2 = extractor.extract(&sections2).await.unwrap();
+    let methods2: Vec<&str> = entities2
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        methods2.contains(&"self-evolving memory"),
+        "'Self-Evolving Memory' (title case) should be extracted, got: {methods2:?}"
     );
 }
 
