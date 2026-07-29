@@ -95,6 +95,60 @@ const TASK_PHRASES: &[&str] = &["prompt optimization", "preference optimization"
 /// Known task acronyms.
 const TASK_ACRONYMS: &[&str] = &["RLHF", "RAG"];
 
+// ============================================================================
+// Declarative extraction patterns (Wave 3).
+// Can be loaded from JSON file (data/extraction_patterns.json) or use
+// embedded defaults. Governor CLI can update patterns without recompiling.
+// ============================================================================
+
+/// Declarative extraction config (Wave 3: JSON-driven whitelists).
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ExtractionConfig {
+    pub methods: MethodConfig,
+    pub models: Vec<String>,
+    pub datasets: Vec<String>,
+    pub metrics: Vec<String>,
+    pub tasks: TaskConfig,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct MethodConfig {
+    pub acronyms: Vec<String>,
+    pub phrases: Vec<String>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct TaskConfig {
+    pub phrases: Vec<String>,
+    pub acronyms: Vec<String>,
+}
+
+impl ExtractionConfig {
+    /// Load from JSON file.
+    pub fn from_file(path: &str) -> Result<Self, std::io::Error> {
+        let json = std::fs::read_to_string(path)?;
+        serde_json::from_str(&json)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+
+    /// Embedded defaults (matches KNOWN_* const arrays).
+    pub fn defaults() -> Self {
+        Self {
+            methods: MethodConfig {
+                acronyms: KNOWN_METHODS.iter().map(|s| s.to_string()).collect(),
+                phrases: KNOWN_METHOD_PHRASES.iter().map(|s| s.to_string()).collect(),
+            },
+            models: KNOWN_MODELS.iter().map(|s| s.to_string()).collect(),
+            datasets: KNOWN_DATASETS.iter().map(|s| s.to_string()).collect(),
+            metrics: KNOWN_METRICS.iter().map(|s| s.to_string()).collect(),
+            tasks: TaskConfig {
+                phrases: TASK_PHRASES.iter().map(|s| s.to_string()).collect(),
+                acronyms: TASK_ACRONYMS.iter().map(|s| s.to_string()).collect(),
+            },
+        }
+    }
+}
+
 /// Rule-based extractor using section titles + keyword heuristics.
 pub struct RuleBasedExtractor;
 
@@ -1106,6 +1160,46 @@ fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
         overlap.is_empty(),
         "Method and Task acronyms overlap: {overlap:?}"
     );
+}
+
+#[test]
+fn test_extraction_config_defaults() {
+    // Wave 3: ExtractionConfig::defaults() must match KNOWN_* const arrays.
+    let config = ExtractionConfig::defaults();
+    assert!(!config.methods.acronyms.is_empty());
+    assert!(config.methods.acronyms.iter().any(|m| m == "GEPA"));
+    assert!(config.methods.acronyms.iter().any(|m| m == "GCN")); // cross-domain
+    assert!(config.models.iter().any(|m| m == "GPT-4"));
+    assert!(config.datasets.iter().any(|d| d == "MMLU"));
+    assert!(config.metrics.iter().any(|m| m == "accuracy"));
+    assert!(config
+        .tasks
+        .phrases
+        .iter()
+        .any(|t| t == "prompt optimization"));
+    assert!(config.tasks.acronyms.iter().any(|t| t == "RLHF"));
+}
+
+#[test]
+fn test_extraction_config_from_file() {
+    // Wave 3: load patterns from JSON file.
+    // Tests run from crate dir; walk up to find data/extraction_patterns.json
+    let candidates = [
+        "../../../data/extraction_patterns.json",
+        "../../data/extraction_patterns.json",
+        "data/extraction_patterns.json",
+    ];
+    let path = candidates
+        .iter()
+        .find(|p| std::path::Path::new(p).exists())
+        .copied()
+        .expect("extraction_patterns.json should exist");
+    let config = ExtractionConfig::from_file(path).unwrap_or_else(|e| {
+        panic!("Failed to load config: {e}");
+    });
+    assert!(!config.methods.acronyms.is_empty());
+    assert!(config.methods.acronyms.iter().any(|m| m == "GEPA"));
+    assert!(config.models.iter().any(|m| m == "GPT-4"));
 }
 
 #[tokio::test]
