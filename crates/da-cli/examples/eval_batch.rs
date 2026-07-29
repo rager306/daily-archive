@@ -67,15 +67,13 @@ async fn main() {
             .output()
             .ok()
             .and_then(|o| String::from_utf8(o.stdout).ok())
-            .map(|s| {
-                let lines: Vec<&str> = s.trim().lines().collect();
-                lines
-                    .iter()
+            .and_then(|s| {
+                s.trim()
+                    .lines()
                     .find(|l| l.contains(&paper_id))
-                    .map(|l| l.to_string())
-            })
-            .flatten()
-            .filter(|s| !s.is_empty());
+                    .map(|l| l.trim().to_string())
+                    .filter(|s| !s.is_empty())
+            });
 
         let parsed = if let Some(pdf_path) = pdf {
             // Parse via GROBID (PDF path)
