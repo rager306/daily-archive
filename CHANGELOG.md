@@ -90,6 +90,11 @@
   gold entities against current whitelists, reports uncovered candidates.
   Coverage: 28/29 (96.6%), 1 uncovered ("generalization" — too broad for
   whitelist). Usage: `cargo run -p da-cli --example suggest_whitelist`.
+- **Eval display consistency fix**: FN/FP display logic in eval_extract.rs
+  and eval_batch.rs now uses type-checked matching, consistent with the
+  actual P/R/F1 metrics (ExtractionMetrics::evaluate_fuzzy). Previously
+  display used type-agnostic matching which could disagree with metric
+  counts.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
