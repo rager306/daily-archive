@@ -224,13 +224,17 @@ or arXiv match is found) or remain a stub.
 
 ### Layer 3: Content edges
 
-| Edge | Source | From → To | Description |
-|------|--------|-----------|-------------|
-| `mentions` | extraction | Work → Entity | Work mentions entity |
-| `foundIn` | extraction | Entity → Section | Entity in section |
-| `BUILDS_ON` | ADR-028 | Entity → Entity | Entity builds on entity |
-| `USES_METHOD_IN` | CiTO | Entity → Entity | Uses method from |
-| ...25 more | ADR-028/CiTO | Entity → Entity | Typed relations |
+| Edge | Source | From → To | Description | Weight |
+|------|--------|-----------|-------------|--------|
+| `mentions` | extraction | Work → Entity | Work mentions entity | 1.0 (rule-based confidence) |
+| `foundIn` | extraction | Entity → Section | Entity in section | — |
+| `BUILDS_ON` | ADR-028 | Entity → Entity | Entity builds on entity | — |
+| `USES_METHOD_IN` | CiTO | Entity → Entity | Uses method from | — |
+| ...25 more | ADR-028/CiTO | Entity → Entity | Typed relations | — |
+
+**Edge weight property** (Phase 3 GNN readiness): `mentions` edges carry a
+`weight` float property (default 1.0 for rule-based extraction). This enables
+PPR (Personalized PageRank) and GNN message passing via RuVector Tier 2.
 
 ### CiTO citation typing (property on `cites` edge)
 

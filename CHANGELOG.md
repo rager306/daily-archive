@@ -106,6 +106,14 @@
   textbook HTML). eval_batch now auto-detects PDF (GROBID) vs HTML (HtmlParser).
   GNN textbook: 0 FN (100% recall on HTML sources).
   GRAPH-SCHEMA.md updated with Layer 0 Source node + FROM_SOURCE edge.
+- **Phase 3: Edge weight support**. DirectGraphStore trait extended with
+  `set_edge_property_float` and `set_edge_property_string`. MENTIONS edges
+  now carry `weight=1.0` (rule-based confidence). Enables PPR and GNN
+  message passing via RuVector Tier 2. GRAPH-SCHEMA.md updated.
+- **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
+  config file — whitelists loadable from JSON, governor CLI can update
+  patterns without recompiling Rust. ExtractionConfig::defaults() provides
+  backward-compatible embedded defaults.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
