@@ -152,6 +152,7 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::relation::CitationSchema),
         Box::new(crate::entity::EntitySchema),
         Box::new(crate::source::SourceSchema),
+        Box::new(crate::hypergraph::ConceptClusterSchema),
     ]
 }
 
@@ -165,9 +166,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_node_schemas_has_eleven_types() {
+    fn test_all_node_schemas_has_twelve_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 11);
+        assert_eq!(schemas.len(), 12);
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         assert!(labels.contains(&"Paper"));
         assert!(labels.contains(&"Section"));
@@ -180,6 +181,7 @@ mod tests {
         assert!(labels.contains(&"Citation"));
         assert!(labels.contains(&"Entity"));
         assert!(labels.contains(&"Source"));
+        assert!(labels.contains(&"ConceptCluster"));
     }
 
     #[test]

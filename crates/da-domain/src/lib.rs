@@ -12,6 +12,7 @@ pub mod entity;
 pub mod eval;
 pub mod evidence;
 pub mod healing;
+pub mod hypergraph;
 pub mod paper;
 pub mod relation;
 pub mod scheduler;
@@ -28,6 +29,9 @@ pub use eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
+};
+pub use hypergraph::{
+    ConceptClusterSchema, CLUSTER_BENCHMARK_SUITE, CLUSTER_CONCEPT, CLUSTER_METHOD_FAMILY,
 };
 pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
