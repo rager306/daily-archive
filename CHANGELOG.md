@@ -88,9 +88,10 @@
   Use `SKIP=eval-baseline-check` for fast commits.
 - **Wave 1: multi-word method phrase extraction**. New KNOWN_METHOD_PHRASES
   whitelist + global Method phrase pass for compound names like "self-evolving
-  memory", "chain-of-thought reasoning", "in-context learning",
-  "retrieval-augmented generation". Recall 0.979→0.990 (1 FN closed),
-  132 tests green.
+  memory", "chain-of-thought reasoning", "in-context learning".
+  Recall 0.979→0.990 (1 FN closed), 133 tests green.
+  Removed "retrieval-augmented generation" from phrases — cross-type
+  conflict with RAG (Task). Cross-type regression test added.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
