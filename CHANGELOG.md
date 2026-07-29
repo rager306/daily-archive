@@ -86,6 +86,11 @@
   check that runs the 12-paper extraction eval after every Rust file commit.
   Closes the biggest process gap: metrics were previously estimated "by eye".
   Use `SKIP=eval-baseline-check` for fast commits.
+- **Wave 1: multi-word method phrase extraction**. New KNOWN_METHOD_PHRASES
+  whitelist + global Method phrase pass for compound names like "self-evolving
+  memory", "chain-of-thought reasoning", "in-context learning",
+  "retrieval-augmented generation". Recall 0.979→0.990 (1 FN closed),
+  132 tests green.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
