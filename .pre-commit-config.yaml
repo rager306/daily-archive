@@ -32,3 +32,12 @@ repos:
         pass_filenames: false
         types: [rust]
         stages: [pre-commit]
+
+      - id: eval-baseline-check
+        name: extraction eval baseline (non-blocking)
+        entry: bash -c 'cargo run -p da-cli --example eval_batch 2>/dev/null | grep "F1=" | head -1 || echo "eval skipped (GROBID not running)"'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: false
+        verbose: true
