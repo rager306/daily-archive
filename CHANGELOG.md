@@ -72,6 +72,10 @@
   same (label, type) pair from multiple sections before global `seen` was
   initialized. Real symptom: duplicate `[Dataset] HotpotQA` in 2507.19457.
   Added final post-pass retain collapsing duplicates; 123 tests green.
+- **Pattern 1 cross-whitelist suppression**: "we propose/use X" extraction
+  in Method+Task sections no longer claims known model names (GPT-4,
+  Claude, etc.) as Method/Task candidates. Cross-whitelist check prevents
+  wrong-type duplicates before they form. 124 tests green.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
