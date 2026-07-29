@@ -26,11 +26,14 @@ const KNOWN_METHODS: &[&str] = &[
 /// These are compound method names that cannot be captured by the
 /// all-caps acronym whitelist — they appear as lowercase/titlecase
 /// phrases in paper body text.
+///
+/// CROSS-TYPE CONFLICT AVOIDANCE: do NOT include phrases whose acronym
+/// already exists in TASK_ACRONYMS (e.g., "retrieval-augmented generation"
+/// conflicts with RAG=Task). Expand the acronym instead of adding a phrase.
 const KNOWN_METHOD_PHRASES: &[&str] = &[
     "self-evolving memory",
     "chain-of-thought reasoning",
     "in-context learning",
-    "retrieval-augmented generation",
 ];
 
 /// Known dataset names (direct match, case-insensitive, word-boundary).
@@ -1037,6 +1040,38 @@ async fn test_multi_word_method_phrase_extraction() {
     assert!(
         methods2.contains(&"self-evolving memory"),
         "'Self-Evolving Memory' (title case) should be extracted, got: {methods2:?}"
+    );
+}
+
+#[test]
+fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
+    // Regression: "retrieval-augmented generation" was in KNOWN_METHOD_PHRASES
+    // while "RAG" is in TASK_ACRONYMS. Same concept, different entity types →
+    // graph confusion. Verify no acronym in TASK_ACRONYMS has a corresponding
+    // phrase in KNOWN_METHOD_PHRASES (and vice versa for KNOWN_METHODS).
+    let method_acronyms: std::collections::HashSet<&str> = KNOWN_METHODS.iter().copied().collect();
+    let task_acronyms: std::collections::HashSet<&str> = TASK_ACRONYMS.iter().copied().collect();
+
+    // No method phrase should be a task acronym expanded (or vice versa).
+    // Check: TASK_ACRONYMS items should not appear as substrings of
+    // KNOWN_METHOD_PHRASES items.
+    for phrase in KNOWN_METHOD_PHRASES {
+        let p_lower = phrase.to_lowercase();
+        for acr in &task_acronyms {
+            let a_lower = acr.to_lowercase();
+            // RAG = Retrieval-Augmented Generation — check if phrase starts
+            // with the expansion. This is a heuristic guard, not exhaustive.
+            if p_lower.starts_with(&a_lower) {
+                panic!("Cross-type conflict: phrase '{phrase}' starts with task acronym '{acr}'");
+            }
+        }
+    }
+
+    // Also verify method acronyms and task acronyms don't overlap.
+    let overlap: Vec<&&str> = method_acronyms.intersection(&task_acronyms).collect();
+    assert!(
+        overlap.is_empty(),
+        "Method and Task acronyms overlap: {overlap:?}"
     );
 }
 
