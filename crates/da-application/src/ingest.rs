@@ -130,6 +130,54 @@ impl IngestUseCase {
             .set_node_property_int(node_id, "citation_count", citation_count as i64)
             .await?;
 
+        // 4b. Create Section nodes (Layer 2 Structure — ONTOLOGY-DESIGN)
+        // Each section gets a node with title, level, order, text.
+        // Linked to Paper via hasPart edge (FaBiO frbr:part).
+        let mut section_nodes = 0usize;
+        for (i, section) in parsed.sections.iter().enumerate() {
+            let section_node = self.graph_store.create_node("Section").await?;
+            self.graph_store
+                .set_node_property_string(
+                    section_node,
+                    "vid",
+                    format!("vid:section:{}:{}", paper_id, i),
+                )
+                .await?;
+            self.graph_store
+                .set_node_property_string(section_node, "title", section.title.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_int(section_node, "level", section.level as i64)
+                .await?;
+            self.graph_store
+                .set_node_property_int(section_node, "order", i as i64)
+                .await?;
+            self.graph_store
+                .set_node_property_string(section_node, "work_vid", vid_str.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_bool(section_node, "retrieval_eligible", true)
+                .await?;
+            // Truncate text to 10000 chars to avoid oversized properties
+            let text_trunc = if section.text.len() > 10000 {
+                &section.text[..10000]
+            } else {
+                &section.text
+            };
+            self.graph_store
+                .set_node_property_string(section_node, "text", text_trunc.to_string())
+                .await?;
+            self.graph_store
+                .set_node_property_int(section_node, "char_count", section.text.len() as i64)
+                .await?;
+            // Link Section to Paper via hasPart edge
+            self.graph_store
+                .create_edge(node_id, section_node, "hasPart")
+                .await?;
+            section_nodes += 1;
+        }
+        tracing::info!(paper_id, section_nodes, "Section nodes created");
+
         // 5. HOT PATH: Add vector to index
         self.graph_store
             .add_vector("Paper", "embedding", node_id, vector.clone())

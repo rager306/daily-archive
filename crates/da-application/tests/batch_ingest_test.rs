@@ -270,7 +270,7 @@ async fn test_batch_ingest_all_success() {
     assert_eq!(result.total_cites_resolved, 0);
     assert!(result.errors.is_empty());
     assert!(!result.import_eligible); // D127
-    assert_eq!(nodes.load(Ordering::SeqCst), 3); // 3 Paper nodes created
+    assert_eq!(nodes.load(Ordering::SeqCst), 6); // 3 Paper + 3 Section nodes
     assert_eq!(snapshot_calls.load(Ordering::SeqCst), 0); // no snapshot (None)
 }
 
@@ -291,7 +291,7 @@ async fn test_batch_ingest_partial_failure() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].0, "2401.00002");
     assert!(result.errors[0].1.contains("forced failure"));
-    assert_eq!(nodes.load(Ordering::SeqCst), 2); // only 2 nodes (failed one didn't create)
+    assert_eq!(nodes.load(Ordering::SeqCst), 4); // 2 Paper + 2 Section (failed one didn't create)
 }
 
 #[tokio::test]
@@ -374,7 +374,7 @@ async fn test_ingest_citations_create_cites_edges() {
     assert_eq!(result.total_cites_resolved, 2); // only 2 have arxiv_id
     assert_eq!(result.total_sections, 1);
     // 1 Paper node + 2 Citation nodes = 3 total
-    assert_eq!(nodes.load(Ordering::SeqCst), 3);
+    assert_eq!(nodes.load(Ordering::SeqCst), 4); // 1 Paper + 1 Section + 2 Citation
 }
 
 #[tokio::test]
@@ -399,11 +399,11 @@ async fn test_ingest_citation_dedup_shared_reference() {
 
     assert_eq!(result.ok, 2);
     assert_eq!(result.total_cites_resolved, 2); // both papers cite it
-                                                // 2 Paper nodes + 1 Citation node (deduped!) = 3 total
+                                                // 2 Paper + 2 Section + 1 Citation (deduped!) = 5 total
     assert_eq!(
         nodes.load(Ordering::SeqCst),
-        3,
-        "expected dedup: 2 Paper + 1 Citation = 3 nodes, got {}",
+        5,
+        "expected dedup: 2 Paper + 2 Section + 1 Citation = 5 nodes, got {}",
         nodes.load(Ordering::SeqCst)
     );
 }
