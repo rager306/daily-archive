@@ -378,7 +378,8 @@ impl Extractor for RuleBasedExtractor {
             })
             .collect();
         for (title, text) in sections {
-            let acronyms = Self::extract_method_acronyms_global(text);
+            let scan_text = format!("{} {}", title, text);
+            let acronyms = Self::extract_method_acronyms_global(&scan_text);
             for (char_start, char_end, label) in acronyms {
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
@@ -389,7 +390,8 @@ impl Extractor for RuleBasedExtractor {
                         section_title: title.clone(),
                         char_start,
                         char_end,
-                        surface: text[char_start.min(text.len())..char_end.min(text.len())]
+                        surface: scan_text
+                            [char_start.min(scan_text.len())..char_end.min(scan_text.len())]
                             .to_string(),
                     });
                 }
@@ -401,14 +403,15 @@ impl Extractor for RuleBasedExtractor {
         // These are compound method names that cannot be captured by the
         // all-caps acronym pass — they appear as lowercase/titlecase phrases.
         for (title, text) in sections {
-            let lower = text.to_lowercase();
+            let scan_text = format!("{} {}", title, text);
+            let lower = scan_text.to_lowercase();
             for phrase in KNOWN_METHOD_PHRASES {
                 let p_lower = phrase.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&p_lower) {
                     let abs = start + pos;
                     let end = abs + phrase.len();
-                    if Self::word_boundary(text, abs, end) {
+                    if Self::word_boundary(&scan_text, abs, end) {
                         let key = (p_lower.clone(), "method".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -430,14 +433,15 @@ impl Extractor for RuleBasedExtractor {
         // Global Dataset pass: scan ALL sections for known dataset names.
         // Datasets are mentioned throughout the paper, not just in Dataset sections.
         for (title, text) in sections {
-            let lower = text.to_lowercase();
+            let scan_text = format!("{} {}", title, text);
+            let lower = scan_text.to_lowercase();
             for ds in KNOWN_DATASETS {
                 let ds_lower = ds.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&ds_lower) {
                     let abs = start + pos;
                     let end = abs + ds.len();
-                    if Self::word_boundary(text, abs, end) {
+                    if Self::word_boundary(&scan_text, abs, end) {
                         let key = (ds_lower.clone(), "dataset".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -461,7 +465,8 @@ impl Extractor for RuleBasedExtractor {
         // Uses canonical names (not greedy extraction) to avoid duplicate
         // variants like GPT-4.1, GPT-4.1-Mini, GPT-4.1-Mini.
         for (title, text) in sections {
-            let lower = text.to_lowercase();
+            let scan_text = format!("{} {}", title, text);
+            let lower = scan_text.to_lowercase();
             for canonical in KNOWN_MODELS {
                 let pattern = canonical.to_lowercase();
                 if lower.contains(&pattern) {
@@ -486,7 +491,8 @@ impl Extractor for RuleBasedExtractor {
         // Metrics (accuracy, F1, etc.) appear in various sections, not just
         // Evaluation/Results.
         for (title, text) in sections {
-            let lower = text.to_lowercase();
+            let scan_text = format!("{} {}", title, text);
+            let lower = scan_text.to_lowercase();
             for metric in KNOWN_METRICS {
                 let metric_lower = metric.to_lowercase();
                 let mut start = 0;
@@ -514,14 +520,15 @@ impl Extractor for RuleBasedExtractor {
         let task_phrases = TASK_PHRASES;
         let task_acronyms = TASK_ACRONYMS;
         for (title, text) in sections {
-            let lower = text.to_lowercase();
+            let scan_text = format!("{} {}", title, text);
+            let lower = scan_text.to_lowercase();
             for phrase in task_phrases {
                 let p_lower = phrase.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&p_lower) {
                     let abs = start + pos;
                     let end = abs + phrase.len();
-                    if Self::word_boundary(text, abs, end) {
+                    if Self::word_boundary(&scan_text, abs, end) {
                         let key = (p_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -544,7 +551,7 @@ impl Extractor for RuleBasedExtractor {
                 while let Some(pos) = lower[start..].find(&a_lower) {
                     let abs = start + pos;
                     let end = abs + acr.len();
-                    if Self::word_boundary(text, abs, end) {
+                    if Self::word_boundary(&scan_text, abs, end) {
                         let key = (a_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
@@ -1040,6 +1047,29 @@ async fn test_multi_word_method_phrase_extraction() {
     assert!(
         methods2.contains(&"self-evolving memory"),
         "'Self-Evolving Memory' (title case) should be extracted, got: {methods2:?}"
+    );
+}
+
+#[tokio::test]
+async fn test_entity_in_section_title_is_extracted() {
+    // Regression: entity mentions in section TITLES were not scanned by
+    // global passes — only body text was. Section "In-Context Learning and
+    // Case-Based Reasoning" has "in-context learning" only in the title,
+    // not in body text, causing FN.
+    let extractor = RuleBasedExtractor::new();
+    let sections = vec![(
+        "In-Context Learning and Case-Based Reasoning".to_string(),
+        "We compare different approaches.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let methods: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        methods.contains(&"in-context learning"),
+        "'in-context learning' should be found in section title, got: {methods:?}"
     );
 }
 
