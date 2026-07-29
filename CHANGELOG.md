@@ -114,6 +114,11 @@
   optional_fields extended with `embedding` (Vector, bge-m3 1024d) and
   `domain_tags` (String, cross-domain filtering). fd_api embedder
   confirmed alive at :8000.
+- **Phase 3: Entity embedding computation wired**. ExtractionUseCase gains
+  optional `embedder: Option<Box<dyn Embedder>>` and `with_embedder()`
+  builder. When set, each unique entity label gets a bge-m3 embedding
+  written to Entity node vector index via `add_vector`. Backward
+  compatible (default: None, no embeddings).
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides

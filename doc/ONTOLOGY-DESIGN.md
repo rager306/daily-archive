@@ -402,9 +402,9 @@ For RuVector Tier 2 integration:
 | Requirement | Status | Action |
 |-------------|--------|--------|
 | Embeddings on Work nodes | ✅ Done | bge-m3 1024d |
-| Embeddings on Entity nodes | ❌ Missing | Add `embedding` field to Entity |
+| Embeddings on Entity nodes | ✅ Done | EntitySchema has embedding Vector field; ExtractionUseCase.with_embedder() |
 | Embeddings on Section nodes | ❌ Missing | Add section-level embeddings |
-| Edge weights | ❌ Missing | Add `weight` property to all edges |
+| Edge weights | ✅ Done | set_edge_property_float in DirectGraphStore; MENTIONS weight=1.0 |
 | Typed adjacency export | ❌ Missing | Export CSR matrices per edge type |
 | heterogeneous node types | ✅ Done | 8+ node types |
 | retrieval_eligible filter | ✅ Done | D134 on ALL nodes |
