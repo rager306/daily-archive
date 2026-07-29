@@ -128,6 +128,29 @@ pub trait DirectGraphStore: GraphStore {
         edge_type: &str,
     ) -> Result<u64, GraphStoreError>;
 
+    /// Set a float property on an edge (e.g., weight, confidence, similarity).
+    /// Phase 3 GNN readiness: edge weights enable PPR and message passing.
+    async fn set_edge_property_float(
+        &self,
+        _edge_id: u64,
+        _key: &str,
+        _value: f64,
+    ) -> Result<(), GraphStoreError> {
+        // Default: no-op (adapters override if supported)
+        Ok(())
+    }
+
+    /// Set a string property on an edge (e.g., citation_type, evidence).
+    async fn set_edge_property_string(
+        &self,
+        _edge_id: u64,
+        _key: &str,
+        _value: &str,
+    ) -> Result<(), GraphStoreError> {
+        // Default: no-op (adapters override if supported)
+        Ok(())
+    }
+
     /// Add a vector to a node's vector index.
     async fn add_vector(
         &self,

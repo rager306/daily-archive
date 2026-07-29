@@ -128,12 +128,18 @@ impl ExtractionUseCase {
             };
             // Link Entity to Paper via MENTIONS edge (if Paper node exists)
             if let Some(paper_id) = paper_node_id {
-                self.graph_store
+                let edge_id = self
+                    .graph_store
                     .create_edge(
                         paper_id,
                         node_id,
                         da_domain::relation::bibliographic::MENTIONS,
                     )
+                    .await?;
+                // Set edge weight = extraction confidence (Phase 3 GNN readiness)
+                // Rule-based extractor has uniform confidence 1.0
+                self.graph_store
+                    .set_edge_property_float(edge_id, "weight", 1.0)
                     .await?;
                 mentions_edges += 1;
             }
