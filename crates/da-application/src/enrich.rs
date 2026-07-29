@@ -228,7 +228,7 @@ impl EnrichUseCase {
             .set_node_property_string(task_node, "arxiv_id", arxiv_id.to_string())
             .await?;
         self.graph_store
-            .set_node_property_string(task_node, "task_type", "openalex_enrich".to_string())
+            .set_node_property_string(task_node, "task_type", task.task_type.as_str().to_string())
             .await?;
         self.graph_store
             .set_node_property_string(task_node, "status", "pending".to_string())
