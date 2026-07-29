@@ -16,6 +16,7 @@ pub mod paper;
 pub mod relation;
 pub mod scheduler;
 pub mod schema;
+pub mod source;
 pub mod vid;
 
 pub use article::{
@@ -34,4 +35,5 @@ pub use scheduler::{PendingTask, RetryPolicy, TaskPriority, TaskStatus, TaskType
 pub use schema::{
     all_node_schemas, schema_for_label, Field, FieldType, NodeSchemaDef, SchemaError,
 };
+pub use source::{SourceSchema, SOURCE_ARXIV, SOURCE_OPENALEX, SOURCE_TEXTBOOK};
 pub use vid::{entity_vid, paper_vid, Vid};
