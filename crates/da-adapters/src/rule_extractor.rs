@@ -196,8 +196,27 @@ impl RuleBasedExtractor {
                             .map(|c| c.is_uppercase())
                             .unwrap_or(false)
                     {
-                        let label_end = abs + end;
-                        results.push((abs, label_end, candidate.to_string()));
+                        // CROSS-WHITELIST SUPPRESSION: if the candidate is a known
+                        // model name (GPT-4, Claude, etc.) or known dataset/metric,
+                        // do NOT claim it as a Method/Task — the global
+                        // Model/Dataset/Metric pass will type it correctly.
+                        let cand_lower = candidate.to_lowercase();
+                        let is_known_non_method = KNOWN_MODELS.iter().any(|m| {
+                            cand_lower.starts_with(
+                                &m.to_lowercase()
+                                    .split('-')
+                                    .next()
+                                    .unwrap_or(m)
+                                    .to_lowercase(),
+                            )
+                        }) || KNOWN_DATASETS.contains(&candidate)
+                            || KNOWN_METRICS
+                                .iter()
+                                .any(|m| m.eq_ignore_ascii_case(candidate));
+                        if !is_known_non_method {
+                            let label_end = abs + end;
+                            results.push((abs, label_end, candidate.to_string()));
+                        }
                     }
                     start = abs + 1;
                 }
@@ -643,6 +662,32 @@ mod tests {
         assert!(
             method_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
             "GRPO should be a Method candidate, got: {method_candidates:?}"
+        );
+    }
+
+    #[test]
+    fn test_pattern1_suppresses_known_model_names() {
+        // Regression: Pattern 1 ("we use X") in a Method-classified section
+        // extracts the first capitalized word after "we use". For model names
+        // like GPT-4, this would incorrectly classify them as Method entities.
+        // Known models (GPT-4, Claude, Gemini, etc.) must NOT be extracted as
+        // Method/Task candidates — they belong to the global Model pass.
+        let text = "In our method, we use GPT-4 to evaluate the outputs.";
+        let method_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+        assert!(
+            !method_candidates
+                .iter()
+                .any(|(_, _, l)| l.to_lowercase().contains("gpt-4")),
+            "GPT-4 should NOT be a Method candidate (it's a known model), got: {method_candidates:?}"
+        );
+        // But real method names should still be extracted
+        let text2 = "In our method, we use GEPA to optimize prompts.";
+        let method_candidates2 = RuleBasedExtractor::extract_candidates(text2, &EntityType::Method);
+        assert!(
+            method_candidates2
+                .iter()
+                .any(|(_, _, l)| l.contains("GEPA")),
+            "GEPA should still be a Method candidate, got: {method_candidates2:?}"
         );
     }
 
