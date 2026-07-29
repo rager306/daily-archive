@@ -119,6 +119,11 @@
   builder. When set, each unique entity label gets a bge-m3 embedding
   written to Entity node vector index via `add_vector`. Backward
   compatible (default: None, no embeddings).
+- **Phase 3: Section node creation in ingest (Layer 2)**. IngestUseCase
+  now creates Section nodes for each parsed section with vid, title, level,
+  order, text, char_count properties. Linked via hasPart edge (Paper→Section).
+  Closes implementation gap: GRAPH-SCHEMA defined Section but pipeline didn't
+  materialize it. Updated batch_ingest_test assertions.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides
