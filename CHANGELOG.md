@@ -95,6 +95,11 @@
   actual P/R/F1 metrics (ExtractionMetrics::evaluate_fuzzy). Previously
   display used type-agnostic matching which could disagree with metric
   counts.
+- **Corpus expanded to 54 papers**: 42 new automated gold-standard fixtures
+  (12→54). Each entity verified as standalone word in GROBID body sections.
+  376 gold entities total. Corpus-level metrics: P=0.751 R=0.994 F1=0.855
+  (Micro); P=0.788 R=0.994 F1=0.869 (Macro). Precision +18% from more
+  complete gold annotation.
 - **Corpus modernized**: removed stale 2014/2023 fixtures (Bahdanau NMT,
   SWE-Bench), added 6 modern LLM/agent papers (Dec 2024 – Jun 2026)
   covering GEPA/GRPO/RLVR, harness engineering, world models, multimodal
