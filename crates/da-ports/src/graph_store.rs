@@ -190,6 +190,13 @@ pub trait DirectGraphStore: GraphStore {
     /// Returns Vec of (source_node_id, edge_type).
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)>;
 
+    /// Get all outgoing edges from a node (for PPR traversal, Phase 5).
+    /// Returns Vec of (target_node_id, edge_type).
+    async fn get_outgoing_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
+        // Default: empty (adapters override)
+        Vec::new()
+    }
+
     /// Read a string property from a node (for healing audit trail, D135).
     /// Returns None if the node or property doesn't exist.
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String>;
