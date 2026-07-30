@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### D127/D134 invariant enforcement + dead code removal (2026-07-29)
+
+- **D127 violation fixed: 5 node creation sites missing import_eligible=false.**
+  Audit found: enrich.rs Topic/Author/SchedulerTask, ingest.rs Section/Citation,
+  all created without `import_eligible=false`. Now ALL 8 create_node sites are
+  D127/D134 compliant (import_eligible=false + retrieval_eligible set).
+  Audit pattern captured in MEM480.
+- **Dead code removed: ExtractionConfig::from_file().** JSON loader had 0
+  callers after YAML migration (Wave C). Replaced by from_yaml_file().
+
 ### Hot-path extraction optimization (Wave 3a) (2026-07-29)
 
 - **Pre-lowercase config data (LoweredConfig).** `RuleBasedExtractor` now

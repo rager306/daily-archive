@@ -47,13 +47,6 @@ pub struct TaskConfig {
 }
 
 impl ExtractionConfig {
-    /// Load from JSON file.
-    pub fn from_file(path: &str) -> Result<Self, std::io::Error> {
-        let json = std::fs::read_to_string(path)?;
-        serde_json::from_str(&json)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
-    }
-
     /// Load from YAML file.
     pub fn from_yaml_file(path: &str) -> Result<Self, std::io::Error> {
         let yaml = std::fs::read_to_string(path)?;
