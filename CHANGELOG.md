@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Rust 2026 meta-optimization (2026-07-29)
+
+- **Edition 2021 → 2024 migration.** `cargo fix --edition` found zero
+  breaking changes — code was already compatible. Updated edition field
+  and rust-version 1.75 → 1.85. Enables: async closures, never type fallback,
+  RPIT lifetime capture, gen blocks, IntoFuture in prelude.
+- **Release profile optimization.** Added codegen-units=1 and strip=true
+  for smaller, faster release binaries. Kept lto="thin" (fat LTO causes
+  3min+ build times due to large vendor samyama-graph crate).
+- **Dev profile tuning.** debug=1 for faster incremental builds.
+- **Research:** doc/META-OPTIMIZATION-PLAN.md based on Rust 2026 best
+  practices (Edition 2024, Tokio patterns, performance optimization).
+
 ### Hot-path extraction → config-driven (Wave H) (2026-07-29)
 
 - **KNOWN_* const arrays eliminated from extraction hot-path.** 7 hardcoded
