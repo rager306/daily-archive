@@ -247,7 +247,40 @@ When a citation has a known context/intent, the `cites` edge carries a
 
 ---
 
-## Layer 6: Evidence & Community (ADR-042 revised)
+## Layer 6: Evidence & Community (ADR-042 revised) + Research Process Plane (ADR-043)
+
+### Research Process Plane (14 process kernel node types)
+
+Cross-cutting plane distributed across L1–L6 (not Layer 8). See ADR-043
+and PROCESS-SCHEMA-P0.md for full design.
+
+| Node | Layer | Semantics |
+|------|-------|----------|
+| `ResearchProblem` | L1 | what must be improved or explained |
+| `ResearchEnvironment` | L1/L2 | two-tier n-ary verification context (full/env_lite) |
+| `BaselineSnapshot` | L2 | concrete baseline artifact+config |
+| `ResearchIdea` | L6 | natural-language proposal (not necessarily testable) |
+| `Hypothesis` | L6 | first-class pre-test expectation (≠ Claim) |
+| `Intervention` | L3 | normalized change (method/arch/protocol/exposure/param) |
+| `InterventionBundle` | L3 | compound recipe (avoids opaque Method) |
+| `ImplementationAttempt` | L6 | idea → artifact attempt (≠ ExperimentRun) |
+| `ArtifactVersion` | L2 | immutable code/config/model/container hash |
+| `ExperimentRun` | L6 | execution of artifact in environment |
+| `MetricDefinition` | L3 | metric name + protocol (reusable) |
+| `MetricObservation` | L6 | raw measured value (≠ Comparison ≠ Claim) |
+| `ResultComparison` | L6 | candidate vs baseline derived comparison |
+| `FailureEvent` | L6 | structured non-execution cause (≠ refutation) |
+
+**Invariants (normative, ADR-043):**
+  ResearchIdea ≠ Hypothesis ≠ Claim
+  ImplementationAttempt ≠ ExperimentRun
+  FailureEvent ≠ NegativeResult (no REFUTES edge)
+  MetricObservation ≠ ResultComparison ≠ Claim ≠ RewardSignal
+  Experimental Claim requires VALID_UNDER → ResearchEnvironment
+  Environment completeness explicit (full | env_lite | unknown)
+  All process nodes: retrieval_eligible + import_eligible (D127 default false)
+
+### Publication Evidence & Community
 
 ### ConceptCluster (derived community)
 

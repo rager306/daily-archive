@@ -159,6 +159,83 @@ pub mod hypergraph {
     pub const QUALIFIES: &str = "QUALIFIES";
 }
 
+/// Research Process Plane edge types (ADR-043, PROCESS-SCHEMA-P0 §15).
+///
+/// Cross-cutting edges for the execution-grounded research process.
+/// These connect process kernel nodes (ResearchProblem, ResearchEnvironment,
+/// ResearchIdea, Hypothesis, Intervention, ExperimentRun, etc.).
+///
+/// Invariants enforced by schema, not by edge strings:
+///   - FailureEvent NEVER has REFUTES → Hypothesis
+///   - Only ResultComparison → Hypothesis (SUPPORTS/REFUTES/QUALIFIES)
+///   - Claim asserting experimental effectiveness requires VALID_UNDER
+pub mod process {
+    // ─── Environment / problem ───
+    pub const SEEKS_SOLUTION_IN: &str = "SEEKS_SOLUTION_IN";
+    pub const HAS_SUBPROBLEM: &str = "HAS_SUBPROBLEM";
+    pub const DEFINES_BASELINE: &str = "DEFINES_BASELINE";
+    pub const USES_DATASET: &str = "USES_DATASET";
+    pub const USES_METRIC: &str = "USES_METRIC";
+    pub const FOLLOWS_PROTOCOL: &str = "FOLLOWS_PROTOCOL";
+    pub const RUNS: &str = "RUNS";
+    pub const VALIDATES: &str = "VALIDATES";
+    pub const VALID_UNDER: &str = "VALID_UNDER";
+
+    // ─── Idea / hypothesis / lineage ───
+    pub const FORMALIZES: &str = "FORMALIZES";
+    pub const OPENS: &str = "OPENS";
+    pub const VARIANT_OF: &str = "VARIANT_OF";
+    pub const REFINES: &str = "REFINES";
+    pub const COMBINES: &str = "COMBINES";
+    pub const GENERALIZES: &str = "GENERALIZES";
+    pub const REJECTS: &str = "REJECTS";
+    pub const REDISCOVERS: &str = "REDISCOVERS";
+    pub const INSPIRED_BY: &str = "INSPIRED_BY";
+    pub const DECOMPOSES_INTO: &str = "DECOMPOSES_INTO";
+    pub const HAS_INTERVENTION: &str = "HAS_INTERVENTION";
+    pub const TESTED_BY: &str = "TESTED_BY";
+    pub const TESTS: &str = "TESTS";
+    pub const SUPPORTS: &str = "SUPPORTS";
+    pub const REFUTES: &str = "REFUTES";
+    pub const QUALIFIES: &str = "QUALIFIES";
+
+    // ─── Intervention / bundle ───
+    pub const HAS_COMPONENT: &str = "HAS_COMPONENT";
+    pub const TARGETS_COMPONENT: &str = "TARGETS_COMPONENT";
+    pub const APPLIES: &str = "APPLIES";
+    pub const REMOVES_COMPONENT: &str = "REMOVES_COMPONENT"; // P1 ablation
+    pub const ESTIMATES_CONTRIBUTION_OF: &str = "ESTIMATES_CONTRIBUTION_OF"; // P1
+
+    // ─── Attempt / artifact / run ───
+    pub const ATTEMPTS: &str = "ATTEMPTS";
+    pub const PRODUCES: &str = "PRODUCES";
+    pub const FAILED_WITH: &str = "FAILED_WITH";
+    pub const IMPLEMENTS: &str = "IMPLEMENTS";
+    pub const PARENT_OF: &str = "PARENT_OF";
+    pub const EXECUTES: &str = "EXECUTES";
+    pub const FROM_ARTIFACT: &str = "FROM_ARTIFACT";
+
+    // ─── Observation / comparison ───
+    pub const FROM_DEFINITION: &str = "FROM_DEFINITION";
+    pub const MEASURED_BY: &str = "MEASURED_BY";
+    pub const OBSERVED_AS: &str = "OBSERVED_AS";
+    pub const COMPARES_CANDIDATE: &str = "COMPARES_CANDIDATE";
+    pub const COMPARES_BASELINE: &str = "COMPARES_BASELINE";
+    pub const GROUNDS: &str = "GROUNDS";
+    pub const SUPPORTED_BY: &str = "SUPPORTED_BY";
+
+    // ─── Failure ───
+    pub const OCCURRED_DURING: &str = "OCCURRED_DURING";
+    pub const LIMITS_EXECUTABILITY_OF: &str = "LIMITS_EXECUTABILITY_OF";
+
+    // ─── Replication ───
+    pub const REPLICATES: &str = "REPLICATES";
+
+    // ─── Literature bridge ───
+    pub const DESCRIBED_IN: &str = "DESCRIBED_IN";
+    pub const APPROXIMATES: &str = "APPROXIMATES"; // ExperimentSetup → ResearchEnvironment
+}
+
 /// Schema definition for Citation nodes (GRAPH-SCHEMA.md).
 pub struct CitationSchema;
 

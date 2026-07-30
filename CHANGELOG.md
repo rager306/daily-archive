@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Research Process Plane ontology (2026-07-29)
+
+- **ADR-043 + Process kernel implemented.** 14 new process node types
+  (ResearchProblem, ResearchEnvironment, BaselineSnapshot, ResearchIdea,
+  Hypothesis, Intervention, InterventionBundle, ImplementationAttempt,
+  ArtifactVersion, ExperimentRun, MetricDefinition, MetricObservation,
+  ResultComparison, FailureEvent) + 45 edge types. Node types 14 → 28.
+  All with retrieval_eligible/import_eligible (D127). TDD: 42 new tests.
+- **Domain registry (arXiv + da.*)**: 60+ canonical scientific_domain codes
+  (cs.LG, q-bio.GN, da.medicine, da.microbiome, da.biohacking, etc.).
+  Alias canonicalization (cs.ml→cs.LG, nlp→cs.CL, gnn→cs.LG).
+- **Design docs**: DOMAIN-REFERENCE-ARXIV.md, PROCESS-SCHEMA-P0.md, ADR-043.
+  Three-plane model: Publication / Research Process / Experience (RVF).
+
 ### Ontology design (2026-07-29)
 
 - **ADR-043 Proposed: Research Process Plane (execution-grounded).**

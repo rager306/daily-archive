@@ -9,6 +9,7 @@
 
 pub mod article;
 pub mod cluster;
+pub mod domain;
 pub mod entity;
 pub mod eval;
 pub mod evidence;
@@ -16,6 +17,7 @@ pub mod evidence_bundle;
 pub mod healing;
 pub mod hypergraph;
 pub mod paper;
+pub mod process;
 pub mod relation;
 pub mod scheduler;
 pub mod schema;

@@ -141,6 +141,7 @@ pub const CURRENT_SCHEMA_VERSION: u32 = 1;
 /// Loading code validates against these before writing.
 pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
     vec![
+        // ─── Publication plane ───
         Box::new(crate::paper::PaperSchema),
         Box::new(crate::article::SectionSchema),
         Box::new(crate::article::AuthorSchema),
@@ -152,9 +153,25 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::relation::CitationSchema),
         Box::new(crate::entity::EntitySchema),
         Box::new(crate::source::SourceSchema),
+        // ─── Evidence & Community (Layer 6) ───
         Box::new(crate::hypergraph::ConceptClusterSchema),
         Box::new(crate::evidence_bundle::EvidenceBundleSchema),
         Box::new(crate::evidence_bundle::ClaimSchema),
+        // ─── Research Process Plane (ADR-043) ───
+        Box::new(crate::process::ResearchProblemSchema),
+        Box::new(crate::process::ResearchEnvironmentSchema),
+        Box::new(crate::process::BaselineSnapshotSchema),
+        Box::new(crate::process::ResearchIdeaSchema),
+        Box::new(crate::process::HypothesisSchema),
+        Box::new(crate::process::InterventionSchema),
+        Box::new(crate::process::InterventionBundleSchema),
+        Box::new(crate::process::ImplementationAttemptSchema),
+        Box::new(crate::process::ArtifactVersionSchema),
+        Box::new(crate::process::ExperimentRunSchema),
+        Box::new(crate::process::MetricDefinitionSchema),
+        Box::new(crate::process::MetricObservationSchema),
+        Box::new(crate::process::ResultComparisonSchema),
+        Box::new(crate::process::FailureEventSchema),
     ]
 }
 
@@ -168,10 +185,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_node_schemas_has_fourteen_types() {
+    fn test_all_node_schemas_has_twenty_eight_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 14);
+        assert_eq!(schemas.len(), 28);
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
+        // Publication plane
         assert!(labels.contains(&"Paper"));
         assert!(labels.contains(&"Section"));
         assert!(labels.contains(&"Author"));
@@ -183,9 +201,25 @@ mod tests {
         assert!(labels.contains(&"Citation"));
         assert!(labels.contains(&"Entity"));
         assert!(labels.contains(&"Source"));
+        // Evidence & Community
         assert!(labels.contains(&"ConceptCluster"));
         assert!(labels.contains(&"EvidenceBundle"));
         assert!(labels.contains(&"Claim"));
+        // Research Process Plane (ADR-043)
+        assert!(labels.contains(&"ResearchProblem"));
+        assert!(labels.contains(&"ResearchEnvironment"));
+        assert!(labels.contains(&"BaselineSnapshot"));
+        assert!(labels.contains(&"ResearchIdea"));
+        assert!(labels.contains(&"Hypothesis"));
+        assert!(labels.contains(&"Intervention"));
+        assert!(labels.contains(&"InterventionBundle"));
+        assert!(labels.contains(&"ImplementationAttempt"));
+        assert!(labels.contains(&"ArtifactVersion"));
+        assert!(labels.contains(&"ExperimentRun"));
+        assert!(labels.contains(&"MetricDefinition"));
+        assert!(labels.contains(&"MetricObservation"));
+        assert!(labels.contains(&"ResultComparison"));
+        assert!(labels.contains(&"FailureEvent"));
     }
 
     #[test]
