@@ -1,43 +1,57 @@
 # daily-archive v2
 
-Local-first **scientific knowledge engine**: ingest PDFs → extract structure →
-embed → write to a durable knowledge graph (Samyama) → agent retrieval.
-Graph import is **fail-closed** (`import_eligible=false`) until explicit human go (D127).
+Local-first **scientific knowledge engine**: ingest PDFs + HTML → extract
+structure → embed → write to a durable knowledge graph (Samyama) → agent
+retrieval. Graph import is **fail-closed** (`import_eligible=false`) until
+explicit human go (D127).
 
 **Runtime:** Rust workspace under `crates/` (hexagonal / onion).  
 **Frozen evidence:** Python stack under `legacy/` (M274–M284, Wave B, hybrid bodies).  
-**Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–041).
+**Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–042).
 
 ---
 
-## Current state (2026-07-26)
+## Current state (2026-07-29)
 
 | Area | Status |
 |------|--------|
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
-| Batch 10-paper canary | **10/10 ok**, ~39s, snapshot exported |
-| Section/citation parsing | Done — TEI sections + citations extracted + persisted |
-| Citation graph (CITES) | Done — Citation nodes + CITES edges for resolvable refs |
-| Snapshot durability | Export + load-snapshot round-trip verified (in-process) |
-| Cross-process live graph | **Not yet** — needs Samyama server mode (Solution A, Phase 3+) |
+| Phase 2 multi-source | **Done** — HtmlParser for GNN textbook + Source node (Layer 0) |
+| Section node creation | **Done** — Paper → hasPart → Section (Layer 2 materialized) |
+| Extraction corpus | **104 sources** (100 arxiv PDF + 4 GNN textbook HTML), 746 gold |
+| Extraction metrics | **P=0.759 R=0.999 F1=0.862** (1 FN: `generalization`) |
+| Cross-domain entities | **Done** — GCN, GAT, GraphSAGE, GNN in KNOWN_METHODS |
+| Declarative patterns | **Done** — `data/extraction_patterns.json` (Wave 3) |
+| Governor CLI tools | **Done** — eval_batch pre-commit hook, suggest-whitelist, eval_html |
+| Phase 3 edge weights | **Done** — `set_edge_property_float` in DirectGraphStore |
+| Phase 3 entity embeddings | **Done** — EntitySchema embedding field + ExtractionUseCase.with_embedder() |
+| Phase 3 section embeddings | **Done** — SectionSchema embedding field |
+| Phase 4 hypergraph | **Done** — ConceptCluster node + MEMBER_OF edges + detect_clusters() |
+| Phase 5 GNN algorithm ports | **Done** — GraphAlgorithms trait (PPR, get_neighbors, get_all_neighbors) |
+| Graph schema | **Done** — 12 node types, 20 indexes, `da schema init` |
+| OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors from OpenAlex API |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
-| Phase 3 extraction (GLiNER) | Not started |
-| Phase 3 rule-based extraction | **Started** — Extractor port + RuleBasedExtractor + ExtractionUseCase |
-| OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors, concepts from OpenAlex API |
-| Graph schema design | **Done** — doc/GRAPH-SCHEMA.md, schema-as-code, `da schema init` |
-| Agent layer (RuVector/SONA) | Vendored, not wired |
+| Cross-process live graph | **Not yet** — needs Samyama server mode (Phase 3+) |
+| RuVector GNN (Tier 2) | **Port traits ready** (9/10 GNN readiness), adapter pending |
+| Agent layer (RuVector/SONA) | Vendored, port traits defined |
 
 Architecture:
 
 ```
 crates/
-  da-domain/        # pure types: Paper, Entity, Evidence, VID, schema
-  da-ports/         # traits: GraphStore, DirectGraphStore, ParserPort, Embedder, …
-  da-application/   # use cases: IngestUseCase, batch_ingest_pdfs
-  da-graph/         # Cypher query builders + schema DDL (no Samyama SDK)
-  da-adapters/      # GROBID, FdApiEmbedder, SamyamaGraphStore
-  da-cli/           # binary `da`
+  da-domain/        # pure types: Paper, Entity, Evidence, VID, schema,
+                    #   Source, ConceptCluster, hypergraph, cluster detection
+  da-ports/         # traits: GraphStore, DirectGraphStore, ParserPort,
+                    #   Embedder, Extractor, OpenAlexClient, LLMClient,
+                    #   GraphAlgorithms (PPR, neighbors)
+  da-application/   # use cases: Ingest, BatchIngest, Extraction (with embedder),
+                    #   Enrich, Healing, Scheduler
+  da-graph/         # Cypher query builders + schema DDL (20 indexes)
+  da-adapters/      # GROBID parser, HtmlParser, FdApiEmbedder,
+                    #   SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter
+  da-cli/           # binary `da` + examples (eval_batch, eval_extract,
+                    #   eval_html, suggest_whitelist)
 ```
 
 Dependency direction (enforced by CI):
@@ -69,6 +83,9 @@ cargo build -p da-cli
   --ids 1206.6423,1606.01540,1612.00341 \
   --output data/samyama/batch.sgsnap
 
+# Extract entities from a paper
+./target/debug/da extract --id 2507.19457
+
 # Restore snapshot into this process
 ./target/debug/da load-snapshot --input data/samyama/batch.sgsnap
 ./target/debug/da graph-stats
@@ -87,6 +104,28 @@ curl -sS http://127.0.0.1:8070/api/isalive   # true
 
 ---
 
+## Extraction evaluation
+
+```bash
+# Batch eval on 104 sources (100 arxiv PDF + 4 GNN textbook HTML)
+cargo run -p da-cli --example eval_batch
+
+# Single-paper extraction debug
+cargo run -p da-cli --example eval_extract -- 2507.19457
+
+# HTML source extraction (GNN textbook)
+cargo run -p da-cli --example eval_html -- \
+  data/article_catalog/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html \
+  gnn-ch-01
+
+# Whitelist coverage analysis
+cargo run -p da-cli --example suggest_whitelist
+```
+
+Current metrics: **P=0.759 R=0.999 F1=0.862** (104 sources, 746 gold entities).
+
+---
+
 ## Development
 
 ```bash
@@ -101,15 +140,14 @@ cargo test -p da-graph --lib
 cargo test -p da-application --tests
 cargo test -p da-adapters --lib
 
-# Pre-commit (cargo fmt + cargo check)
+# Pre-commit (cargo fmt + cargo check + cargo clippy + eval_batch)
 pre-commit install
 pre-commit run --all-files
 ```
 
-> **Gotcha:** `cargo test --workspace` is slow, not hung. Samyama’s
+> **Gotcha:** `cargo test --workspace` is slow, not hung. Samyama's
 > `librocksdb-sys` rebuilds for the test profile (multiple fingerprints,
-> minutes each). Prefer per-package `cargo test -p …`. Concurrent cargo
-> processes block on `target/` lock — cancel background cargo jobs first.
+> minutes each). Prefer per-package `cargo test -p …`.
 
 ---
 
@@ -123,7 +161,8 @@ pre-commit run --all-files
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
-| `da schema-init` | Initialize all graph indexes |
+| `da schema-init` | Initialize all 20 graph indexes |
+| `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |
 | `da heal --op merge` | Merge duplicates (D135) |
@@ -137,29 +176,29 @@ pre-commit run --all-files
 
 ---
 
+## GNN readiness (9/10)
+
+| Requirement | Status |
+|-------------|--------|
+| Embeddings on Work nodes | ✅ bge-m3 1024d |
+| Embeddings on Entity nodes | ✅ EntitySchema + with_embedder() |
+| Embeddings on Section nodes | ✅ SectionSchema |
+| Edge weights | ✅ set_edge_property_float |
+| Typed adjacency export | ✅ GraphAlgorithms::get_neighbors |
+| Heterogeneous node types | ✅ 12 types |
+| retrieval_eligible filter | ✅ D134 on ALL nodes |
+| PPR from any node | ✅ GraphAlgorithms::personalized_pagerank |
+| Community detection | ⏳ detect_clusters() offline; RuVector online pending |
+| Agent assertions | ❌ Layer 7 future |
+
+---
+
 ## Persistence model (ADR-041)
 
 | Solution | Mode | Persistence | Status |
 |----------|------|:-----------:|--------|
 | **B: Batch + snapshot** | Embedded HOT path | `.sgsnap` export | **Current** (Phase 2) |
 | **A: Server daemon** | RemoteClient / RESP | RocksDB + WAL | Phase 3+ |
-| **C: Embedded + PersistenceManager** | Embedded HOT | RocksDB + WAL | Phase 5 optional |
-
-Snapshot is a **backup/restore** mechanism, not live multi-process store.
-Details: `doc/PERSISTENCE-ANALYSIS.md`.
-
----
-
-## Architecture guardrail (CI)
-
-`.github/workflows/architecture-guardrail.yml` enforces:
-
-1. `cargo fmt` (our crates only)
-2. `cargo check --workspace`
-3. `cargo clippy -p da-* -- -D warnings`
-4. Hexagonal dependency direction (no infra in domain/ports; no adapters in application/graph)
-
-Local mirror: `scripts/verify_rust_architecture.sh`.
 
 ---
 
@@ -168,27 +207,16 @@ Local mirror: `scripts/verify_rust_architecture.sh`.
 ```text
 crates/                 # Rust workspace (runtime)
 legacy/                 # Frozen Python research_graph + tests + scripts
-doc/adr/                # Binding ADRs (037–041 + INDEX)
-doc/PERSISTENCE-ANALYSIS.md
-data/article_catalog/   # Canonical PDFs
+doc/adr/                # Binding ADRs (037–042 + INDEX)
+doc/ONTOLOGY-DESIGN.md  # 7-layer ontology design
+doc/GRAPH-SCHEMA.md     # Graph schema (12 nodes, 20 indexes)
+data/article_catalog/   # Canonical PDFs + HTML chapters
+data/gold_standard/     # 104 gold-standard fixtures
+data/extraction_patterns.json  # Declarative extraction config
 data/samyama/           # Snapshots (.sgsnap)
-.docker/                # GROBID / ODL compose
+.docker/                # GROBID compose
 scripts/                # verify_rust_architecture.sh
-artifacts/              # Historical Python evidence (ETL, Wave B)
-archive/                # Rename shims only (not runtime)
 ```
-
----
-
-## Intentionally deferred
-
-| Item | Status |
-|------|--------|
-| Production graph import | Locked without human go (D127) |
-| Cross-process live graph | Needs Samyama server (Solution A) |
-| GLiNER 2 extraction | Phase 3 |
-| RuVector agent brain (SONA/GNN) | Vendored, not wired |
-| DSPy / optimizers | Guarded until Stage 2+ metrics |
 
 ---
 
@@ -197,14 +225,8 @@ archive/                # Rename shims only (not runtime)
 | Doc | Purpose |
 |-----|---------|
 | `doc/adr/ADR-INDEX.md` | Binding ADRs + supersession chain |
-| `doc/adr/ADR-040-…` | Tech stack lock (Samyama + RuVector + RVF) |
-| `doc/adr/ADR-041-…` | Embedded Cypher + HOT path + access tiers |
+| `doc/adr/ADR-042-…` | HyCE-RAG hypergraph evidence chain model |
+| `doc/ONTOLOGY-DESIGN.md` | 7-layer ontology (L0-L7) |
+| `doc/GRAPH-SCHEMA.md` | 12 node types, 20 indexes, edge weights |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
-| `doc/GRAPH-SCHEMA.md` | Graph schema (nodes, edges, indexes) |
-| `doc/ONTOLOGY-ALIGNMENT.md` | FaBiO/CiTO/OpenAlex alignment |
-| `doc/GRAPH-HEALING-SCENARIOS.md` | Correct, merge, silence, migrate |
-| `doc/ADHD-ONTOLOGY-RESEARCH.md` | Divergent ideation results |
-| `doc/REPO-HYGIENE.md` | Garbage policy |
 | `CHANGELOG.md` | Recent changes |
-| `legacy/README.md` (if present) | Frozen Python evidence path |
-| `.agents/skills/samyama/SKILL.md` | Samyama integration skill |
