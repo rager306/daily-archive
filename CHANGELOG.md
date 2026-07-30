@@ -142,6 +142,11 @@
   get_outgoing_edges implemented (was default empty). Uses
   get_outgoing_neighbor_slice(). TDD test verified.
   All PPR prerequisites complete: port + adjacency + edge weights + embeddings.
+- **ADR-042 revised: EvidenceBundle + Claim**. Deep HyCE-RAG critique applied:
+  ConceptCluster separated from EvidenceBundle (derived community ≠ evidence).
+  MEMBER_OF → MEMBER_OF_CLUSTER. Added PARTICIPATES_IN, CONTRADICTS, QUALIFIES.
+  New domain types: EvidenceBundle (source-grounded n-ary), Claim (proposition).
+  Node types: 12 → 14. 7 TDD tests added.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides
