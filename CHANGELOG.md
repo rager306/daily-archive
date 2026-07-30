@@ -138,6 +138,10 @@
   RuVector solver wiring. GNN Readiness: **9/10** (only Agent assertions
   remaining). Typed adjacency export ✅, PPR port ✅, community detection
   algorithm ✅ (offline detect_clusters).
+- **Phase 5: SamyamaGraphStore get_outgoing_edges**. DirectGraphStore
+  get_outgoing_edges implemented (was default empty). Uses
+  get_outgoing_neighbor_slice(). TDD test verified.
+  All PPR prerequisites complete: port + adjacency + edge weights + embeddings.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides
