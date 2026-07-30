@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Configuration externalization — Waves F/G (2026-07-29)
+
+- **Node vocabulary → YAML.** 10 hardcoded BUNDLE_*/VERIFICATION_*/CLUSTER_*
+  const → `data/node_vocabulary.yaml` (4 bundle types, 3 verification
+  statuses, 3 cluster types). New `vocabulary` module with
+  NodeVocabularyRegistry + is_known_bundle_type/verification_status/cluster_type().
+  evidence_bundle.rs and hypergraph.rs: const → 0.
+- **Cluster thresholds → YAML.** MIN_COOCCURRENCE and MIN_SINGLE_MENTIONS
+  const → `data/algorithm_params.yaml` (runtime tuning parameters).
+  cluster.rs: const → functions min_cooccurrence(), min_single_mentions()
+  loaded from ClusterConfig YAML registry.
+
 ### Configuration externalization — Waves C/D/E (2026-07-29)
 
 - **Source codes → YAML.** 16 hardcoded SOURCE_*/TYPE_*/DOMAIN_* const →

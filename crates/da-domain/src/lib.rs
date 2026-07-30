@@ -23,6 +23,7 @@ pub mod scheduler;
 pub mod schema;
 pub mod source;
 pub mod vid;
+pub mod vocabulary;
 
 pub use article::{
     Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
@@ -34,9 +35,7 @@ pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, S
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
 };
-pub use hypergraph::{
-    ConceptClusterSchema, CLUSTER_BENCHMARK_SUITE, CLUSTER_CONCEPT, CLUSTER_METHOD_FAMILY,
-};
+pub use hypergraph::ConceptClusterSchema;
 pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,

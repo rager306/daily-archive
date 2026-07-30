@@ -10,12 +10,58 @@
 
 use crate::entity::EntityType;
 use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
 
-/// Minimum co-occurrence count to form a cluster (configurable).
-pub const MIN_COOCCURRENCE: usize = 3;
+// ─── Algorithm parameters (loaded from YAML) ───
 
-/// Minimum single-entity mention count for a standalone cluster.
-pub const MIN_SINGLE_MENTIONS: usize = 5;
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct ClusterParamsYaml {
+    version: String,
+    cluster_detection: ClusterDetectionParams,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct ClusterDetectionParams {
+    min_cooccurrence: usize,
+    min_single_mentions: usize,
+}
+
+const BUNDLED_PARAMS_YAML: &str = include_str!("../../../data/algorithm_params.yaml");
+
+struct ClusterConfig {
+    min_cooccurrence: usize,
+    min_single_mentions: usize,
+}
+
+impl ClusterConfig {
+    fn load() -> Self {
+        let yaml_str = std::fs::read_to_string("data/algorithm_params.yaml")
+            .unwrap_or_else(|_| BUNDLED_PARAMS_YAML.to_string());
+        let data: ClusterParamsYaml =
+            serde_yaml::from_str(&yaml_str).expect("algorithm_params.yaml must be valid YAML");
+        Self {
+            min_cooccurrence: data.cluster_detection.min_cooccurrence,
+            min_single_mentions: data.cluster_detection.min_single_mentions,
+        }
+    }
+
+    fn instance() -> &'static ClusterConfig {
+        static CONFIG: OnceLock<ClusterConfig> = OnceLock::new();
+        CONFIG.get_or_init(ClusterConfig::load)
+    }
+}
+
+/// Minimum co-occurrence count to form a cluster (from YAML config).
+pub fn min_cooccurrence() -> usize {
+    ClusterConfig::instance().min_cooccurrence
+}
+
+/// Minimum single-entity mention count for a standalone cluster (from YAML).
+pub fn min_single_mentions() -> usize {
+    ClusterConfig::instance().min_single_mentions
+}
 
 /// A detected concept cluster from co-occurrence analysis.
 #[derive(Debug, Clone)]
@@ -39,7 +85,7 @@ pub fn detect_clusters(entity_papers: &EntityPapers) -> Vec<DetectedCluster> {
 
     // 1. Single-entity clusters (high-mention entities)
     for (label, (etype, papers)) in entity_papers {
-        if papers.len() >= MIN_SINGLE_MENTIONS {
+        if papers.len() >= min_single_mentions() {
             let cluster_type = cluster_type_for_entity(etype);
             clusters.push(DetectedCluster {
                 label: format!("{label} mentions"),
@@ -67,7 +113,7 @@ pub fn detect_clusters(entity_papers: &EntityPapers) -> Vec<DetectedCluster> {
 
             let shared = papers_a.intersection(papers_b).count();
 
-            if shared >= MIN_COOCCURRENCE {
+            if shared >= min_cooccurrence() {
                 let cluster_type = if etype_a != etype_b {
                     "concept_cluster"
                 } else {
@@ -99,6 +145,15 @@ fn cluster_type_for_entity(etype: &EntityType) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_thresholds_loaded_from_yaml() {
+        assert!(min_cooccurrence() >= 1);
+        assert!(min_single_mentions() >= 1);
+        // Default values from bundled YAML
+        assert_eq!(min_cooccurrence(), 3);
+        assert_eq!(min_single_mentions(), 5);
+    }
 
     fn make_papers(ids: &[&str]) -> HashSet<String> {
         ids.iter().map(|s| s.to_string()).collect()

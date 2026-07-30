@@ -75,16 +75,9 @@ impl NodeSchemaDef for ClaimSchema {
     }
 }
 
-/// Known bundle types (closed vocabulary).
-pub const BUNDLE_EXPERIMENT: &str = "experiment_setup";
-pub const BUNDLE_RESULT: &str = "result_bundle";
-pub const BUNDLE_CITATION: &str = "citation_context";
-pub const BUNDLE_CLAIM: &str = "claim_bundle";
-
-/// Known verification statuses.
-pub const VERIFICATION_PENDING: &str = "pending";
-pub const VERIFICATION_VERIFIED: &str = "verified";
-pub const VERIFICATION_DISPUTED: &str = "disputed";
+// Bundle type and verification status vocabularies moved to
+// data/node_vocabulary.yaml. Use crate::vocabulary::is_known_bundle_type()
+// and crate::vocabulary::is_known_verification_status() for validation.
 
 #[cfg(test)]
 mod tests {
@@ -144,8 +137,8 @@ mod tests {
     }
 
     #[test]
-    fn test_bundle_type_constants() {
-        assert_eq!(BUNDLE_EXPERIMENT, "experiment_setup");
-        assert_eq!(BUNDLE_RESULT, "result_bundle");
+    fn test_bundle_types_from_registry() {
+        assert!(crate::vocabulary::is_known_bundle_type("experiment_setup"));
+        assert!(crate::vocabulary::is_known_bundle_type("result_bundle"));
     }
 }

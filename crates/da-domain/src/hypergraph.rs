@@ -35,10 +35,8 @@ impl NodeSchemaDef for ConceptClusterSchema {
     }
 }
 
-/// Known cluster types (closed vocabulary).
-pub const CLUSTER_CONCEPT: &str = "concept_cluster";
-pub const CLUSTER_METHOD_FAMILY: &str = "method_family";
-pub const CLUSTER_BENCHMARK_SUITE: &str = "benchmark_suite";
+// Cluster type vocabulary moved to data/node_vocabulary.yaml.
+// Use crate::vocabulary::is_known_cluster_type() for validation.
 
 #[cfg(test)]
 mod tests {
@@ -86,9 +84,9 @@ mod tests {
     }
 
     #[test]
-    fn test_cluster_type_constants() {
-        assert_eq!(CLUSTER_CONCEPT, "concept_cluster");
-        assert_eq!(CLUSTER_METHOD_FAMILY, "method_family");
-        assert_eq!(CLUSTER_BENCHMARK_SUITE, "benchmark_suite");
+    fn test_cluster_types_from_registry() {
+        assert!(crate::vocabulary::is_known_cluster_type("concept_cluster"));
+        assert!(crate::vocabulary::is_known_cluster_type("method_family"));
+        assert!(crate::vocabulary::is_known_cluster_type("benchmark_suite"));
     }
 }
