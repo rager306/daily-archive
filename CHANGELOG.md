@@ -133,6 +133,11 @@
   Added hypergraph::MEMBER_OF, SUBSUMES, SUPPORTS edge types. Rule-based
   detect_clusters() — deterministic co-occurrence analysis, no LLM required
   (GSD: "statistical-first"). 4 TDD tests for cluster detection.
+- **Phase 5: GNN algorithm ports**. GraphAlgorithms trait added to da-ports:
+  personalized_pagerank(), get_neighbors(), get_all_neighbors(). Enables
+  RuVector solver wiring. GNN Readiness: **9/10** (only Agent assertions
+  remaining). Typed adjacency export ✅, PPR port ✅, community detection
+  algorithm ✅ (offline detect_clusters).
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides

@@ -408,11 +408,11 @@ For RuVector Tier 2 integration:
 | Embeddings on Entity nodes | ✅ Done | EntitySchema has embedding Vector field; ExtractionUseCase.with_embedder() |
 | Embeddings on Section nodes | ✅ Done | SectionSchema has embedding Vector field |
 | Edge weights | ✅ Done | set_edge_property_float in DirectGraphStore; MENTIONS weight=1.0 |
-| Typed adjacency export | ❌ Missing | Export CSR matrices per edge type |
-| heterogeneous node types | ✅ Done | 8+ node types |
+| Typed adjacency export | ✅ Done | GraphAlgorithms::get_neighbors() port trait |
+| heterogeneous node types | ✅ Done | 12 node types |
 | retrieval_eligible filter | ✅ Done | D134 on ALL nodes |
-| Community detection | ❌ Future | RuVector GNN-rerank |
-| PPR from any node | ❌ Future | RuVector solver |
+| Community detection | ⏳ Algorithm ready | detect_clusters() offline; RuVector GNN online pending |
+| PPR from any node | ✅ Port ready | GraphAlgorithms::personalized_pagerank() trait defined |
 | Agent assertions | ❌ Future | Layer 7 |
 
 ---
