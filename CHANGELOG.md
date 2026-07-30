@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Debt sweep — DRY + consistency (2026-07-29)
+
+- **Edge type magic strings eliminated.** New `relation::structure` module with
+  6 FaBiO/OpenAlex structural edges (HAS_PART, HAS_TOPIC, AUTHORED_BY,
+  FROM_SOURCE, FOUND_IN, IN_CATEGORY). Replaced 5 magic string call sites
+  in ingest/enrich/adapters/tests with typed constants. 2 new TDD tests
+  verify structural edge values and detect cross-module label drift.
+- **Architecture sweep clean.** Hexagonal dependency direction verified:
+  da-domain → 0 da deps; da-ports → 0 da deps; da-application/adapters/cli
+  → only domain+ports. 220 tests green. Clippy clean for da-* crates.
+  No TODO/FIXME/unimplemented!() in production code.
+- **Dead code audit.** 6 fn candidates verified as legitimate:
+  builder pattern (with_embedder/with_policy), utility (from_entity,
+  health_check), test helpers (with_store, add_vector_direct). 9 unused
+  da-ports exports are planned Phase 5+ port traits, not dead code.
+
 ### Research Process Plane ontology (2026-07-29)
 
 - **ADR-043 + Process kernel implemented.** 14 new process node types
