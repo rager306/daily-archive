@@ -131,6 +131,19 @@ pub mod bibliographic {
     pub const SPLITS: &str = "SPLITS";
 }
 
+/// Hypergraph edge types (ONTOLOGY-DESIGN Layer 6, ADR-042).
+pub mod hypergraph {
+    /// Entity is a member of a ConceptCluster (hyperedge membership).
+    /// Carries weight (confidence) and optional context (evidence text).
+    pub const MEMBER_OF: &str = "MEMBER_OF";
+
+    /// ConceptCluster A subsumes ConceptCluster B (hierarchical hyperedges).
+    pub const SUBSUMES: &str = "SUBSUMES";
+
+    /// Evidence chain supports an entity claim (future, Phase 5-6).
+    pub const SUPPORTS: &str = "SUPPORTS";
+}
+
 /// Schema definition for Citation nodes (GRAPH-SCHEMA.md).
 pub struct CitationSchema;
 

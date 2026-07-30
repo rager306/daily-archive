@@ -11,6 +11,7 @@ listed here — see `legacy/doc/adr/`.
 | [039](ADR-039-grounded-architecture-lifecycle-validation-sources.md) | Grounded Architecture: Lifecycle, Validation, Sources | Accepted (amended by 040) | 2026-07-25 |
 | [040](ADR-040-technology-stack-lock-samyama-ruvector-rvf.md) | Technology Stack Lock — Samyama + RuVector + RVF | Accepted (binding) | 2026-07-25 |
 | [041](ADR-041-samyama-embedded-cypher-hybrid-agentruntime-sona.md) | Samyama Embedded Cypher + Hybrid AgentRuntime/SONA | Accepted (binding) | 2026-07-25 |
+| [042](ADR-042-hycerag-hypergraph-evidence-chain.md) | HyCE-RAG-Inspired Hypergraph Evidence Chain Model | Proposed | 2026-07-29 |
 
 ## Supersession chain
 
