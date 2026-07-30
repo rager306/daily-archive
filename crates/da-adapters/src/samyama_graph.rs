@@ -466,6 +466,19 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
         result
     }
 
+    async fn get_outgoing_edges(&self, node_id: u64) -> Vec<(u64, String)> {
+        let store = self.store_read().await;
+        let nid = NodeId(node_id);
+        let neighbors = store.get_outgoing_neighbor_slice(nid);
+        let mut result = Vec::new();
+        for (target_id, edge_id) in neighbors {
+            if let Some(edge) = store.get_edge(*edge_id) {
+                result.push((target_id.0, edge.edge_type.as_str().to_string()));
+            }
+        }
+        result
+    }
+
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
         let store = self.store_read().await;
         store
@@ -514,6 +527,29 @@ mod tests {
         let _edge = store.create_edge_direct(a, p, "AUTHORED").await.unwrap();
         let neighbors = store.outgoing_neighbors(a).await;
         assert!(!neighbors.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_outgoing_edges_returns_targets() {
+        // Phase 5: get_outgoing_edges must return target nodes for PPR traversal.
+        use da_ports::graph_store::DirectGraphStore;
+        let store = SamyamaGraphStore::new();
+        let paper = store.create_node_direct("Paper").await;
+        let entity = store.create_node_direct("Entity").await;
+        store
+            .create_edge_direct(paper, entity, "MENTIONS")
+            .await
+            .unwrap();
+
+        // Paper has outgoing MENTIONS edge to Entity
+        let outgoing = store.get_outgoing_edges(paper.0).await;
+        assert_eq!(outgoing.len(), 1);
+        assert_eq!(outgoing[0].0, entity.0); // target node ID
+        assert_eq!(outgoing[0].1, "MENTIONS");
+
+        // Entity has no outgoing edges
+        let entity_outgoing = store.get_outgoing_edges(entity.0).await;
+        assert!(entity_outgoing.is_empty());
     }
 
     #[tokio::test]
