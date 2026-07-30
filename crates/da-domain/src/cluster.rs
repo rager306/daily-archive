@@ -1,15 +1,12 @@
-//! Rule-based ConceptCluster creation (Phase 4 offline, ADR-042).
+//! Rule-based ConceptCluster detection (Phase 4 offline, ADR-042 revised).
 //!
-//! Creates hyperedges (ConceptCluster nodes + MEMBER_OF edges) based on
-//! entity co-occurrence across papers. No LLM required — deterministic.
+//! Creates derived semantic community clusters based on entity co-occurrence
+//! across papers. No LLM required — deterministic.
 //!
-//! Algorithm:
-//! 1. For each pair of entities that co-occur in ≥N papers, create or join
-//!    a ConceptCluster.
-//! 2. Single-entity clusters: entities mentioned in ≥5 papers get their own
-//!    cluster (high-mention entities).
-//! 3. Cross-type clusters: entities of different types co-occurring frequently
-//!    (e.g., GPT-4 + MATH dataset + accuracy metric) form benchmark suites.
+//! IMPORTANT: These are NOT evidence hyperedges. ConceptCluster is a derived
+//! community object for retrieval expansion and topic association.
+//! Source-grounded evidence requires EvidenceBundle (future P1 work).
+//! Do NOT run evidence PPR over MEMBER_OF_CLUSTER edges.
 
 use crate::entity::EntityType;
 use std::collections::{HashMap, HashSet};

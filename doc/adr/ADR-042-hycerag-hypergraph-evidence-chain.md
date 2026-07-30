@@ -1,89 +1,127 @@
-# ADR-042: HyCE-RAG-Inspired Hypergraph Evidence Chain Model
+# ADR-042: Query-Local Evidence Activation Over Reified Evidence Bundles
 
-**Status:** Proposed
-**Date:** 2026-07-29
+**Status:** Proposed (revised — supersedes initial HyCE-RAG hypergraph blueprint)
+**Date:** 2026-07-29 (revised)
 **Deciders:** collaborative
-**Related:** ADR-037 (RuVector agent brain), ADR-040 (Samyama sole store), ONTOLOGY-DESIGN (Layer 6 Hypergraph)
+**Related:** ADR-037 (RuVector agent brain), ADR-040 (Samyama sole store), ADR-038 (ExperimentSetup n-ary)
 
 ## Context
 
-ONTOLOGY-DESIGN Layer 6 defines ConceptCluster nodes for grouping entities
-into higher-level concepts. However, the design lacks:
+Initial draft of ADR-042 adopted HyCE-RAG (arXiv:2607.22597) as a blueprint
+for hypergraph evidence chains. Deep review revealed semantic confusions:
 
-1. **Hyperedge semantics** — how multiple entities + evidence context form
-   a single semantic unit (not just a label on a cluster)
-2. **Incidence relation** — the entity↔hyperedge membership structure needed
-   for confidence propagation
-3. **Evidence chain construction** — post-retrieval reasoning that connects
-   scattered evidence into explainable paths
+1. **ConceptCluster ≠ EvidenceHyperedge** — ConceptCluster is a derived
+   community object (co-occurrence cluster, method family). It does not
+   represent a source-grounded evidence unit, claim, or reasoning step.
+2. **MEMBER_OF conflates community membership with evidence participation** —
+   entities co-occurring in N papers do not form a self-contained fact.
+3. **SUPPORTS targets Entity** — entities are not truth-bearing propositions.
+4. **Query-local evidence chains should not be canonical knowledge nodes** —
+   they are ephemeral retrieval results (RVF Tier 3 on save).
 
-Paper **HyCE-RAG** (arXiv:2607.22597, June 2026) provides a concrete
-blueprint for addressing all three gaps using hypergraph-structured
-knowledge representation with confidence-aware evidence chain construction.
+## Revised decision
 
-## Decision
+### Three distinct object types
 
-Adopt HyCE-RAG's **two-phase architecture** as the blueprint for daily-archive
-Layer 6 (Hypergraph) and Layer 7 (Agent Memory):
+```
+ConceptCluster      — derived semantic community (existing, keep as-is)
+  Entity → MEMBER_OF_CLUSTER → ConceptCluster
+  Not evidence, not claim, not reasoning step.
 
-### Phase A: Offline hypergraph construction (ADR-040 compliant)
+EvidenceBundle      — source-grounded n-ary evidence unit (NEW)
+  Entity → PARTICIPATES_IN {role} → EvidenceBundle
+  Subtypes: ExperimentSetup, ResultBundle, CitationContext, ClaimBundle
+  Fields: vid, bundle_type, normalized_text, source_span_id,
+          document_id, section_id, extraction_confidence,
+          verification_status, valid_from, valid_to, retrieval_eligible
 
-- Extract entities, relations, and **hyperedges** (connecting multiple
-  entities + context) from ingested papers
-- Store in Samyama Graph: Entity nodes + ConceptCluster nodes + MEMBER_OF edges
-- MEMBER_OF edges carry `weight` (extraction confidence) and `context` (evidence text)
-- Entity embeddings enable semantic similarity (bge-m3, already wired)
+Claim               — proposition-bearing node (NEW, future)
+  EvidenceBundle → SUPPORTS → Claim
+  EvidenceBundle → CONTRADICTS → Claim
+  EvidenceBundle → QUALIFIES → Claim
+  Fields: vid, text, claim_type, modality, scope,
+          valid_time, source_span_id
+```
 
-### Phase B: Online evidence chain construction (future, RuVector Tier 2)
+### Query-local evidence activation (Phase 5+)
 
-- **Entry-entity extraction**: query → entity matching via embedding similarity
-- **Query-aware subhypergraph**: expand from entry entities via MEMBER_OF edges
-- **Confidence propagation**: PPR-like algorithm over incidence structure
-  (RuVector solver, with restart mechanism)
-- **Evidence assembly**: confidence-guided path construction considering:
-  - Semantic relevance (cosine similarity)
-  - Entity connectivity (graph structure)
-  - Evidence coverage (entity overlap)
-  - Extraction confidence (edge weight)
-  - Propagated confidence (PPR score)
-- **Structured context**: merged evidence paths → LLM input (not flat chunks)
+```
+Query → candidate retrieval (BM25, dense, entity lookup)
+      → query-local incidence graph (Entity ↔ EvidenceBundle only)
+      → structural activation (PPR-like, non-uniform restart)
+      → evidence subgraph assembly (connected, covers query anchors)
+      → claim-level verification (supports/contradicts/qualifies)
+      → structured context → LLM
+```
 
-### Schema additions (Layer 6)
+Evidence chains are **ephemeral** — not stored as canonical knowledge.
+If persisted: RVF Tier 3 (agent experience), `retrieval_eligible=false`.
 
-| Element | Type | Description |
-|---------|------|-------------|
-| ConceptCluster | Node | Hyperedge node (already implemented) |
-| MEMBER_OF | Edge | Entity → ConceptCluster, carries weight + context |
-| SUBSUMES | Edge | ConceptCluster → ConceptCluster (hierarchy) |
-| EvidenceChain | Node | Result of Phase B online reasoning (future) |
-| SUPPORTS | Edge | EvidenceChain → Entity (evidence link) |
+### What stays unchanged
 
-### GNN readiness alignment
+- ConceptCluster stays as derived community detection output
+- detect_clusters() stays as offline community analysis
+- PPR port trait stays, but needs weighted restart + diagnostics
+- Samyama as sole store — EvidenceBundle is a node in Samyama
+- Fail-closed import (D127)
+- Statistical-first extraction (no LLM hyperedge extraction yet)
 
-| HyCE-RAG concept | daily-archive status |
-|------------------|---------------------|
-| Hyperedge | ✅ ConceptCluster schema |
-| Entity embeddings | ✅ bge-m3 1024d, wired |
-| Incidence structure | ⏳ MEMBER_OF edge type (next) |
-| Confidence propagation | ⏳ RuVector PPR (Phase 5) |
-| Evidence chains | ⏳ Phase 5-6 |
+### PPR port improvement needed
+
+Current:
+```rust
+personalized_pagerank(seed_nodes: &[u64], alpha: f64, max_iterations: usize)
+```
+
+Needed:
+```text
+restart_distribution: [(NodeId, weight)]  // non-uniform
+restart_probability: f64                  // separate from max_iterations
+tolerance: f64                            // convergence threshold
+allowed_edge_types: &[&str]              // query-local scope
+→ scores + iterations + residual + converged
+```
+
+### Incidence traversal must be bidirectional
+
+```
+Entity → PARTICIPATES_IN → EvidenceBundle
+EvidenceBundle → HAS_PARTICIPANT → Entity
+```
+
+PPR must traverse both directions. Either store both edges or provide
+undirected incidence view in adapter.
+
+## Migration path
+
+1. **P0 (now):** Rename MEMBER_OF → MEMBER_OF_CLUSTER in relation.rs.
+   Add PARTICIPATES_IN edge type. Fix SUPPORTS → Claim target.
+   Update cluster.rs docstrings (no "hyperedge" language).
+2. **P1:** Add EvidenceBundle + Claim domain types.
+   Generalize ExperimentSetup as EvidenceBundle subtype.
+3. **P2:** Wire EvidenceBundle creation into extraction pipeline
+   (when entities co-occur in same section with source span).
+4. **P3:** Implement query-local incidence PPR (feature flag).
+5. **P4:** Claim-level verifier (supports/contradicts/qualifies).
+
+## What we do NOT do
+
+- Do NOT run PPR over ConceptCluster/MEMBER_OF edges (wrong semantics).
+- Do NOT store query-generated EvidenceDAG as canonical knowledge.
+- Do NOT mix activation_score with extraction_confidence with
+  source_reliability with verification_status. Four separate fields.
+- Do NOT call top-15 bundles "evidence chains" — they are candidate
+  bundles. Chain assembly is a separate algorithmic step.
 
 ## Consequences
 
 **Positive:**
-- Provides concrete blueprint for hypergraph evidence reasoning
-- Aligns with RuVector Tier 2 (PPR solver already vendored)
-- Enables explainable multi-hop QA over scientific literature
-- ConceptCluster nodes already implemented — low incremental cost
+- Clean separation: community detection vs evidence retrieval
+- EvidenceBundle is source-grounded (has source_span_id)
+- Claim is truth-bearing (can be supported/contradicted)
+- Query-local PPR won't be polluted by hubness/centrality
 
 **Negative:**
-- MEMBER_OF edges with context property increase storage
-- Confidence propagation requires RuVector integration (not yet wired)
-- LLM-based hyperedge extraction may introduce noise (GSD: "statistical-first")
-
-**Compliance:**
-- ADR-040: Samyama sole store — hyperedges are nodes in Samyama ✅
-- D127: import_eligible=false — agent assertions stay quarantined ✅
-- D134: retrieval_eligible on ALL nodes ✅
-- GSD memory: "statistical-first before every LLM" — offline extraction
-  uses rule-based extractor first; LLM hyperedge extraction deferred ✅
+- More node types (14 total: +EvidenceBundle, +Claim)
+- PARTICATES_IN edges increase graph density
+- Requires evidence extraction pipeline (future work)

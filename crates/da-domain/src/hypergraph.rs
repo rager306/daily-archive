@@ -1,7 +1,9 @@
-//! Hypergraph node types (ONTOLOGY-DESIGN Layer 6).
+//! ConceptCluster node — derived semantic community (ONTOLOGY-DESIGN Layer 6).
 //!
-//! Groups entities into higher-level concepts, method families, and
-//! benchmark suites. Enables hypergraph queries and GNN community detection.
+//! IMPORTANT: ConceptCluster is NOT an evidence unit, NOT a claim, NOT a
+//! reasoning step. It is a derived community object for concept communities,
+//! method families, and benchmark suites.
+//! Source-grounded evidence requires EvidenceBundle (future P1 work).
 
 use crate::schema::{FieldType, NodeSchemaDef};
 

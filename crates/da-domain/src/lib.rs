@@ -12,6 +12,7 @@ pub mod cluster;
 pub mod entity;
 pub mod eval;
 pub mod evidence;
+pub mod evidence_bundle;
 pub mod healing;
 pub mod hypergraph;
 pub mod paper;
@@ -35,6 +36,9 @@ pub use hypergraph::{
     ConceptClusterSchema, CLUSTER_BENCHMARK_SUITE, CLUSTER_CONCEPT, CLUSTER_METHOD_FAMILY,
 };
 pub use paper::{Paper, PaperSchema, PaperStatus};
+pub use relation::hypergraph::{
+    CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
+};
 pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
 pub use scheduler::{PendingTask, RetryPolicy, TaskPriority, TaskStatus, TaskType};
 pub use schema::{

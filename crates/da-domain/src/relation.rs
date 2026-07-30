@@ -131,17 +131,32 @@ pub mod bibliographic {
     pub const SPLITS: &str = "SPLITS";
 }
 
-/// Hypergraph edge types (ONTOLOGY-DESIGN Layer 6, ADR-042).
+/// Hypergraph edge types (ONTOLOGY-DESIGN Layer 6, ADR-042 revised).
+///
+/// IMPORTANT: ConceptCluster is a derived community object, NOT an evidence
+/// unit. EvidenceBundle (future) is the source-grounded n-ary evidence node.
+/// Do NOT run PPR over MEMBER_OF_CLUSTER edges — wrong semantics.
 pub mod hypergraph {
-    /// Entity is a member of a ConceptCluster (hyperedge membership).
-    /// Carries weight (confidence) and optional context (evidence text).
-    pub const MEMBER_OF: &str = "MEMBER_OF";
+    /// Entity is a member of a ConceptCluster (derived community membership).
+    /// This is NOT evidence participation. For evidence, use PARTICIPATES_IN.
+    pub const MEMBER_OF_CLUSTER: &str = "MEMBER_OF_CLUSTER";
 
-    /// ConceptCluster A subsumes ConceptCluster B (hierarchical hyperedges).
+    /// ConceptCluster A subsumes ConceptCluster B (hierarchical clusters).
     pub const SUBSUMES: &str = "SUBSUMES";
 
-    /// Evidence chain supports an entity claim (future, Phase 5-6).
+    /// Entity participates in an EvidenceBundle (n-ary evidence, future).
+    /// Carries role: method, dataset, metric, baseline, result, etc.
+    pub const PARTICIPATES_IN: &str = "PARTICIPATES_IN";
+
+    /// EvidenceBundle supports a Claim (truth-bearing proposition, future).
+    /// Target is Claim node, NOT Entity.
     pub const SUPPORTS: &str = "SUPPORTS";
+
+    /// EvidenceBundle contradicts a Claim (future).
+    pub const CONTRADICTS: &str = "CONTRADICTS";
+
+    /// EvidenceBundle qualifies a Claim (partial support, future).
+    pub const QUALIFIES: &str = "QUALIFIES";
 }
 
 /// Schema definition for Citation nodes (GRAPH-SCHEMA.md).
