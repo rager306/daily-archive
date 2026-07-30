@@ -5,8 +5,8 @@
 
 #![cfg(test)]
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 use da_application::{batch_ingest_pdfs, ingest::IngestUseCase};
@@ -399,7 +399,7 @@ async fn test_ingest_citation_dedup_shared_reference() {
 
     assert_eq!(result.ok, 2);
     assert_eq!(result.total_cites_resolved, 2); // both papers cite it
-                                                // 2 Paper + 2 Section + 1 Citation (deduped!) = 5 total
+    // 2 Paper + 2 Section + 1 Citation (deduped!) = 5 total
     assert_eq!(
         nodes.load(Ordering::SeqCst),
         5,

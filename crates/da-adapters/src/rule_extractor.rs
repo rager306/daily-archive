@@ -91,20 +91,81 @@ const BUNDLED_EXTRACTION_YAML: &str = include_str!("../../../data/extraction_pat
 
 /// Rule-based extractor using section titles + keyword heuristics.
 /// Holds an ExtractionConfig loaded from YAML (no hardcoded whitelists).
+///
+/// Performance: pre-computes lowercase versions of config lists once
+/// at construction time to avoid repeated `.to_lowercase()` allocations
+/// in the extraction hot path (Rust 2026 best practice: reuse allocations).
 pub struct RuleBasedExtractor {
     config: ExtractionConfig,
+    /// Pre-lowercased config data for O(1) hot-path lookups.
+    lowered: LoweredConfig,
+}
+
+/// Pre-lowercased extraction config data.
+/// Built once at construction; avoids `.to_lowercase()` in inner loops.
+struct LoweredConfig {
+    method_acronyms_lower: Vec<String>,
+    method_acronyms_canonical: Vec<String>,
+    models_lower: Vec<String>,
+    models_prefix_lower: Vec<String>, // first segment before '-', lowercased
+    datasets_lower: Vec<String>,
+    metrics_lower: Vec<String>,
+    task_phrases_lower: Vec<String>,
+    task_acronyms_lower: Vec<String>,
+    method_phrases_lower: Vec<String>,
+}
+
+impl LoweredConfig {
+    fn from_config(config: &ExtractionConfig) -> Self {
+        Self {
+            method_acronyms_lower: config
+                .methods
+                .acronyms
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+            method_acronyms_canonical: config.methods.acronyms.clone(),
+            models_lower: config.models.iter().map(|s| s.to_lowercase()).collect(),
+            models_prefix_lower: config
+                .models
+                .iter()
+                .map(|s| s.split('-').next().unwrap_or(s).to_lowercase())
+                .collect(),
+            datasets_lower: config.datasets.iter().map(|s| s.to_lowercase()).collect(),
+            metrics_lower: config.metrics.iter().map(|s| s.to_lowercase()).collect(),
+            task_phrases_lower: config
+                .tasks
+                .phrases
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+            task_acronyms_lower: config
+                .tasks
+                .acronyms
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+            method_phrases_lower: config
+                .methods
+                .phrases
+                .iter()
+                .map(|s| s.to_lowercase())
+                .collect(),
+        }
+    }
 }
 
 impl RuleBasedExtractor {
     pub fn new() -> Self {
-        Self {
-            config: ExtractionConfig::load(),
-        }
+        let config = ExtractionConfig::load();
+        let lowered = LoweredConfig::from_config(&config);
+        Self { config, lowered }
     }
 
     /// Create with explicit config (for testing or custom whitelists).
     pub fn with_config(config: ExtractionConfig) -> Self {
-        Self { config }
+        let lowered = LoweredConfig::from_config(&config);
+        Self { config, lowered }
     }
 
     /// Access the loaded config.
@@ -163,20 +224,20 @@ impl RuleBasedExtractor {
     /// Abstract/Introduction (unclassified sections) rather than Method sections.
     /// Restricted to a whitelist to avoid false positives from all-caps scan.
     fn extract_method_acronyms_global(&self, text: &str) -> Vec<(usize, usize, String)> {
-        let mut results = Vec::new();
-        // Known method acronyms in RL/optimization/prompt-engineering literature.
-        // Whitelist-based to keep precision high (global scan of all all-caps words
-        // produced 20+ false positives per paper).
+        let mut results = Vec::with_capacity(self.lowered.method_acronyms_lower.len());
         let lower_text = text.to_lowercase();
-        for method in &self.config.methods.acronyms {
-            let method_lower = method.to_lowercase();
+        for (method_lower, method_canonical) in self
+            .lowered
+            .method_acronyms_lower
+            .iter()
+            .zip(self.lowered.method_acronyms_canonical.iter())
+        {
             let mut start = 0;
-            while let Some(pos) = lower_text[start..].find(&method_lower) {
+            while let Some(pos) = lower_text[start..].find(method_lower.as_str()) {
                 let abs = start + pos;
-                let end = abs + method.len();
+                let end = abs + method_lower.len();
                 if Self::word_boundary(text, abs, end) {
-                    // Use canonical uppercase form as the label
-                    results.push((abs, end, method.to_string()));
+                    results.push((abs, end, method_canonical.clone()));
                 }
                 start = end;
             }
@@ -231,21 +292,21 @@ impl RuleBasedExtractor {
                         // do NOT claim it as a Method/Task — the global
                         // Model/Dataset/Metric pass will type it correctly.
                         let cand_lower = candidate.to_lowercase();
-                        let is_known_non_method =
-                            self.config.models.iter().any(|m| {
-                                cand_lower.starts_with(
-                                    &m.to_lowercase()
-                                        .split('-')
-                                        .next()
-                                        .unwrap_or(m)
-                                        .to_lowercase(),
-                                )
-                            }) || self.config.datasets.contains(&candidate.to_string())
-                                || self
-                                    .config
-                                    .metrics
-                                    .iter()
-                                    .any(|m| m.eq_ignore_ascii_case(candidate));
+                        let is_known_non_method = self
+                            .lowered
+                            .models_prefix_lower
+                            .iter()
+                            .any(|mp| cand_lower.starts_with(mp.as_str()))
+                            || self
+                                .lowered
+                                .datasets_lower
+                                .iter()
+                                .any(|d| d.eq_ignore_ascii_case(&cand_lower))
+                            || self
+                                .lowered
+                                .metrics_lower
+                                .iter()
+                                .any(|m| m.eq_ignore_ascii_case(&cand_lower));
                         if !is_known_non_method {
                             let label_end = abs + end;
                             results.push((abs, label_end, candidate.to_string()));
@@ -264,12 +325,18 @@ impl RuleBasedExtractor {
                 // produced high false positive rates (long phrase labels like
                 // "150 examples for training" classified as Dataset entities).
                 // Unknown dataset discovery requires GLiNER or curated lists.
-                for ds in &self.config.datasets {
+                let lower_text_ds = text.to_lowercase();
+                for (ds_lower, ds_canonical) in self
+                    .lowered
+                    .datasets_lower
+                    .iter()
+                    .zip(self.config.datasets.iter())
+                {
                     let mut start = 0;
-                    while let Some(pos) = text[start..].find(ds) {
+                    while let Some(pos) = lower_text_ds[start..].find(ds_lower.as_str()) {
                         let abs = start + pos;
-                        results.push((abs, abs + ds.len(), ds.to_string()));
-                        start = abs + ds.len();
+                        results.push((abs, abs + ds_lower.len(), ds_canonical.clone()));
+                        start = abs + ds_lower.len();
                     }
                 }
             }
@@ -287,14 +354,18 @@ impl RuleBasedExtractor {
                 // in one paper). Whitelist keeps precision high.
                 // Case-insensitive search: GROBID may normalize casing (ppo, Cot).
                 let lower_text = text.to_lowercase();
-                for method in &self.config.methods.acronyms {
-                    let method_lower = method.to_lowercase();
+                for (method_lower, method_canonical) in self
+                    .lowered
+                    .method_acronyms_lower
+                    .iter()
+                    .zip(self.lowered.method_acronyms_canonical.iter())
+                {
                     let mut start = 0;
-                    while let Some(pos) = lower_text[start..].find(&method_lower) {
+                    while let Some(pos) = lower_text[start..].find(method_lower.as_str()) {
                         let abs = start + pos;
-                        let end = abs + method.len();
+                        let end = abs + method_lower.len();
                         if Self::word_boundary(text, abs, end) {
-                            results.push((abs, end, method.to_string()));
+                            results.push((abs, end, method_canonical.clone()));
                         }
                         start = end;
                     }
@@ -424,23 +495,27 @@ impl Extractor for RuleBasedExtractor {
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
-            for phrase in &self.config.methods.phrases {
-                let p_lower = phrase.to_lowercase();
+            for (p_lower, phrase_canonical) in self
+                .lowered
+                .method_phrases_lower
+                .iter()
+                .zip(self.config.methods.phrases.iter())
+            {
                 let mut start = 0;
-                while let Some(pos) = lower[start..].find(&p_lower) {
+                while let Some(pos) = lower[start..].find(p_lower.as_str()) {
                     let abs = start + pos;
-                    let end = abs + phrase.len();
+                    let end = abs + phrase_canonical.len();
                     if Self::word_boundary(&scan_text, abs, end) {
                         let key = (p_lower.clone(), "method".to_string());
                         if !seen.contains(&key) {
                             seen.insert(key);
                             entities.push(ExtractedEntity {
-                                label: phrase.to_string(),
+                                label: phrase_canonical.to_string(),
                                 entity_type: EntityType::Method,
                                 section_title: title.clone(),
                                 char_start: abs,
                                 char_end: end,
-                                surface: phrase.to_string(),
+                                surface: phrase_canonical.to_string(),
                             });
                         }
                     }
@@ -919,9 +994,11 @@ mod tests {
         let entities = extractor.extract(&sections).await.unwrap();
         assert!(!entities.is_empty());
         assert!(entities.iter().any(|e| e.label.contains("TransformerX")));
-        assert!(entities
-            .iter()
-            .any(|e| e.entity_type == EntityType::Dataset));
+        assert!(
+            entities
+                .iter()
+                .any(|e| e.entity_type == EntityType::Dataset)
+        );
         // Introduction should produce no entities
         assert!(!entities.iter().any(|e| e.section_title == "Introduction"));
     }
@@ -1143,11 +1220,13 @@ fn test_extraction_config_bundled() {
     assert!(config.models.iter().any(|m| m == "GPT-4"));
     assert!(config.datasets.iter().any(|d| d == "MMLU"));
     assert!(config.metrics.iter().any(|m| m == "accuracy"));
-    assert!(config
-        .tasks
-        .phrases
-        .iter()
-        .any(|t| t == "prompt optimization"));
+    assert!(
+        config
+            .tasks
+            .phrases
+            .iter()
+            .any(|t| t == "prompt optimization")
+    );
     assert!(config.tasks.acronyms.iter().any(|t| t == "RLHF"));
 }
 

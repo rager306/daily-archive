@@ -2,8 +2,8 @@
 
 #![cfg(test)]
 
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 use da_application::EnrichUseCase;

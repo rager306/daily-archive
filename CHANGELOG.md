@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Hot-path extraction optimization (Wave 3a) (2026-07-29)
+
+- **Pre-lowercase config data (LoweredConfig).** `RuleBasedExtractor` now
+  pre-computes lowercase versions of all config lists once at construction
+  time. Eliminates repeated `.to_lowercase()` allocations in extraction hot
+  path — Rust 2026 best practice: "reuse allocations where possible."
+  - `method_acronyms_lower` + `method_acronyms_canonical` (zip for label)
+  - `models_prefix_lower` (first segment before '-', lowercased)
+  - `datasets_lower`, `metrics_lower`
+  - `task_phrases_lower`, `task_acronyms_lower`, `method_phrases_lower`
+- **Cross-whitelist check optimized.** Was O(models × candidates) allocations
+  (`m.to_lowercase()` for each model for each candidate). Now O(candidates)
+  with pre-lowered prefix lookup.
+- **Vec::with_capacity** instead of Vec::new() in extraction methods.
+- **Hot-path `.to_lowercase()` count: ~20+ → 9** (remaining are necessary
+  per-text lowerings, not per-entity).
+
 ### Rust 2026 meta-optimization (2026-07-29)
 
 - **Edition 2021 → 2024 migration.** `cargo fix --edition` found zero

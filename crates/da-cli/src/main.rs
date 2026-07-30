@@ -323,7 +323,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
 
 async fn batch_ingest(ids_str: &str, output: Option<&str>) {
     use da_adapters::{FdApiEmbedder, GrobidParser, SamyamaGraphStore};
-    use da_application::{batch_ingest_pdfs, IngestUseCase};
+    use da_application::{IngestUseCase, batch_ingest_pdfs};
 
     let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
     let pdfs: Vec<(String, String)> = ids

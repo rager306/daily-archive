@@ -266,11 +266,7 @@ impl GrobidParser {
         let content = &entry[tag_end + 1..];
         let close = content.find("</idno>")?;
         let value = Self::strip_xml_tags(&content[..close]);
-        if value.is_empty() {
-            None
-        } else {
-            Some(value)
-        }
+        if value.is_empty() { None } else { Some(value) }
     }
 
     /// Strip XML tags from text.

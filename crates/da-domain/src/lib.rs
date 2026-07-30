@@ -40,12 +40,12 @@ pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
 };
-pub use relation::{bibliographic, CitationSchema, Relation, RelationType, RELATION_TYPES};
+pub use relation::{CitationSchema, RELATION_TYPES, Relation, RelationType, bibliographic};
 pub use scheduler::{PendingTask, RetryPolicy, TaskPriority, TaskStatus, TaskType};
 pub use schema::{
-    all_node_schemas, schema_for_label, Field, FieldType, NodeSchemaDef, SchemaError,
+    Field, FieldType, NodeSchemaDef, SchemaError, all_node_schemas, schema_for_label,
 };
 pub use source::{
-    is_known_source_code, is_known_source_profile, is_known_source_type, SourceSchema,
+    SourceSchema, is_known_source_code, is_known_source_profile, is_known_source_type,
 };
-pub use vid::{entity_vid, paper_vid, Vid};
+pub use vid::{Vid, entity_vid, paper_vid};
