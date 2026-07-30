@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Configuration externalization — no hardcoded reference data (2026-07-29)
+
+- **Domain codes moved to YAML.** 166 hardcoded const → 0. Reference data now
+  lives in `data/arxiv_categories.yaml` (148 official categories) and
+  `data/extension_domains.yaml` (10 da.* codes + aliases). Loaded at startup
+  via `DomainRegistry` with `OnceLock`. Bundled fallback via `include_str!`.
+  Public API (`is_known()`, `canonicalize()`) unchanged.
+  Principle: **logic stays in Rust, data goes to YAML.** No recompilation
+  needed to update category lists.
+- **Scientific domain extraction in ingest.** `extract_domain_from_path()`
+  parses catalog path (`.../arxiv/cs-lg/<id>/source/<id>.pdf` → `cs.LG`) and
+  sets `primary_scientific_domain`, `scientific_domains`,
+  `domain_assignment_method` on Paper nodes. ADR-043 compliance.
+  `canonicalize_fs_category()` handles multi-dash prefixes (cond-mat, astro-ph).
+  PaperSchema updated: +scientific_domains, +primary_scientific_domain,
+  +domain_assignment_method fields.
+- **CONFIG-EXTERNALIZATION-PLAN.md**: roadmap for remaining hardcoded data
+  (extraction patterns dedup, source codes, failure taxonomy, edge types).
+
 ### Debt sweep — DRY + consistency (2026-07-29)
 
 - **Edge type magic strings eliminated.** New `relation::structure` module with

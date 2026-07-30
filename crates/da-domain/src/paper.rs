@@ -86,6 +86,13 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
             ("pdf_hash", crate::schema::FieldType::String),
             ("section_count", crate::schema::FieldType::Integer),
             ("citation_count", crate::schema::FieldType::Integer),
+            // ADR-043: multi-domain support
+            ("scientific_domains", crate::schema::FieldType::String),
+            (
+                "primary_scientific_domain",
+                crate::schema::FieldType::String,
+            ),
+            ("domain_assignment_method", crate::schema::FieldType::String),
             ("valid_to", crate::schema::FieldType::DateTime),
             ("superseded_by", crate::schema::FieldType::String),
             ("evidence_ready", crate::schema::FieldType::Boolean),

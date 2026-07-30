@@ -54,6 +54,9 @@ impl IngestUseCase {
     pub async fn ingest_pdf(&self, pdf_path: &str, paper_id: &str) -> anyhow::Result<IngestResult> {
         tracing::info!(paper_id, pdf_path, "Starting ingest (HOT path)");
 
+        // ADR-043: extract scientific_domain from catalog path if available
+        let primary_domain = extract_domain_from_path(pdf_path);
+
         // 1. Parse via GROBID
         let parsed = self.parser.parse_pdf(pdf_path, paper_id).await?;
         tracing::info!(
@@ -119,6 +122,24 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_bool(node_id, "retrieval_eligible", true) // D134: live for retrieval
             .await?;
+
+        // ADR-043: set scientific_domain fields (extracted from catalog path)
+        if let Some(ref domain) = primary_domain {
+            self.graph_store
+                .set_node_property_string(node_id, "primary_scientific_domain", domain.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_string(node_id, "scientific_domains", domain.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_string(
+                    node_id,
+                    "domain_assignment_method",
+                    "catalog_path".to_string(),
+                )
+                .await?;
+            tracing::debug!(paper_id, domain = %domain, "Set primary_scientific_domain");
+        }
 
         // Section + citation metadata (enables Phase 3 extraction queries)
         let section_count = parsed.sections.len();
@@ -278,7 +299,101 @@ impl IngestUseCase {
     }
 }
 
+/// Canonicalize a filesystem-style category segment to arXiv dotted form.
+///
+/// Filesystem uses dashes: `cs-lg`, `cond-mat-mtrl-sci`, `q-bio-gn`.
+/// arXiv uses dots: `cs.LG`, `cond-mat.mtrl-sci`, `q-bio.GN`.
+///
+/// Strategy: try known multi-component prefixes first, then standard X-YY format.
+fn canonicalize_fs_category(seg: &str) -> Option<String> {
+    // Known multi-dash prefixes (group.subgroup format in arXiv)
+    for prefix in ["cond-mat-", "astro-ph-", "q-bio-", "q-fin-", "nlin-"] {
+        if let Some(rest) = seg.strip_prefix(prefix) {
+            let group = &prefix[..prefix.len() - 1];
+            return Some(format!("{}.{}", group, rest));
+        }
+    }
+    // Standard X-YY format: cs-lg → cs.LG
+    if let Some((first, rest)) = seg.split_once('-') {
+        return Some(format!("{}.{}", first, rest.to_uppercase()));
+    }
+    // No dash: standalone like "quant-ph" or "gr-qc" — already canonical
+    Some(seg.to_string())
+}
+
+/// Extract arXiv-style scientific_domain from catalog path.
+///
+/// Path format: `.../arxiv/<cat-dash>/<paper-id>/source/<paper-id>.pdf`
+/// Example: `.../arxiv/cs-lg/2603.24533/source/2603.24533.pdf` → `cs.LG`
+///
+/// Returns None if path doesn't match the expected pattern.
+/// Validates against the canonical arXiv registry (da_domain::domain module).
+fn extract_domain_from_path(pdf_path: &str) -> Option<String> {
+    // Find the segment after "arxiv/"
+    let path = std::path::Path::new(pdf_path);
+    let components: Vec<&str> = path
+        .components()
+        .filter_map(|c| c.as_os_str().to_str())
+        .collect();
+
+    let arxiv_idx = components.iter().position(|c| *c == "arxiv")?;
+    let cat_segment = components.get(arxiv_idx + 1)?;
+
+    // Convert filesystem dash format to arXiv dotted form.
+    let canonical = canonicalize_fs_category(cat_segment)?;
+
+    // Validate against registry
+    if da_domain::domain::is_known(&canonical) {
+        Some(canonical)
+    } else {
+        tracing::warn!(
+            path_segment = cat_segment,
+            canonical = %canonical,
+            "Unknown arXiv category from catalog path"
+        );
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_domain_cs_lg() {
+        let path =
+            "data/article_catalog/article_catalog/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
+        assert_eq!(extract_domain_from_path(path), Some("cs.LG".to_string()));
+    }
+
+    #[test]
+    fn test_extract_domain_cs_ai() {
+        let path = "/root/daily-archive/data/article_catalog/article_catalog/arxiv/cs-ai/1234.5678/source/1234.5678.pdf";
+        assert_eq!(extract_domain_from_path(path), Some("cs.AI".to_string()));
+    }
+
+    #[test]
+    fn test_extract_domain_physics() {
+        let path = "data/article_catalog/article_catalog/arxiv/cond-mat-mtrl-sci/1234.5678/source/1234.5678.pdf";
+        // cond-mat.mtrl-sci has multi-part suffix (lowercase in arXiv)
+        assert_eq!(
+            extract_domain_from_path(path),
+            Some("cond-mat.mtrl-sci".to_string())
+        );
+    }
+
+    #[test]
+    fn test_extract_domain_unknown_category() {
+        let path =
+            "data/article_catalog/article_catalog/arxiv/xx-yy/1234.5678/source/1234.5678.pdf";
+        assert_eq!(extract_domain_from_path(path), None);
+    }
+
+    #[test]
+    fn test_extract_domain_no_arxiv_segment() {
+        let path = "/tmp/some/random/path/file.pdf";
+        assert_eq!(extract_domain_from_path(path), None);
+    }
+
     // Integration tests require live services (GROBID, fd_api, Samyama embedded)
 }
