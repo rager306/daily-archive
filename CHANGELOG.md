@@ -128,6 +128,11 @@
   registered as 12th node type. Supports GNN community detection and hypergraph
   queries. cluster_type: concept_cluster / method_family / benchmark_suite.
   5 TDD tests added.
+- **Phase 4: ADR-042 + MEMBER_OF edges + ConceptCluster detection**. ADR-042
+  adopts HyCE-RAG (arXiv:2607.22597) blueprint for hypergraph evidence chains.
+  Added hypergraph::MEMBER_OF, SUBSUMES, SUPPORTS edge types. Rule-based
+  detect_clusters() — deterministic co-occurrence analysis, no LLM required
+  (GSD: "statistical-first"). 4 TDD tests for cluster detection.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides
