@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### CLI runtime refactor + code quality (2026-07-29)
+
+- **CLI runtime duplication eliminated.** 12× `Runtime::new().unwrap()` in
+  main.rs → 1 shared runtime with proper error handling (unwrap_or_else →
+  eprintln + exit(1)). Rust 2026 best practice: single runtime, no unwrap
+  in main error path.
+- **Dead code removed: ExtractionConfig::from_file().** JSON loader with
+  0 callers after YAML migration.
+- **D127 invariant enforced on ALL 8 node creation sites.** Previous: 3/8.
+  Now: 8/8 (import_eligible=false + retrieval_eligible set everywhere).
+
 ### D127/D134 invariant enforcement + dead code removal (2026-07-29)
 
 - **D127 violation fixed: 5 node creation sites missing import_eligible=false.**

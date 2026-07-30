@@ -150,10 +150,16 @@ fn main() {
     };
     tracing_subscriber::fmt().with_env_filter(filter).init();
 
+    // Single shared Tokio runtime for all async commands (Rust 2026 best practice:
+    // avoid repeated Runtime creation; one runtime serves all commands).
+    let rt = tokio::runtime::Runtime::new().unwrap_or_else(|e| {
+        eprintln!("Failed to create Tokio runtime: {e}");
+        std::process::exit(1);
+    });
+
     match cli.command {
         Commands::Health => {
             println!("daily-archive v2 — health check");
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 check_health().await;
             });
@@ -165,37 +171,31 @@ fn main() {
         }
         Commands::Ingest { pdf, id } => {
             println!("Ingesting: {} → {}", pdf, id);
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 ingest_pdf(&pdf, &id).await;
             });
         }
         Commands::BatchIngest { ids, output } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 batch_ingest(&ids, output.as_deref()).await;
             });
         }
         Commands::LoadSnapshot { input } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 load_snapshot(&input).await;
             });
         }
         Commands::GraphStats => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 graph_stats().await;
             });
         }
         Commands::Query { kind, id, hops } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 query_graph(&kind, id.as_deref(), hops).await;
             });
         }
         Commands::Extract { id } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 extract_entities(&id).await;
             });
@@ -212,7 +212,6 @@ fn main() {
             keep,
             reason,
         } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 heal_graph(
                     &op,
@@ -227,19 +226,16 @@ fn main() {
             });
         }
         Commands::Enrich { id } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 enrich_from_openalex(&id).await;
             });
         }
         Commands::BatchEnrich { ids } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 batch_enrich_from_openalex(&ids).await;
             });
         }
         Commands::SchedulerRun { queue_dir } => {
-            let rt = tokio::runtime::Runtime::new().unwrap();
             rt.block_on(async {
                 run_scheduler(&queue_dir).await;
             });
