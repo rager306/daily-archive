@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Hot-path extraction → config-driven (Wave H) (2026-07-29)
+
+- **KNOWN_* const arrays eliminated from extraction hot-path.** 7 hardcoded
+  arrays (KNOWN_METHODS, KNOWN_METHOD_PHRASES, KNOWN_DATASETS, KNOWN_MODELS,
+  KNOWN_METRICS, TASK_PHRASES, TASK_ACRONYMS) → 0. Extraction logic now uses
+  `self.config.*` from loaded YAML (data/extraction_patterns.yaml).
+- **Logical gap fixed.** RuleBasedExtractor loaded config from YAML but hot-path
+  methods (extract_candidates, extract_method_acronyms_global) still used const
+  arrays directly. Config was loaded but unused in extraction — illusion of
+  configurability. Now: 13 const references → self.config.* references.
+- **API change.** extract_candidates() and extract_method_acronyms_global()
+  converted from associated functions to &self methods (need config access).
+  Tests updated: 6 test functions added `let extractor = RuleBasedExtractor::new()`.
+- **Result:** Updating entity whitelists = edit YAML, no recompile.
+  Governor CLI can add new Method/Dataset/Model/Metric/Task without Rust change.
+
 ### Configuration externalization — Waves F/G (2026-07-29)
 
 - **Node vocabulary → YAML.** 10 hardcoded BUNDLE_*/VERIFICATION_*/CLUSTER_*

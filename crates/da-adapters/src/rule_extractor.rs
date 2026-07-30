@@ -13,87 +13,10 @@ use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 // Used by both extract_candidates (section-classified) and the global passes
 // in extract(). Adding a new entity = add it here once.
 // ============================================================================
-
-/// Known method acronyms in RL / optimization / prompt-engineering literature.
-const KNOWN_METHODS: &[&str] = &[
-    // RL / optimization methods
-    "GEPA", "GRPO", "RLVR", "PPO", "DPO", "KTO", // Prompt optimization / memory
-    "GSEM", "PEM", "OPRO", "EoT", // Reasoning
-    "CoT", "ToT", // GNN architectures (cross-domain: ONTOLOGY-DESIGN Phase 2)
-    "GCN", "GAT", "GIN", "MPNN", "GNN",
-];
-
-/// Known multi-word method phrases (case-insensitive, word-boundary).
-/// These are compound method names that cannot be captured by the
-/// all-caps acronym whitelist — they appear as lowercase/titlecase
-/// phrases in paper body text.
-///
-/// CROSS-TYPE CONFLICT AVOIDANCE: do NOT include phrases whose acronym
-/// already exists in TASK_ACRONYMS (e.g., "retrieval-augmented generation"
-/// conflicts with RAG=Task). Expand the acronym instead of adding a phrase.
-const KNOWN_METHOD_PHRASES: &[&str] = &[
-    "self-evolving memory",
-    "chain-of-thought reasoning",
-    "in-context learning",
-    // GNN-specific phrases (cross-domain: ONTOLOGY-DESIGN Phase 2)
-    "GraphSAGE",
-];
-
-/// Known dataset names (direct match, case-insensitive, word-boundary).
-const KNOWN_DATASETS: &[&str] = &[
-    "HotpotQA",
-    "LiveBench",
-    "MATH",
-    "GSM8K",
-    "MBPP",
-    "HumanEval",
-    "SQuAD",
-    "WMT",
-    "ImageNet",
-    "CIFAR",
-    "MNIST",
-    "AGNews",
-    "TriviaQA",
-    "NaturalQuestions",
-    "DROP",
-    "BoolQ",
-    "MMLU",
-    "MMLU-Pro",
-    "BBH",
-    "ARC",
-    "HellaSwag",
-    "TruthfulQA",
-    "AGIEval",
-    "WinoGrande",
-    "PIQA",
-    "OpenBookQA",
-];
-
-/// Canonical model names. Prevents duplicate variants (GPT-4.1, GPT-4.1-Mini).
-const KNOWN_MODELS: &[&str] = &[
-    "GPT-4", "GPT-3.5", "GPT-4o", "LLaMA", "Claude", "Gemini", "Mistral", "Qwen", "DeepSeek",
-    "GLM", "BERT", "T5", "BLOOM",
-];
-
-/// Known metrics (direct match, case-insensitive, word-boundary).
-const KNOWN_METRICS: &[&str] = &[
-    "accuracy",
-    "precision",
-    "recall",
-    "F1",
-    "BLEU",
-    "ROUGE",
-    "AUC",
-    "MSE",
-    "RMSE",
-    "MAE",
-];
-
-/// Known multi-word task phrases.
-const TASK_PHRASES: &[&str] = &["prompt optimization", "preference optimization"];
-
-/// Known task acronyms.
-const TASK_ACRONYMS: &[&str] = &["RLHF", "RAG"];
+// Entity whitelists moved to data/extraction_patterns.yaml.
+// RuleBasedExtractor loads config from YAML at construction time.
+// No hardcoded KNOWN_* arrays — single source of truth is YAML.
+// ============================================================================
 
 // ============================================================================
 // Declarative extraction patterns (Wave 3).
@@ -239,13 +162,13 @@ impl RuleBasedExtractor {
     /// Used to find method acronyms (GSEM, GEPA, GRPO, RLVR) that appear in
     /// Abstract/Introduction (unclassified sections) rather than Method sections.
     /// Restricted to a whitelist to avoid false positives from all-caps scan.
-    fn extract_method_acronyms_global(text: &str) -> Vec<(usize, usize, String)> {
+    fn extract_method_acronyms_global(&self, text: &str) -> Vec<(usize, usize, String)> {
         let mut results = Vec::new();
         // Known method acronyms in RL/optimization/prompt-engineering literature.
         // Whitelist-based to keep precision high (global scan of all all-caps words
         // produced 20+ false positives per paper).
         let lower_text = text.to_lowercase();
-        for method in KNOWN_METHODS {
+        for method in &self.config.methods.acronyms {
             let method_lower = method.to_lowercase();
             let mut start = 0;
             while let Some(pos) = lower_text[start..].find(&method_lower) {
@@ -263,7 +186,11 @@ impl RuleBasedExtractor {
 
     /// Extract candidate entity labels from section text using heuristics.
     /// Looks for capitalized phrases, quoted terms, and "we propose X" patterns.
-    fn extract_candidates(text: &str, entity_type: &EntityType) -> Vec<(usize, usize, String)> {
+    fn extract_candidates(
+        &self,
+        text: &str,
+        entity_type: &EntityType,
+    ) -> Vec<(usize, usize, String)> {
         let mut results = Vec::new();
 
         // Pattern 1: "we propose X" / "we use X" / "we present X" (case-insensitive)
@@ -304,18 +231,21 @@ impl RuleBasedExtractor {
                         // do NOT claim it as a Method/Task — the global
                         // Model/Dataset/Metric pass will type it correctly.
                         let cand_lower = candidate.to_lowercase();
-                        let is_known_non_method = KNOWN_MODELS.iter().any(|m| {
-                            cand_lower.starts_with(
-                                &m.to_lowercase()
-                                    .split('-')
-                                    .next()
-                                    .unwrap_or(m)
-                                    .to_lowercase(),
-                            )
-                        }) || KNOWN_DATASETS.contains(&candidate)
-                            || KNOWN_METRICS
-                                .iter()
-                                .any(|m| m.eq_ignore_ascii_case(candidate));
+                        let is_known_non_method =
+                            self.config.models.iter().any(|m| {
+                                cand_lower.starts_with(
+                                    &m.to_lowercase()
+                                        .split('-')
+                                        .next()
+                                        .unwrap_or(m)
+                                        .to_lowercase(),
+                                )
+                            }) || self.config.datasets.contains(&candidate.to_string())
+                                || self
+                                    .config
+                                    .metrics
+                                    .iter()
+                                    .any(|m| m.eq_ignore_ascii_case(candidate));
                         if !is_known_non_method {
                             let label_end = abs + end;
                             results.push((abs, label_end, candidate.to_string()));
@@ -334,7 +264,7 @@ impl RuleBasedExtractor {
                 // produced high false positive rates (long phrase labels like
                 // "150 examples for training" classified as Dataset entities).
                 // Unknown dataset discovery requires GLiNER or curated lists.
-                for ds in KNOWN_DATASETS {
+                for ds in &self.config.datasets {
                     let mut start = 0;
                     while let Some(pos) = text[start..].find(ds) {
                         let abs = start + pos;
@@ -357,7 +287,7 @@ impl RuleBasedExtractor {
                 // in one paper). Whitelist keeps precision high.
                 // Case-insensitive search: GROBID may normalize casing (ppo, Cot).
                 let lower_text = text.to_lowercase();
-                for method in KNOWN_METHODS {
+                for method in &self.config.methods.acronyms {
                     let method_lower = method.to_lowercase();
                     let mut start = 0;
                     while let Some(pos) = lower_text[start..].find(&method_lower) {
@@ -373,8 +303,8 @@ impl RuleBasedExtractor {
             EntityType::Task => {
                 // Known task phrases + acronyms. Case-insensitive with word
                 // boundary to avoid substring false positives.
-                let task_phrases = TASK_PHRASES;
-                let task_acronyms = TASK_ACRONYMS;
+                let task_phrases = &self.config.tasks.phrases;
+                let task_acronyms = &self.config.tasks.acronyms;
                 let lower = text.to_lowercase();
                 for phrase in task_phrases {
                     let p_lower = phrase.to_lowercase();
@@ -433,7 +363,7 @@ impl Extractor for RuleBasedExtractor {
 
         for (title, text) in sections {
             if let Some(entity_type) = Self::classify_section(title) {
-                let candidates = Self::extract_candidates(text, &entity_type);
+                let candidates = self.extract_candidates(text, &entity_type);
                 for (char_start, char_end, label) in candidates {
                     entities.push(ExtractedEntity {
                         label,
@@ -468,7 +398,7 @@ impl Extractor for RuleBasedExtractor {
             .collect();
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
-            let acronyms = Self::extract_method_acronyms_global(&scan_text);
+            let acronyms = self.extract_method_acronyms_global(&scan_text);
             for (char_start, char_end, label) in acronyms {
                 let key = (label.to_lowercase(), "method".to_string());
                 if !seen.contains(&key) {
@@ -494,7 +424,7 @@ impl Extractor for RuleBasedExtractor {
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
-            for phrase in KNOWN_METHOD_PHRASES {
+            for phrase in &self.config.methods.phrases {
                 let p_lower = phrase.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&p_lower) {
@@ -524,7 +454,7 @@ impl Extractor for RuleBasedExtractor {
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
-            for ds in KNOWN_DATASETS {
+            for ds in &self.config.datasets {
                 let ds_lower = ds.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&ds_lower) {
@@ -556,7 +486,7 @@ impl Extractor for RuleBasedExtractor {
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
-            for canonical in KNOWN_MODELS {
+            for canonical in &self.config.models {
                 let pattern = canonical.to_lowercase();
                 if lower.contains(&pattern) {
                     let key = (pattern.clone(), "model".to_string());
@@ -582,7 +512,7 @@ impl Extractor for RuleBasedExtractor {
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
-            for metric in KNOWN_METRICS {
+            for metric in &self.config.metrics {
                 let metric_lower = metric.to_lowercase();
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&metric_lower) {
@@ -606,8 +536,8 @@ impl Extractor for RuleBasedExtractor {
 
         // Global Task pass: scan ALL sections for known task phrases/acronyms.
         // Tasks are mentioned throughout the paper, not just in Task sections.
-        let task_phrases = TASK_PHRASES;
-        let task_acronyms = TASK_ACRONYMS;
+        let task_phrases = &self.config.tasks.phrases;
+        let task_acronyms = &self.config.tasks.acronyms;
         for (title, text) in sections {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
@@ -775,21 +705,23 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_propose() {
+        let extractor = RuleBasedExtractor::new();
         let text = "In this paper we propose GeoRLE, a novel approach for layout analysis.";
-        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+        let candidates = extractor.extract_candidates(text, &EntityType::Method);
         assert!(!candidates.is_empty());
         assert!(candidates[0].2.contains("GeoRLE"));
     }
 
     #[test]
     fn test_propose_pattern_type_restricted() {
+        let extractor = RuleBasedExtractor::new();
         // Pattern 1 ("we use X") should NOT fire for Dataset/Metric entity types.
         // "we use GRPO" in a Benchmarks section must not add GRPO as a Dataset.
         // Previously, Pattern 1 was type-agnostic, causing GRPO/GPT-4/etc to be
         // mistyped when they appeared in non-Method sections with "we use".
         let text = "Policy RL training, we use GRPO to let the model learn.";
-        let ds_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
-        let metric_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Metric);
+        let ds_candidates = extractor.extract_candidates(text, &EntityType::Dataset);
+        let metric_candidates = extractor.extract_candidates(text, &EntityType::Metric);
         assert!(
             !ds_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
             "GRPO should NOT be a Dataset candidate, got: {ds_candidates:?}"
@@ -799,7 +731,7 @@ mod tests {
             "GRPO should NOT be a Metric candidate, got: {metric_candidates:?}"
         );
         // But Method type should still extract it
-        let method_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+        let method_candidates = extractor.extract_candidates(text, &EntityType::Method);
         assert!(
             method_candidates.iter().any(|(_, _, l)| l.contains("GRPO")),
             "GRPO should be a Method candidate, got: {method_candidates:?}"
@@ -808,13 +740,14 @@ mod tests {
 
     #[test]
     fn test_pattern1_suppresses_known_model_names() {
+        let extractor = RuleBasedExtractor::new();
         // Regression: Pattern 1 ("we use X") in a Method-classified section
         // extracts the first capitalized word after "we use". For model names
         // like GPT-4, this would incorrectly classify them as Method entities.
         // Known models (GPT-4, Claude, Gemini, etc.) must NOT be extracted as
         // Method/Task candidates — they belong to the global Model pass.
         let text = "In our method, we use GPT-4 to evaluate the outputs.";
-        let method_candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+        let method_candidates = extractor.extract_candidates(text, &EntityType::Method);
         assert!(
             !method_candidates
                 .iter()
@@ -823,7 +756,7 @@ mod tests {
         );
         // But real method names should still be extracted
         let text2 = "In our method, we use GEPA to optimize prompts.";
-        let method_candidates2 = RuleBasedExtractor::extract_candidates(text2, &EntityType::Method);
+        let method_candidates2 = extractor.extract_candidates(text2, &EntityType::Method);
         assert!(
             method_candidates2
                 .iter()
@@ -834,11 +767,12 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_dataset() {
+        let extractor = RuleBasedExtractor::new();
         // Direct match of known datasets is the primary pattern.
         // The heuristic "capitalized word before dataset keyword" was removed
         // (too many false positives — long phrase labels).
         let text = "We evaluate on the PubMed dataset and the HotpotQA benchmark.";
-        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+        let candidates = extractor.extract_candidates(text, &EntityType::Dataset);
         assert!(!candidates.is_empty());
         // HotpotQA is in known_datasets
         assert!(candidates.iter().any(|(_, _, l)| l == "HotpotQA"));
@@ -846,9 +780,10 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_known_datasets() {
+        let extractor = RuleBasedExtractor::new();
         // Known dataset names should be extracted directly
         let text = "We evaluate on HotpotQA, LiveBench, and MATH benchmarks.";
-        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+        let candidates = extractor.extract_candidates(text, &EntityType::Dataset);
         assert!(!candidates.is_empty());
         let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
         assert!(labels.contains(&"HotpotQA"), "got: {labels:?}");
@@ -858,11 +793,12 @@ mod tests {
 
     #[test]
     fn test_extract_candidates_models() {
+        let extractor = RuleBasedExtractor::new();
         // Model extraction is now handled by the global pass in extract(),
         // not by section-classified extract_candidates. This test verifies
         // that extract_candidates for Model returns empty (no false positives).
         let text = "We compare GPT-4, Llama-3, Claude-3, and Gemini across tasks.";
-        let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Model);
+        let candidates = extractor.extract_candidates(text, &EntityType::Model);
         assert!(
             candidates.is_empty(),
             "Model extraction should be global, not section-classified"
@@ -1041,8 +977,9 @@ mod tests {
 
 #[test]
 fn test_extract_method_acronyms() {
+    let extractor = RuleBasedExtractor::new();
     let text = "We propose GEPA and compare with GRPO and RLVR baselines.";
-    let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Method);
+    let candidates = extractor.extract_candidates(text, &EntityType::Method);
     assert!(!candidates.is_empty());
     let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
     assert!(labels.contains(&"GEPA"), "got: {labels:?}");
@@ -1164,17 +1101,19 @@ async fn test_entity_in_section_title_is_extracted() {
 
 #[test]
 fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
-    // Regression: "retrieval-augmented generation" was in KNOWN_METHOD_PHRASES
-    // while "RAG" is in TASK_ACRONYMS. Same concept, different entity types →
-    // graph confusion. Verify no acronym in TASK_ACRONYMS has a corresponding
-    // phrase in KNOWN_METHOD_PHRASES (and vice versa for KNOWN_METHODS).
-    let method_acronyms: std::collections::HashSet<&str> = KNOWN_METHODS.iter().copied().collect();
-    let task_acronyms: std::collections::HashSet<&str> = TASK_ACRONYMS.iter().copied().collect();
+    // Regression: "retrieval-augmented generation" was in method phrases
+    // while "RAG" is in task acronyms. Same concept, different entity types →
+    // graph confusion. Verify no acronym in task acronyms has a corresponding
+    // phrase in method phrases (and vice versa for method acronyms).
+    let config = ExtractionConfig::bundled();
+    let method_acronyms: std::collections::HashSet<String> =
+        config.methods.acronyms.iter().cloned().collect();
+    let task_acronyms: std::collections::HashSet<String> =
+        config.tasks.acronyms.iter().cloned().collect();
 
     // No method phrase should be a task acronym expanded (or vice versa).
-    // Check: TASK_ACRONYMS items should not appear as substrings of
-    // KNOWN_METHOD_PHRASES items.
-    for phrase in KNOWN_METHOD_PHRASES {
+    // Check: task acronyms should not appear as substrings of method phrases.
+    for phrase in &config.methods.phrases {
         let p_lower = phrase.to_lowercase();
         for acr in &task_acronyms {
             let a_lower = acr.to_lowercase();
@@ -1187,7 +1126,7 @@ fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
     }
 
     // Also verify method acronyms and task acronyms don't overlap.
-    let overlap: Vec<&&str> = method_acronyms.intersection(&task_acronyms).collect();
+    let overlap: Vec<&String> = method_acronyms.intersection(&task_acronyms).collect();
     assert!(
         overlap.is_empty(),
         "Method and Task acronyms overlap: {overlap:?}"
@@ -1318,9 +1257,10 @@ async fn test_extract_task_phrases_global() {
 
 #[test]
 fn test_extract_known_llm_benchmarks() {
+    let extractor = RuleBasedExtractor::new();
     // LLM evaluation benchmarks should be extracted directly
     let text = "We evaluate on MMLU, MMLU-Pro, BBH, ARC, HellaSwag, and TruthfulQA.";
-    let candidates = RuleBasedExtractor::extract_candidates(text, &EntityType::Dataset);
+    let candidates = extractor.extract_candidates(text, &EntityType::Dataset);
     assert!(!candidates.is_empty());
     let labels: Vec<&str> = candidates.iter().map(|(_, _, l)| l.as_str()).collect();
     assert!(labels.contains(&"MMLU"), "got: {labels:?}");
