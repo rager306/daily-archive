@@ -1,24 +1,53 @@
 # Ontology Design — Multi-Source, Multi-Domain Knowledge Graph
 
-**Status:** Design (proposed)
+**Status:** Design (proposed; amended by ADR-043 Research Process Plane)
 **Date:** 2026-07-29
 **Supersedes:** GRAPH-SCHEMA.md (extends, not replaces)
-**Related:** ADR-037 (RuVector agent brain), ADR-040 (Samyama sole store), D133 (ontology alignment)
+**Related:** ADR-037, ADR-038, ADR-040, ADR-042, **ADR-043** (process plane), D133
+
+---
+
+## 0. Three Planes × Seven Layers (ADR-043)
+
+Vertical layers L0–L7 remain. Horizontal planes answer different questions:
+
+| Plane | Question | Store |
+|-------|----------|-------|
+| **Publication** | What was published/described? | Samyama |
+| **Research Process** | How was knowledge obtained/tested/qualified? | Samyama |
+| **Experience** | How did agent/human search? | RVF; promote via gate only |
+
+Process plane is **cross-cutting** (not Layer 8). Full execution-grounded kernel:
+`ResearchProblem → ResearchEnvironment → ResearchIdea → Hypothesis →
+Intervention(s) → ImplementationAttempt → ArtifactVersion → ExperimentRun →
+MetricObservation → ResultComparison → Claim/Insight` (+ `FailureEvent`,
+novelty/generalization/replication assessments).
+
+**Multi-domain from day one:** split `source_profile` (document genre) from
+`scientific_domain` (cs.ml, physics, math, biology, medicine, microbiome, …).
+Domain packs specialize vocabulary; process kernel stays domain-agnostic.
+Current GNN/arxiv fixtures are a seed corpus, not an ontology boundary.
+
+**Normative invariants:** see ADR-043 §Invariants (Hypothesis≠Claim,
+Failure≠Refutation, Observation≠Comparison≠Claim≠Reward, env full/env_lite,
+ConceptCluster≠evidence, D127 fail-closed import).
 
 ---
 
 ## 1. Vision
 
-daily-archive — это **multi-source, multi-domain scientific knowledge engine**.
+daily-archive — это **multi-source, multi-domain scientific knowledge engine**
+для **research analysis / synthesis / idea search**, не только хранения статей.
 Онтология должна поддерживать:
 
-1. **Multi-source federation** — arxiv, textbooks, Stanford, OpenAlex, Crossref, code repos
-2. **Multi-domain profiles** — scientific paper, textbook chapter, lecture notes, code repository
+1. **Multi-source federation** — arxiv, textbooks, Stanford, OpenAlex, Crossref, code repos, protocols, logs
+2. **Multi-domain packs** — scientific domains (physics, biology, medicine, …) × source profiles (paper, textbook, …)
 3. **Subgraph extraction** — citation neighborhoods, topic clusters, method lineages, communities
-4. **Hypergraph formation** — grouping entities into concept clusters, method families, benchmark suites
-5. **Temporality** — versioned entities, point-in-time queries, change tracking
-6. **Summary generation** — paper summaries, topic surveys, author profiles, method evolution
+4. **Evidence + process memory** — EvidenceBundle/Claim plus execution-grounded idea→run→comparison chains
+5. **Temporality** — document/valid/transaction/execution/search time axes
+6. **Summary & synthesis** — paper summaries, topic surveys, open problems, under-explored interventions
 7. **GNN readiness** — embeddings on ALL nodes, typed adjacency, edge weights for PPR/message passing
+8. **Research evolution** — idea lineage, failure taxonomy, multi-objective fitness (not scalar reward-as-truth)
 
 ---
 

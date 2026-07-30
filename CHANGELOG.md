@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Ontology design (2026-07-29)
+
+- **ADR-043 Proposed: Research Process Plane (execution-grounded).**
+  Cross-cutting plane over L0–L7 (not Layer 8): Publication / Research Process /
+  Experience (RVF). Full process kernel from ResearchProblem → Environment →
+  Idea → Hypothesis → Intervention → Attempt → Artifact → Run → Observation →
+  Comparison → Claim/Insight (+ Failure, Novelty, Generalization, Replication).
+  Multi-domain from day one via `source_profile` × `scientific_domain` packs.
+  Two-tier ResearchEnvironment (`full` / `env_lite`). Hypothesis first-class ≠ Claim.
+  Invariants: failure≠refutation, observation≠comparison≠claim≠reward,
+  ConceptCluster≠evidence, D127 fail-closed. ONTOLOGY-DESIGN §0 + ADR-INDEX updated.
+
 ### Rust v2 (2026-07-26)
 
 - **Repository hygiene**: removed orphan root `uv.lock` (no root `pyproject.toml`
