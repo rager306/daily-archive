@@ -104,6 +104,36 @@ impl SchemaInitializer {
         "CREATE INDEX category_code IF NOT EXISTS FOR (n:Category) ON (n.code)".to_string()
     }
 
+    // --- Source (Layer 0: ONTOLOGY-DESIGN) ---
+
+    pub fn create_source_vid_index() -> String {
+        "CREATE INDEX source_vid IF NOT EXISTS FOR (n:Source) ON (n.vid)".to_string()
+    }
+
+    pub fn create_source_code_index() -> String {
+        "CREATE INDEX source_code IF NOT EXISTS FOR (n:Source) ON (n.code)".to_string()
+    }
+
+    // --- ConceptCluster (Layer 6: ONTOLOGY-DESIGN Hypergraph) ---
+
+    pub fn create_cluster_vid_index() -> String {
+        "CREATE INDEX cluster_vid IF NOT EXISTS FOR (n:ConceptCluster) ON (n.vid)".to_string()
+    }
+
+    pub fn create_cluster_type_index() -> String {
+        "CREATE INDEX cluster_type IF NOT EXISTS FOR (n:ConceptCluster) ON (n.cluster_type)"
+            .to_string()
+    }
+
+    // --- Entity embedding (Phase 3 GNN readiness) ---
+
+    pub fn create_entity_vector_index(dimensions: usize) -> String {
+        format!(
+            "CREATE VECTOR INDEX entity_embedding IF NOT EXISTS FOR (n:Entity) ON (n.embedding) OPTIONS {{indexConfig: {{`vector.dimensions`: {}, `vector.similarity_function`: 'cosine'}}}}",
+            dimensions
+        )
+    }
+
     /// All schema initialization Cypher statements in order (GRAPH-SCHEMA.md).
     pub fn all_init_statements(dimensions: usize) -> Vec<String> {
         vec![
@@ -129,6 +159,14 @@ impl SchemaInitializer {
             // Category
             Self::create_category_vid_index(),
             Self::create_category_code_index(),
+            // Source (Layer 0)
+            Self::create_source_vid_index(),
+            Self::create_source_code_index(),
+            // ConceptCluster (Layer 6 Hypergraph)
+            Self::create_cluster_vid_index(),
+            Self::create_cluster_type_index(),
+            // Entity embedding (Phase 3 GNN readiness)
+            Self::create_entity_vector_index(dimensions),
         ]
     }
 }
@@ -152,8 +190,9 @@ mod tests {
     #[test]
     fn test_all_init_statements() {
         let stmts = SchemaInitializer::all_init_statements(1024);
-        // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category = 15
-        assert_eq!(stmts.len(), 15);
+        // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category
+        // + 2 Source + 2 ConceptCluster + 1 Entity vector = 20
+        assert_eq!(stmts.len(), 20);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 
