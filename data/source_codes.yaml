@@ -1,0 +1,62 @@
+# Source codes and types — reference data for Source node (Layer 0).
+# Used by ingest pipeline to tag provenance of documents.
+# No hardcoded values in Rust — this YAML is the single source of truth.
+
+version: "1.0"
+
+# Source codes — where the document came from (archive/repository).
+source_codes:
+  - code: "arxiv"
+    name: "arXiv preprint server"
+    reliability_tier: 2
+  - code: "textbook"
+    name: "Textbook (curated)"
+    reliability_tier: 1
+  - code: "stanford"
+    name: "Stanford course materials"
+    reliability_tier: 2
+  - code: "openalex"
+    name: "OpenAlex (curated metadata)"
+    reliability_tier: 1
+  - code: "crossref"
+    name: "Crossref (curated DOI metadata)"
+    reliability_tier: 1
+  - code: "semantic_scholar"
+    name: "Semantic Scholar"
+    reliability_tier: 2
+
+# Source types — document format/medium.
+source_types:
+  - code: "pdf"
+    name: "PDF document"
+  - code: "html"
+    name: "HTML page"
+  - code: "markdown"
+    name: "Markdown text"
+  - code: "api_json"
+    name: "API JSON response"
+  - code: "latex"
+    name: "LaTeX source"
+
+# Source profiles — document genre (ADR-043: distinct from scientific_domain).
+# Used as Work.source_profile field.
+source_profiles:
+  - code: "scientific_paper"
+    name: "Scientific paper"
+  - code: "textbook"
+    name: "Textbook chapter"
+  - code: "lecture_notes"
+    name: "Lecture notes"
+  - code: "code_repo"
+    name: "Code repository"
+  - code: "blog"
+    name: "Blog post"
+
+# Reliability tiers (ONTOLOGY-DESIGN §3).
+reliability_tiers:
+  - tier: 1
+    name: "Curated (OpenAlex, Crossref)"
+  - tier: 2
+    name: "Extracted (GROBID, HTML parser)"
+  - tier: 3
+    name: "User-provided"

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Configuration externalization — Waves C/D/E (2026-07-29)
+
+- **Source codes → YAML.** 16 hardcoded SOURCE_*/TYPE_*/DOMAIN_* const →
+  `data/source_codes.yaml` (6 source codes, 5 types, 5 profiles, 3 tiers).
+  SourceRegistry with OnceLock, is_known_source_code/type/profile().
+  Removed convenience fn SOURCE_ARXIV() (snake_case violation).
+- **Failure taxonomy → YAML.** 30 hardcoded COMPLETENESS_/ORIGIN_/STAGE_/FAIL_
+  const → `data/failure_taxonomy.yaml` (6 stages, 16 classes, 3 completeness,
+  5 origins). FailureTaxonomyRegistry with is_known_*() validation.
+- **Extraction patterns → YAML.** Converted `data/extraction_patterns.json`
+  → `.yaml`. ExtractionConfig::from_yaml_file() + bundled() + load().
+  RuleBasedExtractor now holds config: `with_config()`, `config()`.
+  7 KNOWN_* const arrays remain as runtime fallback (full hot-path
+  migration is next slice). ExtractionConfig::defaults() removed.
+- **Removed**: `data/extraction_patterns.json` (replaced by .yaml).
+
 ### Configuration externalization — no hardcoded reference data (2026-07-29)
 
 - **Domain codes moved to YAML.** 166 hardcoded const → 0. Reference data now

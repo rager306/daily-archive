@@ -97,7 +97,7 @@ const TASK_ACRONYMS: &[&str] = &["RLHF", "RAG"];
 
 // ============================================================================
 // Declarative extraction patterns (Wave 3).
-// Can be loaded from JSON file (data/extraction_patterns.json) or use
+// Patterns loaded from YAML: data/extraction_patterns.yaml (bundled fallback)
 // embedded defaults. Governor CLI can update patterns without recompiling.
 // ============================================================================
 
@@ -131,30 +131,62 @@ impl ExtractionConfig {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }
 
-    /// Embedded defaults (matches KNOWN_* const arrays).
-    pub fn defaults() -> Self {
-        Self {
-            methods: MethodConfig {
-                acronyms: KNOWN_METHODS.iter().map(|s| s.to_string()).collect(),
-                phrases: KNOWN_METHOD_PHRASES.iter().map(|s| s.to_string()).collect(),
-            },
-            models: KNOWN_MODELS.iter().map(|s| s.to_string()).collect(),
-            datasets: KNOWN_DATASETS.iter().map(|s| s.to_string()).collect(),
-            metrics: KNOWN_METRICS.iter().map(|s| s.to_string()).collect(),
-            tasks: TaskConfig {
-                phrases: TASK_PHRASES.iter().map(|s| s.to_string()).collect(),
-                acronyms: TASK_ACRONYMS.iter().map(|s| s.to_string()).collect(),
-            },
+    /// Load from YAML file.
+    pub fn from_yaml_file(path: &str) -> Result<Self, std::io::Error> {
+        let yaml = std::fs::read_to_string(path)?;
+        serde_yaml::from_str(&yaml)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+
+    /// Bundled defaults from YAML (single source of truth).
+    /// data/extraction_patterns.yaml is the canonical reference.
+    pub fn bundled() -> Self {
+        serde_yaml::from_str(BUNDLED_EXTRACTION_YAML)
+            .expect("bundled extraction_patterns.yaml must be valid")
+    }
+
+    /// Load from YAML file, falling back to bundled defaults.
+    pub fn load() -> Self {
+        for path in [
+            "data/extraction_patterns.yaml",
+            "../../data/extraction_patterns.yaml",
+            "../../../data/extraction_patterns.yaml",
+        ] {
+            if std::path::Path::new(path).exists() {
+                if let Ok(config) = Self::from_yaml_file(path) {
+                    return config;
+                }
+            }
         }
+        Self::bundled()
     }
 }
 
+/// Bundled extraction patterns YAML (canonical source of truth).
+/// data/extraction_patterns.yaml can override at runtime.
+const BUNDLED_EXTRACTION_YAML: &str = include_str!("../../../data/extraction_patterns.yaml");
+
 /// Rule-based extractor using section titles + keyword heuristics.
-pub struct RuleBasedExtractor;
+/// Holds an ExtractionConfig loaded from YAML (no hardcoded whitelists).
+pub struct RuleBasedExtractor {
+    config: ExtractionConfig,
+}
 
 impl RuleBasedExtractor {
     pub fn new() -> Self {
-        Self
+        Self {
+            config: ExtractionConfig::load(),
+        }
+    }
+
+    /// Create with explicit config (for testing or custom whitelists).
+    pub fn with_config(config: ExtractionConfig) -> Self {
+        Self { config }
+    }
+
+    /// Access the loaded config.
+    pub fn config(&self) -> &ExtractionConfig {
+        &self.config
     }
 
     /// Classify a section title to an entity type.
@@ -1163,9 +1195,9 @@ fn test_no_cross_type_conflict_between_acronyms_and_phrases() {
 }
 
 #[test]
-fn test_extraction_config_defaults() {
-    // Wave 3: ExtractionConfig::defaults() must match KNOWN_* const arrays.
-    let config = ExtractionConfig::defaults();
+fn test_extraction_config_bundled() {
+    // ExtractionConfig::bundled() loads from bundled YAML.
+    let config = ExtractionConfig::bundled();
     assert!(!config.methods.acronyms.is_empty());
     assert!(config.methods.acronyms.iter().any(|m| m == "GEPA"));
     assert!(config.methods.acronyms.iter().any(|m| m == "GCN")); // cross-domain
@@ -1181,25 +1213,33 @@ fn test_extraction_config_defaults() {
 }
 
 #[test]
-fn test_extraction_config_from_file() {
-    // Wave 3: load patterns from JSON file.
-    // Tests run from crate dir; walk up to find data/extraction_patterns.json
+fn test_extraction_config_from_yaml_file() {
+    // Load patterns from YAML file (canonical format).
     let candidates = [
-        "../../../data/extraction_patterns.json",
-        "../../data/extraction_patterns.json",
-        "data/extraction_patterns.json",
+        "../../../data/extraction_patterns.yaml",
+        "../../data/extraction_patterns.yaml",
+        "data/extraction_patterns.yaml",
     ];
     let path = candidates
         .iter()
         .find(|p| std::path::Path::new(p).exists())
         .copied()
-        .expect("extraction_patterns.json should exist");
-    let config = ExtractionConfig::from_file(path).unwrap_or_else(|e| {
+        .expect("extraction_patterns.yaml should exist");
+    let config = ExtractionConfig::from_yaml_file(path).unwrap_or_else(|e| {
         panic!("Failed to load config: {e}");
     });
     assert!(!config.methods.acronyms.is_empty());
     assert!(config.methods.acronyms.iter().any(|m| m == "GEPA"));
     assert!(config.models.iter().any(|m| m == "GPT-4"));
+}
+
+#[test]
+fn test_rule_based_extractor_loads_config() {
+    // RuleBasedExtractor::new() should load config from YAML automatically.
+    let extractor = RuleBasedExtractor::new();
+    let config = extractor.config();
+    assert!(!config.methods.acronyms.is_empty());
+    assert!(config.methods.acronyms.iter().any(|m| m == "GRPO"));
 }
 
 #[tokio::test]

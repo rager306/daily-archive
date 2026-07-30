@@ -46,5 +46,7 @@ pub use scheduler::{PendingTask, RetryPolicy, TaskPriority, TaskStatus, TaskType
 pub use schema::{
     all_node_schemas, schema_for_label, Field, FieldType, NodeSchemaDef, SchemaError,
 };
-pub use source::{SourceSchema, SOURCE_ARXIV, SOURCE_OPENALEX, SOURCE_TEXTBOOK};
+pub use source::{
+    is_known_source_code, is_known_source_profile, is_known_source_type, SourceSchema,
+};
 pub use vid::{entity_vid, paper_vid, Vid};

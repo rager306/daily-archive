@@ -1,0 +1,79 @@
+# Failure taxonomy — FailureEvent stage/class vocabulary (ADR-043).
+# Used by Research Process Plane to classify execution failures.
+# No hardcoded values in Rust — this YAML is the single source of truth.
+
+version: "1.0"
+
+# Failure stages — lifecycle phase where failure occurred.
+stages:
+  - code: "ideation"
+    name: "Idea specification phase"
+  - code: "implementation"
+    name: "Patch/code generation phase"
+  - code: "scheduling"
+    name: "Resource scheduling phase"
+  - code: "execution"
+    name: "Runtime execution phase"
+  - code: "evaluation"
+    name: "Metric evaluation phase"
+  - code: "replication"
+    name: "Replication/reproduction phase"
+
+# Failure classes — closed vocabulary, extensible per domain.
+# IMPORTANT: FailureEvent NEVER has REFUTES → Hypothesis edge.
+# Failure ≠ negative result. Only completed valid runs can refute.
+classes:
+  - code: "specification"
+    name: "Idea specification failure"
+  - code: "patch"
+    name: "Patch generation failure"
+  - code: "build"
+    name: "Build/compilation failure"
+  - code: "dependency"
+    name: "Dependency resolution failure"
+  - code: "runtime"
+    name: "Runtime error"
+  - code: "oom"
+    name: "Out of memory"
+  - code: "timeout"
+    name: "Execution timeout"
+  - code: "data"
+    name: "Data loading/processing failure"
+  - code: "metric"
+    name: "Metric computation failure"
+  - code: "protocol_violation"
+    name: "Protocol violation"
+  - code: "guard_violation"
+    name: "Evaluation guard violation (anti reward-hacking)"
+  - code: "nondeterminism"
+    name: "Non-deterministic behavior"
+  - code: "underpowered"
+    name: "Statistically underpowered"
+  - code: "confounding"
+    name: "Confounding variable detected"
+  - code: "reproduction_failure"
+    name: "Reproduction failed"
+  - code: "completed_without_improvement"
+    name: "Completed but no improvement over baseline"
+
+# Environment completeness tiers (ADR-043 §4).
+completeness_tiers:
+  - code: "full"
+    name: "Full hashable environment (live execution)"
+  - code: "env_lite"
+    name: "Partial fingerprint (literature reconstruction)"
+  - code: "unknown"
+    name: "Environment cannot be reconstructed"
+
+# Evidence origin types (ADR-043 §3.3).
+evidence_origins:
+  - code: "literature_reported"
+    name: "Extracted from paper/textbook"
+  - code: "live_executed"
+    name: "Our/agent live execution"
+  - code: "reanalysis"
+    name: "Recomputed from public artifacts"
+  - code: "simulation"
+    name: "In-silico / synthetic"
+  - code: "observational"
+    name: "Cohort/study without controlled intervention"

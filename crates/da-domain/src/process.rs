@@ -18,18 +18,89 @@
 //!   6. Environment completeness explicit (full | env_lite | unknown)
 
 use crate::schema::{FieldType, NodeSchemaDef};
+use std::collections::HashSet;
+use std::sync::OnceLock;
 
-// ─── Completeness / origin / status constants ───
+// ─── Failure taxonomy YAML loading ───
 
-pub const COMPLETENESS_FULL: &str = "full";
-pub const COMPLETENESS_ENV_LITE: &str = "env_lite";
-pub const COMPLETENESS_UNKNOWN: &str = "unknown";
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct FailureTaxonomyYaml {
+    version: String,
+    stages: Vec<CodeNameEntry>,
+    classes: Vec<CodeNameEntry>,
+    completeness_tiers: Vec<CodeNameEntry>,
+    evidence_origins: Vec<CodeNameEntry>,
+}
 
-pub const ORIGIN_LITERATURE: &str = "literature_reported";
-pub const ORIGIN_LIVE: &str = "live_executed";
-pub const ORIGIN_REANALYSIS: &str = "reanalysis";
-pub const ORIGIN_SIMULATION: &str = "simulation";
-pub const ORIGIN_OBSERVATIONAL: &str = "observational";
+#[derive(Debug, Clone, serde::Deserialize)]
+#[allow(dead_code)]
+struct CodeNameEntry {
+    code: String,
+    name: String,
+}
+
+const BUNDLED_TAXONOMY_YAML: &str = include_str!("../../../data/failure_taxonomy.yaml");
+
+/// Failure taxonomy registry — stages, classes, completeness, origins.
+pub struct FailureTaxonomyRegistry {
+    pub stages: HashSet<String>,
+    pub classes: HashSet<String>,
+    pub completeness_tiers: HashSet<String>,
+    pub evidence_origins: HashSet<String>,
+}
+
+impl FailureTaxonomyRegistry {
+    fn load() -> Self {
+        let yaml_str = std::fs::read_to_string("data/failure_taxonomy.yaml")
+            .unwrap_or_else(|_| BUNDLED_TAXONOMY_YAML.to_string());
+        let data: FailureTaxonomyYaml =
+            serde_yaml::from_str(&yaml_str).expect("failure_taxonomy.yaml must be valid YAML");
+        Self {
+            stages: data.stages.iter().map(|e| e.code.clone()).collect(),
+            classes: data.classes.iter().map(|e| e.code.clone()).collect(),
+            completeness_tiers: data
+                .completeness_tiers
+                .iter()
+                .map(|e| e.code.clone())
+                .collect(),
+            evidence_origins: data
+                .evidence_origins
+                .iter()
+                .map(|e| e.code.clone())
+                .collect(),
+        }
+    }
+
+    fn instance() -> &'static FailureTaxonomyRegistry {
+        static REGISTRY: OnceLock<FailureTaxonomyRegistry> = OnceLock::new();
+        REGISTRY.get_or_init(FailureTaxonomyRegistry::load)
+    }
+}
+
+/// Check if a failure stage code is known.
+pub fn is_known_stage(code: &str) -> bool {
+    FailureTaxonomyRegistry::instance().stages.contains(code)
+}
+
+/// Check if a failure class code is known.
+pub fn is_known_failure_class(code: &str) -> bool {
+    FailureTaxonomyRegistry::instance().classes.contains(code)
+}
+
+/// Check if a completeness tier is known.
+pub fn is_known_completeness(code: &str) -> bool {
+    FailureTaxonomyRegistry::instance()
+        .completeness_tiers
+        .contains(code)
+}
+
+/// Check if an evidence origin is known.
+pub fn is_known_origin(code: &str) -> bool {
+    FailureTaxonomyRegistry::instance()
+        .evidence_origins
+        .contains(code)
+}
 
 // ═══════════════════════════════════════════════════════════════
 // 1. ResearchProblem
@@ -516,35 +587,8 @@ impl NodeSchemaDef for FailureEventSchema {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Failure taxonomy constants
-// ═══════════════════════════════════════════════════════════════
-
-/// Failure stage constants.
-pub const STAGE_IDEATION: &str = "ideation";
-pub const STAGE_IMPLEMENTATION: &str = "implementation";
-pub const STAGE_SCHEDULING: &str = "scheduling";
-pub const STAGE_EXECUTION: &str = "execution";
-pub const STAGE_EVALUATION: &str = "evaluation";
-pub const STAGE_REPLICATION: &str = "replication";
-
-/// Failure class constants (closed vocabulary, extensible per domain).
-pub const FAIL_SPECIFICATION: &str = "specification";
-pub const FAIL_PATCH: &str = "patch";
-pub const FAIL_BUILD: &str = "build";
-pub const FAIL_DEPENDENCY: &str = "dependency";
-pub const FAIL_RUNTIME: &str = "runtime";
-pub const FAIL_OOM: &str = "oom";
-pub const FAIL_TIMEOUT: &str = "timeout";
-pub const FAIL_DATA: &str = "data";
-pub const FAIL_METRIC: &str = "metric";
-pub const FAIL_PROTOCOL_VIOLATION: &str = "protocol_violation";
-pub const FAIL_GUARD_VIOLATION: &str = "guard_violation";
-pub const FAIL_NONDETERMINISM: &str = "nondeterminism";
-pub const FAIL_UNDERPOWERED: &str = "underpowered";
-pub const FAIL_CONFOUNDING: &str = "confounding";
-pub const FAIL_REPRODUCTION: &str = "reproduction_failure";
-pub const FAIL_COMPLETED_NO_IMPROVEMENT: &str = "completed_without_improvement";
+// Failure taxonomy constants moved to data/failure_taxonomy.yaml.
+// Use is_known_stage(), is_known_failure_class() for validation.
 
 #[cfg(test)]
 mod tests {
@@ -871,19 +915,38 @@ mod tests {
         }
     }
 
-    // ─── Constants tests ───
+    // ─── Taxonomy registry tests ───
 
     #[test]
-    fn test_completeness_constants() {
-        assert_eq!(COMPLETENESS_FULL, "full");
-        assert_eq!(COMPLETENESS_ENV_LITE, "env_lite");
-        assert_eq!(COMPLETENESS_UNKNOWN, "unknown");
+    fn test_completeness_tiers_from_yaml() {
+        assert!(is_known_completeness("full"));
+        assert!(is_known_completeness("env_lite"));
+        assert!(is_known_completeness("unknown"));
+        assert!(!is_known_completeness("invalid"));
     }
 
     #[test]
-    fn test_failure_class_constants() {
-        assert_eq!(FAIL_OOM, "oom");
-        assert_eq!(FAIL_TIMEOUT, "timeout");
-        assert_eq!(FAIL_GUARD_VIOLATION, "guard_violation");
+    fn test_failure_classes_from_yaml() {
+        assert!(is_known_failure_class("oom"));
+        assert!(is_known_failure_class("timeout"));
+        assert!(is_known_failure_class("guard_violation"));
+        assert!(is_known_failure_class("completed_without_improvement"));
+        assert!(!is_known_failure_class("not_a_real_failure"));
+    }
+
+    #[test]
+    fn test_stages_from_yaml() {
+        assert!(is_known_stage("execution"));
+        assert!(is_known_stage("implementation"));
+        assert!(is_known_stage("replication"));
+        assert!(!is_known_stage("not_a_stage"));
+    }
+
+    #[test]
+    fn test_origins_from_yaml() {
+        assert!(is_known_origin("literature_reported"));
+        assert!(is_known_origin("live_executed"));
+        assert!(is_known_origin("observational"));
+        assert!(!is_known_origin("unknown_origin"));
     }
 }
