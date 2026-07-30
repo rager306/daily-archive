@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod article;
+pub mod cluster;
 pub mod entity;
 pub mod eval;
 pub mod evidence;
