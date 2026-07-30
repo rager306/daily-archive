@@ -1,8 +1,9 @@
-# Domain Reference — arXiv Taxonomy + Extension Packs
+# Domain Reference - arXiv Taxonomy + Extension Packs
 
-**Status:** Design (ADR-043)  
-**Date:** 2026-07-29  
-**Purpose:** Canonical *scientific_domain* codes for multi-domain ontology.  
+**Status:** Design (ADR-043) — synced with official arXiv taxonomy (154 categories, verified 2026-07-29)
+**Date:** 2026-07-29
+**Source:** https://arxiv.org/category_taxonomy
+**Purpose:** Canonical *scientific_domain* codes for multi-domain ontology.
 **Not:** document genre (`source_profile`). Not extraction whitelist.
 
 ---
@@ -16,7 +17,7 @@
 
 Current seed corpus is mostly `cs.LG` / GNN-adjacent papers. That is **coverage**, not an ontology limit.
 
-`Source.domain` in today’s schema means *genre* (`scientific_paper` / `textbook`).  
+`Source.domain` in today's schema means *genre* (`scientific_paper` / `textbook`).
 Do **not** overload it with arXiv categories. Prefer:
 
 ```text
@@ -35,7 +36,7 @@ Work.primary_scientific_domain = "cs.LG"   # optional denorm of arXiv primary
 4. Non-arXiv domains use extension namespace: `da.<domain>` (daily-archive pack id).
 5. A Work may have **multiple** `scientific_domains` (ordered by relevance).
 6. Domain packs live under `data/domain_packs/<code>/` (config; future).
-7. Process kernel types do **not** fork per domain — only vocab/templates do.
+7. Process kernel types do **not** fork per domain - only vocab/templates do.
 
 ### Alias examples
 
@@ -49,14 +50,14 @@ Work.primary_scientific_domain = "cs.LG"   # optional denorm of arXiv primary
 | `biohacking` | `da.biohacking` |
 | `microbiome` | `da.microbiome` |
 
-Topics/entities still carry fine-grained labels (`GCN`, `GraphSAGE`).  
+Topics/entities still carry fine-grained labels (`GCN`, `GraphSAGE`).
 Domain codes are **coarse routing + pack selection**, not entity identity.
 
 ---
 
 ## 3. arXiv category registry (canonical examples)
 
-Full official list evolves; this table is the **working registry seed**.  
+Full official list evolves; this table is the **working registry seed**.
 Groups below cover research synthesis needs; packs can load a fuller dump later.
 
 ### 3.1 Computer Science (`cs.*`)
@@ -101,7 +102,7 @@ Groups below cover research synthesis needs; packs can load a fuller dump later.
 | `stat.CO` | Computation |
 | `stat.OT` | Other Statistics |
 
-### 3.3 Mathematics (`math.*`) — selected
+### 3.3 Mathematics (`math.*`) - selected
 
 | Code | Name |
 |------|------|
@@ -171,13 +172,23 @@ Groups below cover research synthesis needs; packs can load a fuller dump later.
 | `q-bio.SC` | Subcellular Processes | subcellular |
 | `q-bio.TO` | Tissues and Organs | physiology |
 
-### 3.6 Quantitative Finance / EE / Econ (selected)
+### 3.5 Quantitative Finance (`fin.*`) — replaced `q-fin.*`
+
+arXiv renamed `q-fin.*` to `fin.*`. Legacy codes migrate via `canonicalize()`.
 
 | Code | Name |
 |------|------|
-| `q-fin.CP` | Computational Finance |
-| `q-fin.PM` | Portfolio Management |
-| `q-fin.ST` | Statistical Finance |
+| `fin.CP` | Computational Finance |
+| `fin.EC` | Economics |
+| `fin.GN` | General Finance |
+| `fin.MF` | Mathematical Finance |
+| `fin.PM` | Portfolio Management |
+| `fin.PR` | Pricing of Securities |
+| `fin.RM` | Risk Management |
+| `fin.ST` | Statistical Finance |
+| `fin.TR` | Trading and Market Microstructure |
+
+### 3.5b Condensed Matter (`cond-mat.*`) — 9 codes
 | `eess.AS` | Audio and Speech Processing |
 | `eess.IV` | Image and Video Processing |
 | `eess.SP` | Signal Processing |
@@ -188,15 +199,15 @@ Groups below cover research synthesis needs; packs can load a fuller dump later.
 
 ---
 
-## 4. Extension domains (`da.*`) — non-arXiv first-class packs
+## 4. Extension domains (`da.*`) - non-arXiv first-class packs
 
-arXiv is incomplete for clinical medicine, biohacking practice, microbiome nutrition, etc.  
+arXiv is incomplete for clinical medicine, biohacking practice, microbiome nutrition, etc.
 These are **first-class scientific_domain codes**, not second-class tags.
 
 | Code | Name | Typical sources | Notes |
 |------|------|-----------------|-------|
 | `da.medicine` | Clinical / biomedical research | PubMed, guidelines, preprints | PICO-friendly env templates |
-| `da.microbiome` | Host–microbiome science | papers, reviews, datasets | taxon/metabolite entities |
+| `da.microbiome` | Host-microbiome science | papers, reviews, datasets | taxon/metabolite entities |
 | `da.metabolism` | Metabolism / metabolic health | papers, protocols | pathways, biomarkers |
 | `da.genetics` | Genetics / genomics (applied) | papers, ClinVar-like refs | may overlap `q-bio.GN` |
 | `da.biohacking` | Human enhancement / self-experiment protocols | protocols, n-of-1, reviews | strong safety/ethics fitness |
@@ -253,7 +264,7 @@ Medicine example differs by kinds (`population`, `cohort_definition`, `study_des
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `source_profile` | string | genre; today’s `domain_profile` migrates here |
+| `source_profile` | string | genre; today's `domain_profile` migrates here |
 | `scientific_domains` | string[] | canonical codes from this registry |
 | `primary_scientific_domain` | string | usually arXiv `primary_category` when present |
 | `domain_assignment_method` | string | `arxiv_primary` / `openalex` / `manual` / `classifier` |
@@ -274,18 +285,18 @@ primary_category = "cs.LG"
 - Not a replacement for Topic/OpenAlex hierarchy.
 - Not entity resolution (GCN still an Entity, not a domain).
 - Not requiring every domain pack implemented before ingest.
-- Not blocking unknown codes: unknown → record + `da.general` warning, don’t drop paper.
+- Not blocking unknown codes: unknown → record + `da.general` warning, don't drop paper.
 
 ---
 
 ## 8. Seed priority packs (design order, not exclusivity)
 
-1. `cs.LG` — current corpus / GNN adjacency  
-2. `cs.AI`, `cs.CL` — nearby seed mass  
-3. `q-bio.QM`, `q-bio.GN` — biology bridge  
-4. `da.medicine`, `da.microbiome`, `da.metabolism` — explicit user domains  
-5. `math.OC`, `stat.ML` — methods bridges  
-6. others on demand  
+1. `cs.LG` - current corpus / GNN adjacency
+2. `cs.AI`, `cs.CL` - nearby seed mass
+3. `q-bio.QM`, `q-bio.GN` - biology bridge
+4. `da.medicine`, `da.microbiome`, `da.metabolism` - explicit user domains
+5. `math.OC`, `stat.ML` - methods bridges
+6. others on demand
 
 ---
 
