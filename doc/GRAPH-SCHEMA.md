@@ -247,37 +247,37 @@ When a citation has a known context/intent, the `cites` edge carries a
 
 ---
 
-## Indexes (complete — 21 indexes)
+## Indexes (complete — 20 indexes)
 
 | Index | Type | On |
 |-------|------|----|
 | `work_vid` | unique | Work.vid |
 | `work_arxiv_id` | property | Work.arxiv_id |
-| `work_doi` | property | Work.doi |
-| `work_category` | property | Work.primary_category |
 | `work_embedding` | vector(1024) | Work.embedding |
-| `author_vid` | unique | Author.vid |
-| `author_orcid` | property | Author.orcid |
-| `author_name` | property | Author.name |
-| `institution_vid` | unique | Institution.vid |
-| `institution_ror` | property | Institution.ror |
-| `concept_vid` | unique | Concept.vid |
-| `concept_label` | property | Concept.label |
-| `concept_openalex` | property | Concept.openalex_id |
-| `topic_vid` | unique | Topic.vid |
-| `topic_label` | property | Topic.label |
-| `section_vid` | unique | Section.vid |
-| `section_work` | property | Section.work_vid |
+| `citation_vid` | unique | Citation.vid |
+| `citation_arxiv_id` | property | Citation.arxiv_id |
 | `entity_vid` | unique | Entity.vid |
 | `entity_type` | property | Entity.entity_type |
-| `reference_vid` | unique | Reference.vid |
-| `reference_doi` | property | Reference.doi |
+| `entity_embedding` | vector(1024) | Entity.embedding (Phase 3 GNN) |
+| `section_vid` | unique | Section.vid |
+| `section_work` | property | Section.work_vid |
+| `keyword_vid` | unique | Keyword.vid |
+| `keyword_text` | property | Keyword.text |
+| `topic_vid` | unique | Topic.vid |
+| `topic_label` | property | Topic.label |
+| `category_vid` | unique | Category.vid |
+| `category_code` | property | Category.code |
+| `source_vid` | unique | Source.vid (Layer 0) |
+| `source_code` | property | Source.code (Layer 0) |
+| `cluster_vid` | unique | ConceptCluster.vid (Layer 6) |
+| `cluster_type` | property | ConceptCluster.cluster_type (Layer 6) |
 
 ---
 
 ## Loading contract
 
-1. **`da schema init`** — create all 21 indexes.
+1. **`da schema init`** — create all 20 indexes (7 node types + Source +
+   ConceptCluster + Entity vector).
 2. **`da enrich --from openalex`** (Phase A) — fetch Work + Author + Institution +
    Concept + Topic from OpenAlex API. **Replaces** YAKE keywords, category
    guessing, author parsing, citation resolution.
