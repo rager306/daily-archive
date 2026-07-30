@@ -240,7 +240,17 @@ RETURN s
 
 ---
 
-## 9. Layer 6: Hypergraph (IMPLEMENTED: ConceptCluster)
+## 9. Layer 6: Evidence & Community (IMPLEMENTED: ConceptCluster + EvidenceBundle + Claim)
+
+**Status:**
+- ConceptClusterSchema: implemented, derived community detection (detect_clusters).
+- EvidenceBundleSchema: implemented, source-grounded n-ary evidence.
+- ClaimSchema: implemented, proposition-bearing truth target.
+- MEMBER_OF_CLUSTER: Entity → ConceptCluster (community membership).
+- PARTICIPATES_IN: Entity → EvidenceBundle (role-bearing participation).
+- SUPPORTS/CONTRADICTS/QUALIFIES: EvidenceBundle → Claim.
+
+**Key separation (ADR-042 revised):** ConceptCluster ≠ EvidenceBundle.
 
 **Status:** ConceptClusterSchema implemented in `crates/da-domain/src/hypergraph.rs`.
 MethodFamily and BenchmarkSuite use the same schema with different `cluster_type`.

@@ -247,6 +247,55 @@ When a citation has a known context/intent, the `cites` edge carries a
 
 ---
 
+## Layer 6: Evidence & Community (ADR-042 revised)
+
+### ConceptCluster (derived community)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `vid` | String | `vid:hyper:<label>` |
+| `label` | String | Human-readable name |
+| `cluster_type` | String | `concept_cluster` / `method_family` / `benchmark_suite` |
+| `embedding` | Vector(1024) | Aggregate embedding |
+| `retrieval_eligible` | Boolean | D134 |
+
+**NOT an evidence unit.** Derived community for retrieval expansion.
+
+### EvidenceBundle (source-grounded n-ary evidence)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `vid` | String | `vid:bundle:<id>` |
+| `bundle_type` | String | `experiment_setup` / `result_bundle` / `citation_context` |
+| `normalized_text` | String | Normalized evidence text |
+| `source_span_id` | String | Grounded source span |
+| `document_id` | String | Source paper VID |
+| `extraction_confidence` | Float | Extraction confidence |
+| `verification_status` | String | `pending` / `verified` / `disputed` |
+| `retrieval_eligible` | Boolean | D134 |
+
+### Claim (proposition-bearing)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `vid` | String | `vid:claim:<id>` |
+| `text` | String | Proposition text |
+| `claim_type` | String | `factual` / `methodological` / `comparative` |
+| `source_span_id` | String | Grounded source span |
+| `retrieval_eligible` | Boolean | D134 |
+
+### Evidence edges
+
+| Edge | From → To | Description |
+|------|-----------|-------------|
+| `MEMBER_OF_CLUSTER` | Entity → ConceptCluster | Community membership (NOT evidence) |
+| `PARTICIPATES_IN` | Entity → EvidenceBundle | Role-bearing n-ary participation |
+| `SUPPORTS` | EvidenceBundle → Claim | Evidence supports claim |
+| `CONTRADICTS` | EvidenceBundle → Claim | Evidence contradicts claim |
+| `QUALIFIES` | EvidenceBundle → Claim | Partial/conditional support |
+
+---
+
 ## Indexes (complete — 20 indexes)
 
 | Index | Type | On |
