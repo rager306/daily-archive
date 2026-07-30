@@ -123,7 +123,11 @@
   now creates Section nodes for each parsed section with vid, title, level,
   order, text, char_count properties. Linked via hasPart edge (Paper→Section).
   Closes implementation gap: GRAPH-SCHEMA defined Section but pipeline didn't
-  materialize it. Updated batch_ingest_test assertions.
+  materialize it. Updated batch_ingest_test assertions. UTF-8 safe truncation.
+- **Phase 4: ConceptCluster node (Layer 6 Hypergraph)**. ConceptClusterSchema
+  registered as 12th node type. Supports GNN community detection and hypergraph
+  queries. cluster_type: concept_cluster / method_family / benchmark_suite.
+  5 TDD tests added.
 - **Wave 3: Declarative extraction patterns**. `data/extraction_patterns.json`
   config file — whitelists loadable from JSON, governor CLI can update
   patterns without recompiling Rust. ExtractionConfig::defaults() provides

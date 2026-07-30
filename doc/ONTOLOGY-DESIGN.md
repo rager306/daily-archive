@@ -240,7 +240,10 @@ RETURN s
 
 ---
 
-## 9. Layer 6: Hypergraph (NEW)
+## 9. Layer 6: Hypergraph (IMPLEMENTED: ConceptCluster)
+
+**Status:** ConceptClusterSchema implemented in `crates/da-domain/src/hypergraph.rs`.
+MethodFamily and BenchmarkSuite use the same schema with different `cluster_type`.
 
 ### Hyperedge node types
 
