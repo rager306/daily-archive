@@ -124,7 +124,7 @@ impl EnrichUseCase {
                 .await
             {
                 self.graph_store
-                    .create_edge(work_id, node_id, "hasTopic")
+                    .create_edge(work_id, node_id, da_domain::relation::structure::HAS_TOPIC)
                     .await?;
             }
             topics_written += 1;
@@ -172,7 +172,11 @@ impl EnrichUseCase {
                 .await
             {
                 self.graph_store
-                    .create_edge(node_id, paper_id, "authoredBy")
+                    .create_edge(
+                        node_id,
+                        paper_id,
+                        da_domain::relation::structure::AUTHORED_BY,
+                    )
                     .await?;
             }
             authors_written += 1;

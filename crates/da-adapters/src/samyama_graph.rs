@@ -537,7 +537,7 @@ mod tests {
         let paper = store.create_node_direct("Paper").await;
         let entity = store.create_node_direct("Entity").await;
         store
-            .create_edge_direct(paper, entity, "MENTIONS")
+            .create_edge_direct(paper, entity, da_domain::relation::bibliographic::MENTIONS)
             .await
             .unwrap();
 
@@ -545,7 +545,7 @@ mod tests {
         let outgoing = store.get_outgoing_edges(paper.0).await;
         assert_eq!(outgoing.len(), 1);
         assert_eq!(outgoing[0].0, entity.0); // target node ID
-        assert_eq!(outgoing[0].1, "MENTIONS");
+        assert_eq!(outgoing[0].1, da_domain::relation::bibliographic::MENTIONS);
 
         // Entity has no outgoing edges
         let entity_outgoing = store.get_outgoing_edges(entity.0).await;

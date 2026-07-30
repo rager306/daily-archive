@@ -225,7 +225,11 @@ async fn test_merge_creates_supersedes_edge() {
     // Simulate a Paper mentioning the merge target
     let paper_id = store.create_node("Paper").await.unwrap();
     store
-        .create_edge(paper_id, merge_id, "MENTIONS")
+        .create_edge(
+            paper_id,
+            merge_id,
+            da_domain::relation::bibliographic::MENTIONS,
+        )
         .await
         .unwrap();
     let use_case = GraphHealingUseCase::new(Box::new(store));

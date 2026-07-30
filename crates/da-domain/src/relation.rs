@@ -103,6 +103,31 @@ pub struct Relation {
     pub schema_version: u32,
 }
 
+/// Structural edge types (FaBiO + FRBR + OpenAlex, GRAPH-SCHEMA.md).
+///
+/// Graph structure edges linking Works to component parts, metadata,
+/// and provenance. Distinct from bibliographic citation edges and from
+/// evidence/hypergraph edges.
+pub mod structure {
+    /// Work → Section (FaBiO frbr:part). Work contains a structural section.
+    pub const HAS_PART: &str = "hasPart";
+
+    /// Work → Topic (OpenAlex topic assignment).
+    pub const HAS_TOPIC: &str = "hasTopic";
+
+    /// Paper → Author (authorship relation).
+    pub const AUTHORED_BY: &str = "authoredBy";
+
+    /// Work → Source (provenance: where the document came from).
+    pub const FROM_SOURCE: &str = "FROM_SOURCE";
+
+    /// Entity → Section (where an entity was found in the document).
+    pub const FOUND_IN: &str = "foundIn";
+
+    /// Work → Category (arXiv/OpenAlex category assignment).
+    pub const IN_CATEGORY: &str = "inCategory";
+}
+
 /// Bibliographic edge types — structural metadata, NOT extracted semantic
 /// relations. These are deterministic facts from the source document
 /// (paper A cites paper B), not LLM/GLiNER-extracted relationships.
@@ -297,5 +322,40 @@ mod tests {
         assert_eq!(bibliographic::MENTIONS, "MENTIONS");
         assert_eq!(bibliographic::SUPERSEDES, "SUPERSEDES");
         assert_eq!(bibliographic::SPLITS, "SPLITS");
+    }
+
+    #[test]
+    fn test_structure_edge_constants() {
+        // Structural edges (FaBiO + OpenAlex) must be stable strings.
+        assert_eq!(structure::HAS_PART, "hasPart");
+        assert_eq!(structure::HAS_TOPIC, "hasTopic");
+        assert_eq!(structure::AUTHORED_BY, "authoredBy");
+        assert_eq!(structure::FROM_SOURCE, "FROM_SOURCE");
+        assert_eq!(structure::FOUND_IN, "foundIn");
+        assert_eq!(structure::IN_CATEGORY, "inCategory");
+    }
+
+    #[test]
+    fn test_no_magic_string_drift() {
+        // Ensure edge string values are unique across modules.
+        // An edge label must not be accidentally defined in two modules
+        // with different semantics.
+        let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+        for label in [
+            bibliographic::CITES,
+            bibliographic::CITED_BY,
+            bibliographic::CO_AUTHORED,
+            bibliographic::MENTIONS,
+            bibliographic::SUPERSEDES,
+            bibliographic::SPLITS,
+            structure::HAS_PART,
+            structure::HAS_TOPIC,
+            structure::AUTHORED_BY,
+            structure::FROM_SOURCE,
+            structure::FOUND_IN,
+            structure::IN_CATEGORY,
+        ] {
+            assert!(seen.insert(label), "duplicate edge label: {label}");
+        }
     }
 }

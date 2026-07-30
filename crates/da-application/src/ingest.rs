@@ -168,7 +168,11 @@ impl IngestUseCase {
                 .await?;
             // Link Section to Paper via hasPart edge
             self.graph_store
-                .create_edge(node_id, section_node, "hasPart")
+                .create_edge(
+                    node_id,
+                    section_node,
+                    da_domain::relation::structure::HAS_PART,
+                )
                 .await?;
             section_nodes += 1;
         }
