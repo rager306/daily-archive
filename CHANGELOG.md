@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Logic gap fix: SchedulerTask schema registration (2026-07-29)
+
+- **SchedulerTaskSchema added to da-domain.** SchedulerTask was created in
+  pipeline (ingest, enrich, scheduler) but had NO domain representation —
+  violating single source of truth. Now registered in `all_node_schemas()`
+  as 29th node type. Required: vid, arxiv_id, task_type, status.
+  D127/D134 compliant (retrieval_eligible + import_eligible fields).
+  2 TDD tests added.
+
 ### ADR-044: Schema Lifecycle design (2026-07-29)
 
 - **ADR-044 Proposed**: Graph Schema Lifecycle — Versioned Manifest,

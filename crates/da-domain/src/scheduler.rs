@@ -3,6 +3,7 @@
 //! Tracks papers awaiting OpenAlex data with exponential backoff.
 //! File-based persistence (survives process restarts).
 
+use crate::schema::{FieldType, NodeSchemaDef};
 use serde::{Deserialize, Serialize};
 
 /// A pending enrichment task in the retry queue.
@@ -163,6 +164,39 @@ impl PendingTask {
     }
 }
 
+// ─── SchedulerTask node schema (Layer 1 — Operational State) ───
+
+/// SchedulerTask node schema.
+/// Used by ETL Scheduler (ADR-040) to track pending/retry tasks in graph.
+/// Not a knowledge node — operational state only.
+pub struct SchedulerTaskSchema;
+
+impl NodeSchemaDef for SchedulerTaskSchema {
+    fn label(&self) -> &'static str {
+        "SchedulerTask"
+    }
+
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("vid", FieldType::String),
+            ("arxiv_id", FieldType::String),
+            ("task_type", FieldType::String),
+            ("status", FieldType::String),
+        ]
+    }
+
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("retry_count", FieldType::Integer),
+            ("next_retry", FieldType::DateTime),
+            ("added_at", FieldType::DateTime),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -281,4 +315,28 @@ fn test_priority_ordering() {
     assert!(TaskPriority::High > TaskPriority::Medium);
     assert!(TaskPriority::Medium > TaskPriority::Low);
     assert!(TaskPriority::High > TaskPriority::Low);
+}
+
+#[test]
+fn test_scheduler_task_schema_label() {
+    assert_eq!(SchedulerTaskSchema.label(), "SchedulerTask");
+}
+
+#[test]
+fn test_scheduler_task_schema_has_d127_d134_fields() {
+    let required = SchedulerTaskSchema.required_fields();
+    let req_names: Vec<&str> = required.iter().map(|(n, _)| *n).collect();
+    assert!(req_names.contains(&"vid"));
+    assert!(req_names.contains(&"arxiv_id"));
+
+    let optional = SchedulerTaskSchema.optional_fields();
+    let opt_names: Vec<&str> = optional.iter().map(|(n, _)| *n).collect();
+    assert!(
+        opt_names.contains(&"retrieval_eligible"),
+        "D134: retrieval_eligible missing"
+    );
+    assert!(
+        opt_names.contains(&"import_eligible"),
+        "D127: import_eligible missing"
+    );
 }
