@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Documentation drift fix (2026-07-29)
+
+- **README + GRAPH-SCHEMA synced.** Stale counts updated: 12→29 node types,
+  20→18 indexes. 5 stale references in README.md, 2 in GRAPH-SCHEMA.md.
+  Documentation now matches actual code state.
+
 ### Logic gap fix: schema_version on ALL nodes (ADR-044 prep) (2026-07-29)
 
 - **schema_version missing on 6/9 node creation sites.** Found by audit:

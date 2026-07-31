@@ -29,7 +29,7 @@ explicit human go (D127).
 | Phase 3 section embeddings | **Done** — SectionSchema embedding field |
 | Phase 4 hypergraph | **Done** — ConceptCluster node + MEMBER_OF edges + detect_clusters() |
 | Phase 5 GNN algorithm ports | **Done** — GraphAlgorithms trait (PPR, get_neighbors, get_all_neighbors) |
-| Graph schema | **Done** — 12 node types, 20 indexes, `da schema init` |
+| Graph schema | **Done** — 29 node types, 18 indexes, `da schema init` |
 | OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors from OpenAlex API |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Cross-process live graph | **Not yet** — needs Samyama server mode (Phase 3+) |
@@ -47,7 +47,7 @@ crates/
                     #   GraphAlgorithms (PPR, neighbors)
   da-application/   # use cases: Ingest, BatchIngest, Extraction (with embedder),
                     #   Enrich, Healing, Scheduler
-  da-graph/         # Cypher query builders + schema DDL (20 indexes)
+  da-graph/         # Cypher query builders + schema DDL (18 indexes)
   da-adapters/      # GROBID parser, HtmlParser, FdApiEmbedder,
                     #   SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter
   da-cli/           # binary `da` + examples (eval_batch, eval_extract,
@@ -161,7 +161,7 @@ pre-commit run --all-files
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
-| `da schema-init` | Initialize all 20 graph indexes |
+| `da schema-init` | Initialize all 18 graph indexes |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |
@@ -185,7 +185,7 @@ pre-commit run --all-files
 | Embeddings on Section nodes | ✅ SectionSchema |
 | Edge weights | ✅ set_edge_property_float |
 | Typed adjacency export | ✅ GraphAlgorithms::get_neighbors |
-| Heterogeneous node types | ✅ 12 types |
+| Heterogeneous node types | ✅ 29 types |
 | retrieval_eligible filter | ✅ D134 on ALL nodes |
 | PPR from any node | ✅ GraphAlgorithms::personalized_pagerank |
 | Community detection | ⏳ detect_clusters() offline; RuVector online pending |
@@ -209,7 +209,7 @@ crates/                 # Rust workspace (runtime)
 legacy/                 # Frozen Python research_graph + tests + scripts
 doc/adr/                # Binding ADRs (037–042 + INDEX)
 doc/ONTOLOGY-DESIGN.md  # 7-layer ontology design
-doc/GRAPH-SCHEMA.md     # Graph schema (12 nodes, 20 indexes)
+doc/GRAPH-SCHEMA.md     # Graph schema (29 nodes, 18 indexes)
 data/article_catalog/   # Canonical PDFs + HTML chapters
 data/gold_standard/     # 104 gold-standard fixtures
 data/extraction_patterns.json  # Declarative extraction config
@@ -227,6 +227,6 @@ scripts/                # verify_rust_architecture.sh
 | `doc/adr/ADR-INDEX.md` | Binding ADRs + supersession chain |
 | `doc/adr/ADR-042-…` | HyCE-RAG hypergraph evidence chain model |
 | `doc/ONTOLOGY-DESIGN.md` | 7-layer ontology (L0-L7) |
-| `doc/GRAPH-SCHEMA.md` | 12 node types, 20 indexes, edge weights |
+| `doc/GRAPH-SCHEMA.md` | 29 node types, 18 indexes, edge weights |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
 | `CHANGELOG.md` | Recent changes |

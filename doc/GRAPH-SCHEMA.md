@@ -282,6 +282,19 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ### Publication Evidence & Community
 
+### SchedulerTask (Layer 1 — Operational State)
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `vid` | String | `vid:task:<id>` |
+| `arxiv_id` | String | Paper being processed |
+| `task_type` | String | `openalex_enrich` / `ingest` / `extract` |
+| `status` | String | `pending` / `running` / `completed` / `failed` |
+| `retry_count` | Integer | Exponential backoff retry count |
+| `next_retry` | DateTime | Next retry timestamp |
+| `retrieval_eligible` | Boolean | false (operational, not content) |
+| `import_eligible` | Boolean | false (D127) |
+
 ### ConceptCluster (derived community)
 
 | Property | Type | Description |
@@ -329,7 +342,7 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ---
 
-## Indexes (complete — 20 indexes)
+## Indexes (complete — 18 indexes)
 
 | Index | Type | On |
 |-------|------|----|
@@ -358,7 +371,7 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ## Loading contract
 
-1. **`da schema init`** — create all 20 indexes (7 node types + Source +
+1. **`da schema init`** — create all 18 indexes (7 node types + Source +
    ConceptCluster + Entity vector).
 2. **`da enrich --from openalex`** (Phase A) — fetch Work + Author + Institution +
    Concept + Topic from OpenAlex API. **Replaces** YAKE keywords, category
