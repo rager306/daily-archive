@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Idiomatic patterns + docs (Wave 5) (2026-07-29)
+
+- **`#[inline]` on hot-path functions.** `word_boundary` (19 call sites),
+  `classify_section` (18 call sites), `is_known` (domain lookup) — all
+  small functions called in extraction inner loops. Rust 2026 best practice:
+  add `#[inline]` to small hot functions to enable cross-crate inlining.
+- **D127/D134 audit automated.** Audit script verifies every `create_node()` 
+  sets `import_eligible=false` + `retrieval_eligible`. All 8 sites pass.
+- **PROJECT.md updated.** Reflects Edition 2024 + YAML config externalization.
+
 ### CLI runtime refactor + code quality (2026-07-29)
 
 - **CLI runtime duplication eliminated.** 12× `Runtime::new().unwrap()` in

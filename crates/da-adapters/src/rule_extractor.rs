@@ -168,6 +168,7 @@ impl RuleBasedExtractor {
 
     /// Classify a section title to an entity type.
     /// e.g. "Datasets" → Dataset, "Methods" → Method, "Evaluation Setup" → Metric.
+    #[inline]
     fn classify_section(title: &str) -> Option<EntityType> {
         let lower = title.to_lowercase();
         if lower.contains("dataset") || lower.contains("corpus") || lower.contains("benchmark") {
@@ -198,6 +199,7 @@ impl RuleBasedExtractor {
     /// Check that [start, end) in text is bounded by non-alphanumeric chars
     /// (or string edges). Prevents substring false positives like "arc" in
     /// "architecture", "ppo" in "support", "drop" in "dropout".
+    #[inline]
     fn word_boundary(text: &str, start: usize, end: usize) -> bool {
         let before_ok = start == 0
             || !text

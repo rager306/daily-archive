@@ -119,6 +119,7 @@ pub fn is_known_extension(code: &str) -> bool {
 }
 
 /// Check if a domain code is recognized (arXiv or extension).
+#[inline]
 pub fn is_known(code: &str) -> bool {
     is_known_arxiv(code) || is_known_extension(code)
 }
