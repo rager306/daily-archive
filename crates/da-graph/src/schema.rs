@@ -151,6 +151,12 @@ impl SchemaInitializer {
             .to_string()
     }
 
+    // --- Claim (Layer 6 proposition) ---
+
+    pub fn create_claim_vid_index() -> String {
+        "CREATE INDEX claim_vid IF NOT EXISTS FOR (n:Claim) ON (n.vid)".to_string()
+    }
+
     // --- SchedulerTask (Layer 1 operational state) ---
 
     pub fn create_schedulertask_arxiv_id_index() -> String {
@@ -206,6 +212,8 @@ impl SchemaInitializer {
             Self::create_institution_openalex_id_index(),
             // EvidenceBundle (Layer 6 evidence)
             Self::create_evidence_bundle_vid_index(),
+            // Claim (Layer 6 proposition)
+            Self::create_claim_vid_index(),
             // SchedulerTask (Layer 1 operational state)
             Self::create_schedulertask_arxiv_id_index(),
             // Entity embedding (Phase 3 GNN readiness)
@@ -236,7 +244,7 @@ mod tests {
         // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category
         // + 2 Source + 2 ConceptCluster + 1 Reference + 1 Author + 1 Institution
         // + 1 SchedulerTask + 1 Entity vector = 24
-        assert_eq!(stmts.len(), 25);
+        assert_eq!(stmts.len(), 26);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 

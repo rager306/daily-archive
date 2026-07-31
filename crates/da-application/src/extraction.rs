@@ -29,6 +29,7 @@ pub struct ExtractionResult {
     pub found_in_edges: usize,
     pub evidence_bundles_created: usize,
     pub participates_in_edges: usize,
+    pub claims_created: usize,
 }
 
 impl ExtractionUseCase {
@@ -225,6 +226,7 @@ impl ExtractionUseCase {
         // When 2+ entities appear in the same section, they form an n-ary
         // evidence unit linked via PARTICIPATES_IN edges (ADR-042 revised).
         let mut evidence_bundles_created = 0usize;
+        let mut claims_created = 0usize;
         let mut participates_in_edges = 0usize;
         if let Some(_paper_node) = paper_node_id {
             use std::collections::HashMap as Map;
@@ -292,6 +294,54 @@ impl ExtractionUseCase {
                     }
                 }
                 evidence_bundles_created += 1;
+
+                // Create Claim from EvidenceBundle (structural claim).
+                // Claim: "Paper uses {entities} in {section}" — generated from
+                // evidence bundle, not LLM-extracted. claim_type=structural.
+                let claim_text = format!(
+                    "Paper {} uses {} in {}",
+                    parsed.paper_id, bundle_text, section_title
+                );
+                let claim_node = self.graph_store.create_node("Claim").await?;
+                self.graph_store
+                    .set_node_property_string(
+                        claim_node,
+                        "vid",
+                        format!("vid:claim:{}:{}", parsed.paper_id, section_title.len()),
+                    )
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(claim_node, "text", claim_text)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(claim_node, "claim_type", "structural".to_string())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(
+                        claim_node,
+                        "scope",
+                        format!("section:{}", section_title),
+                    )
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(claim_node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(claim_node, "import_eligible", false) // D127
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(claim_node, "schema_version", 1)
+                    .await?;
+                // EvidenceBundle SUPPORTS Claim
+                let _ = self
+                    .graph_store
+                    .create_edge(
+                        bundle_node,
+                        claim_node,
+                        da_domain::relation::hypergraph::SUPPORTS,
+                    )
+                    .await;
+                claims_created += 1;
             }
         }
 
@@ -301,6 +351,7 @@ impl ExtractionUseCase {
             mentions_edges,
             found_in_edges,
             evidence_bundles_created,
+            claims_created,
             participates_in_edges,
             embeddings_written,
             paper_linked = paper_node_id.is_some(),
@@ -315,6 +366,7 @@ impl ExtractionUseCase {
             mentions_edges,
             found_in_edges,
             evidence_bundles_created,
+            claims_created,
             participates_in_edges,
         })
     }
