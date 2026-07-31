@@ -125,6 +125,25 @@ impl SchemaInitializer {
             .to_string()
     }
 
+    // --- Reference (bibliography entries, Layer 1) ---
+
+    pub fn create_reference_vid_index() -> String {
+        "CREATE INDEX reference_vid IF NOT EXISTS FOR (n:Reference) ON (n.vid)".to_string()
+    }
+
+    // --- Author (Layer 1 metadata) ---
+
+    pub fn create_author_vid_index() -> String {
+        "CREATE INDEX author_vid IF NOT EXISTS FOR (n:Author) ON (n.vid)".to_string()
+    }
+
+    // --- SchedulerTask (Layer 1 operational state) ---
+
+    pub fn create_schedulertask_arxiv_id_index() -> String {
+        "CREATE INDEX schedulertask_arxiv_id IF NOT EXISTS FOR (n:SchedulerTask) ON (n.arxiv_id)"
+            .to_string()
+    }
+
     // --- Entity embedding (Phase 3 GNN readiness) ---
 
     pub fn create_entity_vector_index(dimensions: usize) -> String {
@@ -165,6 +184,12 @@ impl SchemaInitializer {
             // ConceptCluster (Layer 6 Hypergraph)
             Self::create_cluster_vid_index(),
             Self::create_cluster_type_index(),
+            // Reference (Layer 1 bibliography)
+            Self::create_reference_vid_index(),
+            // Author (Layer 1 metadata)
+            Self::create_author_vid_index(),
+            // SchedulerTask (Layer 1 operational state)
+            Self::create_schedulertask_arxiv_id_index(),
             // Entity embedding (Phase 3 GNN readiness)
             Self::create_entity_vector_index(dimensions),
         ]
@@ -191,8 +216,9 @@ mod tests {
     fn test_all_init_statements() {
         let stmts = SchemaInitializer::all_init_statements(1024);
         // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category
-        // + 2 Source + 2 ConceptCluster + 1 Entity vector = 20
-        assert_eq!(stmts.len(), 20);
+        // + 2 Source + 2 ConceptCluster + 1 Reference + 1 Author + 1 SchedulerTask
+        // + 1 Entity vector = 23
+        assert_eq!(stmts.len(), 23);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 
