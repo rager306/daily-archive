@@ -27,6 +27,8 @@ pub struct ExtractionResult {
     pub graph_node_ids: Vec<u64>,
     pub mentions_edges: usize,
     pub found_in_edges: usize,
+    pub evidence_bundles_created: usize,
+    pub participates_in_edges: usize,
 }
 
 impl ExtractionUseCase {
@@ -219,11 +221,87 @@ impl ExtractionUseCase {
             }
         }
 
+        // Phase 4: Create EvidenceBundle nodes for co-occurring entities.
+        // When 2+ entities appear in the same section, they form an n-ary
+        // evidence unit linked via PARTICIPATES_IN edges (ADR-042 revised).
+        let mut evidence_bundles_created = 0usize;
+        let mut participates_in_edges = 0usize;
+        if let Some(_paper_node) = paper_node_id {
+            use std::collections::HashMap as Map;
+            let mut by_section: Map<String, Vec<(usize, &str)>> = Map::new();
+            for (i, ext) in extracted.iter().enumerate() {
+                if !ext.section_title.is_empty() {
+                    by_section
+                        .entry(ext.section_title.clone())
+                        .or_default()
+                        .push((i, ext.label.as_str()));
+                }
+            }
+            for (section_title, members) in &by_section {
+                if members.len() < 2 {
+                    continue;
+                }
+                let bundle_text = members
+                    .iter()
+                    .map(|(_, label)| *label)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let bundle_vid = format!("vid:bundle:{}:{}", parsed.paper_id, section_title.len());
+                let bundle_node = self.graph_store.create_node("EvidenceBundle").await?;
+                self.graph_store
+                    .set_node_property_string(bundle_node, "vid", bundle_vid)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(
+                        bundle_node,
+                        "bundle_type",
+                        "experiment_setup".to_string(),
+                    )
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(
+                        bundle_node,
+                        "normalized_text",
+                        format!("Entities in {section_title}: {bundle_text}"),
+                    )
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(bundle_node, "document_id", parsed.paper_id.clone())
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(bundle_node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(bundle_node, "import_eligible", false) // D127
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(bundle_node, "schema_version", 1)
+                    .await?;
+                // Create PARTICIPATES_IN edges: Entity → EvidenceBundle
+                for (idx, _) in members {
+                    if let Some(&entity_node) = node_ids.get(*idx) {
+                        let _ = self
+                            .graph_store
+                            .create_edge(
+                                entity_node,
+                                bundle_node,
+                                da_domain::relation::hypergraph::PARTICIPATES_IN,
+                            )
+                            .await;
+                        participates_in_edges += 1;
+                    }
+                }
+                evidence_bundles_created += 1;
+            }
+        }
+
         tracing::info!(
             paper_id = %parsed.paper_id,
             entities = extracted.len(),
             mentions_edges,
             found_in_edges,
+            evidence_bundles_created,
+            participates_in_edges,
             embeddings_written,
             paper_linked = paper_node_id.is_some(),
             "Extraction complete"
@@ -236,6 +314,8 @@ impl ExtractionUseCase {
             graph_node_ids: node_ids,
             mentions_edges,
             found_in_edges,
+            evidence_bundles_created,
+            participates_in_edges,
         })
     }
 }
