@@ -9,7 +9,6 @@
   Documentation now matches actual code state.
 
 ### Logic gap fix: schema_version on ALL nodes (ADR-044 prep) (2026-07-29)
-
 - **schema_version missing on 6/9 node creation sites.** Found by audit:
   Section, Topic, Author, SchedulerTask (×2), ConceptCluster created
   without `schema_version` property. Critical for ADR-044 schema migrations:

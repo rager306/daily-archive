@@ -220,9 +220,11 @@ pub mod process {
     pub const HAS_INTERVENTION: &str = "HAS_INTERVENTION";
     pub const TESTED_BY: &str = "TESTED_BY";
     pub const TESTS: &str = "TESTS";
-    pub const SUPPORTS: &str = "SUPPORTS";
     pub const REFUTES: &str = "REFUTES";
-    pub const QUALIFIES: &str = "QUALIFIES";
+    // SUPPORTS and QUALIFIES are in hypergraph module (EvidenceBundle → Claim).
+    // process module has REFUTES (ResultComparison → Hypothesis, unique to process).
+    // Both modules share the same string values for SUPPORTS/QUALIFIES —
+    // they are the same edge type label used in different semantic contexts.
 
     // ─── Intervention / bundle ───
     pub const HAS_COMPONENT: &str = "HAS_COMPONENT";
@@ -354,8 +356,42 @@ mod tests {
             structure::FROM_SOURCE,
             structure::FOUND_IN,
             structure::IN_CATEGORY,
+            // Process plane edges
+            process::VALID_UNDER,
+            process::TESTED_BY,
+            process::FORMALIZES,
+            process::HAS_INTERVENTION,
+            // Hypergraph edges
+            hypergraph::MEMBER_OF_CLUSTER,
+            hypergraph::SUBSUMES,
         ] {
             assert!(seen.insert(label), "duplicate edge label: {label}");
         }
+    }
+
+    #[test]
+    fn test_process_edge_constants() {
+        // Process plane edges (VALID_UNDER, TESTED_BY) must be stable strings.
+        // SUPPORTS/CONTRADICTS/QUALIFIES belong to hypergraph module (evidence edges).
+        assert_eq!(process::VALID_UNDER, "VALID_UNDER");
+        assert_eq!(process::TESTED_BY, "TESTED_BY");
+        assert_eq!(process::FORMALIZES, "FORMALIZES");
+        assert_eq!(process::HAS_INTERVENTION, "HAS_INTERVENTION");
+        // Verify process module does NOT duplicate hypergraph edges
+        // (SUPPORTS/CONTRADICTS/QUALIFIES are in hypergraph, not process)
+        assert_eq!(hypergraph::SUPPORTS, "SUPPORTS");
+        assert_eq!(hypergraph::CONTRADICTS, "CONTRADICTS");
+        assert_eq!(hypergraph::QUALIFIES, "QUALIFIES");
+    }
+
+    #[test]
+    fn test_hypergraph_edge_constants() {
+        // Hypergraph/community edges must be stable strings.
+        assert_eq!(hypergraph::MEMBER_OF_CLUSTER, "MEMBER_OF_CLUSTER");
+        assert_eq!(hypergraph::SUBSUMES, "SUBSUMES");
+        // Critical invariant: MEMBER_OF_CLUSTER != MEMBER_OF (old name)
+        assert!(hypergraph::MEMBER_OF_CLUSTER != "MEMBER_OF");
+        // Critical invariant: MEMBER_OF_CLUSTER != PARTICIPATES_IN (different semantics)
+        assert!(hypergraph::MEMBER_OF_CLUSTER != "PARTICIPATES_IN");
     }
 }
