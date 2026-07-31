@@ -114,6 +114,9 @@ impl EnrichUseCase {
                         .set_node_property_bool(node, "import_eligible", false) // D127
                         .await?;
                     self.graph_store
+                        .set_node_property_int(node, "schema_version", 1)
+                        .await?;
+                    self.graph_store
                         .set_node_property_int(node, "valid_from", now)
                         .await?;
                     node
@@ -163,6 +166,9 @@ impl EnrichUseCase {
                         .await?;
                     self.graph_store
                         .set_node_property_bool(node, "import_eligible", false) // D127
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(node, "schema_version", 1)
                         .await?;
                     self.graph_store
                         .set_node_property_int(node, "valid_from", now)
@@ -254,6 +260,9 @@ impl EnrichUseCase {
             .await?;
         self.graph_store
             .set_node_property_bool(task_node, "import_eligible", false) // D127
+            .await?;
+        self.graph_store
+            .set_node_property_int(task_node, "schema_version", 1)
             .await?;
         tracing::info!(arxiv_id, task_node, "SchedulerTask created in graph");
 

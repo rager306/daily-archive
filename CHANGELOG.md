@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Logic gap fix: schema_version on ALL nodes (ADR-044 prep) (2026-07-29)
+
+- **schema_version missing on 6/9 node creation sites.** Found by audit:
+  Section, Topic, Author, SchedulerTask (×2), ConceptCluster created
+  without `schema_version` property. Critical for ADR-044 schema migrations:
+  without per-node schema version, migration runner cannot track which
+  nodes need backfill. Now ALL 9 create_node sites set schema_version=1.
+  This enables future ADR-044 Wave B (schema registry in graph).
+
 ### Logic gap fix: SchedulerTask schema registration (2026-07-29)
 
 - **SchedulerTaskSchema added to da-domain.** SchedulerTask was created in

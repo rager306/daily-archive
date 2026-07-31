@@ -106,6 +106,9 @@ impl GraphScheduler {
         store
             .set_node_property_bool(node, "import_eligible", false) // D127
             .await?;
+        store
+            .set_node_property_int(node, "schema_version", 1)
+            .await?;
 
         tracing::info!(arxiv_id, node_id = node, "SchedulerTask created in graph");
         Ok(())

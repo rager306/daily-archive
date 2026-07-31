@@ -182,6 +182,9 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_bool(section_node, "import_eligible", false) // D127
                 .await?;
+            self.graph_store
+                .set_node_property_int(section_node, "schema_version", 1)
+                .await?;
             // Truncate text to ~10000 bytes, UTF-8 safe (avoid mid-char panic)
             let text_trunc = section.text.get(..10000).unwrap_or(&section.text);
             self.graph_store

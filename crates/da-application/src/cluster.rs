@@ -83,6 +83,9 @@ impl ClusterUseCase {
             self.graph_store
                 .set_node_property_bool(cluster_node, "import_eligible", false) // D127
                 .await?;
+            self.graph_store
+                .set_node_property_int(cluster_node, "schema_version", 1)
+                .await?;
 
             // 4. Create MEMBER_OF_CLUSTER edges: Entity → ConceptCluster
             for (member_label, _member_type) in dc.members.iter().zip(dc.member_types.iter()) {
