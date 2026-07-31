@@ -30,6 +30,7 @@ pub struct ExtractionResult {
     pub evidence_bundles_created: usize,
     pub participates_in_edges: usize,
     pub claims_created: usize,
+    pub problems_created: usize,
 }
 
 impl ExtractionUseCase {
@@ -345,6 +346,66 @@ impl ExtractionUseCase {
             }
         }
 
+        // Phase 5: Create ResearchProblem from paper abstract.
+        // Rule-based: detect problem-statement patterns in abstract.
+        // "we propose" → improvement; "we investigate/study" → explanation.
+        let mut problems_created = 0usize;
+        if let Some(paper_id) = paper_node_id {
+            let problem_type = if parsed.abstract_text.contains("we propose")
+                || parsed.abstract_text.contains("we improve")
+                || parsed.abstract_text.contains("we introduce")
+            {
+                Some("improvement")
+            } else if parsed.abstract_text.contains("we investigate")
+                || parsed.abstract_text.contains("we study")
+                || parsed.abstract_text.contains("we address")
+            {
+                Some("explanation")
+            } else {
+                None
+            };
+            if let Some(problem_type) = problem_type {
+                let prob_text = if parsed.title.len() > 120 {
+                    parsed.title.chars().take(120).collect::<String>()
+                } else {
+                    parsed.title.clone()
+                };
+                let prob_node = self.graph_store.create_node("ResearchProblem").await?;
+                self.graph_store
+                    .set_node_property_string(
+                        prob_node,
+                        "vid",
+                        format!("vid:problem:{}:{}", parsed.paper_id, problem_type),
+                    )
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(prob_node, "text", prob_text)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(prob_node, "problem_type", problem_type.to_string())
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(prob_node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(prob_node, "import_eligible", false) // D127
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(prob_node, "schema_version", 1)
+                    .await?;
+                // Paper MENTIONS ResearchProblem (paper describes problem)
+                let _ = self
+                    .graph_store
+                    .create_edge(
+                        paper_id,
+                        prob_node,
+                        da_domain::relation::bibliographic::MENTIONS,
+                    )
+                    .await;
+                problems_created += 1;
+            }
+        }
+
         tracing::info!(
             paper_id = %parsed.paper_id,
             entities = extracted.len(),
@@ -352,6 +413,7 @@ impl ExtractionUseCase {
             found_in_edges,
             evidence_bundles_created,
             claims_created,
+            problems_created,
             participates_in_edges,
             embeddings_written,
             paper_linked = paper_node_id.is_some(),
@@ -367,6 +429,7 @@ impl ExtractionUseCase {
             found_in_edges,
             evidence_bundles_created,
             claims_created,
+            problems_created,
             participates_in_edges,
         })
     }
