@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Pipeline: Source node + FROM_SOURCE edge wiring (2026-07-29)
+
+- **Source node materialization.** Layer 0 provenance node was missing
+  from pipeline. Now created in ingest_pdf() with: vid, code, source_type,
+  domain, reliability_tier, retrieval_eligible=false, import_eligible=false
+  (D127), schema_version. Idempotent (checks existing Source by code).
+  Paper → Source via FROM_SOURCE edge.
+- **extract_source_from_path helper.** Detects source from path.
+- **3 TDD tests.** Pipeline: 10/29 node types materialized.
+
 ### Documentation drift fix (2026-07-29)
 
 - **README + GRAPH-SCHEMA synced.** Stale counts updated: 12→29 node types,

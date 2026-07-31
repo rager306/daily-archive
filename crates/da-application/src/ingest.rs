@@ -56,6 +56,13 @@ impl IngestUseCase {
 
         // ADR-043: extract scientific_domain from catalog path if available
         let primary_domain = extract_domain_from_path(pdf_path);
+        // ADR-044: extract source code from catalog path for Source node
+        let source_code = extract_source_from_path(pdf_path);
+        tracing::debug!(
+            paper_id,
+            source_code = source_code.as_deref(),
+            "Source detected"
+        );
 
         // 1. Parse via GROBID
         let parsed = self.parser.parse_pdf(pdf_path, paper_id).await?;
@@ -122,6 +129,56 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_bool(node_id, "retrieval_eligible", true) // D134: live for retrieval
             .await?;
+
+        // ADR-044: create Source node + FROM_SOURCE edge (Layer 0 provenance)
+        if let Some(ref code) = source_code {
+            // Idempotent: check if Source node already exists
+            let source_node = self
+                .graph_store
+                .find_node_by_string_property("Source", "code", code)
+                .await;
+            let source_node = match source_node {
+                Some(existing) => existing,
+                None => {
+                    let sn = self.graph_store.create_node("Source").await?;
+                    self.graph_store
+                        .set_node_property_string(sn, "vid", format!("vid:source:{code}"))
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(sn, "code", code.clone())
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(sn, "source_type", "pdf".to_string())
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(sn, "domain", "scientific_paper".to_string())
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(sn, "reliability_tier", 2)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(sn, "retrieval_eligible", false)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(sn, "import_eligible", false) // D127
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(sn, "schema_version", 1)
+                        .await?;
+                    sn
+                }
+            };
+            // Link Paper → Source via FROM_SOURCE edge
+            let _ = self
+                .graph_store
+                .create_edge(
+                    node_id,
+                    source_node,
+                    da_domain::relation::structure::FROM_SOURCE,
+                )
+                .await;
+            tracing::debug!(paper_id, source_code = %code, "Source node linked");
+        }
 
         // ADR-043: set scientific_domain fields (extracted from catalog path)
         if let Some(ref domain) = primary_domain {
@@ -308,6 +365,26 @@ impl IngestUseCase {
     }
 }
 
+/// Extract source code from catalog path.
+///
+/// Path format: `.../arxiv/<cat-dash>/<id>/...` → "arxiv"
+///              `.../textbooks/<book>/...` → "textbook"
+/// Returns None if path doesn't match known source patterns.
+fn extract_source_from_path(path: &str) -> Option<String> {
+    let path_str = path.to_lowercase();
+    if path_str.contains("arxiv") || path_str.contains("article_catalog") {
+        Some("arxiv".to_string())
+    } else if path_str.contains("textbook") {
+        Some("textbook".to_string())
+    } else if path_str.contains("stanford") {
+        Some("stanford".to_string())
+    } else if path_str.contains("openalex") {
+        Some("openalex".to_string())
+    } else {
+        None
+    }
+}
+
 /// Canonicalize a filesystem-style category segment to arXiv dotted form.
 ///
 /// Filesystem uses dashes: `cs-lg`, `cond-mat-mtrl-sci`, `q-bio-gn`.
@@ -402,6 +479,26 @@ mod tests {
     fn test_extract_domain_no_arxiv_segment() {
         let path = "/tmp/some/random/path/file.pdf";
         assert_eq!(extract_domain_from_path(path), None);
+    }
+
+    #[test]
+    fn test_extract_source_arxiv_from_path() {
+        let path =
+            "data/article_catalog/article_catalog/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
+        assert_eq!(extract_source_from_path(path), Some("arxiv".to_string()));
+    }
+
+    #[test]
+    fn test_extract_source_textbook_from_path() {
+        let path = "data/textbooks/gnn_book/chapter_01/intro.pdf";
+        assert_eq!(extract_source_from_path(path), Some("textbook".to_string()));
+    }
+
+    #[test]
+    fn test_extract_source_unknown_from_path() {
+        let path = "/tmp/random/file.pdf";
+        // Unknown source — should default but not crash
+        assert_eq!(extract_source_from_path(path), None);
     }
 
     // Integration tests require live services (GROBID, fd_api, Samyama embedded)
