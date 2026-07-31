@@ -13,6 +13,7 @@ listed here — see `legacy/doc/adr/`.
 | [041](ADR-041-samyama-embedded-cypher-hybrid-agentruntime-sona.md) | Samyama Embedded Cypher + Hybrid AgentRuntime/SONA | Accepted (binding) | 2026-07-25 |
 | [042](ADR-042-hycerag-hypergraph-evidence-chain.md) | Query-Local Evidence Activation Over Reified Evidence Bundles | Proposed (revised) | 2026-07-29 |
 | [043](ADR-043-research-process-plane-execution-grounded.md) | Research Process Plane — Execution-Grounded Scientific Memory | Proposed | 2026-07-29 |
+| [044](ADR-044-schema-lifecycle-versioning-migration-healing.md) | Graph Schema Lifecycle — Versioned Manifest, Migration Framework, Self-Healing | Proposed | 2026-07-29 |
 
 ## Supersession chain
 
@@ -26,6 +27,8 @@ ADR-038 (NebulaGraph nGQL)  ──amended──► ADR-040 (Samyama Cypher)
 ADR-039 (graph lifecycle)   ──amended──► ADR-040 (updated lifecycle)
 ADR-042 (evidence bundles)  ──extended──► ADR-043 (research process plane)
 ADR-038 ExperimentSetup     ──specialized──► EvidenceBundle subtype + env_lite bridge (043)
+ADR-040 (Samyama schemaless) ──complemented──► ADR-044 (schema lifecycle management)
+ADR-043 (28 node types)      ──requires──► ADR-044 (versioned schema registry)
 ```
 
 ## Template

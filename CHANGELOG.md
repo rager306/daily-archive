@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### ADR-044: Schema Lifecycle design (2026-07-29)
+
+- **ADR-044 Proposed**: Graph Schema Lifecycle — Versioned Manifest,
+  Migration Framework, Self-Healing. Based on 2026 best practices research
+  (expand-contract pattern, idempotent migrations, schema registry in-graph).
+  Two new node types: SchemaVersion (semver, active/deprecated/superseded),
+  SchemaMigration (from→to, pending→completed→rolled_back). External schema
+  manifest in `data/schema/versions/*.yaml`. Schema drift detection + healing
+  (extends GraphHealingUseCase with 4 new operations). CLI: schema version,
+  history, plan, migrate, verify, rollback, drift, heal.
+- **Design doc**: doc/SCHEMA-LIFECYCLE-DESIGN.md (Samyama + RuVector analysis).
+
 ### Pipeline: ConceptCluster materialization (MEM482) (2026-07-29)
 
 - **ClusterUseCase created.** `da-application/src/cluster.rs` — bridge between
