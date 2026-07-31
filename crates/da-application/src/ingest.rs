@@ -197,6 +197,32 @@ impl IngestUseCase {
                 )
                 .await?;
             tracing::debug!(paper_id, domain = %domain, "Set primary_scientific_domain");
+
+            // Create Category node + link Paper → Category (IN_CATEGORY edge)
+            let cat_node = self.graph_store.create_node("Category").await?;
+            self.graph_store
+                .set_node_property_string(cat_node, "vid", format!("vid:cat:{domain}"))
+                .await?;
+            self.graph_store
+                .set_node_property_string(cat_node, "code", domain.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_bool(cat_node, "retrieval_eligible", true)
+                .await?;
+            self.graph_store
+                .set_node_property_bool(cat_node, "import_eligible", false) // D127
+                .await?;
+            self.graph_store
+                .set_node_property_int(cat_node, "schema_version", 1)
+                .await?;
+            let _ = self
+                .graph_store
+                .create_edge(
+                    node_id,
+                    cat_node,
+                    da_domain::relation::structure::IN_CATEGORY,
+                )
+                .await;
         }
 
         // Section + citation metadata (enables Phase 3 extraction queries)

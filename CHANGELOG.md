@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Pipeline: Reference + Category node wiring (2026-07-29)
+
+- **Reference node materialization.** Full bibliography now preserved.
+  Previously only resolvable arxiv citations were saved (~20%). Now ALL
+  citations become Reference nodes with raw_text + metadata.
+  Paper → Reference via hasPart edge.
+- **Category node materialization.** arXiv category (cs.LG, cs.AI, etc.)
+  now materialized as Category node. Paper → Category via IN_CATEGORY edge.
+- **reference_vid helper.** SHA256-based VID for idempotent reference dedup.
+- **Pipeline: 12/29 node types** (was 10).
+
 ### Pipeline: Source node + FROM_SOURCE edge wiring (2026-07-29)
 
 - **Source node materialization.** Layer 0 provenance node was missing
