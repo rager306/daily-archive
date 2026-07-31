@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 use da_ports::openalex::{
-    OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexError, OpenAlexResult, OpenAlexTopic,
-    OpenAlexWork,
+    OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexError, OpenAlexInstitution,
+    OpenAlexResult, OpenAlexTopic, OpenAlexWork,
 };
 use serde::Deserialize;
 
@@ -76,6 +76,16 @@ struct ConceptResponse {
 #[derive(Debug, Deserialize)]
 struct AuthorshipResponse {
     author: AuthorResponse,
+    #[serde(default)]
+    institutions: Vec<InstitutionResponse>,
+}
+
+#[derive(Debug, Deserialize)]
+struct InstitutionResponse {
+    id: Option<String>,
+    display_name: String,
+    country_code: Option<String>,
+    ror: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,6 +111,26 @@ fn parse_topic(t: TopicResponse) -> OpenAlexTopic {
 }
 
 fn parse_work(w: WorkResponse) -> OpenAlexWork {
+    let authorships = w.authorships.unwrap_or_default();
+    let authors: Vec<_> = authorships
+        .iter()
+        .map(|a| OpenAlexAuthor {
+            id: a.author.id.clone().unwrap_or_default(),
+            display_name: a.author.display_name.clone(),
+            orcid: a.author.orcid.clone(),
+        })
+        .collect();
+    let institutions: Vec<_> = authorships
+        .iter()
+        .flat_map(|a| {
+            a.institutions.iter().map(|inst| OpenAlexInstitution {
+                id: inst.id.clone().unwrap_or_default(),
+                display_name: inst.display_name.clone(),
+                country_code: inst.country_code.clone(),
+                ror: inst.ror.clone(),
+            })
+        })
+        .collect();
     OpenAlexWork {
         id: w.id,
         title: w.title,
@@ -125,16 +155,8 @@ fn parse_work(w: WorkResponse) -> OpenAlexWork {
                 score: c.score,
             })
             .collect(),
-        authors: w
-            .authorships
-            .unwrap_or_default()
-            .into_iter()
-            .map(|a| OpenAlexAuthor {
-                id: a.author.id.unwrap_or_default(),
-                display_name: a.author.display_name,
-                orcid: a.author.orcid,
-            })
-            .collect(),
+        authors,
+        institutions,
         referenced_works: w.referenced_works.unwrap_or_default(),
     }
 }

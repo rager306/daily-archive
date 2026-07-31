@@ -38,6 +38,15 @@ pub struct OpenAlexAuthor {
     pub orcid: Option<String>,
 }
 
+/// An institution from OpenAlex authorship.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenAlexInstitution {
+    pub id: String,
+    pub display_name: String,
+    pub country_code: Option<String>,
+    pub ror: Option<String>,
+}
+
 /// A concept from OpenAlex (deprecated, but kept for historical audit).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenAlexConcept {
@@ -59,6 +68,7 @@ pub struct OpenAlexWork {
     pub topics: Vec<OpenAlexTopic>,
     pub concepts: Vec<OpenAlexConcept>,
     pub authors: Vec<OpenAlexAuthor>,
+    pub institutions: Vec<OpenAlexInstitution>,
     pub referenced_works: Vec<String>,
 }
 
