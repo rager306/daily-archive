@@ -3,6 +3,7 @@
 //! ADR-038 Module B: extract textually mentioned entities from paper sections.
 //! Phase 3 Slice 2: wires Extractor port to IngestUseCase graph writes.
 
+use da_domain::entity::EntityType;
 use da_domain::vid;
 use da_ports::extractor::Extractor;
 use da_ports::graph_store::DirectGraphStore;
@@ -31,6 +32,7 @@ pub struct ExtractionResult {
     pub participates_in_edges: usize,
     pub claims_created: usize,
     pub problems_created: usize,
+    pub observations_created: usize,
 }
 
 impl ExtractionUseCase {
@@ -406,6 +408,78 @@ impl ExtractionUseCase {
             }
         }
 
+        // Phase 6: Create MetricObservation nodes for metric + number co-occurrences.
+        // Rule-based: find metric names (accuracy, F1, BLEU, etc.) in Results/Experiments
+        // sections, extract nearby number as the observed value.
+        let mut observations_created = 0usize;
+        let mut obs_edges_created = 0usize;
+        if let Some(paper_node) = paper_node_id {
+            let metrics_lower: &[&str] = &[
+                "accuracy",
+                "precision",
+                "recall",
+                "f1",
+                "bleu",
+                "rouge",
+                "auc",
+                "mse",
+                "rmse",
+                "mae",
+            ];
+            for (i, ext) in extracted.iter().enumerate() {
+                if ext.entity_type != EntityType::Metric {
+                    continue;
+                }
+                let metric_lower = ext.label.to_lowercase();
+                if !metrics_lower.contains(&metric_lower.as_str()) {
+                    continue;
+                }
+                // Find numeric value near this metric mention
+                let section_text = ext.surface.clone();
+                if let Some(value) = extract_metric_value(&section_text, &metric_lower) {
+                    let obs_vid = format!("vid:obs:{}:{}", parsed.paper_id, metric_lower);
+                    let obs_node = self.graph_store.create_node("MetricObservation").await?;
+                    self.graph_store
+                        .set_node_property_string(obs_node, "vid", obs_vid)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(
+                            obs_node,
+                            "metric_definition_id",
+                            metric_lower.clone(),
+                        )
+                        .await?;
+                    self.graph_store
+                        .set_node_property_float(obs_node, "value", value)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(obs_node, "document_id", parsed.paper_id.clone())
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(obs_node, "retrieval_eligible", true)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(obs_node, "import_eligible", false) // D127
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(obs_node, "schema_version", 1)
+                        .await?;
+                    // Paper MENTIONS MetricObservation (observed value in this paper)
+                    let _ = self
+                        .graph_store
+                        .create_edge(
+                            paper_node,
+                            obs_node,
+                            da_domain::relation::bibliographic::MENTIONS,
+                        )
+                        .await;
+                    observations_created += 1;
+
+                    // Suppress unused variable warning
+                }
+            }
+        }
+
         tracing::info!(
             paper_id = %parsed.paper_id,
             entities = extracted.len(),
@@ -431,6 +505,60 @@ impl ExtractionUseCase {
             claims_created,
             problems_created,
             participates_in_edges,
+            observations_created,
         })
+    }
+}
+
+/// Extract a numeric metric value from text near a metric name.
+/// Looks for number immediately before or after the metric name.
+/// Examples: "accuracy of 0.95" → 0.95, "F1=0.87" → 0.87.
+fn extract_metric_value(text: &str, metric: &str) -> Option<f64> {
+    let lower = text.to_lowercase();
+    // Pattern: metric followed by number (accuracy 0.95, F1=0.87)
+    let patterns: Vec<String> = vec![
+        format!("{} =", metric),
+        format!("{}:", metric),
+        metric.to_string(),
+    ];
+    for pat in &patterns {
+        if let Some(pos) = lower.find(pat) {
+            let after = &lower[pos + pat.len()..];
+            let cleaned = after.trim_start_matches(|c: char| {
+                c.is_whitespace() || c == '=' || c == ':' || c == 'o' || c == 'f'
+            });
+            if let Some(num_end) =
+                cleaned.find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
+            {
+                let num_str = &cleaned[..num_end];
+                if let Ok(value) = num_str.parse::<f64>() {
+                    return Some(value);
+                }
+            }
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_metric_value_after() {
+        let text = "We achieved accuracy of 0.95 on the test set.";
+        assert_eq!(extract_metric_value(text, "accuracy"), Some(0.95));
+    }
+
+    #[test]
+    fn test_extract_metric_value_equals() {
+        let text = "F1=0.87 which is better than baseline.";
+        assert_eq!(extract_metric_value(text, "f1"), Some(0.87));
+    }
+
+    #[test]
+    fn test_extract_metric_value_no_number() {
+        let text = "We report accuracy in our experiments.";
+        assert_eq!(extract_metric_value(text, "accuracy"), None);
     }
 }

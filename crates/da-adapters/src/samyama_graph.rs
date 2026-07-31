@@ -376,6 +376,23 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
             .map_err(|e| GraphStoreError::Storage(e.to_string()))
     }
 
+    async fn set_node_property_float(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: f64,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_node_property(
+                &self.tenant,
+                NodeId::new(node_id),
+                key.to_string(),
+                PropertyValue::Float(value),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
     async fn create_edge(
         &self,
         source: u64,

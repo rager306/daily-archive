@@ -29,7 +29,7 @@ explicit human go (D127).
 | Phase 3 section embeddings | **Done** — SectionSchema embedding field |
 | Phase 4 hypergraph | **Done** — ConceptCluster node + MEMBER_OF edges + detect_clusters() |
 | Phase 5 GNN algorithm ports | **Done** — GraphAlgorithms trait (PPR, get_neighbors, get_all_neighbors) |
-| Graph schema | **Done** — 29 node types, 25 indexes, `da schema init` |
+| Graph schema | **Done** — 29 node types, 26 indexes, `da schema init` |
 | OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors from OpenAlex API |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Cross-process live graph | **Not yet** — needs Samyama server mode (Phase 3+) |
@@ -47,7 +47,7 @@ crates/
                     #   GraphAlgorithms (PPR, neighbors)
   da-application/   # use cases: Ingest, BatchIngest, Extraction (with embedder),
                     #   Enrich, Healing, Scheduler
-  da-graph/         # Cypher query builders + schema DDL (25 indexes)
+  da-graph/         # Cypher query builders + schema DDL (26 indexes)
   da-adapters/      # GROBID parser, HtmlParser, FdApiEmbedder,
                     #   SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter
   da-cli/           # binary `da` + examples (eval_batch, eval_extract,
@@ -209,7 +209,7 @@ crates/                 # Rust workspace (runtime)
 legacy/                 # Frozen Python research_graph + tests + scripts
 doc/adr/                # Binding ADRs (037–042 + INDEX)
 doc/ONTOLOGY-DESIGN.md  # 7-layer ontology design
-doc/GRAPH-SCHEMA.md     # Graph schema (29 nodes, 25 indexes)
+doc/GRAPH-SCHEMA.md     # Graph schema (29 nodes, 26 indexes)
 data/article_catalog/   # Canonical PDFs + HTML chapters
 data/gold_standard/     # 104 gold-standard fixtures
 data/extraction_patterns.json  # Declarative extraction config
@@ -227,6 +227,6 @@ scripts/                # verify_rust_architecture.sh
 | `doc/adr/ADR-INDEX.md` | Binding ADRs + supersession chain |
 | `doc/adr/ADR-042-…` | HyCE-RAG hypergraph evidence chain model |
 | `doc/ONTOLOGY-DESIGN.md` | 7-layer ontology (L0-L7) |
-| `doc/GRAPH-SCHEMA.md` | 29 node types, 25 indexes, edge weights |
+| `doc/GRAPH-SCHEMA.md` | 29 node types, 26 indexes, edge weights |
 | `doc/PERSISTENCE-ANALYSIS.md` | Why snapshot vs server |
 | `CHANGELOG.md` | Recent changes |

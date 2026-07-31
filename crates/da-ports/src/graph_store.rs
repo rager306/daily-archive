@@ -120,6 +120,14 @@ pub trait DirectGraphStore: GraphStore {
         value: bool,
     ) -> Result<(), GraphStoreError>;
 
+    /// Set a float property on a node (e.g., metric observations, confidence).
+    async fn set_node_property_float(
+        &self,
+        node_id: u64,
+        key: &str,
+        value: f64,
+    ) -> Result<(), GraphStoreError>;
+
     /// Create a directed edge between two nodes.
     async fn create_edge(
         &self,

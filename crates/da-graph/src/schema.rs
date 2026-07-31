@@ -164,6 +164,13 @@ impl SchemaInitializer {
             .to_string()
     }
 
+    // --- MetricObservation (process plane) ---
+
+    pub fn create_metric_observation_vid_index() -> String {
+        "CREATE INDEX metric_observation_vid IF NOT EXISTS FOR (n:MetricObservation) ON (n.vid)"
+            .to_string()
+    }
+
     // --- SchedulerTask (Layer 1 operational state) ---
 
     pub fn create_schedulertask_arxiv_id_index() -> String {
@@ -221,6 +228,8 @@ impl SchemaInitializer {
             Self::create_evidence_bundle_vid_index(),
             // Claim (Layer 6 proposition)
             Self::create_claim_vid_index(),
+            // MetricObservation (process plane)
+            Self::create_metric_observation_vid_index(),
             // ResearchProblem (Layer 1 process plane)
             Self::create_research_problem_vid_index(),
             // SchedulerTask (Layer 1 operational state)
@@ -253,7 +262,7 @@ mod tests {
         // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category
         // + 2 Source + 2 ConceptCluster + 1 Reference + 1 Author + 1 Institution
         // + 1 SchedulerTask + 1 Entity vector = 24
-        assert_eq!(stmts.len(), 27);
+        assert_eq!(stmts.len(), 28);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 

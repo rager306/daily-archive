@@ -101,6 +101,14 @@ impl DirectGraphStore for MockGraphStore {
     ) -> Result<(), GraphStoreError> {
         Ok(())
     }
+    async fn set_node_property_float(
+        &self,
+        _node_id: u64,
+        _key: &str,
+        _value: f64,
+    ) -> Result<(), GraphStoreError> {
+        Ok(())
+    }
     async fn set_node_property_bool(
         &self,
         _node_id: u64,

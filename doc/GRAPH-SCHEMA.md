@@ -342,7 +342,7 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ---
 
-## Indexes (complete — 25 indexes)
+## Indexes (complete — 26 indexes)
 
 | Index | Type | On |
 |-------|------|----|
@@ -371,7 +371,7 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ## Loading contract
 
-1. **`da schema init`** — create all 25 indexes (9 node types + Source + Reference + Author + SchedulerTask +
+1. **`da schema init`** — create all 26 indexes (9 node types + Source + Reference + Author + SchedulerTask +
    ConceptCluster + Entity vector).
 2. **`da enrich --from openalex`** (Phase A) — fetch Work + Author + Institution +
    Concept + Topic from OpenAlex API. **Replaces** YAKE keywords, category
