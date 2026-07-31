@@ -337,6 +337,40 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
 }
 
 #[tokio::test]
+async fn test_extraction_links_entities_to_sections_via_found_in() {
+    // When Entity has section_title and a Section node exists with matching
+    // title, extraction should create FOUND_IN edges (Entity → Section).
+    // This enables: retrieval by section, PPR adjacency, evidence grounding.
+    let entities = vec![ExtractedEntity {
+        label: "TestMethod".to_string(),
+        entity_type: EntityType::Method,
+        section_title: "Methods".to_string(),
+        char_start: 0,
+        char_end: 10,
+        surface: "TestMethod".to_string(),
+    }];
+    let (_nodes, store) = make_store();
+    // Pre-create a Paper + Section node with title="Methods"
+    let paper_node = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+    let section_node = store.create_node("Section").await.unwrap();
+    store
+        .set_node_property_string(section_node, "title", "Methods".to_string())
+        .await
+        .unwrap();
+
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.found_in_edges, 1, "expected 1 FOUND_IN edge");
+    assert_eq!(result.mentions_edges, 1, "expected 1 MENTIONS edge");
+}
+
+#[tokio::test]
 async fn test_extraction_no_mentions_when_paper_absent() {
     // If no Paper node exists, entities are created but no MENTIONS edges.
     let entities = vec![ExtractedEntity {

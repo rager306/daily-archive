@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Pipeline: FOUND_IN edge wiring (Entity → Section) (2026-07-29)
+
+- **FOUND_IN edge creation in extraction pipeline.** When Entity has
+  section_title and a matching Section node exists, extraction now creates
+  Entity -[:FOUND_IN]-> Section edge. This closes a critical pipeline gap:
+  entities were linked to Paper (via MENTIONS) but NOT to Section.
+- **Enables:** retrieval by section, PPR adjacency through Section nodes,
+  evidence chain construction from Entity → Section → Work.
+- **Hexagonal compliance:** Section lookup via find_node_by_string_property
+  (no Cypher in application layer). Uses structure::FOUND_IN constant.
+- **ExtractionResult** extended: +mentions_edges, +found_in_edges counters.
+- **TDD test:** test_extraction_links_entities_to_sections_via_found_in.
+
 ### Idiomatic patterns + docs (Wave 5) (2026-07-29)
 
 - **`#[inline]` on hot-path functions.** `word_boundary` (19 call sites),

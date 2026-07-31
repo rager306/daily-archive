@@ -25,6 +25,8 @@ pub struct ExtractionResult {
     pub entities_extracted: usize,
     pub entity_types: Vec<String>,
     pub graph_node_ids: Vec<u64>,
+    pub mentions_edges: usize,
+    pub found_in_edges: usize,
 }
 
 impl ExtractionUseCase {
@@ -76,6 +78,7 @@ impl ExtractionUseCase {
         let mut node_ids = Vec::new();
         let mut entity_types = Vec::new();
         let mut mentions_edges = 0usize;
+        let mut found_in_edges = 0usize;
         for ext in &extracted {
             let entity_vid = vid::entity_vid(ext.entity_type.as_str(), &ext.label);
             // Idempotent: check if entity already exists
@@ -154,6 +157,28 @@ impl ExtractionUseCase {
                     .await?;
                 mentions_edges += 1;
             }
+
+            // Link Entity to Section via FOUND_IN edge (evidence grounding).
+            // Enables: retrieval by section, PPR adjacency through Section nodes,
+            // and evidence chain construction from Entity → Section → Work.
+            if !ext.section_title.is_empty() {
+                // Find Section node by title (hexagonal: no Cypher in application).
+                if let Some(section_node) = self
+                    .graph_store
+                    .find_node_by_string_property("Section", "title", &ext.section_title)
+                    .await
+                {
+                    let _ = self
+                        .graph_store
+                        .create_edge(
+                            node_id,
+                            section_node,
+                            da_domain::relation::structure::FOUND_IN,
+                        )
+                        .await;
+                    found_in_edges += 1;
+                }
+            }
             node_ids.push(node_id);
             entity_types.push(ext.entity_type.as_str().to_string());
         }
@@ -198,6 +223,7 @@ impl ExtractionUseCase {
             paper_id = %parsed.paper_id,
             entities = extracted.len(),
             mentions_edges,
+            found_in_edges,
             embeddings_written,
             paper_linked = paper_node_id.is_some(),
             "Extraction complete"
@@ -208,6 +234,8 @@ impl ExtractionUseCase {
             entities_extracted: extracted.len(),
             entity_types,
             graph_node_ids: node_ids,
+            mentions_edges,
+            found_in_edges,
         })
     }
 }
