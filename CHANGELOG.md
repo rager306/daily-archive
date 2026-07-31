@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Pipeline: ConceptCluster materialization (MEM482) (2026-07-29)
+
+- **ClusterUseCase created.** `da-application/src/cluster.rs` — bridge between
+  domain `detect_clusters()` (pure function) and graph store.
+  - `materialize_clusters()` takes EntityPapers mapping, detects clusters,
+    writes ConceptCluster nodes + MEMBER_OF_CLUSTER edges to graph.
+  - D127 compliant: import_eligible=false on all ConceptCluster nodes.
+  - Hexagonal: entity lookup via get_nodes_by_label + get_node_property_string
+    (no Cypher in application layer).
+- **Shared test mock.** `tests/common/mock_graph_store.rs` — reusable
+  MockGraphStore for all integration tests (implements both GraphStore +
+  DirectGraphStore). Eliminates boilerplate duplication.
+- **4 TDD tests:** cluster creation, MEMBER_OF_CLUSTER edge, no-clusters-for-low-mentions,
+  correct label.
+- **Pipeline gap closed (MEM482):** detect_clusters() was never called from
+  application. Now ConceptCluster materialization is wired.
+
 ### Pipeline: FOUND_IN edge wiring (Entity → Section) (2026-07-29)
 
 - **FOUND_IN edge creation in extraction pipeline.** When Entity has

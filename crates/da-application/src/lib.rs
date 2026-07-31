@@ -17,3 +17,5 @@ pub mod enrich;
 pub use enrich::{EnrichResult, EnrichUseCase};
 pub mod scheduler;
 pub use scheduler::GraphScheduler;
+pub mod cluster;
+pub use cluster::{ClusterResult, ClusterUseCase};
