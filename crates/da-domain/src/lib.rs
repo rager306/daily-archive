@@ -50,4 +50,4 @@ pub use schema::{
 pub use source::{
     SourceSchema, is_known_source_code, is_known_source_profile, is_known_source_type,
 };
-pub use vid::{Vid, entity_vid, paper_vid};
+pub use vid::{Vid, entity_vid, paper_vid, reference_vid};

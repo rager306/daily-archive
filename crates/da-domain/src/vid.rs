@@ -65,4 +65,28 @@ mod tests {
             entity_vid("Model", "Transformer")
         );
     }
+
+    #[test]
+    fn test_reference_vid_deterministic() {
+        let vid1 = reference_vid("Smith et al. (2023). Deep Learning.");
+        let vid2 = reference_vid("Smith et al. (2023). Deep Learning.");
+        assert_eq!(vid1, vid2, "same raw_text must produce same VID");
+    }
+
+    #[test]
+    fn test_reference_vid_different_text() {
+        let vid1 = reference_vid("Paper A");
+        let vid2 = reference_vid("Paper B");
+        assert_ne!(vid1, vid2);
+    }
+}
+
+/// Compute a Reference VID from raw citation text.
+/// Uses SHA256 of normalized raw_text for idempotent dedup.
+pub fn reference_vid(raw_text: &str) -> Vid {
+    let canonical = raw_text.trim().to_lowercase();
+    let mut hasher = Sha256::new();
+    hasher.update(b"reference:");
+    hasher.update(canonical.as_bytes());
+    hex::encode(hasher.finalize())
 }

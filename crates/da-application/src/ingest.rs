@@ -28,7 +28,8 @@ pub struct IngestResult {
     pub body_chars: usize,
     pub section_count: usize,
     pub citation_count: usize,
-    pub cites_resolved: usize, // citations with a resolvable arxiv_id
+    pub references_written: usize, // all citations as Reference nodes
+    pub cites_resolved: usize,     // citations with a resolvable arxiv_id
     pub vector_dimensions: usize,
     pub graph_node_id: Option<u64>,
     pub import_eligible: bool, // always false (D127)
@@ -271,8 +272,56 @@ impl IngestUseCase {
         // (enables citation graph traversal — ADR-038 S_kn tri-source)
         // Idempotent: reuses existing Citation node if one with same arxiv_id exists.
         let mut cites_resolved = 0usize;
+        let mut references_written = 0usize;
         let now_ts = chrono::Utc::now().timestamp();
         for citation in &parsed.citations {
+            // Create Reference node for ALL citations (full bibliography).
+            // Reference stores raw_text + metadata, even for unresolved citations.
+            // Citation node is created separately for resolvable arxiv_ids.
+            {
+                let ref_vid = da_domain::vid::reference_vid(&citation.raw_text);
+                let ref_node = self.graph_store.create_node("Reference").await?;
+                self.graph_store
+                    .set_node_property_string(ref_node, "vid", ref_vid)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(ref_node, "raw_text", citation.raw_text.clone())
+                    .await?;
+                if let Some(ref arxiv_id) = citation.arxiv_id {
+                    self.graph_store
+                        .set_node_property_string(ref_node, "arxiv_id", arxiv_id.clone())
+                        .await?;
+                }
+                if let Some(ref title) = citation.title {
+                    self.graph_store
+                        .set_node_property_string(ref_node, "title", title.clone())
+                        .await?;
+                }
+                if let Some(ref doi) = citation.doi {
+                    self.graph_store
+                        .set_node_property_string(ref_node, "doi", doi.clone())
+                        .await?;
+                }
+                self.graph_store
+                    .set_node_property_int(ref_node, "valid_from", now_ts)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(ref_node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(ref_node, "import_eligible", false) // D127
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(ref_node, "schema_version", 1)
+                    .await?;
+                // Link Paper → Reference via hasPart edge (FaBiO)
+                let _ = self
+                    .graph_store
+                    .create_edge(node_id, ref_node, da_domain::relation::structure::HAS_PART)
+                    .await;
+                references_written += 1;
+            }
+
             if let Some(ref arxiv_id) = citation.arxiv_id {
                 let cited_vid = vid::paper_vid(arxiv_id);
                 // Check if Citation node already exists (idempotent)
@@ -344,6 +393,7 @@ impl IngestUseCase {
             body_chars: parsed.body_text.len(),
             section_count,
             citation_count,
+            references_written,
             cites_resolved,
             vector_dimensions: vector.len(),
             graph_node_id: Some(node_id),
