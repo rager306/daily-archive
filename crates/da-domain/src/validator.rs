@@ -633,3 +633,205 @@ mod tests {
         }
     }
 }
+
+// ─── Cross-reference field registry (ADR-045 Wave F foundation) ───────
+//
+// Declares which node fields carry a VID reference to another node.
+// The runtime cross-reference validator (Wave F runtime, future work)
+// walks this registry to confirm that every listed (source_node,
+// reference_field) pair points to a node that actually exists in the
+// graph. Without this registry the validator would have to assume any
+// `*_id` field is a reference, which is unsafe (some `_id` fields are
+// opaque external identifiers, not graph VIDs).
+//
+
+/// One row of the cross-reference field registry.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CrossReferenceField {
+    /// Node label that carries the reference.
+    pub source_label: &'static str,
+    /// Field name on the source node whose value is a VID reference.
+    pub field: &'static str,
+    /// Label of the node the reference is expected to point to.
+    pub target_label: &'static str,
+    /// Whether the reference is required (non-empty) or optional.
+    pub required: bool,
+}
+
+/// The cross-reference field registry. Add rows here when wiring a new
+/// process-plane node that links to another node via a *_id field.
+///
+/// Convention: only list fields whose value is a graph VID (not an
+/// external opaque id like `openalex_id` or `arxiv_id`). External ids
+/// are resolved through their own lookup paths and are not part of the
+/// graph's reference integrity contract.
+pub fn cross_reference_fields() -> Vec<CrossReferenceField> {
+    vec![
+        // ResearchProblem.parent_problem_id → ResearchProblem
+        CrossReferenceField {
+            source_label: "ResearchProblem",
+            field: "parent_problem_id",
+            target_label: "ResearchProblem",
+            required: false,
+        },
+        // ResearchProblem.evidence_bundle_id → EvidenceBundle
+        CrossReferenceField {
+            source_label: "ResearchProblem",
+            field: "evidence_bundle_id",
+            target_label: "EvidenceBundle",
+            required: false,
+        },
+        // Claim.source_span_id → EvidenceBundle (grounding)
+        CrossReferenceField {
+            source_label: "Claim",
+            field: "source_span_id",
+            target_label: "EvidenceBundle",
+            required: false,
+        },
+        // ResearchEnvironment.research_problem_id → ResearchProblem
+        CrossReferenceField {
+            source_label: "ResearchEnvironment",
+            field: "research_problem_id",
+            target_label: "ResearchProblem",
+            required: true,
+        },
+        // MetricObservation.metric_definition_id → MetricDefinition
+        CrossReferenceField {
+            source_label: "MetricObservation",
+            field: "metric_definition_id",
+            target_label: "MetricDefinition",
+            required: true,
+        },
+        // MetricObservation.run_id → ExperimentRun (or pseudo-run for literature-only)
+        CrossReferenceField {
+            source_label: "MetricObservation",
+            field: "run_id",
+            target_label: "ExperimentRun",
+            required: true,
+        },
+        // ResultComparison.candidate_observation_id → MetricObservation
+        CrossReferenceField {
+            source_label: "ResultComparison",
+            field: "candidate_observation_id",
+            target_label: "MetricObservation",
+            required: true,
+        },
+        // ResultComparison.baseline_observation_id → MetricObservation
+        CrossReferenceField {
+            source_label: "ResultComparison",
+            field: "baseline_observation_id",
+            target_label: "MetricObservation",
+            required: true,
+        },
+        // ResultComparison.environment_id → ResearchEnvironment
+        CrossReferenceField {
+            source_label: "ResultComparison",
+            field: "environment_id",
+            target_label: "ResearchEnvironment",
+            required: true,
+        },
+    ]
+}
+
+#[cfg(test)]
+mod cross_ref_tests {
+    use super::*;
+
+    /// Every (source_label, target_label) pair in the cross-reference
+    /// registry must be a registered node label. Catches typos.
+    #[test]
+    fn test_cross_ref_labels_are_registered() {
+        let registered: std::collections::HashSet<String> = crate::schema::all_node_schemas()
+            .into_iter()
+            .map(|s| s.label().to_string())
+            .collect();
+        for cr in cross_reference_fields() {
+            assert!(
+                registered.contains(cr.source_label),
+                "source label '{}' on field '{}' is not a registered node type",
+                cr.source_label,
+                cr.field
+            );
+            assert!(
+                registered.contains(cr.target_label),
+                "target label '{}' on field '{}' is not a registered node type",
+                cr.target_label,
+                cr.field
+            );
+        }
+    }
+
+    /// The same (source_label, field) pair cannot appear twice with
+    /// contradictory target_label or required.
+    #[test]
+    fn test_no_contradictory_cross_ref_rows() {
+        let rows = cross_reference_fields();
+        for (i, a) in rows.iter().enumerate() {
+            for b in rows.iter().skip(i + 1) {
+                if a.source_label == b.source_label && a.field == b.field {
+                    assert_eq!(
+                        (a.target_label, a.required),
+                        (b.target_label, b.required),
+                        "field '{}.{}' has contradictory rows:\n  {:?}\n  {:?}",
+                        a.source_label,
+                        a.field,
+                        a,
+                        b
+                    );
+                }
+            }
+        }
+    }
+
+    /// Every declared cross-reference field must actually be a declared
+    /// field on the source node's schema (required OR optional).
+    #[test]
+    fn test_cross_ref_fields_exist_on_source_schema() {
+        for cr in cross_reference_fields() {
+            let schema = crate::schema::schema_for_label(cr.source_label)
+                .expect("source schema must exist (test_cross_ref_labels_are_registered guards this)");
+            let known: std::collections::HashSet<&str> = schema
+                .required_fields()
+                .iter()
+                .map(|(n, _)| *n)
+                .chain(schema.optional_fields().iter().map(|(n, _)| *n))
+                .collect();
+            assert!(
+                known.contains(cr.field),
+                "field '{}.{}' is not declared on the {} schema (required or optional)",
+                cr.source_label,
+                cr.field,
+                cr.source_label
+            );
+        }
+    }
+
+    /// Required cross-reference fields must be listed as required on
+    /// the source schema. Optional cross-reference fields must be
+    /// listed as optional. Catches drift between the two declarations.
+    #[test]
+    fn test_cross_ref_required_matches_schema() {
+        for cr in cross_reference_fields() {
+            let schema = crate::schema::schema_for_label(cr.source_label).unwrap();
+            let req: Vec<&str> = schema.required_fields().iter().map(|(n, _)| *n).collect();
+            let opt: Vec<&str> = schema.optional_fields().iter().map(|(n, _)| *n).collect();
+            if cr.required {
+                assert!(
+                    req.contains(&cr.field),
+                    "field '{}.{}' is declared required in cross_reference_fields() but not in {}Schema::required_fields()",
+                    cr.source_label,
+                    cr.field,
+                    cr.source_label
+                );
+            } else {
+                assert!(
+                    opt.contains(&cr.field),
+                    "field '{}.{}' is declared optional in cross_reference_fields() but not in {}Schema::optional_fields()",
+                    cr.source_label,
+                    cr.field,
+                    cr.source_label
+                );
+            }
+        }
+    }
+}
