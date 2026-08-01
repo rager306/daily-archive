@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Zero undeclared fields + Wave D integration across 4 test files (2026-07-24)
+
+Two waves closing the schema-pipeline drift gap end-to-end.
+
+#### All pipeline-set fields now declared on schemas
+
+Automated audit compared fields set via set_node_property_* in the
+pipeline against fields declared in each schema. Found and fixed:
+- 7 schemas with undeclared pipeline-set fields (Topic, Author,
+  Institution, Category, Reference, Source, MetricObservation)
+- 11 schemas with missing invariant field declarations (prior commit)
+- Entity schema: +deprecated_reason, +last_healed_at (healing writes)
+
+Result: 0 undeclared pipeline-set fields remaining. All node writes
+pass the validator's unknown-field check cleanly. The audit script is
+reproducible — re-run after any pipeline change.
+
+#### Wave D integration: 14 assert_graph_conforms call sites
+
+- cluster_test: 1 site (was 0)
+- enrich_test: 1 site (was 0)
+- healing_test: 1 site (was 0)
+- batch_ingest_test: 1 site (prior session)
+- extraction_test: 5 sites (prior session)
+
+Each new call site required fixing fixture incompleteness in inline
+node creation helpers (Entity/Paper/Section fixtures were missing
+required fields + invariants). The pattern: assert_graph_conforms
+surfaces 2-3 fixture bugs per node type the first time it is wired.
+
 ### Wave D integration: 11 schemas fixed + assert_graph_conforms wired (2026-07-24)
 
 First end-to-end runtime validator wiring in integration tests.
