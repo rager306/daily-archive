@@ -10,6 +10,7 @@
 pub mod article;
 pub mod cluster;
 pub mod domain;
+pub mod edge_contract;
 pub mod entity;
 pub mod eval;
 pub mod evidence;
