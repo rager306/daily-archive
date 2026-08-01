@@ -12,8 +12,8 @@ use da_ports::graph_store::{
     VectorSearchResult,
 };
 use da_ports::openalex::{
-    OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexError, OpenAlexResult, OpenAlexTopic,
-    OpenAlexWork,
+    OpenAlexAuthor, OpenAlexAuthorship, OpenAlexClient, OpenAlexConcept, OpenAlexError,
+    OpenAlexInstitution, OpenAlexResult, OpenAlexTopic, OpenAlexWork,
 };
 
 // ---------- Mock OpenAlex Client ----------
@@ -75,6 +75,29 @@ fn make_mock_work() -> OpenAlexWork {
             },
         ],
         institutions: vec![],
+        authorships: vec![
+            OpenAlexAuthorship {
+                author: OpenAlexAuthor {
+                    id: "https://openalex.org/A1".to_string(),
+                    display_name: "Alice Smith".to_string(),
+                    orcid: Some("https://orcid.org/0000-0001-2345-6789".to_string()),
+                },
+                institutions: vec![OpenAlexInstitution {
+                    id: "https://openalex.org/I1".to_string(),
+                    display_name: "MIT".to_string(),
+                    country_code: Some("US".to_string()),
+                    ror: None,
+                }],
+            },
+            OpenAlexAuthorship {
+                author: OpenAlexAuthor {
+                    id: "https://openalex.org/A2".to_string(),
+                    display_name: "Bob Jones".to_string(),
+                    orcid: None,
+                },
+                institutions: vec![],
+            },
+        ],
         referenced_works: vec![],
     }
 }
@@ -259,8 +282,31 @@ async fn test_enrich_writes_topics_and_authors() {
     assert_eq!(result.title, "Test Paper Title");
     assert_eq!(result.topics_written, 2); // primary + 1 from topics array
     assert_eq!(result.authors_written, 2);
+    assert_eq!(result.institutions_written, 1, "expected 1 Institution (MIT)");
+    assert_eq!(
+        result.affiliation_edges_written, 1,
+        "expected 1 AFFILIATED_WITH edge (Alice → MIT)"
+    );
     assert_eq!(result.cited_by_count, 5);
     assert!(result.doi.is_some());
+}
+
+#[tokio::test]
+async fn test_enrich_links_author_to_institution_via_affiliated_with_edge() {
+    // Verify the edge is materialized when authorship has an institution.
+    // The mock has Alice → MIT in authorships.
+    let work = make_mock_work();
+    let openalex = Box::new(MockOpenAlex { work: Some(work) });
+    let store = make_store();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+
+    let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+
+    assert!(
+        result.affiliation_edges_written >= 1,
+        "AFFILIATED_WITH edge not created; got {}",
+        result.affiliation_edges_written
+    );
 }
 
 #[tokio::test]

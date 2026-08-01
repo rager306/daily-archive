@@ -144,6 +144,13 @@ pub mod bibliographic {
     /// Paper A and paper B share an author.
     pub const CO_AUTHORED: &str = "CO_AUTHORED";
 
+    /// Author is affiliated with an Institution (from OpenAlex authorship data).
+    /// Links Author nodes to Institution nodes, preserving the per-authorship
+    /// association that OpenAlex provides. Stored as a distinct edge type so
+    /// "paper's authors" and "paper's institutions" stay separable from
+    /// "author → employer" links.
+    pub const AFFILIATED_WITH: &str = "AFFILIATED_WITH";
+
     /// Paper mentions an entity (extracted from paper text).
     /// Links Paper nodes to Entity nodes extracted from their sections.
     pub const MENTIONS: &str = "MENTIONS";
@@ -347,6 +354,7 @@ mod tests {
             bibliographic::CITES,
             bibliographic::CITED_BY,
             bibliographic::CO_AUTHORED,
+            bibliographic::AFFILIATED_WITH,
             bibliographic::MENTIONS,
             bibliographic::SUPERSEDES,
             bibliographic::SPLITS,

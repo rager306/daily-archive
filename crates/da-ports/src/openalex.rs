@@ -47,6 +47,17 @@ pub struct OpenAlexInstitution {
     pub ror: Option<String>,
 }
 
+/// One OpenAlex authorship row — preserves the author↔institution association
+/// that OpenAlex provides per authorship. Use this for wiring
+/// Author → Institution edges. The flat `authors` and `institutions`
+/// fields on OpenAlexWork are kept for backward compatibility but lose
+/// this association.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenAlexAuthorship {
+    pub author: OpenAlexAuthor,
+    pub institutions: Vec<OpenAlexInstitution>,
+}
+
 /// A concept from OpenAlex (deprecated, but kept for historical audit).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenAlexConcept {
@@ -69,6 +80,9 @@ pub struct OpenAlexWork {
     pub concepts: Vec<OpenAlexConcept>,
     pub authors: Vec<OpenAlexAuthor>,
     pub institutions: Vec<OpenAlexInstitution>,
+    /// Per-authorship rows preserving the author↔institution association.
+    /// Source of truth for wiring Author → Institution edges.
+    pub authorships: Vec<OpenAlexAuthorship>,
     pub referenced_works: Vec<String>,
 }
 

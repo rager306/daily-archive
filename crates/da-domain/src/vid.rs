@@ -90,3 +90,17 @@ pub fn reference_vid(raw_text: &str) -> Vid {
     hasher.update(canonical.as_bytes());
     hex::encode(hasher.finalize())
 }
+
+/// Compute an Institution VID from (display_name, openalex_id).
+/// Uses both fields so two institutions with the same name from
+/// different OpenAlex records get distinct VIDs.
+pub fn institution_vid(display_name: &str, openalex_id: &str) -> Vid {
+    let canonical_name = display_name.trim().to_lowercase();
+    let canonical_id = openalex_id.trim();
+    let mut hasher = Sha256::new();
+    hasher.update(b"institution:");
+    hasher.update(canonical_name.as_bytes());
+    hasher.update(b"|");
+    hasher.update(canonical_id.as_bytes());
+    hex::encode(hasher.finalize())
+}

@@ -22,6 +22,7 @@ pub struct EnrichResult {
     pub authors_written: usize,
     pub concepts_written: usize,
     pub institutions_written: usize,
+    pub affiliation_edges_written: usize,
     pub doi: Option<String>,
     pub cited_by_count: u32,
     pub openalex_id: String,
@@ -195,53 +196,80 @@ impl EnrichUseCase {
             authors_written += 1;
         }
 
-        // Institutions (from OpenAlex authorship data)
+        // Institutions — materialized from per-authorship rows so the
+        // Author → Institution edge (AFFILIATED_WITH) is preserved.
+        // The earlier flat-`work.institutions` path dropped this association.
         let mut institutions_written = 0usize;
-        for institution in &work.institutions {
-            // Idempotent: check if Institution already exists
-            // NOTE: We create the Institution node but do not yet link it to Author
-            // (no AFFILIATED_WITH edge type defined yet — ADR-043 Wave 2).
-            let _inst_node = match self
+        let mut affiliation_edges_written = 0usize;
+        for authorship in &work.authorships {
+            // Find the Author node for this authorship (created above).
+            let author_vid = vid::author_vid(&authorship.author.display_name);
+            let author_node = self
                 .graph_store
-                .find_node_by_string_property("Institution", "openalex_id", &institution.id)
-                .await
-            {
-                Some(existing) => existing,
-                None => {
-                    let node = self.graph_store.create_node("Institution").await?;
-                    let inst_vid = vid::author_vid(&institution.display_name); // reuse VID pattern
-                    self.graph_store
-                        .set_node_property_string(node, "vid", inst_vid)
-                        .await?;
-                    self.graph_store
-                        .set_node_property_string(node, "name", institution.display_name.clone())
-                        .await?;
-                    self.graph_store
-                        .set_node_property_string(node, "openalex_id", institution.id.clone())
-                        .await?;
-                    if let Some(ref country) = institution.country_code {
+                .find_node_by_string_property("Author", "vid", &author_vid)
+                .await;
+
+            for institution in &authorship.institutions {
+                // Idempotent: check if Institution already exists by openalex_id.
+                let inst_node = match self
+                    .graph_store
+                    .find_node_by_string_property("Institution", "openalex_id", &institution.id)
+                    .await
+                {
+                    Some(existing) => existing,
+                    None => {
+                        let node = self.graph_store.create_node("Institution").await?;
+                        // Institution VID derived from display_name + openalex_id
+                        // (avoids collision with Author VID on the same name).
+                        let inst_vid = vid::institution_vid(
+                            &institution.display_name,
+                            &institution.id,
+                        );
                         self.graph_store
-                            .set_node_property_string(node, "country", country.clone())
+                            .set_node_property_string(node, "vid", inst_vid)
                             .await?;
-                    }
-                    if let Some(ref ror) = institution.ror {
                         self.graph_store
-                            .set_node_property_string(node, "ror", ror.clone())
+                            .set_node_property_string(node, "name", institution.display_name.clone())
                             .await?;
+                        self.graph_store
+                            .set_node_property_string(node, "openalex_id", institution.id.clone())
+                            .await?;
+                        if let Some(ref country) = institution.country_code {
+                            self.graph_store
+                                .set_node_property_string(node, "country", country.clone())
+                                .await?;
+                        }
+                        if let Some(ref ror) = institution.ror {
+                            self.graph_store
+                                .set_node_property_string(node, "ror", ror.clone())
+                                .await?;
+                        }
+                        self.graph_store
+                            .set_node_property_bool(node, "retrieval_eligible", true)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "import_eligible", false) // D127
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "schema_version", 1)
+                            .await?;
+                        institutions_written += 1;
+                        node
                     }
-                    self.graph_store
-                        .set_node_property_bool(node, "retrieval_eligible", true)
-                        .await?;
-                    self.graph_store
-                        .set_node_property_bool(node, "import_eligible", false) // D127
-                        .await?;
-                    self.graph_store
-                        .set_node_property_int(node, "schema_version", 1)
-                        .await?;
-                    node
+                };
+                // Wire Author → Institution (AFFILIATED_WITH) if we resolved the Author.
+                if let Some(author_id) = author_node {
+                    let _ = self
+                        .graph_store
+                        .create_edge(
+                            author_id,
+                            inst_node,
+                            da_domain::relation::bibliographic::AFFILIATED_WITH,
+                        )
+                        .await;
+                    affiliation_edges_written += 1;
                 }
-            };
-            institutions_written += 1;
+            }
         }
 
         // Concepts (deprecated but kept for audit, retrieval_eligible=false)
@@ -264,6 +292,7 @@ impl EnrichUseCase {
             authors_written,
             concepts_written,
             institutions_written,
+            affiliation_edges_written,
             doi: work.doi,
             cited_by_count: work.cited_by_count,
             openalex_id: work.id,
@@ -324,6 +353,7 @@ impl EnrichUseCase {
             authors_written: 0,
             concepts_written: 0,
             institutions_written: 0,
+            affiliation_edges_written: 0,
             doi: None,
             cited_by_count: 0,
             openalex_id: String::new(),

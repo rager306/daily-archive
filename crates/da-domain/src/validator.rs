@@ -297,6 +297,7 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
         crate::relation::bibliographic::CITES,
         crate::relation::bibliographic::CITED_BY,
         crate::relation::bibliographic::CO_AUTHORED,
+        crate::relation::bibliographic::AFFILIATED_WITH,
         crate::relation::bibliographic::MENTIONS,
         crate::relation::bibliographic::SUPERSEDES,
         crate::relation::bibliographic::SPLITS,

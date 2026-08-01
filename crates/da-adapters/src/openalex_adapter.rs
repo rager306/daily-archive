@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 use da_ports::openalex::{
-    OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexError, OpenAlexInstitution,
-    OpenAlexResult, OpenAlexTopic, OpenAlexWork,
+    OpenAlexAuthor, OpenAlexAuthorship, OpenAlexClient, OpenAlexConcept, OpenAlexError,
+    OpenAlexInstitution, OpenAlexResult, OpenAlexTopic, OpenAlexWork,
 };
 use serde::Deserialize;
 
@@ -111,26 +111,34 @@ fn parse_topic(t: TopicResponse) -> OpenAlexTopic {
 }
 
 fn parse_work(w: WorkResponse) -> OpenAlexWork {
-    let authorships = w.authorships.unwrap_or_default();
-    let authors: Vec<_> = authorships
+    let authorships_raw = w.authorships.unwrap_or_default();
+    // Build per-authorship rows preserving author↔institution association.
+    let authorships: Vec<_> = authorships_raw
         .iter()
-        .map(|a| OpenAlexAuthor {
-            id: a.author.id.clone().unwrap_or_default(),
-            display_name: a.author.display_name.clone(),
-            orcid: a.author.orcid.clone(),
+        .map(|a| OpenAlexAuthorship {
+            author: OpenAlexAuthor {
+                id: a.author.id.clone().unwrap_or_default(),
+                display_name: a.author.display_name.clone(),
+                orcid: a.author.orcid.clone(),
+            },
+            institutions: a
+                .institutions
+                .iter()
+                .map(|inst| OpenAlexInstitution {
+                    id: inst.id.clone().unwrap_or_default(),
+                    display_name: inst.display_name.clone(),
+                    country_code: inst.country_code.clone(),
+                    ror: inst.ror.clone(),
+                })
+                .collect(),
         })
         .collect();
-    let institutions: Vec<_> = authorships
+    // Backward-compatible flat views derived from authorships.
+    let authors = authorships.iter().map(|a| a.author.clone()).collect::<Vec<_>>();
+    let institutions = authorships
         .iter()
-        .flat_map(|a| {
-            a.institutions.iter().map(|inst| OpenAlexInstitution {
-                id: inst.id.clone().unwrap_or_default(),
-                display_name: inst.display_name.clone(),
-                country_code: inst.country_code.clone(),
-                ror: inst.ror.clone(),
-            })
-        })
-        .collect();
+        .flat_map(|a| a.institutions.iter().cloned())
+        .collect::<Vec<_>>();
     OpenAlexWork {
         id: w.id,
         title: w.title,
@@ -157,6 +165,7 @@ fn parse_work(w: WorkResponse) -> OpenAlexWork {
             .collect(),
         authors,
         institutions,
+        authorships,
         referenced_works: w.referenced_works.unwrap_or_default(),
     }
 }
