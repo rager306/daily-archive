@@ -154,3 +154,58 @@ fn test_cross_refs_command_outputs_table() {
         );
     }
 }
+
+#[test]
+fn test_validate_node_accepts_valid_snapshot() {
+    use std::io::Write;
+    let bin = env!("CARGO_BIN_EXE_da");
+    let valid = r#"{"vid":"vid:paper:1","arxiv_id":"1","title":"T","valid_from":1,"import_eligible":false,"retrieval_eligible":true,"schema_version":1}"#;
+    let mut child = std::process::Command::new(bin)
+        .args(["validate-node", "--label", "Paper"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    {
+        let stdin = child.stdin.as_mut().expect("opened stdin");
+        stdin.write_all(valid.as_bytes()).expect("write");
+    }
+    let output = child.wait_with_output().expect("wait");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "validate-node failed on valid input\nstdout:\n{stdout}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        stdout.contains("validates cleanly"),
+        "expected success marker, got: {stdout}"
+    );
+}
+
+#[test]
+fn test_validate_node_rejects_invalid_snapshot() {
+    use std::io::Write;
+    let bin = env!("CARGO_BIN_EXE_da");
+    let invalid = r#"{"vid":"x","arxiv_id":"1"}"#; // missing required fields + invariants
+    let mut child = std::process::Command::new(bin)
+        .args(["validate-node", "--label", "Paper"])
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("spawn");
+    {
+        let stdin = child.stdin.as_mut().expect("opened stdin");
+        stdin.write_all(invalid.as_bytes()).expect("write");
+    }
+    let output = child.wait_with_output().expect("wait");
+    assert!(
+        !output.status.success(),
+        "expected non-zero exit on invalid snapshot"
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("CRITICAL"), "expected CRITICAL in output: {stdout}");
+    assert!(stdout.contains("required-field"), "expected required-field rule: {stdout}");
+}

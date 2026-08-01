@@ -150,6 +150,14 @@ enum Commands {
 
     /// Print the cross-reference registry as a markdown table.
     CrossRefs,
+
+    /// Validate a single node property snapshot (JSON on stdin).
+    /// Example: echo '{"vid":"x","arxiv_id":"y",...}' | da validate-node Paper
+    ValidateNode {
+        /// Node label
+        #[arg(long)]
+        label: String,
+    },
 }
 
 fn main() {
@@ -266,6 +274,9 @@ fn main() {
         Commands::CrossRefs => {
             println!("# Cross-reference registry (ADR-045 Wave F)\n");
             print!("{}", da_domain::validator::render_cross_references_table());
+        }
+        Commands::ValidateNode { label } => {
+            validate_node_stdin(label);
         }
     }
 }
@@ -1021,6 +1032,43 @@ fn schema_check() {
         println!();
         println!("Fix: add a Schema struct for each missing label and register it");
         println!("in da_domain::schema::all_node_schemas().");
+        std::process::exit(1);
+    }
+}
+
+/// Validate a single node property snapshot read from stdin.
+/// Exits with code 1 if the snapshot has any Critical violations.
+/// Output is human-readable; pair with `jq` or `cat` for pipelines.
+fn validate_node_stdin(label: String) {
+    use std::io::Read;
+    let mut input = String::new();
+    if std::io::stdin().read_to_string(&mut input).is_err() {
+        eprintln!("validate-node: failed to read stdin");
+        std::process::exit(2);
+    }
+    let props: da_domain::validator::PropertySnapshot = match serde_json::from_str(&input) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("validate-node: invalid JSON on stdin: {e}");
+            std::process::exit(2);
+        }
+    };
+    let violations = da_domain::validator::validate_node_properties(&label, &props);
+    if violations.is_empty() {
+        println!("✅ node `{}` validates cleanly", label);
+        return;
+    }
+    let criticals: Vec<_> = violations
+        .iter()
+        .filter(|v| v.severity == da_domain::validator::Severity::Critical)
+        .collect();
+    println!(
+        "❌ {} violation(s) ({} critical)",
+        violations.len(),
+        criticals.len()
+    );
+    print!("{}", da_domain::validator::format_violations(&violations));
+    if !criticals.is_empty() {
         std::process::exit(1);
     }
 }
