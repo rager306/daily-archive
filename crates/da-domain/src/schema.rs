@@ -255,3 +255,40 @@ mod tests {
         assert!(schema.validate(&props).is_err());
     }
 }
+
+/// Render all registered node schemas as a markdown table for documentation.
+/// Use in `da schema-list` CLI command to emit always-fresh content for
+/// GRAPH-SCHEMA.md. Columns: label, required fields, optional field count,
+/// and whether the schema is materialized in the pipeline (per the known
+/// materialization list maintained here).
+pub fn render_node_types_table() -> String {
+    // Materialized labels — keep in sync with crates/da-application/src
+    // create_node call sites. Verified by da schema-check CLI.
+    let materialized: &[&str] = &[
+        "Author", "Category", "Citation", "Claim", "ConceptCluster", "Entity",
+        "EvidenceBundle", "Institution", "MetricObservation", "Paper",
+        "Reference", "ResearchProblem", "SchedulerTask", "Section", "Source",
+        "Topic",
+    ];
+
+    let mut schemas = all_node_schemas();
+    schemas.sort_by_key(|s| s.label());
+
+    let mut s = String::new();
+    s.push_str("| Label | Required fields | Optional fields | Materialized? |\n");
+    s.push_str("|-------|-----------------|-----------------|---------------|\n");
+    for schema in &schemas {
+        let label = schema.label();
+        let req: Vec<&str> = schema.required_fields().iter().map(|(n, _)| *n).collect();
+        let opt_count = schema.optional_fields().len();
+        let mat = if materialized.contains(&label) { "✅" } else { "—" };
+        s.push_str(&format!(
+            "| `{}` | {} | {} | {} |\n",
+            label,
+            req.iter().map(|r| format!("`{r}`")).collect::<Vec<_>>().join(", "),
+            opt_count,
+            mat
+        ));
+    }
+    s
+}

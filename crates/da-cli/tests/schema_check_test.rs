@@ -87,3 +87,38 @@ fn test_edge_contracts_command_outputs_table() {
         );
     }
 }
+
+#[test]
+fn test_schema_list_command_outputs_table() {
+    let bin = env!("CARGO_BIN_EXE_da");
+    let output = Command::new(bin)
+        .arg("schema-list")
+        .output()
+        .expect("failed to spawn `da schema-list`");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "schema-list exited non-zero\nstdout:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("| Label | Required fields | Optional fields | Materialized? |"),
+        "expected table header, got:\n{stdout}"
+    );
+    // All 29 registered schemas must appear.
+    for label in [
+        "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
+        "Citation", "Claim", "ConceptCluster", "Concept", "Entity",
+        "EvidenceBundle", "ExperimentRun", "FailureEvent", "Hypothesis",
+        "ImplementationAttempt", "Institution", "Intervention",
+        "InterventionBundle", "MetricDefinition", "MetricObservation",
+        "Paper", "Reference", "ResearchEnvironment", "ResearchIdea",
+        "ResearchProblem", "ResultComparison", "SchedulerTask", "Section",
+        "Source", "Topic",
+    ] {
+        assert!(
+            stdout.contains(&format!("`{label}`")),
+            "schema `{label}` missing from CLI output:\n{stdout}"
+        );
+    }
+}

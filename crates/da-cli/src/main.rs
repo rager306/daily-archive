@@ -144,6 +144,9 @@ enum Commands {
 
     /// Print the edge endpoint contract matrix as a markdown table.
     EdgeContracts,
+
+    /// Print all registered node schemas as a markdown table.
+    SchemaList,
 }
 
 fn main() {
@@ -252,6 +255,10 @@ fn main() {
         Commands::EdgeContracts => {
             println!("# Edge endpoint contracts (ADR-045 Wave G)\n");
             print!("{}", da_domain::edge_contract::render_markdown_table());
+        }
+        Commands::SchemaList => {
+            println!("# Node schemas (ADR-040 §11.1)\n");
+            print!("{}", da_domain::schema::render_node_types_table());
         }
     }
 }
