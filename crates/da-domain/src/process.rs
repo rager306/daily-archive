@@ -511,7 +511,8 @@ impl NodeSchemaDef for MetricObservationSchema {
             ("retrieval_eligible", FieldType::Boolean),
             ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
-        ]
+                    ("document_id", FieldType::String),
+]
     }
 }
 

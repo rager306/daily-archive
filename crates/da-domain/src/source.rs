@@ -35,7 +35,10 @@ impl NodeSchemaDef for SourceSchema {
             ("base_url", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
             ("valid_from", FieldType::DateTime),
-        ]
+                    ("domain_assignment_method", FieldType::String),
+            ("primary_scientific_domain", FieldType::String),
+            ("scientific_domains", FieldType::String),
+]
     }
 }
 

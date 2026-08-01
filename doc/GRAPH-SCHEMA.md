@@ -22,9 +22,9 @@ prose, when adding new node types.
 | Label | Required fields | Optional fields | Materialized? |
 |-------|-----------------|-----------------|---------------|
 | `ArtifactVersion` | `vid`, `content_hash`, `artifact_kind`, `uri`, `immutable` | 8 | — |
-| `Author` | `vid`, `name` | 6 | ✅ |
+| `Author` | `vid`, `name` | 7 | ✅ |
 | `BaselineSnapshot` | `vid`, `artifact_ref_id`, `description`, `baseline_type` | 6 | — |
-| `Category` | `vid`, `code`, `is_primary` | 4 | ✅ |
+| `Category` | `vid`, `code`, `is_primary` | 6 | ✅ |
 | `Citation` | `vid`, `valid_from` | 6 | ✅ |
 | `Claim` | `vid`, `text` | 8 | ✅ |
 | `Concept` | `vid`, `label`, `level`, `retrieval_eligible` | 5 | — |
@@ -35,21 +35,21 @@ prose, when adding new node types.
 | `FailureEvent` | `vid`, `stage`, `class`, `recoverable`, `error_signature` | 8 | — |
 | `Hypothesis` | `vid`, `text`, `environment_id`, `metric_definition_id`, `direction`, `research_idea_id` | 9 | — |
 | `ImplementationAttempt` | `vid`, `research_idea_id`, `attempt_number`, `status` | 7 | — |
-| `Institution` | `vid`, `name` | 6 | ✅ |
+| `Institution` | `vid`, `name` | 7 | ✅ |
 | `Intervention` | `vid`, `target_component`, `change_type`, `change_scope` | 6 | — |
 | `InterventionBundle` | `vid`, `recipe_kind` | 3 | — |
 | `MetricDefinition` | `vid`, `name`, `direction`, `split`, `computation_protocol` | 5 | — |
-| `MetricObservation` | `vid`, `run_id`, `metric_definition_id`, `value` | 6 | ✅ |
+| `MetricObservation` | `vid`, `run_id`, `metric_definition_id`, `value` | 7 | ✅ |
 | `Paper` | `vid`, `arxiv_id`, `title`, `valid_from` | 14 | ✅ |
-| `Reference` | `vid`, `raw_text` | 7 | ✅ |
+| `Reference` | `vid`, `raw_text` | 8 | ✅ |
 | `ResearchEnvironment` | `vid`, `completeness`, `research_problem_id`, `baseline_ref`, `subject_system`, `subject_system_kind`, `environment_template_id`, `evidence_origin` | 17 | — |
 | `ResearchIdea` | `vid`, `text`, `idea_type`, `research_problem_id`, `proposed_at`, `proposed_by`, `status` | 8 | — |
 | `ResearchProblem` | `vid`, `text`, `problem_type` | 10 | ✅ |
 | `ResultComparison` | `vid`, `candidate_observation_id`, `baseline_observation_id`, `environment_id`, `valid` | 9 | — |
 | `SchedulerTask` | `vid`, `arxiv_id`, `task_type`, `status` | 6 | ✅ |
 | `Section` | `vid`, `title`, `level`, `order`, `work_vid` | 6 | ✅ |
-| `Source` | `vid`, `code`, `source_type`, `domain` | 5 | ✅ |
-| `Topic` | `vid`, `label` | 7 | ✅ |
+| `Source` | `vid`, `code`, `source_type`, `domain` | 8 | ✅ |
+| `Topic` | `vid`, `label` | 8 | ✅ |
 
 Legend: ✅ = materialized in pipeline (`create_node("Label")` in da-application/src). — = schema declared, not yet materialized (process plane Wave 2 work).
 ---

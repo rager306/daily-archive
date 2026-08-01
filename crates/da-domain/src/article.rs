@@ -123,6 +123,7 @@ impl NodeSchemaDef for TopicSchema {
             ("retrieval_eligible", FieldType::Boolean),
                     ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
 ]
     }
 }
@@ -157,6 +158,8 @@ impl NodeSchemaDef for CategorySchema {
             ("retrieval_eligible", FieldType::Boolean),
                     ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
+            ("citation_count", FieldType::Integer),
+            ("section_count", FieldType::Integer),
 ]
     }
 }
@@ -190,6 +193,7 @@ impl NodeSchemaDef for AuthorSchema {
             ("retrieval_eligible", FieldType::Boolean),
                     ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
 ]
     }
 }
@@ -223,6 +227,7 @@ impl NodeSchemaDef for InstitutionSchema {
             ("retrieval_eligible", FieldType::Boolean),
                     ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
+            ("openalex_pending", FieldType::Boolean),
 ]
     }
 }
@@ -258,6 +263,7 @@ impl NodeSchemaDef for ReferenceSchema {
                     ("retrieval_eligible", FieldType::Boolean),
             ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
 ]
     }
 }
