@@ -292,3 +292,50 @@ pub fn render_node_types_table() -> String {
     }
     s
 }
+
+#[cfg(test)]
+mod render_tests {
+    use super::render_node_types_table;
+
+    #[test]
+    fn test_render_node_types_table_has_header_and_all_labels() {
+        let table = render_node_types_table();
+        assert!(table.contains("| Label | Required fields | Optional fields | Materialized? |"));
+        // Every registered schema must appear
+        for label in [
+            "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
+            "Citation", "Claim", "ConceptCluster", "Concept", "Entity",
+            "EvidenceBundle", "ExperimentRun", "FailureEvent", "Hypothesis",
+            "ImplementationAttempt", "Institution", "Intervention",
+            "InterventionBundle", "MetricDefinition", "MetricObservation",
+            "Paper", "Reference", "ResearchEnvironment", "ResearchIdea",
+            "ResearchProblem", "ResultComparison", "SchedulerTask", "Section",
+            "Source", "Topic",
+        ] {
+            assert!(
+                table.contains(&format!("`{label}`")),
+                "label `{label}` missing from rendered table:\n{table}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_render_node_types_table_marks_known_materialized() {
+        let table = render_node_types_table();
+        // Paper, Entity, Author are materialized — must show ✅.
+        for line in table.lines() {
+            if line.contains("`Paper`") {
+                assert!(line.contains("✅"), "Paper must be marked materialized: {line}");
+            }
+            if line.contains("`Entity`") {
+                assert!(line.contains("✅"), "Entity must be marked materialized: {line}");
+            }
+            if line.contains("`Hypothesis`") {
+                assert!(
+                    line.contains("—"),
+                    "Hypothesis must NOT be marked materialized: {line}"
+                );
+            }
+        }
+    }
+}
