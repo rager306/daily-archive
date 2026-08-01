@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### Mock consolidation complete + edge-contracts CLI (2026-07-24)
+
+Four waves closing the per-test MockGraphStore duplication debt
+(MEM500 #1) and making the edge contract matrix a first-class CLI
+artifact.
+
+#### Mock consolidation: all four per-test mocks eliminated
+
+- enrich_test.rs: 389 → 220 lines (-169 lines of duplicated mock)
+- extraction_test.rs: 558 → 367 lines (-191 lines)
+- batch_ingest_test.rs: 434 → 215 lines (-219 lines)
+- healing_test.rs: 347 → 179 lines (-168 lines, prior session)
+- Total: ~747 lines of duplicated mock code removed.
+- No private MockGraphStore impls remain in da-application/tests.
+
+Shared MockGraphStore restructured to support this:
+- Arc<MockGraphStoreInner>-backed, Clone-able. Tests hand one clone to
+  a use case (as Box<dyn DirectGraphStore>) and keep another for
+  inspection after the use case runs.
+- +snapshot_data: Mutex<Option<Vec<u8>>> for tests that need a specific
+  export_snapshot payload.
+- +snapshot_call_count() / import_call_count() accessors.
+
+extraction_test migration notes:
+- make_store_with_paper() is now async — the old sync version spawned
+  a nested tokio runtime which panics under tokio-1.53.
+- Tests that previously asserted store.node_count_total() after moving
+  the store into ExtractionUseCase now assert on result.graph_node_ids
+  (the store is consumed; result carries equivalent counts).
+
+#### Edge-contracts CLI command + docs sync
+
+- crates/da-domain/src/edge_contract.rs: +render_markdown_table()
+- crates/da-cli/src/main.rs: +Commands::EdgeContracts → `da edge-contracts`
+  prints the contract matrix as a markdown table
+- doc/GRAPH-SCHEMA.md: added "Edge endpoint contracts" section with
+  the full 13-row table (rendered form of edge_contracts())
+- crates/da-cli/tests/schema_check_test.rs: +test_edge_contracts_command_
+  outputs_table (asserts header + 13 edge rows present)
+- README.md command table: +da edge-contracts
+
 ### Polymorphic edges + runtime edge contract validator (2026-07-24)
 
 Two waves advancing ADR-045 coverage, plus the first per-test mock
