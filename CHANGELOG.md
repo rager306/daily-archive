@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Polymorphic edges + runtime edge contract validator (2026-07-24)
+
+Two waves advancing ADR-045 coverage, plus the first per-test mock
+consolidation.
+
+#### Wave G runtime: edge contract validator on MockGraphStore
+
+- The static edge_contracts() matrix is now enforced at test time.
+  `MockGraphStore::validate_edge_contracts()` walks every recorded
+  edge and checks each (source_label, edge_type, target_label) triple
+  against the contract matrix.
+- Detects: unknown edge types, wrong source label, wrong target label.
+- +EdgeContractViolation struct with Display impl.
+- 3 new tests cover violation detection, valid edge pass, and
+  polymorphic MENTIONS target acceptance.
+
+#### Contract drift closed: polymorphic edges documented
+
+- MENTIONS edge was used in 3 semantically distinct paths (Paper→Entity,
+  Paper→ResearchProblem, Paper→MetricObservation) but the contract row
+  documented only Paper→Entity.
+- HAS_PART was used for both Paper→Section and Paper→Reference but
+  documented only Paper→Section.
+- EdgeContract.target_label (single) → target_labels (slice).
+- +test_polymorphic_edges_document_polymorphism: any edge with >1
+  target must explain why in its rationale.
+
+#### Mock consolidation: healing_test → shared MockGraphStore (MEM500 #1)
+
+- healing_test.rs had a complete private MockGraphStore implementation
+  (~170 lines). Replaced with `mod common; use common::mock_graph_store::
+  MockGraphStore;`.
+- Shared MockGraphStore gains snapshot_calls/import_calls counters and
+  accessors so tests that need call-frequency assertions can migrate.
+- Per-test mocks in batch_ingest_test, enrich_test, extraction_test
+  remain (test-specific helper signatures); migration deferred.
+- healing_test.rs: 347 → 179 lines (-168 lines of duplicated mock).
+
 ### Edge contract matrix + validator helpers (2026-07-24)
 
 Two waves advancing ADR-045 coverage.
