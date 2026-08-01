@@ -5,7 +5,8 @@
 > Runtime edge contract enforcement (Wave G) and cross-reference
 > enforcement (Wave F) are implemented on the shared MockGraphStore;
 > production-store enforcement is future work.
-> Companion commands: `da schema-check`, `da schema-list`, `da edge-contracts`.
+> Companion commands: `da schema-check`, `da schema-list`, `da edge-contracts`,
+> `da cross-refs`, `da validate-node`.
 
 ## Module location
 

@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### cross-refs CLI + validate-node CLI + docs drift hook (2026-07-24)
+
+Three additions completing MEM503 (governor CLI improvements).
+
+#### cross-refs CLI (MEM503 #b completion)
+
+- crates/da-domain/src/validator.rs: +render_cross_references_table()
+- crates/da-cli/src/main.rs: +Commands::CrossRefs → `da cross-refs`
+- crates/da-cli/tests/schema_check_test.rs: +test_cross_refs_command_
+  outputs_table (asserts header + every declared source label appears)
+- doc/GRAPH-SCHEMA.md: added "Cross-reference registry" section with
+  the full 9-row table.
+- README.md command table: +da cross-refs
+
+With this, all three halves of the schema surface (nodes, edges,
+references) now have CLI-rendered, docs-synced tables.
+
+#### validate-node CLI (Wave D CLI side)
+
+- crates/da-cli/src/main.rs: +Commands::ValidateNode → reads JSON on
+  stdin, validates against schema, exits non-zero on Critical.
+- +2 CLI tests covering valid + invalid snapshots.
+- Closes the "validator only runs in tests" gap for ad-hoc validation.
+
+#### docs drift pre-commit hook (MEM503 #c)
+
+- scripts/docs_drift_check.sh: verifies that schema-list, edge-contracts,
+  and cross-refs output markers appear in doc/GRAPH-SCHEMA.md or README.
+  Advisory only (always exits 0).
+- .pre-commit-config.yaml: +docs-drift-check hook.
+
 ### Cross-reference validator (ADR-045 Wave F) (2026-07-24)
 
 Closes the third runtime enforcement gap from ADR-045. The shared
