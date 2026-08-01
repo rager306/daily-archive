@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### schema-list CLI + doc table + pre-commit hook (2026-07-24)
+
+Closes MEM503 #b (node-types table generator) and adds a pre-commit
+hook that runs schema-check so label-registry drift fails the commit,
+not just CI.
+
+#### Wave B: node-types table generator
+
+- crates/da-domain/src/schema.rs: +render_node_types_table()
+  Columns: label, required fields, optional field count, materialized?
+  The materialized list is hardcoded from create_node sites in
+  da-application/src (verified by da schema-check).
+- crates/da-cli/src/main.rs: +Commands::SchemaList → `da schema-list`
+- crates/da-cli/tests/schema_check_test.rs: +test_schema_list_command_
+  outputs_table (asserts header + all 29 registered schemas appear)
+- crates/da-domain/src/schema.rs: +render_tests module with 2 tests
+  for the render_node_types_table function
+- doc/GRAPH-SCHEMA.md: added "Schema registry summary" section with
+  the full 29-row table at the top of the document.
+- README.md command table: +da schema-list
+
+#### Pre-commit hook (MEM503 #c partial)
+
+- .pre-commit-config.yaml: +schema-check hook runs
+  `cargo run -p da-cli -- schema-check` on Rust file changes. Fails the
+  commit if any create_node label is not in the schema registry
+  (ADR-045 enforcement at commit time).
+
 ### Mock consolidation complete + edge-contracts CLI (2026-07-24)
 
 Four waves closing the per-test MockGraphStore duplication debt
