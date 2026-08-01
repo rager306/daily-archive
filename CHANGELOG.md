@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+### validate-graph CLI + type-aware getters (2026-07-24)
+
+Two waves closing the ADR-045 Wave D production-side gap.
+
+#### validate-graph CLI command
+
+- crates/da-cli/src/main.rs: +Commands::ValidateGraph { label } →
+  `da validate-graph [--label X]`
+  Reads SamyamaGraphStore via get_nodes_by_label +
+  get_node_property_string/int/bool/float, builds a PropertySnapshot
+  for each node, runs validate_node_properties. Reports total
+  violations (critical + warning) and shows the first 10 with context.
+  Exits non-zero on Critical violations.
+- +test_validate_graph_command_runs_on_empty_store regression guard.
+- README.md command table: +da validate-graph.
+
+The two complementary CLI commands now cover both sides:
+- audit-fields: static source-code audit (pipeline writes vs schemas)
+- validate-graph: runtime graph audit (actual nodes vs schemas)
+
+#### Port trait: +get_node_property_bool, +get_node_property_float
+
+Closes a port trait gap: DirectGraphStore had string and int getters
+but not bool or float. The validator needs all four to build an
+accurate PropertySnapshot for runtime graph validation.
+
+- crates/da-ports/src/graph_store.rs: default impls via string
+  parsing (so existing adapters automatically work).
+- crates/da-adapters/src/samyama_graph.rs: native impls via
+  PropertyValue::as_boolean() / as_float() for type fidelity.
+- crates/da-application/tests/common/mock_graph_store.rs: native
+  impls read from bool_props / float_props HashMaps.
+- validate-graph now dispatches by schema FieldType — each field is
+  read via the matching getter.
+
+Also fixes a clippy or_insert_with warning in audit-fields.
+
 ### audit-fields CLI + Source schema regression fix (2026-07-24)
 
 MEM508 suggestion realized: the ad-hoc Python audit that found 18
