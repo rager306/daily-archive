@@ -37,6 +37,9 @@ struct MockGraphStore {
     nodes: Arc<AtomicUsize>,
     props: Mutex<std::collections::HashMap<(u64, String), String>>,
     edges: Mutex<Vec<(u64, u64, String)>>, // (source, target, edge_type)
+    // Track node labels for find_node_by_string_property label filtering
+    // (MEM495: real SamyamaGraphStore filters by label; mock must match).
+    labels: Mutex<std::collections::HashMap<u64, String>>,
 }
 
 #[async_trait]
@@ -87,8 +90,10 @@ impl GraphStore for MockGraphStore {
 
 #[async_trait]
 impl DirectGraphStore for MockGraphStore {
-    async fn create_node(&self, _label: &str) -> Result<u64, GraphStoreError> {
-        Ok(self.nodes.fetch_add(1, Ordering::SeqCst) as u64)
+    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
+        let id = self.nodes.fetch_add(1, Ordering::SeqCst) as u64;
+        self.labels.lock().unwrap().insert(id, label.to_string());
+        Ok(id)
     }
     async fn set_node_property_string(
         &self,
@@ -164,14 +169,18 @@ impl DirectGraphStore for MockGraphStore {
     }
     async fn find_node_by_string_property(
         &self,
-        _label: &str,
+        label: &str,
         key: &str,
         value: &str,
     ) -> Option<u64> {
         let props = self.props.lock().unwrap();
+        let labels = self.labels.lock().unwrap();
         for ((node_id, k), v) in props.iter() {
             if k == key && v == value {
-                return Some(*node_id);
+                // Verify node label matches (real SamyamaGraphStore filters by label).
+                if labels.get(node_id).map(|s| s.as_str()) == Some(label) {
+                    return Some(*node_id);
+                }
             }
         }
         None
@@ -214,7 +223,26 @@ fn make_store() -> (Arc<AtomicUsize>, MockGraphStore) {
         nodes: nodes.clone(),
         props: Mutex::new(std::collections::HashMap::new()),
         edges: Mutex::new(Vec::new()),
+        labels: Mutex::new(std::collections::HashMap::new()),
     };
+    (nodes, store)
+}
+
+/// Helper: create a store with a Paper node pre-populated so that
+/// extraction's `find_node_by_string_property("Paper", "arxiv_id", ...)` lookup succeeds.
+fn make_store_with_paper(arxiv_id: &str) -> (Arc<AtomicUsize>, MockGraphStore) {
+    let (nodes, mut store) = make_store();
+    let paper_id = nodes.fetch_add(1, Ordering::SeqCst) as u64;
+    store
+        .labels
+        .lock()
+        .unwrap()
+        .insert(paper_id, "Paper".to_string());
+    store
+        .props
+        .lock()
+        .unwrap()
+        .insert((paper_id, "arxiv_id".to_string()), arxiv_id.to_string());
     (nodes, store)
 }
 
@@ -399,4 +427,126 @@ async fn test_extraction_no_mentions_when_paper_absent() {
     assert_eq!(nodes.load(Ordering::SeqCst), 1); // 1 Entity, no Paper
     let edges = use_case.graph_store.edge_count().await;
     assert_eq!(edges, 0, "no MENTIONS edges when Paper absent");
+}
+
+#[tokio::test]
+async fn test_extraction_creates_research_problem_for_improvement_abstract() {
+    // Abstract containing "we propose" → ResearchProblem(problem_type="improvement")
+    let entities = vec![];
+    let (nodes, store) = make_store_with_paper("2401.00001");
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let mut parsed = make_parsed();
+    parsed.abstract_text = "We propose a novel method for scaling transformers.".to_string();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.problems_created, 1, "expected 1 ResearchProblem");
+    // 1 Paper stub + 1 ResearchProblem (no entities, no sections linked)
+    assert!(nodes.load(Ordering::SeqCst) >= 2);
+}
+
+#[tokio::test]
+async fn test_extraction_creates_research_problem_for_explanation_abstract() {
+    // Abstract containing "we investigate" → ResearchProblem(problem_type="explanation")
+    let entities = vec![];
+    let (nodes, store) = make_store_with_paper("2401.00001");
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let mut parsed = make_parsed();
+    parsed.abstract_text = "We investigate why neural networks generalize.".to_string();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.problems_created, 1);
+}
+
+#[tokio::test]
+async fn test_extraction_no_research_problem_for_neutral_abstract() {
+    // Abstract without trigger phrases → no ResearchProblem
+    let entities = vec![];
+    let (_nodes, store) = make_store();
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let mut parsed = make_parsed();
+    parsed.abstract_text = "This paper discusses results.".to_string();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.problems_created, 0);
+}
+
+#[tokio::test]
+async fn test_extraction_creates_metric_observation_for_metric_with_value() {
+    // Metric entity with "accuracy 0.95" pattern → MetricObservation node
+    let entities = vec![ExtractedEntity {
+        label: "accuracy".to_string(),
+        entity_type: EntityType::Metric,
+        section_title: "Results".to_string(),
+        char_start: 0,
+        char_end: 14,
+        surface: "accuracy 0.95".to_string(),
+    }];
+    let (nodes, store) = make_store_with_paper("2401.00001");
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(
+        result.observations_created, 1,
+        "expected 1 MetricObservation"
+    );
+    assert!(nodes.load(Ordering::SeqCst) >= 2);
+}
+
+#[tokio::test]
+async fn test_extraction_metric_observation_skipped_without_value() {
+    // Metric without nearby number → no MetricObservation
+    let entities = vec![ExtractedEntity {
+        label: "accuracy".to_string(),
+        entity_type: EntityType::Metric,
+        section_title: "Results".to_string(),
+        char_start: 0,
+        char_end: 7,
+        surface: "accuracy reported".to_string(),
+    }];
+    let (_nodes, store) = make_store();
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert_eq!(result.observations_created, 0);
+}
+
+#[tokio::test]
+async fn test_extraction_creates_evidence_bundle_for_co_occurring_entities() {
+    // Two entities from the same section → 1 EvidenceBundle
+    let entities = vec![
+        ExtractedEntity {
+            label: "BERT".to_string(),
+            entity_type: EntityType::Method,
+            section_title: "Method".to_string(),
+            char_start: 0,
+            char_end: 4,
+            surface: "BERT".to_string(),
+        },
+        ExtractedEntity {
+            label: "GLUE".to_string(),
+            entity_type: EntityType::Dataset,
+            section_title: "Method".to_string(),
+            char_start: 10,
+            char_end: 14,
+            surface: "GLUE".to_string(),
+        },
+    ];
+    let (_nodes, store) = make_store_with_paper("2401.00001");
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let parsed = make_parsed();
+
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
+
+    assert!(
+        result.evidence_bundles_created >= 1,
+        "expected >=1 EvidenceBundle, got {}",
+        result.evidence_bundles_created
+    );
 }

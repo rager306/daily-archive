@@ -2,21 +2,25 @@
 
 ## Unreleased
 
-### Schema validator + 3 bug fixes (2026-07-24)
+### Schema validator + 5 bug fixes (2026-07-24)
 
 - **SchemaValidator module** (`crates/da-domain/src/validator.rs`). Pure-logic validator that checks node property snapshots against declared `NodeSchemaDef` and architectural invariants. Returns ALL violations in a single pass with severity levels (Critical/Warning). 15 tests cover all 29 schemas + edge registry. ADR-045.
 - **3 schema violations fixed** (caught by the validator audit):
   - `Category`: missing required `is_primary` — now set to `true` in ingest.
   - `SchedulerTask`: missing required `vid` — now set in scheduler.
   - `MetricObservation`: missing required `run_id` — now set to pseudo `run:paper:{paper_id}` until ExperimentRun is materialized.
+- **2 pipeline logic bugs fixed** (caught by writing missing integration tests):
+  - `ResearchProblem` case-sensitivity: `parsed.abstract_text.contains("we propose")` missed abstracts starting with capital "We propose...". Fix: lowercase abstract before matching (MEM496).
+  - `extract_metric_value` returned None when the cleaned substring was a full number (e.g. "0.95") because `find` returned None for end-of-string. Fix: `.unwrap_or(cleaned.len())`.
 - **Reference dedup logic fixed.** Previously each paper citing the same citation created a new Reference node. Now `find_node_by_string_property("Reference", "vid")` is consulted first and existing nodes are reused.
-- **Mock graph store label contract fixed (MEM495).** `MockGraphStore::find_node_by_string_property` previously ignored `_label` parameter. Real `SamyamaGraphStore` filters by label; the mock not filtering caused false-positive dedup matches across node types (Reference with arxiv_id="X" was returned when Citation was queried). Fixed by adding a `labels` map and filtering.
+- **Mock graph store label contract fixed (MEM495).** `MockGraphStore::find_node_by_string_property` previously ignored `_label` parameter. Real `SamyamaGraphStore` filters by label; the mock not filtering caused false-positive dedup matches across node types (Reference with arxiv_id="X" was returned when Citation was queried). Fixed by adding a `labels` map and filtering. Applied to all 5 mock store implementations.
 - **Audit-time CI guard.** New test `schema_audit_test.rs` scans `da-application/src/*.rs` for `create_node("Label")` call sites and asserts every label is registered in `all_node_schemas()`. Future node additions without schema registration fail CI.
+- **6 integration tests added** for process plane node creation (ResearchProblem×3, MetricObservation×2, EvidenceBundle×1). These exercise the full extraction pipeline (Paper lookup → entity extraction → node creation) rather than just unit-level helpers.
 - **EnrichResult propagates institutions_written.** The counter was previously a local variable. Now exposed in the return struct, allowing batch-level aggregation.
 - **Dead code removed.** 3 unused LoweredConfig fields (`models_lower`, `task_phrases_lower`, `task_acronyms_lower`), unused import `DetectedCluster`, and 6 collapsed-if warnings — all cleared. da-* crates now 0 clippy warnings.
 - **Port extension.** `DirectGraphStore::set_node_property_float` added for metric values and confidence scores. SamyamaGraphStore + all mock stores updated.
 - **Documentation.** ADR-045 (Schema Validator), SCHEMA-VALIDATOR-DESIGN.md, ADR-INDEX.md updated with ADR-045 dependency edges.
-- **Tests**: 228 lib + 46 integration = **274 green** (was 213).
+- **Tests**: 269 green (228 lib + 41 integration; was 213).
 
 ### Pipeline: Reference + Category node wiring (2026-07-29)
 

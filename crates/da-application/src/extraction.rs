@@ -353,14 +353,15 @@ impl ExtractionUseCase {
         // "we propose" → improvement; "we investigate/study" → explanation.
         let mut problems_created = 0usize;
         if let Some(paper_id) = paper_node_id {
-            let problem_type = if parsed.abstract_text.contains("we propose")
-                || parsed.abstract_text.contains("we improve")
-                || parsed.abstract_text.contains("we introduce")
+            let abstract_lower = parsed.abstract_text.to_lowercase();
+            let problem_type = if abstract_lower.contains("we propose")
+                || abstract_lower.contains("we improve")
+                || abstract_lower.contains("we introduce")
             {
                 Some("improvement")
-            } else if parsed.abstract_text.contains("we investigate")
-                || parsed.abstract_text.contains("we study")
-                || parsed.abstract_text.contains("we address")
+            } else if abstract_lower.contains("we investigate")
+                || abstract_lower.contains("we study")
+                || abstract_lower.contains("we address")
             {
                 Some("explanation")
             } else {
@@ -482,8 +483,6 @@ impl ExtractionUseCase {
                         )
                         .await;
                     observations_created += 1;
-
-                    // Suppress unused variable warning
                 }
             }
         }
@@ -535,13 +534,14 @@ fn extract_metric_value(text: &str, metric: &str) -> Option<f64> {
             let cleaned = after.trim_start_matches(|c: char| {
                 c.is_whitespace() || c == '=' || c == ':' || c == 'o' || c == 'f'
             });
-            if let Some(num_end) =
-                cleaned.find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
-            {
-                let num_str = &cleaned[..num_end];
-                if let Ok(value) = num_str.parse::<f64>() {
-                    return Some(value);
-                }
+            // If cleaned ends in a full number (no trailing non-digit),
+            // num_end will be None — use the whole cleaned string.
+            let num_end = cleaned
+                .find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
+                .unwrap_or(cleaned.len());
+            let num_str = &cleaned[..num_end];
+            if let Ok(value) = num_str.parse::<f64>() {
+                return Some(value);
             }
         }
     }
