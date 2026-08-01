@@ -301,6 +301,15 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
         crate::relation::bibliographic::MENTIONS,
         crate::relation::bibliographic::SUPERSEDES,
         crate::relation::bibliographic::SPLITS,
+        // Conflict plane (relation::conflict)
+        crate::relation::conflict::CONFLICTS_OVER,
+        crate::relation::conflict::RESOLVED_BY,
+        // Decision plane (relation::decision)
+        crate::relation::decision::CAUSED,
+        crate::relation::decision::INFLUENCED,
+        crate::relation::decision::PRECEDENT_FOR,
+        crate::relation::decision::AUTHORITY_FOR,
+        crate::relation::decision::TRIGGERED_BY,
         // Hypergraph / evidence (relation::hypergraph)
         crate::relation::hypergraph::MEMBER_OF_CLUSTER,
         crate::relation::hypergraph::SUBSUMES,

@@ -41,10 +41,10 @@ fn test_schema_check_counts_match() {
         stdout.contains("16 distinct node labels"),
         "expected 16 materialized labels, got:\n{stdout}"
     );
-    // The registry contains 29 declared node types.
+    // The registry contains 30 declared node types (29 v1 + Conflict from ADR-047).
     assert!(
-        stdout.contains("29 declared node types"),
-        "expected 29 registered schemas, got:\n{stdout}"
+        stdout.contains("30 declared node types"),
+        "expected 30 registered schemas, got:\n{stdout}"
     );
 }
 
@@ -105,16 +105,16 @@ fn test_schema_list_command_outputs_table() {
         stdout.contains("| Label | Required fields | Optional fields | Materialized? |"),
         "expected table header, got:\n{stdout}"
     );
-    // All 29 registered schemas must appear.
+    // All 30 registered schemas (29 v1 + Conflict). must appear.
     for label in [
         "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
-        "Citation", "Claim", "ConceptCluster", "Concept", "Entity",
-        "EvidenceBundle", "ExperimentRun", "FailureEvent", "Hypothesis",
-        "ImplementationAttempt", "Institution", "Intervention",
-        "InterventionBundle", "MetricDefinition", "MetricObservation",
-        "Paper", "Reference", "ResearchEnvironment", "ResearchIdea",
-        "ResearchProblem", "ResultComparison", "SchedulerTask", "Section",
-        "Source", "Topic",
+        "Citation", "Claim", "ConceptCluster", "Concept", "Conflict",
+        "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
+        "Hypothesis", "ImplementationAttempt", "Institution",
+        "Intervention", "InterventionBundle", "MetricDefinition",
+        "MetricObservation", "Paper", "Reference", "ResearchEnvironment",
+        "ResearchIdea", "ResearchProblem", "ResultComparison",
+        "SchedulerTask", "Section", "Source", "Topic",
     ] {
         assert!(
             stdout.contains(&format!("`{label}`")),

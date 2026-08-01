@@ -592,6 +592,45 @@ impl NodeSchemaDef for FailureEventSchema {
     }
 }
 
+/// Conflict node (ADR-047).
+///
+/// First-class object representing factual disagreement between
+/// fact-bearing nodes (Claim, Entity, Reference, MetricObservation).
+/// Lives in Layer 7 — system-derived, not source-derived.
+pub struct ConflictSchema;
+
+impl NodeSchemaDef for ConflictSchema {
+    fn label(&self) -> &'static str {
+        "Conflict"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("vid", FieldType::String),
+            ("kind", FieldType::String),
+            ("field", FieldType::String),
+            ("status", FieldType::String),
+            ("severity", FieldType::String),
+            ("detected_at", FieldType::DateTime),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("resolution_strategy", FieldType::String),
+            ("resolution_value", FieldType::String),
+            ("resolved_at", FieldType::DateTime),
+            // Bi-temporal fields (ADR-046)
+            ("valid_from", FieldType::DateTime),
+            ("valid_to", FieldType::DateTime),
+            ("recorded_at", FieldType::DateTime),
+            ("superseded_at", FieldType::DateTime),
+            // Invariants
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+}
+
 // Failure taxonomy constants moved to data/failure_taxonomy.yaml.
 // Use is_known_stage(), is_known_failure_class() for validation.
 

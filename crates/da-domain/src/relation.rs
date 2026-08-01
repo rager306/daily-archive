@@ -191,6 +191,44 @@ pub mod hypergraph {
     pub const QUALIFIES: &str = "QUALIFIES";
 }
 
+/// Conflict plane edge types (ADR-047).
+///
+/// Edges that connect fact-bearing nodes (Claim, Entity, Reference,
+/// MetricObservation) to Conflict nodes, and Conflict nodes to their
+/// resolution authority (Source or Decision).
+pub mod conflict {
+    /// Fact-bearing node participates in a Conflict. Hyperedge-style:
+    /// 2+ participants per Conflict node.
+    pub const CONFLICTS_OVER: &str = "CONFLICTS_OVER";
+
+    /// Conflict was resolved by a Source (e.g. a retraction notice) or
+    /// by a Decision (ADR-048).
+    pub const RESOLVED_BY: &str = "RESOLVED_BY";
+}
+
+/// Decision plane edge types (ADR-048).
+///
+/// Edges that connect Decision nodes to their causes, precedents,
+/// authority, and triggers. Decision is a first-class graph citizen
+/// capturing every system action with a lifecycle.
+pub mod decision {
+    /// Decision A caused Decision B. Transitive — causal chains.
+    pub const CAUSED: &str = "CAUSED";
+
+    /// Decision A was a factor in Decision B. Non-transitive.
+    pub const INFLUENCED: &str = "INFLUENCED";
+
+    /// Decision A is a precedent cited by Decision B.
+    pub const PRECEDENT_FOR: &str = "PRECEDENT_FOR";
+
+    /// Policy authorizes a Decision (future, Phase 2).
+    pub const AUTHORITY_FOR: &str = "AUTHORITY_FOR";
+
+    /// Decision was triggered by a Conflict, healing action, or
+    /// extraction override.
+    pub const TRIGGERED_BY: &str = "TRIGGERED_BY";
+}
+
 /// Research Process Plane edge types (ADR-043, PROCESS-SCHEMA-P0 §15).
 ///
 /// Cross-cutting edges for the execution-grounded research process.
@@ -373,6 +411,15 @@ mod tests {
             // Hypergraph edges
             hypergraph::MEMBER_OF_CLUSTER,
             hypergraph::SUBSUMES,
+            // Conflict plane edges
+            conflict::CONFLICTS_OVER,
+            conflict::RESOLVED_BY,
+            // Decision plane edges
+            decision::CAUSED,
+            decision::INFLUENCED,
+            decision::PRECEDENT_FOR,
+            decision::AUTHORITY_FOR,
+            decision::TRIGGERED_BY,
         ] {
             assert!(seen.insert(label), "duplicate edge label: {label}");
         }
