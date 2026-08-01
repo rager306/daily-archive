@@ -17,7 +17,27 @@ async fn test_cluster_use_case_creates_concept_cluster_node() {
 
     let entity_id = store.create_node("Entity").await.unwrap();
     store
+        .set_node_property_string(entity_id, "vid", "vid:entity:gpt4".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_string(entity_id, "label", "GPT-4".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(entity_id, "entity_type", "Model".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity_id, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity_id, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(entity_id, "schema_version", 1)
         .await
         .unwrap();
 
@@ -25,7 +45,7 @@ async fn test_cluster_use_case_creates_concept_cluster_node() {
     let papers: HashSet<String> = (0..6).map(|i| format!("2401.0000{i}")).collect();
     entity_papers.insert("GPT-4".to_string(), (EntityType::Model, papers));
 
-    let use_case = ClusterUseCase::new(Box::new(store));
+    let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
 
     assert!(result.clusters_created >= 1, "expected ≥1 cluster");
@@ -33,6 +53,7 @@ async fn test_cluster_use_case_creates_concept_cluster_node() {
         result.member_edges_created >= 1,
         "expected ≥1 MEMBER_OF_CLUSTER edge"
     );
+    store.assert_graph_conforms("test_cluster_use_case_creates_concept_cluster_node");
 }
 
 #[tokio::test]
@@ -41,7 +62,27 @@ async fn test_cluster_use_case_creates_member_of_cluster_edge() {
 
     let entity_id = store.create_node("Entity").await.unwrap();
     store
+        .set_node_property_string(entity_id, "vid", "vid:entity:ppo".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_string(entity_id, "label", "PPO".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(entity_id, "entity_type", "Method".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity_id, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity_id, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(entity_id, "schema_version", 1)
         .await
         .unwrap();
 
@@ -49,7 +90,7 @@ async fn test_cluster_use_case_creates_member_of_cluster_edge() {
     let papers: HashSet<String> = (0..7).map(|i| format!("2402.0000{i}")).collect();
     entity_papers.insert("PPO".to_string(), (EntityType::Method, papers));
 
-    let use_case = ClusterUseCase::new(Box::new(store));
+    let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
 
     // Verify MEMBER_OF_CLUSTER edges were created
@@ -73,7 +114,7 @@ async fn test_cluster_use_case_no_clusters_for_low_mention_entities() {
     let papers: HashSet<String> = (0..2).map(|i| format!("2403.0000{i}")).collect();
     entity_papers.insert("RareModel".to_string(), (EntityType::Model, papers));
 
-    let use_case = ClusterUseCase::new(Box::new(store));
+    let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
 
     assert_eq!(result.clusters_created, 0, "no clusters for <5 mentions");
@@ -95,7 +136,7 @@ async fn test_cluster_use_case_creates_concept_cluster_with_correct_label() {
     let papers: HashSet<String> = (0..5).map(|i| format!("2404.0000{i}")).collect();
     entity_papers.insert("GraphSAGE".to_string(), (EntityType::Method, papers));
 
-    let use_case = ClusterUseCase::new(Box::new(store));
+    let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
 
     assert!(result.clusters_created >= 1);

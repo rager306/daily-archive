@@ -109,6 +109,9 @@ impl crate::schema::NodeSchemaDef for EntitySchema {
             ("evidence_ready", crate::schema::FieldType::Boolean),
             ("import_eligible", crate::schema::FieldType::Boolean),
             ("retrieval_eligible", crate::schema::FieldType::Boolean),
+            // Healing fields (set by GraphHealingUseCase on silence/correct/merge)
+            ("deprecated_reason", crate::schema::FieldType::String),
+            ("last_healed_at", crate::schema::FieldType::DateTime),
             // Phase 3: GNN readiness — entity label embedding (bge-m3 1024d)
             ("embedding", crate::schema::FieldType::Vector),
             ("domain_tags", crate::schema::FieldType::String),

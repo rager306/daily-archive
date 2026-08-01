@@ -111,7 +111,7 @@ async fn test_enrich_writes_topics_and_authors() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
 
@@ -125,6 +125,7 @@ async fn test_enrich_writes_topics_and_authors() {
     );
     assert_eq!(result.cited_by_count, 5);
     assert!(result.doi.is_some());
+    store.assert_graph_conforms("test_enrich_writes_topics_and_authors");
 }
 
 #[tokio::test]
@@ -134,7 +135,7 @@ async fn test_enrich_links_author_to_institution_via_affiliated_with_edge() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
 
@@ -151,7 +152,7 @@ async fn test_enrich_not_found_creates_pending_stub() {
     // a pending stub with openalex_pending=true (lazy load pattern).
     let openalex = Box::new(MockOpenAlex { work: None });
     let store = make_store();
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("9999.99999").await.unwrap();
 
@@ -166,7 +167,7 @@ async fn test_enrich_creates_topic_nodes() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
 
@@ -194,7 +195,7 @@ async fn test_enrich_dedup_same_topic() {
     // The enrich uses vid::paper_vid(topic.id) which is a SHA256 hash
     // So pre-creating won't match unless we use the exact same vid.
     // This test verifies the find_node_by_string_property path works.
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
 
@@ -207,7 +208,7 @@ async fn test_enrich_not_found_without_scheduler_still_works() {
     // Without scheduler attached, enrich should still create pending stub
     let openalex = Box::new(MockOpenAlex { work: None });
     let store = make_store();
-    let use_case = EnrichUseCase::new(openalex, Box::new(store));
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("9999.99999").await.unwrap();
 

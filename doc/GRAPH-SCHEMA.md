@@ -29,7 +29,7 @@ prose, when adding new node types.
 | `Claim` | `vid`, `text` | 8 | ✅ |
 | `Concept` | `vid`, `label`, `level`, `retrieval_eligible` | 5 | — |
 | `ConceptCluster` | `vid`, `label`, `cluster_type` | 7 | ✅ |
-| `Entity` | `vid`, `label`, `entity_type` | 13 | ✅ |
+| `Entity` | `vid`, `label`, `entity_type` | 15 | ✅ |
 | `EvidenceBundle` | `vid`, `bundle_type` | 12 | ✅ |
 | `ExperimentRun` | `vid`, `environment_id`, `artifact_version_id`, `run_type`, `status` | 10 | — |
 | `FailureEvent` | `vid`, `stage`, `class`, `recoverable`, `error_signature` | 8 | — |

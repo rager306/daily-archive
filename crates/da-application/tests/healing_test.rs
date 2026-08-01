@@ -25,7 +25,19 @@ async fn make_entity(store: &MockGraphStore, vid: &str, label: &str) -> u64 {
         .await
         .unwrap();
     store
+        .set_node_property_string(node, "entity_type", "Method".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_bool(node, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(node, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(node, "schema_version", 1)
         .await
         .unwrap();
     node
@@ -35,7 +47,7 @@ async fn make_entity(store: &MockGraphStore, vid: &str, label: &str) -> u64 {
 async fn test_silence_sets_retrieval_eligible_false() {
     let store = make_store();
     make_entity(&store, "vid:entity:Method:GPT", "GPT").await;
-    let use_case = GraphHealingUseCase::new(Box::new(store));
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
 
     let result = use_case
         .silence(
@@ -53,6 +65,7 @@ async fn test_silence_sets_retrieval_eligible_false() {
         result.provenance.operation,
         da_domain::healing::HealingOperation::Silence
     );
+    store.assert_graph_conforms("test_silence_sets_retrieval_eligible_false");
 }
 
 #[tokio::test]
@@ -70,7 +83,7 @@ async fn test_merge_creates_supersedes_edge() {
         )
         .await
         .unwrap();
-    let use_case = GraphHealingUseCase::new(Box::new(store));
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
 
     let result = use_case
         .merge(
@@ -95,7 +108,7 @@ async fn test_merge_creates_supersedes_edge() {
 async fn test_correct_updates_property() {
     let store = make_store();
     make_entity(&store, "vid:entity:Method:GPT", "GPT").await;
-    let use_case = GraphHealingUseCase::new(Box::new(store));
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
 
     let result = use_case
         .correct(
@@ -121,7 +134,7 @@ async fn test_correct_updates_property() {
 #[tokio::test]
 async fn test_silence_not_found_errors() {
     let store = make_store();
-    let use_case = GraphHealingUseCase::new(Box::new(store));
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
 
     let result = use_case
         .silence(
@@ -139,7 +152,7 @@ async fn test_silence_not_found_errors() {
 async fn test_unsilence_restores_retrieval() {
     let store = make_store();
     make_entity(&store, "vid:entity:Method:GPT", "GPT").await;
-    let use_case = GraphHealingUseCase::new(Box::new(store));
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
 
     // First silence
     use_case
