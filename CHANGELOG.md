@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### Author → Institution edge + schema-check CLI + mock contract fixes (2026-07-24)
+
+Three waves closing debts surfaced during ADR-045 validator rollout.
+
+#### Wave 1: Author → Institution via AFFILIATED_WITH edge
+
+- **Model gap closed**: OpenAlex provides per-authorship institution lists, but the flat `OpenAlexWork.institutions` field dropped this association. Institution nodes were orphaned (created without any edge to Author nodes).
+- Port: `+OpenAlexAuthorship { author, institutions }`, `+OpenAlexWork.authorships` (source of truth). Authors/institutions flat fields retained for backward compat and derived by the adapter from authorships.
+- Adapter: parse_work builds authorships first, derives flat views.
+- Domain: `+relation::bibliographic::AFFILIATED_WITH`, `+vid::institution_vid(display_name, openalex_id)`. Validator edge registry + duplicate-label test cover the new constant.
+- Application: enrich.rs institution loop rewritten to iterate authorships; for each (author, institution) pair, creates AFFILIATED_WITH edge.
+- EnrichResult: `+institutions_written`, `+affiliation_edges_written` counters.
+- Tests: enrich_test mock OpenAlexWork includes Alice → MIT authorship; test_enrich_writes_topics_and_authors now asserts 1 institution + 1 affiliation edge; new test_enrich_links_author_to_institution_via_affiliated_with_edge.
+
+#### Wave 2: CLI `da schema-check` (ADR-045 Wave E)
+
+- Promotes the schema_audit_test guard to a standalone CLI command.
+- Scans da-application/src/*.rs for create_node("Label") call sites, reports registered count, used count, unregistered labels; exits non-zero on violations.
+- Tests: 2 CLI smoke tests (success path + count assertions).
+- Docs: README command table updated.
+
+#### Wave 3: Mock contract drift closed (MEM499)
+
+- All 4 per-test MockGraphStore impls (batch_ingest, enrich, extraction, healing) returned Vec::new() from get_nodes_by_label — the real SamyamaGraphStore filters by label.
+- Applied the same labels map pattern already used in common/mock_graph_store.rs and in find_node_by_string_property (MEM495).
+- None of these tests called get_nodes_by_label today, but the drift would have surfaced as a silent empty result if a future test asserted on it.
+
 ### Schema validator + 5 bug fixes (2026-07-24)
 
 - **SchemaValidator module** (`crates/da-domain/src/validator.rs`). Pure-logic validator that checks node property snapshots against declared `NodeSchemaDef` and architectural invariants. Returns ALL violations in a single pass with severity levels (Critical/Warning). 15 tests cover all 29 schemas + edge registry. ADR-045.

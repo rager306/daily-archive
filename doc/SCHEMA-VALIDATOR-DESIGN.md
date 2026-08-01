@@ -1,7 +1,7 @@
 # Schema Validator — Design and Operation
 
 > Companion to [ADR-045](adr/ADR-045-schema-validator-logic-relations-invariants.md).
-> Status: implemented (Wave A–C). Runtime wiring (Wave D) is future work.
+> Status: implemented (Wave A–C, E). Runtime wiring (Wave D) is future work.
 
 ## Module location
 
@@ -122,7 +122,7 @@ All four were closed in the same wave as the validator introduction.
 - **Wave D**: capture property snapshots from live `set_node_property_*`
   calls and run validator on each node after write. Surface Critical
   violations as structured logs.
-- **Wave E**: CLI command `da schema-check` that runs the audit hook
+- **Wave E (done)**: CLI command `da schema-check` that runs the audit hook
   across all crates and prints a markdown report.
 - **Wave F**: cross-reference validator — given a `vid` field, confirm
   a node with that `vid` exists (requires read path).
