@@ -26,11 +26,11 @@ prose, when adding new node types.
 | `BaselineSnapshot` | `vid`, `artifact_ref_id`, `description`, `baseline_type` | 6 | — |
 | `Category` | `vid`, `code`, `is_primary` | 6 | ✅ |
 | `Citation` | `vid`, `valid_from` | 6 | ✅ |
-| `Claim` | `vid`, `text` | 8 | ✅ |
+| `Claim` | `vid`, `text` | 12 | ✅ |
 | `Concept` | `vid`, `label`, `level`, `retrieval_eligible` | 5 | — |
 | `ConceptCluster` | `vid`, `label`, `cluster_type` | 7 | ✅ |
 | `Entity` | `vid`, `label`, `entity_type` | 15 | ✅ |
-| `EvidenceBundle` | `vid`, `bundle_type` | 12 | ✅ |
+| `EvidenceBundle` | `vid`, `bundle_type` | 14 | ✅ |
 | `ExperimentRun` | `vid`, `environment_id`, `artifact_version_id`, `run_type`, `status` | 10 | — |
 | `FailureEvent` | `vid`, `stage`, `class`, `recoverable`, `error_signature` | 8 | — |
 | `Hypothesis` | `vid`, `text`, `environment_id`, `metric_definition_id`, `direction`, `research_idea_id` | 9 | — |
@@ -39,7 +39,7 @@ prose, when adding new node types.
 | `Intervention` | `vid`, `target_component`, `change_type`, `change_scope` | 6 | — |
 | `InterventionBundle` | `vid`, `recipe_kind` | 3 | — |
 | `MetricDefinition` | `vid`, `name`, `direction`, `split`, `computation_protocol` | 5 | — |
-| `MetricObservation` | `vid`, `run_id`, `metric_definition_id`, `value` | 7 | ✅ |
+| `MetricObservation` | `vid`, `run_id`, `metric_definition_id`, `value` | 11 | ✅ |
 | `Paper` | `vid`, `arxiv_id`, `title`, `valid_from` | 14 | ✅ |
 | `Reference` | `vid`, `raw_text` | 8 | ✅ |
 | `ResearchEnvironment` | `vid`, `completeness`, `research_problem_id`, `baseline_ref`, `subject_system`, `subject_system_kind`, `environment_template_id`, `evidence_origin` | 17 | — |
@@ -48,7 +48,7 @@ prose, when adding new node types.
 | `ResultComparison` | `vid`, `candidate_observation_id`, `baseline_observation_id`, `environment_id`, `valid` | 9 | — |
 | `SchedulerTask` | `vid`, `arxiv_id`, `task_type`, `status` | 6 | ✅ |
 | `Section` | `vid`, `title`, `level`, `order`, `work_vid` | 6 | ✅ |
-| `Source` | `vid`, `code`, `source_type`, `domain` | 8 | ✅ |
+| `Source` | `vid`, `code`, `source_type`, `domain` | 10 | ✅ |
 | `Topic` | `vid`, `label` | 8 | ✅ |
 
 Legend: ✅ = materialized in pipeline (`create_node("Label")` in da-application/src). — = schema declared, not yet materialized (process plane Wave 2 work).
