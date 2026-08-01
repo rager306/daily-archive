@@ -165,6 +165,7 @@ pre-commit run --all-files
 | `da schema-check` | Audit create_node sites vs schema registry (ADR-045) |
 | `da edge-contracts` | Print edge endpoint contract matrix (ADR-045 Wave G) |
 | `da schema-list` | Print all registered node schemas as markdown (ADR-040) |
+| `da cross-refs` | Print cross-reference field registry (ADR-045 Wave F) |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |

@@ -122,3 +122,35 @@ fn test_schema_list_command_outputs_table() {
         );
     }
 }
+
+#[test]
+fn test_cross_refs_command_outputs_table() {
+    let bin = env!("CARGO_BIN_EXE_da");
+    let output = Command::new(bin)
+        .arg("cross-refs")
+        .output()
+        .expect("failed to spawn `da cross-refs`");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "cross-refs exited non-zero\nstdout:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("| Source | Field | Target | Required? |"),
+        "expected table header, got:\n{stdout}"
+    );
+    // Every declared cross-reference must appear.
+    for source_label in [
+        "Claim",
+        "MetricObservation",
+        "ResearchEnvironment",
+        "ResearchProblem",
+        "ResultComparison",
+    ] {
+        assert!(
+            stdout.contains(&format!("`{source_label}`")),
+            "source label `{source_label}` missing from CLI output:\n{stdout}"
+        );
+    }
+}

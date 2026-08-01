@@ -415,6 +415,37 @@ contracts; every pipeline-referenced edge has a row.
 
 ---
 
+## Cross-reference registry (ADR-045 Wave F)
+
+The authoritative source of cross-reference declarations is
+`da_domain::validator::cross_reference_fields()` — this table is the
+rendered form produced by `da cross-refs`. Update the function, not
+this prose, when wiring new process-plane nodes.
+
+| Source | Field | Target | Required? |
+|--------|-------|--------|-----------|
+| `Claim` | `source_span_id` | `EvidenceBundle` | optional |
+| `MetricObservation` | `metric_definition_id` | `MetricDefinition` | ✅ required |
+| `MetricObservation` | `run_id` | `ExperimentRun` | ✅ required |
+| `ResearchEnvironment` | `research_problem_id` | `ResearchProblem` | ✅ required |
+| `ResearchProblem` | `evidence_bundle_id` | `EvidenceBundle` | optional |
+| `ResearchProblem` | `parent_problem_id` | `ResearchProblem` | optional |
+| `ResultComparison` | `baseline_observation_id` | `MetricObservation` | ✅ required |
+| `ResultComparison` | `candidate_observation_id` | `MetricObservation` | ✅ required |
+| `ResultComparison` | `environment_id` | `ResearchEnvironment` | ✅ required |
+
+Convention: only fields whose value is a graph VID (not external opaque
+ids like `openalex_id` or `arxiv_id`). External ids are resolved
+through their own lookup paths and are not part of the graph's
+reference integrity contract.
+
+Tests enforce: source/target labels are registered; no contradictory
+rows; fields exist on source schema; required flag matches schema
+declaration. Runtime enforcement on the shared MockGraphStore flags
+dangling references and missing required fields.
+
+---
+
 ## Indexes (complete — 26 indexes)
 
 | Index | Type | On |

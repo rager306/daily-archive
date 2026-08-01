@@ -147,6 +147,9 @@ enum Commands {
 
     /// Print all registered node schemas as a markdown table.
     SchemaList,
+
+    /// Print the cross-reference registry as a markdown table.
+    CrossRefs,
 }
 
 fn main() {
@@ -259,6 +262,10 @@ fn main() {
         Commands::SchemaList => {
             println!("# Node schemas (ADR-040 §11.1)\n");
             print!("{}", da_domain::schema::render_node_types_table());
+        }
+        Commands::CrossRefs => {
+            println!("# Cross-reference registry (ADR-045 Wave F)\n");
+            print!("{}", da_domain::validator::render_cross_references_table());
         }
     }
 }

@@ -835,3 +835,23 @@ mod cross_ref_tests {
         }
     }
 }
+
+/// Render the cross-reference registry as a markdown table for
+/// documentation. Use in `da cross-refs` CLI command to emit always-fresh
+/// content for GRAPH-SCHEMA.md.
+pub fn render_cross_references_table() -> String {
+    let mut rows = cross_reference_fields();
+    rows.sort_by_key(|c| (c.source_label, c.field));
+
+    let mut s = String::new();
+    s.push_str("| Source | Field | Target | Required? |\n");
+    s.push_str("|--------|-------|--------|-----------|\n");
+    for cr in &rows {
+        let req = if cr.required { "✅ required" } else { "optional" };
+        s.push_str(&format!(
+            "| `{}` | `{}` | `{}` | {} |\n",
+            cr.source_label, cr.field, cr.target_label, req
+        ));
+    }
+    s
+}
