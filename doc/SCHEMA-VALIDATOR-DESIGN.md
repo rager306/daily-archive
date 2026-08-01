@@ -1,9 +1,10 @@
 # Schema Validator — Design and Operation
 
 > Companion to [ADR-045](adr/ADR-045-schema-validator-logic-relations-invariants.md).
-> Status: implemented (Wave A–C, E, G). Runtime wiring (Wave D) is future work.
-> Runtime edge contract enforcement (Wave G) is implemented on the
-> shared MockGraphStore; production-store enforcement is future work.
+> Status: implemented (Wave A–C, E, F, G). Runtime wiring (Wave D) is future work.
+> Runtime edge contract enforcement (Wave G) and cross-reference
+> enforcement (Wave F) are implemented on the shared MockGraphStore;
+> production-store enforcement is future work.
 > Companion commands: `da schema-check`, `da schema-list`, `da edge-contracts`.
 
 ## Module location

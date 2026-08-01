@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Cross-reference validator (ADR-045 Wave F) (2026-07-24)
+
+Closes the third runtime enforcement gap from ADR-045. The shared
+MockGraphStore now enforces all three halves of schema conformance:
+node properties (Wave A-C, D-foundation), edge endpoints (Wave G),
+and now cross-references (Wave F).
+
+#### Wave F foundation: cross-reference field registry
+
+- crates/da-domain/src/validator.rs:
+  - +CrossReferenceField { source_label, field, target_label, required }
+  - +cross_reference_fields() returns 9 rows covering the reference
+    fields currently declared on process-plane schemas
+  - Convention: only fields whose value is a graph VID (not external
+    opaque ids like openalex_id or arxiv_id).
+- 4 static tests: labels registered, no contradictory rows, fields
+  exist on source schema, required flag matches schema.
+
+#### Wave F runtime: validator on MockGraphStore
+
+- crates/da-application/tests/common/mock_graph_store.rs:
+  - +CrossRefViolation struct with Display impl
+  - +MockGraphStore::validate_cross_references() walks nodes, reads
+    each declared reference field, flags dangling references and
+    missing required fields.
+- 3 runtime tests cover violation detection, satisfied reference
+  acceptance, and missing required field detection.
+
 ### schema-list CLI + doc table + pre-commit hook (2026-07-24)
 
 Closes MEM503 #b (node-types table generator) and adds a pre-commit
