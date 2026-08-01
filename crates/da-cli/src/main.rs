@@ -156,6 +156,15 @@ enum Commands {
     /// declares (ADR-045 / MEM508).
     AuditFields,
 
+    /// Validate the live graph against the schema registry. Reads all
+    /// nodes by label and runs the validator on each snapshot.
+    /// Requires a running graph store (SamyamaGraphStore).
+    ValidateGraph {
+        /// Optional: validate only this label (default: all).
+        #[arg(long)]
+        label: Option<String>,
+    },
+
     /// Validate a single node property snapshot (JSON on stdin).
     /// Example: echo '{"vid":"x","arxiv_id":"y",...}' | da validate-node Paper
     ValidateNode {
@@ -282,6 +291,11 @@ fn main() {
         }
         Commands::AuditFields => {
             audit_fields();
+        }
+        Commands::ValidateGraph { label } => {
+            rt.block_on(async {
+                validate_graph(label.as_deref()).await;
+            });
         }
         Commands::ValidateNode { label } => {
             validate_node_stdin(label);
@@ -1150,7 +1164,7 @@ fn audit_fields() {
                 let block: String = lines[*line_num..next_line].join("\n");
                 let fields = pipeline_fields
                     .entry(label.clone())
-                    .or_insert_with(HashSet::new);
+                    .or_default();
                 // Simple line-by-line scan for set_node_property_* calls.
                 for bline in block.lines() {
                     if let Some(pos) = bline.find("set_node_property_") {
@@ -1228,5 +1242,98 @@ fn audit_fields() {
         println!("Fix: add each missing field to the corresponding schema's");
         println!("required_fields() or optional_fields() in crates/da-domain/src/.");
         std::process::exit(1);
+    }
+}
+
+/// Validate the live graph against the schema registry.
+///
+/// Reads all nodes (or a single label) from SamyamaGraphStore via
+/// `get_nodes_by_label` + `get_node_property_string/int`, builds a
+/// PropertySnapshot for each, and runs the validator. Reports total
+/// violations and shows the first 10.
+///
+/// This is the production-side counterpart of `assert_graph_conforms`
+/// in integration tests. Wave D production-side enforcement.
+async fn validate_graph(label_filter: Option<&str>) {
+    use da_adapters::SamyamaGraphStore;
+    use da_domain::validator::{format_violations, validate_node_properties, PropertySnapshot};
+    use da_ports::graph_store::DirectGraphStore;
+    use serde_json::json;
+
+    println!("daily-archive v2 — validate-graph (ADR-045 Wave D production)");
+    println!();
+
+    let store = SamyamaGraphStore::from_env();
+    let labels: Vec<String> = match label_filter {
+        Some(l) => vec![l.to_string()],
+        None => da_domain::schema::all_node_schemas()
+            .into_iter()
+            .map(|s| s.label().to_string())
+            .collect(),
+    };
+
+    let mut total_nodes = 0usize;
+    let mut total_violations = 0usize;
+    let mut critical_count = 0usize;
+    let mut warning_count = 0usize;
+    let mut first_violations: Vec<String> = Vec::new();
+
+    for label in &labels {
+        let node_ids = store.get_nodes_by_label(label).await;
+        if node_ids.is_empty() {
+            continue;
+        }
+        for node_id in node_ids {
+            total_nodes += 1;
+            let mut snap = PropertySnapshot::new();
+            // Walk the known schema fields and read each one.
+            if let Some(schema) = da_domain::schema::schema_for_label(label) {
+                for (fname, _) in schema.required_fields().iter().chain(schema.optional_fields().iter()) {
+                    if let Some(s) = store.get_node_property_string(node_id, fname).await {
+                        snap.insert(fname.to_string(), json!(s));
+                    }
+                    if let Some(i) = store.get_node_property_int(node_id, fname).await {
+                        snap.insert(fname.to_string(), json!(i));
+                    }
+                }
+            }
+            let violations = validate_node_properties(label, &snap);
+            if !violations.is_empty() {
+                total_violations += violations.len();
+                for v in &violations {
+                    if v.severity == da_domain::validator::Severity::Critical {
+                        critical_count += 1;
+                    } else {
+                        warning_count += 1;
+                    }
+                }
+                if first_violations.len() < 10 {
+                    let formatted = format_violations(&violations);
+                    first_violations.push(format!(
+                        "[{}] node_id={node_id}\n{}",
+                        label,
+                        formatted.trim_end()
+                    ));
+                }
+            }
+        }
+    }
+
+    println!("Validated {total_nodes} node(s) across {} label(s)", labels.len());
+    println!(
+        "Total violations: {total_violations} ({critical_count} critical, {warning_count} warning)"
+    );
+    println!();
+    if first_violations.is_empty() {
+        println!("✅ OK — graph conforms to schema registry");
+    } else {
+        println!("First violations (up to 10):");
+        for v in &first_violations {
+            println!("{v}");
+            println!("---");
+        }
+        if critical_count > 0 {
+            std::process::exit(1);
+        }
     }
 }

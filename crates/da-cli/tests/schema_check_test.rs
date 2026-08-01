@@ -229,3 +229,29 @@ fn test_audit_fields_command_succeeds_when_clean() {
         "expected success marker, got:\n{stdout}"
     );
 }
+
+#[test]
+fn test_validate_graph_command_runs_on_empty_store() {
+    // On a fresh/empty SamyamaGraphStore the validator should report
+    // 0 nodes and 0 violations, exiting 0.
+    let bin = env!("CARGO_BIN_EXE_da");
+    let output = Command::new(bin)
+        .args(["validate-graph", "--label", "Paper"])
+        .output()
+        .expect("failed to spawn `da validate-graph`");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        output.status.success(),
+        "validate-graph exited non-zero on empty store\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    );
+    assert!(
+        stdout.contains("Validated") && stdout.contains("0 node"),
+        "expected validation summary, got:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("OK — graph conforms"),
+        "expected success marker on empty store, got:\n{stdout}"
+    );
+}
