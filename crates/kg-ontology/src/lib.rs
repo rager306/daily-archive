@@ -36,11 +36,13 @@ pub use temporal::{
 // will populate it, per ADR-050 §Migration path.
 
 pub mod schema {
-    //! `LoadedSchema`, `NodeType`, `PropertyDef`, `FieldType`, `Cardinality`.
-    //! Populated in Phase D when the YAML loader lands. Today da-domain
-    //! holds the NodeSchemaDef trait + 31 XSchema structs; Phase D
-    //! exports them to YAML and this module becomes the single source.
+    //! `LoadedSchema`, `NodeType`, `PropertyDef` — Phase D.
+    //! Phase A provides `EpisodicNodeSchema`, `EpisodeSourceType`,
+    //! and `EdgeTypeRegistry` (temporal edge classification).
+    pub use super::schema_inner::*;
 }
+
+mod schema_inner;
 
 pub mod edge_contract {
     //! `EdgeContract`, `EdgeEndpoint`.
