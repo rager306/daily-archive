@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Edge contract matrix + validator helpers (2026-07-24)
+
+Two waves advancing ADR-045 coverage.
+
+#### Wave G foundation: edge endpoint contract matrix
+
+- New module `crates/da-domain/src/edge_contract.rs` documents the
+  expected (source_label, target_label) endpoint contract for every
+  edge type the pipeline materializes.
+- 13 contracts: AFFILIATED_WITH, AUTHORED_BY, CITES, FOUND_IN,
+  FROM_SOURCE, HAS_PART, HAS_TOPIC, IN_CATEGORY, MEMBER_OF_CLUSTER,
+  MENTIONS, PARTICIPATES_IN, SUPPORTS, SUPERSEDES.
+- 4 tests guard the matrix:
+  - all contract edges reference registered node labels
+  - all contract edges pass `validator::validate_edge_type`
+  - no contradictory contracts (same edge_constant, different endpoints)
+  - every pipeline-referenced edge has a contract row
+- Foundation for Wave G runtime edge-endpoint validation.
+
+#### Wave D foundation: validator helpers on MockGraphStore
+
+- Shared `MockGraphStore` gains validator integration helpers:
+  `snapshot_node(id)`, `validate_node(id)`, `validate_all_nodes()`.
+- Tests can now assert schema conformance of the actual nodes written
+  during a pipeline run without ad-hoc field assertions.
+- New smoke test `test_extraction_produces_schema_valid_nodes` exercises
+  the helper API.
+- The shared MockGraphStore was rewritten to be a complete,
+  label-aware, contract-correct implementation (replaces the previous
+  partial version). Per-test mocks retained for now (test-specific
+  counters); future work to consolidate.
+
 ### Author → Institution edge + schema-check CLI + mock contract fixes (2026-07-24)
 
 Three waves closing debts surfaced during ADR-045 validator rollout.

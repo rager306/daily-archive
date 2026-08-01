@@ -1,7 +1,7 @@
 # Schema Validator — Design and Operation
 
 > Companion to [ADR-045](adr/ADR-045-schema-validator-logic-relations-invariants.md).
-> Status: implemented (Wave A–C, E). Runtime wiring (Wave D) is future work.
+> Status: implemented (Wave A–C, E, G-foundation). Runtime wiring (Wave D) is future work.
 
 ## Module location
 
