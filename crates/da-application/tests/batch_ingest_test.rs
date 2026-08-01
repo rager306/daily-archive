@@ -77,206 +77,32 @@ impl Embedder for MockEmbedder {
 
 // ---------- Mock GraphStore ----------
 
-struct MockGraphStore {
-    nodes: Arc<AtomicUsize>,
-    snapshot_calls: Arc<AtomicUsize>,
-    // Track string properties for find_node_by_string_property testing
-    props: std::sync::Mutex<std::collections::HashMap<(u64, String), String>>,
-    // Track node labels for find_node_by_string_property label filtering
-    // (real SamyamaGraphStore filters by label; mock must match that contract).
-    labels: std::sync::Mutex<std::collections::HashMap<u64, String>>,
-}
+mod common;
 
-#[async_trait]
-impl GraphStore for MockGraphStore {
-    async fn query(&self, _graph: &str, _cypher: &str) -> GraphResult<QueryResult> {
-        Ok(QueryResult {
-            columns: vec![],
-            records: vec![],
-        })
-    }
-    async fn query_readonly(&self, _graph: &str, _cypher: &str) -> GraphResult<QueryResult> {
-        Ok(QueryResult {
-            columns: vec![],
-            records: vec![],
-        })
-    }
-    async fn create_vector_index(
-        &self,
-        _label: &str,
-        _property: &str,
-        _dimensions: usize,
-        _metric: VectorMetric,
-    ) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn create_property_index(&self, _label: &str, _property: &str) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn vector_search(
-        &self,
-        _label: &str,
-        _property: &str,
-        _query_vector: &[f32],
-        _k: usize,
-    ) -> GraphResult<Vec<VectorSearchResult>> {
-        Ok(vec![])
-    }
-    async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
-        self.snapshot_calls.fetch_add(1, Ordering::SeqCst);
-        Ok(b"mock-snapshot-data".to_vec())
-    }
-    async fn import_snapshot(&self, _data: &[u8]) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn health(&self) -> GraphResult<bool> {
-        Ok(true)
-    }
-}
+use common::mock_graph_store::MockGraphStore;
 
-#[async_trait]
-impl DirectGraphStore for MockGraphStore {
-    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
-        let id = self.nodes.fetch_add(1, Ordering::SeqCst) as u64;
-        self.labels.lock().unwrap().insert(id, label.to_string());
-        Ok(id)
-    }
-    async fn set_node_property_string(
-        &self,
-        node_id: u64,
-        key: &str,
-        value: String,
-    ) -> Result<(), GraphStoreError> {
-        self.props
-            .lock()
-            .unwrap()
-            .insert((node_id, key.to_string()), value);
-        Ok(())
-    }
-    async fn set_node_property_int(
-        &self,
-        _node_id: u64,
-        _key: &str,
-        _value: i64,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn set_node_property_bool(
-        &self,
-        _node_id: u64,
-        _key: &str,
-        _value: bool,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn set_node_property_float(
-        &self,
-        _node_id: u64,
-        _key: &str,
-        _value: f64,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn create_edge(
-        &self,
-        _source: u64,
-        _target: u64,
-        _edge_type: &str,
-    ) -> Result<u64, GraphStoreError> {
-        Ok(0)
-    }
-    async fn add_vector(
-        &self,
-        _label: &str,
-        _property: &str,
-        _node_id: u64,
-        _vector: Vec<f32>,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn vector_search_direct(
-        &self,
-        _label: &str,
-        _property: &str,
-        _query: &[f32],
-        _k: usize,
-    ) -> Result<Vec<(u64, f32)>, GraphStoreError> {
-        Ok(vec![])
-    }
-    async fn node_count(&self) -> usize {
-        self.nodes.load(Ordering::SeqCst)
-    }
-    async fn edge_count(&self) -> usize {
-        0
-    }
-    async fn find_node_by_string_property(
-        &self,
-        label: &str,
-        key: &str,
-        value: &str,
-    ) -> Option<u64> {
-        let props = self.props.lock().unwrap();
-        let labels = self.labels.lock().unwrap();
-        for ((node_id, k), v) in props.iter() {
-            if k == key && v == value {
-                // Verify the node label matches (real SamyamaGraphStore filters by label).
-                if labels.get(node_id).map(|s| s.as_str()) == Some(label) {
-                    return Some(*node_id);
-                }
-            }
-        }
-        None
-    }
-    async fn get_incoming_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
-        Vec::new()
-    }
-    async fn get_node_property_string(&self, _node_id: u64, _key: &str) -> Option<String> {
-        None
-    }
-    async fn get_node_property_int(&self, _node_id: u64, _key: &str) -> Option<i64> {
-        None
-    }
-    async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
-        self.labels
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|(_, l)| l.as_str() == label)
-            .map(|(id, _)| *id)
-            .collect()
-    }
-}
-
-fn make_ingest(fail_on: Vec<String>) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
+fn make_ingest(
+    fail_on: Vec<String>,
+) -> (IngestUseCase, MockGraphStore) {
     make_ingest_with_citations(fail_on, vec![])
 }
 
 fn make_ingest_with_citations(
     fail_on: Vec<String>,
     citations: Vec<da_ports::parser::CitationEntry>,
-) -> (IngestUseCase, Arc<AtomicUsize>, Arc<AtomicUsize>) {
-    let nodes = Arc::new(AtomicUsize::new(0));
-    let snapshot_calls = Arc::new(AtomicUsize::new(0));
-    let embed_calls = Arc::new(AtomicUsize::new(0));
+) -> (IngestUseCase, MockGraphStore) {
+    let store = MockGraphStore::new();
     let ingest = IngestUseCase::new(
         Box::new(MockParser { fail_on, citations }),
-        Box::new(MockEmbedder {
-            dims: 1024,
-            call_count: embed_calls.clone(),
-        }),
-        Box::new(MockGraphStore {
-            nodes: nodes.clone(),
-            snapshot_calls: snapshot_calls.clone(),
-            props: std::sync::Mutex::new(std::collections::HashMap::new()),
-            labels: std::sync::Mutex::new(std::collections::HashMap::new()),
-        }),
+        Box::new(MockEmbedder { dims: 1024, call_count: Arc::new(AtomicUsize::new(0)) }),
+        Box::new(store.clone()),
     );
-    (ingest, nodes, snapshot_calls)
+    (ingest, store)
 }
 
 #[tokio::test]
 async fn test_batch_ingest_all_success() {
-    let (ingest, nodes, snapshot_calls) = make_ingest(vec![]);
+    let (ingest, store) = make_ingest(vec![]);
     let pdfs = vec![
         ("paper1.pdf".to_string(), "2401.00001".to_string()),
         ("paper2.pdf".to_string(), "2401.00002".to_string()),
@@ -294,13 +120,13 @@ async fn test_batch_ingest_all_success() {
     assert_eq!(result.total_cites_resolved, 0);
     assert!(result.errors.is_empty());
     assert!(!result.import_eligible); // D127
-    assert_eq!(nodes.load(Ordering::SeqCst), 6); // 3 Paper + 3 Section nodes
-    assert_eq!(snapshot_calls.load(Ordering::SeqCst), 0); // no snapshot (None)
+    assert_eq!(store.node_count_total(), 6); // 3 Paper + 3 Section nodes
+    assert_eq!(store.snapshot_call_count(), 0); // no snapshot (None)
 }
 
 #[tokio::test]
 async fn test_batch_ingest_partial_failure() {
-    let (ingest, nodes, _snapshot_calls) = make_ingest(vec!["2401.00002".to_string()]);
+    let (ingest, store) = make_ingest(vec!["2401.00002".to_string()]);
     let pdfs = vec![
         ("paper1.pdf".to_string(), "2401.00001".to_string()),
         ("paper2.pdf".to_string(), "2401.00002".to_string()), // will fail
@@ -315,12 +141,12 @@ async fn test_batch_ingest_partial_failure() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].0, "2401.00002");
     assert!(result.errors[0].1.contains("forced failure"));
-    assert_eq!(nodes.load(Ordering::SeqCst), 4); // 2 Paper + 2 Section (failed one didn't create)
+    assert_eq!(store.node_count_total(), 4); // 2 Paper + 2 Section (failed one didn't create)
 }
 
 #[tokio::test]
 async fn test_batch_ingest_snapshot_export() {
-    let (ingest, _nodes, snapshot_calls) = make_ingest(vec![]);
+    let (ingest, store) = make_ingest(vec![]);
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
     let tmp = tempfile::NamedTempFile::new().unwrap();
 
@@ -330,7 +156,7 @@ async fn test_batch_ingest_snapshot_export() {
 
     assert_eq!(result.ok, 1);
     assert!(result.snapshot_path.is_some());
-    assert_eq!(snapshot_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(store.snapshot_call_count(), 1);
     // Snapshot file written
     let content = std::fs::read(tmp.path()).unwrap();
     assert_eq!(content, b"mock-snapshot-data");
@@ -338,7 +164,7 @@ async fn test_batch_ingest_snapshot_export() {
 
 #[tokio::test]
 async fn test_batch_ingest_empty_list() {
-    let (ingest, _nodes, _snapshot_calls) = make_ingest(vec![]);
+    let (ingest, _store) = make_ingest(vec![]);
     let pdfs: Vec<(String, String)> = vec![];
 
     let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
@@ -352,7 +178,7 @@ async fn test_batch_ingest_empty_list() {
 #[tokio::test]
 async fn test_batch_ingest_import_eligible_always_false() {
     // D127 invariant: import_eligible must never be true, regardless of success
-    let (ingest, _nodes, _snapshot_calls) = make_ingest(vec![]);
+    let (ingest, _store) = make_ingest(vec![]);
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
 
     let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
@@ -388,7 +214,7 @@ async fn test_ingest_citations_create_cites_edges() {
             title: None,
         },
     ];
-    let (ingest, nodes, _snapshot_calls) = make_ingest_with_citations(vec![], citations);
+    let (ingest, store) = make_ingest_with_citations(vec![], citations);
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
 
     let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
@@ -399,7 +225,7 @@ async fn test_ingest_citations_create_cites_edges() {
     assert_eq!(result.total_sections, 1);
     // 1 Paper + 1 Section + 2 Citation + 3 Reference = 7 total
     // Reference nodes are created for ALL citations (full bibliography).
-    assert_eq!(nodes.load(Ordering::SeqCst), 7);
+    assert_eq!(store.node_count_total(), 7);
 }
 
 #[tokio::test]
@@ -413,7 +239,7 @@ async fn test_ingest_citation_dedup_shared_reference() {
         arxiv_id: Some("2301.09999".to_string()),
         title: Some("Shared Paper".to_string()),
     };
-    let (ingest, nodes, _snapshot_calls) =
+    let (ingest, store) =
         make_ingest_with_citations(vec![], vec![shared_citation.clone()]);
     let pdfs = vec![
         ("paper1.pdf".to_string(), "2401.00001".to_string()),
@@ -426,9 +252,9 @@ async fn test_ingest_citation_dedup_shared_reference() {
     assert_eq!(result.total_cites_resolved, 2); // both papers cite it
     // 2 Paper + 2 Section + 1 Citation (deduped) + 1 Reference (deduped) = 6 total
     assert_eq!(
-        nodes.load(Ordering::SeqCst),
+        store.node_count_total(),
         6,
         "expected dedup: 2 Paper + 2 Section + 1 Citation + 1 Reference = 6 nodes, got {}",
-        nodes.load(Ordering::SeqCst)
+        store.node_count_total()
     );
 }

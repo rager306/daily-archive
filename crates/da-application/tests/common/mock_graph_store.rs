@@ -18,6 +18,7 @@ use da_ports::graph_store::{
     VectorSearchResult,
 };
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -30,57 +31,68 @@ pub struct MockProps {
     pub bool_props: HashMap<(u64, String), bool>,
 }
 
+/// Inner state — behind Arc so MockGraphStore is Clone-able while
+/// keeping the same shared state. This lets tests create a clone of the
+/// store, hand one to the use case (as Box<dyn DirectGraphStore>), and
+/// keep the other for inspection after the use case runs.
+#[derive(Debug, Default)]
+struct MockGraphStoreInner {
+    /// (node_id, label) — one entry per create_node call.
+    nodes: Mutex<Vec<(u64, String)>>,
+    /// (source, target, edge_type) — one entry per create_edge call.
+    edges: Mutex<Vec<(u64, u64, String)>>,
+    /// Monotonic node id counter.
+    counter: AtomicUsize,
+    /// All properties ever set, indexed by (node_id, key).
+    props: Mutex<MockProps>,
+    /// Count of export_snapshot calls.
+    snapshot_calls: AtomicUsize,
+    /// Count of import_snapshot calls.
+    import_calls: AtomicUsize,
+    /// Optional canned payload returned by export_snapshot. Tests that
+    /// need a specific payload set this; otherwise the mock returns
+    /// a stable placeholder (b"mock-snapshot-data") for assertions.
+    snapshot_data: Mutex<Option<Vec<u8>>>,
+}
+
 /// Mock GraphStore that records all node/edge operations.
 /// Thread-safe via Mutex. All methods return Ok or empty results.
 ///
-/// Counters are exposed for tests that need to assert on call frequency
-/// (e.g. snapshot_calls was the reason batch_ingest_test kept a private
-/// mock — now it can use the shared one and read snapshot_calls()).
+/// Clone-able (Arc-backed) so tests can hand one clone to a use case and
+/// keep another for inspection. Counters are exposed for tests that need
+/// to assert on call frequency (e.g. snapshot_calls was the reason
+/// batch_ingest_test kept a private mock — now it can use the shared one
+/// and read snapshot_call_count()).
+#[derive(Debug, Clone)]
 pub struct MockGraphStore {
-    /// (node_id, label) — one entry per create_node call.
-    pub nodes: Mutex<Vec<(u64, String)>>,
-    /// (source, target, edge_type) — one entry per create_edge call.
-    pub edges: Mutex<Vec<(u64, u64, String)>>,
-    /// Monotonic node id counter.
-    pub counter: AtomicUsize,
-    /// All properties ever set, indexed by (node_id, key).
-    pub props: Mutex<MockProps>,
-    /// Count of export_snapshot calls.
-    pub snapshot_calls: AtomicUsize,
-    /// Count of import_snapshot calls.
-    pub import_calls: AtomicUsize,
+    inner: Arc<MockGraphStoreInner>,
 }
 
 impl MockGraphStore {
     pub fn new() -> Self {
         Self {
-            nodes: Mutex::new(Vec::new()),
-            edges: Mutex::new(Vec::new()),
-            counter: AtomicUsize::new(0),
-            props: Mutex::new(MockProps::default()),
-            snapshot_calls: AtomicUsize::new(0),
-            import_calls: AtomicUsize::new(0),
+            inner: Arc::new(MockGraphStoreInner::default()),
         }
     }
 
     /// Convenience: total number of create_node calls.
     pub fn node_count_total(&self) -> usize {
-        self.nodes.lock().unwrap().len()
+        self.inner.nodes.lock().unwrap().len()
     }
 
     /// Convenience: total number of create_edge calls.
     pub fn edge_count_total(&self) -> usize {
-        self.edges.lock().unwrap().len()
+        self.inner.edges.lock().unwrap().len()
     }
 
     /// Count of export_snapshot calls so far.
     pub fn snapshot_call_count(&self) -> usize {
-        self.snapshot_calls.load(Ordering::SeqCst)
+        self.inner.snapshot_calls.load(Ordering::SeqCst)
     }
 
     /// Count of import_snapshot calls so far.
     pub fn import_call_count(&self) -> usize {
-        self.import_calls.load(Ordering::SeqCst)
+        self.inner.import_calls.load(Ordering::SeqCst)
     }
 }
 
@@ -126,11 +138,19 @@ impl GraphStore for MockGraphStore {
         Ok(vec![])
     }
     async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
-        self.snapshot_calls.fetch_add(1, Ordering::SeqCst);
-        Ok(vec![])
+        self.inner.snapshot_calls.fetch_add(1, Ordering::SeqCst);
+        // Return canned payload if set; otherwise a stable placeholder.
+        let data = self
+            .inner
+            .snapshot_data
+            .lock()
+            .unwrap()
+            .clone()
+            .unwrap_or_else(|| b"mock-snapshot-data".to_vec());
+        Ok(data)
     }
     async fn import_snapshot(&self, _data: &[u8]) -> GraphResult<()> {
-        self.import_calls.fetch_add(1, Ordering::SeqCst);
+        self.inner.import_calls.fetch_add(1, Ordering::SeqCst);
         Ok(())
     }
     async fn health(&self) -> GraphResult<bool> {
@@ -141,8 +161,8 @@ impl GraphStore for MockGraphStore {
 #[async_trait::async_trait]
 impl DirectGraphStore for MockGraphStore {
     async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
-        let id = self.counter.fetch_add(1, Ordering::SeqCst) as u64;
-        self.nodes.lock().unwrap().push((id, label.to_string()));
+        let id = self.inner.counter.fetch_add(1, Ordering::SeqCst) as u64;
+        self.inner.nodes.lock().unwrap().push((id, label.to_string()));
         Ok(id)
     }
     async fn set_node_property_string(
@@ -151,7 +171,7 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: String,
     ) -> Result<(), GraphStoreError> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .string_props
@@ -164,7 +184,7 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: i64,
     ) -> Result<(), GraphStoreError> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .int_props
@@ -177,7 +197,7 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: f64,
     ) -> Result<(), GraphStoreError> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .float_props
@@ -190,7 +210,7 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: bool,
     ) -> Result<(), GraphStoreError> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .bool_props
@@ -203,7 +223,7 @@ impl DirectGraphStore for MockGraphStore {
         target: u64,
         edge_type: &str,
     ) -> Result<u64, GraphStoreError> {
-        let mut edges = self.edges.lock().unwrap();
+        let mut edges = self.inner.edges.lock().unwrap();
         let edge_id = edges.len() as u64;
         edges.push((source, target, edge_type.to_string()));
         Ok(edge_id)
@@ -243,10 +263,10 @@ impl DirectGraphStore for MockGraphStore {
         Ok(vec![])
     }
     async fn node_count(&self) -> usize {
-        self.nodes.lock().unwrap().len()
+        self.inner.nodes.lock().unwrap().len()
     }
     async fn edge_count(&self) -> usize {
-        self.edges.lock().unwrap().len()
+        self.inner.edges.lock().unwrap().len()
     }
     async fn find_node_by_string_property(
         &self,
@@ -257,8 +277,8 @@ impl DirectGraphStore for MockGraphStore {
         // Real SamyamaGraphStore filters by label; the mock must honor
         // the same contract (MEM495). Walk nodes with matching label and
         // check their string property.
-        let nodes = self.nodes.lock().unwrap();
-        let props = self.props.lock().unwrap();
+        let nodes = self.inner.nodes.lock().unwrap();
+        let props = self.inner.props.lock().unwrap();
         for (node_id, node_label) in nodes.iter() {
             if node_label == label {
                 if let Some(stored) = props.string_props.get(&(*node_id, key.to_string())) {
@@ -271,7 +291,7 @@ impl DirectGraphStore for MockGraphStore {
         None
     }
     async fn get_outgoing_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
-        self.edges
+        self.inner.edges
             .lock()
             .unwrap()
             .iter()
@@ -280,7 +300,7 @@ impl DirectGraphStore for MockGraphStore {
             .collect()
     }
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
-        self.edges
+        self.inner.edges
             .lock()
             .unwrap()
             .iter()
@@ -289,7 +309,7 @@ impl DirectGraphStore for MockGraphStore {
             .collect()
     }
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .string_props
@@ -297,7 +317,7 @@ impl DirectGraphStore for MockGraphStore {
             .cloned()
     }
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64> {
-        self.props
+        self.inner.props
             .lock()
             .unwrap()
             .int_props
@@ -305,7 +325,7 @@ impl DirectGraphStore for MockGraphStore {
             .copied()
     }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
-        self.nodes
+        self.inner.nodes
             .lock()
             .unwrap()
             .iter()
@@ -336,7 +356,7 @@ impl MockGraphStore {
     ) -> Option<da_domain::validator::PropertySnapshot> {
         use serde_json::json;
         let mut snap = da_domain::validator::PropertySnapshot::new();
-        let props = self.props.lock().unwrap();
+        let props = self.inner.props.lock().unwrap();
         for ((id, key), val) in props.string_props.iter() {
             if *id == node_id {
                 snap.insert(key.clone(), json!(val));
@@ -366,7 +386,7 @@ impl MockGraphStore {
         &self,
     ) -> Vec<da_domain::validator::SchemaViolation> {
         let mut all = Vec::new();
-        let nodes = self.nodes.lock().unwrap();
+        let nodes = self.inner.nodes.lock().unwrap();
         for (node_id, label) in nodes.iter() {
             if let Some(snap) = self.snapshot_node(*node_id) {
                 let mut v = da_domain::validator::validate_node_properties(label, &snap);
@@ -381,7 +401,7 @@ impl MockGraphStore {
         &self,
         node_id: u64,
     ) -> Vec<da_domain::validator::SchemaViolation> {
-        let nodes = self.nodes.lock().unwrap();
+        let nodes = self.inner.nodes.lock().unwrap();
         let label = nodes
             .iter()
             .find(|(id, _)| *id == node_id)
@@ -410,8 +430,8 @@ impl MockGraphStore {
     /// not match any contract row.
     pub fn validate_edge_contracts(&self) -> Vec<EdgeContractViolation> {
         let contracts = da_domain::edge_contract::edge_contracts();
-        let nodes = self.nodes.lock().unwrap();
-        let edges = self.edges.lock().unwrap();
+        let nodes = self.inner.nodes.lock().unwrap();
+        let edges = self.inner.edges.lock().unwrap();
 
         // Build a lookup: edge_constant -> EdgeContract
         let mut by_constant: std::collections::HashMap<&str, &da_domain::edge_contract::EdgeContract> =
