@@ -19,6 +19,7 @@ struct MockGraphStore {
     props: Mutex<std::collections::HashMap<(u64, String), String>>,
     bools: Mutex<std::collections::HashMap<(u64, String), bool>>,
     edges: Mutex<Vec<(u64, u64, String)>>,
+    labels: Mutex<std::collections::HashMap<u64, String>>,
 }
 
 #[async_trait]
@@ -69,8 +70,10 @@ impl GraphStore for MockGraphStore {
 
 #[async_trait]
 impl DirectGraphStore for MockGraphStore {
-    async fn create_node(&self, _: &str) -> Result<u64, GraphStoreError> {
-        Ok(self.nodes.fetch_add(1, Ordering::SeqCst) as u64)
+    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
+        let id = self.nodes.fetch_add(1, Ordering::SeqCst) as u64;
+        self.labels.lock().unwrap().insert(id, label.to_string());
+        Ok(id)
     }
     async fn set_node_property_string(
         &self,
@@ -171,8 +174,14 @@ impl DirectGraphStore for MockGraphStore {
     async fn get_node_property_int(&self, _node_id: u64, _key: &str) -> Option<i64> {
         None
     }
-    async fn get_nodes_by_label(&self, _label: &str) -> Vec<u64> {
-        Vec::new()
+    async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
+        self.labels
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, l)| l.as_str() == label)
+            .map(|(id, _)| *id)
+            .collect()
     }
 }
 
@@ -182,6 +191,7 @@ fn make_store() -> MockGraphStore {
         props: Mutex::new(std::collections::HashMap::new()),
         bools: Mutex::new(std::collections::HashMap::new()),
         edges: Mutex::new(Vec::new()),
+        labels: Mutex::new(std::collections::HashMap::new()),
     }
 }
 
