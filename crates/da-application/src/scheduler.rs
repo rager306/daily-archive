@@ -83,6 +83,9 @@ impl GraphScheduler {
         let node = store.create_node("SchedulerTask").await?;
 
         store
+            .set_node_property_string(node, "vid", format!("vid:task:{}", arxiv_id))
+            .await?;
+        store
             .set_node_property_string(node, "arxiv_id", arxiv_id.to_string())
             .await?;
         store
@@ -133,10 +136,10 @@ impl GraphScheduler {
                 .get_node_property_int(node_id, "next_retry")
                 .await
                 .unwrap_or(0);
-            if next_retry <= now {
-                if let Some(arxiv_id) = store.get_node_property_string(node_id, "arxiv_id").await {
-                    due.push((node_id, arxiv_id));
-                }
+            if next_retry <= now
+                && let Some(arxiv_id) = store.get_node_property_string(node_id, "arxiv_id").await
+            {
+                due.push((node_id, arxiv_id));
             }
         }
         due

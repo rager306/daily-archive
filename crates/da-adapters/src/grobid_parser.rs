@@ -90,13 +90,12 @@ impl GrobidParser {
 
     /// Extract abstract from TEI XML.
     fn extract_abstract(tei: &str) -> String {
-        if let Some(start) = tei.find("<abstract") {
-            if let Some(content_start) = tei[start..].find('>') {
-                let after = &tei[start + content_start + 1..];
-                if let Some(end) = after.find("</abstract>") {
-                    // Strip nested tags
-                    return Self::strip_xml_tags(&after[..end]);
-                }
+        if let Some(start) = tei.find("<abstract")
+            && let Some(content_start) = tei[start..].find('>')
+        {
+            let after = &tei[start + content_start + 1..];
+            if let Some(end) = after.find("</abstract>") {
+                return Self::strip_xml_tags(&after[..end]);
             }
         }
         String::new()
@@ -104,12 +103,12 @@ impl GrobidParser {
 
     /// Extract body text from TEI XML.
     fn extract_body(tei: &str) -> String {
-        if let Some(start) = tei.find("<body") {
-            if let Some(content_start) = tei[start..].find('>') {
-                let after = &tei[start + content_start + 1..];
-                if let Some(end) = after.find("</body>") {
-                    return Self::strip_xml_tags(&after[..end]);
-                }
+        if let Some(start) = tei.find("<body")
+            && let Some(content_start) = tei[start..].find('>')
+        {
+            let after = &tei[start + content_start + 1..];
+            if let Some(end) = after.find("</body>") {
+                return Self::strip_xml_tags(&after[..end]);
             }
         }
         String::new()
@@ -242,14 +241,14 @@ impl GrobidParser {
         let analytic = entry
             .find("<analytic>")
             .and_then(|s| entry[s..].find("</analytic>").map(|e| &entry[s..s + e]))?;
-        if let Some(t_start) = analytic.find("<title") {
-            if let Some(tag_end) = analytic[t_start..].find('>') {
-                let content = &analytic[t_start + tag_end + 1..];
-                if let Some(end) = content.find("</title>") {
-                    let title = Self::strip_xml_tags(&content[..end]);
-                    if !title.is_empty() {
-                        return Some(title);
-                    }
+        if let Some(t_start) = analytic.find("<title")
+            && let Some(tag_end) = analytic[t_start..].find('>')
+        {
+            let content = &analytic[t_start + tag_end + 1..];
+            if let Some(end) = content.find("</title>") {
+                let title = Self::strip_xml_tags(&content[..end]);
+                if !title.is_empty() {
+                    return Some(title);
                 }
             }
         }

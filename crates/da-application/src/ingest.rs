@@ -206,6 +206,11 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_string(cat_node, "code", domain.clone())
                 .await?;
+            // is_primary: arXiv papers have exactly one primary category
+            // (the first in metadata's categories list). This node IS primary.
+            self.graph_store
+                .set_node_property_bool(cat_node, "is_primary", true)
+                .await?;
             self.graph_store
                 .set_node_property_bool(cat_node, "retrieval_eligible", true)
                 .await?;
@@ -304,25 +309,36 @@ impl IngestUseCase {
             // Create Reference node for ALL citations (full bibliography).
             // Reference stores raw_text + metadata, even for unresolved citations.
             // Citation node is created separately for resolvable arxiv_ids.
+            // Dedup: if a Reference with the same vid exists, reuse it.
             {
                 let ref_vid = da_domain::vid::reference_vid(&citation.raw_text);
-                let ref_node = self.graph_store.create_node("Reference").await?;
-                self.graph_store
-                    .set_node_property_string(ref_node, "vid", ref_vid)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(ref_node, "raw_text", citation.raw_text.clone())
-                    .await?;
-                if let Some(ref arxiv_id) = citation.arxiv_id {
-                    self.graph_store
-                        .set_node_property_string(ref_node, "arxiv_id", arxiv_id.clone())
-                        .await?;
-                }
-                if let Some(ref title) = citation.title {
-                    self.graph_store
-                        .set_node_property_string(ref_node, "title", title.clone())
-                        .await?;
-                }
+                let ref_node = match self
+                    .graph_store
+                    .find_node_by_string_property("Reference", "vid", &ref_vid)
+                    .await
+                {
+                    Some(id) => id, // reuse existing Reference (idempotent)
+                    None => {
+                        let new_id = self.graph_store.create_node("Reference").await?;
+                        self.graph_store
+                            .set_node_property_string(new_id, "vid", ref_vid)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(new_id, "raw_text", citation.raw_text.clone())
+                            .await?;
+                        if let Some(ref arxiv_id) = citation.arxiv_id {
+                            self.graph_store
+                                .set_node_property_string(new_id, "arxiv_id", arxiv_id.clone())
+                                .await?;
+                        }
+                        if let Some(ref title) = citation.title {
+                            self.graph_store
+                                .set_node_property_string(new_id, "title", title.clone())
+                                .await?;
+                        }
+                        new_id
+                    }
+                };
                 if let Some(ref doi) = citation.doi {
                     self.graph_store
                         .set_node_property_string(ref_node, "doi", doi.clone())

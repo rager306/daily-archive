@@ -99,6 +99,15 @@ impl DirectGraphStore for MockGraphStore {
             .insert((node_id, key.to_string()), value);
         Ok(())
     }
+    async fn set_node_property_float(
+        &self,
+        _node_id: u64,
+        _key: &str,
+        _value: f64,
+    ) -> Result<(), GraphStoreError> {
+        Ok(())
+    }
+
     async fn create_edge(
         &self,
         source: u64,

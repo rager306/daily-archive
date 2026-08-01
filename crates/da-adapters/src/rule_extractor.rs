@@ -68,10 +68,10 @@ impl ExtractionConfig {
             "../../data/extraction_patterns.yaml",
             "../../../data/extraction_patterns.yaml",
         ] {
-            if std::path::Path::new(path).exists() {
-                if let Ok(config) = Self::from_yaml_file(path) {
-                    return config;
-                }
+            if std::path::Path::new(path).exists()
+                && let Ok(config) = Self::from_yaml_file(path)
+            {
+                return config;
             }
         }
         Self::bundled()
@@ -99,12 +99,9 @@ pub struct RuleBasedExtractor {
 struct LoweredConfig {
     method_acronyms_lower: Vec<String>,
     method_acronyms_canonical: Vec<String>,
-    models_lower: Vec<String>,
     models_prefix_lower: Vec<String>, // first segment before '-', lowercased
     datasets_lower: Vec<String>,
     metrics_lower: Vec<String>,
-    task_phrases_lower: Vec<String>,
-    task_acronyms_lower: Vec<String>,
     method_phrases_lower: Vec<String>,
 }
 
@@ -118,7 +115,6 @@ impl LoweredConfig {
                 .map(|s| s.to_lowercase())
                 .collect(),
             method_acronyms_canonical: config.methods.acronyms.clone(),
-            models_lower: config.models.iter().map(|s| s.to_lowercase()).collect(),
             models_prefix_lower: config
                 .models
                 .iter()
@@ -126,18 +122,6 @@ impl LoweredConfig {
                 .collect(),
             datasets_lower: config.datasets.iter().map(|s| s.to_lowercase()).collect(),
             metrics_lower: config.metrics.iter().map(|s| s.to_lowercase()).collect(),
-            task_phrases_lower: config
-                .tasks
-                .phrases
-                .iter()
-                .map(|s| s.to_lowercase())
-                .collect(),
-            task_acronyms_lower: config
-                .tasks
-                .acronyms
-                .iter()
-                .map(|s| s.to_lowercase())
-                .collect(),
             method_phrases_lower: config
                 .methods
                 .phrases

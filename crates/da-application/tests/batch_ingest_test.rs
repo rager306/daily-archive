@@ -82,6 +82,9 @@ struct MockGraphStore {
     snapshot_calls: Arc<AtomicUsize>,
     // Track string properties for find_node_by_string_property testing
     props: std::sync::Mutex<std::collections::HashMap<(u64, String), String>>,
+    // Track node labels for find_node_by_string_property label filtering
+    // (real SamyamaGraphStore filters by label; mock must match that contract).
+    labels: std::sync::Mutex<std::collections::HashMap<u64, String>>,
 }
 
 #[async_trait]
@@ -133,8 +136,10 @@ impl GraphStore for MockGraphStore {
 
 #[async_trait]
 impl DirectGraphStore for MockGraphStore {
-    async fn create_node(&self, _label: &str) -> Result<u64, GraphStoreError> {
-        Ok(self.nodes.fetch_add(1, Ordering::SeqCst) as u64)
+    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
+        let id = self.nodes.fetch_add(1, Ordering::SeqCst) as u64;
+        self.labels.lock().unwrap().insert(id, label.to_string());
+        Ok(id)
     }
     async fn set_node_property_string(
         &self,
@@ -161,6 +166,14 @@ impl DirectGraphStore for MockGraphStore {
         _node_id: u64,
         _key: &str,
         _value: bool,
+    ) -> Result<(), GraphStoreError> {
+        Ok(())
+    }
+    async fn set_node_property_float(
+        &self,
+        _node_id: u64,
+        _key: &str,
+        _value: f64,
     ) -> Result<(), GraphStoreError> {
         Ok(())
     }
@@ -198,14 +211,18 @@ impl DirectGraphStore for MockGraphStore {
     }
     async fn find_node_by_string_property(
         &self,
-        _label: &str,
+        label: &str,
         key: &str,
         value: &str,
     ) -> Option<u64> {
         let props = self.props.lock().unwrap();
+        let labels = self.labels.lock().unwrap();
         for ((node_id, k), v) in props.iter() {
             if k == key && v == value {
-                return Some(*node_id);
+                // Verify the node label matches (real SamyamaGraphStore filters by label).
+                if labels.get(node_id).map(|s| s.as_str()) == Some(label) {
+                    return Some(*node_id);
+                }
             }
         }
         None
@@ -245,6 +262,7 @@ fn make_ingest_with_citations(
             nodes: nodes.clone(),
             snapshot_calls: snapshot_calls.clone(),
             props: std::sync::Mutex::new(std::collections::HashMap::new()),
+            labels: std::sync::Mutex::new(std::collections::HashMap::new()),
         }),
     );
     (ingest, nodes, snapshot_calls)
@@ -373,8 +391,9 @@ async fn test_ingest_citations_create_cites_edges() {
     assert_eq!(result.total_citations, 3);
     assert_eq!(result.total_cites_resolved, 2); // only 2 have arxiv_id
     assert_eq!(result.total_sections, 1);
-    // 1 Paper node + 2 Citation nodes = 3 total
-    assert_eq!(nodes.load(Ordering::SeqCst), 4); // 1 Paper + 1 Section + 2 Citation
+    // 1 Paper + 1 Section + 2 Citation + 3 Reference = 7 total
+    // Reference nodes are created for ALL citations (full bibliography).
+    assert_eq!(nodes.load(Ordering::SeqCst), 7);
 }
 
 #[tokio::test]
@@ -399,11 +418,11 @@ async fn test_ingest_citation_dedup_shared_reference() {
 
     assert_eq!(result.ok, 2);
     assert_eq!(result.total_cites_resolved, 2); // both papers cite it
-    // 2 Paper + 2 Section + 1 Citation (deduped!) = 5 total
+    // 2 Paper + 2 Section + 1 Citation (deduped) + 1 Reference (deduped) = 6 total
     assert_eq!(
         nodes.load(Ordering::SeqCst),
-        5,
-        "expected dedup: 2 Paper + 2 Section + 1 Citation = 5 nodes, got {}",
+        6,
+        "expected dedup: 2 Paper + 2 Section + 1 Citation + 1 Reference = 6 nodes, got {}",
         nodes.load(Ordering::SeqCst)
     );
 }

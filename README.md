@@ -161,7 +161,7 @@ pre-commit run --all-files
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
-| `da schema-init` | Initialize all 18 graph indexes |
+| `da schema-init` | Initialize all 26 graph indexes |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |

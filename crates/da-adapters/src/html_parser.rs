@@ -18,11 +18,11 @@ impl HtmlParser {
 
     /// Extract the page title from <title> tag.
     fn extract_title(html: &str) -> String {
-        if let Some(start) = html.find("<title>") {
-            if let Some(end) = html[start..].find("</title>") {
-                let raw = &html[start + 7..start + end];
-                return Self::strip_tags(raw).trim().to_string();
-            }
+        if let Some(start) = html.find("<title>")
+            && let Some(end) = html[start..].find("</title>")
+        {
+            let raw = &html[start + 7..start + end];
+            return Self::strip_tags(raw).trim().to_string();
         }
         "Untitled".to_string()
     }

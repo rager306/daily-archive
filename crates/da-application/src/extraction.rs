@@ -412,7 +412,6 @@ impl ExtractionUseCase {
         // Rule-based: find metric names (accuracy, F1, BLEU, etc.) in Results/Experiments
         // sections, extract nearby number as the observed value.
         let mut observations_created = 0usize;
-        let mut obs_edges_created = 0usize;
         if let Some(paper_node) = paper_node_id {
             let metrics_lower: &[&str] = &[
                 "accuracy",
@@ -426,7 +425,7 @@ impl ExtractionUseCase {
                 "rmse",
                 "mae",
             ];
-            for (i, ext) in extracted.iter().enumerate() {
+            for ext in extracted.iter() {
                 if ext.entity_type != EntityType::Metric {
                     continue;
                 }
@@ -451,6 +450,15 @@ impl ExtractionUseCase {
                         .await?;
                     self.graph_store
                         .set_node_property_float(obs_node, "value", value)
+                        .await?;
+                    // run_id: reference to the ExperimentRun that produced this observation.
+                    // Until ExperimentRun nodes are materialized (ADR-043 Wave 2),
+                    // we use a document-scoped pseudo-run so the required field is non-null.
+                    // This makes the provenance explicit: observation came from this paper,
+                    // not a formal experiment run we executed ourselves.
+                    let pseudo_run_id = format!("run:paper:{}", parsed.paper_id);
+                    self.graph_store
+                        .set_node_property_string(obs_node, "run_id", pseudo_run_id)
                         .await?;
                     self.graph_store
                         .set_node_property_string(obs_node, "document_id", parsed.paper_id.clone())

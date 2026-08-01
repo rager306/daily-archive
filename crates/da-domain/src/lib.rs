@@ -22,6 +22,7 @@ pub mod relation;
 pub mod scheduler;
 pub mod schema;
 pub mod source;
+pub mod validator;
 pub mod vid;
 pub mod vocabulary;
 

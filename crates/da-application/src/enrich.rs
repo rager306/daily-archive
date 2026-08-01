@@ -21,6 +21,7 @@ pub struct EnrichResult {
     pub topics_written: usize,
     pub authors_written: usize,
     pub concepts_written: usize,
+    pub institutions_written: usize,
     pub doi: Option<String>,
     pub cited_by_count: u32,
     pub openalex_id: String,
@@ -198,7 +199,9 @@ impl EnrichUseCase {
         let mut institutions_written = 0usize;
         for institution in &work.institutions {
             // Idempotent: check if Institution already exists
-            let inst_node = match self
+            // NOTE: We create the Institution node but do not yet link it to Author
+            // (no AFFILIATED_WITH edge type defined yet — ADR-043 Wave 2).
+            let _inst_node = match self
                 .graph_store
                 .find_node_by_string_property("Institution", "openalex_id", &institution.id)
                 .await
@@ -260,6 +263,7 @@ impl EnrichUseCase {
             topics_written,
             authors_written,
             concepts_written,
+            institutions_written,
             doi: work.doi,
             cited_by_count: work.cited_by_count,
             openalex_id: work.id,
@@ -319,6 +323,7 @@ impl EnrichUseCase {
             topics_written: 0,
             authors_written: 0,
             concepts_written: 0,
+            institutions_written: 0,
             doi: None,
             cited_by_count: 0,
             openalex_id: String::new(),

@@ -11,7 +11,7 @@
 //!   ConceptCluster = derived semantic community, NOT evidence unit.
 //!   MEMBER_OF_CLUSTER edge = community membership, NOT evidence participation.
 
-use da_domain::cluster::{self, DetectedCluster, EntityPapers};
+use da_domain::cluster::{self, EntityPapers};
 use da_domain::relation::hypergraph::MEMBER_OF_CLUSTER;
 use da_ports::graph_store::DirectGraphStore;
 
@@ -60,7 +60,6 @@ impl ClusterUseCase {
 
         let mut clusters_created = 0usize;
         let mut member_edges_created = 0usize;
-        let mut clusters_skipped = 0usize;
 
         // 3. Materialize each DetectedCluster
         for dc in &detected {
@@ -104,7 +103,7 @@ impl ClusterUseCase {
             clusters_created += 1;
         }
 
-        clusters_skipped = detected
+        let clusters_skipped = detected
             .iter()
             .map(|d| d.members.len())
             .sum::<usize>()

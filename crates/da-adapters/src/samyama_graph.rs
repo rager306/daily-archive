@@ -461,10 +461,10 @@ impl da_ports::graph_store::DirectGraphStore for SamyamaGraphStore {
         let store = self.store_read().await;
         let label = Label::new(label);
         for node in store.get_nodes_by_label(&label) {
-            if let Some(prop) = node.properties.get(key) {
-                if prop.as_string() == Some(value) {
-                    return Some(node.id.0);
-                }
+            if let Some(prop) = node.properties.get(key)
+                && prop.as_string() == Some(value)
+            {
+                return Some(node.id.0);
             }
         }
         None
