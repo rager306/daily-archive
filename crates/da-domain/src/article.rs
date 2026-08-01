@@ -40,7 +40,10 @@ impl NodeSchemaDef for SectionSchema {
             ("char_count", FieldType::Integer),
             // Phase 3 GNN readiness — section text embedding
             ("embedding", FieldType::Vector),
-        ]
+                    ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -79,7 +82,9 @@ impl NodeSchemaDef for ConceptSchema {
             ("wikidata", FieldType::String),
             ("openalex_id", FieldType::String),
             ("works_count", FieldType::Integer),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -116,7 +121,9 @@ impl NodeSchemaDef for TopicSchema {
             ("subfield", FieldType::String),
             ("openalex_id", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -148,7 +155,9 @@ impl NodeSchemaDef for CategorySchema {
         vec![
             ("name", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -179,7 +188,9 @@ impl NodeSchemaDef for AuthorSchema {
             ("openalex_id", FieldType::String),
             ("works_count", FieldType::Integer),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -210,7 +221,9 @@ impl NodeSchemaDef for InstitutionSchema {
             ("ror", FieldType::String),
             ("openalex_id", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 
@@ -242,7 +255,10 @@ impl NodeSchemaDef for ReferenceSchema {
             ("doi", FieldType::String),
             ("title", FieldType::String),
             ("resolved_work_vid", FieldType::String),
-        ]
+                    ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 

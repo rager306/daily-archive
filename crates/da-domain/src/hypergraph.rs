@@ -31,7 +31,9 @@ impl NodeSchemaDef for ConceptClusterSchema {
             ("embedding", FieldType::Vector),
             ("retrieval_eligible", FieldType::Boolean),
             ("valid_from", FieldType::DateTime),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 

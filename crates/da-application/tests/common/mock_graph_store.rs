@@ -613,3 +613,63 @@ impl MockGraphStore {
         violations
     }
 }
+
+// ─── Convenience assertion helper (ADR-045 Wave D integration) ────────
+//
+// One-call conformance check that integration tests can drop at the end
+// of a test body. Panics with a readable diagnostic on any violation
+// across nodes, edges, and cross-references.
+//
+
+impl MockGraphStore {
+    /// Assert that the store has zero violations across all three
+    /// validators: node schemas, edge contracts, cross-references.
+    /// Panics with a combined diagnostic if any violation is found.
+    ///
+    /// Usage in integration tests:
+    ///   let store = make_store();
+    ///   // ... pipeline calls ...
+    ///   store.assert_graph_conforms("test name");
+    pub fn assert_graph_conforms(&self, context: &str) {
+        let mut failures = Vec::new();
+
+        let node_violations = self.validate_all_nodes();
+        if !node_violations.is_empty() {
+            failures.push(format!(
+                "node schema violations ({})\n{}",
+                node_violations.len(),
+                da_domain::validator::format_violations(&node_violations)
+            ));
+        }
+
+        let edge_violations = self.validate_edge_contracts();
+        if !edge_violations.is_empty() {
+            let formatted: Vec<String> =
+                edge_violations.iter().map(|v| format!("  {v}")).collect();
+            failures.push(format!(
+                "edge contract violations ({})\n{}",
+                edge_violations.len(),
+                formatted.join("\n")
+            ));
+        }
+
+        let xref_violations = self.validate_cross_references();
+        if !xref_violations.is_empty() {
+            let formatted: Vec<String> =
+                xref_violations.iter().map(|v| format!("  {v}")).collect();
+            failures.push(format!(
+                "cross-reference violations ({})\n{}",
+                xref_violations.len(),
+                formatted.join("\n")
+            ));
+        }
+
+        if !failures.is_empty() {
+            panic!(
+                "graph conformance check failed for {}\n===\n{}",
+                context,
+                failures.join("\n---\n")
+            );
+        }
+    }
+}

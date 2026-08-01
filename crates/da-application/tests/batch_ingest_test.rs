@@ -122,6 +122,7 @@ async fn test_batch_ingest_all_success() {
     assert!(!result.import_eligible); // D127
     assert_eq!(store.node_count_total(), 6); // 3 Paper + 3 Section nodes
     assert_eq!(store.snapshot_call_count(), 0); // no snapshot (None)
+    store.assert_graph_conforms("test_batch_ingest_all_success");
 }
 
 #[tokio::test]

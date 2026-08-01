@@ -39,7 +39,8 @@ impl NodeSchemaDef for EvidenceBundleSchema {
             ("valid_to", FieldType::DateTime),
             ("schema_version", FieldType::Integer),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+]
     }
 }
 
@@ -71,7 +72,9 @@ impl NodeSchemaDef for ClaimSchema {
             ("valid_time", FieldType::DateTime),
             ("source_span_id", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
-        ]
+                    ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+]
     }
 }
 

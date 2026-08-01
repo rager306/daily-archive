@@ -292,7 +292,8 @@ impl crate::schema::NodeSchemaDef for CitationSchema {
             ("doi", crate::schema::FieldType::String),
             ("schema_version", crate::schema::FieldType::Integer),
             ("retrieval_eligible", crate::schema::FieldType::Boolean),
-        ]
+                    ("import_eligible", crate::schema::FieldType::Boolean),
+]
     }
 }
 
