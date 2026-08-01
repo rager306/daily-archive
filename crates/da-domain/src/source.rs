@@ -34,11 +34,13 @@ impl NodeSchemaDef for SourceSchema {
             ("access_method", FieldType::String),
             ("base_url", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
             ("valid_from", FieldType::DateTime),
-                    ("domain_assignment_method", FieldType::String),
+            ("domain_assignment_method", FieldType::String),
             ("primary_scientific_domain", FieldType::String),
             ("scientific_domains", FieldType::String),
-]
+        ]
     }
 }
 

@@ -209,3 +209,23 @@ fn test_validate_node_rejects_invalid_snapshot() {
     assert!(stdout.contains("CRITICAL"), "expected CRITICAL in output: {stdout}");
     assert!(stdout.contains("required-field"), "expected required-field rule: {stdout}");
 }
+
+#[test]
+fn test_audit_fields_command_succeeds_when_clean() {
+    let bin = env!("CARGO_BIN_EXE_da");
+    let output = Command::new(bin)
+        .arg("audit-fields")
+        .output()
+        .expect("failed to spawn `da audit-fields`");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        output.status.success(),
+        "audit-fields exited non-zero (means drift exists)\nstdout:\n{stdout}\nstderr:\n{stderr}"
+    );
+    assert!(
+        stdout.contains("OK — every pipeline-set field is declared"),
+        "expected success marker, got:\n{stdout}"
+    );
+}

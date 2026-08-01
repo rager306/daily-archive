@@ -167,6 +167,7 @@ pre-commit run --all-files
 | `da schema-list` | Print all registered node schemas as markdown (ADR-040) |
 | `da cross-refs` | Print cross-reference field registry (ADR-045 Wave F) |
 | `da validate-node --label X` | Validate a node snapshot from stdin JSON (ADR-045 Wave D CLI) |
+| `da audit-fields` | Audit pipeline-set vs schema-declared fields (ADR-045 / MEM508) |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |

@@ -151,6 +151,11 @@ enum Commands {
     /// Print the cross-reference registry as a markdown table.
     CrossRefs,
 
+    /// Audit pipeline-set fields vs schema-declared fields. Reports
+    /// drift between what the pipeline writes and what the schema
+    /// declares (ADR-045 / MEM508).
+    AuditFields,
+
     /// Validate a single node property snapshot (JSON on stdin).
     /// Example: echo '{"vid":"x","arxiv_id":"y",...}' | da validate-node Paper
     ValidateNode {
@@ -274,6 +279,9 @@ fn main() {
         Commands::CrossRefs => {
             println!("# Cross-reference registry (ADR-045 Wave F)\n");
             print!("{}", da_domain::validator::render_cross_references_table());
+        }
+        Commands::AuditFields => {
+            audit_fields();
         }
         Commands::ValidateNode { label } => {
             validate_node_stdin(label);
@@ -1069,6 +1077,156 @@ fn validate_node_stdin(label: String) {
     );
     print!("{}", da_domain::validator::format_violations(&violations));
     if !criticals.is_empty() {
+        std::process::exit(1);
+    }
+}
+
+/// Audit pipeline-set fields against schema-declared fields.
+///
+/// Walks `da-application/src/*.rs` for `create_node("Label")` blocks,
+/// extracts every `set_node_property_*(node, "field", ...)` call within
+/// 80 lines after each create_node, and compares against fields declared
+/// in the corresponding `NodeSchemaDef::required_fields()` +
+/// `optional_fields()`. Reports drift.
+///
+/// Exits with code 1 if any undeclared fields are found.
+/// This is the CLI counterpart of the static Python audit documented in
+/// MEM508. Run after any pipeline change to catch drift before CI.
+fn audit_fields() {
+    use std::collections::{BTreeMap, HashSet};
+    use std::fs;
+    use std::path::PathBuf;
+
+    println!("daily-archive v2 — audit-fields (ADR-045 / MEM508)");
+    println!();
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let src_dir = manifest_dir.join("../da-application/src");
+    let src_dir = match src_dir.canonicalize() {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!("Could not locate da-application/src directory");
+            std::process::exit(2);
+        }
+    };
+
+    // Build a map: label -> set of fields set via set_node_property_*.
+    let mut pipeline_fields: BTreeMap<String, HashSet<String>> = BTreeMap::new();
+    let mut scanned_files = 0usize;
+    if let Ok(entries) = fs::read_dir(&src_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+                continue;
+            }
+            scanned_files += 1;
+            let content = match fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+            let lines: Vec<&str> = content.lines().collect();
+            // Find create_node call sites
+            let mut create_sites: Vec<(usize, String)> = Vec::new();
+            for (i, line) in lines.iter().enumerate() {
+                if let Some(start) = line.find("create_node(\"") {
+                    let after = &line[start + "create_node(\"".len()..];
+                    if let Some(end) = after.find("\")") {
+                        let label = &after[..end];
+                        if !label.is_empty()
+                            && label.chars().all(|c| c.is_alphanumeric() || c == '_')
+                        {
+                            create_sites.push((i, label.to_string()));
+                        }
+                    }
+                }
+            }
+            // For each create_node, scan forward up to 80 lines for
+            // set_node_property_*(node_id, "field", ...) calls.
+            for (idx, (line_num, label)) in create_sites.iter().enumerate() {
+                let next_line = create_sites
+                    .get(idx + 1)
+                    .map(|(n, _)| *n)
+                    .unwrap_or(lines.len().min(line_num + 80));
+                let block: String = lines[*line_num..next_line].join("\n");
+                let fields = pipeline_fields
+                    .entry(label.clone())
+                    .or_insert_with(HashSet::new);
+                // Simple line-by-line scan for set_node_property_* calls.
+                for bline in block.lines() {
+                    if let Some(pos) = bline.find("set_node_property_") {
+                        // Find the " field " pair after the first comma.
+                        if let Some(comma) = bline[pos..].find(',') {
+                            let after = &bline[pos + comma + 1..];
+                            if let Some(q1) = after.find('"') {
+                                let rest = &after[q1 + 1..];
+                                if let Some(q2) = rest.find('"') {
+                                    fields.insert(rest[..q2].to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Build schema declared fields map
+    let mut declared: BTreeMap<String, HashSet<String>> = BTreeMap::new();
+    for schema in da_domain::schema::all_node_schemas() {
+        let label = schema.label().to_string();
+        let mut fields = HashSet::new();
+        for (n, _) in schema.required_fields() {
+            fields.insert(n.to_string());
+        }
+        for (n, _) in schema.optional_fields() {
+            fields.insert(n.to_string());
+        }
+        declared.insert(label, fields);
+    }
+
+    println!("Scanned {scanned_files} .rs files under da-application/src");
+    println!(
+        "Found {} distinct labels with set_node_property_* calls",
+        pipeline_fields.len()
+    );
+    println!(
+        "Schema registry declares {} node types",
+        declared.len()
+    );
+    println!();
+
+    let mut total_undeclared = 0usize;
+    let mut labels_with_drift = 0usize;
+    for (label, fields) in &pipeline_fields {
+        let schema_fields = declared.get(label).cloned().unwrap_or_default();
+        let undeclared: Vec<&String> =
+            fields.iter().filter(|f| !schema_fields.contains(*f)).collect();
+        if !undeclared.is_empty() {
+            labels_with_drift += 1;
+            total_undeclared += undeclared.len();
+            println!(
+                "  {label}: {} undeclared field(s): {}",
+                undeclared.len(),
+                undeclared
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
+        }
+    }
+
+    println!();
+    if total_undeclared == 0 {
+        println!("✅ OK — every pipeline-set field is declared in its schema");
+    } else {
+        println!(
+            "❌ {} undeclared field(s) across {} label(s)",
+            total_undeclared, labels_with_drift
+        );
+        println!();
+        println!("Fix: add each missing field to the corresponding schema's");
+        println!("required_fields() or optional_fields() in crates/da-domain/src/.");
         std::process::exit(1);
     }
 }
