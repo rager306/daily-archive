@@ -292,3 +292,85 @@ impl DirectGraphStore for MockGraphStore {
             .collect()
     }
 }
+
+// ─── Validator integration helpers (ADR-045 Wave D foundation) ─────────
+//
+// These helpers let integration tests validate the properties that were
+// actually written to the mock store, without needing the validator to
+// be wired into the pipeline itself. Pattern:
+//
+//   let store = MockGraphStore::new();
+//   // ... pipeline calls that create nodes via store.create_node(...)
+//   let report = store.validate_all_nodes();
+//   assert!(report.is_empty(), "violations:\n{}", da_domain::validator::format_violations(&report));
+//
+
+impl MockGraphStore {
+    /// Build a PropertySnapshot for one node (by id) by merging its
+    /// string/int/float/bool properties. Returns None if node not found.
+    pub fn snapshot_node(
+        &self,
+        node_id: u64,
+    ) -> Option<da_domain::validator::PropertySnapshot> {
+        use serde_json::json;
+        let mut snap = da_domain::validator::PropertySnapshot::new();
+        let props = self.props.lock().unwrap();
+        for ((id, key), val) in props.string_props.iter() {
+            if *id == node_id {
+                snap.insert(key.clone(), json!(val));
+            }
+        }
+        for ((id, key), val) in props.int_props.iter() {
+            if *id == node_id {
+                snap.insert(key.clone(), json!(val));
+            }
+        }
+        for ((id, key), val) in props.float_props.iter() {
+            if *id == node_id {
+                snap.insert(key.clone(), json!(val));
+            }
+        }
+        for ((id, key), val) in props.bool_props.iter() {
+            if *id == node_id {
+                snap.insert(key.clone(), json!(val));
+            }
+        }
+        Some(snap)
+    }
+
+    /// Validate every node in the store against its schema. Returns the
+    /// full list of violations across all nodes (flattened).
+    pub fn validate_all_nodes(
+        &self,
+    ) -> Vec<da_domain::validator::SchemaViolation> {
+        let mut all = Vec::new();
+        let nodes = self.nodes.lock().unwrap();
+        for (node_id, label) in nodes.iter() {
+            if let Some(snap) = self.snapshot_node(*node_id) {
+                let mut v = da_domain::validator::validate_node_properties(label, &snap);
+                all.append(&mut v);
+            }
+        }
+        all
+    }
+
+    /// Validate a single node by id; returns its violations.
+    pub fn validate_node(
+        &self,
+        node_id: u64,
+    ) -> Vec<da_domain::validator::SchemaViolation> {
+        let nodes = self.nodes.lock().unwrap();
+        let label = nodes
+            .iter()
+            .find(|(id, _)| *id == node_id)
+            .map(|(_, l)| l.clone());
+        drop(nodes);
+        match label {
+            Some(label) => {
+                let snap = self.snapshot_node(node_id).unwrap_or_default();
+                da_domain::validator::validate_node_properties(&label, &snap)
+            }
+            None => Vec::new(),
+        }
+    }
+}
