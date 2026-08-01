@@ -505,3 +505,111 @@ impl std::fmt::Display for EdgeContractViolation {
         )
     }
 }
+
+// ─── Cross-reference validator (ADR-045 Wave F runtime) ───────────────
+//
+// Walks the cross_reference_fields() registry and confirms that every
+// declared reference field on every node of the matching label points
+// to a node that actually exists in the store under target_label.
+//
+
+/// One cross-reference violation found in the mock store.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CrossRefViolation {
+    pub source_label: String,
+    pub source_node_id: u64,
+    pub field: String,
+    pub target_label: String,
+    pub dangling_value: String,
+    pub reason: String,
+}
+
+impl std::fmt::Display for CrossRefViolation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}[{}].{} → {}: {} (value={})",
+            self.source_label,
+            self.source_node_id,
+            self.field,
+            self.target_label,
+            self.reason,
+            self.dangling_value
+        )
+    }
+}
+
+impl MockGraphStore {
+    /// Walk every node, check every cross-reference field declared for
+    /// its label, and confirm the referenced node exists under the
+    /// target label. Returns all violations found.
+    pub fn validate_cross_references(&self) -> Vec<CrossRefViolation> {
+        let cross_refs = da_domain::validator::cross_reference_fields();
+        let nodes = self.inner.nodes.lock().unwrap();
+        let props = self.inner.props.lock().unwrap();
+
+        // Build a lookup: (label, vid_value) → exists
+        // so we can check references in O(1) per lookup.
+        let mut existing: std::collections::HashSet<(String, String)> =
+            std::collections::HashSet::new();
+        for (node_id, label) in nodes.iter() {
+            if let Some(vid) = props.string_props.get(&(*node_id, "vid".to_string())) {
+                existing.insert((label.clone(), vid.clone()));
+            }
+        }
+
+        let mut violations = Vec::new();
+        for (node_id, label) in nodes.iter() {
+            for cr in &cross_refs {
+                if cr.source_label != label.as_str() {
+                    continue;
+                }
+                let key = cr.field.to_string();
+                let value = props.string_props.get(&(*node_id, key.clone()));
+                match value {
+                    None => {
+                        if cr.required {
+                            violations.push(CrossRefViolation {
+                                source_label: label.clone(),
+                                source_node_id: *node_id,
+                                field: cr.field.to_string(),
+                                target_label: cr.target_label.to_string(),
+                                dangling_value: String::new(),
+                                reason: "required cross-reference field is missing or empty".to_string(),
+                            });
+                        }
+                    }
+                    Some(s) if s.is_empty() => {
+                        if cr.required {
+                            violations.push(CrossRefViolation {
+                                source_label: label.clone(),
+                                source_node_id: *node_id,
+                                field: cr.field.to_string(),
+                                target_label: cr.target_label.to_string(),
+                                dangling_value: String::new(),
+                                reason: "required cross-reference field is missing or empty".to_string(),
+                            });
+                        }
+                    }
+                    Some(vid_value) => {
+                        let key_pair = (cr.target_label.to_string(), vid_value.clone());
+                        if !existing.contains(&key_pair) {
+                            violations.push(CrossRefViolation {
+                                source_label: label.clone(),
+                                source_node_id: *node_id,
+                                field: cr.field.to_string(),
+                                target_label: cr.target_label.to_string(),
+                                dangling_value: vid_value.clone(),
+                                reason: format!(
+                                    "no {} node with vid='{}'",
+                                    cr.target_label, vid_value
+                                ),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        violations
+    }
+}

@@ -243,3 +243,100 @@ async fn test_edge_contract_validator_accepts_polymorphic_mentions() {
         violations
     );
 }
+
+#[tokio::test]
+async fn test_cross_ref_validator_flags_dangling_required_reference() {
+    // Seed a MetricObservation node with run_id pointing to a non-existent
+    // ExperimentRun. Validator must flag the dangling reference.
+    use common::mock_graph_store::MockGraphStore;
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let m = store.create_node("MetricObservation").await.unwrap();
+    store
+        .set_node_property_string(m, "vid", "vid:obs:paper1:accuracy".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(m, "metric_definition_id", "vid:metric:accuracy".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(m, "run_id", "run:does-not-exist".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_float(m, "value", 0.95)
+        .await
+        .unwrap();
+
+    let violations = store.validate_cross_references();
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.field == "run_id" && v.target_label == "ExperimentRun"),
+        "expected run_id dangling reference violation, got {:?}",
+        violations
+    );
+}
+
+#[tokio::test]
+async fn test_cross_ref_validator_accepts_satisfied_reference() {
+    // Seed a ResearchEnvironment node with research_problem_id pointing
+    // to an existing ResearchProblem. Validator must accept it.
+    use common::mock_graph_store::MockGraphStore;
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let rp = store.create_node("ResearchProblem").await.unwrap();
+    store
+        .set_node_property_string(rp, "vid", "vid:problem:p1:improvement".to_string())
+        .await
+        .unwrap();
+    let env = store.create_node("ResearchEnvironment").await.unwrap();
+    store
+        .set_node_property_string(env, "vid", "vid:env:e1".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(env, "research_problem_id", "vid:problem:p1:improvement".to_string())
+        .await
+        .unwrap();
+
+    let violations = store.validate_cross_references();
+    let rp_violations: Vec<_> = violations
+        .iter()
+        .filter(|v| v.source_label == "ResearchEnvironment")
+        .collect();
+    assert!(
+        rp_violations.is_empty(),
+        "expected no violations for satisfied reference, got {:?}",
+        rp_violations
+    );
+}
+
+#[tokio::test]
+async fn test_cross_ref_validator_flags_missing_required_field() {
+    // Seed a MetricObservation without run_id at all. Validator must
+    // flag the missing required field.
+    use common::mock_graph_store::MockGraphStore;
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let m = store.create_node("MetricObservation").await.unwrap();
+    store
+        .set_node_property_string(m, "vid", "vid:obs:p2:f1".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(m, "metric_definition_id", "vid:metric:f1".to_string())
+        .await
+        .unwrap();
+    // run_id missing
+
+    let violations = store.validate_cross_references();
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.field == "run_id" && v.source_node_id == m),
+        "expected run_id missing-required violation, got {:?}",
+        violations
+    );
+}
