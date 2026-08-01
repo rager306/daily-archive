@@ -15,6 +15,10 @@ listed here — see `legacy/doc/adr/`.
 | [043](ADR-043-research-process-plane-execution-grounded.md) | Research Process Plane — Execution-Grounded Scientific Memory | Proposed | 2026-07-29 |
 | [044](ADR-044-schema-lifecycle-versioning-migration-healing.md) | Graph Schema Lifecycle — Versioned Manifest, Migration Framework, Self-Healing | Proposed | 2026-07-29 |
 | [045](ADR-045-schema-validator-logic-relations-invariants.md) | Schema Validator — Logic, Relations, and Invariant Checks | Proposed | 2026-07-24 |
+| [046](ADR-046-bitemporal-fact-model.md) | BiTemporal Fact Model — Valid Time + Transaction Time | Proposed | 2026-07-24 |
+| [047](ADR-047-conflict-detection-resolution.md) | Conflict Detection and Resolution | Proposed | 2026-07-24 |
+| [048](ADR-048-decision-intelligence.md) | Decision Intelligence — First-Class Decision Records | Proposed | 2026-07-24 |
+| [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
 
 ## Supersession chain
 
@@ -32,6 +36,16 @@ ADR-040 (Samyama schemaless) ──complemented──► ADR-044 (schema lifecyc
 ADR-043 (28 node types)      ──requires──► ADR-044 (versioned schema registry)
 ADR-044 (schema lifecycle)   ──enforced──► ADR-045 (schema validator)
 ADR-040 (Samyama store)      ──validated──► ADR-045 (mock contract gap: MEM495)
+ADR-042 (Claim fact value)   ──temporal──► ADR-046 (bi-temporal fact model)
+ADR-043 (process plane)      ──temporal──► ADR-046 (bi-temporal fact model)
+ADR-045 (validator)          ──extended──► ADR-046 (temporal-consistency rule)
+ADR-040 (Samyama store)      ──conflicts──► ADR-047 (conflict detection)
+ADR-042 (Claim competition)  ──conflicts──► ADR-047 (conflict detection)
+ADR-044 (healing actions)    ──decisions──► ADR-048 (decision intelligence)
+ADR-047 (conflict resolved)  ──decisions──► ADR-048 (decision intelligence)
+ADR-043 (use cases)          ──orchestrated──► ADR-049 (pipeline DSL)
+ADR-045 (validator)          ──preflight──► ADR-049 (pipeline validator)
+ADR-048 (decision recorded)  ──orchestrated──► ADR-049 (failure handler)
 ```
 
 ## Template
