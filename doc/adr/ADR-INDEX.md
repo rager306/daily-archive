@@ -19,7 +19,7 @@ listed here — see `legacy/doc/adr/`.
 | [047](ADR-047-conflict-detection-resolution.md) | Conflict Detection and Resolution | Proposed | 2026-07-24 |
 | [048](ADR-048-decision-intelligence.md) | Decision Intelligence — First-Class Decision Records | Proposed | 2026-07-24 |
 | [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
-| [050](ADR-050-universal-graph-subsystem-da-ontology-crate.md) | Universal Graph Subsystem — da-ontology Crate | Proposed | 2026-07-24 |
+| [050](ADR-050-universal-graph-subsystem-kg-crate-family.md) | Universal Graph Subsystem — kg-* Crate Family | Proposed | 2026-07-24 |
 
 ## Supersession chain
 
