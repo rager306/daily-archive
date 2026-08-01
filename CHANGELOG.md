@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### audit-fields CLI + Source schema regression fix (2026-07-24)
+
+MEM508 suggestion realized: the ad-hoc Python audit that found 18
+schema/pipeline drift bugs is now a first-class CLI command and a
+pre-commit hook.
+
+#### audit-fields CLI command
+
+- crates/da-cli/src/main.rs: +Commands::AuditFields → `da audit-fields`
+  Walks da-application/src/*.rs for create_node("Label") blocks, scans
+  forward for set_node_property_* calls, extracts field names, and
+  compares against each label's schema required_fields + optional_fields.
+  Exits non-zero on drift.
+- +test_audit_fields_command_succeeds_when_clean regression guard.
+- +pre-commit hook (runs on Rust changes).
+- README.md command table updated.
+
+#### Regression caught and fixed
+
+The new CLI audit caught a regression the Python audit had missed:
+Source schema was missing import_eligible and schema_version optional
+fields even though the pipeline sets them on every Source node. The
+Python audit's heuristic had missed the Source block (indentation
+parsing). Fixed by adding both fields to source.rs optional_fields.
+
+#### Pre-commit hook coverage summary
+
+7 hooks now cover: cargo-fmt, cargo-check, cargo-clippy,
+eval-baseline-check, schema-check (labels registered), docs-drift-check
+(tables present), audit-fields (fields declared). Schema/pipeline drift
+fails the commit, not just CI.
+
 ### Zero undeclared fields + Wave D integration across 4 test files (2026-07-24)
 
 Two waves closing the schema-pipeline drift gap end-to-end.
