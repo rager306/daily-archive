@@ -19,6 +19,7 @@ listed here — see `legacy/doc/adr/`.
 | [047](ADR-047-conflict-detection-resolution.md) | Conflict Detection and Resolution | Proposed | 2026-07-24 |
 | [048](ADR-048-decision-intelligence.md) | Decision Intelligence — First-Class Decision Records | Proposed | 2026-07-24 |
 | [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
+| [050](ADR-050-universal-graph-subsystem-da-ontology-crate.md) | Universal Graph Subsystem — da-ontology Crate | Proposed | 2026-07-24 |
 
 ## Supersession chain
 
@@ -46,6 +47,10 @@ ADR-047 (conflict resolved)  ──decisions──► ADR-048 (decision intellig
 ADR-043 (use cases)          ──orchestrated──► ADR-049 (pipeline DSL)
 ADR-045 (validator)          ──preflight──► ADR-049 (pipeline validator)
 ADR-048 (decision recorded)  ──orchestrated──► ADR-049 (failure handler)
+ADR-045 (validator)          ──replaced──► ADR-050 (da-ontology crate)
+ADR-040 (Samyama schemaless) ──layered──► ADR-050 (ontology as data)
+ADR-044 (schema lifecycle)   ──hosted──► ADR-050 (ontology crate)
+ADR-046/047/048/049 (data)   ──moved──► ADR-050 (YAML ontology files)
 ```
 
 ## Template

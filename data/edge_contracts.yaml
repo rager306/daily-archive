@@ -1,0 +1,161 @@
+# Edge endpoint contracts (ADR-045 Wave G / ONTOLOGY-DESIGN-V2.md).
+#
+# Authoritative source of "which edge type may connect which node labels".
+# Loaded by crates/da-domain/src/edge_contract.rs::load_edge_contracts().
+# Rendered by `da edge-contracts` CLI command.
+#
+# Convention (per project directive "не хардкодим"):
+# - This file is the single source of truth for edge endpoint metadata.
+# - Rust code holds loader logic + validator rules; data lives here.
+# - Polymorphic edges (multi-target) list every allowed target label.
+# - Rationale is required for every row; polymorphic rows must mention
+#   "or" / "/" / "," so the rationale documents the polymorphism.
+# - Adding a new edge to the pipeline requires a row here, otherwise
+#   `test_every_pipeline_edge_has_contract` fails CI.
+#
+# Layer convention (ONTOLOGY-DESIGN-V2.md §1):
+# - source layer > target layer is forbidden unless explicitly
+#   cross-cutting (e.g. MENTIONS L1→L9 is allowed).
+# - Layers: L0 Source, L1 Metadata, L2 Structure, L3 Content,
+#   L4 Relations, L5 Temporal (cross-cutting), L6 Evidence,
+#   L7 Conflict, L8 Decision, L9 Process, ops.
+
+edge_contracts:
+  # ─── Bibliographic plane (relation::bibliographic) ───
+  - edge_constant: AFFILIATED_WITH
+    source_label: Author
+    target_labels: [Institution]
+    rationale: "Author is affiliated with an institution (OpenAlex authorship)."
+
+  - edge_constant: CITES
+    source_label: Paper
+    target_labels: [Citation]
+    rationale: "Paper cites a bibliographic citation (resolvable to a Paper)."
+
+  - edge_constant: MENTIONS
+    source_label: Paper
+    # Polymorphic: textual mentions of extracted entities, research
+    # problems (from abstract), and metric observations (from results).
+    target_labels: [Entity, ResearchProblem, MetricObservation]
+    rationale: "Paper mentions this Entity/ResearchProblem/MetricObservation (extracted from paper text)."
+
+  - edge_constant: SUPERSEDES
+    source_label: Entity
+    target_labels: [Entity]
+    rationale: "Source Entity supersedes target Entity (D135 merge scenario)."
+
+  - edge_constant: SPLITS
+    source_label: Entity
+    target_labels: [Entity]
+    rationale: "Source Entity was split into target Entity (D135 split scenario)."
+
+  # ─── Structure plane (relation::structure) ───
+  - edge_constant: AUTHORED_BY
+    source_label: Author
+    target_labels: [Paper]
+    rationale: "Author authored the Paper (OpenAlex authorship)."
+
+  - edge_constant: FOUND_IN
+    source_label: Entity
+    target_labels: [Section]
+    rationale: "Entity was extracted from this Section of the Paper."
+
+  - edge_constant: FROM_SOURCE
+    source_label: Paper
+    target_labels: [Source]
+    rationale: "Paper originated from this Source (provenance)."
+
+  - edge_constant: HAS_PART
+    source_label: Paper
+    # Polymorphic: structural parts (Section) and bibliography (Reference).
+    target_labels: [Section, Reference]
+    rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part)."
+
+  - edge_constant: HAS_TOPIC
+    source_label: Paper
+    target_labels: [Topic]
+    rationale: "Paper is classified under this Topic (OpenAlex topic assignment)."
+
+  - edge_constant: IN_CATEGORY
+    source_label: Paper
+    target_labels: [Category]
+    rationale: "Paper is in this arXiv/OpenAlex Category."
+
+  # ─── Hypergraph plane (relation::hypergraph) ───
+  - edge_constant: MEMBER_OF_CLUSTER
+    source_label: Entity
+    target_labels: [ConceptCluster]
+    rationale: "Entity is a member of this ConceptCluster."
+
+  - edge_constant: PARTICIPATES_IN
+    source_label: Entity
+    target_labels: [EvidenceBundle]
+    rationale: "Entity participates in this EvidenceBundle (co-occurring entities)."
+
+  - edge_constant: SUPPORTS
+    source_label: EvidenceBundle
+    target_labels: [Claim]
+    rationale: "EvidenceBundle supports this Claim."
+
+  - edge_constant: REFUTES
+    source_label: EvidenceBundle
+    target_labels: [Claim]
+    rationale: "EvidenceBundle refutes this Claim."
+
+  # ─── Conflict plane (relation::conflict, ADR-047) ───
+  # CONFLICTS_OVER is polymorphic on the source side — any fact-bearing
+  # node (Claim, Entity, Reference, MetricObservation) may participate
+  # in a Conflict hyperedge. We register one row per source label so
+  # the validator's `edge-endpoint-contract` rule can match exactly.
+  - edge_constant: CONFLICTS_OVER
+    source_label: Claim
+    target_labels: [Conflict]
+    rationale: "Claim participates in a Conflict (hyperedge reification)."
+
+  - edge_constant: CONFLICTS_OVER
+    source_label: Entity
+    target_labels: [Conflict]
+    rationale: "Entity participates in a Conflict (hyperedge reification)."
+
+  - edge_constant: CONFLICTS_OVER
+    source_label: Reference
+    target_labels: [Conflict]
+    rationale: "Reference participates in a Conflict (hyperedge reification)."
+
+  - edge_constant: CONFLICTS_OVER
+    source_label: MetricObservation
+    target_labels: [Conflict]
+    rationale: "MetricObservation participates in a Conflict (hyperedge reification)."
+
+  - edge_constant: RESOLVED_BY
+    source_label: Conflict
+    target_labels: [Source, Decision]
+    rationale: "Conflict resolved by a Source (retraction) or by a Decision."
+
+  # ─── Decision plane (relation::decision, ADR-048) ───
+  - edge_constant: CAUSED
+    source_label: Decision
+    target_labels: [Decision]
+    rationale: "Decision A caused Decision B (transitive causal chain)."
+
+  - edge_constant: INFLUENCED
+    source_label: Decision
+    target_labels: [Decision]
+    rationale: "Decision A was a factor in Decision B (non-transitive)."
+
+  - edge_constant: PRECEDENT_FOR
+    source_label: Decision
+    target_labels: [Decision]
+    rationale: "Decision A is a precedent cited by Decision B."
+
+  - edge_constant: AUTHORITY_FOR
+    source_label: Decision
+    # Phase 2 target: [Policy]. Self-referencing placeholder until the
+    # Policy node type materializes (ADR-048 Phase 2).
+    target_labels: [Decision]
+    rationale: "Authority record (Phase 2: Policy → Decision; placeholder self-reference)."
+
+  - edge_constant: TRIGGERED_BY
+    source_label: Decision
+    target_labels: [Conflict]
+    rationale: "Decision triggered by a Conflict (category=conflict_resolution)."

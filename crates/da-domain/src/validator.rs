@@ -739,6 +739,19 @@ pub fn cross_reference_fields() -> Vec<CrossReferenceField> {
             target_label: "ResearchEnvironment",
             required: true,
         },
+        // ─── Conflict plane (ADR-047) ───
+        // Conflict.resolution_strategy is an opaque enum string, not a vid ref.
+        // No cross-reference row for it.
+        // ─── Decision plane (ADR-048) ───
+        // Decision.policy_id → Policy (Phase 2, future). For now optional
+        // and unresolved — declare as optional cross-reference so validator
+        // knows the shape.
+        CrossReferenceField {
+            source_label: "Decision",
+            field: "policy_id",
+            target_label: "Decision", // self-reference placeholder until Policy node exists
+            required: false,
+        },
     ]
 }
 

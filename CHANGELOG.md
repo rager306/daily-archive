@@ -2,6 +2,56 @@
 
 ## Unreleased
 
+### ADR-046/047/048 Phase 1 foundations materialized (2026-07-24)
+
+Three ADRs moved from design to implemented Phase 1 foundation:
+bi-temporal fields, Conflict node, Decision node. No pipeline
+behavior change yet — these slices add the type-level substrate so
+future slices can write Conflict/Decision nodes and emit temporal
+fields on writes.
+
+#### ADR-046 Phase 1: BiTemporal fields + helpers
+
+- New module crates/da-domain/src/temporal.rs: OPEN sentinel,
+  read_datetime, read_bound, is_active_at, was_known_at, is_current,
+  validate_bitemporal. 10 tests.
+- Fact-bearing schemas gain optional bi-temporal fields:
+  - Claim: +valid_from, +valid_to, +recorded_at, +superseded_at
+  - EvidenceBundle: +recorded_at, +superseded_at (already had valid_from/to)
+  - MetricObservation: +valid_from, +valid_to, +recorded_at, +superseded_at
+
+#### ADR-047 Phase 1: Conflict node + plane edges
+
+- +ConflictSchema in process.rs (required: vid, kind, field, status,
+  severity, detected_at; optional: resolution_strategy, resolution_value,
+  resolved_at, bi-temporal, invariants).
+- +conflict edge module: CONFLICTS_OVER (fact-bearing → Conflict),
+  RESOLVED_BY (Conflict → Source | Decision).
+- +decision edge module (forward-declared for ADR-048): CAUSED,
+  INFLUENCED, PRECEDENT_FOR, AUTHORITY_FOR, TRIGGERED_BY.
+- +conflict_vid index.
+- +edge_contract rows for CONFLICTS_OVER, RESOLVED_BY, CAUSED,
+  INFLUENCED, PRECEDENT_FOR, TRIGGERED_BY.
+
+#### ADR-048 Phase 1: Decision node + index
+
+- +DecisionSchema in process.rs (required: vid, category, scenario,
+  reasoning, outcome, confidence, decision_maker, valid_from,
+  recorded_at; optional: policy_id, valid_to, superseded_at,
+  reasoning_embedding, invariants).
+- Decision is the first schema where bi-temporal fields are required
+  at registration time — matches ADR-048's "auditable from day one" intent.
+- +decision_vid index.
+- +cross_reference_fields row for Decision.policy_id (Phase 2 placeholder).
+
+#### Totals
+
+- Schemas: 29 → 31 (+Conflict, +Decision).
+- Edge constants: 13 → 21 (+8 from conflict/decision modules).
+- Indexes: 28 → 30 (+conflict_vid, +decision_vid).
+- Tests: 297 → 307 (+10 temporal helpers).
+- No pipeline behavior change — Phase 1 is type-level substrate only.
+
 ### validate-graph CLI + type-aware getters (2026-07-24)
 
 Two waves closing the ADR-045 Wave D production-side gap.

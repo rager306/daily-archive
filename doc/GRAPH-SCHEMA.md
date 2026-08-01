@@ -29,6 +29,8 @@ prose, when adding new node types.
 | `Claim` | `vid`, `text` | 12 | ✅ |
 | `Concept` | `vid`, `label`, `level`, `retrieval_eligible` | 5 | — |
 | `ConceptCluster` | `vid`, `label`, `cluster_type` | 7 | ✅ |
+| `Conflict` | `vid`, `kind`, `field`, `status`, `severity`, `detected_at` | 10 | — |
+| `Decision` | `vid`, `category`, `scenario`, `reasoning`, `outcome`, `confidence`, `decision_maker`, `valid_from`, `recorded_at` | 7 | — |
 | `Entity` | `vid`, `label`, `entity_type` | 15 | ✅ |
 | `EvidenceBundle` | `vid`, `bundle_type` | 14 | ✅ |
 | `ExperimentRun` | `vid`, `environment_id`, `artifact_version_id`, `run_type`, `status` | 10 | — |
