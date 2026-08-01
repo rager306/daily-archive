@@ -60,7 +60,25 @@ fn make_store() -> MockGraphStore {
 async fn make_store_with_paper(arxiv_id: &str) -> MockGraphStore {
     let s = MockGraphStore::new();
     let id = s.create_node("Paper").await.unwrap();
+    s.set_node_property_string(id, "vid", format!("vid:paper:{arxiv_id}"))
+        .await
+        .unwrap();
     s.set_node_property_string(id, "arxiv_id", arxiv_id.to_string())
+        .await
+        .unwrap();
+    s.set_node_property_string(id, "title", format!("Paper {arxiv_id}"))
+        .await
+        .unwrap();
+    s.set_node_property_int(id, "valid_from", 1)
+        .await
+        .unwrap();
+    s.set_node_property_bool(id, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    s.set_node_property_bool(id, "import_eligible", false)
+        .await
+        .unwrap();
+    s.set_node_property_int(id, "schema_version", 1)
         .await
         .unwrap();
     s
@@ -87,7 +105,7 @@ async fn test_extraction_writes_entity_nodes() {
         },
     ];
     let store = make_store();
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -98,6 +116,7 @@ async fn test_extraction_writes_entity_nodes() {
     assert_eq!(result.graph_node_ids.len(), 2); // 2 Entity nodes
     assert!(result.entity_types.contains(&"Method".to_string()));
     assert!(result.entity_types.contains(&"Dataset".to_string()));
+    store.assert_graph_conforms("test_extraction_writes_entity_nodes");
 }
 
 #[tokio::test]
@@ -122,7 +141,7 @@ async fn test_extraction_dedup_same_entity() {
         },
     ];
     let store = make_store();
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -138,7 +157,7 @@ async fn test_extraction_no_entities() {
     let store = make_store();
     let use_case = ExtractionUseCase::new(
         Box::new(MockExtractor { entities: vec![] }),
-        Box::new(store),
+        Box::new(store.clone()),
     );
     let parsed = make_parsed();
 
@@ -175,11 +194,35 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
     // Pre-create a Paper node with arxiv_id property
     let paper_node = store.create_node("Paper").await.unwrap();
     store
+        .set_node_property_string(paper_node, "vid", "vid:paper:2401.00001".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
         .await
         .unwrap();
+    store
+        .set_node_property_string(paper_node, "title", "Test Paper".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(paper_node, "valid_from", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(paper_node, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(paper_node, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(paper_node, "schema_version", 1)
+        .await
+        .unwrap();
 
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -191,6 +234,7 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
     // 2 MENTIONS edges (Paper → each Entity)
     let edges = use_case.graph_store.edge_count().await;
     assert_eq!(edges, 2, "expected 2 MENTIONS edges, got {edges}");
+    store.assert_graph_conforms("test_extraction_links_entities_to_paper_via_mentions");
 }
 
 #[tokio::test]
@@ -210,21 +254,74 @@ async fn test_extraction_links_entities_to_sections_via_found_in() {
     // Pre-create a Paper + Section node with title="Methods"
     let paper_node = store.create_node("Paper").await.unwrap();
     store
+        .set_node_property_string(paper_node, "vid", "vid:paper:2401.00001".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(paper_node, "title", "Test Paper".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(paper_node, "valid_from", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(paper_node, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(paper_node, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(paper_node, "schema_version", 1)
         .await
         .unwrap();
     let section_node = store.create_node("Section").await.unwrap();
     store
+        .set_node_property_string(section_node, "vid", "vid:section:methods".to_string())
+        .await
+        .unwrap();
+    store
         .set_node_property_string(section_node, "title", "Methods".to_string())
         .await
         .unwrap();
+    store
+        .set_node_property_int(section_node, "level", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(section_node, "order", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(section_node, "work_vid", "vid:paper:2401.00001".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(section_node, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(section_node, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(section_node, "schema_version", 1)
+        .await
+        .unwrap();
 
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
 
     assert_eq!(result.found_in_edges, 1, "expected 1 FOUND_IN edge");
     assert_eq!(result.mentions_edges, 1, "expected 1 MENTIONS edge");
+    store.assert_graph_conforms("test_extraction_links_entities_to_sections_via_found_in");
 }
 
 #[tokio::test]
@@ -239,7 +336,7 @@ async fn test_extraction_no_mentions_when_paper_absent() {
         surface: "TestMethod".to_string(),
     }];
     let store = make_store();
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -255,7 +352,7 @@ async fn test_extraction_creates_research_problem_for_improvement_abstract() {
     // Abstract containing "we propose" → ResearchProblem(problem_type="improvement")
     let entities = vec![];
     let store = make_store_with_paper("2401.00001").await;
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let mut parsed = make_parsed();
     parsed.abstract_text = "We propose a novel method for scaling transformers.".to_string();
 
@@ -264,6 +361,7 @@ async fn test_extraction_creates_research_problem_for_improvement_abstract() {
     assert_eq!(result.problems_created, 1, "expected 1 ResearchProblem");
     // ResearchProblem nodes are not in graph_node_ids (that list tracks
     // Entity nodes only); problems_created above is the authoritative check.
+    store.assert_graph_conforms("test_extraction_creates_research_problem_for_improvement_abstract");
 }
 
 #[tokio::test]
@@ -271,7 +369,7 @@ async fn test_extraction_creates_research_problem_for_explanation_abstract() {
     // Abstract containing "we investigate" → ResearchProblem(problem_type="explanation")
     let entities = vec![];
     let store = make_store_with_paper("2401.00001").await;
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let mut parsed = make_parsed();
     parsed.abstract_text = "We investigate why neural networks generalize.".to_string();
 
@@ -285,7 +383,7 @@ async fn test_extraction_no_research_problem_for_neutral_abstract() {
     // Abstract without trigger phrases → no ResearchProblem
     let entities = vec![];
     let store = make_store();
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let mut parsed = make_parsed();
     parsed.abstract_text = "This paper discusses results.".to_string();
 
@@ -306,7 +404,7 @@ async fn test_extraction_creates_metric_observation_for_metric_with_value() {
         surface: "accuracy 0.95".to_string(),
     }];
     let store = make_store_with_paper("2401.00001").await;
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -316,6 +414,7 @@ async fn test_extraction_creates_metric_observation_for_metric_with_value() {
         "expected 1 MetricObservation"
     );
     assert!(result.graph_node_ids.len() >= 1);
+    store.assert_graph_conforms("test_extraction_creates_metric_observation_for_metric_with_value");
 }
 
 #[tokio::test]
@@ -330,7 +429,7 @@ async fn test_extraction_metric_observation_skipped_without_value() {
         surface: "accuracy reported".to_string(),
     }];
     let store = make_store();
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -360,7 +459,7 @@ async fn test_extraction_creates_evidence_bundle_for_co_occurring_entities() {
         },
     ];
     let store = make_store_with_paper("2401.00001").await;
-    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store));
+    let use_case = ExtractionUseCase::new(Box::new(MockExtractor { entities }), Box::new(store.clone()));
     let parsed = make_parsed();
 
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
@@ -399,7 +498,7 @@ async fn test_extraction_produces_schema_valid_nodes() {
     let store = make_store();
     let use_case = ExtractionUseCase::new(
         Box::new(MockExtractor { entities }),
-        Box::new(store),
+        Box::new(store.clone()),
     );
     let mut parsed = make_parsed();
     parsed.abstract_text = "We propose BERT for GLUE.".to_string();
