@@ -1,6 +1,6 @@
 # ADR-050: Universal Graph Subsystem — kg-* Crate Family
 
-**Status:** Proposed (replaces single-crate draft)
+**Status:** Accepted
 **Date:** 2026-07-24
 **Deciders:** collaborative
 **Related:**
