@@ -2,15 +2,9 @@
 
 #![cfg(test)]
 
-use std::sync::Mutex;
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 use async_trait::async_trait;
 use da_application::EnrichUseCase;
-use da_ports::graph_store::{
-    DirectGraphStore, GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric,
-    VectorSearchResult,
-};
+use da_ports::graph_store::DirectGraphStore;
 use da_ports::openalex::{
     OpenAlexAuthor, OpenAlexAuthorship, OpenAlexClient, OpenAlexConcept, OpenAlexError,
     OpenAlexInstitution, OpenAlexResult, OpenAlexTopic, OpenAlexWork,
@@ -104,180 +98,12 @@ fn make_mock_work() -> OpenAlexWork {
 
 // ---------- Mock GraphStore ----------
 
-struct MockGraphStore {
-    nodes: AtomicUsize,
-    props: Mutex<std::collections::HashMap<(u64, String), String>>,
-    bools: Mutex<std::collections::HashMap<(u64, String), bool>>,
-    edges: Mutex<Vec<(u64, u64, String)>>,
-    labels: Mutex<std::collections::HashMap<u64, String>>,
-}
+mod common;
 
-#[async_trait]
-impl GraphStore for MockGraphStore {
-    async fn query(&self, _: &str, _: &str) -> GraphResult<QueryResult> {
-        Ok(QueryResult {
-            columns: vec![],
-            records: vec![],
-        })
-    }
-    async fn query_readonly(&self, _: &str, _: &str) -> GraphResult<QueryResult> {
-        Ok(QueryResult {
-            columns: vec![],
-            records: vec![],
-        })
-    }
-    async fn create_vector_index(
-        &self,
-        _: &str,
-        _: &str,
-        _: usize,
-        _: VectorMetric,
-    ) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn create_property_index(&self, _: &str, _: &str) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn vector_search(
-        &self,
-        _: &str,
-        _: &str,
-        _: &[f32],
-        _: usize,
-    ) -> GraphResult<Vec<VectorSearchResult>> {
-        Ok(vec![])
-    }
-    async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
-        Ok(vec![])
-    }
-    async fn import_snapshot(&self, _: &[u8]) -> GraphResult<()> {
-        Ok(())
-    }
-    async fn health(&self) -> GraphResult<bool> {
-        Ok(true)
-    }
-}
-
-#[async_trait]
-impl DirectGraphStore for MockGraphStore {
-    async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
-        let id = self.nodes.fetch_add(1, Ordering::SeqCst) as u64;
-        self.labels.lock().unwrap().insert(id, label.to_string());
-        Ok(id)
-    }
-    async fn set_node_property_string(
-        &self,
-        node_id: u64,
-        key: &str,
-        value: String,
-    ) -> Result<(), GraphStoreError> {
-        self.props
-            .lock()
-            .unwrap()
-            .insert((node_id, key.to_string()), value);
-        Ok(())
-    }
-    async fn set_node_property_int(&self, _: u64, _: &str, _: i64) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn set_node_property_bool(
-        &self,
-        node_id: u64,
-        key: &str,
-        value: bool,
-    ) -> Result<(), GraphStoreError> {
-        self.bools
-            .lock()
-            .unwrap()
-            .insert((node_id, key.to_string()), value);
-        Ok(())
-    }
-    async fn set_node_property_float(
-        &self,
-        _node_id: u64,
-        _key: &str,
-        _value: f64,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-
-    async fn create_edge(
-        &self,
-        source: u64,
-        target: u64,
-        edge_type: &str,
-    ) -> Result<u64, GraphStoreError> {
-        self.edges
-            .lock()
-            .unwrap()
-            .push((source, target, edge_type.to_string()));
-        Ok(0)
-    }
-    async fn add_vector(
-        &self,
-        _: &str,
-        _: &str,
-        _: u64,
-        _: Vec<f32>,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
-    async fn vector_search_direct(
-        &self,
-        _: &str,
-        _: &str,
-        _: &[f32],
-        _: usize,
-    ) -> Result<Vec<(u64, f32)>, GraphStoreError> {
-        Ok(vec![])
-    }
-    async fn node_count(&self) -> usize {
-        self.nodes.load(Ordering::SeqCst)
-    }
-    async fn edge_count(&self) -> usize {
-        self.edges.lock().unwrap().len()
-    }
-    async fn find_node_by_string_property(&self, _: &str, key: &str, value: &str) -> Option<u64> {
-        let props = self.props.lock().unwrap();
-        for ((node_id, k), v) in props.iter() {
-            if k == key && v == value {
-                return Some(*node_id);
-            }
-        }
-        None
-    }
-    async fn get_incoming_edges(&self, _: u64) -> Vec<(u64, String)> {
-        Vec::new()
-    }
-    async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
-        self.props
-            .lock()
-            .unwrap()
-            .get(&(node_id, key.to_string()))
-            .cloned()
-    }
-    async fn get_node_property_int(&self, _node_id: u64, _key: &str) -> Option<i64> {
-        None
-    }
-    async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
-        self.labels
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|(_, l)| l.as_str() == label)
-            .map(|(id, _)| *id)
-            .collect()
-    }
-}
+use common::mock_graph_store::MockGraphStore;
 
 fn make_store() -> MockGraphStore {
-    MockGraphStore {
-        nodes: AtomicUsize::new(0),
-        props: Mutex::new(std::collections::HashMap::new()),
-        bools: Mutex::new(std::collections::HashMap::new()),
-        edges: Mutex::new(Vec::new()),
-        labels: Mutex::new(std::collections::HashMap::new()),
-    }
+    MockGraphStore::new()
 }
 
 #[tokio::test]
