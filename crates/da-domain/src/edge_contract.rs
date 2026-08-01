@@ -259,3 +259,22 @@ mod tests {
         }
     }
 }
+
+/// Render the edge contracts matrix as a markdown table for documentation.
+/// Use in `da edge-contracts` CLI command to emit always-fresh content for
+/// GRAPH-SCHEMA.md.
+pub fn render_markdown_table() -> String {
+    let mut s = String::new();
+    s.push_str("| Edge | Source | Target(s) | Rationale |\n");
+    s.push_str("|------|--------|-----------|-----------|\n");
+    let mut contracts = edge_contracts();
+    contracts.sort_by_key(|c| c.edge_constant);
+    for c in &contracts {
+        let targets = c.target_labels.join(" · ");
+        s.push_str(&format!(
+            "| `{}` | `{}` | `{}` | {} |\n",
+            c.edge_constant, c.source_label, targets, c.rationale
+        ));
+    }
+    s
+}

@@ -163,6 +163,7 @@ pre-commit run --all-files
 | `da graph-stats` | Node/edge counts |
 | `da schema-init` | Initialize all 26 graph indexes |
 | `da schema-check` | Audit create_node sites vs schema registry (ADR-045) |
+| `da edge-contracts` | Print edge endpoint contract matrix (ADR-045 Wave G) |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |

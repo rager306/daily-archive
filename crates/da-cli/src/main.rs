@@ -141,6 +141,9 @@ enum Commands {
 
     /// Audit pipeline create_node sites and report unregistered labels
     SchemaCheck,
+
+    /// Print the edge endpoint contract matrix as a markdown table.
+    EdgeContracts,
 }
 
 fn main() {
@@ -245,6 +248,10 @@ fn main() {
         }
         Commands::SchemaCheck => {
             schema_check();
+        }
+        Commands::EdgeContracts => {
+            println!("# Edge endpoint contracts (ADR-045 Wave G)\n");
+            print!("{}", da_domain::edge_contract::render_markdown_table());
         }
     }
 }

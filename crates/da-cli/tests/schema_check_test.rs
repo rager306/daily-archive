@@ -47,3 +47,43 @@ fn test_schema_check_counts_match() {
         "expected 29 registered schemas, got:\n{stdout}"
     );
 }
+
+#[test]
+fn test_edge_contracts_command_outputs_table() {
+    let bin = env!("CARGO_BIN_EXE_da");
+    let output = Command::new(bin)
+        .arg("edge-contracts")
+        .output()
+        .expect("failed to spawn `da edge-contracts`");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "edge-contracts exited non-zero\nstdout:\n{stdout}"
+    );
+    assert!(
+        stdout.contains("| Edge | Source | Target(s) | Rationale |"),
+        "expected table header, got:\n{stdout}"
+    );
+    // Every pipeline edge must appear in the rendered table.
+    for edge in [
+        "AFFILIATED_WITH",
+        "CITES",
+        "FROM_SOURCE",
+        "MEMBER_OF_CLUSTER",
+        "MENTIONS",
+        "PARTICIPATES_IN",
+        "SUPERSEDES",
+        "SUPPORTS",
+        "authoredBy",
+        "foundIn",
+        "hasPart",
+        "hasTopic",
+        "inCategory",
+    ] {
+        assert!(
+            stdout.contains(&format!("`{edge}`")),
+            "edge `{edge}` missing from CLI output:\n{stdout}"
+        );
+    }
+}

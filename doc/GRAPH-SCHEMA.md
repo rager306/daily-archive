@@ -342,6 +342,36 @@ and PROCESS-SCHEMA-P0.md for full design.
 
 ---
 
+## Edge endpoint contracts (ADR-045 Wave G)
+
+The authoritative source of edge endpoint contracts is
+`da_domain::edge_contract::edge_contracts()` — this table is the
+rendered form produced by `da edge-contracts`. Update the function,
+not this prose, when adding new edges.
+
+| Edge | Source | Target(s) | Rationale |
+|------|--------|-----------|-----------|
+| `AFFILIATED_WITH` | `Author` | `Institution` | Author is affiliated with an institution (OpenAlex authorship). |
+| `CITES` | `Paper` | `Citation` | Paper cites a bibliographic citation (resolvable to a Paper). |
+| `FROM_SOURCE` | `Paper` | `Source` | Paper originated from this Source (provenance). |
+| `MEMBER_OF_CLUSTER` | `Entity` | `ConceptCluster` | Entity is a member of this ConceptCluster. |
+| `MENTIONS` | `Paper` | `Entity · ResearchProblem · MetricObservation` | Paper mentions this Entity/ResearchProblem/MetricObservation (extracted from paper text). |
+| `PARTICIPATES_IN` | `Entity` | `EvidenceBundle` | Entity participates in this EvidenceBundle (co-occurring entities). |
+| `SUPERSEDES` | `Entity` | `Entity` | Source Entity supersedes target Entity (D135 merge scenario). |
+| `SUPPORTS` | `EvidenceBundle` | `Claim` | EvidenceBundle supports this Claim. |
+| `authoredBy` | `Author` | `Paper` | Author authored the Paper (OpenAlex authorship). |
+| `foundIn` | `Entity` | `Section` | Entity was extracted from this Section of the Paper. |
+| `hasPart` | `Paper` | `Section · Reference` | Paper has this Section/Reference as a structural part (FaBiO frbr:part). |
+| `hasTopic` | `Paper` | `Topic` | Paper is classified under this Topic (OpenAlex topic assignment). |
+| `inCategory` | `Paper` | `Category` | Paper is in this arXiv/OpenAlex Category. |
+
+Polymorphic edges (multi-target) document why in the rationale column.
+Tests enforce: all endpoint labels are registered node types; every
+edge constant passes `validator::validate_edge_type`; no contradictory
+contracts; every pipeline-referenced edge has a row.
+
+---
+
 ## Indexes (complete — 26 indexes)
 
 | Index | Type | On |
