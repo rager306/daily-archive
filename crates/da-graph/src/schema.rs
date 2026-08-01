@@ -178,6 +178,13 @@ impl SchemaInitializer {
             .to_string()
     }
 
+    // --- Decision (ADR-048) ---
+
+    pub fn create_decision_vid_index() -> String {
+        "CREATE INDEX decision_vid IF NOT EXISTS FOR (n:Decision) ON (n.vid)"
+            .to_string()
+    }
+
     // --- SchedulerTask (Layer 1 operational state) ---
 
     pub fn create_schedulertask_arxiv_id_index() -> String {
@@ -239,6 +246,8 @@ impl SchemaInitializer {
             Self::create_metric_observation_vid_index(),
             // Conflict (ADR-047)
             Self::create_conflict_vid_index(),
+            // Decision (ADR-048)
+            Self::create_decision_vid_index(),
             // ResearchProblem (Layer 1 process plane)
             Self::create_research_problem_vid_index(),
             // SchedulerTask (Layer 1 operational state)
@@ -271,7 +280,7 @@ mod tests {
         // 3 Paper + 2 Citation + 2 Entity + 2 Section + 2 Keyword + 2 Topic + 2 Category
         // + 2 Source + 2 ConceptCluster + 1 Reference + 1 Author + 1 Institution
         // + 1 SchedulerTask + 1 Entity vector = 24
-        assert_eq!(stmts.len(), 29);
+        assert_eq!(stmts.len(), 30);
         assert!(stmts.iter().all(|s| s.contains("CREATE")));
     }
 

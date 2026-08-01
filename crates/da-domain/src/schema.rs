@@ -176,6 +176,8 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::process::FailureEventSchema),
         // ─── Conflict plane (ADR-047) ───
         Box::new(crate::process::ConflictSchema),
+        // ─── Decision plane (ADR-048) ───
+        Box::new(crate::process::DecisionSchema),
     ]
 }
 
@@ -191,7 +193,7 @@ mod tests {
     #[test]
     fn test_all_node_schemas_has_twenty_nine_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 30);
+        assert_eq!(schemas.len(), 31);
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         // Publication plane
         assert!(labels.contains(&"Paper"));
@@ -307,7 +309,7 @@ mod render_tests {
         for label in [
             "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
             "Citation", "Claim", "ConceptCluster", "Concept", "Conflict",
-            "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
+            "Decision", "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
             "Hypothesis", "ImplementationAttempt", "Institution",
             "Intervention", "InterventionBundle", "MetricDefinition",
             "MetricObservation", "Paper", "Reference", "ResearchEnvironment",

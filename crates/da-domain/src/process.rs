@@ -631,6 +631,49 @@ impl NodeSchemaDef for ConflictSchema {
     }
 }
 
+/// Decision node (ADR-048).
+///
+/// First-class object capturing every system action with a lifecycle:
+/// healing, conflict resolution, promotion, schema migration,
+/// extraction override, hypothesis test, retraction recording, etc.
+/// Lives in Layer 8 — system-derived, bi-temporal, causally linked.
+pub struct DecisionSchema;
+
+impl NodeSchemaDef for DecisionSchema {
+    fn label(&self) -> &'static str {
+        "Decision"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("vid", FieldType::String),
+            ("category", FieldType::String),
+            ("scenario", FieldType::String),
+            ("reasoning", FieldType::String),
+            ("outcome", FieldType::String),
+            ("confidence", FieldType::Float),
+            ("decision_maker", FieldType::String),
+            // Bi-temporal valid axis (ADR-046)
+            ("valid_from", FieldType::DateTime),
+            // Bi-temporal transaction axis (ADR-046)
+            ("recorded_at", FieldType::DateTime),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("policy_id", FieldType::String),
+            // Bi-temporal open bounds
+            ("valid_to", FieldType::DateTime),
+            ("superseded_at", FieldType::DateTime),
+            // Semantic precedent search embedding (Phase 2)
+            ("reasoning_embedding", FieldType::Vector),
+            // Invariants
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+}
+
 // Failure taxonomy constants moved to data/failure_taxonomy.yaml.
 // Use is_known_stage(), is_known_failure_class() for validation.
 

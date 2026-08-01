@@ -41,9 +41,9 @@ fn test_schema_check_counts_match() {
         stdout.contains("16 distinct node labels"),
         "expected 16 materialized labels, got:\n{stdout}"
     );
-    // The registry contains 30 declared node types (29 v1 + Conflict from ADR-047).
+    // The registry contains 31 declared node types (29 v1 + Conflict + Decision).
     assert!(
-        stdout.contains("30 declared node types"),
+        stdout.contains("31 declared node types"),
         "expected 30 registered schemas, got:\n{stdout}"
     );
 }
@@ -105,10 +105,11 @@ fn test_schema_list_command_outputs_table() {
         stdout.contains("| Label | Required fields | Optional fields | Materialized? |"),
         "expected table header, got:\n{stdout}"
     );
-    // All 30 registered schemas (29 v1 + Conflict). must appear.
+    // All 31 registered schemas (29 v1 + Conflict + Decision).
     for label in [
         "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
         "Citation", "Claim", "ConceptCluster", "Concept", "Conflict",
+        "Decision",
         "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
         "Hypothesis", "ImplementationAttempt", "Institution",
         "Intervention", "InterventionBundle", "MetricDefinition",
