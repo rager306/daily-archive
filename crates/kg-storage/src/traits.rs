@@ -157,4 +157,46 @@ pub trait DirectGraphStore: GraphStore {
             .and_then(|s| s.parse::<f64>().ok())
     }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64>;
+
+    /// Get all edges of a given type between two specific nodes.
+    /// Used by temporal resolution (ADR-047) to find potentially-
+    /// contradicting edges when a new temporal edge is written.
+    ///
+    /// Returns Vec of (edge_id, edge_type) pairs. Callers then read
+    /// individual edge properties via `get_edge_property_*` methods.
+    async fn get_edges_between(
+        &self,
+        source: u64,
+        target: u64,
+        edge_type: &str,
+    ) -> Vec<(u64, String)> {
+        // Default: filter outgoing edges from source by type + target.
+        let outgoing = self.get_outgoing_edges(source).await;
+        outgoing
+            .into_iter()
+            .filter(|(t, et)| *t == target && et == edge_type)
+            .map(|(_, et)| (0u64, et)) // edge_id unknown by default impl
+            .collect()
+    }
+
+    /// Read a string property from an edge.
+    /// Used for temporal field reads (valid_at, invalid_at, etc.).
+    async fn get_edge_property_string(
+        &self,
+        _edge_id: u64,
+        _key: &str,
+    ) -> Option<String> {
+        None // default: edges are opaque; adapters override
+    }
+
+    /// Set a string property on an edge. Used for temporal field writes
+    /// (invalid_at, expired_at during edge invalidation).
+    async fn set_edge_property_string_v2(
+        &self,
+        _edge_id: u64,
+        _key: &str,
+        _value: &str,
+    ) -> Result<(), GraphStoreError> {
+        Ok(()) // default no-op; adapters override
+    }
 }

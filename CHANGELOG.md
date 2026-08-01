@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Temporal edge model foundation in kg-* crates (2026-07-24)
+
+Three waves implementing the revised ADR-046 (edge-level temporal
+model) in the universal kg-* crate family.
+
+#### Wave 1: TemporalEdge type (kg-ontology)
+
+- Rewritten temporal.rs: TemporalEdge struct (5-field model).
+- +RetroactiveExtension for legal/regulatory domains.
+- +is_active_at/was_known_at/is_current/invalidate/validate.
+- 18 tests.
+
+#### Wave 2: EpisodicNodeSchema + EdgeTypeRegistry (kg-ontology)
+
+- +EpisodicNodeSchema: provenance ground truth.
+- +EdgeTypeRegistry: temporal vs structural edge classification.
+- 3 tests.
+
+#### Wave 3: Edge property access (kg-storage)
+
+- +get_edges_between(source, target, edge_type) in DirectGraphStore.
+- +get_edge_property_string/set_edge_property_string_v2.
+- MockGraphStore upgraded with edge_id + edge_props. 2 tests.
+
+Workspace: 334 tests green.
+
 ### ADR-046/047/048 Phase 1 foundations materialized (2026-07-24)
 
 Three ADRs moved from design to implemented Phase 1 foundation:

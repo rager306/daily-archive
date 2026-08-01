@@ -39,9 +39,12 @@ pub struct MockProps {
 #[derive(Debug, Default)]
 struct MockGraphStoreInner {
     nodes: Mutex<Vec<(u64, String)>>,
-    edges: Mutex<Vec<(u64, u64, String)>>,
+    /// (edge_id, source, target, edge_type)
+    edges: Mutex<Vec<(u64, u64, u64, String)>>,
     counter: AtomicUsize,
     props: Mutex<MockProps>,
+    /// Edge properties: (edge_id, key) → value
+    edge_props: Mutex<HashMap<(u64, String), String>>,
     snapshot_calls: AtomicUsize,
     import_calls: AtomicUsize,
     snapshot_data: Mutex<Option<Vec<u8>>>,
@@ -214,7 +217,7 @@ impl DirectGraphStore for MockGraphStore {
     ) -> Result<u64, GraphStoreError> {
         let mut edges = self.inner.edges.lock().unwrap();
         let edge_id = edges.len() as u64;
-        edges.push((source, target, edge_type.to_string()));
+        edges.push((edge_id, source, target, edge_type.to_string()));
         Ok(edge_id)
     }
     async fn add_vector(
@@ -265,8 +268,8 @@ impl DirectGraphStore for MockGraphStore {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(s, _, _)| *s == node_id)
-            .map(|(_, t, et)| (*t, et.clone()))
+            .filter(|(_, s, _, _)| *s == node_id)
+            .map(|(_, _, t, et)| (*t, et.clone()))
             .collect()
     }
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
@@ -275,9 +278,45 @@ impl DirectGraphStore for MockGraphStore {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, t, _)| *t == node_id)
-            .map(|(s, _, et)| (*s, et.clone()))
+            .filter(|(_, _, t, _)| *t == node_id)
+            .map(|(_, s, _, et)| (*s, et.clone()))
             .collect()
+    }
+    async fn get_edges_between(
+        &self,
+        source: u64,
+        target: u64,
+        edge_type: &str,
+    ) -> Vec<(u64, String)> {
+        self.inner
+            .edges
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(_, s, t, et)| *s == source && *t == target && et == edge_type)
+            .map(|(eid, _, _, et)| (*eid, et.clone()))
+            .collect()
+    }
+    async fn get_edge_property_string(&self, edge_id: u64, key: &str) -> Option<String> {
+        self.inner
+            .edge_props
+            .lock()
+            .unwrap()
+            .get(&(edge_id, key.to_string()))
+            .cloned()
+    }
+    async fn set_edge_property_string_v2(
+        &self,
+        edge_id: u64,
+        key: &str,
+        value: &str,
+    ) -> Result<(), GraphStoreError> {
+        self.inner
+            .edge_props
+            .lock()
+            .unwrap()
+            .insert((edge_id, key.to_string()), value.to_string());
+        Ok(())
     }
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
         self.inner
@@ -392,3 +431,39 @@ mod tests {
         assert_eq!(store.snapshot_call_count(), 1);
     }
 }
+
+    #[tokio::test]
+    async fn test_get_edges_between_filters_correctly() {
+        let store = MockGraphStore::new();
+        let a = store.create_node("Paper").await.unwrap();
+        let b = store.create_node("Entity").await.unwrap();
+        let c = store.create_node("Entity").await.unwrap();
+
+        let e1 = store.create_edge(a, b, "MENTIONS").await.unwrap();
+        let _e2 = store.create_edge(a, c, "MENTIONS").await.unwrap();
+        let _e3 = store.create_edge(a, b, "CITES").await.unwrap();
+
+        let edges = store.get_edges_between(a, b, "MENTIONS").await;
+        assert_eq!(edges.len(), 1);
+        assert_eq!(edges[0].0, e1); // edge_id
+        assert_eq!(edges[0].1, "MENTIONS");
+    }
+
+    #[tokio::test]
+    async fn test_edge_property_set_and_get() {
+        let store = MockGraphStore::new();
+        let a = store.create_node("Paper").await.unwrap();
+        let b = store.create_node("Entity").await.unwrap();
+        let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
+
+        store
+            .set_edge_property_string_v2(edge_id, "valid_at", "2024-01-01T00:00:00Z")
+            .await
+            .unwrap();
+
+        let val = store.get_edge_property_string(edge_id, "valid_at").await;
+        assert_eq!(
+            val,
+            Some("2024-01-01T00:00:00Z".to_string())
+        );
+    }
