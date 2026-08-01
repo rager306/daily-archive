@@ -212,6 +212,31 @@ pub trait DirectGraphStore: GraphStore {
     /// Read an integer property from a node (for scheduler queue).
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64>;
 
+    /// Read a boolean property from a node (for validator snapshot reads).
+    /// Returns None if the node or property doesn't exist.
+    async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
+        // Default: derive from string "true"/"false" if the adapter
+        // does not override. Adapters with native bool storage should
+        // override for type fidelity.
+        self.get_node_property_string(node_id, key)
+            .await
+            .and_then(|s| match s.to_lowercase().as_str() {
+                "true" => Some(true),
+                "false" => Some(false),
+                _ => None,
+            })
+    }
+
+    /// Read a float property from a node (for validator snapshot reads,
+    /// e.g. MetricObservation.value).
+    /// Returns None if the node or property doesn't exist.
+    async fn get_node_property_float(&self, node_id: u64, key: &str) -> Option<f64> {
+        // Default: parse from string representation.
+        self.get_node_property_string(node_id, key)
+            .await
+            .and_then(|s| s.parse::<f64>().ok())
+    }
+
     /// Get all node IDs with a given label (for scheduler queue scan).
     /// O(n) scan — suitable for Phase 2 scale.
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64>;

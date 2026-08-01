@@ -324,6 +324,22 @@ impl DirectGraphStore for MockGraphStore {
             .get(&(node_id, key.to_string()))
             .copied()
     }
+    async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
+        self.inner.props
+            .lock()
+            .unwrap()
+            .bool_props
+            .get(&(node_id, key.to_string()))
+            .copied()
+    }
+    async fn get_node_property_float(&self, node_id: u64, key: &str) -> Option<f64> {
+        self.inner.props
+            .lock()
+            .unwrap()
+            .float_props
+            .get(&(node_id, key.to_string()))
+            .copied()
+    }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
         self.inner.nodes
             .lock()

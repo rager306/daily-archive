@@ -1288,12 +1288,30 @@ async fn validate_graph(label_filter: Option<&str>) {
             let mut snap = PropertySnapshot::new();
             // Walk the known schema fields and read each one.
             if let Some(schema) = da_domain::schema::schema_for_label(label) {
-                for (fname, _) in schema.required_fields().iter().chain(schema.optional_fields().iter()) {
-                    if let Some(s) = store.get_node_property_string(node_id, fname).await {
-                        snap.insert(fname.to_string(), json!(s));
-                    }
-                    if let Some(i) = store.get_node_property_int(node_id, fname).await {
-                        snap.insert(fname.to_string(), json!(i));
+                for (fname, fty) in schema.required_fields().iter().chain(schema.optional_fields().iter()) {
+                    match fty {
+                        da_domain::schema::FieldType::Boolean => {
+                            if let Some(b) = store.get_node_property_bool(node_id, fname).await {
+                                snap.insert(fname.to_string(), json!(b));
+                            }
+                        }
+                        da_domain::schema::FieldType::Integer
+                        | da_domain::schema::FieldType::DateTime => {
+                            if let Some(i) = store.get_node_property_int(node_id, fname).await {
+                                snap.insert(fname.to_string(), json!(i));
+                            }
+                        }
+                        da_domain::schema::FieldType::Float => {
+                            if let Some(f) = store.get_node_property_float(node_id, fname).await {
+                                snap.insert(fname.to_string(), json!(f));
+                            }
+                        }
+                        _ => {
+                            // String / Vector / Any — read as string.
+                            if let Some(s) = store.get_node_property_string(node_id, fname).await {
+                                snap.insert(fname.to_string(), json!(s));
+                            }
+                        }
                     }
                 }
             }
