@@ -138,6 +138,9 @@ enum Commands {
         #[arg(long, default_value = "data/scheduler")]
         queue_dir: String,
     },
+
+    /// Audit pipeline create_node sites and report unregistered labels
+    SchemaCheck,
 }
 
 fn main() {
@@ -239,6 +242,9 @@ fn main() {
             rt.block_on(async {
                 run_scheduler(&queue_dir).await;
             });
+        }
+        Commands::SchemaCheck => {
+            schema_check();
         }
     }
 }
@@ -899,5 +905,101 @@ async fn run_scheduler(_queue_dir: &str) {
     println!("  Failed (max retries): {failed}");
     for (id, status, msg) in &details {
         println!("    {id} [{status}]: {msg}");
+    }
+}
+
+/// Audit pipeline source files for create_node("Label") call sites and
+/// verify each label is registered in da_domain::schema::all_node_schemas().
+/// Exits with code 1 if any unregistered labels are found.
+///
+/// This is the CLI counterpart of `schema_audit_test.rs`. Run ad-hoc to
+/// catch drift between pipeline materialization and the schema registry
+/// without waiting for CI (ADR-045 Wave E).
+fn schema_check() {
+    use da_domain::schema::all_node_schemas;
+    use std::collections::HashSet;
+    use std::fs;
+    use std::path::PathBuf;
+
+    println!("daily-archive v2 — schema-check (ADR-045 Wave E)");
+    println!();
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let src_dir = manifest_dir.join("../da-application/src");
+    let src_dir = match src_dir.canonicalize() {
+        Ok(p) => p,
+        Err(_) => {
+            eprintln!("Could not locate da-application/src directory");
+            std::process::exit(2);
+        }
+    };
+
+    // Collect all create_node("Label") call sites by scanning *.rs files.
+    let mut used_labels: HashSet<String> = HashSet::new();
+    let mut scanned_files = 0usize;
+    if let Ok(entries) = fs::read_dir(&src_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+                continue;
+            }
+            scanned_files += 1;
+            let content = match fs::read_to_string(&path) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+            for line in content.lines() {
+                let trimmed = line.trim_start();
+                if trimmed.starts_with("//") {
+                    continue;
+                }
+                if let Some(start) = line.find("create_node(\"") {
+                    let after = &line[start + "create_node(\"".len()..];
+                    if let Some(end) = after.find("\")") {
+                        let label = &after[..end];
+                        if !label.is_empty()
+                            && label.chars().all(|c| c.is_alphanumeric() || c == '_')
+                        {
+                            used_labels.insert(label.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let registered: HashSet<String> = all_node_schemas()
+        .into_iter()
+        .map(|s| s.label().to_string())
+        .collect();
+
+    println!("Scanned {scanned_files} .rs files under da-application/src");
+    println!(
+        "Found {} distinct node labels referenced via create_node()",
+        used_labels.len()
+    );
+    println!(
+        "Schema registry contains {} declared node types",
+        registered.len()
+    );
+    println!();
+
+    let mut unregistered: Vec<&String> =
+        used_labels.iter().filter(|l| !registered.contains(*l)).collect();
+    unregistered.sort();
+    if unregistered.is_empty() {
+        println!("✅ OK — every create_node label is registered in all_node_schemas()");
+    } else {
+        println!(
+            "❌ {} UNREGISTERED label(s) found in pipeline but not in schema registry:",
+            unregistered.len()
+        );
+        for label in &unregistered {
+            println!("   - {label}");
+        }
+        println!();
+        println!("Fix: add a Schema struct for each missing label and register it");
+        println!("in da_domain::schema::all_node_schemas().");
+        std::process::exit(1);
     }
 }

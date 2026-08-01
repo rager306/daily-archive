@@ -162,6 +162,7 @@ pre-commit run --all-files
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
 | `da graph-stats` | Node/edge counts |
 | `da schema-init` | Initialize all 26 graph indexes |
+| `da schema-check` | Audit create_node sites vs schema registry (ADR-045) |
 | `da extract --id <arxiv_id>` | Extract entities from paper |
 | `da heal --op silence` | Silence a node (D135) |
 | `da heal --op correct` | Correct a property (D135) |
