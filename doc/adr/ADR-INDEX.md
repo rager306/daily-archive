@@ -15,8 +15,8 @@ listed here — see `legacy/doc/adr/`.
 | [043](ADR-043-research-process-plane-execution-grounded.md) | Research Process Plane — Execution-Grounded Scientific Memory | Proposed | 2026-07-29 |
 | [044](ADR-044-schema-lifecycle-versioning-migration-healing.md) | Graph Schema Lifecycle — Versioned Manifest, Migration Framework, Self-Healing | Proposed | 2026-07-29 |
 | [045](ADR-045-schema-validator-logic-relations-invariants.md) | Schema Validator — Logic, Relations, and Invariant Checks | Proposed | 2026-07-24 |
-| [046](ADR-046-bitemporal-fact-model.md) | BiTemporal Fact Model — Valid Time + Transaction Time | Proposed | 2026-07-24 |
-| [047](ADR-047-conflict-detection-resolution.md) | Conflict Detection and Resolution | Proposed | 2026-07-24 |
+| [046](ADR-046-bitemporal-fact-model.md) | Temporal Edge Model — Bi-Temporal Validity on Edges | Proposed (revised) | 2026-07-24 |
+| [047](ADR-047-conflict-detection-resolution.md) | Temporal Edge Invalidation (revised — simplifies Conflict approach) | Proposed (revised) | 2026-07-24 |
 | [048](ADR-048-decision-intelligence.md) | Decision Intelligence — First-Class Decision Records | Proposed | 2026-07-24 |
 | [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
 | [050](ADR-050-universal-graph-subsystem-kg-crate-family.md) | Universal Graph Subsystem — kg-* Crate Family | Accepted | 2026-07-24 |

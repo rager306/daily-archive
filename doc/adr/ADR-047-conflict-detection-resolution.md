@@ -1,157 +1,218 @@
-# ADR-047: Conflict Detection and Resolution
+# ADR-047: Temporal Edge Invalidation (revised — simplifies Conflict approach)
 
-**Status:** Proposed
-**Date:** 2026-07-24
+**Status:** Proposed (revised — supersedes Conflict node draft)
+**Date:** 2026-07-24 (revised)
 **Deciders:** collaborative
-**Related:** ADR-040 (Samyama store), ADR-042 (Claim), ADR-044 (healing), ADR-045 (validator), ADR-046 (bi-temporal), [Semantica conflicts module](https://github.com/semantica-agi/semantica/blob/main/semantica/conflicts/)
+**Related:**
+- ADR-046 (temporal edge model — provides the primitives this ADR uses)
+- ADR-042 (Claim/EvidenceBundle)
+- ADR-045 (validator)
+- ADR-048 (Decision Intelligence — records invalidation decisions)
+- ADR-050 (kg-* crate family)
+- Research: Graphiti `resolve_edge_contradictions` + `resolve_extracted_edge`
 
 ## Context
 
-daily-archive currently silently overwrites or deduplicates when two sources
-disagree:
+The initial draft of this ADR introduced a `Conflict` node type for
+**all** disagreements between facts — factual, typological, temporal,
+and metric. Analysis of Graphiti's production system revealed that
+**edge-level temporal invalidation** handles 80% of these cases
+without a separate Conflict node, and does so more simply.
 
-- Two papers citing the same arxiv_id with different titles — first write wins.
-- Two extractions of the same entity label with different entity_types — last
-  write wins.
-- A retraction (paper A says claim B is wrong) — no representation in the graph.
-- MetricObservation from paper A=0.92, paper B=0.87 for the same method/dataset
-  — both stored, no link.
+Graphiti's `resolve_extracted_edge` + `resolve_edge_contradictions`
+pattern: when a new temporal edge arrives between the same endpoints
+as an existing edge, compare their `valid_at`/`invalid_at` windows.
+If the new edge supersedes the old, set `old.invalid_at = new.valid_at`
+and `old.expired_at = now()`. The old edge remains in the graph
+(history preserved) but is no longer "active" for queries.
 
-The existing `SUPERSEDES` edge (ADR-044 healing) handles merge-driven
-deprecation, not factual disagreement. `REFUTES` (process plane) exists as an
-edge constant but is not materialized in pipeline. There is no `Conflict`
-node, no detection logic, no resolution strategy registry.
+This is the **same operation** our original ADR-047 Conflict node
+performed, but without the ceremony of creating a node, two
+CONFLICTS_OVER edges, a resolution strategy enum, and a RESOLVED_BY
+edge. The temporal fields on the edges themselves carry the resolution.
 
-For a scientific KG this is a correctness gap: contradictions between papers
-are themselves first-class scientific facts. Silently dropping them destroys
-information that downstream users (researchers, meta-analysts, auditors)
-specifically want to see.
+### What remains for Conflict node
+
+Edge invalidation handles **bilateral** contradictions (new fact vs
+old fact, same relationship). It does NOT handle:
+
+- **Multi-party disputes**: 3+ sources asserting different values for
+  the same fact simultaneously (e.g., three papers reporting different
+  accuracy for the same method on the same dataset).
+- **Credibility-weighted resolution**: when sources have different
+  reliability tiers and the system must pick a winner based on source
+  credibility, not temporal order.
+- **Explicit human escalation**: when the system cannot auto-resolve
+  and must flag for expert review.
+- **Legal domain normative conflicts**: hierarchical conflict between
+  federal law and regional law, or between statute and constitution.
+  These require jurisdiction-aware resolution, not temporal.
+
+These remain as future work (ADR-047 Phase 2 or a follow-up ADR).
 
 ## Decision
 
-Introduce a `Conflict` node type and a `ConflictDetector` use case, modelled
-on Semantica's conflicts module but adapted to scientific KG semantics.
+### Phase 1: Edge-level temporal invalidation (this ADR)
 
-### Conflict node (new)
+Implement temporal edge resolution in kg-algorithms, inspired by
+Graphiti's `resolve_edge_contradictions`. No Conflict node.
 
-| Property           | Type     | Required | Description                                                       |
-|--------------------|----------|----------|-------------------------------------------------------------------|
-| `vid`              | String   | yes      | `vid:conflict:{hash}` deterministic from participants + field.    |
-| `kind`             | String   | yes      | `factual` / `typological` / `temporal` / `metric`.                |
-| `field`            | String   | yes      | Property name in disagreement (e.g. `title`, `entity_type`, `value`). |
-| `status`           | String   | yes      | `detected` / `resolved` / `escalated` / `archived`.               |
-| `severity`         | String   | yes      | `low` / `medium` / `high` (drives resolution ordering).           |
-| `resolution_strategy` | String |          | One of the strategies below (set when status=resolved).           |
-| `resolution_value` | String   |          | Winning value when status=resolved.                               |
-| `detected_at`      | DateTime | yes      | Transaction time of detection (bi-temporal, ADR-046).             |
-| `resolved_at`      | DateTime |          | Transaction time of resolution.                                   |
-| + invariants       |          | yes      | vid, retrieval_eligible, import_eligible, schema_version.         |
+#### Algorithm
 
-### Conflict edges (new)
+```text
+resolve_temporal_edges(new_edge, existing_edges):
+  invalidated = []
+  for old in existing_edges:
+    # Rule 1: old was already invalid before new became valid → skip
+    if old.invalid_at is not None and new.valid_at is not None
+       and old.invalid_at <= new.valid_at:
+      continue
 
-- `CONFLICTS_OVER` — `Claim/Entity/Reference/MetricObservation → Conflict`.
-  Hyperedge-style: 2+ participants per conflict.
-- `RESOLVED_BY` — `Conflict → Source` or `Conflict → Decision`. Records
-  which source or authority resolved the conflict.
-- Reuses existing `REFUTES` (Claim → Claim) for direct refutation edges
-  without a Conflict node (lighter weight for bilateral disagreement).
+    # Rule 2: new was invalid before old became valid → skip
+    if new.invalid_at is not None and old.valid_at is not None
+       and new.invalid_at <= old.valid_at:
+      continue
 
-### Conflict kinds
+    # Rule 3: old is strictly earlier → new supersedes
+    if old.valid_at is not None and new.valid_at is not None
+       and old.valid_at < new.valid_at:
+      old.invalid_at = new.valid_at
+      old.expired_at = utc_now()
+      invalidated.append(old)
+      continue
 
-| Kind          | Trigger                                                            | Example                                                          |
-|---------------|--------------------------------------------------------------------|------------------------------------------------------------------|
-| `factual`     | Same entity, same property, different values across sources.       | Paper A says method X is from 2019, paper B says 2018.           |
-| `typological` | Same surface form, different entity_type.                          | "Transformer" as Method vs Model.                                |
-| `temporal`    | Same fact, different valid_from.                                   | Two papers claim priority for the same method.                   |
-| `metric`      | Same method × dataset, different observed values.                  | accuracy 0.92 vs 0.87 on GLUE.                                   |
-
-### Resolution strategies (pluggable)
-
-Adopted directly from Semantica's `ResolutionStrategy` enum, with
-scientific-KG adjustments:
-
-| Strategy              | When to use                                                    |
-|-----------------------|----------------------------------------------------------------|
-| `voting`              | 3+ sources, majority wins. Tie → fall through to credibility.  |
-| `credibility_weighted`| Source.reliability_tier weights votes. Tier 1 > tier 2 > 3.    |
-| `most_recent`         | valid_from decides. For "current state of knowledge" queries.  |
-| `first_seen`          | recorded_at decides. For "original claim" preservation.        |
-| `highest_confidence`  | Extraction confidence decides. For LLM-extracted facts.        |
-| `retain_both`         | No resolution; both values kept, conflict flagged. Default for |
-|                       | metric conflicts (different measurement protocols).            |
-| `manual_review`       | Escalate to human. Sets status=escalated.                      |
-| `expert_review`       | Escalate to domain expert queue. Future (ADR-048).             |
-
-Default strategy per kind, overridable per conflict via CLI/config:
-
-```toml
-[conflicts.default_strategy]
-factual = "credibility_weighted"
-typological = "retain_both"
-temporal = "retain_both"
-metric = "retain_both"
+    # Rule 4: temporal overlap and neither strictly earlier → retain both
+    # (multi-version period, transition period in law, competing measurements)
+    # Do nothing — both edges remain active.
+  return invalidated
 ```
 
-### Pipeline integration
+#### Placement
 
-New use case `crates/da-application/src/conflicts.rs`:
+| Concern | Crate | Module |
+|---|---|---|
+| `resolve_temporal_edges` function | kg-algorithms | `temporal::resolution` |
+| Edge property updates (invalid_at, expired_at) | kg-storage | `traits::DirectGraphStore` |
+| "find existing edges between these endpoints" | kg-storage | `traits::get_edges_between(source, target, edge_type)` |
+
+#### New port method needed in kg-storage
 
 ```rust
-pub struct ConflictDetectionUseCase {
-    graph_store: Box<dyn DirectGraphStore>,
-    detector: ConflictDetector,
-    resolver: ConflictResolver,
-}
-
-impl ConflictDetectionUseCase {
-    pub async fn scan_new_facts(&self, since: DateTime) -> Result<ConflictScanResult>;
-    pub async fn resolve(&self, conflict_id: &str, strategy: ResolutionStrategy) -> Result<ResolutionResult>;
-    pub async fn escalate(&self, conflict_id: &str, reason: &str) -> Result<()>;
-}
+/// Get all edges of a given type between two nodes.
+/// Used by temporal resolution to find potentially-contradicting edges.
+async fn get_edges_between(
+    &self,
+    source: u64,
+    target: u64,
+    edge_type: &str,
+) -> Vec<EdgeRecord>;
 ```
 
-Runs after extraction (detects factual/typological conflicts on newly-written
-nodes) and after enrich (detects temporal conflicts when OpenAlex refines
-metadata).
+Where `EdgeRecord` carries edge_id + all temporal properties.
 
-### Cross-ADR alignment
+#### When invalidation runs
 
-- **ADR-042**: Claim can be a conflict participant. Conflict replaces the
-  ad-hoc "later write wins" pattern.
-- **ADR-044**: healing.rs `SUPERSEDES` continues for merge-driven
-  deprecation; Conflict is for disagreement, not deduplication.
-- **ADR-045**: validator gains a `conflict-consistency` rule — a node with
-  active conflict must not have `retrieval_eligible=true` unless the
-  conflict is `resolved` or `retain_both`.
-- **ADR-046**: all Conflict timestamps are bi-temporal.
-- **ADR-048**: Decision records can resolve conflicts (RESOLVED_BY edge).
+After every new temporal edge write:
+1. Pipeline writes new edge (SUPPORTS, REFUTES, CITES, REFERENCES, etc.)
+2. Pipeline calls `resolve_temporal_edges(new_edge, existing_edges)`
+3. For each invalidated old edge: write `invalid_at` + `expired_at`
+4. Optionally: emit a Decision node (ADR-048) recording the
+   invalidation (`category: "edge_invalidated"`, `scenario:
+   "temporal overlap resolution"`)
+
+Step 4 is optional — invalidation can happen silently (Graphiti does)
+or with an audit trail (recommended for legal/compliance domains).
+
+#### What this replaces from the original ADR-047
+
+| Original ADR-047 element | Status in revised ADR |
+|---|---|
+| Conflict node type | **Deferred** (Phase 2, future ADR) |
+| CONFLICTS_OVER edge | **Deferred** |
+| RESOLVED_BY edge | **Deferred** |
+| 7 resolution strategies | **Simplified** to 4 rules (skip/skip/supersede/retain-both) |
+| Conflict kinds (factual/typological/temporal/metric) | **Covered by temporal resolution** for bilateral; multi-party deferred |
+
+### Phase 2: Conflict node (future, separate ADR)
+
+When multi-party disputes need explicit resolution:
+
+- Conflict node returns, but ONLY for 3+ source disagreements.
+- Resolution strategies (voting, credibility_weighted, expert_review)
+  apply to Conflict nodes, not to individual edges.
+- Edge invalidation handles the bilateral case; Conflict handles the
+  multi-party case.
+
+This is intentionally deferred. The edge invalidation from Phase 1
+is sufficient for the first legal KG deployment (bilateral
+amendment/repeal resolution).
+
+## Compatibility with ADR-046
+
+ADR-046 (revised) defines the **5-field temporal edge model**.
+This ADR defines the **invalidation algorithm** that operates on those
+fields. They are complementary:
+
+- ADR-046: what temporal fields exist on edges.
+- ADR-047: how those fields are used to resolve contradictions.
 
 ## Alternatives considered
 
-1. **Reuse healing.rs for conflicts.** Rejected — healing assumes one node
-   is wrong and should be silenced. Conflicts assume both nodes may be right
-   under different valid-time windows.
-2. **Edge-only model (no Conflict node).** Rejected — hyperedge with 2+
-   participants and resolution lifecycle needs reification. Pure edge
-   `Claim REFUTES Claim` is kept for bilateral cases.
-3. **Event-sourced conflict log.** Defer — the Conflict node + bi-temporal
-   fields (ADR-046) capture the same audit trail without the query cost.
+### 1. Keep original ADR-047 Conflict node for everything
+
+Rejected. Graphiti demonstrates that edge-level invalidation is
+sufficient for the majority of temporal contradictions. Creating a
+Conflict node + 2 CONFLICTS_OVER edges + resolution strategy for
+every bilateral amendment (extremely common in legal domain) is
+excessive ceremony. Defer Conflict to multi-party cases.
+
+### 2. No invalidation — just write new edges and let old ones linger
+
+Considered. Simple but wrong: queries return stale facts alongside
+current ones. "What is the current penalty for Article 105?" would
+return all historical penalties unless the query explicitly filters
+by `invalid_at IS NULL`. Edge invalidation makes the default query
+correct.
+
+### 3. Delete old edges on invalidation
+
+Rejected. Destroys history. Legal and scientific domains need to
+answer "what was the law on date X" — requires historical edges with
+their temporal windows intact.
 
 ## Consequences
 
-- New node type `Conflict` (29 → 30 schemas).
-- New edges: `CONFLICTS_OVER`, `RESOLVED_BY` (13 → 15 edge constants).
-- Conflict detector runs on every ingest batch; adds latency proportional
-  to number of new fact-bearing nodes × participants per fact.
-- Source.reliability_tier (currently unused) becomes load-bearing for the
-  `credibility_weighted` strategy.
-- CLI gains `da conflicts list|resolve|escalate` commands.
-- Retractions, priority disputes, and metric disagreements become
-  first-class queryable facts instead of silent overwrites.
+### Positive
+
+- **Simpler than Conflict node** — 4 resolution rules vs 7 strategies
+  + node/edge lifecycle.
+- **Production-proven** — Graphiti uses exactly this pattern at scale.
+- **Sufficient for legal domain** — bilateral amendment/repeal is the
+  most common case; multi-party conflicts are rare.
+- **History-preserving** — invalidated edges remain queryable for
+  point-in-time queries.
+- **Composable with ADR-048** — invalidation can optionally emit a
+  Decision for audit trail.
+
+### Negative
+
+- **Conflict node deferred** — multi-party disputes (3+ sources) have
+  no native representation until Phase 2. Workaround: use a Decision
+  node with `category: "multi_source_dispute"` + reference all
+  involved edges in `scenario` text.
+- **New port method needed** — `get_edges_between(source, target,
+  edge_type)` must be added to DirectGraphStore trait and implemented
+  in SamyamaGraphStore + MockGraphStore.
 
 ## Open questions
 
-- Should Conflict participate in cross-reference validation (ADR-045 Wave F)?
-  Tentative yes — `RESOLVED_BY → Source` is a cross-reference.
-- Default conflict detection window: per-batch only, or re-scan full graph
-  on each ingest? Defer to performance testing.
+1. **Should invalidation be synchronous (blocking pipeline) or
+   asynchronous (background job)?** Tentative: synchronous for single-
+   edge writes (common case); async batch for bulk ingest.
+2. **Retain-both default for overlapping windows** — is this correct
+   for all domains? Legal transition periods need it; scientific
+   metric disagreements need it (different measurements coexist).
+   Tentative: yes, retain-both is the safe default.
+3. **Should Decision emission be mandatory or optional on
+   invalidation?** Tentative: optional, configurable via pipeline
+   policy. Legal/compliance domains will want it mandatory.
