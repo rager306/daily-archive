@@ -396,3 +396,92 @@ impl MockGraphStore {
         }
     }
 }
+
+// ─── Edge contract validation helpers (ADR-045 Wave G runtime) ────────
+//
+// Walks the recorded edges and checks each (source_label, edge_type,
+// target_label) triple against the edge_contracts() matrix. Returns a
+// list of contract violations describing any mismatch.
+//
+
+impl MockGraphStore {
+    /// Validate every recorded edge against the edge-endpoint contract
+    /// matrix. Each violation describes the edge triple and why it does
+    /// not match any contract row.
+    pub fn validate_edge_contracts(&self) -> Vec<EdgeContractViolation> {
+        let contracts = da_domain::edge_contract::edge_contracts();
+        let nodes = self.nodes.lock().unwrap();
+        let edges = self.edges.lock().unwrap();
+
+        // Build a lookup: edge_constant -> EdgeContract
+        let mut by_constant: std::collections::HashMap<&str, &da_domain::edge_contract::EdgeContract> =
+            std::collections::HashMap::new();
+        for c in &contracts {
+            by_constant.insert(c.edge_constant, c);
+        }
+
+        // Build a lookup: node_id -> label
+        let id_to_label: std::collections::HashMap<u64, &str> = nodes
+            .iter()
+            .map(|(id, label)| (*id, label.as_str()))
+            .collect();
+
+        let mut violations = Vec::new();
+        for (src_id, tgt_id, edge_type) in edges.iter() {
+            let src_label = id_to_label.get(src_id).copied().unwrap_or("<unknown>");
+            let tgt_label = id_to_label.get(tgt_id).copied().unwrap_or("<unknown>");
+            match by_constant.get(edge_type.as_str()) {
+                None => violations.push(EdgeContractViolation {
+                    edge_type: edge_type.clone(),
+                    source_label: src_label.to_string(),
+                    target_label: tgt_label.to_string(),
+                    reason: format!("edge type '{}' is not in edge_contracts()", edge_type),
+                }),
+                Some(c) => {
+                    if c.source_label != src_label {
+                        violations.push(EdgeContractViolation {
+                            edge_type: edge_type.clone(),
+                            source_label: src_label.to_string(),
+                            target_label: tgt_label.to_string(),
+                            reason: format!(
+                                "edge '{}' source must be '{}', got '{}'",
+                                edge_type, c.source_label, src_label
+                            ),
+                        });
+                    }
+                    if !c.target_labels.contains(&tgt_label) {
+                        violations.push(EdgeContractViolation {
+                            edge_type: edge_type.clone(),
+                            source_label: src_label.to_string(),
+                            target_label: tgt_label.to_string(),
+                            reason: format!(
+                                "edge '{}' target must be one of {:?}, got '{}'",
+                                edge_type, c.target_labels, tgt_label
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+        violations
+    }
+}
+
+/// One edge-endpoint contract violation found in the mock store.
+#[derive(Debug, Clone, PartialEq)]
+pub struct EdgeContractViolation {
+    pub edge_type: String,
+    pub source_label: String,
+    pub target_label: String,
+    pub reason: String,
+}
+
+impl std::fmt::Display for EdgeContractViolation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "edge '{}' ({} → {}): {}",
+            self.edge_type, self.source_label, self.target_label, self.reason
+        )
+    }
+}

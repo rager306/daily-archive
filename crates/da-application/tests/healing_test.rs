@@ -164,3 +164,82 @@ async fn test_unsilence_restores_retrieval() {
 
     assert!(!result.previous_eligible); // was false before unsilence
 }
+
+#[tokio::test]
+async fn test_edge_contract_validator_catches_wrong_source_label() {
+    // Seed a deliberate contract violation: create an Entity node and a
+    // ConceptCluster node, then wire HAS_PART (Paper-only source) between
+    // them. The validator should flag the wrong source label.
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let e = store.create_node("Entity").await.unwrap();
+    let c = store.create_node("ConceptCluster").await.unwrap();
+    let _ = store
+        .create_edge(e, c, da_domain::relation::structure::HAS_PART)
+        .await
+        .unwrap();
+
+    let violations = store.validate_edge_contracts();
+    assert_eq!(
+        violations.len(),
+        2,
+        "expected 2 contract violations (source + target), got {:?}",
+        violations
+    );
+    assert!(violations
+        .iter()
+        .any(|v| v.reason.contains("source must be 'Paper'")));
+    assert!(violations
+        .iter()
+        .any(|v| v.reason.contains("target must be one of")));
+}
+
+#[tokio::test]
+async fn test_edge_contract_validator_accepts_valid_edges() {
+    // Paper → Entity via MENTIONS: should be accepted (contract row
+    // lists Entity as a valid target of MENTIONS).
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let p = store.create_node("Paper").await.unwrap();
+    let e = store.create_node("Entity").await.unwrap();
+    let _ = store
+        .create_edge(
+            p,
+            e,
+            da_domain::relation::bibliographic::MENTIONS,
+        )
+        .await
+        .unwrap();
+
+    let violations = store.validate_edge_contracts();
+    assert!(
+        violations.is_empty(),
+        "expected no violations for valid MENTIONS edge, got {:?}",
+        violations
+    );
+}
+
+#[tokio::test]
+async fn test_edge_contract_validator_accepts_polymorphic_mentions() {
+    // Paper → ResearchProblem via MENTIONS: should be accepted because
+    // the MENTIONS contract row lists ResearchProblem as a valid target.
+    use da_ports::graph_store::DirectGraphStore;
+    let store = MockGraphStore::new();
+    let p = store.create_node("Paper").await.unwrap();
+    let rp = store.create_node("ResearchProblem").await.unwrap();
+    let _ = store
+        .create_edge(
+            p,
+            rp,
+            da_domain::relation::bibliographic::MENTIONS,
+        )
+        .await
+        .unwrap();
+
+    let violations = store.validate_edge_contracts();
+    assert!(
+        violations.is_empty(),
+        "expected no violations for MENTIONS → ResearchProblem, got {:?}",
+        violations
+    );
+}
