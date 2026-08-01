@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+### Wave D integration: 11 schemas fixed + assert_graph_conforms wired (2026-07-24)
+
+First end-to-end runtime validator wiring in integration tests.
+Surfaced three classes of test fixture incompleteness that were
+silently passing before.
+
+#### Schema invariant field declarations (11 schemas fixed)
+
+The validator flagged 'unknown-field' warnings on every node because
+schemas did not declare the architectural invariants as optional
+fields, even though the pipeline sets them on every node.
+
+Schemas fixed: Section, Concept, Topic, Category, Author, Institution,
+Reference, EvidenceBundle, Claim, ConceptCluster, Citation.
+
+#### assert_graph_conforms helper (Wave D integration)
+
+- crates/da-application/tests/common/mock_graph_store.rs:
+  +assert_graph_conforms(context) — one-call check that runs node
+  schema and edge contract validators. Panics with combined diagnostic
+  on any violation.
+  +assert_node_and_edge_conforms (alias)
+  +assert_nodes_conform (node-only check)
+  Cross-reference validator excluded — pipeline creates forward
+  references to nodes not yet materialized (Wave 2 work).
+
+#### Extraction tests wired (5 tests)
+
+Five extraction tests now call store.assert_graph_conforms() at the
+end. Required fixing inline Paper/Section fixtures that were missing
+required fields (vid/title/valid_from/level/order/work_vid).
+
+#### batch_ingest_test wired
+
+test_batch_ingest_all_success also calls assert_graph_conforms.
+
 ### cross-refs CLI + validate-node CLI + docs drift hook (2026-07-24)
 
 Three additions completing MEM503 (governor CLI improvements).
