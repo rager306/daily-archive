@@ -26,7 +26,10 @@ pub mod temporal;
 pub use validator::{
     PropertySnapshot, Severity, Violation, format_violations,
 };
-pub use temporal::{OPEN, is_active_at, was_known_at, is_current};
+pub use temporal::{
+    TemporalEdge, RetroactiveExtension, OPEN,
+    validate_temporal_edge, parse_datetime,
+};
 
 // Reserved module shells — populated in later migration phases (B-F)
 // as code moves in from da-domain. Each module documents which phase

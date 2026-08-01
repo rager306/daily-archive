@@ -1,291 +1,346 @@
-//! BiTemporal Fact helpers (ADR-046).
+//! Temporal edge model (ADR-046 revised, GRAPH-CORE-TEMPORAL-DESIGN.md).
 //!
-//! Fact-bearing nodes carry four temporal fields:
-//!   valid_from    — when the fact became true in the real world
-//!   valid_to      — when the fact stopped being true (OPEN = still true)
-//!   recorded_at   — when our system first wrote this fact
-//!   superseded_at — when our system stopped using this fact (OPEN = current)
+//! Entities persist. Facts change. Temporality lives on edges.
 //!
-//! Together they answer two distinct time-travel questions:
-//!   is_active_at(snapshot, t)  — was the fact true at time t?
-//!   was_known_at(snapshot, t)  — did our system know it at time t?
+//! Every temporal edge carries a 5-field model:
+//!   valid_at      — when the fact became true in the real world
+//!   invalid_at    — when the fact stopped being true (OPEN = still true)
+//!   expired_at    — when the system invalidated this edge (OPEN = active)
+//!   reference_time — timestamp from the source episode
+//!   created_at    — when the system first wrote this edge
 //!
-//! Phase 1 (this module): helpers operate on PropertySnapshot from the
-//! validator module. No storage changes. Fact-bearing schemas declare
-//! the four fields as optional; existing writes are unaffected.
+//! Optional extension fields for retroactivity-aware domains (law, accounting):
+//!   retroactive_to — fact applies retroactively from this date
+//!   retroactivity_basis — legal/operational basis for retroactivity
+//!
+//! Two temporal axes:
+//!   valid time (valid_at → invalid_at): when the fact was true in the world
+//!   transaction time (created_at → expired_at): when the system knew it
 
-use crate::validator::PropertySnapshot;
+use chrono::{DateTime, Utc};
 
-/// Sentinel string value for open temporal bounds (valid_to, superseded_at).
+/// Sentinel string value for open temporal bounds (invalid_at, expired_at).
 /// Matches Semantica's TemporalBound::OPEN convention; serializable in
 /// Samyama's schemaless store.
 pub const OPEN: &str = "OPEN";
 
-/// Parse a DateTime from a property snapshot field. Returns None if the
-/// field is missing, null, empty, or the OPEN sentinel.
-///
-/// Accepts Unix timestamps (i64 seconds since epoch) or ISO-8601 strings.
-/// The two encodings coexist because Samyama stores both shapes depending
-/// on which adapter wrote the node.
-pub fn read_datetime(props: &PropertySnapshot, key: &str) -> Option<chrono::DateTime<chrono::Utc>> {
-    let val = props.get(key)?;
-    if val.is_null() {
-        return None;
-    }
-    if let Some(s) = val.as_str() {
-        if s.is_empty() || s == OPEN {
-            return None;
+/// The 5-field temporal edge model. Every temporal edge carries these
+/// fields. Non-temporal edges (HAS_PART, FROM_SOURCE) carry only
+/// `created_at`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TemporalEdge {
+    /// When the fact became true in the real world.
+    pub valid_at: DateTime<Utc>,
+    /// When the fact stopped being true. None = still true.
+    pub invalid_at: Option<DateTime<Utc>>,
+    /// When the system invalidated this edge. None = active.
+    pub expired_at: Option<DateTime<Utc>>,
+    /// Timestamp from the source episode that produced this edge.
+    pub reference_time: Option<DateTime<Utc>>,
+    /// When the system first wrote this edge (auto-set at creation).
+    pub created_at: DateTime<Utc>,
+}
+
+/// Optional retroactivity extension for domains where facts can have
+/// retroactive effect (law, accounting, regulatory compliance).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct RetroactiveExtension {
+    /// Fact applies retroactively from this date (earlier than valid_at).
+    pub retroactive_to: Option<DateTime<Utc>>,
+    /// Legal/operational basis for retroactivity.
+    pub retroactivity_basis: Option<String>,
+}
+
+impl TemporalEdge {
+    /// Create a new temporal edge starting now. `valid_at` defaults to
+    /// the current time; callers should override with the source's
+    /// actual `valid_at` when known.
+    pub fn new_now() -> Self {
+        let now = Utc::now();
+        Self {
+            valid_at: now,
+            invalid_at: None,
+            expired_at: None,
+            reference_time: None,
+            created_at: now,
         }
-        // Try ISO-8601 first, then fall through to caller.
-        return chrono::DateTime::parse_from_rfc3339(s)
-            .ok()
-            .map(|dt| dt.with_timezone(&chrono::Utc));
     }
-    if let Some(i) = val.as_i64() {
-        // Treat as Unix seconds. Negative values are pre-1970 — unlikely
-        // in our domain but handled defensively.
-        return chrono::DateTime::from_timestamp(i, 0);
-    }
-    None
-}
 
-/// Read a temporal bound — either a DateTime or the OPEN sentinel.
-/// Returns Ok(Some(dt)) for a concrete timestamp, Ok(None) for OPEN or
-/// missing, Err for a malformed value.
-pub fn read_bound(
-    props: &PropertySnapshot,
-    key: &str,
-) -> Result<Option<chrono::DateTime<chrono::Utc>>, String> {
-    let val = props.get(key);
-    let Some(val) = val else {
-        return Ok(None);
-    };
-    if val.is_null() {
-        return Ok(None);
-    }
-    if let Some(s) = val.as_str() {
-        if s.is_empty() || s == OPEN {
-            return Ok(None);
+    /// True if the fact was true at the given instant.
+    /// Checks the valid-time axis: valid_at <= t < invalid_at.
+    /// If `retroactive_to` is provided, uses it instead of valid_at.
+    pub fn is_active_at(&self, at: DateTime<Utc>, retro: Option<&RetroactiveExtension>) -> bool {
+        let effective_start = retro
+            .and_then(|r| r.retroactive_to)
+            .unwrap_or(self.valid_at);
+        let effective_end = self.invalid_at;
+        match effective_end {
+            Some(end) => effective_start <= at && at < end,
+            None => effective_start <= at,
         }
-        return chrono::DateTime::parse_from_rfc3339(s)
-            .map(|dt| Some(dt.with_timezone(&chrono::Utc)))
-            .map_err(|e| format!("invalid datetime at {key}: {e}"));
     }
-    if let Some(i) = val.as_i64() {
-        return chrono::DateTime::from_timestamp(i, 0)
-            .map(Some)
-            .ok_or_else(|| format!("out-of-range timestamp at {key}: {i}"));
-    }
-    Err(format!("expected datetime or OPEN at {key}, got {val}"))
-}
 
-/// True if the fact was true in the real world at the given instant.
-/// Checks the valid-time axis: valid_from <= t < valid_to.
-pub fn is_active_at(props: &PropertySnapshot, at: chrono::DateTime<chrono::Utc>) -> bool {
-    let from = read_datetime(props, "valid_from");
-    let to = read_bound(props, "valid_to").ok().flatten();
-    match (from, to) {
-        (Some(f), Some(t)) => f <= at && at < t,
-        (Some(f), None) => f <= at,
-        (None, Some(t)) => at < t,
-        (None, None) => true, // no temporal info → treat as always active
+    /// True if the system knew about this fact at the given instant.
+    /// Checks the transaction-time axis: created_at <= t < expired_at.
+    pub fn was_known_at(&self, at: DateTime<Utc>) -> bool {
+        match self.expired_at {
+            Some(exp) => self.created_at <= at && at < exp,
+            None => self.created_at <= at,
+        }
     }
-}
 
-/// True if our system knew about the fact at the given instant.
-/// Checks the transaction-time axis: recorded_at <= t < superseded_at.
-pub fn was_known_at(props: &PropertySnapshot, at: chrono::DateTime<chrono::Utc>) -> bool {
-    let recorded = read_datetime(props, "recorded_at");
-    let superseded = read_bound(props, "superseded_at").ok().flatten();
-    match (recorded, superseded) {
-        (Some(r), Some(s)) => r <= at && at < s,
-        (Some(r), None) => r <= at,
-        (None, Some(_)) => false, // superseded before any record — inconsistent
-        (None, None) => true, // no transaction info → treat as always known
+    /// True if the edge is currently active (valid time) and known
+    /// (transaction time). Convenience combining both axes at now().
+    pub fn is_current(&self, retro: Option<&RetroactiveExtension>) -> bool {
+        let now = Utc::now();
+        self.is_active_at(now, retro) && self.was_known_at(now)
+    }
+
+    /// True if the edge has been superseded (expired_at is set).
+    pub fn is_expired(&self) -> bool {
+        self.expired_at.is_some()
+    }
+
+    /// Invalidate this edge at the given time. Sets expired_at and,
+    /// if invalid_at is not already set, sets invalid_at to the same
+    /// timestamp. Used by `resolve_temporal_edges` when a newer edge
+    /// supersedes this one.
+    pub fn invalidate(&mut self, at: DateTime<Utc>) {
+        if self.invalid_at.is_none() {
+            self.invalid_at = Some(at);
+        }
+        self.expired_at = Some(at);
     }
 }
 
-/// True if the fact is currently active (valid time) AND currently known
-/// (transaction time). Convenience combining is_active_at(now) and
-/// was_known_at(now).
-pub fn is_current(props: &PropertySnapshot) -> bool {
-    let now = chrono::Utc::now();
-    is_active_at(props, now) && was_known_at(props, now)
-}
-
-/// Validate bi-temporal consistency on a fact-bearing node snapshot.
+/// Validate temporal consistency on a TemporalEdge.
 /// Returns a list of human-readable issues (empty = consistent).
 ///
 /// Rules:
-///   1. If both valid_from and valid_to are set, valid_from <= valid_to.
-///   2. If both recorded_at and superseded_at are set,
-///      recorded_at <= superseded_at.
-///   3. If recorded_at is set and valid_from is set, recorded_at >= valid_from
-///      (we cannot record a fact before it became true). This is a soft
-///      warning for paper-publication facts where extraction timestamp
-///      naturally lags publication.
-pub fn validate_bitemporal(props: &PropertySnapshot) -> Vec<String> {
+///   1. valid_at <= invalid_at (if both set)
+///   2. created_at <= expired_at (if both set)
+///   3. created_at >= valid_at is NOT required — extraction can lag
+///      publication (soft, not flagged)
+///   4. retroactive_to <= valid_at (if both set)
+pub fn validate_temporal_edge(
+    edge: &TemporalEdge,
+    retro: Option<&RetroactiveExtension>,
+) -> Vec<String> {
     let mut issues = Vec::new();
-    let from = read_datetime(props, "valid_from");
-    let to = read_bound(props, "valid_to").ok().flatten();
-    let recorded = read_datetime(props, "recorded_at");
-    let superseded = read_bound(props, "superserialized_at")
-        .ok()
-        .flatten()
-        .or_else(|| read_bound(props, "superseded_at").ok().flatten());
 
-    if let (Some(f), Some(t)) = (from, to)
-        && f > t
+    if let Some(invalid) = edge.invalid_at
+        && edge.valid_at > invalid
     {
         issues.push(format!(
-            "valid_from ({f}) is later than valid_to ({t})"
+            "valid_at ({}) is later than invalid_at ({})",
+            edge.valid_at, invalid
         ));
     }
-    if let (Some(r), Some(s)) = (recorded, superseded)
-        && r > s
+
+    if let Some(expired) = edge.expired_at
+        && edge.created_at > expired
     {
         issues.push(format!(
-            "recorded_at ({r}) is later than superseded_at ({s})"
+            "created_at ({}) is later than expired_at ({})",
+            edge.created_at, expired
         ));
     }
-    if let (Some(r), Some(f)) = (recorded, from)
-        && r < f
+
+    if let Some(r) = retro
+        && let Some(retro_to) = r.retroactive_to
+        && retro_to > edge.valid_at
     {
         issues.push(format!(
-            "recorded_at ({r}) is earlier than valid_from ({f}) — extraction before publication (unusual but allowed)"
+            "retroactive_to ({}) is later than valid_at ({}) — retroactivity must point backwards",
+            retro_to, edge.valid_at
         ));
     }
+
     issues
+}
+
+/// Parse a DateTime from a string (ISO-8601) or integer (Unix seconds).
+/// Returns None for empty strings, null, or the OPEN sentinel.
+pub fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
+    if s.is_empty() || s == OPEN {
+        return None;
+    }
+    DateTime::parse_from_rfc3339(s)
+        .ok()
+        .map(|dt| dt.with_timezone(&Utc))
+        .or_else(|| s.parse::<i64>().ok().and_then(|secs| DateTime::from_timestamp(secs, 0)))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
 
-    fn snap(pairs: &[(&str, serde_json::Value)]) -> PropertySnapshot {
-        pairs
-            .iter()
-            .map(|(k, v)| (k.to_string(), v.clone()))
-            .collect()
+    fn ts(seconds: i64) -> DateTime<Utc> {
+        DateTime::from_timestamp(seconds, 0).unwrap()
     }
 
     #[test]
-    fn test_open_sentinel_recognized() {
-        let props = snap(&[
-            ("valid_from", json!(1_700_000_000_i64)),
-            ("valid_to", json!(OPEN)),
-        ]);
-        assert!(read_bound(&props, "valid_to").unwrap().is_none());
+    fn test_new_now_has_no_gaps() {
+        let edge = TemporalEdge::new_now();
+        assert!(edge.invalid_at.is_none());
+        assert!(edge.expired_at.is_none());
+        assert!(edge.is_current(None));
     }
 
     #[test]
     fn test_is_active_at_within_range() {
-        let props = snap(&[
-            ("valid_from", json!(1_700_000_000_i64)), // 2023-11-14
-            ("valid_to", json!(1_800_000_000_i64)),   // 2027-01-15
-        ]);
-        let within = chrono::DateTime::from_timestamp(1_750_000_000, 0).unwrap();
-        let before = chrono::DateTime::from_timestamp(1_600_000_000, 0).unwrap();
-        let after = chrono::DateTime::from_timestamp(1_900_000_000, 0).unwrap();
-        assert!(is_active_at(&props, within));
-        assert!(!is_active_at(&props, before));
-        assert!(!is_active_at(&props, after));
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: Some(ts(2000)),
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        assert!(edge.is_active_at(ts(1500), None));
+        assert!(!edge.is_active_at(ts(500), None));
+        assert!(!edge.is_active_at(ts(2500), None));
     }
 
     #[test]
     fn test_is_active_at_open_ended() {
-        let props = snap(&[("valid_from", json!(1_700_000_000_i64))]);
-        let now = chrono::Utc::now();
-        assert!(is_active_at(&props, now));
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: None,
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        assert!(edge.is_active_at(ts(999_999_999), None));
     }
 
     #[test]
-    fn test_was_known_at_within_transaction_range() {
-        let props = snap(&[
-            ("recorded_at", json!(1_700_000_000_i64)),
-            ("superseded_at", json!(1_800_000_000_i64)),
-        ]);
-        let within = chrono::DateTime::from_timestamp(1_750_000_000, 0).unwrap();
-        let before = chrono::DateTime::from_timestamp(1_600_000_000, 0).unwrap();
-        let after = chrono::DateTime::from_timestamp(1_900_000_000, 0).unwrap();
-        assert!(was_known_at(&props, within));
-        assert!(!was_known_at(&props, before));
-        assert!(!was_known_at(&props, after));
+    fn test_was_known_at_transaction_range() {
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: None,
+            expired_at: Some(ts(3000)),
+            reference_time: None,
+            created_at: ts(2000),
+        };
+        assert!(!edge.was_known_at(ts(1500))); // not yet written
+        assert!(edge.was_known_at(ts(2500))); // written, not expired
+        assert!(!edge.was_known_at(ts(3500))); // expired
     }
 
     #[test]
-    fn test_was_known_at_open_ended() {
-        let props = snap(&[("recorded_at", json!(1_700_000_000_i64))]);
-        let now = chrono::Utc::now();
-        assert!(was_known_at(&props, now));
+    fn test_retroactive_effective_start() {
+        let edge = TemporalEdge {
+            valid_at: ts(2000),
+            invalid_at: None,
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(2000),
+        };
+        let retro = RetroactiveExtension {
+            retroactive_to: Some(ts(1000)),
+            retroactivity_basis: Some("ФЗ-xxx ст.4".to_string()),
+        };
+        // Before valid_at but after retroactive_to → active
+        assert!(edge.is_active_at(ts(1500), Some(&retro)));
+        // Before retroactive_to → not active
+        assert!(!edge.is_active_at(ts(500), Some(&retro)));
     }
 
     #[test]
-    fn test_validate_bitemporal_consistent() {
-        let props = snap(&[
-            ("valid_from", json!(1_700_000_000_i64)),
-            ("valid_to", json!(1_800_000_000_i64)),
-            ("recorded_at", json!(1_700_500_000_i64)),
-            ("superseded_at", json!(OPEN)),
-        ]);
-        let issues = validate_bitemporal(&props);
-        assert!(
-            issues.is_empty(),
-            "expected no issues, got: {issues:?}"
-        );
+    fn test_invalidate_sets_both_fields() {
+        let mut edge = TemporalEdge::new_now();
+        edge.invalidate(ts(5000));
+        assert_eq!(edge.invalid_at, Some(ts(5000)));
+        assert_eq!(edge.expired_at, Some(ts(5000)));
+        assert!(edge.is_expired());
     }
 
     #[test]
-    fn test_validate_bitemporal_inverted_valid_range() {
-        let props = snap(&[
-            ("valid_from", json!(1_800_000_000_i64)),
-            ("valid_to", json!(1_700_000_000_i64)),
-        ]);
-        let issues = validate_bitemporal(&props);
-        assert!(
-            issues
-                .iter()
-                .any(|s| s.contains("valid_from") && s.contains("later than valid_to")),
-            "expected valid range inversion issue, got: {issues:?}"
-        );
+    fn test_invalidate_preserves_existing_invalid_at() {
+        let mut edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: Some(ts(1500)),
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        edge.invalidate(ts(5000));
+        // invalid_at was already set → preserved
+        assert_eq!(edge.invalid_at, Some(ts(1500)));
+        // expired_at gets the invalidation timestamp
+        assert_eq!(edge.expired_at, Some(ts(5000)));
     }
 
     #[test]
-    fn test_validate_bitemporal_inverted_transaction_range() {
-        let props = snap(&[
-            ("recorded_at", json!(1_800_000_000_i64)),
-            ("superseded_at", json!(1_700_000_000_i64)),
-        ]);
-        let issues = validate_bitemporal(&props);
-        assert!(
-            issues
-                .iter()
-                .any(|s| s.contains("recorded_at") && s.contains("later than superseded_at")),
-            "expected transaction range inversion issue, got: {issues:?}"
-        );
+    fn test_validate_temporal_edge_consistent() {
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: Some(ts(2000)),
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        assert!(validate_temporal_edge(&edge, None).is_empty());
     }
 
     #[test]
-    fn test_validate_bitemporal_extraction_before_publication_warns() {
-        let props = snap(&[
-            ("valid_from", json!(1_800_000_000_i64)), // future publication
-            ("recorded_at", json!(1_700_000_000_i64)), // extracted before
-        ]);
-        let issues = validate_bitemporal(&props);
-        assert!(
-            issues
-                .iter()
-                .any(|s| s.contains("earlier than valid_from")),
-            "expected extraction-before-publication warning, got: {issues:?}"
-        );
+    fn test_validate_temporal_edge_inverted_valid_range() {
+        let edge = TemporalEdge {
+            valid_at: ts(2000),
+            invalid_at: Some(ts(1000)),
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        let issues = validate_temporal_edge(&edge, None);
+        assert!(issues.iter().any(|s| s.contains("later than invalid_at")));
     }
 
     #[test]
-    fn test_no_temporal_info_treated_as_active_and_known() {
-        let props = PropertySnapshot::new();
-        let now = chrono::Utc::now();
-        assert!(is_active_at(&props, now));
-        assert!(was_known_at(&props, now));
+    fn test_validate_temporal_edge_inverted_transaction_range() {
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: None,
+            expired_at: Some(ts(500)),
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        let issues = validate_temporal_edge(&edge, None);
+        assert!(issues.iter().any(|s| s.contains("later than expired_at")));
+    }
+
+    #[test]
+    fn test_validate_retroactive_to_must_be_before_valid_at() {
+        let edge = TemporalEdge {
+            valid_at: ts(1000),
+            invalid_at: None,
+            expired_at: None,
+            reference_time: None,
+            created_at: ts(1000),
+        };
+        let retro = RetroactiveExtension {
+            retroactive_to: Some(ts(2000)), // wrong: retroactive should be earlier
+            retroactivity_basis: None,
+        };
+        let issues = validate_temporal_edge(&edge, Some(&retro));
+        assert!(issues.iter().any(|s| s.contains("retroactivity must point backwards")));
+    }
+
+    #[test]
+    fn test_parse_datetime_iso8601() {
+        let dt = parse_datetime("2024-01-15T10:30:00Z");
+        assert!(dt.is_some());
+    }
+
+    #[test]
+    fn test_parse_datetime_unix_seconds() {
+        let dt = parse_datetime("1700000000");
+        assert!(dt.is_some());
+    }
+
+    #[test]
+    fn test_parse_datetime_open_returns_none() {
+        assert!(parse_datetime(OPEN).is_none());
+        assert!(parse_datetime("").is_none());
     }
 }
