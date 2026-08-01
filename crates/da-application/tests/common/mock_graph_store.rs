@@ -32,6 +32,10 @@ pub struct MockProps {
 
 /// Mock GraphStore that records all node/edge operations.
 /// Thread-safe via Mutex. All methods return Ok or empty results.
+///
+/// Counters are exposed for tests that need to assert on call frequency
+/// (e.g. snapshot_calls was the reason batch_ingest_test kept a private
+/// mock — now it can use the shared one and read snapshot_calls()).
 pub struct MockGraphStore {
     /// (node_id, label) — one entry per create_node call.
     pub nodes: Mutex<Vec<(u64, String)>>,
@@ -41,6 +45,10 @@ pub struct MockGraphStore {
     pub counter: AtomicUsize,
     /// All properties ever set, indexed by (node_id, key).
     pub props: Mutex<MockProps>,
+    /// Count of export_snapshot calls.
+    pub snapshot_calls: AtomicUsize,
+    /// Count of import_snapshot calls.
+    pub import_calls: AtomicUsize,
 }
 
 impl MockGraphStore {
@@ -50,6 +58,8 @@ impl MockGraphStore {
             edges: Mutex::new(Vec::new()),
             counter: AtomicUsize::new(0),
             props: Mutex::new(MockProps::default()),
+            snapshot_calls: AtomicUsize::new(0),
+            import_calls: AtomicUsize::new(0),
         }
     }
 
@@ -61,6 +71,16 @@ impl MockGraphStore {
     /// Convenience: total number of create_edge calls.
     pub fn edge_count_total(&self) -> usize {
         self.edges.lock().unwrap().len()
+    }
+
+    /// Count of export_snapshot calls so far.
+    pub fn snapshot_call_count(&self) -> usize {
+        self.snapshot_calls.load(Ordering::SeqCst)
+    }
+
+    /// Count of import_snapshot calls so far.
+    pub fn import_call_count(&self) -> usize {
+        self.import_calls.load(Ordering::SeqCst)
     }
 }
 
@@ -106,9 +126,11 @@ impl GraphStore for MockGraphStore {
         Ok(vec![])
     }
     async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
+        self.snapshot_calls.fetch_add(1, Ordering::SeqCst);
         Ok(vec![])
     }
     async fn import_snapshot(&self, _data: &[u8]) -> GraphResult<()> {
+        self.import_calls.fetch_add(1, Ordering::SeqCst);
         Ok(())
     }
     async fn health(&self) -> GraphResult<bool> {
