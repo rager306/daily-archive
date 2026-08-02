@@ -196,3 +196,54 @@ pub trait DirectGraphStore: GraphStore {
         Ok(()) // default no-op; adapters override
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_query_result_serde_round_trip() {
+        let qr = QueryResult {
+            columns: vec!["vid".into(), "label".into()],
+            records: vec![
+                vec![serde_json::json!("abc"), serde_json::json!("Paper")],
+                vec![serde_json::json!("def"), serde_json::json!("Author")],
+            ],
+        };
+        let json = serde_json::to_string(&qr).unwrap();
+        let back: QueryResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(qr.columns, back.columns);
+        assert_eq!(qr.records.len(), back.records.len());
+    }
+
+    #[test]
+    fn test_vector_metric_serde_lowercase() {
+        assert_eq!(serde_json::to_string(&VectorMetric::Cosine).unwrap(), "\"cosine\"");
+        assert_eq!(serde_json::to_string(&VectorMetric::L2).unwrap(), "\"l2\"");
+        assert_eq!(serde_json::to_string(&VectorMetric::Dot).unwrap(), "\"dot\"");
+    }
+
+    #[test]
+    fn test_vector_metric_deserialize() {
+        let m: VectorMetric = serde_json::from_str("\"cosine\"").unwrap();
+        assert_eq!(m, VectorMetric::Cosine);
+    }
+
+    #[test]
+    fn test_vector_search_result_serde() {
+        let vsr = VectorSearchResult {
+            vid: "node123".into(),
+            score: 0.95,
+            properties: serde_json::json!({"label": "Paper"}),
+        };
+        let json = serde_json::to_string(&vsr).unwrap();
+        let back: VectorSearchResult = serde_json::from_str(&json).unwrap();
+        assert_eq!(vsr.vid, back.vid);
+    }
+
+    #[test]
+    fn test_graph_store_error_display() {
+        let e = GraphStoreError::Query("syntax error".into());
+        assert!(format!("{e}").contains("syntax error"));
+    }
+}
