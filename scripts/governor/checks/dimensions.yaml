@@ -93,3 +93,14 @@ dimensions:
       - "M279: held_out excluded from GEPA train fail-closed"
       - "M280: 60 paper_ids assigned, 12 held-out frozen"
     artifact_ref: "artifacts/etl/canary-held-out-split.v1.json"
+
+  - id: test_coverage_delta
+    description: "Test coverage: files without tests (MEM515)"
+    status_logic:
+      measured: "scripts/governor/adapters/clippy_scanner.py exists"
+      not_started: "always (fallback)"
+    evidence:
+      - "governor --check-dead-code surfaces dead code"
+      - "Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]"
+      - "test_coverage_delta dimension added M287 post-session"
+    artifact_ref: "scripts/governor/adapters/clippy_scanner.py"

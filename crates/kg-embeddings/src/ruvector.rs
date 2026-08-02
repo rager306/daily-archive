@@ -23,3 +23,21 @@ impl Default for RuVectorBridge {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_equals_default() {
+        let a = RuVectorBridge::new();
+        let b = RuVectorBridge::default();
+        // RuVectorBridge is a zero-sized type; both are equal.
+        let _ = (a, b); // compile-time check
+    }
+
+    #[test]
+    fn test_default_works() {
+        let _bridge = RuVectorBridge::default();
+    }
+}

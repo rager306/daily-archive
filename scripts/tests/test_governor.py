@@ -145,7 +145,7 @@ def test_yaml_rules_load_successfully():
     assert len(rules) >= 16, f"Expected >=16 ADR rules, got {len(rules)}"
 
     dims = repo.load_dimensions()
-    assert len(dims) >= 7, f"Expected >=7 dimensions, got {len(dims)}"
+    assert len(dims) >= 9, f"Expected >=9 dimensions, got {len(dims)}"
 
     # Verify all rules have required fields.
     for rule in rules:
