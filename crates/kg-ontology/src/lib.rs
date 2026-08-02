@@ -21,6 +21,7 @@
 //! See ADR-050 for the full architecture decision and migration plan.
 
 pub mod bitemporal;
+pub mod schema;
 pub mod temporal;
 pub mod validator;
 
@@ -33,14 +34,7 @@ pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 // as code moves in from da-domain. Each module documents which phase
 // will populate it, per ADR-050 §Migration path.
 
-pub mod schema {
-    //! `LoadedSchema`, `NodeType`, `PropertyDef` — Phase D.
-    //! Phase A provides `EpisodicNodeSchema`, `EpisodeSourceType`,
-    //! and `EdgeTypeRegistry` (temporal edge classification).
-    pub use super::schema_inner::*;
-}
-
-mod schema_inner;
+// schema_inner removed (M289-u4fzx5/S02): schema is now file-based.
 
 pub mod edge_contract {
     //! `EdgeContract`, `EdgeEndpoint`.
