@@ -1,63 +1,42 @@
 //! SHA256 stable VIDs (Identifier-Preserving Joins, ADR-038 §6 P1).
 //!
-//! Every entity gets a deterministic SHA256 ID from its canonical form.
-//! This enables O(|K|) hash joins — no false merges across sources.
+//! Re-exports universal Vid type and sha256_vid helper from
+//! kg_ontology::vid (M289-u4fzx5/S04). Project-specific functions
+//! (paper_vid, author_vid, entity_vid, etc.) stay here and call
+//! the universal helper.
 
-use sha2::{Digest, Sha256};
-
-/// A stable vertex ID (SHA256 hex, 64 chars).
-pub type Vid = String;
+// Re-export universal types from kg-ontology (ADR-050).
+pub use kg_ontology::vid::{sha256_vid, sha256_vid2, Vid};
 
 /// Compute a Paper VID from arxiv_id.
 pub fn paper_vid(arxiv_id: &str) -> Vid {
     let id = arxiv_id.trim().replace("arxiv:", "");
-    let mut hasher = Sha256::new();
-    hasher.update(b"paper:");
-    hasher.update(id.as_bytes());
-    hex::encode(hasher.finalize())
+    sha256_vid("paper", &id)
 }
 
 /// Compute an Entity VID from (entity_type, canonical_label).
 pub fn entity_vid(entity_type: &str, label: &str) -> Vid {
     let canonical = label.trim().to_lowercase();
-    let mut hasher = Sha256::new();
-    hasher.update(entity_type.as_bytes());
-    hasher.update(b":");
-    hasher.update(canonical.as_bytes());
-    hex::encode(hasher.finalize())
+    sha256_vid(entity_type, &canonical)
 }
 
 /// Compute an Author VID from canonical name.
 pub fn author_vid(name: &str) -> Vid {
     let canonical = name.trim().to_lowercase();
-    let mut hasher = Sha256::new();
-    hasher.update(b"author:");
-    hasher.update(canonical.as_bytes());
-    hex::encode(hasher.finalize())
+    sha256_vid("author", &canonical)
 }
 
 /// Compute a Reference VID from raw citation text.
-/// Uses SHA256 of normalized raw_text for idempotent dedup.
 pub fn reference_vid(raw_text: &str) -> Vid {
     let canonical = raw_text.trim().to_lowercase();
-    let mut hasher = Sha256::new();
-    hasher.update(b"reference:");
-    hasher.update(canonical.as_bytes());
-    hex::encode(hasher.finalize())
+    sha256_vid("reference", &canonical)
 }
 
 /// Compute an Institution VID from (display_name, openalex_id).
-/// Uses both fields so two institutions with the same name from
-/// different OpenAlex records get distinct VIDs.
 pub fn institution_vid(display_name: &str, openalex_id: &str) -> Vid {
     let canonical_name = display_name.trim().to_lowercase();
     let canonical_id = openalex_id.trim();
-    let mut hasher = Sha256::new();
-    hasher.update(b"institution:");
-    hasher.update(canonical_name.as_bytes());
-    hasher.update(b"|");
-    hasher.update(canonical_id.as_bytes());
-    hex::encode(hasher.finalize())
+    sha256_vid2("institution", &canonical_name, canonical_id)
 }
 
 #[cfg(test)]
@@ -84,10 +63,7 @@ mod tests {
 
     #[test]
     fn test_different_types_different_vid() {
-        assert_ne!(
-            entity_vid("Method", "Transformer"),
-            entity_vid("Model", "Transformer")
-        );
+        assert_ne!(entity_vid("Method", "Transformer"), entity_vid("Model", "Transformer"));
     }
 
     #[test]

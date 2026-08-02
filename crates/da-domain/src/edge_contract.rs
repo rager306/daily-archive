@@ -1,36 +1,11 @@
 //! Edge endpoint contract matrix (ADR-045 Wave G foundation).
 //!
-//! Documents the expected (source_label, target_labels) endpoint contract
-//! for every edge type the pipeline materializes. This is a static
-//! documentation test: it does not read the graph. Instead it encodes
-//! the contract as data so that future code reviews and audits can
-//! check pipeline edges against it.
-//!
-//! When a new edge type is added to the pipeline, add a row here and
-//! the source/target labels it connects. If an existing edge's endpoint
-//! semantics changes, update the row in the same commit.
-//!
-//! Some edges are polymorphic — they accept multiple target labels
-//! (e.g. MENTIONS may point to Entity, ResearchProblem, or
-//! MetricObservation). Such edges list every allowed target in
-//! `target_labels`. The matrix tests enforce that:
-//!   - every listed label is a registered node type
-//!   - the same edge_constant cannot list contradictory source labels
-//!
-//! See ADR-045 §Wave G and MEM500 #5.
+//! Universal EdgeContract struct lives in kg_ontology::edge_contract
+//! (M289-u4fzx5/S03). Project-specific contracts (CITES, AUTHORED_BY,
+//! MENTIONS, etc.) and render_markdown_table() stay here.
 
-/// One row of the edge-endpoint contract matrix.
-#[derive(Debug, Clone, PartialEq)]
-pub struct EdgeContract {
-    pub edge_constant: &'static str,
-    pub source_label: &'static str,
-    /// All node labels that may appear as the target of this edge.
-    /// Single-element slices for monomorphic edges; multi-element for
-    /// polymorphic edges like MENTIONS.
-    pub target_labels: &'static [&'static str],
-    /// Short rationale — why this edge connects these two labels.
-    pub rationale: &'static str,
-}
+// Re-export universal EdgeContract struct from kg-ontology (ADR-050).
+pub use kg_ontology::edge_contract::EdgeContract;
 
 /// The contract matrix: every edge type the pipeline materializes,
 /// with its expected endpoint node labels.

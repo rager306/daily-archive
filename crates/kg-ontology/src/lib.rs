@@ -21,8 +21,10 @@
 //! See ADR-050 for the full architecture decision and migration plan.
 
 pub mod bitemporal;
+pub mod edge_contract;
 pub mod schema;
 pub mod temporal;
+pub mod vid;
 pub mod validator;
 
 pub use temporal::{
@@ -35,12 +37,6 @@ pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 // will populate it, per ADR-050 §Migration path.
 
 // schema_inner removed (M289-u4fzx5/S02): schema is now file-based.
-
-pub mod edge_contract {
-    //! `EdgeContract`, `EdgeEndpoint`.
-    //! Populated in Phase D alongside schema. Today da-domain holds
-    //! the edge_contracts() registry; Phase D moves the data to YAML.
-}
 
 pub mod aspects {
     //! `Aspect`, `AspectApplication` — cross-cutting trait mixins.
