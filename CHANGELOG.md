@@ -2,7 +2,16 @@
 
 ## Unreleased
 
-### M287-q1wf9r — Governor CLI v2 improvements (2026-08-02)
+### M288-avqgux S03 — Validator YAML-driven schema support (2026-08-02)
+
+Phase F step 3 ADR-050: opt-in YAML-driven validator functions.
+
+- `schema_for_label_or_yaml()`: tries YAML first, falls back to hardcoded.
+- `validate_node_properties_or_yaml()`: same validation logic, YAML source.
+- 6 parity tests: hardcoded vs YAML count match, unknown label, missing required.
+- 181 total da-domain tests (175 existing + 6 new).
+
+### M288-avqgux S01-S02 — YamlSchemaAdapter + schema-list --from-yaml (2026-08-02)
 
 2/3 slices delivered. S03 (dead-code scanner) deferred.
 
