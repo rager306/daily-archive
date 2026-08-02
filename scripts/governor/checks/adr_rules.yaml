@@ -130,3 +130,16 @@ rules:
     scan: artifacts/
     pattern: '"auto_promote"\s*:\s*true'
     rationale: "GEPA/LLM deploy requires dual F1 + same-n + val_gap. No auto-promote."
+
+  # --- GSD browser-evidence-gate early warning (MEM516) ---
+  # Scans GSD PLAN files for 'snapshot' word in goal/successCriteria text.
+  # The GSD browserEvidenceGateRequiresAttention function treats 'snapshot'
+  # as a browser requirement trigger, downgrading verdict: pass -> needs-attention.
+  # Fix: write ASSESSMENT.md with uatType: runtime-executable for triggering slices.
+  - id: gsd_snapshot_trigger_in_plan_files
+    anchor: "GSD browser evidence gate (MEM516)"
+    severity: medium
+    scan: .gsd/phases/
+    pattern: '\b(?:snapshot|PropertySnapshot|export_snapshot|import_snapshot)\b'
+    rationale: "Slice PLAN text contains 'snapshot' which triggers GSD browser-evidence gate. Write ASSESSMENT.md with uatType: runtime-executable to bypass. See AGENTS.md browser evidence gate section."
+    filename_filter: PLAN.md

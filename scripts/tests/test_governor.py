@@ -142,7 +142,7 @@ def test_yaml_rules_load_successfully():
     repo = YAMLRuleRepository(checks_dir)
 
     rules = repo.load_adr_rules()
-    assert len(rules) >= 15, f"Expected >=15 ADR rules, got {len(rules)}"
+    assert len(rules) >= 16, f"Expected >=16 ADR rules, got {len(rules)}"
 
     dims = repo.load_dimensions()
     assert len(dims) >= 7, f"Expected >=7 dimensions, got {len(dims)}"
