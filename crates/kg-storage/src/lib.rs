@@ -11,12 +11,14 @@ pub mod error;
 pub mod mock;
 pub mod traits;
 
+#[cfg(feature = "samyama")]
+pub mod samyama_adapter;
+
 pub use error::{GraphResult, GraphStoreError};
 pub use mock::MockGraphStore;
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
-// Phase B follow-up (M285-z09px0/S05): SamyamaGraphStore full impl
-// (GraphStore + DirectGraphStore) will move here from
-// da-adapters/src/samyama_graph.rs behind a `samyama` feature flag.
-// Until then the stub is removed (dead-code); da-adapters remains
-// the single source of SamyamaGraphStore truth.
+#[cfg(feature = "samyama")]
+pub use samyama_adapter::{
+    EdgeId, EdgeType, Label, NodeId, PropertyValue, RecordBatch, SamyamaGraphStore, SamyamaStore,
+};
