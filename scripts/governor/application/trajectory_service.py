@@ -25,12 +25,14 @@ class TrajectoryService:
         rule_repo: RuleRepository,
         adr_repo: ADRRepository,
         milestone_reader: MilestoneReader,
+        git_reader: "GitReader | None" = None,
     ):
         self.root = project_root
         self.audit = audit_service
         self.rule_repo = rule_repo
         self.adr_repo = adr_repo
         self.milestone_reader = milestone_reader
+        self.git_reader = git_reader
 
     def build_report(self, phase: str = "preflight") -> TrajectoryReport:
         audit_report = self.audit.run_audit()
@@ -116,6 +118,34 @@ class TrajectoryService:
                         evidence="README.md does not contain 'Next gate' section",
                     )
                 )
+        # Check for stale milestone (no closeout > 7 days with commits).
+        if self.git_reader and self.git_reader.is_repo():
+            from datetime import datetime, timedelta
+
+            cutoff = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+            recent_commits = self.git_reader.commits_since_date(cutoff)
+            if recent_commits > 0:
+                # Check if any milestone was closed in the last 7 days.
+                gsd_dir = self.root / ".gsd" / "phases"
+                recent_closeout = False
+                if gsd_dir.exists():
+                    for ms_dir in gsd_dir.iterdir():
+                        summary = ms_dir / f"{ms_dir.name.split('-')[0]}-SUMMARY.md"
+                        if summary.exists():
+                            stat = summary.stat()
+                            import time
+                            age_days = (time.time() - stat.st_mtime) / 86400
+                            if age_days < 7:
+                                recent_closeout = True
+                                break
+                if not recent_closeout:
+                    flags.append(
+                        DriftFlag(
+                            flag="stale_milestone",
+                            severity="medium",
+                            evidence=f"{recent_commits} commits in last 7 days but no milestone closeout",
+                        )
+                    )
         return flags
 
     def _derive_verdict(

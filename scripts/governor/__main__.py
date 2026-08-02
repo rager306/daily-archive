@@ -22,6 +22,7 @@ from governor.adapters import (
     FilesystemArtifactReader,
     FilesystemCodeScanner,
     FilesystemMilestoneReader,
+    GitReader,
     YAMLRuleRepository,
 )
 from governor.application import AuditService, TrajectoryService
@@ -59,6 +60,16 @@ def main() -> int:
         action="store_true",
         help="Run checks without writing trajectory-report.json (for pre-commit).",
     )
+    parser.add_argument(
+        "--validate-yaml",
+        action="store_true",
+        help="Validate all YAML rule/dimension files load without error.",
+    )
+    parser.add_argument(
+        "--self-test",
+        action="store_true",
+        help="Run governor unit tests (scripts/tests/test_governor.py).",
+    )
     args = parser.parse_args()
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
@@ -70,6 +81,13 @@ def main() -> int:
     adr_repo = FilesystemADRRepository(project_root)
     milestone_reader = FilesystemMilestoneReader(project_root)
     artifact_reader = FilesystemArtifactReader(project_root)
+    git_reader = GitReader(project_root)
+
+    if args.validate_yaml:
+        return _validate_yaml(rule_repo)
+
+    if args.self_test:
+        return _self_test()
 
     if args.list_checks:
         _print_checks(rule_repo)
@@ -87,6 +105,7 @@ def main() -> int:
         rule_repo=rule_repo,
         adr_repo=adr_repo,
         milestone_reader=milestone_reader,
+        git_reader=git_reader,
     )
 
     report = trajectory_service.build_report(phase=args.phase)
@@ -119,6 +138,43 @@ def main() -> int:
     if verdict_value == "blocked":
         return 1
     return 0
+
+
+def _validate_yaml(rule_repo) -> int:
+    """Validate all YAML rule/dimension files load without error."""
+    try:
+        rules = rule_repo.load_adr_rules()
+        dims = rule_repo.load_dimensions()
+    except Exception as e:
+        print(f"YAML validation FAILED: {e}", file=sys.stderr)
+        return 1
+    print(f"YAML validation PASS: {len(rules)} rules, {len(dims)} dimensions")
+    return 0
+
+
+def _self_test() -> int:
+    """Run governor unit tests via subprocess."""
+    import subprocess
+
+    test_path = Path(__file__).resolve().parent.parent / "tests" / "test_governor.py"
+    if not test_path.exists():
+        print(f"Self-test FAILED: {test_path} not found", file=sys.stderr)
+        return 1
+
+    scripts_dir = Path(__file__).resolve().parent.parent
+    env = {**__import__("os").environ, "PYTHONPATH": str(scripts_dir)}
+    result = subprocess.run(
+        [sys.executable, str(test_path)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    # Print test output.
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
+    return result.returncode
 
 
 def _detect_root() -> Path:
