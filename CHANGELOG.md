@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Governor CLI hexagonal refactor + Rust-era coverage (M286-wda3cp) (2026-08-02)
+
+Governor CLI переписан как hexagonal Python package в scripts/governor/.
+Rules are DATA (YAML), not hardcoded Python logic. Old monolithic
+check_project_trajectory.py (798 lines) became thin delegate (25 lines).
+
+#### S01 — Hexagonal package skeleton
+
+- scripts/governor/ package: domain/ (pure logic), ports/ (5 ABC
+  interfaces), adapters/ (5 filesystem implementations), application/
+  (AuditService + TrajectoryService), checks/ (YAML data files).
+- __main__.py CLI with --phase, --list-checks, --audit-artifacts flags.
+- CodeScanner section_filter: TOML [dependencies] vs [dev-dependencies]
+  awareness — da-adapters in dev-deps NOT flagged as violation.
+
+#### S02 — YAML rules + Rust-era field coverage + dimensions
+
+- adr_rules.yaml expanded from 9 to 15 rules:
+  - ADR-040 forbidden graph stores: no nebula/falkordb/ladybugdb/arcadedb
+    in Cargo.toml AND Rust imports (binding enforcement).
+  - ADR-050 kg-* must not import da_domain: Rust use patterns checked.
+  - ADR-045/050 no hardcoded node label definitions (HE хардкодим).
+  - D136 no DSPy enabled in artifacts.
+  - AGENTS.md no auto-promote.
+- dimensions.yaml: 8 Rust-era dimensions with full-path conditions.
+  schema_readiness=implemented, hexagonal_discipline=crystallized,
+  kg_crate_family=phase_a_complete, gepa_isolation=wired.
+- 2707 JSON artifacts checked, 0 violations. Universal fields covered:
+  import_eligible, graph_writes_allowed, graph_write_allowed,
+  graph_writes_any.
+- 8 unit tests (2 new for Rust rules): all PASS.
+
 ### kg-* crate family skeleton (ADR-050 Phases A, B, C, E) (2026-08-01..02)
 
 Ten commits realizing the kg-* crate family planned in ADR-050. Each

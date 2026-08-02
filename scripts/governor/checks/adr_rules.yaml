@@ -1,0 +1,132 @@
+# ADR reverse audit rules — code-level checks that binding ADRs are honoured.
+# Each rule has: id, anchor (ADR/decision), severity (high/medium), scan (path),
+# pattern (regex), rationale, optional filters.
+#
+# This is DATA — adding a rule = adding an entry here, not changing Python code.
+# Loaded by governor.domain.rule_loader at runtime.
+
+rules:
+  # --- D127 / ADR-005 artifacts-gate rules (JSON field checks) ---
+  - id: no_graph_import_allowed_true_in_artifacts
+    anchor: "ADR-005 (No Direct Extractor to GraphDB Path), D127"
+    severity: high
+    scan: artifacts/
+    pattern: '"graph_import_allowed"\s*:\s*true'
+    rationale: "graph_import_allowed must remain false until explicit graph promotion milestone."
+
+  - id: no_production_import_attempted_true_in_artifacts
+    anchor: "ADR-005 (No Direct Extractor to GraphDB Path)"
+    severity: high
+    scan: artifacts/
+    pattern: '"production_import_attempted"\s*:\s*true'
+    rationale: "production_import_attempted must remain false."
+
+  # --- Universal artifact field checks (Rust-era M274-M285) ---
+  # These fields appear in ALL Rust-era artifacts regardless of milestone.
+  # Governor must check every JSON artifact, not just hand-picked ones.
+  - id: no_import_eligible_true_in_artifacts
+    anchor: "R029, ADR-005, D127"
+    severity: high
+    scan: artifacts/
+    pattern: '"import_eligible"\s*:\s*true'
+    rationale: "import_eligible must remain false until independent review and explicit user yes (D127)."
+
+  - id: no_graph_writes_allowed_true_in_artifacts
+    anchor: "ADR-040 (Samyama sole KG store), D127"
+    severity: high
+    scan: artifacts/
+    pattern: '"graph_writes_allowed"\s*:\s*true'
+    rationale: "graph_writes_allowed must remain false. Graph writes locked behind D127."
+
+  - id: no_graph_write_allowed_true_in_artifacts
+    anchor: "ADR-040, D127"
+    severity: high
+    scan: artifacts/
+    pattern: '"graph_write_allowed"\s*:\s*true'
+    rationale: "graph_write_allowed (singular) must remain false. Variant spelling of graph_writes_allowed."
+
+  - id: no_graph_writes_any_true_in_artifacts
+    anchor: "ADR-005, D127"
+    severity: high
+    scan: artifacts/
+    pattern: '"graph_writes_any"\s*:\s*true'
+    rationale: "graph_writes_any must remain false. Any graph write signal locked behind D127."
+
+  # --- ADR-050 universal-crate invariant (Rust workspace) ---
+  - id: kg_crates_must_not_depend_on_da
+    anchor: "ADR-050 (kg-* crate family — universal, no da-* deps)"
+    severity: high
+    scan: crates/
+    pattern: '^(?:da-domain|da-ports|da-application|da-adapters|da-graph|da-cli)\s*='
+    rationale: "kg-* crates are universal (ADR-050). They must NOT declare any da-* dependency in Cargo.toml."
+    filename_filter: Cargo.toml
+    path_prefix_include: crates/kg-
+
+  # --- Hexagonal overlay (ADR-034) on Rust workspace ---
+  - id: da_domain_must_not_depend_on_infra
+    anchor: "ADR-034 (Hexagonal/Onion overlay), ADR-040"
+    severity: medium
+    scan: crates/da-domain/Cargo.toml
+    pattern: '^(?:reqwest|tokio|samyama|hyper|axum|actix)\s*='
+    rationale: "da-domain (domain Core) must not depend on infrastructure crates."
+
+  - id: da_application_must_not_depend_on_da_adapters
+    anchor: "ADR-034 (Hexagonal/Onion overlay)"
+    severity: medium
+    scan: crates/da-application/Cargo.toml
+    pattern: '^da-adapters\s*='
+    rationale: "da-application must not depend on da-adapters in prod deps."
+    section_filter: dependencies
+
+  # --- ADR-040 binding: Samyama sole KG+vector+persist store ---
+  - id: no_forbidden_graph_stores_in_cargo
+    anchor: "ADR-040 §3 (binding inventory — Samyama sole KG store)"
+    severity: high
+    scan: crates/
+    pattern: '^(?:nebula|falkordb|ladybugdb|arcadedb)\s*='
+    rationale: "ADR-040 binding: Samyama is sole KG+vector+persist store. No NebulaGraph, no FalkorDB, no LadybugDB, no ArcadeDB."
+    filename_filter: Cargo.toml
+
+  - id: no_forbidden_graph_stores_in_rust_imports
+    anchor: "ADR-040 §3 (binding inventory)"
+    severity: high
+    scan: crates/
+    pattern: '^use (?:nebula|falkordb|ladybugdb|arcadedb)::'
+    rationale: "ADR-040 binding: no forbidden graph store crates imported in Rust source."
+    suffix_allowlist:
+      - .rs
+
+  # --- ADR-050 binding: kg-* crates must not use da_domain types directly ---
+  - id: kg_crates_must_not_import_da_domain
+    anchor: "ADR-050 (kg-* crate family — universal, no da-* deps)"
+    severity: high
+    scan: crates/
+    pattern: '^use da_domain::'
+    rationale: "kg-* crates are universal — must not import da_domain types directly. Use kg-ontology instead."
+    suffix_allowlist:
+      - .rs
+    path_prefix_include: crates/kg-
+
+  # --- ADR-045 / ADR-050 binding: no hardcoded schema in Rust (HE хардкодим) ---
+  - id: no_hardcoded_node_label_definitions
+    anchor: "ADR-050 + ADR-045 (HE хардкодим — data in YAML, logic in Rust)"
+    severity: medium
+    scan: crates/da-domain/src/schema.rs
+    pattern: 'NodeSchemaDef\s*\{\s*label:\s*"[A-Z]'
+    rationale: "Node schemas should be data-driven (YAML). Direct NodeSchemaDef literals in Rust indicate hardcoding. M285-z09px0/S06/S07 will move these to YAML."
+
+  # --- DSPy / LLM deploy lock (D136) ---
+  - id: no_dspy_enabled_in_artifacts
+    anchor: "D136 (DSPy not enabled until eval metrics + benchmark fixtures verified)"
+    severity: medium
+    scan: artifacts/
+    pattern: '"dspy_enabled"\s*:\s*true'
+    rationale: "DSPy must remain disabled (D136) until eval metrics and benchmark fixtures are verified."
+
+  # --- GEPA/LLM deploy lock: no auto-promote (AGENTS.md) ---
+  - id: no_auto_promote_in_artifacts
+    anchor: "AGENTS.md hard locks (GEPA/LLM deploy)"
+    severity: medium
+    scan: artifacts/
+    pattern: '"auto_promote"\s*:\s*true'
+    rationale: "GEPA/LLM deploy requires dual F1 + same-n + val_gap. No auto-promote."

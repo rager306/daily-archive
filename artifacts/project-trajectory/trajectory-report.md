@@ -1,6 +1,6 @@
 # Project Trajectory Report
 
-- Verdict: `blocked`
+- Verdict: `drift_risk`
 - Phase: `preflight`
 - Derived, not canonical: true
 - Graph writes: disabled
@@ -14,12 +14,12 @@
 |---|---|---|---|
 | architecture | tracked | none | .gsd/DECISIONS.md, doc/adr/, .codebase-memory/governance-graph.json |
 | functionality | tracked | none | requirements=83, statuses={'active': 22, 'validated': 61} |
-| module_code | tracked | uncommitted_changes_present | git_changed_files=5 |
+| module_code | tracked | none | git_changed_files=0 |
 | evidence | missing | none |  |
-| safety | blocked | reverse_adr_audit_kg_crates_must_not_depend_on_da | prohibited-claim scan over PROJECT/README/recent summaries |
+| safety | clear | none | prohibited-claim scan over PROJECT/README/recent summaries |
 | operations | tracked | none | runtime/service state is artifact-derived; live process management remains external |
 | next_gate | needs_attention | missing_next_gate | README.md, recent milestone summaries |
-| reverse_adr_audit | violations | kg_crates_must_not_depend_on_da | rule_count=7, artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127), crates/ (rule: kg_crates_must_not_depend_on |
+| reverse_adr_audit | clear | none | rule_count=7, artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127), crates/ (rule: kg_crates_must_not_depend_on |
 | schema_readiness | missing | none | da-domain::schema canonical home (Rust workspace), ADR-040 Samyama unified store, ADR-045 edge contract matrix, 31 node schemas (XSchema) |
 | extraction_coverage | prototype_done | none | Rust RuleBasedExtractor (crates/da-adapters), Gold-standard corpus: 12 modern papers, 96 gold entities, Precision 0.639 / Recall 0.979 / F1 0.774 (micro), import_eligible=false (D1 |
 | falkordb_migration | superseded_by_samyama | none | ADR-040 Samyama = sole KG+vector+persist store (supersedes FalkorDB plan), SamyamaGraphStore impl (GraphStore + DirectGraphStore) in da-adapters, Phase B follow-up: migrate impl to |
@@ -32,8 +32,6 @@
 | Severity | Flag | Evidence |
 |---|---|---|
 | medium | missing_next_gate | README.md |
-| info | uncommitted_changes_present | 5 files |
-| high | reverse_adr_audit_kg_crates_must_not_depend_on_da | crates/kg-ontology/Cargo.toml:9 |
 
 ## Recent milestones
 
@@ -43,7 +41,6 @@
 ## Next actions
 
 - Add or confirm the next gate before starting broad implementation.
-- Run focused verification and commit or intentionally leave a handoff.
 
 ## How to create an ADR
 

@@ -1,418 +1,101 @@
 {
-  "codebase_memory": {
-    "canonical": false,
-    "provided": false,
-    "snapshot": {}
-  },
-  "derived_not_canonical": true,
+  "schema_version": "m286.hexagonal.governor.v1",
+  "phase": "preflight",
+  "verdict": "drift_risk",
   "dimensions": {
-    "agent_readiness": {
-      "evidence": [
-        "SymFSM deferred",
-        "kg-pipeline skeleton ready (Phase E ADR-050)"
-      ],
-      "flags": [],
-      "status": "requires_development"
-    },
-    "architecture": {
-      "evidence": [
-        ".gsd/DECISIONS.md",
-        "doc/adr/",
-        ".codebase-memory/governance-graph.json"
-      ],
-      "flags": [],
-      "status": "tracked"
-    },
-    "evidence": {
-      "evidence": [],
-      "flags": [],
-      "status": "missing"
-    },
-    "extraction_coverage": {
-      "evidence": [
-        "Rust RuleBasedExtractor (crates/da-adapters)",
-        "Gold-standard corpus: 12 modern papers, 96 gold entities",
-        "Precision 0.639 / Recall 0.979 / F1 0.774 (micro)",
-        "import_eligible=false (D127)"
-      ],
-      "flags": [],
-      "status": "prototype_done"
-    },
-    "falkordb_migration": {
-      "evidence": [
-        "ADR-040 Samyama = sole KG+vector+persist store (supersedes FalkorDB plan)",
-        "SamyamaGraphStore impl (GraphStore + DirectGraphStore) in da-adapters",
-        "Phase B follow-up: migrate impl to kg-storage (M285-z09px0/S05)"
-      ],
-      "flags": [],
-      "status": "superseded_by_samyama"
-    },
-    "functionality": {
-      "evidence": [
-        "requirements=83",
-        "statuses={'active': 22, 'validated': 61}"
-      ],
-      "flags": [],
-      "status": "tracked"
-    },
-    "hexagonal_discipline": {
-      "evidence": [
-        "ADR-034 hexagonal/onion overlay on Rust workspace",
-        "da-domain <- da-ports <- da-application <- da-adapters/da-cli",
-        "GraphStore + DirectGraphStore ports (da-ports)",
-        "kg-* universal crate family (ADR-050, no da-* deps)",
-        "scripts/verify_rust_architecture.sh guardrail"
-      ],
-      "flags": [],
-      "status": "crystallized"
-    },
-    "module_code": {
-      "evidence": [
-        "git_changed_files=5"
-      ],
-      "flags": [
-        "uncommitted_changes_present"
-      ],
-      "status": "tracked"
-    },
-    "next_gate": {
-      "evidence": [
-        "README.md",
-        "recent milestone summaries"
-      ],
-      "flags": [
-        "missing_next_gate"
-      ],
-      "status": "needs_attention"
-    },
-    "operations": {
-      "evidence": [
-        "runtime/service state is artifact-derived; live process management remains external"
-      ],
-      "flags": [],
-      "status": "tracked"
-    },
-    "reverse_adr_audit": {
-      "evidence": [
-        "rule_count=7",
-        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127)",
-        "crates/ (rule: kg_crates_must_not_depend_on_da, anchor: ADR-050 (kg-* crate family — universal, no da-* deps))",
-        "crates/da-domain/Cargo.toml/ (rule: da_domain_must_not_depend_on_infra, anchor: ADR-034 (Hexagonal/Onion overlay), ADR-040)",
-        "crates/da-application/Cargo.toml/ (rule: da_application_must_not_depend_on_da_adapters, anchor: ADR-034 (Hexagonal/Onion overlay))"
-      ],
-      "flags": [
-        "kg_crates_must_not_depend_on_da"
-      ],
-      "status": "violations"
-    },
-    "safety": {
-      "evidence": [
-        "prohibited-claim scan over PROJECT/README/recent summaries"
-      ],
-      "flags": [
-        "reverse_adr_audit_kg_crates_must_not_depend_on_da"
-      ],
-      "status": "blocked"
-    },
     "schema_readiness": {
+      "description": "Typed knowledge schema (node labels, property types, edge contracts)",
+      "status": "implemented",
       "evidence": [
         "da-domain::schema canonical home (Rust workspace)",
         "ADR-040 Samyama unified store",
         "ADR-045 edge contract matrix",
         "31 node schemas (XSchema)"
-      ],
-      "flags": [],
-      "status": "missing"
+      ]
     },
-    "universal_sources": {
+    "extraction_coverage": {
+      "description": "Extraction pipeline quality on gold-standard corpus",
+      "status": "prototype_done",
       "evidence": [
-        "arXiv CS.CL catalog (data/article_catalog/)",
-        "GROBID hybrid PDF parser (da-adapters)",
-        "GNN textbook pending"
-      ],
-      "flags": [],
-      "status": "paper_only"
+        "Rust RuleBasedExtractor (crates/da-adapters)",
+        "Gold-standard corpus: 12 modern papers, 96 gold entities",
+        "Precision 0.639 / Recall 0.979 / F1 0.774 (micro)",
+        "import_eligible=false (D127)"
+      ]
+    },
+    "graph_store_binding": {
+      "description": "KG+vector+persist store binding (ADR-040 Samyama)",
+      "status": "superseded_by_samyama",
+      "evidence": [
+        "ADR-040 Samyama = sole KG+vector+persist store",
+        "SamyamaGraphStore impl (GraphStore + DirectGraphStore)",
+        "kg-storage traits re-exported via da-ports (M285-z09px0/S05)"
+      ]
+    },
+    "hexagonal_discipline": {
+      "description": "Hexagonal/Onion overlay maturity (ADR-034)",
+      "status": "crystallized",
+      "evidence": [
+        "ADR-034 hexagonal/onion overlay on Rust workspace",
+        "da-domain <- da-ports <- da-application <- da-adapters/da-cli",
+        "kg-* universal crate family (ADR-050, no da-* deps)",
+        "scripts/verify_rust_architecture.sh guardrail"
+      ]
+    },
+    "kg_crate_family": {
+      "description": "Universal kg-* crate family migration (ADR-050)",
+      "status": "phase_a_complete",
+      "evidence": [
+        "ADR-050 kg-* crate family (5 crates)",
+        "Phase A: da-domain re-exports kg-ontology (M285/S03)",
+        "Phase B: da-ports re-exports kg-storage (M285/S05)",
+        "Phase D: YAML ontology export pending"
+      ]
+    },
+    "canary_resolvability": {
+      "description": "Canary paper resolvability metric (M280-M284)",
+      "status": "measured",
+      "evidence": [
+        "M280: canary paper ids assigned, 12 held-out frozen",
+        "M281: gold char-span grounding",
+        "M282: relation entity-id resolve",
+        "M284: evidence governor fleet wire"
+      ]
+    },
+    "structure_gate": {
+      "description": "Structure gate v2 IR signals (M277)",
+      "status": "active",
+      "evidence": [
+        "M277: v2 IR hard structure, newline soft_legacy",
+        "M283: ODL layout key fix, hybrid gold batch"
+      ]
+    },
+    "gepa_isolation": {
+      "description": "GEPA held-out isolation wire (M279)",
+      "status": "wired",
+      "evidence": [
+        "M279: held_out excluded from GEPA train fail-closed",
+        "M280: 60 paper_ids assigned, 12 held-out frozen"
+      ]
     }
   },
   "drift_flags": [
     {
-      "evidence": "README.md",
       "flag": "missing_next_gate",
-      "severity": "medium"
-    },
-    {
-      "evidence": "5 files",
-      "flag": "uncommitted_changes_present",
-      "severity": "info"
-    },
-    {
-      "evidence": "crates/kg-ontology/Cargo.toml:9",
-      "flag": "reverse_adr_audit_kg_crates_must_not_depend_on_da",
-      "severity": "high",
-      "snippet": "da-domain = { path = \"../da-domain\" }"
+      "severity": "medium",
+      "evidence": "README.md does not contain 'Next gate' section"
     }
   ],
-  "graph_write_allowed": false,
-  "import_eligible": false,
-  "next_actions": [
-    "Add or confirm the next gate before starting broad implementation.",
-    "Run focused verification and commit or intentionally leave a handoff."
-  ],
-  "phase": "preflight",
-  "production_import_attempted": false,
-  "progress_summary": {
-    "decisions": {
-      "count": 135,
-      "latest": [
-        {
-          "choice": "Replace the broken Python M044/M045 guardrail workflow with a Rust-native guardrail: cargo check --workspace, cargo test --workspace, cargo clippy, cargo fmt --check, plus a dependency-direction check (da-domain/da-ports have no infra deps). Move the Python guardrail to a legacy-only workflow or remove it.",
-          "decision": "Architecture guardrail CI workflow (.github/workflows/architecture-guardrail.yml) is broken after the Python→Rust rewrite: it runs `uv sync` (no root pyproject.toml) and `scripts/verify_onion_layering.py` (now at legacy/scripts/). The guardrail must be rewritten for the Rust hexagonal layout.",
-          "id": "D131",
-          "scope": "architecture",
-          "when": ""
-        },
-        {
-          "choice": "Design the complete graph schema (all node types, edge types, properties, indexes) as a single source of truth BEFORE any further data loading. Implement schema-as-code in da-domain (NodeSchemaDef for every node type), schema initialization in da-graph (all indexes), and a `da schema init` CLI command. Loading (ingest/extract) must validate against the schema before writing.",
-          "decision": "Graph data was being loaded chaotically — each session added node types/properties ad hoc (Paper, Citation, Entity, CITES, MENTIONS) without a unified schema design. PaperSchema/EntitySchema exist in da-domain but validate() is never called, CitationSchema doesn't exist, SchemaInitializer only creates 3 indexes, and written properties don't match the declared schema.",
-          "id": "D132",
-          "scope": "architecture",
-          "when": ""
-        },
-        {
-          "choice": "Adopt the hybrid approach (option 3): OpenAlex as curated metadata backbone + FaBiO structural types + domain-specific extraction layer. Three-layer graph architecture: (1) Metadata layer from OpenAlex API (Work, Author, Institution, Concept, Topic, Citation), (2) Structure layer from GROBID/S2ORC (Section, Figure, Table, Equation), (3) Content layer from extraction (Entity, Relation). FaBiO class names for node labels, CiTO property names for citation edges, OpenAlex concept hierarchy for topics.",
-          "decision": "The graph schema was ad-hoc — invented Paper/Section/Keyword/Topic/Category from scratch without aligning to established ontologies (FaBiO, CiTO) or practical schemas (OpenAlex). User directed to study SPAR/FaBiO, CiTO, OpenAlex, S2ORC and redesign accordingly. The hybrid approach is best for daily-archive: use OpenAlex curated data for metadata (not noisy YAKE/NER), FaBiO for structural types, CiTO for citation typing, and domain extraction on top.",
-          "id": "D133",
-          "scope": "architecture",
-          "when": ""
-        },
-        {
-          "choice": "Adopt four ADHD-derived patterns in the graph schema: (1) retrieval_eligible boolean on ALL nodes — defaults false for deprecated Concepts, quarantined agent writes, unparsed spans; true only for promoted, live taxonomy nodes. (2) TopicAssignment edge with assignment_method + hierarchy_snapshot_id — audit trail for OpenAlex taxonomy transitions. (3) Provenance as append-only ring (ProvenanceEvent) — nodes hold ring offset pointer, not inline provenance, keeping hot retrieval paths clean. (4) QuarantinedAssertion edges for RuVector/SONA agent writes — retrieval_eligible=false until PromotionCertificate.",
-          "decision": "ADHD research (5 parallel cognitive frames + 3 deepened branches) on the graph ontology problem produced four high-value patterns that the current schema misses. These patterns address: OpenAlex Concepts deprecation (epigenetic silencing), agent brain contamination (quarantine), provenance bloat (audit ring), and taxonomy lineage (assignment_method).",
-          "id": "D134",
-          "scope": "architecture",
-          "when": ""
-        },
-        {
-          "choice": "Extend the current FileScheduler into the full ADR-037 §4.3 ETL Scheduler design: priority queue (ingest/reparse/extract/embed/graph_write/enrich with HIGH/MED/LOW), resource guards (CPU, RAM, LLM rate limits, sidecar health, graph throughput), backpressure (fallback modes when resources constrained), and WAL checkpointing (crash recovery + idempotent resume). The current FileScheduler with RetryPolicy is the foundation — extend with TaskPriority, ResourceGuard trait, and BackpressurePolicy.",
-          "decision": "Found the original ETL Scheduler design in ADR-037 §4.3. The current FileScheduler implements only the retry-queue subset. The full design includes: priority queue (5 task types with HIGH/MED/LOW), resource guards (CPU/RAM/LLM/sidecar/graph), backpressure (fallback when constrained), and checkpointing (WAL + idempotent + resume). The OpenAlex lazy-load scheduler is the first concrete instance of this broader pattern.",
-          "id": "D135",
-          "scope": "architecture",
-          "when": ""
-        }
-      ]
-    },
-    "governance_graph": {
-      "edge_count": 13,
-      "node_count": 201,
-      "node_types": {
-        "ADR": 33,
-        "Artifact": 2,
-        "Decision": 88,
-        "Milestone": 5,
-        "Requirement": 72,
-        "SafetyBoundary": 1
-      }
-    },
-    "latest_milestone": {},
-    "recent_milestones": [],
-    "requirements": {
-      "count": 83,
-      "ids": [
-        "R019",
-        "R022",
-        "R023",
-        "R024",
-        "R027",
-        "R029",
-        "R031",
-        "R032",
-        "R033",
-        "R035",
-        "R040",
-        "R050",
-        "R051",
-        "R052",
-        "R054",
-        "R055",
-        "R056",
-        "R079",
-        "R080",
-        "R081",
-        "R082",
-        "R083",
-        "R001",
-        "R002",
-        "R003",
-        "R004",
-        "R005",
-        "R006",
-        "R007",
-        "R008",
-        "R009",
-        "R010",
-        "R011",
-        "R012",
-        "R013",
-        "R014",
-        "R015",
-        "R016",
-        "R017",
-        "R018",
-        "R020",
-        "R021",
-        "R025",
-        "R026",
-        "R028",
-        "R030",
-        "R034",
-        "R036",
-        "R037",
-        "R038",
-        "R039",
-        "R041",
-        "R042",
-        "R043",
-        "R044",
-        "R045",
-        "R046",
-        "R047",
-        "R048",
-        "R049",
-        "R053",
-        "R057",
-        "R058",
-        "R059",
-        "R060",
-        "R061",
-        "R062",
-        "R063",
-        "R064",
-        "R065",
-        "R066",
-        "R067",
-        "R068",
-        "R069",
-        "R070",
-        "R071",
-        "R072",
-        "R073",
-        "R074",
-        "R075",
-        "R076",
-        "R077",
-        "R078"
-      ],
-      "statuses": {
-        "active": 22,
-        "validated": 61
-      },
-      "titles": {
-        "R001": "CLI help info",
-        "R002": "CLI `--date` analysis",
-        "R003": "JSON result in sessions",
-        "R004": "Save full list of papers",
-        "R005": "Per-paper artifacts",
-        "R006": "Topic overview aggregates",
-        "R007": "Transparent score breakdown",
-        "R008": "Queue state file",
-        "R009": "Idempotent reruns",
-        "R010": "Rust-portable contracts",
-        "R011": "Follow style guide/lint",
-        "R012": "Empty day handling",
-        "R013": "Pytest contract coverage",
-        "R014": "Local full-text ingestion must produce deterministic, provenance-rich ingestion results for markdown and plain-text paper artifacts.",
-        "R015": "PageIndex document navigation must represent fixture papers as deterministic PageIndexNode hierarchies with parent, child, NEXT, path, and validation diagnostics.",
-        "R016": "SemanticChunk records and EvidencePath objects must provide deterministic traceability from Paper to PageIndexNode to chunk.",
-        "R017": "Claim, ScientificEntity, and ScientificRelation contracts must reference EvidencePath records or explicit validation errors.",
-        "R018": "LadybugDB SCI KG schema must store Paper, PageIndexNode, SemanticChunk, Claim, ScientificEntity, ScientificRelation, EvidencePath, and required edges idempotently and transaction-safely.",
-        "R019": "Hybrid retrieval must return traceable evidence contexts with vector, graph, fusion score metadata, and EvidencePath references.",
-        "R020": "Evaluation fixtures and metrics must exist before scale, optimizer, DSPy, RLM, or retrieval-quality claims are made.",
-        "R021": "DSPy extraction boundaries must remain disabled or non-optimizing until evaluation metrics and benchmark fixtures are verified.",
-        "R022": "RLM document navigation and workflow-in-code prototypes must be read-only, bounded, and return typed draft outputs plus trajectories validated by deterministic code.",
-        "R023": "RLM graph traversal must be benchmarked against vector-only, one-hop graph expansion, and heuristic BFS before adoption recommendations are made.",
-        "R024": "Before expanding beyond M003, the system must validate current scientific KG behavior on staged real article batches of 10 documents, 20 documents, and then a one-week corpus, with analysis of graph quality at each stage.",
-        "R025": "Full-text acquisition and real-corpus KG validation must emit structured Loguru-based logs and persisted diagnostics for each selected paper before rerunning the 10-document validation.",
-        "R026": "Before scaling validation to 10, 20, or larger document batches, the real-data scientific KG pipeline must be debugged end-to-end on the current small corpus through full text, PageIndex, SemanticChunk, EvidencePath, ExtractionPatch, SCI KG persistence, and retrieval diagnostics.",
-        "R027": "Before scientific KG validation or scaling continues, converted paper data and chunks must satisfy an explicit graph-readiness quality contract covering conversion fidelity, normalization, chunk semantics, table/figure handling, section hierarchy, and evidence provenance.",
-        "R028": "Validation of conversion, chunking, extraction, and graph-readiness must include an independent artifact review step where feasible, preferably via a subagent, that inspects raw outputs and test meaningfulness rather than relying only on code tests or mocked fixtures.",
-        "R029": "Before KG import continues, chunking must produce an import-ready typed chunk package with stable IDs, source spans, parent-child lineage, content routes, quality states, deterministic annotations, and independent review evidence.",
-        "R030": "Article ingestion must preserve source artifacts alongside derived text, including the original PDF, normalized Markdown, extracted figures, tables, image assets, hashes, provenance, and redacted asset manifests for future multimodal retrieval.",
-        "R031": "Before drawing broader chunking/import-readiness conclusions, validation must expand from the 10-paper gold corpus to a 30-paper deviation scan that compares distributions, outliers, missing-source rates, route/refusal patterns, and new failure modes without authorizing production KG import.",
-        "R032": "Corpus validation must support an automated +10-paper iterative loop up to 100 papers, with resumable batch state, source acquisition, deviation analysis, remediation recommendations, and strict no-import/no-write safety gates.",
-        "R033": "Provide a deterministic, resumable CLI workflow for iterative +10-paper validation batches toward a 100-paper diagnostic corpus.",
-        "R034": "Run the first genuinely new +10-paper validation batch through the deterministic M007 validation-batch workflow.",
-        "R035": "Validation batches must fill the target accepted-paper quota by drawing deterministic replacement candidates when selected papers cannot become source-ready within bounded acquisition rules.",
-        "R036": "Validation CLI runs must produce replay/audit provenance logs tying each generated artifact to the exact command, inputs, output hashes, exit code, cwd, git commit, and active milestone/batch context.",
-        "R037": "Run the next reviewed +10 validation batch using M009 runbook gates: active scan lineage, real provenance entry, artifact freshness verification, and bounded top-up handling before scan.",
-        "R038": "Before any positive KG import, a reviewed semantic evidence gate must evaluate a small subset of scanned chunks/outliers for factual extraction readiness without writing to production LadybugDB.",
-        "R039": "Before enabling DSPy or MiniMax in the Scientific KG pipeline, the project must complete parallel compatibility research proving version/API requirements, minimal invocation paths, failure modes, artifact boundaries, and no-import/no-write safety constraints.",
-        "R040": "New infrastructure must be researched, compatibility-probed, and safety-wrapped before it is enabled in the main Scientific KG process.",
-        "R041": "Before any DSPy optimizer or MiniMax helper is used in the Scientific KG process, the project must prove detailed optimizer applicability, dependency/install feasibility, bounded invocation, and explicit blocked/allowed scopes.",
-        "R042": "MiniMax advancement must use real bounded API tests, document Token Plan quota/limit visibility, and keep external calls redacted and non-authoritative.",
-        "R043": "MiniMax remediation must prove Token Plan limit-check access and structured JSON behavior using the correct API surfaces before any helper verdict is accepted.",
-        "R044": "MiniMax limit checking must follow the 9router endpoint/fallback/parsing algorithm before declaring Token Plan remains unresolved.",
-        "R045": "MiniMax helper implementation must turn the verified MiniMax findings into dev-only, tested code before MiniMax is used in any Scientific KG workflow.",
-        "R046": "Triage ML dependency vulnerabilities before enabling any runtime path that uses vulnerable ML packages.",
-        "R047": "Compare selected open-source research-agent systems before adopting any research-agent patterns into the Scientific KG workflow.",
-        "R048": "Define and validate KG candidate locators with chunk-span provenance before any positive Scientific KG import is allowed.",
-        "R049": "Implement deterministic candidate locator generation with schema validation, source hash checks, coordinate validation, safety guards, and ambiguity diagnostics while keeping KG import disabled.",
-        "R050": "Provide a deterministic CLI for detecting article structure artifacts and candidate KG scaffold links from preserved paper sources without performing KG import.",
-        "R051": "MiniMax may assist article artifact detection only as a bounded structured helper with forced tool calls, local schema validation, redacted inputs, and non-authoritative outputs.",
-        "R052": "DSPy prompt optimization for artifact detection must remain gated until benchmark fixtures, metrics, and baseline MiniMax or deterministic outputs exist.",
-        "R053": "External PDF/parser tool evaluation must compare current daily-archive outputs with opendataloader-pdf and GROBID on a bounded local PDF corpus before any parser integration or graph-readiness claim is accepted.",
-        "R054": "Provide a durable lazy async sidecar pipeline for article processing jobs.",
-        "R055": "Track sidecar job lifecycle, retries, typed blockers, and backend/cache health explicitly.",
-        "R056": "Parser sidecar outputs must remain candidate evidence until daily-archive validators, review packets, and graph-readiness review pass.",
-        "R057": "Future sidecar-pipeline roadmap must include explicit architecture brainstorm and decision gates at key irreversible points.",
-        "R058": "Post-M033 ADR package must root every sidecar and orchestration decision in the overall daily-archive mission: local-first scientific paper evidence chains before any Scientific KG or LadybugDB import.",
-        "R059": "Do not lock the future knowledge graph database choice to LadybugDB before a dedicated GraphDB evaluation compares viable local-first candidates.",
-        "R060": "Frame the architecture around a universal local-first knowledge base, with scientific articles as the primary current domain and proving ground.",
-        "R061": "M034 must audit all existing GSD requirements and decisions for mutual consistency with the universal knowledge-base ADR package before closeout.",
-        "R062": "Governance memory must provide a fast codebase-memory ADR/R/D mirror generated from canonical GSD and ADR artifacts without becoming the source of truth.",
-        "R063": "Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical.",
-        "R064": "The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable.",
-        "R065": "Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.",
-        "R066": "Recurring corpus pipeline logic must live behind hexagonal onion application use cases and ports, with milestone scripts reduced to thin CLI or compatibility wrappers.",
-        "R067": "Pipeline must expose typed, resumable, observable jobs for intake, acquisition, parsing, chunking, evidence, and graph-candidate preparation before graph import claims.",
-        "R068": "Pipeline external dependency failures must be typed and fail closed for network, arXiv availability, resource limits, LLM limits, stale hashes, and partial artifacts.",
-        "R069": "Graph readiness work must pass through a graph projection boundary with schema versioning, evidence paths, and lightweight NetworkX rehearsal before any production graph backend write.",
-        "R070": "Pipeline production hardening must provide staged validation evidence before any production promotion.",
-        "R071": "Pipeline hardening must persist operator-readable run state, failure diagnostics, retry counts, and artifact lineage.",
-        "R072": "Pipeline production hardening must not enable graph backend writes, migration execution, or import eligibility.",
-        "R073": "Pipeline orchestration should support bounded asynchronous execution for independent I/O-bound stages while preserving deterministic sync domain contracts.",
-        "R074": "Reactive pipeline jobs must expose observable state transitions, correlation IDs, retries, cancellation, timeout, and artifact lineage.",
-        "R075": "Async/reactive adoption must preserve fail-closed graph/import governance boundaries.",
-        "R076": "Reactive no-write pilot must gain production-readiness preconditions that compare dry-run, sync rehearsal, smoke, and graph readiness evidence without enabling production writes.",
-        "R077": "Reactive readiness workflows must expose operator-readable failure diagnostics, drift deltas, and evidence indexes for dry-run versus sync/smoke parity.",
-        "R078": "No production graph import, schema migration, queue dependency semantic change, or smoke/rehearsal semantic change may be enabled by M198 readiness work.",
-        "R079": "Every pipeline service that touches external or local I/O (ArxivClient, TEI Embedder, Markdown Converter, SemanticScholar) must wrap network/local calls in typed error handling (HTTPError, TimeoutException, ConnectError, 429-rate-limit) and surface typed diagnostics (error code, service name, redacted message, retry count, final outcome) instead of propagating opaque exceptions.",
-        "R080": "Transient failures (429, 5xx, timeout) for pipeline services must retry with bounded backoff honoring Retry-After where present. The mature catalog_ingest retry/backoff/Retry-After pattern (ARXIV_BACKOFF_SECONDS=(1,5,15,60,300)) is the established project pattern and must be reused rather than reinvented.",
-        "R081": "Graceful degradation (e.g. TEI Embedder returning zero vectors when the circuit-breaker is open) is allowed only when the degraded output is explicitly marked via a typed signal or safety flag, and downstream consumers fail closed on or annotate its use. No service may silently degrade to corrupt data.",
-        "R082": "The ScoringEngine recency score must document and enforce its same-day-run contract: a retrospective scoring run must either use an explicit run_date parameter or be rejected, never silently score all papers recency=0.5 by comparing against date.today().",
-        "R083": "Error diagnostics across all pipeline services must never include raw payload, raw text, embeddings, vectors, or secrets — only error code, service name, redacted message, retry count, and final outcome."
-      }
-    }
-  },
-  "promotion_allowed": false,
   "reverse_adr_audit_details": {
-    "evidence": [
-      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127)",
-      "crates/ (rule: kg_crates_must_not_depend_on_da, anchor: ADR-050 (kg-* crate family — universal, no da-* deps))",
-      "crates/da-domain/Cargo.toml/ (rule: da_domain_must_not_depend_on_infra, anchor: ADR-034 (Hexagonal/Onion overlay), ADR-040)",
-      "crates/da-application/Cargo.toml/ (rule: da_application_must_not_depend_on_da_adapters, anchor: ADR-034 (Hexagonal/Onion overlay))"
-    ],
-    "rule_count": 7,
-    "status": "violations",
-    "violations": [
-      {
-        "anchor": "ADR-050 (kg-* crate family — universal, no da-* deps)",
-        "file": "crates/kg-ontology/Cargo.toml",
-        "line": "9",
-        "rule_id": "kg_crates_must_not_depend_on_da",
-        "snippet": "da-domain = { path = \"../da-domain\" }"
-      }
-    ]
+    "status": "clear",
+    "violations": [],
+    "violations_count": 0
   },
-  "schema_version": "m285.rust.trajectory.v1",
-  "verdict": "blocked"
+  "next_actions": [
+    "Add 'Next gate' section to README.md."
+  ],
+  "milestone_context": {
+    "latest_milestone_id": "286",
+    "latest_milestone_title": "wda3cp-governor-cli-hexagonal-refactor-and-rust"
+  }
 }
