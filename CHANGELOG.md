@@ -2,7 +2,37 @@
 
 ## Unreleased
 
-### M288-avqgux S03 — Validator YAML-driven schema support (2026-08-02)
+### M289-u4fzx5 — Extract universal graph capabilities to kg-ontology (2026-08-02)
+
+4/4 universal extractions from da-domain to kg-ontology (ADR-050 principle:
+universal graph capabilities live in kg-*, project-specific in da-*).
+
+#### S01 — Node-level bi-temporal helpers
+
+- `kg_ontology::bitemporal`: PropertyMap, read_datetime, read_bound,
+  is_active_at, was_known_at, is_current, validate_bitemporal (7 tests).
+- da-domain re-exports; PropertySnapshot = PropertyMap alias.
+
+#### S02 — NodeSchemaDef trait + FieldType
+
+- `kg_ontology::schema`: SchemaError, FieldType, Field, NodeSchemaDef
+  trait with validate() default impl (6 tests).
+- da-domain re-exports; 28 project-specific impls unaffected.
+- Removed: schema_inner.rs (dead code after extraction).
+
+#### S03 — EdgeContract struct
+
+- `kg_ontology::edge_contract`: EdgeContract struct with matches() helper
+  (3 tests).
+- da-domain re-exports; project-specific edge_contracts() matrix stays.
+
+#### S04 — Vid type + SHA256 hashing
+
+- `kg_ontology::vid`: Vid type alias, sha256_vid(prefix, key),
+  sha256_vid2(prefix, key1, key2) (6 tests).
+- da-domain functions (paper_vid, author_vid, etc.) call universal helpers.
+
+### M288-avqgux — Phase F: data-driven NodeSchemaDef (2026-08-02)
 
 Phase F step 3 ADR-050: opt-in YAML-driven validator functions.
 
