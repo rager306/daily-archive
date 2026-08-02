@@ -7,225 +7,107 @@
 - ADR-040 (Samyama sole KG+vector+persist store)
 - ADR-050 (kg-* universal crate family — traits must have contract suites)
 - ADR-034 (hexagonal/onion overlay — crate boundaries are test boundaries)
-- Research: Cockburn Hexagonal Architecture, proptest-state-machine,
-  RuVector lifecycle E2E, Samyama use-case specs, grok-build serde roundtrip,
-  EdgeQuake spec-driven + flaky detection, iwe fixture builder
+- Research (2026-07-28): Cockburn Hexagonal Architecture, proptest-state-machine,
+  Rust test stack 2026, RuVector/Samyama/grok-build/EdgeQuake/iwe vendor analysis
 
 ## Context
 
 daily-archive has 303+ tests across 10 crates, but they form a **flat
-collection** rather than a **layered verification matrix**. Specifically:
+collection** rather than a **layered verification matrix**. The project
+has a temporal knowledge graph, event sourcing, extraction pipeline,
+healing operations, and (future) agent runtime — each requiring
+specialised semantic test suites.
+
+Key gaps identified:
 
 1. **No port contract suites** — GraphStore, Embedder, GraphAlgorithms
-   traits lack a reusable test suite that runs against every
-   implementation (Mock + Samyama + future RuVector). A bug in the real
-   adapter that the Mock does not reproduce will pass tests but fail in
-   production.
-
-2. **No serde roundtrip tests** — public types (TemporalEdge,
-   RetryPolicy, ProvenanceEvent, EdgeContract) are Serialize+Deserialize
-   but have no automated wire-format verification. A rename or enum
-   variant change can silently break graph persistence.
-
-3. **No lifecycle E2E tests** — SamyamaGraphStore snapshot export/import
-   round-trip is not verified. Data loss across restart is invisible
-   until a real crash.
-
-4. **No use-case specs** — extraction tests check mechanics (entity
-   count, F1) but not end-to-end domain scenarios ("ingest paper
-   2507.19457 → verify MENTIONS edges → time-travel query").
-
-5. **No deterministic test infrastructure** — tests rely on system
-   time, random UUIDs, and execution-order-dependent shared state.
-
-6. **No flaky test detection** — non-deterministic failures are caught
-   manually, not through repeated execution and comparison.
-
-7. **No property-based testing** — bi-temporal intervals, VID hashing,
-   retry backoff, and canonicalization are ideal for property-based
-   verification but use only example-based tests.
+   lack reusable suites running against every implementation.
+2. **No serde roundtrip tests** — public Serialize types lack
+   wire-format stability verification.
+3. **No lifecycle/E2E tests** — snapshot export/import, use-case specs.
+4. **No deterministic test infrastructure** — tests rely on system time,
+   random UUIDs, shared state.
+5. **No property-based or metamorphic tests** — bi-temporal intervals,
+   VID hashing, retry backoff use only example-based tests.
+6. **No concurrency testing** — no Loom/Shuttle/Turmoil for interleavings.
+7. **No mutation testing** — test quality (do tests catch bugs?) unverified.
+8. **No fuzzing** — parsers, event deserialization untested with random input.
+9. **No flaky detection** — non-deterministic failures caught manually.
+10. **No domain-specific semantic suites** — temporal graph invariants,
+    vector retrieval hard constraints, event sourcing replay equivalence,
+    candidate→verify→promote safety not codified.
 
 ## Decision
 
-Adopt a **seven-contour testing model** mapped to hexagonal architecture
-layers. Each contour has a specific oracle, scope, and toolset. The
-model is inspired by Cockburn's Ports & Adapters (the test harness is a
-driving adapter; the in-memory fake is a driven adapter), research on
-Rust hexagonal testing (2025-2026), and patterns observed in vendor-source
-projects (RuVector, Samyama, grok-build, EdgeQuake, iwe).
+Adopt the **seven-contour verification model** from Cockburn's Ports &
+Adapters, enriched with domain-specific semantic suites, property-based
+testing, concurrency simulation, and mutation testing. The model treats
+automated test harness as a **driving adapter** and in-memory fake as a
+**driven adapter** — both must satisfy the same contract.
 
-### Testing contour matrix
+---
 
-Two orthogonal axes: **hexagonal layers** (rows) × **test types** (columns).
-Each cell describes what that test type looks like at that layer.
-
-#### Axis 1: Hexagonal layers (7 contours)
+## 1. Seven verification contours
 
 ```text
-┌─────────────────────────────────────────────────────────┐
-│ Contour 7: Architecture Invariant (governor + guardrail) │
-├─────────────────────────────────────────────────────────┤
-│ Contour 6: System Journey E2E (lifecycle, use-case specs)│
-├─────────────────────────────────────────────────────────┤
-│ Contour 5: Adapter Integration (real Samyama, GROBID)    │
-├─────────────────────────────────────────────────────────┤
-│ Contour 4: Port Contract Suite (GraphStore, Embedder)    │
-├─────────────────────────────────────────────────────────┤
-│ Contour 3: Application Functional (use cases, mock ports)│
-├─────────────────────────────────────────────────────────┤
-│ Contour 2: Domain Semantic (invariants, property, serde) │
-├─────────────────────────────────────────────────────────┤
-│ Contour 1: Determinism Infrastructure (Clock, ID, RNG)   │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ Contour 7: Architecture Invariant (governor + cargo metadata) │
+├──────────────────────────────────────────────────────────────┤
+│ Contour 6: System Journey E2E (use-case specs, lifecycle)     │
+├──────────────────────────────────────────────────────────────┤
+│ Contour 5: Adapter Integration (real Samyama, wiremock HTTP)  │
+├──────────────────────────────────────────────────────────────┤
+│ Contour 4: Port Contract Suite (GraphStore, Embedder, GraphAlgorithms) │
+├──────────────────────────────────────────────────────────────┤
+│ Contour 3: Application Functional (use cases via driving port)│
+├──────────────────────────────────────────────────────────────┤
+│ Contour 2: Domain Semantic (invariants, property, metamorphic)│
+├──────────────────────────────────────────────────────────────┤
+│ Contour 1: Determinism Infrastructure (Clock, ID, RNG ports)  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-#### Axis 2: Test types (8 categories)
+The key difference from a traditional test pyramid: **contract suites
+are a mandatory separate level** between application tests and adapter
+integration tests. A fake that is too lenient (no version conflicts,
+stable order, no transactional isolation) will pass application tests
+but fail in production.
+
+---
+
+## 2. Test type taxonomy (8 categories)
 
 | Type | What it verifies | Oracle | Tool | Speed |
 |------|------------------|--------|------|-------|
 | **Unit** | Single function/method/struct | Direct input→output | `#[test]` inline | <1ms |
-| **Property** | Algebraic invariants over random inputs | Metamorphic relation | `proptest!` | ~50ms |
+| **Property** | Algebraic invariant over random inputs | Metamorphic relation | `proptest!` | ~50ms |
 | **Serde roundtrip** | Wire-format stability | encode→decode≡original | `roundtrip<T>()` macro | <1ms |
 | **Contract** | Trait semantics across all impls | Shared suite | `contract_*.rs` | <10ms |
 | **Integration** | Real external system behaviour | Observable effect | `cargo test` + real deps | ~100ms |
 | **Business logic** | Domain policy/invariant enforcement | Domain expert rule | use-case test | ~50ms |
-| **Mutation** | Test suite catches code mutations | Mutant killed by tests | `cargo-mutants` | ~minutes |
-| **E2E journey** | Full business scenario | Observable result | CLI/HTTP test | ~seconds |
+| **Mutation** | Test suite catches code mutations | Mutant killed | `cargo-mutants` | ~minutes |
+| **E2E journey** | Full business scenario | Observable system result | CLI/HTTP test | ~seconds |
 
-#### Full matrix: layer × type
+### Full matrix: layer × type
 
 | Layer | Unit | Property | Serde | Contract | Integration | Business | Mutation | E2E |
 |-------|------|----------|-------|----------|-------------|----------|----------|-----|
-| **1. Determinism** | ✅ Clock/RNG impls | ❌ | ❌ | Clock trait | ❌ | ❌ | ❌ | ❌ |
-| **2. Domain** | ✅ 248 tests | ✅ vid/retry/temporal | ✅ all Serialize types | ❌ | ❌ | ✅ invariants | ✅ domain crates | ❌ |
-| **3. Application** | ✅ use-case methods | ❌ | ❌ | ❌ | ❌ (mock) | ✅ policy enforcement | ✅ application crates | ❌ |
+| **1. Determinism** | ✅ | ❌ | ❌ | Clock trait | ❌ | ❌ | ❌ | ❌ |
+| **2. Domain** | ✅ 248 | ✅ vid/retry/temporal | ✅ all Serialize | ❌ | ❌ | ✅ invariants | ✅ domain | ❌ |
+| **3. Application** | ✅ | ❌ | ❌ | ❌ | ❌ (mock) | ✅ policy | ✅ app crates | ❌ |
 | **4. Port contract** | ❌ | ❌ | ❌ | ✅ GraphStore/Embedder | ❌ | ❌ | ❌ | ❌ |
-| **5. Adapter** | ❌ | ❌ | ❌ | ✅ (suite re-run) | ✅ Samyama/wiremock | ❌ | ❌ | ❌ |
-| **6. E2E journey** | ❌ | ❌ | ❌ | ❌ | ✅ (real deps) | ✅ scenario oracle | ❌ | ✅ UC1-5 |
+| **5. Adapter** | ❌ | ❌ | ❌ | ✅ (re-run) | ✅ Samyama/wiremock | ❌ | ❌ | ❌ |
+| **6. E2E journey** | ❌ | ❌ | ❌ | ❌ | ✅ (real deps) | ✅ scenario | ❌ | ✅ UC1-5 |
 | **7. Architecture** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ governor |
 
-**Legend:** ✅ = required, ❌ = not applicable, blank = optional
+---
 
-#### Priority matrix (what to build first)
+## 3. Contour 1: Determinism Infrastructure
 
-| Priority | Test type | Where | Why |
-|----------|-----------|-------|-----|
-| **P0** | Unit (domain) | kg-* + da-domain | Foundation — catches regressions in pure logic |
-| **P0** | Serde roundtrip | kg-ontology public types | Wire-format stability — prevents silent persistence breakage |
-| **P0** | Contract (GraphStore) | kg-storage/tests/ | Mock vs Samyama semantic drift |
-| **P1** | Property | kg-ontology (vid, retry, bitemporal) | Edge cases humans miss |
-| **P1** | Business logic | da-application (extraction, healing) | Policy enforcement (D127, schema, temporal) |
-| **P1** | Mutation (domain) | kg-ontology + da-domain | Test quality — do tests catch real bugs? |
-| **P2** | Integration (wiremock) | da-adapters (GROBID, FdApi) | Real protocol behaviour |
-| **P2** | E2E journey | da-cli/tests/ | End-to-end business value |
-| **P3** | Mutation (application) | da-application | Harder to run, lower ROI |
-| **P3** | Flaky detection | all crates | Governor `--check-flaky N` |
+**Principle:** every non-deterministic source must be injectable as a port.
+A test is flaky if it can pass or fail without code changes.
 
-#### Detailed type definitions
-
-**Unit test** — tests a single function, method, or struct in isolation.
-No I/O, no external dependencies. Lives inline (`#[cfg(test)]`) or in
-`tests/` directory. Runs in <1ms.
-
-```rust
-#[test]
-fn test_sha256_vid_produces_hex() {
-    let vid = sha256_vid("paper", "1206.6423");
-    assert_eq!(vid.len(), 64);
-    assert!(vid.chars().all(|c| c.is_ascii_hexdigit()));
-}
-```
-
-**Property test** — verifies an algebraic property holds for ALL inputs
-in a domain, using random generation + shrinking.
-
-```rust
-proptest! {
-    #[test]
-    fn vid_idempotent(prefix: String, key: String) {
-        prop_assert_eq!(sha256_vid(&prefix, &key), sha256_vid(&prefix, &key));
-    }
-}
-```
-
-**Serde roundtrip test** — verifies a type survives serialization and
-deserialization without semantic loss.
-
-```rust
-#[test]
-fn test_temporal_edge_serde_roundtrip() {
-    let edge = TemporalEdge { valid_at: ts(1000), invalid_at: None, ... };
-    roundtrip(&edge);
-}
-```
-
-**Contract test** — a shared suite that verifies trait semantics.
-Runs against every implementation (Mock, Samyama, future RuVector).
-
-```rust
-#[test]
-fn mock_passes_graph_store_contract() {
-    let store = MockGraphStore::new();
-    graph_store_contract_suite(&store);
-}
-```
-
-**Integration test** — tests against a real external system
-(Samyama embedded, GROBID HTTP, FdApi HTTP).
-
-```rust
-#[tokio::test]
-async fn test_samyama_export_import_roundtrip() {
-    let store = SamyamaGraphStore::new();
-    // ... create nodes, export, drop, import, verify
-}
-```
-
-**Business logic test** — verifies a domain policy or business rule is
-enforced correctly.
-
-```rust
-#[test]
-fn test_d127_import_eligible_remains_false() {
-    let violations = validate_node_properties("Paper", &props);
-    assert!(violations.iter().any(|v| v.rule == "import-eligible"));
-}
-```
-
-**Mutation test** — mutates production code and checks if any test
-fails. Surviving mutants indicate weak tests.
-
-```bash
-cargo mutants -p kg-ontology --test-tool=nextest
-```
-
-**E2E journey test** — full business scenario through external interface
-(CLI, HTTP).
-
-```rust
-#[tokio::test]
-async fn uc1_ingest_paper_verify_mentions() {
-    let fx = GraphFixture::with_papers(&["2507.19457"]).await;
-    // ... extract, verify graph state, time-travel query
-}
-```
-
-#### CI execution tiers
-
-| Tier | When | What runs | Budget |
-|------|------|-----------|--------|
-| **PR** | Every push | Unit + Property + Serde + Contract (Mock) | <30s |
-| **Merge** | On merge to main | + Integration (Samyama) + Business logic | <2min |
-| **Nightly** | 1×/day | + Mutation (domain) + E2E journey + Flaky(5) | <15min |
-| **Release** | Pre-release | + Mutation (application) + Crash recovery + Migration upgrade | <30min |
-
-### Contour 1: Determinism Infrastructure
-
-**Principle:** Every non-deterministic source (time, randomness, ID
-generation) must be injectable as a port. Tests must not depend on
-system clock, thread scheduling, or global state.
-
-**Ports to inject:**
+### Ports to inject
 
 ```rust
 pub trait Clock: Send + Sync {
@@ -240,9 +122,13 @@ pub trait RandomSource: Send + Sync {
     fn next_f32(&mut self) -> f32;
     fn next_u64(&mut self) -> u64;
 }
+
+pub trait Sleeper: Send + Sync {
+    async fn sleep(&self, duration: std::time::Duration);
+}
 ```
 
-**Test implementation:**
+### Test implementations
 
 ```rust
 struct FixedClock(DateTime<Utc>);
@@ -260,11 +146,19 @@ impl RandomSource for SeededRng {
 }
 ```
 
-**LCG deterministic vector** (borrowed from RuVector + Samyama):
+### Tokio paused time
 
 ```rust
-/// Deterministic pseudo-random vector using an LCG.
-/// No rand dependency — fully reproducible.
+#[tokio::test(start_paused = true)]
+async fn test_retry_backoff_progression() {
+    let policy = RetryPolicy::fast();
+    // Time auto-advances; no real sleep
+}
+```
+
+### Deterministic vector (LCG, borrowed from RuVector/Samyama)
+
+```rust
 pub fn deterministic_vector(dim: usize, seed: u64) -> Vec<f32> {
     let mut v = Vec::with_capacity(dim);
     let mut x = seed;
@@ -277,59 +171,30 @@ pub fn deterministic_vector(dim: usize, seed: u64) -> Vec<f32> {
 }
 ```
 
-**Tokio paused time** for async timeout/backoff tests:
+### Rule
 
-```rust
-#[tokio::test(start_paused = true)]
-async fn test_retry_backoff_progression() {
-    let policy = RetryPolicy::fast();
-    // Time is auto-advanced; no real sleep
-}
-```
+A test must NOT depend on: real clock, random UUID, `sleep`, OS thread
+scheduling, global state, shared database, previous test execution.
 
-**Rule:** A test is flaky if it can pass or fail without code changes.
-The only acceptable sources of non-determinism are: explicit random seed,
-explicit time injection, or declared interleaving tests (Loom/Shuttle).
+For each simulation run, preserve: seed, transitions, toolchain,
+feature set, dependency versions, input corpus, event trace.
 
-### Contour 2: Domain Semantic Tests
+---
+
+## 4. Contour 2: Domain Semantic Tests
 
 **Scope:** kg-ontology + da-domain (pure logic, no I/O)
-
 **Oracle:** domain invariants, algebraic properties, idempotency,
 metamorphic relations.
 
-**Existing coverage:** 248 unit tests across kg-ontology (57) +
-da-domain (171) + kg-storage (11) + kg-algorithms (10).
-
-**Add:**
-
-1. **Serde roundtrip macro** (borrowed from grok-build):
-
-```rust
-/// Verify a type survives serialize → deserialize without loss.
-fn roundtrip<T>(value: &T)
-where
-    T: serde::Serialize + serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
-{
-    let json = serde_json::to_value(value).expect("serialize");
-    let parsed: T = serde_json::from_value(json.clone()).expect("deserialize");
-    assert_eq!(&parsed, value, "round-trip mismatch");
-}
-```
-
-Applied to: TemporalEdge, RetryPolicy, ProvenanceEvent, EdgeContract,
-QueryResult, VectorSearchResult, YamlNodeSchema, FieldDef.
-
-2. **Property-based tests** via `proptest`:
+### 4.1 Property-based testing (`proptest`)
 
 ```rust
 proptest! {
     #[test]
     fn vid_deterministic(prefix: String, key: String) {
-        let v1 = sha256_vid(&prefix, &key);
-        let v2 = sha256_vid(&prefix, &key);
-        prop_assert_eq!(v1, v2);
-        prop_assert_eq!(v1.len(), 64);
+        prop_assert_eq!(sha256_vid(&prefix, &key), sha256_vid(&prefix, &key));
+        prop_assert_eq!(sha256_vid(&prefix, &key).len(), 64);
     }
 
     #[test]
@@ -337,11 +202,11 @@ proptest! {
         let p = RetryPolicy::default();
         let d1 = p.delay_for_retry(retries);
         let d2 = p.delay_for_retry(retries + 1);
-        prop_assert!(d2 >= d1, "delay must be monotonically non-decreasing");
+        prop_assert!(d2 >= d1);
     }
 
     #[test]
-    fn bTemporal_no_future_knowledge(
+    fn bitemporal_no_future_knowledge(
         valid_from in 1_000_000_000i64..2_000_000_000,
         valid_to in 1_000_000_000i64..2_000_000_000,
         query_at in 1_000_000_000i64..2_000_000_000,
@@ -359,25 +224,108 @@ proptest! {
 }
 ```
 
-3. **Metamorphic relations:**
+Save `proptest-regressions/` files in git to reproduce previously found cases.
+
+### 4.2 Model-based state-machine testing (`proptest-state-machine`)
+
+Compares system under test with an abstract reference state machine,
+generates operation sequences, shrinks both values and sequences.
+
+**SUT candidates:**
+- SamyamaGraphStore (create/set/query lifecycle)
+- ExtractionUseCase (candidate→verify→promote)
+- TaskScheduler (retry scheduling)
+
+**Reference model requirements:**
+- Significantly simpler than production implementation
+- Independent of production helpers
+- Implements only required semantics
+- Suitable for comparison after each transition
+
+**Critical rule:** do NOT build oracle through the same code being tested
+(common-mode failure).
+
+Note: `proptest-state-machine` supports only sequential strategy.
+Concurrent transitions need Loom/Shuttle/Turmoil (see §9).
+
+### 4.3 Metamorphic testing
+
+When exact expected output is hard to obtain, verify relations between
+multiple executions.
 
 | Transformation | Expected relation |
 |---------------|-------------------|
-| Reorder independent facts | Same query result |
+| Reorder independent facts | Semantically equivalent answer |
 | Repeat idempotent command | Same externally visible state |
 | Add isolated graph component | Relevant result unchanged |
-| Paraphrase query (same embedding) | Same evidence IDs |
+| Paraphrase query | Same evidence IDs |
 | Shift query time within validity interval | Result unchanged |
-| Serialize + deserialize | Semantic equivalence |
+| Rebuild projection from full event log | Same canonical state |
+| Use different port adapter | Same contract holds |
+| Serialize and deserialize command/event | Semantic preservation |
 
-### Contour 3: Application Functional Tests
+Especially important for RAG, graph retrieval, and agentic components
+where exact string equality is a bad oracle.
 
-**Scope:** da-application use cases (IngestPDF, ExtractEntities, HealGraph)
+### 4.4 Serde roundtrip tests
 
-**Oracle:** use-case result (entities created, edges materialised,
-violations detected).
+```rust
+fn roundtrip<T>(value: &T)
+where
+    T: serde::Serialize + serde::de::DeserializeOwned + PartialEq + std::fmt::Debug,
+{
+    let json = serde_json::to_value(value).expect("serialize");
+    let parsed: T = serde_json::from_value(json.clone()).expect("deserialize");
+    assert_eq!(&parsed, value, "round-trip mismatch");
+}
 
-**Pattern:** Fixture builder (borrowed from iwe):
+#[test]
+fn test_temporal_edge_serde_roundtrip() {
+    let edge = TemporalEdge { valid_at: ts(1000), invalid_at: None, .. };
+    roundtrip(&edge);
+}
+```
+
+Applied to: TemporalEdge, RetryPolicy, ProvenanceEvent, EdgeContract,
+QueryResult, VectorSearchResult, YamlNodeSchema, FieldDef.
+
+---
+
+## 5. Contour 3: Application Functional Tests
+
+**Scope:** da-application use cases via driving port.
+**Oracle:** use-case result, events, state changes, effects.
+
+### Functional vs semantic test
+
+**Functional:** does the application execute the required use case with
+given inputs and environment state?
+
+**Semantic:** is the meaning and set of business guarantees preserved
+(not the specific sequence of internal calls)?
+
+One test can be both functional and semantic.
+
+### State-based fakes (not choreography mocks)
+
+Prefer: state-based fakes, deterministic stubs, recording spies, event
+collectors, controlled clocks and schedulers.
+
+Do NOT verify by default:
+- Repository method called exactly once
+- Methods called in specific order
+- Which internal helper was used
+- How many internal queries the adapter performed
+
+Interaction assertions are justified ONLY when interaction is part of
+semantics:
+- Event must be published at most once
+- Promotion must not happen before verification
+- Transaction must complete before sending acknowledgment
+- After cancellation, new external operations are forbidden
+- Audit record must be created before changing authoritative state
+
+### Fixture builder (borrowed from iwe)
 
 ```rust
 pub struct GraphFixture {
@@ -386,132 +334,106 @@ pub struct GraphFixture {
 }
 
 impl GraphFixture {
-    /// Create a fixture pre-loaded with papers.
     pub async fn with_papers(arxiv_ids: &[&str]) -> Self {
         let store = SamyamaGraphStore::new();
         let embedder = DeterministicEmbedder::new();
-        // Pre-populate papers
         for id in arxiv_ids {
             let nid = store.create_node_direct("Paper").await;
-            store.set_property_direct(
-                nid, "arxiv_id",
-                PropertyValue::String((*id).into())
-            ).await;
+            store.set_property_direct(nid, "arxiv_id",
+                PropertyValue::String((*id).into())).await;
         }
         Self { store, embedder }
     }
 }
-
-// Usage in test:
-#[tokio::test]
-async fn test_extract_creates_mentions_edges() {
-    let fx = GraphFixture::with_papers(&["2507.19457"]).await;
-    let result = ExtractEntities::new()
-        .execute(&fx.store, &fx.embedder, "2507.19457")
-        .await
-        .unwrap();
-    assert!(result.graph_node_ids.len() > 0);
-}
 ```
 
-**Deterministic embedder** (no network, LCG vectors):
+---
 
-```rust
-pub struct DeterministicEmbedder { seed: u64 }
-impl Embedder for DeterministicEmbedder {
-    async fn embed(&self, text: &str) -> EmbedResult {
-        let hash = sha256_vid("embed", text);
-        let seed = u64::from_str_radix(&hash[..16], 16).unwrap();
-        Ok(EmbedResult { vector: deterministic_vector(768, seed) })
-    }
-}
-```
+## 6. Contour 4: Port Contract Suite
 
-### Contour 4: Port Contract Suite — NEW
+**The most critical practice.** A single semantic specification of each
+port, run against every implementation (Mock, Samyama, future RuVector).
 
-**Scope:** Universal traits (GraphStore, Embedder, GraphAlgorithms)
+### What contract suite must include
 
-**Oracle:** a single test suite that runs against every implementation.
+#### For GraphStore / DirectGraphStore (repository-like)
 
-**Problem it solves:** MockGraphStore has different semantics from
-SamyamaGraphStore (e.g., Mock does not enforce uniqueness, does not
-model transactional isolation, always returns stable order). Tests that
-pass against Mock can fail against real Samyama.
+- Save and read
+- Duplicate identity (same VID → same node)
+- Not-found semantics (missing property → None, not panic)
+- Create node returns unique ID
+- Create edge returns unique edge ID
+- Set and get string/int/float/bool properties
+- Find node by string property
+- Get outgoing/incoming edges
+- Node/edge count after creates
+- Temporal edge create and query
+- Edge property set and get
+- `get_edges_between` filters by type
+- No partial write state (atomicity)
 
-**Pattern:** Contract test module in a shared testkit:
+#### For Embedder (vector retrieval)
+
+- Embed returns correct dimension
+- Same text → same vector (determinism)
+- Different text → different vector
+- Empty text handling
+- Unicode text handling
+
+#### For GraphAlgorithms
+
+- PPR from seed nodes returns scores
+- PPR scores sum to ~1 (within tolerance)
+- Get neighbors by edge type
+- Get all neighbors regardless of type
+
+### Critical rule
+
+**In-memory fake MUST also pass the contract suite.**
+
+Otherwise application tests confirm behaviour absent in the real adapter.
+Common fake defects:
+- Does not model version conflicts
+- Always returns stable order
+- Does not account for transactional isolation
+- Does not check uniqueness
+- Does not reproduce eventual consistency
+- Does not model partial write error
+
+### Pattern
 
 ```rust
 // crates/kg-storage/tests/contract_graph_store.rs
 
-/// Generic contract suite for GraphStore + DirectGraphStore.
-/// Run against: MockGraphStore, SamyamaGraphStore, future RuVectorAdapter.
 pub fn graph_store_contract_suite<T: DirectGraphStore + GraphStore>(store: &T) {
     test_create_node_returns_unique_id(store);
     test_set_and_get_string_property(store);
     test_set_and_get_int_property(store);
-    test_create_edge_returns_edge_id(store);
-    test_find_node_by_string_property(store);
-    test_get_outgoing_edges(store);
-    test_get_incoming_edges(store);
-    test_node_count_after_creates(store);
-    test_edge_count_after_creates(store);
-    test_missing_node_property_returns_none(store);
-    test_duplicate_create_node_different_ids(store);
-    // Temporal-specific
-    test_temporal_edge_create_and_query(store);
-    test_edge_property_set_and_get(store);
-    test_get_edges_between_filters_by_type(store);
+    // ... full list
+}
+
+#[test]
+fn mock_passes_graph_store_contract() {
+    let store = MockGraphStore::new();
+    graph_store_contract_suite(&store);
 }
 ```
 
-**Critical rule:** MockGraphStore MUST also pass the contract suite. If
-it cannot, the Mock is too lenient and must be tightened.
+For inter-service HTTP contracts, consider Pact (consumer-driven).
+For internal Rust traits, generic Rust contract suite is simpler and
+more precise.
 
-**Contract test for Embedder:**
+---
 
-```rust
-pub fn embedder_contract_suite<E: Embedder>(embedder: &E) {
-    test_embed_returns_correct_dimension(embedder);
-    test_embed_same_text_same_vector(embedder);
-    test_embed_different_text_different_vector(embedder);
-    test_embed_empty_text(embedder);
-    test_embed_unicode_text(embedder);
-}
-```
+## 7. Contour 5: Adapter Integration Tests
 
-### Contour 5: Adapter Integration Tests
+**Scope:** da-adapters against real external systems.
 
-**Scope:** da-adapters (real external systems: Samyama embedded,
-GROBID HTTP, FdApi HTTP, OpenAlex HTTP)
-
-**Oracle:** real external behaviour (not mock).
-
-**Existing coverage:** 4 SamyamaGraphStore tests in da-adapters.
-
-**Add:**
-
-1. **wiremock** for HTTP adapters (GROBID, FdApi):
-
-```rust
-use wiremock::{MockServer, Mock, ResponseTemplate};
-
-#[tokio::test]
-async fn test_grobid_parser_handles_timeout() {
-    let server = MockServer::start().await;
-    Mock::given(any())
-        .respond_with(ResponseTemplate::new(504).set_delay(Duration::from_secs(30)))
-        .mount(&server)
-        .await;
-    // Test parser handles timeout gracefully
-}
-```
-
-2. **Lifecycle test** (borrowed from RuVector):
+### Samyama embedded
 
 ```rust
 #[tokio::test]
-async fn test_samyama_lifecycle() {
-    // create → ingest → query → export → drop → import → query → verify
+async fn test_samyama_lifecycle_export_import() {
     let store = SamyamaGraphStore::new();
     let nid = store.create_node_direct("Paper").await;
     store.set_property_direct(nid, "arxiv_id",
@@ -526,13 +448,54 @@ async fn test_samyama_lifecycle() {
 }
 ```
 
-### Contour 6: System Journey E2E
+### HTTP adapters (GROBID, FdApi, OpenAlex) — wiremock
 
-**Scope:** End-to-end business scenarios through CLI or API.
+```rust
+use wiremock::{MockServer, Mock, ResponseTemplate};
 
-**Oracle:** observable system result (entities in graph, query results).
+#[tokio::test]
+async fn test_grobid_parser_handles_timeout() {
+    let server = MockServer::start().await;
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(504)
+            .set_delay(Duration::from_secs(30)))
+        .mount(&server).await;
+    // Test parser handles timeout gracefully
+}
+```
 
-**Pattern:** Use-case executable specs (borrowed from Samyama UC1-5):
+Test not only happy path: timeout, connection reset, HTTP 429,
+retry-after, 5xx, malformed JSON, unknown enum variants, partial
+response, duplicate response, out-of-order messages, cancellation
+during streaming.
+
+wiremock validates **your adapter**, not that mock matches real vendor
+API. For critical integrations, add a small compatibility suite
+against sandbox/real provider.
+
+### Testcontainers (for future PostgreSQL/RuVector)
+
+Custom Testcontainers image containing: production-compatible version,
+required extension, same index configuration, migrations, minimal
+deterministic fixture.
+
+Why rollback transaction is NOT sufficient:
+- Application opens its own transaction
+- Multiple connections used
+- Visibility between transactions tested
+- Advisory locks
+- Outbox read by another worker
+- Optimistic concurrency checked
+- Migration/extension creates database-level objects
+
+---
+
+## 8. Contour 6: System Journey E2E
+
+**Scope:** full business scenarios through CLI or API.
+**Oracle:** observable system result.
+
+### Use-case executable specs (borrowed from Samyama UC1-5)
 
 ```rust
 // tests/uc1_paper_ingest_test.rs
@@ -545,54 +508,273 @@ async fn uc1_ingest_paper_and_verify_graph() {
     let fx = GraphFixture::with_papers(&[PAPER_ARXIV_ID]).await;
     let result = ExtractEntities::new()
         .execute(&fx.store, &fx.embedder, PAPER_ARXIV_ID)
-        .await
-        .unwrap();
+        .await.unwrap();
 
     assert!(result.graph_node_ids.len() >= EXPECTED_ENTITIES.len());
-    // Verify MENTIONS edges exist
     let paper_nodes = fx.store.nodes_by_label("Paper").await;
     assert!(!paper_nodes.is_empty());
-    // Time-travel: active_at(ingestion_time) == true
-    let props = /* read paper node properties */;
-    assert!(is_current(&props));
 }
 ```
 
-### Contour 7: Architecture Invariant
+---
 
-**Scope:** crate dependency graph, feature flags, hexagonal direction.
+## 9. Concurrency and Resilience Testing
 
-**Existing coverage:** scripts/verify_rust_architecture.sh + governor
-CLI (16 ADR rules).
+Standard async test reruns barely explore interleaving space.
 
-**Add to governor:**
+### Loom
 
-1. **Spec-driven naming** (borrowed from EdgeQuake):
+Exhaustive exploration of concurrent code for small primitives:
+lock-free structures, atomic state machines, channels, caches, shared
+ownership, custom synchronisation.
+
+```rust
+#[test]
+fn test_concurrent_node_creation() {
+    loom::model(|| {
+        let store = Arc::new(SamyamaGraphStore::new());
+        let store2 = store.clone();
+        let t1 = loom::thread::spawn(move || {
+            store2.create_node_direct("Paper")
+        });
+        let id2 = store.create_node_direct("Paper");
+        let id1 = t1.join().unwrap();
+        assert_ne!(id1, id2); // unique IDs under concurrency
+    });
+}
+```
+
+### Shuttle
+
+Randomized scheduling. No proof of correctness, but scales to larger
+scenarios than Loom, with deterministic replay of found schedules.
+
+Suitable for: multiple workers, task queues, deduplication, concurrent
+projections, timeout-vs-completion race, lease renewal, cancellation,
+competing promotion attempts.
+
+### Turmoil
+
+Deterministic simulation testing for distributed async Rust. Executes
+multiple hosts in one thread, injects: latency, packet loss, partitions,
+crashes, torn writes, network and filesystem failures.
+
+For agent/event runtime, verifies:
+- Crash after recording event but before acknowledgment
+- Retry after unknown outcome
+- Split-brain
+- Lease loss
+- Delayed verifier response
+- Duplicate command delivery
+- Worker crash between verify and promote
+- Projection recovery after torn write
+- Safety invariant under partition
+
+---
+
+## 10. Coverage, Mutation, Fuzzing, Formal Tools
+
+These do NOT replace semantic tests — they answer different questions.
+
+| Tool | Question |
+|------|----------|
+| `cargo-llvm-cov` | What code was executed? |
+| `cargo-mutants` | Do tests catch artificially introduced changes? |
+| `cargo-fuzz` | What unexpected inputs/sequences break the implementation? |
+| Miri | Is there undefined behaviour? |
+| Kani | Does a bounded correctness property hold for all explored inputs? |
+
+### Coverage
+
+Use as a gap map, not a quality gate. Track domain/application
+separately. Do NOT require 100%. Exclude generated glue, derive
+output, trivial wiring.
+
+### Mutation testing
+
+```bash
+cargo mutants -p kg-ontology --test-tool=nextest
+```
+
+Run on: domain and application crates, changed crates, nightly or
+pre-release — not entire workspace in every PR.
+
+### Fuzzing
+
+Priority targets: scientific document parser, markdown/HTML/PDF IR,
+DSL/query parser, graph import format, event deserialization, schema
+migrations, temporal interval normalisation, canonicalisation and
+dedup, binary/vector formats, API codecs, unsafe wrappers.
+
+### Miri
+
+For crates with `unsafe`, FFI, and low-level structures — NOT for
+business correctness.
+
+### Kani
+
+Model checking for compact pure algorithms and unsafe abstractions.
+Concurrency support incomplete; function contracts experimental.
+
+---
+
+## 11. Snapshot and BDD — Selectively
+
+### Snapshot testing (`insta`)
+
+Useful for: canonical events, validation errors, AST, query plans,
+normalised graph fragments, CLI output, stable serialised contracts.
+
+NOT for: entire HTTP response without semantic assertions, approximate
+vector ordering, LLM text, large JSON where reviewer stops seeing
+changes, data with mass non-deterministic part.
+
+Snapshot complements targeted assertions, does not replace them.
+
+### BDD (Cucumber)
+
+For solo-dev Rust project creates unnecessary translation layer.
+Prefer: scenario builders, domain test names, Given/When/Then inside
+regular Rust, `rstest` for tabular inputs.
+
+Cucumber justified only when Gherkin is a shared specification between
+business, QA, and development.
+
+---
+
+## 12. Domain-Specific Semantic Suites
+
+### 12.1 Temporal knowledge graph
+
+**Mandatory properties:**
+
+1. **No future knowledge:** `query(as_of=t)` cannot use a fact that
+   became known after `t`.
+2. **Valid time ≠ transaction time:** correcting a historical fact
+   must not change the old audit view.
+3. **Current projection reproducible:** rebuild from authoritative
+   event/fact log yields the same canonical current state.
+4. **Interval boundaries unambiguous:** intervals defined as `[from, to)`,
+   no different interpretations across adapters.
+5. **Correction ≠ destructive overwrite:** provenance and supersession
+   relation preserved.
+6. **Canonicalisation idempotent:** repeat import does not create a new
+   entity or relation.
+7. **Irrelevant expansion invariant:** isolated nodes/edges do not
+   affect local semantic query.
+8. **Projection order:** independent events may commute; dependent must
+   preserve order.
+
+### 12.2 Vector and hybrid retrieval
+
+**Hard invariants (always checked):**
+- No forbidden tenant results
+- No facts outside temporal window
+- Every result has provenance
+- Score is not NaN
+- Deleted documents not returned
+- Mandatory filters strictly enforced
+
+**Quality relations (tolerance-based):**
+- recall@k vs exact/brute-force oracle on small corpus
+- Set equivalence on ties
+- Score tolerance
+- Resilience to adding irrelevant documents
+- Key evidence ID preservation on paraphrase
+- Differential comparison: dense-only vs graph-only vs hybrid
+
+Application tests use `DeterministicEmbedder`. Real embedding model and
+approximate index checked in separate retrieval-quality lane.
+
+### 12.3 Event sourcing and replay
+
+- `fold(events)` is deterministic
+- Snapshot + tail equivalent to full replay
+- Fork from one position is reproducible
+- Schema upcasting preserves semantics
+- Projection handles repeated event safely
+- Failed projection does not advance checkpoint
+- Checkpoint and materialised state change atomically
+- Replay does not re-trigger external side effects
+
+### 12.4 Candidate → verify → promote
+
+**Critical invariants:**
+
+```text
+candidate ≠ authoritative state
+promote allowed only after independent verification
+failed verification never changes authoritative state
+retry does not create double promotion
+worker cannot self-confirm own result
+audit log sufficient to reproduce decision
+promotion and evidence fixation are atomic
+```
+
+For critical verifier, do NOT use the same production helper that
+candidate builder used to compute the verified property — common-mode
+failure.
+
+### 12.5 Agent/LLM components
+
+**Bad oracle:** `output_text == expected_text`
+
+**Robust oracle:**
+- Valid action selected
+- Tool arguments match schema
+- Evidence IDs relevant and exist
+- Mandatory citations present
+- Budget not exceeded
+- Policy gate not bypassed
+- State transition allowed
+- Missing evidence → no promotion
+- Paraphrase/reordering does not change actual decision
+- Misleading context does not replace authoritative evidence
+
+---
+
+## 13. Architecture Invariant Tests (Contour 7)
+
+### Crate dependency graph check
+
+`cargo metadata --format-version=1` provides machine-readable workspace
+metadata and resolved dependency graph.
+
+Existing: `scripts/verify_rust_architecture.sh` + governor CLI with
+`grep_deps` / `grep_deps_prod` helpers checking Cargo.toml.
+
+Optional future: `cargo-depgraph-check` (new, July 2026) or custom
+`xtask` on `cargo metadata`.
+
+### Compile-time checks
+
+- `cargo-hack` — feature combinations (`--feature-powerset`)
+- `trybuild` — expected compile errors and type-level API contracts
+- Compile-fail tests — inability to create invalid object
+- Visibility rules — no public access to adapter internals
+
+### Governor spec-driven naming (borrowed from EdgeQuake)
 
 ```yaml
-# scripts/governor/checks/spec_rules.yaml
 specs:
   - id: spec001_no_da_in_kg
     description: "kg-* crates must not depend on da-*"
-    rule: kg_crates_must_not_depend_on_da  # existing ADR rule
-
   - id: spec002_contract_suite_exists
     description: "Every port trait must have a contract test file"
-    rule: check_contract_suite_exists  # NEW
-
   - id: spec003_serde_roundtrip_coverage
     description: "All public Serialize types must have roundtrip tests"
-    rule: check_serde_roundtrip_coverage  # NEW
 ```
 
-2. **Flaky test detection** (borrowed from EdgeQuake):
+### Flaky test detection (borrowed from EdgeQuake)
 
 ```bash
 # governor --check-flaky 5
 # Runs each test 5 times, compares pass/fail across iterations
 ```
 
-### Governor CLI integration
+---
+
+## 14. Governor CLI Integration
 
 New governor commands to enforce testing contours:
 
@@ -610,31 +792,9 @@ PYTHONPATH=scripts python3 -m governor --check-flaky 5
 PYTHONPATH=scripts python3 -m governor --test-matrix
 ```
 
-### Test naming conventions
+---
 
-| Contour | Convention | Example |
-|---------|-----------|---------|
-| Domain semantic | `{module}_test::{property}` | `bitemporal::test_no_future_knowledge` |
-| Application functional | `{usecase}_{scenario}_test` | `extract_creates_mentions_edges` |
-| Port contract | `contract_{trait}.rs` | `contract_graph_store.rs` |
-| Adapter integration | `{adapter}_{feature}_test` | `samyama_lifecycle_test` |
-| System journey | `uc{N}_{scenario}_test` | `uc1_paper_ingest_test` |
-| Architecture | governor spec | `spec001_no_da_in_kg` |
-
-### Anti-patterns to avoid
-
-1. **Mock every trait** — test choreography of mocks, not semantics
-2. **Fake without contract suite** — Mock is too lenient
-3. **Functional = HTTP E2E only** — slow, hard to diagnose
-4. **Shared test database** — race conditions, order dependence
-5. **`sleep` for synchronisation** — slow and flaky
-6. **Retry hides flaky test** — should mark as flaky, not pass
-7. **100% line coverage as quality gate** — covered line ≠ tested semantic
-8. **Snapshot entire result** — reviewer stops seeing real changes
-9. **Same code in SUT and oracle** — common-mode failure
-10. **Exact assertions for approximate output** — use tolerance, not equality
-
-### Workspace test layout
+## 15. Workspace Test Layout
 
 ```text
 crates/
@@ -665,27 +825,184 @@ crates/
     └── GraphFixture
 ```
 
+`testkit` connects only as dev-dependency. Each file in `tests/`
+compiles as a separate crate — group by bounded context, not hundreds
+of tiny files.
+
+---
+
+## 16. Recommended Rust Test Stack (2026)
+
+### Basic
+
+- `cargo test` (built-in)
+- `cargo-nextest`
+- `proptest`
+- `proptest-state-machine`
+- `rstest` (tabular cases)
+- `testcontainers`
+- `wiremock`
+- `cargo-llvm-cov`
+- `cargo-mutants`
+
+### Concurrency and resilience
+
+- Tokio paused time
+- Loom
+- Shuttle
+- Turmoil
+
+### Parsers and low-level code
+
+- `cargo-fuzz`
+- Miri
+- Kani
+- sanitizers
+
+### Architecture and API
+
+- custom `xtask` on `cargo metadata` (or `cargo-depgraph-check`)
+- `cargo-hack`
+- `trybuild`
+- `cargo-semver-checks` (for public crates)
+
+### Snapshots
+
+- `insta` — only for stable canonical representations
+
+---
+
+## 17. CI Profiles
+
+### Per PR
+
+```text
+format
+clippy
+workspace check
+architecture dependency check
+domain semantic tests
+application functional tests
+port contracts
+basic adapter integration tests
+doctests
+```
+
+Budget: <30s using per-crate checks (MEM468/MEM514).
+
+### Nightly
+
+```text
+feature powerset (cargo-hack)
+full Samyama contracts
+mutation testing (domain + application)
+fuzzing (cargo-fuzz, time-boxed)
+Miri (unsafe crates)
+Shuttle/Turmoil (multiple seeds)
+extended retrieval-quality tests
+```
+
+Budget: <15min.
+
+### Pre-release
+
+```text
+production-version dependency images
+forward migrations
+upgrade from previous release schema
+projection rebuild
+critical system journeys
+backup/restore
+crash recovery
+compatibility contracts
+cargo-semver-checks (public crates)
+```
+
+Budget: <30min.
+
+---
+
+## 18. Anti-patterns
+
+1. **Mock every trait** — tests mock choreography, not use-case meaning.
+2. **Fake without contract suite** — app works only against simplified memory.
+3. **Functional = HTTP E2E only** — slow, hard to diagnose suite.
+4. **Shared test database** — race conditions, order dependence, `serial_test`.
+5. **`sleep` for synchronisation** — slow and flaky tests.
+6. **Retry hides flaky test** — should mark as flaky, not pass.
+7. **100% line coverage as quality gate** — covered line ≠ tested semantic.
+8. **Snapshot entire result** — reviewer stops seeing real changes.
+9. **Same code in SUT and oracle** — common-mode false confirmation.
+10. **Exact assertions for approximate/LLM output** — unstable form checked.
+11. **Testing only happy path** — no retries, cancellation, partial commit.
+12. **Architecture boundaries only in documentation** — domain starts
+    depending on Tokio, SQLx, HTTP types, config framework over time.
+
+---
+
+## 19. Implementation Priorities
+
+### P0 — Foundation
+
+1. Split workspace into domain/application/adapters/bootstrap. ✅ DONE
+2. Add executable dependency rules. ✅ DONE (governor + guardrail)
+3. Extract Clock, ID, RNG, Scheduler, external deps into ports.
+4. Define semantics of each port in text.
+5. Create contract suites.
+6. Run them against fake and real adapters.
+
+### P1 — Semantic depth
+
+1. Property tests for domain value objects.
+2. State-machine model for GraphStore and candidate lifecycle.
+3. Temporal/no-future invariants.
+4. Replay and projection equivalence.
+5. Metamorphic tests for graph/vector retrieval.
+6. Mutation testing domain/application.
+
+### P2 — System reliability
+
+1. Loom for low-level synchronisation.
+2. Shuttle for worker concurrency.
+3. Turmoil for network/filesystem/crash simulation.
+4. Fuzzing parsers, import, event formats.
+5. Miri/Kani for unsafe and critical algorithms.
+6. Release-level recovery and migration scenarios.
+
+### Core principle
+
+> Every production adapter must be replaceable by a test adapter, every
+> test adapter must satisfy the same contract, and every critical
+> business invariant must have an independent semantic oracle.
+
+---
+
 ## Consequences
 
 ### Positive
 
 - Port contract suites catch Mock/Samyama semantic drift before production
 - Serde roundtrip prevents silent wire-format breakage
-- Lifecycle test verifies snapshot persistence integrity
 - Property tests explore edge cases humans miss
-- Deterministic infrastructure eliminates flaky tests at the source
-- Use-case specs serve as executable documentation
+- Model-based state-machine testing verifies lifecycle correctness
+- Metamorphic testing handles approximate/LLM output robustly
+- Concurrency testing (Loom/Shuttle/Turmoil) catches rare interleavings
+- Mutation testing validates test suite quality
+- Deterministic infrastructure eliminates flaky tests at source
+- Domain-specific suites codify temporal, retrieval, and agent invariants
 
 ### Negative
 
-- Initial investment: ~2-3 sessions to build contract suites + testkit
-- Contract suites add a maintenance surface (change trait = update suite)
-- proptest adds a dependency and CI time (mitigated by `proptest-regressions`)
+- Initial investment: ~3-4 sessions for full P0+P1 implementation
+- Contract suites add maintenance surface (trait change = suite update)
+- `proptest` adds dependency and CI time (mitigated by regressions files)
+- Mutation/fuzz testing require nightly CI budget
 
 ### Neutral
 
-- Governor gains 3 new commands (--check-contracts, --check-serde-roundtrip,
-  --check-flaky)
+- Governor gains 4 new commands (--check-contracts, --check-serde-roundtrip,
+  --check-flaky, --test-matrix)
+- `testkit` crate added as dev-dependency only
 - Test file count increases but each file is smaller and more focused
 
 ## LLM Reading Notes
@@ -697,3 +1014,4 @@ crates/
 - MockGraphStore must pass the same contract suite as SamyamaGraphStore
 - All E2E tests use Fixture builder + DeterministicEmbedder, never real network
 - Governor `--test-matrix` gives a live overview of all 7 contours
+- Reference research (2026-07-28): full 16-section analysis in project archive
