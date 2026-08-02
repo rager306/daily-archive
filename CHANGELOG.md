@@ -250,7 +250,7 @@ dependencies (ADR-050 invariant). Workspace compiles; 334+ tests green.
 - kg-storage/samyama_adapter.rs is a dead-code stub pending Phase B
   follow-up (full SamyamaGraphStore migration).
 - Phase D (YAML ontology export), Phase F (deprecation cleanup), Phase
-  G (cross-project reuse validation) not yet started.
+  G (cross-project reuse validation) not in scope.
 
 ### Temporal edge model foundation in kg-* crates (2026-07-24)
 

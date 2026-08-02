@@ -32,7 +32,6 @@ listed here — see `legacy/doc/adr/`.
 | D | ✅ DONE | M285-z09px0/S06+S07: YAML ontology export + OntologyRegistry loader |
 | E | ✅ DONE | kg-algorithms (temporal resolution) + kg-pipeline (DSL + execution engine) |
 | F | ✅ DONE | M288-avqgux: YamlSchemaAdapter + validate_node_properties_or_yaml + schema-list --from-yaml |
-| G | DEFERRED | Cross-project reuse validation (needs reactivegraph project) |
 
 ## Supersession chain
 

@@ -237,7 +237,6 @@ in YAML data files.
 - **Phase 3 (active)**: kg-* crate family (ADR-050) — Phase A+D done, Phase B follow-up pending
 - **Phase 4**: OntologyRegistry reads YAML as source of truth (ADR-050 Phase D core)
 - **Phase 5**: Deprecation cleanup (NodeSchemaDef -> OntologyRegistry)
-- **Phase 6**: Cross-project reuse validation (reactivegraph, ADR-050 Phase G)
 
 Import lock (D127): `import_eligible = false`. Graph writes stay locked
 until explicit user yes.
