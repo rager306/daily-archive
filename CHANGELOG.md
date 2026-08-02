@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### M287-q1wf9r — Governor CLI v2 improvements (2026-08-02)
+
+2/3 slices delivered. S03 (dead-code scanner) deferred.
+
+#### S01 — Self-validation commands
+
+- `governor --validate-yaml`: loads adr_rules.yaml + dimensions.yaml,
+  prints count, exit 1 on parse error.
+- `governor --self-test`: runs 8 unit tests via subprocess, exit 1 on failure.
+
+#### S02 — Git-aware dimensions
+
+- `GitReader` adapter (`adapters/git_reader.py`): subprocess-based git
+  log reader with `get_git_info()`, `commits_since_date()`, `is_repo()`.
+- `stale_milestone` drift flag: fires when >7 days elapsed since last
+  milestone closeout AND commits exist in that period.
+- `TrajectoryService` updated with optional `git_reader` param.
+
 ### M285-z09px0 + M286-wda3cp session (2026-08-02)
 
 #### M285-z09px0 — kg-* Architecture Debt Closure and ADR-050 Advance
