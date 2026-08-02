@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### M285-z09px0 + M286-wda3cp session (2026-08-02)
+
+#### M285-z09px0 — kg-* Architecture Debt Closure and ADR-050 Advance
+
+8/8 slices delivered. Phase A + Phase D ADR-050 complete.
+
+- **S01**: GSD state sync after kg-* skeleton session (CONTEXT-DRAFT,
+  CHANGELOG, continue.md updated).
+- **S02**: Architecture guardrail extended for kg-* crates: cargo
+  fmt/clippy/test + ADR-050 invariant enforcement (kg-* must not depend
+  on da-*). 5 pre-existing clippy warnings fixed.
+- **S03**: da-domain re-exports kg-ontology universal types (Violation,
+  Severity, PropertySnapshot, TemporalEdge). Phase A complete.
+- **S04**: kg-storage dead-code stub SamyamaGraphStore removed.
+- **S05**: da-ports re-exports kg-storage GraphStore traits. Phase B
+  step 1 complete. S09 (impl migration) unblocked.
+- **S06**: da ontology-export CLI command generates node_schemas.yaml
+  from 31 NodeSchemaDef structs. Phase D partial.
+- **S07**: OntologyRegistry YAML loader in kg-ontology. Phase D complete.
+  6 unit tests. Round-trip YAML → registry → lookup works.
+- **S08**: Governor CLI extracted from legacy/, adapted for Rust.
+
+Validation: needs-attention (Phase B step 2 deferred to S09).
+
+#### M286-wda3cp — Governor CLI hexagonal refactor and Rust-era coverage
+
+4/4 slices delivered (S03+S04 executed as part of S02).
+
+- **S01**: Governor CLI rewritten as hexagonal Python package
+  (domain/ports/adapters/application/checks). 798-line monolith → 25-line
+  delegate. 6 unit tests.
+- **S02**: 15 ADR rules in YAML data files (6 new Rust-era: ADR-040
+  forbidden graph stores, ADR-050 kg-* invariant, D127 import lock,
+  D136 DSPy lock). 8 dimensions. 8 unit tests. 2707 artifacts checked.
+
+#### Pre-commit fix (main user pain point)
+
+Pre-commit rewritten: 5-10 min → 25 sec. Removed cargo check --workspace,
+clippy --all-targets, cargo run (all triggered rocksdb rebuild).
+Governor integrated as pre-commit hook with --check-only.
+
 ### Governor CLI hexagonal refactor + Rust-era coverage (M286-wda3cp) (2026-08-02)
 
 Governor CLI переписан как hexagonal Python package в scripts/governor/.

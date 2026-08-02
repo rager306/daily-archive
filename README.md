@@ -227,6 +227,28 @@ scripts/                # verify_rust_architecture.sh
 
 ---
 
+## Next gate (trajectory enforcement)
+
+Architecture is crystallized on the Rust onion (ADR-040 Samyama +
+ADR-050 kg-* universal crates). Hexagonal guardrail
+(scripts/verify_rust_architecture.sh) enforces da-domain <- da-ports <-
+da-application <- da-adapters/da-cli direction and ADR-050 invariant
+(kg-* must not depend on da-*). Governor CLI
+(scripts/governor/) provides trajectory enforcement with 15 ADR rules
+in YAML data files.
+
+- **Phase 1 ✅**: Rust workspace migration (da-* crates), SamyamaGraphStore (ADR-040)
+- **Phase 2 ✅**: Extraction eval corpus (12 modern papers, F1=0.774 micro)
+- **Phase 3 (active)**: kg-* crate family (ADR-050) — Phase A+D done, Phase B follow-up pending
+- **Phase 4**: OntologyRegistry reads YAML as source of truth (ADR-050 Phase D core)
+- **Phase 5**: Deprecation cleanup (NodeSchemaDef -> OntologyRegistry)
+- **Phase 6**: Cross-project reuse validation (reactivegraph, ADR-050 Phase G)
+
+Import lock (D127): `import_eligible = false`. Graph writes stay locked
+until explicit user yes.
+
+---
+
 ## Further reading
 
 | Doc | Purpose |

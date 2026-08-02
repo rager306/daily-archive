@@ -68,7 +68,4 @@ pub mod mappings {
     //! Populated in Phase D when node_types.yaml mappings land.
 }
 
-pub mod registry {
-    //! `OntologyRegistry` — top-level API. Loads YAML ontology from
-    //! disk or bundled fallback. Populated in Phase D.
-}
+pub mod registry;
