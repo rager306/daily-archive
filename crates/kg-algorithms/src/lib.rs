@@ -9,4 +9,4 @@
 
 pub mod temporal;
 
-pub use temporal::{resolve_temporal_edges, ResolutionOutcome, ResolutionRule};
+pub use temporal::{ResolutionOutcome, ResolutionRule, resolve_temporal_edges};

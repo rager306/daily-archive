@@ -107,15 +107,37 @@ fn test_schema_list_command_outputs_table() {
     );
     // All 31 registered schemas (29 v1 + Conflict + Decision).
     for label in [
-        "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
-        "Citation", "Claim", "ConceptCluster", "Concept", "Conflict",
+        "ArtifactVersion",
+        "Author",
+        "BaselineSnapshot",
+        "Category",
+        "Citation",
+        "Claim",
+        "ConceptCluster",
+        "Concept",
+        "Conflict",
         "Decision",
-        "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
-        "Hypothesis", "ImplementationAttempt", "Institution",
-        "Intervention", "InterventionBundle", "MetricDefinition",
-        "MetricObservation", "Paper", "Reference", "ResearchEnvironment",
-        "ResearchIdea", "ResearchProblem", "ResultComparison",
-        "SchedulerTask", "Section", "Source", "Topic",
+        "Entity",
+        "EvidenceBundle",
+        "ExperimentRun",
+        "FailureEvent",
+        "Hypothesis",
+        "ImplementationAttempt",
+        "Institution",
+        "Intervention",
+        "InterventionBundle",
+        "MetricDefinition",
+        "MetricObservation",
+        "Paper",
+        "Reference",
+        "ResearchEnvironment",
+        "ResearchIdea",
+        "ResearchProblem",
+        "ResultComparison",
+        "SchedulerTask",
+        "Section",
+        "Source",
+        "Topic",
     ] {
         assert!(
             stdout.contains(&format!("`{label}`")),
@@ -207,8 +229,14 @@ fn test_validate_node_rejects_invalid_snapshot() {
         "expected non-zero exit on invalid snapshot"
     );
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("CRITICAL"), "expected CRITICAL in output: {stdout}");
-    assert!(stdout.contains("required-field"), "expected required-field rule: {stdout}");
+    assert!(
+        stdout.contains("CRITICAL"),
+        "expected CRITICAL in output: {stdout}"
+    );
+    assert!(
+        stdout.contains("required-field"),
+        "expected required-field rule: {stdout}"
+    );
 }
 
 #[test]

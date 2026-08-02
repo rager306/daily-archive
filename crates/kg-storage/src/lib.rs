@@ -7,13 +7,13 @@
 //!
 //! See ADR-050 for the full architecture decision.
 
-pub mod traits;
 pub mod error;
 pub mod mock;
+pub mod traits;
 
-pub use traits::{GraphStore, DirectGraphStore, VectorMetric, VectorSearchResult, QueryResult};
-pub use error::{GraphStoreError, GraphResult};
+pub use error::{GraphResult, GraphStoreError};
 pub use mock::MockGraphStore;
+pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
 // Reserved for Phase B follow-up: when the full Samyama adapter moves
 // here from da-adapters, it will live in samyama_adapter.rs behind

@@ -199,12 +199,16 @@ async fn test_edge_contract_validator_catches_wrong_source_label() {
         "expected 2 contract violations (source + target), got {:?}",
         violations
     );
-    assert!(violations
-        .iter()
-        .any(|v| v.reason.contains("source must be 'Paper'")));
-    assert!(violations
-        .iter()
-        .any(|v| v.reason.contains("target must be one of")));
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.reason.contains("source must be 'Paper'"))
+    );
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.reason.contains("target must be one of"))
+    );
 }
 
 #[tokio::test]
@@ -216,11 +220,7 @@ async fn test_edge_contract_validator_accepts_valid_edges() {
     let p = store.create_node("Paper").await.unwrap();
     let e = store.create_node("Entity").await.unwrap();
     let _ = store
-        .create_edge(
-            p,
-            e,
-            da_domain::relation::bibliographic::MENTIONS,
-        )
+        .create_edge(p, e, da_domain::relation::bibliographic::MENTIONS)
         .await
         .unwrap();
 
@@ -241,11 +241,7 @@ async fn test_edge_contract_validator_accepts_polymorphic_mentions() {
     let p = store.create_node("Paper").await.unwrap();
     let rp = store.create_node("ResearchProblem").await.unwrap();
     let _ = store
-        .create_edge(
-            p,
-            rp,
-            da_domain::relation::bibliographic::MENTIONS,
-        )
+        .create_edge(p, rp, da_domain::relation::bibliographic::MENTIONS)
         .await
         .unwrap();
 
@@ -310,7 +306,11 @@ async fn test_cross_ref_validator_accepts_satisfied_reference() {
         .await
         .unwrap();
     store
-        .set_node_property_string(env, "research_problem_id", "vid:problem:p1:improvement".to_string())
+        .set_node_property_string(
+            env,
+            "research_problem_id",
+            "vid:problem:p1:improvement".to_string(),
+        )
         .await
         .unwrap();
 

@@ -134,7 +134,10 @@ fn parse_work(w: WorkResponse) -> OpenAlexWork {
         })
         .collect();
     // Backward-compatible flat views derived from authorships.
-    let authors = authorships.iter().map(|a| a.author.clone()).collect::<Vec<_>>();
+    let authors = authorships
+        .iter()
+        .map(|a| a.author.clone())
+        .collect::<Vec<_>>();
     let institutions = authorships
         .iter()
         .flat_map(|a| a.institutions.iter().cloned())

@@ -118,7 +118,10 @@ async fn test_enrich_writes_topics_and_authors() {
     assert_eq!(result.title, "Test Paper Title");
     assert_eq!(result.topics_written, 2); // primary + 1 from topics array
     assert_eq!(result.authors_written, 2);
-    assert_eq!(result.institutions_written, 1, "expected 1 Institution (MIT)");
+    assert_eq!(
+        result.institutions_written, 1,
+        "expected 1 Institution (MIT)"
+    );
     assert_eq!(
         result.affiliation_edges_written, 1,
         "expected 1 AFFILIATED_WITH edge (Alice → MIT)"

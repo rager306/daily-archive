@@ -187,18 +187,18 @@ mod tests {
         // old: [2010..2025], new: [2024..OPEN]
         // old.valid_at(2010) < new.valid_at(2024) → supersede
         let new = TemporalEdge {
-            valid_at: ts(2024_000_000),
+            valid_at: ts(2_024_000_000),
             invalid_at: None,
             expired_at: None,
             reference_time: None,
-            created_at: ts(2024_000_000),
+            created_at: ts(2_024_000_000),
         };
         let old = TemporalEdge {
-            valid_at: ts(2010_000_000),
-            invalid_at: Some(ts(2025_000_000)),
+            valid_at: ts(2_010_000_000),
+            invalid_at: Some(ts(2_025_000_000)),
             expired_at: None,
             reference_time: None,
-            created_at: ts(2010_000_000),
+            created_at: ts(2_010_000_000),
         };
         let outcomes = resolve_temporal_edges(&new, &[old]);
         // old.valid_at(2010) < new.valid_at(2024) → rule 3 supersede

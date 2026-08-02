@@ -8,6 +8,6 @@ pub mod embedder;
 pub mod fd_api;
 pub mod ruvector;
 
-pub use embedder::{Embedder, EmbedderError, EmbedResult};
+pub use embedder::{EmbedResult, Embedder, EmbedderError};
 pub use fd_api::FdApiEmbedder;
 pub use ruvector::RuVectorBridge;

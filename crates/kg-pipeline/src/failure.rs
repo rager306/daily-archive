@@ -8,10 +8,7 @@ pub enum FailurePolicy {
     /// Continue executing independent steps after a failure.
     Continue,
     /// Retry failed steps up to N times with backoff, then abort.
-    RetryThenAbort {
-        retries: u32,
-        backoff_ms: u64,
-    },
+    RetryThenAbort { retries: u32, backoff_ms: u64 },
 }
 
 impl Default for FailurePolicy {

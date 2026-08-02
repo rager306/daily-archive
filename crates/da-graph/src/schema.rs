@@ -174,15 +174,13 @@ impl SchemaInitializer {
     // --- Conflict (ADR-047) ---
 
     pub fn create_conflict_vid_index() -> String {
-        "CREATE INDEX conflict_vid IF NOT EXISTS FOR (n:Conflict) ON (n.vid)"
-            .to_string()
+        "CREATE INDEX conflict_vid IF NOT EXISTS FOR (n:Conflict) ON (n.vid)".to_string()
     }
 
     // --- Decision (ADR-048) ---
 
     pub fn create_decision_vid_index() -> String {
-        "CREATE INDEX decision_vid IF NOT EXISTS FOR (n:Decision) ON (n.vid)"
-            .to_string()
+        "CREATE INDEX decision_vid IF NOT EXISTS FOR (n:Decision) ON (n.vid)".to_string()
     }
 
     // --- SchedulerTask (Layer 1 operational state) ---

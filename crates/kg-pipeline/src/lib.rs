@@ -11,6 +11,6 @@ pub mod builder;
 pub mod engine;
 pub mod failure;
 
-pub use builder::{Pipeline, PipelineStep, PipelineBuilder, StageName};
+pub use builder::{Pipeline, PipelineBuilder, PipelineStep, StageName};
 pub use engine::{ExecutionEngine, ExecutionResult, PipelineStatus};
-pub use failure::{FailurePolicy, RetryPolicy, FailureAction};
+pub use failure::{FailureAction, FailurePolicy, RetryPolicy};

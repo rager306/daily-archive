@@ -181,11 +181,7 @@ pub trait DirectGraphStore: GraphStore {
 
     /// Read a string property from an edge.
     /// Used for temporal field reads (valid_at, invalid_at, etc.).
-    async fn get_edge_property_string(
-        &self,
-        _edge_id: u64,
-        _key: &str,
-    ) -> Option<String> {
+    async fn get_edge_property_string(&self, _edge_id: u64, _key: &str) -> Option<String> {
         None // default: edges are opaque; adapters override
     }
 

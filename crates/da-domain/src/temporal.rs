@@ -101,7 +101,7 @@ pub fn was_known_at(props: &PropertySnapshot, at: chrono::DateTime<chrono::Utc>)
         (Some(r), Some(s)) => r <= at && at < s,
         (Some(r), None) => r <= at,
         (None, Some(_)) => false, // superseded before any record — inconsistent
-        (None, None) => true, // no transaction info → treat as always known
+        (None, None) => true,     // no transaction info → treat as always known
     }
 }
 
@@ -137,9 +137,7 @@ pub fn validate_bitemporal(props: &PropertySnapshot) -> Vec<String> {
     if let (Some(f), Some(t)) = (from, to)
         && f > t
     {
-        issues.push(format!(
-            "valid_from ({f}) is later than valid_to ({t})"
-        ));
+        issues.push(format!("valid_from ({f}) is later than valid_to ({t})"));
     }
     if let (Some(r), Some(s)) = (recorded, superseded)
         && r > s
@@ -230,10 +228,7 @@ mod tests {
             ("superseded_at", json!(OPEN)),
         ]);
         let issues = validate_bitemporal(&props);
-        assert!(
-            issues.is_empty(),
-            "expected no issues, got: {issues:?}"
-        );
+        assert!(issues.is_empty(), "expected no issues, got: {issues:?}");
     }
 
     #[test]
@@ -274,9 +269,7 @@ mod tests {
         ]);
         let issues = validate_bitemporal(&props);
         assert!(
-            issues
-                .iter()
-                .any(|s| s.contains("earlier than valid_from")),
+            issues.iter().any(|s| s.contains("earlier than valid_from")),
             "expected extraction-before-publication warning, got: {issues:?}"
         );
     }

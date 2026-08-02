@@ -126,6 +126,25 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
     ]
 }
 
+/// Render the edge contracts matrix as a markdown table for documentation.
+/// Use in `da edge-contracts` CLI command to emit always-fresh content for
+/// GRAPH-SCHEMA.md.
+pub fn render_markdown_table() -> String {
+    let mut s = String::new();
+    s.push_str("| Edge | Source | Target(s) | Rationale |\n");
+    s.push_str("|------|--------|-----------|-----------|\n");
+    let mut contracts = edge_contracts();
+    contracts.sort_by_key(|c| c.edge_constant);
+    for c in &contracts {
+        let targets = c.target_labels.join(" · ");
+        s.push_str(&format!(
+            "| `{}` | `{}` | `{}` | {} |\n",
+            c.edge_constant, c.source_label, targets, c.rationale
+        ));
+    }
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,12 +200,9 @@ mod tests {
             for b in contracts.iter().skip(i + 1) {
                 if a.edge_constant == b.edge_constant {
                     assert_eq!(
-                        a.source_label,
-                        b.source_label,
+                        a.source_label, b.source_label,
                         "edge '{}' has contradictory source labels:\n  {:?}\n  {:?}",
-                        a.edge_constant,
-                        a,
-                        b
+                        a.edge_constant, a, b
                     );
                     let a_targets: HashSet<&&str> = a.target_labels.iter().collect();
                     let b_targets: HashSet<&&str> = b.target_labels.iter().collect();
@@ -258,23 +274,4 @@ mod tests {
             }
         }
     }
-}
-
-/// Render the edge contracts matrix as a markdown table for documentation.
-/// Use in `da edge-contracts` CLI command to emit always-fresh content for
-/// GRAPH-SCHEMA.md.
-pub fn render_markdown_table() -> String {
-    let mut s = String::new();
-    s.push_str("| Edge | Source | Target(s) | Rationale |\n");
-    s.push_str("|------|--------|-----------|-----------|\n");
-    let mut contracts = edge_contracts();
-    contracts.sort_by_key(|c| c.edge_constant);
-    for c in &contracts {
-        let targets = c.target_labels.join(" · ");
-        s.push_str(&format!(
-            "| `{}` | `{}` | `{}` | {} |\n",
-            c.edge_constant, c.source_label, targets, c.rationale
-        ));
-    }
-    s
 }

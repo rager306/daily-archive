@@ -11,10 +11,6 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use async_trait::async_trait;
 use da_application::{batch_ingest_pdfs, ingest::IngestUseCase};
 use da_ports::embedder::{EmbedResult, Embedder};
-use da_ports::graph_store::{
-    DirectGraphStore, GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric,
-    VectorSearchResult,
-};
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
 
 // ---------- Mock Parser ----------
@@ -81,9 +77,7 @@ mod common;
 
 use common::mock_graph_store::MockGraphStore;
 
-fn make_ingest(
-    fail_on: Vec<String>,
-) -> (IngestUseCase, MockGraphStore) {
+fn make_ingest(fail_on: Vec<String>) -> (IngestUseCase, MockGraphStore) {
     make_ingest_with_citations(fail_on, vec![])
 }
 
@@ -94,7 +88,10 @@ fn make_ingest_with_citations(
     let store = MockGraphStore::new();
     let ingest = IngestUseCase::new(
         Box::new(MockParser { fail_on, citations }),
-        Box::new(MockEmbedder { dims: 1024, call_count: Arc::new(AtomicUsize::new(0)) }),
+        Box::new(MockEmbedder {
+            dims: 1024,
+            call_count: Arc::new(AtomicUsize::new(0)),
+        }),
         Box::new(store.clone()),
     );
     (ingest, store)
@@ -240,8 +237,7 @@ async fn test_ingest_citation_dedup_shared_reference() {
         arxiv_id: Some("2301.09999".to_string()),
         title: Some("Shared Paper".to_string()),
     };
-    let (ingest, store) =
-        make_ingest_with_citations(vec![], vec![shared_citation.clone()]);
+    let (ingest, store) = make_ingest_with_citations(vec![], vec![shared_citation.clone()]);
     let pdfs = vec![
         ("paper1.pdf".to_string(), "2401.00001".to_string()),
         ("paper2.pdf".to_string(), "2401.00002".to_string()),

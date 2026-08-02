@@ -64,6 +64,7 @@ jobs:
       - name: Cargo fmt check
         run: |
           cargo fmt \
+            -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
             -p da-graph -p da-adapters -p da-cli \
             -- --check
@@ -76,6 +77,7 @@ jobs:
           # --no-deps: lint only our crates, not vendored Samyama (which has
           # many pre-existing unused-import warnings we do not own).
           cargo clippy \
+            -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
             -p da-graph -p da-adapters -p da-cli \
             --all-targets --no-deps -- -D warnings
@@ -84,11 +86,19 @@ jobs:
         run: |
           # Inner layers must not depend on outer layers or infrastructure.
           # da-domain and da-ports: no infra crates allowed.
+          # kg-* crates: universal (ADR-050) — must not depend on da-* at all.
           set -euo pipefail
-          # Helper: scan only [dependencies], never [dev-dependencies].
+          # Helper: scan only [dependencies] (prod), never [dev-dependencies].
           grep_deps() {
             awk '/^\[dependencies\]$/ {in_deps=1;next}
                  /^\[/ && $0!="[dependencies]" {in_deps=0}
+                 in_deps {print}' "$1" | grep -E "$2";
+          }
+          # Helper: scan [dependencies] AND [dev-dependencies] (universal invariant).
+          grep_deps_all() {
+            awk '/^\[dependencies\]$/ {in_deps=1;next}
+                 /^\[dev-dependencies\]$/ {in_deps=1;next}
+                 /^\[/ && $0!="[dependencies]" && $0!="[dev-dependencies]" {in_deps=0}
                  in_deps {print}' "$1" | grep -E "$2";
           }
 
@@ -104,6 +114,12 @@ jobs:
           echo "Checking da-graph does not depend on da-adapters..."
           ! grep_deps crates/da-graph/Cargo.toml 'da-adapters' || {
             echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"; exit 1; }
+          echo "Checking kg-* crates have no da-* dependencies (ADR-050 invariant)..."
+          for kg in kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline; do
+            ! grep_deps_all "crates/$kg/Cargo.toml" 'da-domain|da-ports|da-application|da-adapters|da-graph|da-cli' || {
+              echo "ERROR: $kg must not depend on da-* crates (ADR-050 universal invariant)"; exit 1; }
+            echo "  $kg: OK (no da-* deps)"
+          done
           echo "Hexagonal dependency direction: PASS"
 
       - name: Guardrail evidence

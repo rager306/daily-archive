@@ -70,10 +70,7 @@ impl Violation {
         }
     }
 
-    pub fn critical_no_field(
-        rule: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn critical_no_field(rule: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
             severity: Severity::Critical,
             rule: rule.into(),

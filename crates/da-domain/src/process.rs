@@ -511,12 +511,12 @@ impl NodeSchemaDef for MetricObservationSchema {
             ("retrieval_eligible", FieldType::Boolean),
             ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
-                    ("document_id", FieldType::String),
+            ("document_id", FieldType::String),
             ("valid_from", FieldType::DateTime),
             ("valid_to", FieldType::DateTime),
             ("recorded_at", FieldType::DateTime),
             ("superseded_at", FieldType::DateTime),
-]
+        ]
     }
 }
 

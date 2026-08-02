@@ -810,8 +810,9 @@ mod cross_ref_tests {
     #[test]
     fn test_cross_ref_fields_exist_on_source_schema() {
         for cr in cross_reference_fields() {
-            let schema = crate::schema::schema_for_label(cr.source_label)
-                .expect("source schema must exist (test_cross_ref_labels_are_registered guards this)");
+            let schema = crate::schema::schema_for_label(cr.source_label).expect(
+                "source schema must exist (test_cross_ref_labels_are_registered guards this)",
+            );
             let known: std::collections::HashSet<&str> = schema
                 .required_fields()
                 .iter()
@@ -869,7 +870,11 @@ pub fn render_cross_references_table() -> String {
     s.push_str("| Source | Field | Target | Required? |\n");
     s.push_str("|--------|-------|--------|-----------|\n");
     for cr in &rows {
-        let req = if cr.required { "✅ required" } else { "optional" };
+        let req = if cr.required {
+            "✅ required"
+        } else {
+            "optional"
+        };
         s.push_str(&format!(
             "| `{}` | `{}` | `{}` | {} |\n",
             cr.source_label, cr.field, cr.target_label, req

@@ -162,7 +162,11 @@ impl GraphStore for MockGraphStore {
 impl DirectGraphStore for MockGraphStore {
     async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
         let id = self.inner.counter.fetch_add(1, Ordering::SeqCst) as u64;
-        self.inner.nodes.lock().unwrap().push((id, label.to_string()));
+        self.inner
+            .nodes
+            .lock()
+            .unwrap()
+            .push((id, label.to_string()));
         Ok(id)
     }
     async fn set_node_property_string(
@@ -171,7 +175,8 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: String,
     ) -> Result<(), GraphStoreError> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .string_props
@@ -184,7 +189,8 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: i64,
     ) -> Result<(), GraphStoreError> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .int_props
@@ -197,7 +203,8 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: f64,
     ) -> Result<(), GraphStoreError> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .float_props
@@ -210,7 +217,8 @@ impl DirectGraphStore for MockGraphStore {
         key: &str,
         value: bool,
     ) -> Result<(), GraphStoreError> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .bool_props
@@ -280,18 +288,20 @@ impl DirectGraphStore for MockGraphStore {
         let nodes = self.inner.nodes.lock().unwrap();
         let props = self.inner.props.lock().unwrap();
         for (node_id, node_label) in nodes.iter() {
-            if node_label == label {
-                if let Some(stored) = props.string_props.get(&(*node_id, key.to_string())) {
-                    if stored == value {
-                        return Some(*node_id);
-                    }
-                }
+            if node_label == label
+                && props
+                    .string_props
+                    .get(&(*node_id, key.to_string()))
+                    .is_some_and(|stored| stored == value)
+            {
+                return Some(*node_id);
             }
         }
         None
     }
     async fn get_outgoing_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
-        self.inner.edges
+        self.inner
+            .edges
             .lock()
             .unwrap()
             .iter()
@@ -300,7 +310,8 @@ impl DirectGraphStore for MockGraphStore {
             .collect()
     }
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
-        self.inner.edges
+        self.inner
+            .edges
             .lock()
             .unwrap()
             .iter()
@@ -309,7 +320,8 @@ impl DirectGraphStore for MockGraphStore {
             .collect()
     }
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .string_props
@@ -317,7 +329,8 @@ impl DirectGraphStore for MockGraphStore {
             .cloned()
     }
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .int_props
@@ -325,7 +338,8 @@ impl DirectGraphStore for MockGraphStore {
             .copied()
     }
     async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .bool_props
@@ -333,7 +347,8 @@ impl DirectGraphStore for MockGraphStore {
             .copied()
     }
     async fn get_node_property_float(&self, node_id: u64, key: &str) -> Option<f64> {
-        self.inner.props
+        self.inner
+            .props
             .lock()
             .unwrap()
             .float_props
@@ -341,7 +356,8 @@ impl DirectGraphStore for MockGraphStore {
             .copied()
     }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
-        self.inner.nodes
+        self.inner
+            .nodes
             .lock()
             .unwrap()
             .iter()
@@ -366,10 +382,7 @@ impl DirectGraphStore for MockGraphStore {
 impl MockGraphStore {
     /// Build a PropertySnapshot for one node (by id) by merging its
     /// string/int/float/bool properties. Returns None if node not found.
-    pub fn snapshot_node(
-        &self,
-        node_id: u64,
-    ) -> Option<da_domain::validator::PropertySnapshot> {
+    pub fn snapshot_node(&self, node_id: u64) -> Option<da_domain::validator::PropertySnapshot> {
         use serde_json::json;
         let mut snap = da_domain::validator::PropertySnapshot::new();
         let props = self.inner.props.lock().unwrap();
@@ -398,9 +411,7 @@ impl MockGraphStore {
 
     /// Validate every node in the store against its schema. Returns the
     /// full list of violations across all nodes (flattened).
-    pub fn validate_all_nodes(
-        &self,
-    ) -> Vec<da_domain::validator::SchemaViolation> {
+    pub fn validate_all_nodes(&self) -> Vec<da_domain::validator::SchemaViolation> {
         let mut all = Vec::new();
         let nodes = self.inner.nodes.lock().unwrap();
         for (node_id, label) in nodes.iter() {
@@ -413,10 +424,7 @@ impl MockGraphStore {
     }
 
     /// Validate a single node by id; returns its violations.
-    pub fn validate_node(
-        &self,
-        node_id: u64,
-    ) -> Vec<da_domain::validator::SchemaViolation> {
+    pub fn validate_node(&self, node_id: u64) -> Vec<da_domain::validator::SchemaViolation> {
         let nodes = self.inner.nodes.lock().unwrap();
         let label = nodes
             .iter()
@@ -450,8 +458,10 @@ impl MockGraphStore {
         let edges = self.inner.edges.lock().unwrap();
 
         // Build a lookup: edge_constant -> EdgeContract
-        let mut by_constant: std::collections::HashMap<&str, &da_domain::edge_contract::EdgeContract> =
-            std::collections::HashMap::new();
+        let mut by_constant: std::collections::HashMap<
+            &str,
+            &da_domain::edge_contract::EdgeContract,
+        > = std::collections::HashMap::new();
         for c in &contracts {
             by_constant.insert(c.edge_constant, c);
         }
@@ -591,7 +601,8 @@ impl MockGraphStore {
                                 field: cr.field.to_string(),
                                 target_label: cr.target_label.to_string(),
                                 dangling_value: String::new(),
-                                reason: "required cross-reference field is missing or empty".to_string(),
+                                reason: "required cross-reference field is missing or empty"
+                                    .to_string(),
                             });
                         }
                     }
@@ -603,7 +614,8 @@ impl MockGraphStore {
                                 field: cr.field.to_string(),
                                 target_label: cr.target_label.to_string(),
                                 dangling_value: String::new(),
-                                reason: "required cross-reference field is missing or empty".to_string(),
+                                reason: "required cross-reference field is missing or empty"
+                                    .to_string(),
                             });
                         }
                     }
@@ -667,8 +679,7 @@ impl MockGraphStore {
 
         let edge_violations = self.validate_edge_contracts();
         if !edge_violations.is_empty() {
-            let formatted: Vec<String> =
-                edge_violations.iter().map(|v| format!("  {v}")).collect();
+            let formatted: Vec<String> = edge_violations.iter().map(|v| format!("  {v}")).collect();
             failures.push(format!(
                 "edge contract violations ({})\n{}",
                 edge_violations.len(),

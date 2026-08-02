@@ -221,15 +221,17 @@ impl EnrichUseCase {
                         let node = self.graph_store.create_node("Institution").await?;
                         // Institution VID derived from display_name + openalex_id
                         // (avoids collision with Author VID on the same name).
-                        let inst_vid = vid::institution_vid(
-                            &institution.display_name,
-                            &institution.id,
-                        );
+                        let inst_vid =
+                            vid::institution_vid(&institution.display_name, &institution.id);
                         self.graph_store
                             .set_node_property_string(node, "vid", inst_vid)
                             .await?;
                         self.graph_store
-                            .set_node_property_string(node, "name", institution.display_name.clone())
+                            .set_node_property_string(
+                                node,
+                                "name",
+                                institution.display_name.clone(),
+                            )
                             .await?;
                         self.graph_store
                             .set_node_property_string(node, "openalex_id", institution.id.clone())

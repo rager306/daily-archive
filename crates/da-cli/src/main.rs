@@ -1038,8 +1038,10 @@ fn schema_check() {
     );
     println!();
 
-    let mut unregistered: Vec<&String> =
-        used_labels.iter().filter(|l| !registered.contains(*l)).collect();
+    let mut unregistered: Vec<&String> = used_labels
+        .iter()
+        .filter(|l| !registered.contains(*l))
+        .collect();
     unregistered.sort();
     if unregistered.is_empty() {
         println!("✅ OK — every create_node label is registered in all_node_schemas()");
@@ -1162,9 +1164,7 @@ fn audit_fields() {
                     .map(|(n, _)| *n)
                     .unwrap_or(lines.len().min(line_num + 80));
                 let block: String = lines[*line_num..next_line].join("\n");
-                let fields = pipeline_fields
-                    .entry(label.clone())
-                    .or_default();
+                let fields = pipeline_fields.entry(label.clone()).or_default();
                 // Simple line-by-line scan for set_node_property_* calls.
                 for bline in block.lines() {
                     if let Some(pos) = bline.find("set_node_property_") {
@@ -1203,18 +1203,17 @@ fn audit_fields() {
         "Found {} distinct labels with set_node_property_* calls",
         pipeline_fields.len()
     );
-    println!(
-        "Schema registry declares {} node types",
-        declared.len()
-    );
+    println!("Schema registry declares {} node types", declared.len());
     println!();
 
     let mut total_undeclared = 0usize;
     let mut labels_with_drift = 0usize;
     for (label, fields) in &pipeline_fields {
         let schema_fields = declared.get(label).cloned().unwrap_or_default();
-        let undeclared: Vec<&String> =
-            fields.iter().filter(|f| !schema_fields.contains(*f)).collect();
+        let undeclared: Vec<&String> = fields
+            .iter()
+            .filter(|f| !schema_fields.contains(*f))
+            .collect();
         if !undeclared.is_empty() {
             labels_with_drift += 1;
             total_undeclared += undeclared.len();
@@ -1256,7 +1255,7 @@ fn audit_fields() {
 /// in integration tests. Wave D production-side enforcement.
 async fn validate_graph(label_filter: Option<&str>) {
     use da_adapters::SamyamaGraphStore;
-    use da_domain::validator::{format_violations, validate_node_properties, PropertySnapshot};
+    use da_domain::validator::{PropertySnapshot, format_violations, validate_node_properties};
     use da_ports::graph_store::DirectGraphStore;
     use serde_json::json;
 
@@ -1288,7 +1287,11 @@ async fn validate_graph(label_filter: Option<&str>) {
             let mut snap = PropertySnapshot::new();
             // Walk the known schema fields and read each one.
             if let Some(schema) = da_domain::schema::schema_for_label(label) {
-                for (fname, fty) in schema.required_fields().iter().chain(schema.optional_fields().iter()) {
+                for (fname, fty) in schema
+                    .required_fields()
+                    .iter()
+                    .chain(schema.optional_fields().iter())
+                {
                     match fty {
                         da_domain::schema::FieldType::Boolean => {
                             if let Some(b) = store.get_node_property_bool(node_id, fname).await {
@@ -1337,7 +1340,10 @@ async fn validate_graph(label_filter: Option<&str>) {
         }
     }
 
-    println!("Validated {total_nodes} node(s) across {} label(s)", labels.len());
+    println!(
+        "Validated {total_nodes} node(s) across {} label(s)",
+        labels.len()
+    );
     println!(
         "Total violations: {total_violations} ({critical_count} critical, {warning_count} warning)"
     );

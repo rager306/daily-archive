@@ -6,8 +6,7 @@ use common::mock_graph_store::MockGraphStore;
 use da_application::cluster::ClusterUseCase;
 use da_domain::cluster::EntityPapers;
 use da_domain::entity::EntityType;
-use da_domain::relation::hypergraph::MEMBER_OF_CLUSTER;
-use da_ports::graph_store::{DirectGraphStore, GraphStore};
+use da_ports::graph_store::DirectGraphStore;
 use std::collections::{HashMap, HashSet};
 
 #[tokio::test]

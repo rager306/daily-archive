@@ -6,7 +6,6 @@
 
 use crate::builder::Pipeline;
 
-
 /// Pipeline execution status.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PipelineStatus {
@@ -66,11 +65,7 @@ impl ExecutionEngine {
     /// Execute a pipeline sequentially, calling the handler for each step.
     /// Steps are executed in declaration order (the builder validates that
     /// dependencies appear before dependents).
-    pub async fn execute<F, Fut>(
-        &self,
-        pipeline: &Pipeline,
-        mut handler: F,
-    ) -> ExecutionResult
+    pub async fn execute<F, Fut>(&self, pipeline: &Pipeline, mut handler: F) -> ExecutionResult
     where
         F: FnMut(&str) -> Fut,
         Fut: std::future::Future<Output = Result<(), String>>,
@@ -109,7 +104,7 @@ mod tests {
 
         let engine = ExecutionEngine::new();
         let result = engine
-            .execute(&pipeline, |stage| async move { Ok(()) })
+            .execute(&pipeline, |_stage| async move { Ok(()) })
             .await;
 
         assert!(result.success);

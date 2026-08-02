@@ -168,7 +168,11 @@ pub fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(s)
         .ok()
         .map(|dt| dt.with_timezone(&Utc))
-        .or_else(|| s.parse::<i64>().ok().and_then(|secs| DateTime::from_timestamp(secs, 0)))
+        .or_else(|| {
+            s.parse::<i64>()
+                .ok()
+                .and_then(|secs| DateTime::from_timestamp(secs, 0))
+        })
 }
 
 #[cfg(test)]
@@ -323,7 +327,11 @@ mod tests {
             retroactivity_basis: None,
         };
         let issues = validate_temporal_edge(&edge, Some(&retro));
-        assert!(issues.iter().any(|s| s.contains("retroactivity must point backwards")));
+        assert!(
+            issues
+                .iter()
+                .any(|s| s.contains("retroactivity must point backwards"))
+        );
     }
 
     #[test]

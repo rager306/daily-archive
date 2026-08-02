@@ -2,6 +2,86 @@
 
 ## Unreleased
 
+### kg-* crate family skeleton (ADR-050 Phases A, B, C, E) (2026-08-01..02)
+
+Ten commits realizing the kg-* crate family planned in ADR-050. Each
+crate is a skeleton: module shells + public API surface + unit tests,
+ready to receive migrations from da-* in later phases. Zero da-*
+dependencies (ADR-050 invariant). Workspace compiles; 334+ tests green.
+
+#### Phase A — kg-ontology skeleton (51525a2e)
+
+- crates/kg-ontology/{lib.rs, validator.rs, temporal.rs, schema_inner.rs}
+- Public API: Violation, Severity, PropertySnapshot, format_violations,
+  TemporalEdge, RetroactiveExtension, OPEN, validate_temporal_edge,
+  parse_datetime, EpisodicNodeSchema, EpisodeSourceType,
+  EdgeTypeRegistry.
+- Reserved module shells (schema, edge_contract, aspects, versioning,
+  routing, mappings, registry) document which phase will populate them.
+- 21 tests (validator 4, temporal 14, schema_inner 3).
+
+#### ADR-050 split — kg-* crate family rewrite (33708c38)
+
+- ADR-050 rewritten: 5 granular crates (kg-ontology, kg-storage,
+  kg-embeddings, kg-algorithms, kg-pipeline) instead of single
+  da-ontology. Neutral kg-* prefix signals cross-project reuse.
+- Dependency rule documented: kg-* never depends on da-*.
+- 6-phase migration plan (A through G) with per-phase shippable gates.
+
+#### Phase B — kg-storage skeleton (ee46448a) + edge property access (417dff00)
+
+- crates/kg-storage/{lib.rs, traits.rs, error.rs, mock.rs,
+  samyama_adapter.rs}
+- Public API: GraphStore, DirectGraphStore, VectorMetric,
+  VectorSearchResult, QueryResult, GraphStoreError, GraphResult,
+  MockGraphStore, get_edges_between, edge property accessors.
+- MockGraphStore with edge_id + edge_props.
+- samyama_adapter.rs: stub SamyamaGraphStore behind `samyama` feature
+  flag (full impl deferred to Phase B follow-up slice).
+
+#### Phase C — kg-embeddings skeleton (a82c37e2)
+
+- crates/kg-embeddings/{lib.rs, embedder.rs, fd_api.rs, ruvector.rs}
+- Public API: Embedder trait, EmbedderError, EmbedResult,
+  FdApiEmbedder (TEI/bge-m3 adapter), RuVectorBridge stub.
+- Optional `ruvector` feature flag for GNN-aware embeddings.
+
+#### Phase E — kg-algorithms skeleton (1e0a90e7)
+
+- crates/kg-algorithms/{lib.rs, temporal.rs}
+- Public API: resolve_temporal_edges, ResolutionOutcome,
+  ResolutionRule.
+- 4-rule temporal resolution algorithm (skip/skip/supersede/retain-both)
+  adapted from Graphiti's resolve_edge_contradictions.
+- 9 tests covering all four resolution rules.
+
+#### Phase E — kg-pipeline skeleton (df644fc3)
+
+- crates/kg-pipeline/{lib.rs, builder.rs, engine.rs, failure.rs}
+- Public API: Pipeline, PipelineStep, PipelineBuilder, StageName,
+  ExecutionEngine, ExecutionResult, PipelineStatus, FailurePolicy,
+  RetryPolicy, FailureAction.
+- Stage implementations stay project-specific (consumers plug in via
+  PipelineStep::Custom). 5 tests.
+
+#### Companion design docs (aa567c05, a6b90161, 074fc3f5)
+
+- doc/GRAPH-CORE-TEMPORAL-DESIGN.md: temporal edge model synthesis
+  (Graphiti + OntoKG + Neo4j GRAPH TYPE + RDF-star).
+- ADR-046 revised: edge-level temporal model (5-field + retroactivity).
+- ADR-047 revised: temporal edge invalidation (simplifies conflict).
+- kg-ontology: EpisodicNodeSchema + EdgeTypeRegistry.
+
+#### Open follow-ups (tracked as M285-z09px0)
+
+- Architecture guardrail scripts/CI do not yet cover kg-* crates.
+- da-domain does not yet re-export kg-ontology types (Phase A backward
+  compat gap).
+- kg-storage/samyama_adapter.rs is a dead-code stub pending Phase B
+  follow-up (full SamyamaGraphStore migration).
+- Phase D (YAML ontology export), Phase F (deprecation cleanup), Phase
+  G (cross-project reuse validation) not yet started.
+
 ### Temporal edge model foundation in kg-* crates (2026-07-24)
 
 Three waves implementing the revised ADR-046 (edge-level temporal

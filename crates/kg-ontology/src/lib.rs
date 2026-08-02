@@ -20,16 +20,13 @@
 //!
 //! See ADR-050 for the full architecture decision and migration plan.
 
-pub mod validator;
 pub mod temporal;
+pub mod validator;
 
-pub use validator::{
-    PropertySnapshot, Severity, Violation, format_violations,
-};
 pub use temporal::{
-    TemporalEdge, RetroactiveExtension, OPEN,
-    validate_temporal_edge, parse_datetime,
+    OPEN, RetroactiveExtension, TemporalEdge, parse_datetime, validate_temporal_edge,
 };
+pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 
 // Reserved module shells — populated in later migration phases (B-F)
 // as code moves in from da-domain. Each module documents which phase

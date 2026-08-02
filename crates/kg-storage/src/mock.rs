@@ -21,9 +21,7 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::error::{GraphResult, GraphStoreError};
-use crate::traits::{
-    DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult,
-};
+use crate::traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
 /// Property value stored per (node_id, key).
 #[derive(Debug, Clone, Default)]
@@ -150,7 +148,11 @@ impl GraphStore for MockGraphStore {
 impl DirectGraphStore for MockGraphStore {
     async fn create_node(&self, label: &str) -> Result<u64, GraphStoreError> {
         let id = self.inner.counter.fetch_add(1, Ordering::SeqCst) as u64;
-        self.inner.nodes.lock().unwrap().push((id, label.to_string()));
+        self.inner
+            .nodes
+            .lock()
+            .unwrap()
+            .push((id, label.to_string()));
         Ok(id)
     }
     async fn set_node_property_string(
@@ -416,10 +418,7 @@ mod tests {
         let id = clone.create_node("Shared").await.unwrap();
         // Original sees the node created via the clone
         assert_eq!(store.node_count_total(), 1);
-        assert_eq!(
-            store.get_nodes_by_label("Shared").await,
-            vec![id]
-        );
+        assert_eq!(store.get_nodes_by_label("Shared").await, vec![id]);
     }
 
     #[tokio::test]
@@ -432,38 +431,35 @@ mod tests {
     }
 }
 
-    #[tokio::test]
-    async fn test_get_edges_between_filters_correctly() {
-        let store = MockGraphStore::new();
-        let a = store.create_node("Paper").await.unwrap();
-        let b = store.create_node("Entity").await.unwrap();
-        let c = store.create_node("Entity").await.unwrap();
+#[tokio::test]
+async fn test_get_edges_between_filters_correctly() {
+    let store = MockGraphStore::new();
+    let a = store.create_node("Paper").await.unwrap();
+    let b = store.create_node("Entity").await.unwrap();
+    let c = store.create_node("Entity").await.unwrap();
 
-        let e1 = store.create_edge(a, b, "MENTIONS").await.unwrap();
-        let _e2 = store.create_edge(a, c, "MENTIONS").await.unwrap();
-        let _e3 = store.create_edge(a, b, "CITES").await.unwrap();
+    let e1 = store.create_edge(a, b, "MENTIONS").await.unwrap();
+    let _e2 = store.create_edge(a, c, "MENTIONS").await.unwrap();
+    let _e3 = store.create_edge(a, b, "CITES").await.unwrap();
 
-        let edges = store.get_edges_between(a, b, "MENTIONS").await;
-        assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].0, e1); // edge_id
-        assert_eq!(edges[0].1, "MENTIONS");
-    }
+    let edges = store.get_edges_between(a, b, "MENTIONS").await;
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0].0, e1); // edge_id
+    assert_eq!(edges[0].1, "MENTIONS");
+}
 
-    #[tokio::test]
-    async fn test_edge_property_set_and_get() {
-        let store = MockGraphStore::new();
-        let a = store.create_node("Paper").await.unwrap();
-        let b = store.create_node("Entity").await.unwrap();
-        let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
+#[tokio::test]
+async fn test_edge_property_set_and_get() {
+    let store = MockGraphStore::new();
+    let a = store.create_node("Paper").await.unwrap();
+    let b = store.create_node("Entity").await.unwrap();
+    let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
 
-        store
-            .set_edge_property_string_v2(edge_id, "valid_at", "2024-01-01T00:00:00Z")
-            .await
-            .unwrap();
+    store
+        .set_edge_property_string_v2(edge_id, "valid_at", "2024-01-01T00:00:00Z")
+        .await
+        .unwrap();
 
-        let val = store.get_edge_property_string(edge_id, "valid_at").await;
-        assert_eq!(
-            val,
-            Some("2024-01-01T00:00:00Z".to_string())
-        );
-    }
+    let val = store.get_edge_property_string(edge_id, "valid_at").await;
+    assert_eq!(val, Some("2024-01-01T00:00:00Z".to_string()));
+}

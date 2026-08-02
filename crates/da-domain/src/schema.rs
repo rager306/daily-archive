@@ -269,9 +269,21 @@ pub fn render_node_types_table() -> String {
     // Materialized labels — keep in sync with crates/da-application/src
     // create_node call sites. Verified by da schema-check CLI.
     let materialized: &[&str] = &[
-        "Author", "Category", "Citation", "Claim", "ConceptCluster", "Entity",
-        "EvidenceBundle", "Institution", "MetricObservation", "Paper",
-        "Reference", "ResearchProblem", "SchedulerTask", "Section", "Source",
+        "Author",
+        "Category",
+        "Citation",
+        "Claim",
+        "ConceptCluster",
+        "Entity",
+        "EvidenceBundle",
+        "Institution",
+        "MetricObservation",
+        "Paper",
+        "Reference",
+        "ResearchProblem",
+        "SchedulerTask",
+        "Section",
+        "Source",
         "Topic",
     ];
 
@@ -285,11 +297,18 @@ pub fn render_node_types_table() -> String {
         let label = schema.label();
         let req: Vec<&str> = schema.required_fields().iter().map(|(n, _)| *n).collect();
         let opt_count = schema.optional_fields().len();
-        let mat = if materialized.contains(&label) { "✅" } else { "—" };
+        let mat = if materialized.contains(&label) {
+            "✅"
+        } else {
+            "—"
+        };
         s.push_str(&format!(
             "| `{}` | {} | {} | {} |\n",
             label,
-            req.iter().map(|r| format!("`{r}`")).collect::<Vec<_>>().join(", "),
+            req.iter()
+                .map(|r| format!("`{r}`"))
+                .collect::<Vec<_>>()
+                .join(", "),
             opt_count,
             mat
         ));
@@ -307,14 +326,37 @@ mod render_tests {
         assert!(table.contains("| Label | Required fields | Optional fields | Materialized? |"));
         // Every registered schema must appear
         for label in [
-            "ArtifactVersion", "Author", "BaselineSnapshot", "Category",
-            "Citation", "Claim", "ConceptCluster", "Concept", "Conflict",
-            "Decision", "Entity", "EvidenceBundle", "ExperimentRun", "FailureEvent",
-            "Hypothesis", "ImplementationAttempt", "Institution",
-            "Intervention", "InterventionBundle", "MetricDefinition",
-            "MetricObservation", "Paper", "Reference", "ResearchEnvironment",
-            "ResearchIdea", "ResearchProblem", "ResultComparison",
-            "SchedulerTask", "Section", "Source", "Topic",
+            "ArtifactVersion",
+            "Author",
+            "BaselineSnapshot",
+            "Category",
+            "Citation",
+            "Claim",
+            "ConceptCluster",
+            "Concept",
+            "Conflict",
+            "Decision",
+            "Entity",
+            "EvidenceBundle",
+            "ExperimentRun",
+            "FailureEvent",
+            "Hypothesis",
+            "ImplementationAttempt",
+            "Institution",
+            "Intervention",
+            "InterventionBundle",
+            "MetricDefinition",
+            "MetricObservation",
+            "Paper",
+            "Reference",
+            "ResearchEnvironment",
+            "ResearchIdea",
+            "ResearchProblem",
+            "ResultComparison",
+            "SchedulerTask",
+            "Section",
+            "Source",
+            "Topic",
         ] {
             assert!(
                 table.contains(&format!("`{label}`")),
@@ -329,10 +371,16 @@ mod render_tests {
         // Paper, Entity, Author are materialized — must show ✅.
         for line in table.lines() {
             if line.contains("`Paper`") {
-                assert!(line.contains("✅"), "Paper must be marked materialized: {line}");
+                assert!(
+                    line.contains("✅"),
+                    "Paper must be marked materialized: {line}"
+                );
             }
             if line.contains("`Entity`") {
-                assert!(line.contains("✅"), "Entity must be marked materialized: {line}");
+                assert!(
+                    line.contains("✅"),
+                    "Entity must be marked materialized: {line}"
+                );
             }
             if line.contains("`Hypothesis`") {
                 assert!(
