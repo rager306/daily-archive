@@ -20,6 +20,7 @@
 //!
 //! See ADR-050 for the full architecture decision and migration plan.
 
+pub mod bitemporal;
 pub mod temporal;
 pub mod validator;
 
