@@ -17,6 +17,7 @@ explicit human go (D127).
 |------|--------|
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
 | **kg-* universal crates** | **Done (ADR-050)** — kg-ontology (9 modules), kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
+| **ADR-051 P0 contract suites** | **Done (M291)** — GraphStore + Embedder contract suites (public module, Mock + Samyama), serde roundtrip tests (12 types) |
 | **da-domain → kg-ontology** | **Done (Phase A)** — re-exports universal types (Violation, TemporalEdge, NodeSchemaDef, Vid, RetryPolicy, HealingOperation) |
 | **da-ports → kg-storage** | **Done (Phase B)** — re-exports GraphStore/DirectGraphStore traits + SamyamaGraphStore impl behind feature |
 | **YAML data-driven ontology** | **Done (Phase D+F)** — da ontology-export → YAML → OntologyRegistry → YamlSchemaAdapter → NodeSchemaDef |
@@ -235,6 +236,7 @@ in YAML data files.
 - **Phase 1 ✅**: Rust workspace migration (da-* crates), SamyamaGraphStore (ADR-040)
 - **Phase 2 ✅**: Extraction eval corpus (12 modern papers, F1=0.774 micro)
 - **Phase 3 (active)**: kg-* crate family (ADR-050) — Phase A+D done, Phase B follow-up pending
+- **Phase 3.5 ✅**: ADR-051 P0 contract suites — GraphStore + Embedder contract suites (Mock + Samyama), serde roundtrip tests (M291)
 - **Phase 4**: OntologyRegistry reads YAML as source of truth (ADR-050 Phase D core)
 - **Phase 5**: Deprecation cleanup (NodeSchemaDef -> OntologyRegistry)
 

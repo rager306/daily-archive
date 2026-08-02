@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Session 2026-08-02 — M291-p80wbx ADR-051 P0: contract suites + serde
+
+**S01-S04 complete. 33+ tests added. Governor on_track.**
+
+#### S01 — Public GraphStore contract suite
+
+- Extracted `graph_store_contract_suite<T>()` to `kg-storage/src/contract.rs`
+  (public module, importable by Samyama and future adapters)
+- Integration test becomes thin runner (1 test, imports public suite)
+- Full ADR-051 §6 checklist: unique IDs, set/get all property types,
+  missing→None, label isolation, get_edges_between filter, edge prop
+  set/get, health, export_snapshot
+- Fixed clippy (approx_constant, unused var) + fmt violations
+- Removed dead `set_edge_property_string` (v1, no callers); kept
+  `set_edge_property_float` (used in da-application/extraction.rs)
+- Fixed pre-commit config: removed stale da-graph package (M290)
+
+#### S02 — SamyamaGraphStore passes contract suite
+
+- Implemented `get_edges_between`, `get_edge_property_string`,
+  `set_edge_property_string_v2`, `set_edge_property_float` on
+  SamyamaGraphStore using samyama-graph SDK edge property API
+- Both Mock and Samyama run the SAME suite (ADR-051 Contour 4 goal)
+
+#### S03 — Embedder contract suite
+
+- `embedder_contract_suite<E>()` in `kg-embeddings/src/contract.rs`
+- Deterministic `MockEmbedder` (FNV-1a + LCG, no network)
+- 6 contract checks: dimension, determinism, different text, empty,
+  unicode, batch consistency
+
+#### S04 — Serde roundtrip tests
+
+- 9 types in kg-storage (QueryResult, VectorMetric, VectorSearchResult,
+  HealingOperation, HealingActor, ProvenanceEvent, RetryPolicy,
+  YamlNodeSchema) + 3 Paper tests in da-domain
+- JSON + bincode roundtrip (ADR-051 §4.4 Contour 2)
+
 ### Session 2026-08-01..02 — M285-M290 comprehensive kg-* extraction + governor
 
 **6 milestones closed, 47+ commits, 303 tests pass, governor on_track.**

@@ -534,4 +534,62 @@ impl DirectGraphStore for SamyamaGraphStore {
             .map(|n| n.id.0)
             .collect()
     }
+
+    async fn get_edges_between(
+        &self,
+        source: u64,
+        target: u64,
+        edge_type: &str,
+    ) -> Vec<(u64, String)> {
+        let store = self.store_read().await;
+        let src = NodeId(source);
+        let tgt = NodeId(target);
+        let et = EdgeType::new(edge_type);
+        store
+            .all_edges()
+            .into_iter()
+            .filter(|e| e.source == src && e.target == tgt && e.edge_type == et)
+            .map(|e| (e.id.0, e.edge_type.as_str().to_string()))
+            .collect()
+    }
+
+    async fn get_edge_property_string(&self, edge_id: u64, key: &str) -> Option<String> {
+        let store = self.store_read().await;
+        store
+            .get_edge_properties(EdgeId(edge_id))
+            .and_then(|props| props.get(key))
+            .and_then(|prop| prop.as_string().map(|s| s.to_string()))
+    }
+
+    async fn set_edge_property_string_v2(
+        &self,
+        edge_id: u64,
+        key: &str,
+        value: &str,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_edge_property(
+                EdgeId(edge_id),
+                key.to_string(),
+                PropertyValue::String(value.to_string()),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn set_edge_property_float(
+        &self,
+        edge_id: u64,
+        key: &str,
+        value: f64,
+    ) -> Result<(), GraphStoreError> {
+        let mut store = self.store_write().await;
+        store
+            .set_edge_property(
+                EdgeId(edge_id),
+                key.to_string(),
+                PropertyValue::Float(value),
+            )
+            .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
 }
