@@ -2,7 +2,34 @@
 
 ## Unreleased
 
-### M289-u4fzx5 — Extract universal graph capabilities to kg-ontology (2026-08-02)
+### Session 2026-08-01..02 — M285-M289 comprehensive kg-* extraction + governor
+
+**5 milestones closed, 47+ commits, 286 tests pass.**
+
+#### M285-z09px0 — kg-* Architecture Debt Closure (ADR-050 Phase A+B+D)
+
+9 slices. SamyamaGraphStore impl migrated to kg-storage behind feature.
+OntologyRegistry YAML loader. da-domain/da-ports re-export universal types.
+
+#### M286-wda3cp — Governor CLI hexagonal refactor
+
+798-line monolith → hexagonal Python package. 16 YAML rules.
+Pre-commit integration (--check-only).
+
+#### M287-q1wf9r — Governor CLI v2 improvements
+
+--validate-yaml, --self-test, --check-dead-code, git-aware stale_milestone.
+
+#### M288-avqgux — Phase F data-driven NodeSchemaDef
+
+YamlSchemaAdapter (Box::leak), validate_node_properties_or_yaml,
+schema-list --from-yaml.
+
+#### M289-u4fzx5 — Extract universal graph capabilities
+
+6 universal extractions to kg-ontology: bitemporal, schema (NodeSchemaDef),
+edge_contract, vid (sha256), retry (RetryPolicy), healing (ProvenanceEvent).
+kg-ontology now has 9 universal modules.
 
 4/4 universal extractions from da-domain to kg-ontology (ADR-050 principle:
 universal graph capabilities live in kg-*, project-specific in da-*).
