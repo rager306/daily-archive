@@ -1,1 +1,0 @@
-"""Canonical architecture-boundary package."""

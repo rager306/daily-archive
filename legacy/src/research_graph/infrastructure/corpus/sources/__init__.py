@@ -1,1 +1,0 @@
-"""External research source adapters."""

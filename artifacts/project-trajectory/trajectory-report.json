@@ -8,9 +8,8 @@
   "dimensions": {
     "agent_readiness": {
       "evidence": [
-        "ADR-031 directional",
-        "SymFSM needs formalization",
-        "Phase 6 deferred"
+        "SymFSM deferred",
+        "kg-pipeline skeleton ready (Phase E ADR-050)"
       ],
       "flags": [],
       "status": "requires_development"
@@ -25,53 +24,51 @@
       "status": "tracked"
     },
     "evidence": {
-      "evidence": [
-        ".gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md",
-        ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
-        ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md"
-      ],
+      "evidence": [],
       "flags": [],
-      "status": "tracked"
+      "status": "missing"
     },
     "extraction_coverage": {
       "evidence": [
-        "Core-then-Modes pipeline implemented (application/, ADR-029/033)",
-        "M103 S03 prototype: 40 TypedEntity + 6 TypedRelation via MiniMax (arXiv:2605.18747 chunks)",
-        "entity recall ~1.0; relation precision low (raw, pre-DSPy)"
+        "Rust RuleBasedExtractor (crates/da-adapters)",
+        "Gold-standard corpus: 12 modern papers, 96 gold entities",
+        "Precision 0.639 / Recall 0.979 / F1 0.774 (micro)",
+        "import_eligible=false (D127)"
       ],
       "flags": [],
       "status": "prototype_done"
     },
     "falkordb_migration": {
       "evidence": [
-        "ADR-022 FalkorDB binding",
-        "ADR-030 schema designed",
-        "GraphDBPort + LadybugAdapter ready (M104): FalkorDB = new Adapter, not rewrite"
+        "ADR-040 Samyama = sole KG+vector+persist store (supersedes FalkorDB plan)",
+        "SamyamaGraphStore impl (GraphStore + DirectGraphStore) in da-adapters",
+        "Phase B follow-up: migrate impl to kg-storage (M285-z09px0/S05)"
       ],
       "flags": [],
-      "status": "port_ready"
+      "status": "superseded_by_samyama"
     },
     "functionality": {
       "evidence": [
-        "requirements=72",
-        "statuses={'active': 24, 'validated': 48}"
+        "requirements=83",
+        "statuses={'active': 22, 'validated': 61}"
       ],
       "flags": [],
       "status": "tracked"
     },
     "hexagonal_discipline": {
       "evidence": [
-        "ADR-034 hexagonal/onion overlay",
-        "3 Ports: LLMClientPort, GraphDBPort, FullTextProviderPort",
-        "Ponytail Port rule enforced",
-        "verify_onion_layering.py multi-layer guard"
+        "ADR-034 hexagonal/onion overlay on Rust workspace",
+        "da-domain <- da-ports <- da-application <- da-adapters/da-cli",
+        "GraphStore + DirectGraphStore ports (da-ports)",
+        "kg-* universal crate family (ADR-050, no da-* deps)",
+        "scripts/verify_rust_architecture.sh guardrail"
       ],
       "flags": [],
       "status": "crystallized"
     },
     "module_code": {
       "evidence": [
-        "git_changed_files=229"
+        "git_changed_files=5"
       ],
       "flags": [
         "uncommitted_changes_present"
@@ -83,8 +80,10 @@
         "README.md",
         "recent milestone summaries"
       ],
-      "flags": [],
-      "status": "clear"
+      "flags": [
+        "missing_next_gate"
+      ],
+      "status": "needs_attention"
     },
     "operations": {
       "evidence": [
@@ -95,15 +94,14 @@
     },
     "reverse_adr_audit": {
       "evidence": [
-        "rule_count=10",
-        "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
-        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
-        "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))",
-        "src/research_graph/domain/ (rule: no_infra_import_in_domain, anchor: ADR-034 (Hexagonal/Onion overlay), D086)",
-        "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
+        "rule_count=7",
+        "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127)",
+        "crates/ (rule: kg_crates_must_not_depend_on_da, anchor: ADR-050 (kg-* crate family — universal, no da-* deps))",
+        "crates/da-domain/Cargo.toml/ (rule: da_domain_must_not_depend_on_infra, anchor: ADR-034 (Hexagonal/Onion overlay), ADR-040)",
+        "crates/da-application/Cargo.toml/ (rule: da_application_must_not_depend_on_da_adapters, anchor: ADR-034 (Hexagonal/Onion overlay))"
       ],
       "flags": [
-        "no_anthropic_sdk_outside_llm"
+        "kg_crates_must_not_depend_on_da"
       ],
       "status": "violations"
     },
@@ -111,23 +109,25 @@
       "evidence": [
         "prohibited-claim scan over PROJECT/README/recent summaries"
       ],
-      "flags": [],
-      "status": "clear"
+      "flags": [
+        "reverse_adr_audit_kg_crates_must_not_depend_on_da"
+      ],
+      "status": "blocked"
     },
     "schema_readiness": {
       "evidence": [
-        "ADR-028 typed schema",
-        "domain/schema.py canonical home (M104)",
-        "27 relation types",
-        "5 modules A-E"
+        "da-domain::schema canonical home (Rust workspace)",
+        "ADR-040 Samyama unified store",
+        "ADR-045 edge contract matrix",
+        "31 node schemas (XSchema)"
       ],
       "flags": [],
-      "status": "implemented"
+      "status": "missing"
     },
     "universal_sources": {
       "evidence": [
-        "220 PDFs in arXiv catalog",
-        "5 domain profiles designed (ADR-032)",
+        "arXiv CS.CL catalog (data/article_catalog/)",
+        "GROBID hybrid PDF parser (da-adapters)",
         "GNN textbook pending"
       ],
       "flags": [],
@@ -136,68 +136,68 @@
   },
   "drift_flags": [
     {
-      "evidence": "M104-q9tft1",
-      "flag": "latest_milestone_missing_readme_reference",
+      "evidence": "README.md",
+      "flag": "missing_next_gate",
       "severity": "medium"
     },
     {
-      "evidence": "229 files",
+      "evidence": "5 files",
       "flag": "uncommitted_changes_present",
       "severity": "info"
     },
     {
-      "evidence": "src/research_graph/infrastructure/llm/summarizer.py:9",
-      "flag": "reverse_adr_audit_no_anthropic_sdk_outside_llm",
-      "severity": "medium",
-      "snippet": ""
+      "evidence": "crates/kg-ontology/Cargo.toml:9",
+      "flag": "reverse_adr_audit_kg_crates_must_not_depend_on_da",
+      "severity": "high",
+      "snippet": "da-domain = { path = \"../da-domain\" }"
     }
   ],
   "graph_write_allowed": false,
   "import_eligible": false,
   "next_actions": [
-    "Update README with latest milestone M104-q9tft1 interpretation.",
+    "Add or confirm the next gate before starting broad implementation.",
     "Run focused verification and commit or intentionally leave a handoff."
   ],
   "phase": "preflight",
   "production_import_attempted": false,
   "progress_summary": {
     "decisions": {
-      "count": 88,
+      "count": 135,
       "latest": [
         {
-          "choice": "1-hop saturation observed; 2-hop BFS recommended for M058 graph-readiness",
-          "decision": "BFS scale evidence for M056 1-hop expansion from 2605.18747",
-          "id": "D084",
-          "scope": "parser-benchmark / graph-readiness",
-          "when": "M056-lchpnp S07 final synthesis"
-        },
-        {
-          "choice": "Pipeline framework builds explicit SEAMS for queue/scheduler/agent integration rather than building the full scheduler now. Concrete design: (1) pipeline/types.py defines ResourceProfile (LLM/CPU/IO tags per ADR-027 §2.2) carried by PipelineStage; PipelineStage.resource_profile + stage_name are queue-compatible with the existing UniversalKBQueue.ProcessingJob contract (stage, contract_version, output_paths). (2) pipeline/orchestrator.py is SYNCHRONOUS by default (ADR-017: queue deferred) but exposes a dispatch_protocol strategy seam: SyncDispatch (default) vs QueueDispatch (adapter over the existing UniversalKBQueue: enqueue/claim/complete), so queue-backed dispatch is a thin adapter — no queue duplication. (3) Resource-aware admission via can_dispatch() checks resource lanes; Phase 2 implements ONLY the simple LLM lane check (ADR-027 §5: MiniMax token_plan before each call) — full 3-lane scheduler deferred to Phase 4. (4) pipeline/primitives.py stages declare their ResourceProfile (CoreEntityExtractor=LLM, StatisticalPreProcessor/EvidenceLinker=CPU). What is NOT built in S02: full 3-lane scheduler (Phase 4), agent FSM runtime (Phase 6, ADR-026), PostgreSQL migration (M066). This honors ADR-017 (deferral) while making future activation a strategy swap, not a rewrite.",
-          "decision": "How M103 S02 pipeline framework (pipeline/ package) accounts for queues and future scheduling/agent planning without violating ADR-017 (queue deferred) and ADR-027 (phased scheduler)",
-          "id": "D085",
-          "scope": "pipeline / queue / scheduler",
+          "choice": "Replace the broken Python M044/M045 guardrail workflow with a Rust-native guardrail: cargo check --workspace, cargo test --workspace, cargo clippy, cargo fmt --check, plus a dependency-direction check (da-domain/da-ports have no infra deps). Move the Python guardrail to a legacy-only workflow or remove it.",
+          "decision": "Architecture guardrail CI workflow (.github/workflows/architecture-guardrail.yml) is broken after the Python→Rust rewrite: it runs `uv sync` (no root pyproject.toml) and `scripts/verify_onion_layering.py` (now at legacy/scripts/). The guardrail must be rewritten for the Rust hexagonal layout.",
+          "id": "D131",
+          "scope": "architecture",
           "when": ""
         },
         {
-          "choice": "Hexagonal + Onion + Ponytail (M104)",
-          "decision": "Принять гексагональную (Ports/Adapters) + луковичную (domain/application/infrastructure) архитектуру как целевую структуру research_graph/. Ports реализуются как typing.Protocol в domain/; Adapters в infrastructure/. Port добавляется ТОЛЬКО при ≥2 реализациях, запланированной миграции, или требовании к mockability (Ponytail override — не для симметрии). Ввести Ponytail как кодовую дисциплину (skill в .agents/skills/ponytail/, правила в AGENTS.md) с §6.3 инвариантами как NEVER-списком.",
-          "id": "D086",
+          "choice": "Design the complete graph schema (all node types, edge types, properties, indexes) as a single source of truth BEFORE any further data loading. Implement schema-as-code in da-domain (NodeSchemaDef for every node type), schema initialization in da-graph (all indexes), and a `da schema init` CLI command. Loading (ingest/extract) must validate against the schema before writing.",
+          "decision": "Graph data was being loaded chaotically — each session added node types/properties ad hoc (Paper, Citation, Entity, CITES, MENTIONS) without a unified schema design. PaperSchema/EntitySchema exist in da-domain but validate() is never called, CitationSchema doesn't exist, SchemaInitializer only creates 3 indexes, and written properties don't match the declared schema.",
+          "id": "D132",
           "scope": "architecture",
-          "when": "Пересматривается при добавлении 3+ доменов (Phase 5), миграции на распределённую очередь, или если sync-оркестрация станет узким местом на масштабе >10k статей."
+          "when": ""
         },
         {
-          "choice": "Отказ от Prefect, оставить EP-4 DispatchProtocol seam",
-          "decision": "НЕ вводить Prefect как Central Flow Orchestrator. S02 уже планирует DispatchProtocol/SyncDispatch/QueueDispatch поверх UniversalKBQueue — это покрывает Phase 2 (sync) и Phase 4 (queue activation). EP-4 (DispatchProtocol) оставляет дверь открытой: если sync-режим станет узким местом на Phase 4, Prefect добавляется как PrefectDispatch Adapter без переписывания Core. Ресурс-планировщик усиливается своими силами (~150 строк поверх UniversalKBQueue), не как отдельный сервис/фреймворк.",
-          "id": "D087",
+          "choice": "Adopt the hybrid approach (option 3): OpenAlex as curated metadata backbone + FaBiO structural types + domain-specific extraction layer. Three-layer graph architecture: (1) Metadata layer from OpenAlex API (Work, Author, Institution, Concept, Topic, Citation), (2) Structure layer from GROBID/S2ORC (Section, Figure, Table, Equation), (3) Content layer from extraction (Entity, Relation). FaBiO class names for node labels, CiTO property names for citation edges, OpenAlex concept hierarchy for topics.",
+          "decision": "The graph schema was ad-hoc — invented Paper/Section/Keyword/Topic/Category from scratch without aligning to established ontologies (FaBiO, CiTO) or practical schemas (OpenAlex). User directed to study SPAR/FaBiO, CiTO, OpenAlex, S2ORC and redesign accordingly. The hybrid approach is best for daily-archive: use OpenAlex curated data for metadata (not noisy YAKE/NER), FaBiO for structural types, CiTO for citation typing, and domain extraction on top.",
+          "id": "D133",
           "scope": "architecture",
-          "when": "Пересматривается на Phase 4 (queue activation + real concurrency), если profiling покажет что sync-оркестрация тормозит при >100 параллельных статей, или если понадобится dynamic branching/Prefect UI для operational observability."
+          "when": ""
         },
         {
-          "choice": "FullTextProviderPort за MDConverter вместо PDFParserPort (M104 S02 pivot)",
-          "decision": "Перепланировать M104 S02: вместо преждевременного PDFParserPort (S01) ввести FullTextProviderPort для MDConverter. Разведка показала: parse_article — одна детерминированная реализация (markdown headings), 4 'движка' (Marker/GROBID/arxiv2md/OpenDataLoader) — external offline producers (manifest-driven ADR-013), не runtime. Реальный runtime seam с ≥2 backends и fallback routing — MDConverter (corpus/sources/markdown_converter.py): convert(arxiv_id)->ConversionResult с backends arxiv2md/marker/docling + _needs_marker_fallback fallback логикой. Удалить PDFParserPort из domain/ports.py (одна реализация parse_article — Ponytail Port rule не оправдан: нет ≥2 runtime реализаций и нет миграции). FullTextProviderPort = convert/convert_sync signatures, MDConverter удовлетворяет структурно. parse_article и build_page_index НЕ трогать (deterministic, одна реализация — Port не нужен).",
-          "id": "D088",
+          "choice": "Adopt four ADHD-derived patterns in the graph schema: (1) retrieval_eligible boolean on ALL nodes — defaults false for deprecated Concepts, quarantined agent writes, unparsed spans; true only for promoted, live taxonomy nodes. (2) TopicAssignment edge with assignment_method + hierarchy_snapshot_id — audit trail for OpenAlex taxonomy transitions. (3) Provenance as append-only ring (ProvenanceEvent) — nodes hold ring offset pointer, not inline provenance, keeping hot retrieval paths clean. (4) QuarantinedAssertion edges for RuVector/SONA agent writes — retrieval_eligible=false until PromotionCertificate.",
+          "decision": "ADHD research (5 parallel cognitive frames + 3 deepened branches) on the graph ontology problem produced four high-value patterns that the current schema misses. These patterns address: OpenAlex Concepts deprecation (epigenetic silencing), agent brain contamination (quarantine), provenance bloat (audit ring), and taxonomy lineage (assignment_method).",
+          "id": "D134",
           "scope": "architecture",
-          "when": "Пересматривается если появится 2-я runtime реализация parse_article (например, structured PDF parser vs markdown parser), или если MDConverter backends изменятся."
+          "when": ""
+        },
+        {
+          "choice": "Extend the current FileScheduler into the full ADR-037 §4.3 ETL Scheduler design: priority queue (ingest/reparse/extract/embed/graph_write/enrich with HIGH/MED/LOW), resource guards (CPU, RAM, LLM rate limits, sidecar health, graph throughput), backpressure (fallback modes when resources constrained), and WAL checkpointing (crash recovery + idempotent resume). The current FileScheduler with RetryPolicy is the foundation — extend with TaskPriority, ResourceGuard trait, and BackpressurePolicy.",
+          "decision": "Found the original ETL Scheduler design in ADR-037 §4.3. The current FileScheduler implements only the retry-queue subset. The full design includes: priority queue (5 task types with HIGH/MED/LOW), resource guards (CPU/RAM/LLM/sidecar/graph), backpressure (fallback when constrained), and checkpointing (WAL + idempotent + resume). The OpenAlex lazy-load scheduler is the first concrete instance of this broader pattern.",
+          "id": "D135",
+          "scope": "architecture",
+          "when": ""
         }
       ]
     },
@@ -213,59 +213,10 @@
         "SafetyBoundary": 1
       }
     },
-    "latest_milestone": {
-      "id": "M104-q9tft1",
-      "mentions_no_import": false,
-      "path": ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md",
-      "status": "complete",
-      "title": "Hexagonal Foundation"
-    },
-    "recent_milestones": [
-      {
-        "id": "M055-kyxuqm",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M055-kyxuqm/M055-kyxuqm-SUMMARY.md",
-        "status": "complete",
-        "title": "M055 Hybrid Parser Deep-Dive: GROBID Fulltext + OpenDataLoader Correctness + 20 PDFs"
-      },
-      {
-        "id": "M100-nb11x1",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M100-nb11x1/M100-nb11x1-SUMMARY.md",
-        "status": "complete",
-        "title": "M100 Architecture Cleanup Post Migration"
-      },
-      {
-        "id": "M062-b4porb",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M062-b4porb/M062-b4porb-SUMMARY.md",
-        "status": "complete",
-        "title": "M062 ADR Template + Library Selection (Superseded)"
-      },
-      {
-        "id": "M099-bpeq8b",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M099-bpeq8b/M099-bpeq8b-SUMMARY.md",
-        "status": "complete",
-        "title": "M099 Remaining Migration (Superseded by M099-bpeq08b)"
-      },
-      {
-        "id": "M103-6tip5z",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M103-6tip5z/M103-6tip5z-SUMMARY.md",
-        "status": "complete",
-        "title": "Typed schema and pipeline implementation"
-      },
-      {
-        "id": "M104-q9tft1",
-        "mentions_no_import": false,
-        "path": ".gsd/milestones/M104-q9tft1/M104-q9tft1-SUMMARY.md",
-        "status": "complete",
-        "title": "Hexagonal Foundation"
-      }
-    ],
+    "latest_milestone": {},
+    "recent_milestones": [],
     "requirements": {
-      "count": 72,
+      "count": 83,
       "ids": [
         "R019",
         "R022",
@@ -284,13 +235,11 @@
         "R054",
         "R055",
         "R056",
-        "R066",
-        "R067",
-        "R068",
-        "R069",
-        "R070",
-        "R071",
-        "R072",
+        "R079",
+        "R080",
+        "R081",
+        "R082",
+        "R083",
         "R001",
         "R002",
         "R003",
@@ -338,11 +287,24 @@
         "R062",
         "R063",
         "R064",
-        "R065"
+        "R065",
+        "R066",
+        "R067",
+        "R068",
+        "R069",
+        "R070",
+        "R071",
+        "R072",
+        "R073",
+        "R074",
+        "R075",
+        "R076",
+        "R077",
+        "R078"
       ],
       "statuses": {
-        "active": 24,
-        "validated": 48
+        "active": 22,
+        "validated": 61
       },
       "titles": {
         "R001": "CLI help info",
@@ -410,37 +372,47 @@
         "R063": "Governance memory must expose a typed ADR/R/D graph projection with verifiable nodes and edges while preserving GSD and ADR files as canonical.",
         "R064": "The real-corpus no-write smoke must support a mixed 20-30 article batch containing retained baseline articles, fresh articles, and reference-linked candidates when safely discoverable.",
         "R065": "Provide a unified project trajectory check that summarizes architecture decisions, requirements, module/code movement, evidence maturity, safety boundaries, and next blockers so agents can detect drift before planning or execution.",
-        "R066": "Extract LLM access into a dedicated architecture module that supports MiniMax, GLM/Z.ai, and optional future Headroom routing/compression scenarios.",
-        "R067": "The system must implement a 7-layer typed knowledge pipeline (Source → Parser → Structure → Extraction → Graph → Review → Agents) per ADR-023. Each layer must produce durable, traceable artifacts with stable IDs and evidence provenance.",
-        "R068": "Every LLM extraction stage must be preceded by deterministic/statistical pre-processing (YAKE keywords, TF-IDF summaries, graph community detection, embedding similarity). The LLM receives both raw text AND statistical context per ADR-024.",
-        "R069": "The LLM module must support multiple providers (MiniMax primary, GLM secondary) with per-provider rate limit checking before API calls, automatic fallback on rate exhaustion, and durable usage tracking per provider in the queue per ADR-025.",
-        "R070": "Future agents must use FSM-controlled reasoning inspired by SymFSM: LLM acts as interpreter within a pre-built reasoning model (cognitive map from FalkorDB subgraph), not as free-form generator. Every agent action passes through fail-closed safety gates per ADR-026.",
-        "R071": "The system must support typed knowledge schema with 5 entity modules (A: factual/meta, B: textually mentioned, C: implicit/abstracted, D: citation relationships, E: knowledge relations) adapted from Agents-K1, with ~25 typed relation types in 5 groups (controlled, causal, composition, comparison, citation).",
-        "R072": "The pipeline queue scheduler must coordinate job dispatch across three resource dimensions: LLM API rate limits (per-provider token/time quotas), CPU/local compute (parser/heavy processing concurrency), and I/O (network fetch, disk write, graph write serialization). Jobs are routed to the least-constrained resource lane with automatic backoff and recovery per ADR-027."
+        "R066": "Recurring corpus pipeline logic must live behind hexagonal onion application use cases and ports, with milestone scripts reduced to thin CLI or compatibility wrappers.",
+        "R067": "Pipeline must expose typed, resumable, observable jobs for intake, acquisition, parsing, chunking, evidence, and graph-candidate preparation before graph import claims.",
+        "R068": "Pipeline external dependency failures must be typed and fail closed for network, arXiv availability, resource limits, LLM limits, stale hashes, and partial artifacts.",
+        "R069": "Graph readiness work must pass through a graph projection boundary with schema versioning, evidence paths, and lightweight NetworkX rehearsal before any production graph backend write.",
+        "R070": "Pipeline production hardening must provide staged validation evidence before any production promotion.",
+        "R071": "Pipeline hardening must persist operator-readable run state, failure diagnostics, retry counts, and artifact lineage.",
+        "R072": "Pipeline production hardening must not enable graph backend writes, migration execution, or import eligibility.",
+        "R073": "Pipeline orchestration should support bounded asynchronous execution for independent I/O-bound stages while preserving deterministic sync domain contracts.",
+        "R074": "Reactive pipeline jobs must expose observable state transitions, correlation IDs, retries, cancellation, timeout, and artifact lineage.",
+        "R075": "Async/reactive adoption must preserve fail-closed graph/import governance boundaries.",
+        "R076": "Reactive no-write pilot must gain production-readiness preconditions that compare dry-run, sync rehearsal, smoke, and graph readiness evidence without enabling production writes.",
+        "R077": "Reactive readiness workflows must expose operator-readable failure diagnostics, drift deltas, and evidence indexes for dry-run versus sync/smoke parity.",
+        "R078": "No production graph import, schema migration, queue dependency semantic change, or smoke/rehearsal semantic change may be enabled by M198 readiness work.",
+        "R079": "Every pipeline service that touches external or local I/O (ArxivClient, TEI Embedder, Markdown Converter, SemanticScholar) must wrap network/local calls in typed error handling (HTTPError, TimeoutException, ConnectError, 429-rate-limit) and surface typed diagnostics (error code, service name, redacted message, retry count, final outcome) instead of propagating opaque exceptions.",
+        "R080": "Transient failures (429, 5xx, timeout) for pipeline services must retry with bounded backoff honoring Retry-After where present. The mature catalog_ingest retry/backoff/Retry-After pattern (ARXIV_BACKOFF_SECONDS=(1,5,15,60,300)) is the established project pattern and must be reused rather than reinvented.",
+        "R081": "Graceful degradation (e.g. TEI Embedder returning zero vectors when the circuit-breaker is open) is allowed only when the degraded output is explicitly marked via a typed signal or safety flag, and downstream consumers fail closed on or annotate its use. No service may silently degrade to corrupt data.",
+        "R082": "The ScoringEngine recency score must document and enforce its same-day-run contract: a retrospective scoring run must either use an explicit run_date parameter or be rejected, never silently score all papers recency=0.5 by comparing against date.today().",
+        "R083": "Error diagnostics across all pipeline services must never include raw payload, raw text, embeddings, vectors, or secrets — only error code, service name, redacted message, retry count, and final outcome."
       }
     }
   },
   "promotion_allowed": false,
   "reverse_adr_audit_details": {
     "evidence": [
-      "src/ (rule: no_ladybugdb_import_outside_graph_package, anchor: ADR-022 (FalkorDB binding), ADR-005 (No Direct Extractor to GraphDB))",
-      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path))",
-      "src/ (rule: no_arxiv_archive_import, anchor: M099 (Full migration to research_graph))",
-      "src/research_graph/domain/ (rule: no_infra_import_in_domain, anchor: ADR-034 (Hexagonal/Onion overlay), D086)",
-      "src/research_graph/application/ (rule: no_concrete_infra_import_in_application, anchor: ADR-034 (Hexagonal/Onion overlay), D086)"
+      "artifacts/ (rule: no_graph_import_allowed_true_in_artifacts, anchor: ADR-005 (No Direct Extractor to GraphDB Path), D127)",
+      "crates/ (rule: kg_crates_must_not_depend_on_da, anchor: ADR-050 (kg-* crate family — universal, no da-* deps))",
+      "crates/da-domain/Cargo.toml/ (rule: da_domain_must_not_depend_on_infra, anchor: ADR-034 (Hexagonal/Onion overlay), ADR-040)",
+      "crates/da-application/Cargo.toml/ (rule: da_application_must_not_depend_on_da_adapters, anchor: ADR-034 (Hexagonal/Onion overlay))"
     ],
-    "rule_count": 10,
+    "rule_count": 7,
     "status": "violations",
     "violations": [
       {
-        "anchor": "M100 (summarizer moved to llm), ADR-025 (multi-provider)",
-        "file": "src/research_graph/infrastructure/llm/summarizer.py",
+        "anchor": "ADR-050 (kg-* crate family — universal, no da-* deps)",
+        "file": "crates/kg-ontology/Cargo.toml",
         "line": "9",
-        "rule_id": "no_anthropic_sdk_outside_llm",
-        "snippet": ""
+        "rule_id": "kg_crates_must_not_depend_on_da",
+        "snippet": "da-domain = { path = \"../da-domain\" }"
       }
     ]
   },
-  "schema_version": "m101.project-trajectory.v2",
-  "verdict": "drift_risk"
+  "schema_version": "m285.rust.trajectory.v1",
+  "verdict": "blocked"
 }
