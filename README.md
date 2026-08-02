@@ -11,25 +11,20 @@ explicit human go (D127).
 
 ---
 
-## Current state (2026-07-29)
+## Current state (2026-08-02)
 
 | Area | Status |
 |------|--------|
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
+| **kg-* universal crates** | **Done (ADR-050)** — kg-ontology (9 modules), kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
+| **da-domain → kg-ontology** | **Done (Phase A)** — re-exports universal types (Violation, TemporalEdge, NodeSchemaDef, Vid, RetryPolicy, HealingOperation) |
+| **da-ports → kg-storage** | **Done (Phase B)** — re-exports GraphStore/DirectGraphStore traits + SamyamaGraphStore impl behind feature |
+| **YAML data-driven ontology** | **Done (Phase D+F)** — da ontology-export → YAML → OntologyRegistry → YamlSchemaAdapter → NodeSchemaDef |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
-| Phase 2 multi-source | **Done** — HtmlParser for GNN textbook + Source node (Layer 0) |
-| Section node creation | **Done** — Paper → hasPart → Section (Layer 2 materialized) |
 | Extraction corpus | **104 sources** (100 arxiv PDF + 4 GNN textbook HTML), 746 gold |
 | Extraction metrics | **P=0.759 R=0.999 F1=0.862** (1 FN: `generalization`) |
-| Cross-domain entities | **Done** — GCN, GAT, GraphSAGE, GNN in KNOWN_METHODS |
-| Declarative patterns | **Done** — `data/extraction_patterns.json` (Wave 3) |
-| Governor CLI tools | **Done** — eval_batch pre-commit hook, suggest-whitelist, eval_html |
-| Phase 3 edge weights | **Done** — `set_edge_property_float` in DirectGraphStore |
-| Phase 3 entity embeddings | **Done** — EntitySchema embedding field + ExtractionUseCase.with_embedder() |
-| Phase 3 section embeddings | **Done** — SectionSchema embedding field |
-| Phase 4 hypergraph | **Done** — ConceptCluster node + MEMBER_OF edges + detect_clusters() |
-| Phase 5 GNN algorithm ports | **Done** — GraphAlgorithms trait (PPR, get_neighbors, get_all_neighbors) |
-| Graph schema | **Done** — 29 node types, 26 indexes, `da schema init` |
+| Graph schema | **Done** — 31 node types, 26 indexes, `da schema init` |
+| **Governor CLI** | **Done (M286+M287)** — hexagonal Python package, 16 YAML rules, 8 dimensions, --validate-yaml, --self-test, --check-dead-code |
 | OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors from OpenAlex API |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | Cross-process live graph | **Not yet** — needs Samyama server mode (Phase 3+) |
