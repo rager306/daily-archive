@@ -20,6 +20,7 @@ listed here — see `legacy/doc/adr/`.
 | [048](ADR-048-decision-intelligence.md) | Decision Intelligence — First-Class Decision Records | Proposed | 2026-07-24 |
 | [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
 | [050](ADR-050-universal-graph-subsystem-kg-crate-family.md) | Universal Graph Subsystem — kg-* Crate Family | Accepted | 2026-07-24 |
+| [051](ADR-051-testing-strategy-overlapping-verification-contours.md) | Testing Strategy — Overlapping Verification Contours | Accepted | 2026-08-02 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
