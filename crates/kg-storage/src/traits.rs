@@ -106,14 +106,6 @@ pub trait DirectGraphStore: GraphStore {
     ) -> Result<(), GraphStoreError> {
         Ok(())
     }
-    async fn set_edge_property_string(
-        &self,
-        _edge_id: u64,
-        _key: &str,
-        _value: &str,
-    ) -> Result<(), GraphStoreError> {
-        Ok(())
-    }
     async fn add_vector(
         &self,
         label: &str,

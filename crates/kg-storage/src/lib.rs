@@ -7,6 +7,7 @@
 //!
 //! See ADR-050 for the full architecture decision.
 
+pub mod contract;
 pub mod error;
 pub mod mock;
 pub mod traits;
