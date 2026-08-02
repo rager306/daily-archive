@@ -81,54 +81,12 @@ pub enum TaskStatus {
     Failed,
 }
 
-/// Retry policy with exponential backoff.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RetryPolicy {
-    /// Initial delay in seconds (default: 1 day = 86400).
-    pub initial_delay: i64,
-    /// Backoff multiplier (default: 3.0 — 1d → 3d → 9d → 27d).
-    pub backoff_multiplier: f64,
-    /// Maximum delay between retries in seconds (default: 30 days).
-    pub max_delay: i64,
-    /// Maximum number of retries before giving up (default: 10).
-    pub max_retries: u32,
-}
+/// Retry policy — re-exported from kg_ontology::retry (M289-u4fzx5/S05).
+pub use kg_ontology::retry::RetryPolicy;
 
-impl Default for RetryPolicy {
-    fn default() -> Self {
-        Self {
-            initial_delay: 86400,    // 1 day
-            backoff_multiplier: 3.0, // 1d → 3d → 9d → 27d
-            max_delay: 30 * 86400,   // 30 days cap
-            max_retries: 10,
-        }
-    }
-}
-
-impl RetryPolicy {
-    /// Calculate next retry timestamp given current retry count.
-    pub fn next_retry_ts(&self, retry_count: u32, now: i64) -> i64 {
-        let delay = self.delay_for_retry(retry_count);
-        now + delay
-    }
-
-    /// Get delay in seconds for a given retry attempt (0-based).
-    pub fn delay_for_retry(&self, retry_count: u32) -> i64 {
-        let base = self.initial_delay as f64;
-        let mult = self.backoff_multiplier.powi(retry_count as i32);
-        let delay = (base * mult) as i64;
-        delay.min(self.max_delay)
-    }
-
-    /// Should we give up on this task?
-    pub fn should_give_up(&self, retry_count: u32) -> bool {
-        retry_count >= self.max_retries
-    }
-
-    /// Is this task due for retry now?
-    pub fn is_due(&self, task: &PendingTask, now: i64) -> bool {
-        task.status == TaskStatus::Pending && task.next_retry <= now
-    }
+/// Is this task due for retry now?
+pub fn is_due(task: &PendingTask, now: i64) -> bool {
+    task.status == TaskStatus::Pending && task.next_retry <= now
 }
 
 impl PendingTask {
@@ -284,10 +242,10 @@ mod tests {
         let task = PendingTask::new_openalex_enrich("2401.00001", &policy, now);
 
         // Not due immediately (next_retry is now + 1 day)
-        assert!(!policy.is_due(&task, now));
+        assert!(!is_due(&task, now));
 
         // Due after 1 day
-        assert!(policy.is_due(&task, now + 86400));
+        assert!(is_due(&task, now + 86400));
     }
 
     #[test]
