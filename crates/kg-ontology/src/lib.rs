@@ -24,6 +24,7 @@ pub mod bitemporal;
 pub mod edge_contract;
 pub mod schema;
 pub mod retry;
+pub mod healing;
 pub mod temporal;
 pub mod vid;
 pub mod validator;

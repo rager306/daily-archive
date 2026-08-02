@@ -1,103 +1,14 @@
 //! Graph healing operations (D135).
 //!
-//! Scenarios for correcting, merging, silencing, and migrating graph nodes.
-//! See doc/GRAPH-HEALING-SCENARIOS.md for the full catalog.
+//! Universal types (HealingOperation, HealingActor, ProvenanceEvent)
+//! re-exported from kg_ontology::healing (M289-u4fzx5/S06).
+//! Project-specific result types (MergeResult, SilenceResult, CorrectResult)
+//! stay here.
+
+// Re-export universal healing types from kg-ontology (ADR-050).
+pub use kg_ontology::healing::{HealingActor, HealingOperation, ProvenanceEvent};
 
 use serde::{Deserialize, Serialize};
-
-/// The type of healing operation performed.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum HealingOperation {
-    /// Fix a wrong property value on a node.
-    Correct,
-    /// Fuse two duplicate entities into one.
-    Merge,
-    /// Split one entity into two.
-    Split,
-    /// Deprecate/quarantine a node (retrieval_eligible=false).
-    Silence,
-    /// Migrate from one taxonomy to another (e.g., Concepts → Topics).
-    Migrate,
-    /// Revert extraction to a previous version.
-    Rollback,
-    /// Fix a wrong citation edge.
-    RepairCites,
-}
-
-impl HealingOperation {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            HealingOperation::Correct => "correct",
-            HealingOperation::Merge => "merge",
-            HealingOperation::Split => "split",
-            HealingOperation::Silence => "silence",
-            HealingOperation::Migrate => "migrate",
-            HealingOperation::Rollback => "rollback",
-            HealingOperation::RepairCites => "repair_cites",
-        }
-    }
-}
-
-/// Who or what initiated the healing operation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum HealingActor {
-    Human(String),
-    Agent(String),
-    System(String),
-}
-
-impl HealingActor {
-    pub fn as_str(&self) -> String {
-        match self {
-            HealingActor::Human(name) => format!("human:{name}"),
-            HealingActor::Agent(name) => format!("agent:{name}"),
-            HealingActor::System(name) => format!("system:{name}"),
-        }
-    }
-}
-
-/// A provenance event recording a healing operation.
-/// Every healing action creates one of these for audit trail.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProvenanceEvent {
-    pub operation: HealingOperation,
-    pub actor: HealingActor,
-    pub timestamp: i64,
-    pub affected_vids: Vec<String>,
-    pub reason: String,
-    /// Key-value changes (property → {old, new}).
-    pub changes: Vec<(String, serde_json::Value, serde_json::Value)>,
-}
-
-impl ProvenanceEvent {
-    pub fn new(
-        operation: HealingOperation,
-        actor: HealingActor,
-        affected_vids: Vec<String>,
-        reason: String,
-    ) -> Self {
-        Self {
-            operation,
-            actor,
-            timestamp: chrono::Utc::now().timestamp(),
-            affected_vids,
-            reason,
-            changes: Vec::new(),
-        }
-    }
-
-    pub fn with_change(
-        mut self,
-        key: &str,
-        old: serde_json::Value,
-        new: serde_json::Value,
-    ) -> Self {
-        self.changes.push((key.to_string(), old, new));
-        self
-    }
-}
 
 /// Result of a merge operation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
