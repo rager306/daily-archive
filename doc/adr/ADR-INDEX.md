@@ -21,6 +21,19 @@ listed here — see `legacy/doc/adr/`.
 | [049](ADR-049-pipeline-dsl-execution-engine.md) | Pipeline DSL and Execution Engine | Proposed | 2026-07-24 |
 | [050](ADR-050-universal-graph-subsystem-kg-crate-family.md) | Universal Graph Subsystem — kg-* Crate Family | Accepted | 2026-07-24 |
 
+## Phase completion status (ADR-050, 2026-08-02)
+
+| Phase | Status | Milestone |
+|-------|--------|----------|
+| A | ✅ DONE | M285-z09px0/S03: da-domain re-exports kg-ontology types |
+| B step 1 | ✅ DONE | M285-z09px0/S05: da-ports re-exports kg-storage traits |
+| B step 2 | ✅ DONE | M285-z09px0/S09: SamyamaGraphStore impl in kg-storage behind feature `samyama` |
+| C | ✅ DONE | kg-embeddings skeleton (Embedder + FdApi + RuVector stub) |
+| D | ✅ DONE | M285-z09px0/S06+S07: YAML ontology export + OntologyRegistry loader |
+| E | ✅ DONE | kg-algorithms (temporal resolution) + kg-pipeline (DSL + execution engine) |
+| F | ✅ DONE | M288-avqgux: YamlSchemaAdapter + validate_node_properties_or_yaml + schema-list --from-yaml |
+| G | DEFERRED | Cross-project reuse validation (needs reactivegraph project) |
+
 ## Supersession chain
 
 ```
