@@ -56,6 +56,11 @@ projects (RuVector, Samyama, grok-build, EdgeQuake, iwe).
 
 ### Testing contour matrix
 
+Two orthogonal axes: **hexagonal layers** (rows) × **test types** (columns).
+Each cell describes what that test type looks like at that layer.
+
+#### Axis 1: Hexagonal layers (7 contours)
+
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │ Contour 7: Architecture Invariant (governor + guardrail) │
@@ -64,15 +69,155 @@ projects (RuVector, Samyama, grok-build, EdgeQuake, iwe).
 ├─────────────────────────────────────────────────────────┤
 │ Contour 5: Adapter Integration (real Samyama, GROBID)    │
 ├─────────────────────────────────────────────────────────┤
-│ Contour 4: Port Contract Suite (GraphStore, Embedder)    │  ← NEW
+│ Contour 4: Port Contract Suite (GraphStore, Embedder)    │
 ├─────────────────────────────────────────────────────────┤
 │ Contour 3: Application Functional (use cases, mock ports)│
 ├─────────────────────────────────────────────────────────┤
 │ Contour 2: Domain Semantic (invariants, property, serde) │
 ├─────────────────────────────────────────────────────────┤
-│ Contour 1: Determinism Infrastructure (Clock, ID, RNG)   │  ← NEW
+│ Contour 1: Determinism Infrastructure (Clock, ID, RNG)   │
 └─────────────────────────────────────────────────────────┘
 ```
+
+#### Axis 2: Test types (8 categories)
+
+| Type | What it verifies | Oracle | Tool | Speed |
+|------|------------------|--------|------|-------|
+| **Unit** | Single function/method/struct | Direct input→output | `#[test]` inline | <1ms |
+| **Property** | Algebraic invariants over random inputs | Metamorphic relation | `proptest!` | ~50ms |
+| **Serde roundtrip** | Wire-format stability | encode→decode≡original | `roundtrip<T>()` macro | <1ms |
+| **Contract** | Trait semantics across all impls | Shared suite | `contract_*.rs` | <10ms |
+| **Integration** | Real external system behaviour | Observable effect | `cargo test` + real deps | ~100ms |
+| **Business logic** | Domain policy/invariant enforcement | Domain expert rule | use-case test | ~50ms |
+| **Mutation** | Test suite catches code mutations | Mutant killed by tests | `cargo-mutants` | ~minutes |
+| **E2E journey** | Full business scenario | Observable result | CLI/HTTP test | ~seconds |
+
+#### Full matrix: layer × type
+
+| Layer | Unit | Property | Serde | Contract | Integration | Business | Mutation | E2E |
+|-------|------|----------|-------|----------|-------------|----------|----------|-----|
+| **1. Determinism** | ✅ Clock/RNG impls | ❌ | ❌ | Clock trait | ❌ | ❌ | ❌ | ❌ |
+| **2. Domain** | ✅ 248 tests | ✅ vid/retry/temporal | ✅ all Serialize types | ❌ | ❌ | ✅ invariants | ✅ domain crates | ❌ |
+| **3. Application** | ✅ use-case methods | ❌ | ❌ | ❌ | ❌ (mock) | ✅ policy enforcement | ✅ application crates | ❌ |
+| **4. Port contract** | ❌ | ❌ | ❌ | ✅ GraphStore/Embedder | ❌ | ❌ | ❌ | ❌ |
+| **5. Adapter** | ❌ | ❌ | ❌ | ✅ (suite re-run) | ✅ Samyama/wiremock | ❌ | ❌ | ❌ |
+| **6. E2E journey** | ❌ | ❌ | ❌ | ❌ | ✅ (real deps) | ✅ scenario oracle | ❌ | ✅ UC1-5 |
+| **7. Architecture** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ governor |
+
+**Legend:** ✅ = required, ❌ = not applicable, blank = optional
+
+#### Priority matrix (what to build first)
+
+| Priority | Test type | Where | Why |
+|----------|-----------|-------|-----|
+| **P0** | Unit (domain) | kg-* + da-domain | Foundation — catches regressions in pure logic |
+| **P0** | Serde roundtrip | kg-ontology public types | Wire-format stability — prevents silent persistence breakage |
+| **P0** | Contract (GraphStore) | kg-storage/tests/ | Mock vs Samyama semantic drift |
+| **P1** | Property | kg-ontology (vid, retry, bitemporal) | Edge cases humans miss |
+| **P1** | Business logic | da-application (extraction, healing) | Policy enforcement (D127, schema, temporal) |
+| **P1** | Mutation (domain) | kg-ontology + da-domain | Test quality — do tests catch real bugs? |
+| **P2** | Integration (wiremock) | da-adapters (GROBID, FdApi) | Real protocol behaviour |
+| **P2** | E2E journey | da-cli/tests/ | End-to-end business value |
+| **P3** | Mutation (application) | da-application | Harder to run, lower ROI |
+| **P3** | Flaky detection | all crates | Governor `--check-flaky N` |
+
+#### Detailed type definitions
+
+**Unit test** — tests a single function, method, or struct in isolation.
+No I/O, no external dependencies. Lives inline (`#[cfg(test)]`) or in
+`tests/` directory. Runs in <1ms.
+
+```rust
+#[test]
+fn test_sha256_vid_produces_hex() {
+    let vid = sha256_vid("paper", "1206.6423");
+    assert_eq!(vid.len(), 64);
+    assert!(vid.chars().all(|c| c.is_ascii_hexdigit()));
+}
+```
+
+**Property test** — verifies an algebraic property holds for ALL inputs
+in a domain, using random generation + shrinking.
+
+```rust
+proptest! {
+    #[test]
+    fn vid_idempotent(prefix: String, key: String) {
+        prop_assert_eq!(sha256_vid(&prefix, &key), sha256_vid(&prefix, &key));
+    }
+}
+```
+
+**Serde roundtrip test** — verifies a type survives serialization and
+deserialization without semantic loss.
+
+```rust
+#[test]
+fn test_temporal_edge_serde_roundtrip() {
+    let edge = TemporalEdge { valid_at: ts(1000), invalid_at: None, ... };
+    roundtrip(&edge);
+}
+```
+
+**Contract test** — a shared suite that verifies trait semantics.
+Runs against every implementation (Mock, Samyama, future RuVector).
+
+```rust
+#[test]
+fn mock_passes_graph_store_contract() {
+    let store = MockGraphStore::new();
+    graph_store_contract_suite(&store);
+}
+```
+
+**Integration test** — tests against a real external system
+(Samyama embedded, GROBID HTTP, FdApi HTTP).
+
+```rust
+#[tokio::test]
+async fn test_samyama_export_import_roundtrip() {
+    let store = SamyamaGraphStore::new();
+    // ... create nodes, export, drop, import, verify
+}
+```
+
+**Business logic test** — verifies a domain policy or business rule is
+enforced correctly.
+
+```rust
+#[test]
+fn test_d127_import_eligible_remains_false() {
+    let violations = validate_node_properties("Paper", &props);
+    assert!(violations.iter().any(|v| v.rule == "import-eligible"));
+}
+```
+
+**Mutation test** — mutates production code and checks if any test
+fails. Surviving mutants indicate weak tests.
+
+```bash
+cargo mutants -p kg-ontology --test-tool=nextest
+```
+
+**E2E journey test** — full business scenario through external interface
+(CLI, HTTP).
+
+```rust
+#[tokio::test]
+async fn uc1_ingest_paper_verify_mentions() {
+    let fx = GraphFixture::with_papers(&["2507.19457"]).await;
+    // ... extract, verify graph state, time-travel query
+}
+```
+
+#### CI execution tiers
+
+| Tier | When | What runs | Budget |
+|------|------|-----------|--------|
+| **PR** | Every push | Unit + Property + Serde + Contract (Mock) | <30s |
+| **Merge** | On merge to main | + Integration (Samyama) + Business logic | <2min |
+| **Nightly** | 1×/day | + Mutation (domain) + E2E journey + Flaky(5) | <15min |
+| **Release** | Pre-release | + Mutation (application) + Crash recovery + Migration upgrade | <30min |
 
 ### Contour 1: Determinism Infrastructure
 
