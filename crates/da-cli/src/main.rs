@@ -146,7 +146,12 @@ enum Commands {
     EdgeContracts,
 
     /// Print all registered node schemas as a markdown table.
-    SchemaList,
+    /// Use --from-yaml to load via OntologyRegistry instead of hardcoded impls.
+    SchemaList {
+        /// Load schemas from data/ontology/node_schemas.yaml via OntologyRegistry.
+        #[arg(long)]
+        from_yaml: bool,
+    },
 
     /// Print the cross-reference registry as a markdown table.
     CrossRefs,
@@ -289,9 +294,21 @@ fn main() {
             println!("# Edge endpoint contracts (ADR-045 Wave G)\n");
             print!("{}", da_domain::edge_contract::render_markdown_table());
         }
-        Commands::SchemaList => {
-            println!("# Node schemas (ADR-040 §11.1)\n");
-            print!("{}", da_domain::schema::render_node_types_table());
+        Commands::SchemaList { from_yaml } => {
+            if from_yaml {
+                println!("# Node schemas (ADR-050 Phase F, loaded from YAML)\n");
+                let schemas = da_domain::yaml_schema_adapter::all_node_schemas_or_yaml();
+                println!("| Label | Required | Optional |\n|-------|----------|----------|");
+                for schema in &schemas {
+                    let required = schema.required_fields().len();
+                    let optional = schema.optional_fields().len();
+                    println!("| {} | {} | {} |", schema.label(), required, optional);
+                }
+                println!("\n_Total: {} schemas_", schemas.len());
+            } else {
+                println!("# Node schemas (ADR-040 §11.1)\n");
+                print!("{}", da_domain::schema::render_node_types_table());
+            }
         }
         Commands::CrossRefs => {
             println!("# Cross-reference registry (ADR-045 Wave F)\n");
