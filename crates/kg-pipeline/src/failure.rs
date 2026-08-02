@@ -57,7 +57,10 @@ mod tests {
     fn test_default_failure_policy_is_retry() {
         let policy = FailurePolicy::default();
         match policy {
-            FailurePolicy::RetryThenAbort { retries, backoff_ms } => {
+            FailurePolicy::RetryThenAbort {
+                retries,
+                backoff_ms,
+            } => {
                 assert_eq!(retries, 3);
                 assert_eq!(backoff_ms, 1000);
             }

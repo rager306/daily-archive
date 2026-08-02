@@ -6,7 +6,7 @@
 //! the universal helper.
 
 // Re-export universal types from kg-ontology (ADR-050).
-pub use kg_ontology::vid::{sha256_vid, sha256_vid2, Vid};
+pub use kg_ontology::vid::{Vid, sha256_vid, sha256_vid2};
 
 /// Compute a Paper VID from arxiv_id.
 pub fn paper_vid(arxiv_id: &str) -> Vid {
@@ -63,7 +63,10 @@ mod tests {
 
     #[test]
     fn test_different_types_different_vid() {
-        assert_ne!(entity_vid("Method", "Transformer"), entity_vid("Model", "Transformer"));
+        assert_ne!(
+            entity_vid("Method", "Transformer"),
+            entity_vid("Model", "Transformer")
+        );
     }
 
     #[test]

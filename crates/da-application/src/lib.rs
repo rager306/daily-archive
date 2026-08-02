@@ -19,3 +19,7 @@ pub mod scheduler;
 pub use scheduler::GraphScheduler;
 pub mod cluster;
 pub use cluster::{ClusterResult, ClusterUseCase};
+pub mod queries;
+pub use queries::{EntityQueries, PaperQueries, RelationQueries};
+pub mod schema_init;
+pub use schema_init::{CURRENT_SCHEMA_VERSION, SchemaInitializer};

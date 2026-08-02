@@ -63,16 +63,11 @@ impl NodeSchemaDef for YamlSchemaAdapter {
         self.optional.clone()
     }
 
-    fn validate(
-        &self,
-        props: &HashMap<String, serde_json::Value>,
-    ) -> Result<(), SchemaError> {
+    fn validate(&self, props: &HashMap<String, serde_json::Value>) -> Result<(), SchemaError> {
         for (name, _fty) in &self.required_fields() {
             match props.get(&name.to_string()) {
                 None => return Err(SchemaError::MissingRequired(name)),
-                Some(serde_json::Value::Null) => {
-                    return Err(SchemaError::MissingRequired(name))
-                }
+                Some(serde_json::Value::Null) => return Err(SchemaError::MissingRequired(name)),
                 _ => {}
             }
         }
@@ -111,18 +106,17 @@ pub fn all_node_schemas_or_yaml() -> Vec<Box<dyn NodeSchemaDef>> {
     if yaml_path.exists()
         && let Ok(registry) = kg_ontology::registry::OntologyRegistry::load_from_file(yaml_path)
     {
-            let schemas: Vec<Box<dyn NodeSchemaDef>> = registry
-                .labels()
-                .into_iter()
-                .filter_map(|label| registry.get_schema(label))
-                .map(|yaml_schema| {
-                    Box::new(YamlSchemaAdapter::from_yaml_schema(yaml_schema))
-                        as Box<dyn NodeSchemaDef>
-                })
-                .collect();
+        let schemas: Vec<Box<dyn NodeSchemaDef>> = registry
+            .labels()
+            .into_iter()
+            .filter_map(|label| registry.get_schema(label))
+            .map(|yaml_schema| {
+                Box::new(YamlSchemaAdapter::from_yaml_schema(yaml_schema)) as Box<dyn NodeSchemaDef>
+            })
+            .collect();
         if !schemas.is_empty() {
-                return schemas;
-            }
+            return schemas;
+        }
     }
     // Fallback: hardcoded schemas.
     crate::schema::all_node_schemas()

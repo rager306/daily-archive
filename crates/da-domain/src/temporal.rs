@@ -16,12 +16,12 @@
 
 // Re-export edge-level temporal types from kg-ontology (ADR-050 Phase A).
 pub use kg_ontology::temporal::{
-    parse_datetime, validate_temporal_edge, RetroactiveExtension, TemporalEdge, OPEN,
+    OPEN, RetroactiveExtension, TemporalEdge, parse_datetime, validate_temporal_edge,
 };
 
 // Re-export node-level bi-temporal helpers from kg-ontology (M289-u4fzx5/S01).
 pub use kg_ontology::bitemporal::{
-    is_active_at, is_current, read_bound, read_datetime, validate_bitemporal, PropertyMap,
+    PropertyMap, is_active_at, is_current, read_bound, read_datetime, validate_bitemporal,
 };
 
 /// Project-specific type alias for backward compatibility.

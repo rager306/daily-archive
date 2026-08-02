@@ -119,7 +119,10 @@ mod tests {
     fn test_healing_actor_as_str() {
         assert_eq!(HealingActor::Human("alice".into()).as_str(), "human:alice");
         assert_eq!(HealingActor::Agent("bot".into()).as_str(), "agent:bot");
-        assert_eq!(HealingActor::System("scheduler".into()).as_str(), "system:scheduler");
+        assert_eq!(
+            HealingActor::System("scheduler".into()).as_str(),
+            "system:scheduler"
+        );
     }
 
     #[test]

@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_delay_for_retry_exponential() {
         let p = RetryPolicy::default();
-        assert_eq!(p.delay_for_retry(0), 86400);  // 1 day
+        assert_eq!(p.delay_for_retry(0), 86400); // 1 day
         assert_eq!(p.delay_for_retry(1), 259200); // 3 days
         assert_eq!(p.delay_for_retry(2), 777600); // 9 days
     }

@@ -218,9 +218,15 @@ mod tests {
 
     #[test]
     fn test_vector_metric_serde_lowercase() {
-        assert_eq!(serde_json::to_string(&VectorMetric::Cosine).unwrap(), "\"cosine\"");
+        assert_eq!(
+            serde_json::to_string(&VectorMetric::Cosine).unwrap(),
+            "\"cosine\""
+        );
         assert_eq!(serde_json::to_string(&VectorMetric::L2).unwrap(), "\"l2\"");
-        assert_eq!(serde_json::to_string(&VectorMetric::Dot).unwrap(), "\"dot\"");
+        assert_eq!(
+            serde_json::to_string(&VectorMetric::Dot).unwrap(),
+            "\"dot\""
+        );
     }
 
     #[test]

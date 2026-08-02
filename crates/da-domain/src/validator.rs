@@ -131,7 +131,10 @@ pub fn validate_node_properties_or_yaml(
         None => {
             violations.push(SchemaViolation::critical_no_field(
                 "schema-registry",
-                format!("Unknown node label '{}' — not in schemas (YAML or hardcoded)", label),
+                format!(
+                    "Unknown node label '{}' — not in schemas (YAML or hardcoded)",
+                    label
+                ),
             ));
             return violations;
         }
@@ -909,7 +912,10 @@ mod yaml_parity_tests {
     fn test_yaml_vs_hardcoded_parity_paper() {
         let mut props: PropertySnapshot = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::Value::String("abc".into()));
-        props.insert("arxiv_id".to_string(), serde_json::Value::String("2507.1".into()));
+        props.insert(
+            "arxiv_id".to_string(),
+            serde_json::Value::String("2507.1".into()),
+        );
 
         let hardcoded = crate::validator::validate_node_properties("Paper", &props);
         let yaml = crate::validator::validate_node_properties_or_yaml("Paper", &props);
@@ -929,7 +935,10 @@ mod yaml_parity_tests {
     fn test_yaml_unknown_label() {
         let props: PropertySnapshot = PropertySnapshot::new();
         let result = crate::validator::validate_node_properties_or_yaml("Nonexistent", &props);
-        assert!(!result.is_empty(), "Unknown label should produce violations");
+        assert!(
+            !result.is_empty(),
+            "Unknown label should produce violations"
+        );
         assert!(
             result.iter().any(|v| v.rule == "schema-registry"),
             "Should have schema-registry violation"
@@ -959,7 +968,9 @@ mod yaml_parity_tests {
         let result = crate::validator::validate_node_properties_or_yaml("Paper", &props);
         assert!(!result.is_empty());
         assert!(
-            result.iter().any(|v| v.rule == "required-field" && v.severity == Severity::Critical),
+            result
+                .iter()
+                .any(|v| v.rule == "required-field" && v.severity == Severity::Critical),
             "Should have critical required-field violation"
         );
     }

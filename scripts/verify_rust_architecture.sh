@@ -12,7 +12,7 @@ KG_CRATES="kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline"
 
 # Packages included in fmt/clippy/test guardrails.
 KG_FMT_PKGS="-p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline"
-DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli"
+DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-adapters -p da-cli"
 
 echo "=== cargo fmt --check (our crates only, kg-* + da-*) ==="
 cargo fmt $KG_FMT_PKGS $DA_FMT_PKGS -- --check
@@ -25,7 +25,7 @@ echo "=== cargo clippy (our crates incl kg-*, no-deps, deny warnings) ==="
 cargo clippy \
   $KG_FMT_PKGS \
   -p da-domain -p da-ports -p da-application \
-  -p da-graph -p da-adapters -p da-cli \
+  -p da-adapters -p da-cli \
   --all-targets --no-deps -- -D warnings
 
 # Helper: grep inside [dependencies] only (prod deps). Use for hexagonal
@@ -65,9 +65,9 @@ for kg in $KG_CRATES; do
     fail=1
     continue
   fi
-  if grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-graph|da-cli'; then
+  if grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-cli'; then
     echo "ERROR: $kg must not depend on da-* crates (ADR-050 universal invariant)"
-    grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-graph|da-cli'
+    grep_deps "$toml" 'da-domain|da-ports|da-application|da-adapters|da-cli'
     fail=1
   else
     echo "  $kg: OK (no da-* deps)"
@@ -95,13 +95,6 @@ else
   echo "  da-application: OK (no da-adapters in prod deps; dev-deps allowed for tests)"
 fi
 
-if grep_deps_prod crates/da-graph/Cargo.toml 'da-adapters'; then
-  echo "ERROR: da-graph must not depend on da-adapters (hexagonal violation)"
-  fail=1
-else
-  echo "  da-graph: OK (no da-adapters in prod deps; dev-deps allowed for tests)"
-fi
-
 echo "=== unit tests (per-package, avoids rocksdb test-profile rebuild hang) ==="
 cargo test -p kg-ontology --lib
 cargo test -p kg-storage --lib
@@ -109,7 +102,6 @@ cargo test -p kg-embeddings --lib
 cargo test -p kg-algorithms --lib
 cargo test -p kg-pipeline --lib
 cargo test -p da-domain --lib
-cargo test -p da-graph --lib
 cargo test -p da-application --tests
 cargo test -p da-adapters --lib
 

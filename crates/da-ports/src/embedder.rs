@@ -3,4 +3,4 @@
 //! Universal Embedder trait + EmbedderError live in kg-embeddings
 //! (no da-* deps). This module re-exports for backward compatibility.
 
-pub use kg_embeddings::embedder::{Embedder, EmbedderError, EmbedResult};
+pub use kg_embeddings::embedder::{EmbedResult, Embedder, EmbedderError};

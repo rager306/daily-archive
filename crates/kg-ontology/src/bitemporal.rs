@@ -154,7 +154,10 @@ mod tests {
     use serde_json::json;
 
     fn map(pairs: &[(&str, serde_json::Value)]) -> PropertyMap {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect()
     }
 
     #[test]
@@ -220,7 +223,11 @@ mod tests {
             ("valid_to", json!(1_700_000_000_i64)),
         ]);
         let issues = validate_bitemporal(&props);
-        assert!(issues.iter().any(|s| s.contains("valid_from") && s.contains("valid_to")));
+        assert!(
+            issues
+                .iter()
+                .any(|s| s.contains("valid_from") && s.contains("valid_to"))
+        );
     }
 
     #[test]

@@ -512,7 +512,7 @@ async fn graph_stats() {
 }
 
 async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
-    use da_graph::{EntityQueries, PaperQueries};
+    use da_application::{EntityQueries, PaperQueries};
 
     // Build the Cypher via da-graph query builders
     let cypher = match kind {
@@ -661,7 +661,7 @@ fn schema_init(dimensions: usize) {
     println!("daily-archive v2 — schema initialization");
     println!(
         "  Schema version: {}",
-        da_graph::schema::CURRENT_SCHEMA_VERSION
+        da_application::schema_init::CURRENT_SCHEMA_VERSION
     );
 
     // Property indexes: (label, property)

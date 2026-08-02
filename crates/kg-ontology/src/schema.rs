@@ -66,19 +66,44 @@ pub struct Field {
 
 impl Field {
     pub fn string(name: &'static str) -> Self {
-        Self { name, field_type: FieldType::String, required: true, default: None }
+        Self {
+            name,
+            field_type: FieldType::String,
+            required: true,
+            default: None,
+        }
     }
     pub fn integer(name: &'static str) -> Self {
-        Self { name, field_type: FieldType::Integer, required: true, default: None }
+        Self {
+            name,
+            field_type: FieldType::Integer,
+            required: true,
+            default: None,
+        }
     }
     pub fn float(name: &'static str) -> Self {
-        Self { name, field_type: FieldType::Float, required: true, default: None }
+        Self {
+            name,
+            field_type: FieldType::Float,
+            required: true,
+            default: None,
+        }
     }
     pub fn boolean(name: &'static str) -> Self {
-        Self { name, field_type: FieldType::Boolean, required: true, default: None }
+        Self {
+            name,
+            field_type: FieldType::Boolean,
+            required: true,
+            default: None,
+        }
     }
     pub fn datetime(name: &'static str) -> Self {
-        Self { name, field_type: FieldType::DateTime, required: true, default: None }
+        Self {
+            name,
+            field_type: FieldType::DateTime,
+            required: true,
+            default: None,
+        }
     }
 }
 
@@ -97,10 +122,7 @@ pub trait NodeSchemaDef {
     }
 
     /// Validate a property map against this schema.
-    fn validate(
-        &self,
-        props: &HashMap<String, serde_json::Value>,
-    ) -> Result<(), SchemaError> {
+    fn validate(&self, props: &HashMap<String, serde_json::Value>) -> Result<(), SchemaError> {
         for (name, _fty) in self.required_fields() {
             match props.get(&name.to_string()) {
                 None => return Err(SchemaError::MissingRequired(name)),
@@ -118,7 +140,9 @@ mod tests {
 
     struct TestSchema;
     impl NodeSchemaDef for TestSchema {
-        fn label(&self) -> &'static str { "Test" }
+        fn label(&self) -> &'static str {
+            "Test"
+        }
         fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
             vec![("vid", FieldType::String)]
         }
