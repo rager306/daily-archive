@@ -32,6 +32,19 @@ universal graph capabilities live in kg-*, project-specific in da-*).
   sha256_vid2(prefix, key1, key2) (6 tests).
 - da-domain functions (paper_vid, author_vid, etc.) call universal helpers.
 
+#### S05 — RetryPolicy
+
+- `kg_ontology::retry`: RetryPolicy struct with delay_for_retry,
+  should_retry, should_give_up, next_retry_ts, fast() (7 tests).
+- da-domain re-exports; scheduler is_due() converted to free function.
+
+#### S06 — HealingOperation + ProvenanceEvent
+
+- `kg_ontology::healing`: HealingOperation (7 variants), HealingActor
+  (3 variants), ProvenanceEvent struct with new() + with_change()
+  (5 tests).
+- da-domain re-exports; project-specific result types stay.
+
 ### M288-avqgux — Phase F: data-driven NodeSchemaDef (2026-08-02)
 
 Phase F step 3 ADR-050: opt-in YAML-driven validator functions.
