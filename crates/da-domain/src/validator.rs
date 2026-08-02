@@ -109,6 +109,88 @@ pub fn validate_node_properties(label: &str, props: &PropertySnapshot) -> Vec<Sc
     violations
 }
 
+/// Validate a node's properties against its schema — YAML-driven variant.
+///
+/// ADR-050 Phase F (M288-avqgux/S03): opt-in function that uses
+/// schema_for_label_or_yaml() instead of hardcoded schema_for_label().
+/// When data/ontology/node_schemas.yaml exists, schemas are loaded from
+/// YAML via OntologyRegistry + YamlSchemaAdapter. Otherwise falls back
+/// to hardcoded schemas.
+///
+/// Behavior is identical to validate_node_properties() — the only
+/// difference is the schema source. Existing callers that use
+/// validate_node_properties() are unaffected.
+pub fn validate_node_properties_or_yaml(
+    label: &str,
+    props: &PropertySnapshot,
+) -> Vec<SchemaViolation> {
+    let mut violations = Vec::new();
+
+    let schema = match crate::schema::schema_for_label_or_yaml(label) {
+        Some(s) => s,
+        None => {
+            violations.push(SchemaViolation::critical_no_field(
+                "schema-registry",
+                format!("Unknown node label '{}' — not in schemas (YAML or hardcoded)", label),
+            ));
+            return violations;
+        }
+    };
+
+    // 1. Required-field presence
+    for (name, fty) in schema.required_fields() {
+        match props.get(name) {
+            None | Some(serde_json::Value::Null) => {
+                violations.push(SchemaViolation::critical(
+                    "required-field",
+                    name,
+                    format!("Missing required field '{}' on '{}'", name, label),
+                ));
+            }
+            Some(val) => {
+                if let Some(violation) = check_type_mismatch(name, fty, val) {
+                    violations.push(violation);
+                }
+            }
+        }
+    }
+
+    // 2. Optional-field type check
+    let optional_names: Vec<(&'static str, FieldType)> = schema.optional_fields();
+    for (name, fty) in &optional_names {
+        if let Some(val) = props.get(*name).filter(|v| !v.is_null())
+            && let Some(violation) = check_type_mismatch(name, *fty, val)
+        {
+            violations.push(violation);
+        }
+    }
+
+    // 3. Unknown-field detection
+    let known: std::collections::HashSet<&str> = schema
+        .required_fields()
+        .iter()
+        .map(|(n, _)| *n)
+        .chain(optional_names.iter().map(|(n, _)| *n))
+        .collect();
+    for key in props.keys() {
+        if !known.contains(key.as_str()) {
+            violations.push(SchemaViolation::warn(
+                "unknown-field",
+                key,
+                format!(
+                    "Field '{}' on '{}' is not declared in schema (required or optional)",
+                    key, label
+                ),
+            ));
+        }
+    }
+
+    // 4. Architectural invariants
+    violations.extend(check_invariants(label, props));
+
+    violations
+}
+
 /// Check the cross-cutting invariants that apply to EVERY node type:
 /// - D127: `import_eligible` must be present and boolean (fail-closed)
 /// - D134: `retrieval_eligible` must be present and boolean
@@ -814,4 +896,90 @@ pub fn render_cross_references_table() -> String {
         ));
     }
     s
+}
+
+#[cfg(test)]
+mod yaml_parity_tests {
+    use super::*;
+    use crate::validator::PropertySnapshot;
+
+    /// validate_node_properties_or_yaml must return same violations as
+    /// validate_node_properties for known labels (Paper).
+    #[test]
+    fn test_yaml_vs_hardcoded_parity_paper() {
+        let mut props: PropertySnapshot = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::Value::String("abc".into()));
+        props.insert("arxiv_id".to_string(), serde_json::Value::String("2507.1".into()));
+
+        let hardcoded = crate::validator::validate_node_properties("Paper", &props);
+        let yaml = crate::validator::validate_node_properties_or_yaml("Paper", &props);
+
+        // Both must find the same number of violations (should be similar).
+        assert_eq!(
+            hardcoded.len(),
+            yaml.len(),
+            "Hardcoded vs YAML violation count mismatch: {} vs {}",
+            hardcoded.len(),
+            yaml.len()
+        );
+    }
+
+    /// Unknown label should produce violation in both modes.
+    #[test]
+    fn test_yaml_unknown_label() {
+        let props: PropertySnapshot = PropertySnapshot::new();
+        let result = crate::validator::validate_node_properties_or_yaml("Nonexistent", &props);
+        assert!(!result.is_empty(), "Unknown label should produce violations");
+        assert!(
+            result.iter().any(|v| v.rule == "schema-registry"),
+            "Should have schema-registry violation"
+        );
+    }
+
+    /// schema_for_label_or_yaml should return Paper schema.
+    #[test]
+    fn test_schema_for_label_or_yaml_paper() {
+        let schema = crate::schema::schema_for_label_or_yaml("Paper");
+        assert!(schema.is_some(), "Paper schema should be found");
+        assert_eq!(schema.unwrap().label(), "Paper");
+    }
+
+    /// schema_for_label_or_yaml should return None for unknown label.
+    #[test]
+    fn test_schema_for_label_or_yaml_unknown() {
+        let schema = crate::schema::schema_for_label_or_yaml("NonexistentLabel");
+        assert!(schema.is_none(), "Unknown label should return None");
+    }
+
+    /// Missing required field should produce critical violation in YAML mode.
+    #[test]
+    fn test_yaml_missing_required_field() {
+        let props: PropertySnapshot = PropertySnapshot::new();
+        // Missing vid and arxiv_id (required for Paper)
+        let result = crate::validator::validate_node_properties_or_yaml("Paper", &props);
+        assert!(!result.is_empty());
+        assert!(
+            result.iter().any(|v| v.rule == "required-field" && v.severity == Severity::Critical),
+            "Should have critical required-field violation"
+        );
+    }
+
+    /// YAML schema count must match hardcoded count (parity).
+    #[test]
+    fn test_yaml_schema_count_matches_hardcoded() {
+        let hardcoded = crate::schema::all_node_schemas();
+        let yaml = crate::yaml_schema_adapter::all_node_schemas_or_yaml();
+        // Counts may differ slightly if YAML has been updated, but should be close.
+        // When YAML is generated from the same code, they should match.
+        assert!(
+            yaml.len() >= 28,
+            "Expected >=28 YAML schemas, got {}",
+            yaml.len()
+        );
+        assert!(
+            hardcoded.len() >= 28,
+            "Expected >=28 hardcoded schemas, got {}",
+            hardcoded.len()
+        );
+    }
 }

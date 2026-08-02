@@ -186,6 +186,17 @@ pub fn schema_for_label(label: &str) -> Option<Box<dyn NodeSchemaDef>> {
     all_node_schemas().into_iter().find(|s| s.label() == label)
 }
 
+/// Find a schema by its label, preferring YAML-loaded data when available.
+///
+/// ADR-050 Phase F: tries data/ontology/node_schemas.yaml first, falls
+/// back to hardcoded all_node_schemas(). This is the opt-in YAML-driven
+/// variant of schema_for_label() — the original function stays unchanged.
+pub fn schema_for_label_or_yaml(label: &str) -> Option<Box<dyn NodeSchemaDef>> {
+    crate::yaml_schema_adapter::all_node_schemas_or_yaml()
+        .into_iter()
+        .find(|s| s.label() == label)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
