@@ -172,6 +172,14 @@ enum Commands {
         #[arg(long)]
         label: String,
     },
+
+    /// Export all node schemas to YAML (ADR-050 Phase D). Generates
+    /// data/ontology/node_schemas.yaml from all_node_schemas().
+    OntologyExport {
+        /// Output directory (default: data/ontology/)
+        #[arg(long, default_value = "data/ontology")]
+        output: String,
+    },
 }
 
 fn main() {
@@ -299,6 +307,10 @@ fn main() {
         }
         Commands::ValidateNode { label } => {
             validate_node_stdin(label);
+        }
+
+        Commands::OntologyExport { output } => {
+            export_ontology_yaml(&output);
         }
     }
 }
@@ -1242,6 +1254,66 @@ fn audit_fields() {
         println!("required_fields() or optional_fields() in crates/da-domain/src/.");
         std::process::exit(1);
     }
+}
+
+/// Export all node schemas to YAML (ADR-050 Phase D).
+///
+/// Iterates `all_node_schemas()`, builds a serializable struct per
+/// schema, writes to `<output_dir>/node_schemas.yaml`.
+fn export_ontology_yaml(output_dir: &str) {
+    use serde::Serialize;
+    use std::collections::BTreeMap;
+
+    #[derive(Serialize)]
+    struct FieldDef {
+        name: String,
+        field_type: String,
+    }
+
+    #[derive(Serialize)]
+    struct YamlNodeSchema {
+        label: String,
+        required_fields: Vec<FieldDef>,
+        optional_fields: Vec<FieldDef>,
+    }
+
+    let schemas: Vec<YamlNodeSchema> = da_domain::schema::all_node_schemas()
+        .into_iter()
+        .map(|s| YamlNodeSchema {
+            label: s.label().to_string(),
+            required_fields: s
+                .required_fields()
+                .into_iter()
+                .map(|(name, fty)| FieldDef {
+                    name: name.to_string(),
+                    field_type: format!("{:?}", fty),
+                })
+                .collect(),
+            optional_fields: s
+                .optional_fields()
+                .into_iter()
+                .map(|(name, fty)| FieldDef {
+                    name: name.to_string(),
+                    field_type: format!("{:?}", fty),
+                })
+                .collect(),
+        })
+        .collect();
+
+    let mut root: BTreeMap<&str, Vec<YamlNodeSchema>> = BTreeMap::new();
+    root.insert("node_schemas", schemas);
+
+    let yaml = serde_yaml::to_string(&root).expect("YAML serialize failed");
+    let output_path = std::path::Path::new(output_dir);
+    std::fs::create_dir_all(output_path).expect("create_dir_all failed");
+    let yaml_path = output_path.join("node_schemas.yaml");
+    std::fs::write(&yaml_path, &yaml).expect("write failed");
+
+    eprintln!(
+        "ontology export: {} schemas → {}",
+        root["node_schemas"].len(),
+        yaml_path.display()
+    );
 }
 
 /// Validate the live graph against the schema registry.

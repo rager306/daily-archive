@@ -1,0 +1,876 @@
+node_schemas:
+- label: Paper
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: arxiv_id
+    field_type: String
+  - name: title
+    field_type: String
+  - name: valid_from
+    field_type: DateTime
+  optional_fields:
+  - name: abstract_text
+    field_type: String
+  - name: doi
+    field_type: String
+  - name: pdf_hash
+    field_type: String
+  - name: section_count
+    field_type: Integer
+  - name: citation_count
+    field_type: Integer
+  - name: scientific_domains
+    field_type: String
+  - name: primary_scientific_domain
+    field_type: String
+  - name: domain_assignment_method
+    field_type: String
+  - name: valid_to
+    field_type: DateTime
+  - name: superseded_by
+    field_type: String
+  - name: evidence_ready
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: Section
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: title
+    field_type: String
+  - name: level
+    field_type: Integer
+  - name: order
+    field_type: Integer
+  - name: work_vid
+    field_type: String
+  optional_fields:
+  - name: text
+    field_type: String
+  - name: char_count
+    field_type: Integer
+  - name: embedding
+    field_type: Vector
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: Author
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: name
+    field_type: String
+  optional_fields:
+  - name: orcid
+    field_type: String
+  - name: openalex_id
+    field_type: String
+  - name: works_count
+    field_type: Integer
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: valid_from
+    field_type: DateTime
+- label: Institution
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: name
+    field_type: String
+  optional_fields:
+  - name: country
+    field_type: String
+  - name: ror
+    field_type: String
+  - name: openalex_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: openalex_pending
+    field_type: Boolean
+- label: Concept
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: label
+    field_type: String
+  - name: level
+    field_type: Integer
+  - name: retrieval_eligible
+    field_type: Boolean
+  optional_fields:
+  - name: wikidata
+    field_type: String
+  - name: openalex_id
+    field_type: String
+  - name: works_count
+    field_type: Integer
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: Topic
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: label
+    field_type: String
+  optional_fields:
+  - name: domain
+    field_type: String
+  - name: field
+    field_type: String
+  - name: subfield
+    field_type: String
+  - name: openalex_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: valid_from
+    field_type: DateTime
+- label: Category
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: code
+    field_type: String
+  - name: is_primary
+    field_type: Boolean
+  optional_fields:
+  - name: name
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: citation_count
+    field_type: Integer
+  - name: section_count
+    field_type: Integer
+- label: Reference
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: raw_text
+    field_type: String
+  optional_fields:
+  - name: arxiv_id
+    field_type: String
+  - name: doi
+    field_type: String
+  - name: title
+    field_type: String
+  - name: resolved_work_vid
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: valid_from
+    field_type: DateTime
+- label: Citation
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: valid_from
+    field_type: DateTime
+  optional_fields:
+  - name: arxiv_id
+    field_type: String
+  - name: title
+    field_type: String
+  - name: doi
+    field_type: String
+  - name: schema_version
+    field_type: Integer
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+- label: Entity
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: label
+    field_type: String
+  - name: entity_type
+    field_type: String
+  optional_fields:
+  - name: section
+    field_type: String
+  - name: char_start
+    field_type: Integer
+  - name: char_end
+    field_type: Integer
+  - name: surface
+    field_type: String
+  - name: description
+    field_type: String
+  - name: confidence
+    field_type: Float
+  - name: valid_from
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+  - name: evidence_ready
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: deprecated_reason
+    field_type: String
+  - name: last_healed_at
+    field_type: DateTime
+  - name: embedding
+    field_type: Vector
+  - name: domain_tags
+    field_type: String
+- label: Source
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: code
+    field_type: String
+  - name: source_type
+    field_type: String
+  - name: domain
+    field_type: String
+  optional_fields:
+  - name: reliability_tier
+    field_type: Integer
+  - name: access_method
+    field_type: String
+  - name: base_url
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: valid_from
+    field_type: DateTime
+  - name: domain_assignment_method
+    field_type: String
+  - name: primary_scientific_domain
+    field_type: String
+  - name: scientific_domains
+    field_type: String
+- label: SchedulerTask
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: arxiv_id
+    field_type: String
+  - name: task_type
+    field_type: String
+  - name: status
+    field_type: String
+  optional_fields:
+  - name: retry_count
+    field_type: Integer
+  - name: next_retry
+    field_type: DateTime
+  - name: added_at
+    field_type: DateTime
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: ConceptCluster
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: label
+    field_type: String
+  - name: cluster_type
+    field_type: String
+  optional_fields:
+  - name: description
+    field_type: String
+  - name: member_count
+    field_type: Integer
+  - name: embedding
+    field_type: Vector
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: EvidenceBundle
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: bundle_type
+    field_type: String
+  optional_fields:
+  - name: normalized_text
+    field_type: String
+  - name: source_span_id
+    field_type: String
+  - name: document_id
+    field_type: String
+  - name: section_id
+    field_type: String
+  - name: extraction_confidence
+    field_type: Float
+  - name: verification_status
+    field_type: String
+  - name: artifact_hash
+    field_type: String
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: recorded_at
+    field_type: DateTime
+  - name: superseded_at
+    field_type: DateTime
+- label: Claim
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: text
+    field_type: String
+  optional_fields:
+  - name: claim_type
+    field_type: String
+  - name: modality
+    field_type: String
+  - name: scope
+    field_type: String
+  - name: valid_time
+    field_type: DateTime
+  - name: source_span_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: recorded_at
+    field_type: DateTime
+  - name: superseded_at
+    field_type: DateTime
+- label: ResearchProblem
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: text
+    field_type: String
+  - name: problem_type
+    field_type: String
+  optional_fields:
+  - name: parent_problem_id
+    field_type: String
+  - name: domain_pack_id
+    field_type: String
+  - name: source_span_id
+    field_type: String
+  - name: evidence_bundle_id
+    field_type: String
+  - name: origin
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+- label: ResearchEnvironment
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: completeness
+    field_type: String
+  - name: research_problem_id
+    field_type: String
+  - name: baseline_ref
+    field_type: String
+  - name: subject_system
+    field_type: String
+  - name: subject_system_kind
+    field_type: String
+  - name: environment_template_id
+    field_type: String
+  - name: evidence_origin
+    field_type: String
+  optional_fields:
+  - name: environment_hash
+    field_type: String
+  - name: input_data_refs
+    field_type: String
+  - name: eval_data_refs
+    field_type: String
+  - name: protocol_ref
+    field_type: String
+  - name: metric_definition_ids
+    field_type: String
+  - name: objective_function
+    field_type: String
+  - name: compute_budget
+    field_type: Float
+  - name: wall_clock_budget
+    field_type: Integer
+  - name: sample_size_budget
+    field_type: Integer
+  - name: hardware_or_lab_profile
+    field_type: String
+  - name: allowed_change_scope
+    field_type: String
+  - name: protected_eval_artifacts
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+- label: BaselineSnapshot
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: artifact_ref_id
+    field_type: String
+  - name: description
+    field_type: String
+  - name: baseline_type
+    field_type: String
+  optional_fields:
+  - name: performance_ref
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+- label: ResearchIdea
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: text
+    field_type: String
+  - name: idea_type
+    field_type: String
+  - name: research_problem_id
+    field_type: String
+  - name: proposed_at
+    field_type: DateTime
+  - name: proposed_by
+    field_type: String
+  - name: status
+    field_type: String
+  optional_fields:
+  - name: search_campaign_id
+    field_type: String
+  - name: source_span_id
+    field_type: String
+  - name: origin
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+- label: Hypothesis
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: text
+    field_type: String
+  - name: environment_id
+    field_type: String
+  - name: metric_definition_id
+    field_type: String
+  - name: direction
+    field_type: String
+  - name: research_idea_id
+    field_type: String
+  optional_fields:
+  - name: expected_effect_size
+    field_type: Float
+  - name: confidence_prior
+    field_type: Float
+  - name: source_span_id
+    field_type: String
+  - name: origin
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: schema_version
+    field_type: Integer
+- label: Intervention
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: target_component
+    field_type: String
+  - name: change_type
+    field_type: String
+  - name: change_scope
+    field_type: String
+  optional_fields:
+  - name: parameter_before
+    field_type: String
+  - name: parameter_after
+    field_type: String
+  - name: implementation_artifact_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: InterventionBundle
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: recipe_kind
+    field_type: String
+  optional_fields:
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: ImplementationAttempt
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: research_idea_id
+    field_type: String
+  - name: attempt_number
+    field_type: Integer
+  - name: status
+    field_type: String
+  optional_fields:
+  - name: artifact_version_id
+    field_type: String
+  - name: failure_event_id
+    field_type: String
+  - name: patch_diff_ref
+    field_type: String
+  - name: repair_attempts
+    field_type: Integer
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: ArtifactVersion
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: content_hash
+    field_type: String
+  - name: artifact_kind
+    field_type: String
+  - name: uri
+    field_type: String
+  - name: immutable
+    field_type: Boolean
+  optional_fields:
+  - name: path
+    field_type: String
+  - name: line_start
+    field_type: Integer
+  - name: line_end
+    field_type: Integer
+  - name: parent_artifact_id
+    field_type: String
+  - name: created_at
+    field_type: DateTime
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: ExperimentRun
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: environment_id
+    field_type: String
+  - name: artifact_version_id
+    field_type: String
+  - name: run_type
+    field_type: String
+  - name: status
+    field_type: String
+  optional_fields:
+  - name: intervention_bundle_id
+    field_type: String
+  - name: started_at
+    field_type: DateTime
+  - name: finished_at
+    field_type: DateTime
+  - name: wall_clock_sec
+    field_type: Integer
+  - name: seed
+    field_type: String
+  - name: preregistered
+    field_type: Boolean
+  - name: hypothesis_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: MetricDefinition
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: name
+    field_type: String
+  - name: direction
+    field_type: String
+  - name: split
+    field_type: String
+  - name: computation_protocol
+    field_type: String
+  optional_fields:
+  - name: unit
+    field_type: String
+  - name: metric_code_artifact_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: MetricObservation
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: run_id
+    field_type: String
+  - name: metric_definition_id
+    field_type: String
+  - name: value
+    field_type: Float
+  optional_fields:
+  - name: std_dev
+    field_type: Float
+  - name: n_seeds
+    field_type: Integer
+  - name: logged_artifact_id
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+  - name: document_id
+    field_type: String
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: recorded_at
+    field_type: DateTime
+  - name: superseded_at
+    field_type: DateTime
+- label: ResultComparison
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: candidate_observation_id
+    field_type: String
+  - name: baseline_observation_id
+    field_type: String
+  - name: environment_id
+    field_type: String
+  - name: valid
+    field_type: Boolean
+  optional_fields:
+  - name: absolute_delta
+    field_type: Float
+  - name: relative_delta
+    field_type: Float
+  - name: significance_test
+    field_type: String
+  - name: p_value
+    field_type: Float
+  - name: confidence_interval_low
+    field_type: Float
+  - name: confidence_interval_high
+    field_type: Float
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: FailureEvent
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: stage
+    field_type: String
+  - name: class
+    field_type: String
+  - name: recoverable
+    field_type: Boolean
+  - name: error_signature
+    field_type: String
+  optional_fields:
+  - name: log_ref_id
+    field_type: String
+  - name: artifact_version_id
+    field_type: String
+  - name: environment_id
+    field_type: String
+  - name: repair_attempt_count
+    field_type: Integer
+  - name: resolved_by
+    field_type: String
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: Conflict
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: kind
+    field_type: String
+  - name: field
+    field_type: String
+  - name: status
+    field_type: String
+  - name: severity
+    field_type: String
+  - name: detected_at
+    field_type: DateTime
+  optional_fields:
+  - name: resolution_strategy
+    field_type: String
+  - name: resolution_value
+    field_type: String
+  - name: resolved_at
+    field_type: DateTime
+  - name: valid_from
+    field_type: DateTime
+  - name: valid_to
+    field_type: DateTime
+  - name: recorded_at
+    field_type: DateTime
+  - name: superseded_at
+    field_type: DateTime
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
+- label: Decision
+  required_fields:
+  - name: vid
+    field_type: String
+  - name: category
+    field_type: String
+  - name: scenario
+    field_type: String
+  - name: reasoning
+    field_type: String
+  - name: outcome
+    field_type: String
+  - name: confidence
+    field_type: Float
+  - name: decision_maker
+    field_type: String
+  - name: valid_from
+    field_type: DateTime
+  - name: recorded_at
+    field_type: DateTime
+  optional_fields:
+  - name: policy_id
+    field_type: String
+  - name: valid_to
+    field_type: DateTime
+  - name: superseded_at
+    field_type: DateTime
+  - name: reasoning_embedding
+    field_type: Vector
+  - name: retrieval_eligible
+    field_type: Boolean
+  - name: import_eligible
+    field_type: Boolean
+  - name: schema_version
+    field_type: Integer
