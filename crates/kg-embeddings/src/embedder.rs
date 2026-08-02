@@ -29,3 +29,26 @@ pub trait Embedder: Send + Sync {
 
     fn model_id(&self) -> &str;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// EmbedderError Display formats correctly.
+    #[test]
+    fn test_embedder_error_display() {
+        let e = EmbedderError::EmbedFailed("timeout".into());
+        assert_eq!(format!("{e}"), "Embedding failed: timeout");
+
+        let e2 = EmbedderError::Unavailable("service down".into());
+        assert_eq!(format!("{e2}"), "Service unavailable: service down");
+    }
+
+    /// EmbedderError variants are Debug-printable.
+    #[test]
+    fn test_embedder_error_debug() {
+        let e = EmbedderError::EmbedFailed("err".into());
+        let s = format!("{e:?}");
+        assert!(s.contains("EmbedFailed"));
+    }
+}
