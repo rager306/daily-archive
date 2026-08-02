@@ -13,13 +13,27 @@
 //! Phase 1 (this module): helpers operate on PropertySnapshot from the
 //! validator module. No storage changes. Fact-bearing schemas declare
 //! the four fields as optional; existing writes are unaffected.
+//!
+//! # Universal types (ADR-050 Phase A re-export)
+//!
+//! The edge-level temporal model (`TemporalEdge`, `RetroactiveExtension`,
+//! `validate_temporal_edge`, `parse_datetime`, `OPEN`) lives in
+//! [`kg_ontology::temporal`] (universal crate). This module re-exports
+//! those types so callers can reach them through `da_domain::temporal`
+//! and keeps the node-level bi-temporal helpers (which work on
+//! `PropertySnapshot`) that are specific to da-domain.
+
+// Re-export universal edge-level temporal types from kg-ontology (ADR-050 Phase A).
+pub use kg_ontology::temporal::{
+    RetroactiveExtension, TemporalEdge, parse_datetime, validate_temporal_edge,
+};
 
 use crate::validator::PropertySnapshot;
 
 /// Sentinel string value for open temporal bounds (valid_to, superseded_at).
-/// Matches Semantica's TemporalBound::OPEN convention; serializable in
-/// Samyama's schemaless store.
-pub const OPEN: &str = "OPEN";
+/// Re-exported from kg-ontology for source compatibility — new code should
+/// import `OPEN` from `kg_ontology::temporal` directly.
+pub use kg_ontology::temporal::OPEN;
 
 /// Parse a DateTime from a property snapshot field. Returns None if the
 /// field is missing, null, empty, or the OPEN sentinel.

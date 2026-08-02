@@ -17,75 +17,25 @@
 //!   - [`validate_edge_type`] for edge-type registry check
 //! - [`Severity::Critical`] for missing required fields / broken invariants
 //! - [`Severity::Warning`] for type mismatches / suspicious patterns
+//!
+//! # Universal types (ADR-050 Phase A re-export)
+//!
+//! The type definitions of `Severity`, `Violation`, `PropertySnapshot`,
+//! and the `format_violations` helper live in [`kg_ontology::validator`]
+//! (universal crate, no da-* deps). This module re-exports them so
+//! existing callers (`da_domain::validator::Severity` etc.) keep working.
+//! The legacy alias `SchemaViolation = Violation` preserves the
+//! pre-migration type name.
+
+// Re-export universal validator types from kg-ontology (ADR-050 Phase A).
+pub use kg_ontology::validator::{PropertySnapshot, Severity, Violation, format_violations};
+
+/// Legacy alias for the pre-migration type name. New code should use
+/// [`Violation`] directly; this alias exists so existing call sites in
+/// da-cli and da-application tests keep compiling without churn.
+pub type SchemaViolation = Violation;
 
 use crate::schema::{FieldType, schema_for_label};
-use std::collections::HashMap;
-
-/// Severity of a schema violation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Severity {
-    /// Missing required field, broken architectural invariant (D127/D134),
-    /// or unknown node label. Must be fixed.
-    Critical,
-    /// Type mismatch, unknown optional field, or suspicious pattern.
-    /// May indicate drift between schema and pipeline.
-    Warning,
-}
-
-impl Severity {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Severity::Critical => "CRITICAL",
-            Severity::Warning => "WARNING",
-        }
-    }
-}
-
-/// One rule violation found by the validator.
-#[derive(Debug, Clone, PartialEq)]
-pub struct SchemaViolation {
-    pub severity: Severity,
-    pub rule: String,
-    pub field: Option<String>,
-    pub message: String,
-}
-
-impl SchemaViolation {
-    fn critical(
-        rule: impl Into<String>,
-        field: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
-        Self {
-            severity: Severity::Critical,
-            rule: rule.into(),
-            field: Some(field.into()),
-            message: message.into(),
-        }
-    }
-
-    fn warn(rule: impl Into<String>, field: impl Into<String>, message: impl Into<String>) -> Self {
-        Self {
-            severity: Severity::Warning,
-            rule: rule.into(),
-            field: Some(field.into()),
-            message: message.into(),
-        }
-    }
-
-    fn critical_no_field(rule: impl Into<String>, message: impl Into<String>) -> Self {
-        Self {
-            severity: Severity::Critical,
-            rule: rule.into(),
-            field: None,
-            message: message.into(),
-        }
-    }
-}
-
-/// A snapshot of one node's properties for validation.
-/// Uses a JSON value map to match the existing `NodeSchemaDef::validate` signature.
-pub type PropertySnapshot = HashMap<String, serde_json::Value>;
 
 /// Validate one node's property snapshot against its declared schema.
 ///
@@ -332,24 +282,7 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
 }
 
 /// Format a list of violations for human-readable output.
-pub fn format_violations(violations: &[SchemaViolation]) -> String {
-    if violations.is_empty() {
-        return "OK — no violations".to_string();
-    }
-    let mut s = String::new();
-    for v in violations {
-        let field = v.field.as_deref().unwrap_or("-");
-        s.push_str(&format!(
-            "[{}] rule={} field={} :: {}\n",
-            v.severity.as_str(),
-            v.rule,
-            field,
-            v.message
-        ));
-    }
-    s
-}
-
+/// Re-exported from kg-ontology; see the re-export at the top of this module.
 #[cfg(test)]
 mod tests {
     use super::*;
