@@ -40,25 +40,4 @@ pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 
 // schema_inner removed (M289-u4fzx5/S02): schema is now file-based.
 
-pub mod aspects {
-    //! `Aspect`, `AspectApplication` — cross-cutting trait mixins.
-    //! Populated in Phase E. Provenance, bi-temporal, and similar
-    //! aspect definitions will live in `aspects.yaml`.
-}
-
-pub mod versioning {
-    //! `SchemaVersion`, `MigrationPolicy`, `VersionedSchema`.
-    //! Populated in Phase D when schema_versions.yaml lands.
-}
-
-pub mod routing {
-    //! Intrinsic vs Relational routing decisions.
-    //! Populated in Phase D when properties.yaml declares routing.
-}
-
-pub mod mappings {
-    //! Standard vocabulary mappings (schema.org, FaBiO, CiTO, PROV-O).
-    //! Populated in Phase D when node_types.yaml mappings land.
-}
-
 pub mod registry;
