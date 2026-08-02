@@ -2,9 +2,51 @@
 
 ## Unreleased
 
-### Session 2026-08-01..02 — M285-M289 comprehensive kg-* extraction + governor
+### Session 2026-08-01..02 — M285-M290 comprehensive kg-* extraction + governor
 
-**5 milestones closed, 47+ commits, 286 tests pass.**
+**6 milestones closed, 47+ commits, 303 tests pass, governor on_track.**
+
+#### M285-z09px0 — kg-* Architecture Debt Closure (ADR-050 Phase A+B+D)
+
+9 slices. SamyamaGraphStore impl migrated to kg-storage behind feature.
+OntologyRegistry YAML loader. da-domain/da-ports re-export universal types.
+
+#### M286-wda3cp — Governor CLI hexagonal refactor
+
+798-line monolith → hexagonal Python package. 16 YAML rules.
+Pre-commit integration (--check-only).
+
+#### M287-q1wf9r — Governor CLI v2 improvements
+
+--validate-yaml, --self-test, --check-dead-code, git-aware stale_milestone.
+
+#### M288-avqgux — Phase F data-driven NodeSchemaDef
+
+YamlSchemaAdapter (Box::leak), validate_node_properties_or_yaml,
+schema-list --from-yaml.
+
+#### M289-u4fzx5 — Extract universal graph capabilities
+
+6 universal extractions to kg-ontology: bitemporal, schema (NodeSchemaDef),
+edge_contract, vid (sha256), retry (RetryPolicy), healing (ProvenanceEvent).
+kg-ontology now has 9 universal modules.
+
+#### M290-j98lkq — Deduplicate ports and disassemble da-graph
+
+3 duplicated traits eliminated (Embedder, FdApiEmbedder, GraphAlgorithms).
+da-graph crate fully disassembled: queries/schema → da-application.
+10 crates remain (5 kg-* + 5 da-*).
+
+#### ADR-051 — Testing Strategy (Overlapping Verification Contours)
+
+1017-line ADR accepted. 7 verification contours × 8 test types matrix.
+Domain-specific semantic suites (temporal graph, vector retrieval, event
+sourcing, candidate→promote, agent/LLM). 12 anti-patterns documented.
+P0/P1/P2 implementation priorities. Governor CLI 4 new commands planned.
+
+#### kg-ontology universal modules (9)
+
+bitemporal, schema, edge_contract, vid, retry, healing, temporal, validator, registry.
 
 #### M285-z09px0 — kg-* Architecture Debt Closure (ADR-050 Phase A+B+D)
 
