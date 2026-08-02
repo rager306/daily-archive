@@ -70,6 +70,11 @@ def main() -> int:
         action="store_true",
         help="Run governor unit tests (scripts/tests/test_governor.py).",
     )
+    parser.add_argument(
+        "--check-dead-code",
+        action="store_true",
+        help="Run cargo clippy per-crate and surface dead_code/unused warnings.",
+    )
     args = parser.parse_args()
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
@@ -88,6 +93,12 @@ def main() -> int:
 
     if args.self_test:
         return _self_test()
+
+    if args.check_dead_code:
+        from governor.adapters import ClippyScanner
+
+        scanner = ClippyScanner(project_root)
+        return _check_dead_code(scanner)
 
     if args.list_checks:
         _print_checks(rule_repo)
@@ -150,6 +161,25 @@ def _validate_yaml(rule_repo) -> int:
         return 1
     print(f"YAML validation PASS: {len(rules)} rules, {len(dims)} dimensions")
     return 0
+
+
+def _check_dead_code(scanner) -> int:
+    """Run cargo clippy per-crate and surface warnings from our code."""
+    report = scanner.scan_all()
+    if not report.has_warnings:
+        print(
+            f"Dead-code scan PASS: {report.crates_clean}/{report.crates_scanned} "
+            "crates clean (0 warnings in our code)"
+        )
+        return 0
+    print(f"Dead-code scan: {len(report.warnings)} warning(s) in our crates:")
+    for w in report.warnings:
+        rel = w.file
+        # Shorten path for readability.
+        if "/crates/" in rel:
+            rel = rel[rel.index("/crates/") + 1 :]
+        print(f"  [{w.crate}] {rel}:{w.line} :: {w.message}")
+    return 1
 
 
 def _self_test() -> int:
