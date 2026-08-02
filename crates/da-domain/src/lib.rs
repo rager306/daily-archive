@@ -27,6 +27,7 @@ pub mod temporal;
 pub mod validator;
 pub mod vid;
 pub mod vocabulary;
+pub mod yaml_schema_adapter;
 
 pub use article::{
     Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
