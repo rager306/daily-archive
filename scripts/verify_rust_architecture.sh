@@ -17,8 +17,9 @@ DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-graph -p da-adapte
 echo "=== cargo fmt --check (our crates only, kg-* + da-*) ==="
 cargo fmt $KG_FMT_PKGS $DA_FMT_PKGS -- --check
 
-echo "=== cargo check --workspace ==="
-cargo check --workspace
+# NOTE: no `cargo check --workspace` here — it triggers librocksdb-sys
+# rebuild (5-10 min, MEM468). Per-crate clippy below already compiles
+# all our crates incrementally. Full workspace check is CI-only.
 
 echo "=== cargo clippy (our crates incl kg-*, no-deps, deny warnings) ==="
 cargo clippy \
