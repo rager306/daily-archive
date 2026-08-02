@@ -2,54 +2,37 @@
 # Install: pre-commit install
 # Run all: pre-commit run --all-files
 #
-# After the Python→Rust rewrite the previous Python hooks (verify_onion_layering,
-# M044 sidecar guardrail) no longer apply. This config enforces Rust hygiene only.
-# Architecture direction is enforced by CI (.github/workflows/architecture-guardrail.yml).
+# FAST-ONLY policy (MEM468/MEM514):
+#   No `cargo check --workspace`, no `cargo run`, no `--all-targets`.
+#   Each hook must finish in <10s. Heavy checks (full workspace test,
+#   eval-baseline, schema-check binary) belong in CI or manual `da` runs.
+#   Governor CLI (Python, ~1s) enforces ADR invariants in every commit.
 
 repos:
   - repo: local
     hooks:
       - id: cargo-fmt
-        name: cargo fmt
-        entry: cargo fmt -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli
+        name: cargo fmt (kg-* + da-*)
+        entry: cargo fmt -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli -- --check
         language: system
         pass_filenames: false
         types: [rust]
         stages: [pre-commit]
 
-      - id: cargo-check
-        name: cargo check (workspace)
-        entry: cargo check --workspace
+      - id: cargo-clippy-lib
+        name: cargo clippy (lib only, no --all-targets, avoids rocksdb)
+        entry: cargo clippy -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli --no-deps -- -D warnings
         language: system
         pass_filenames: false
         types: [rust]
         stages: [pre-commit]
 
-      - id: cargo-clippy
-        name: cargo clippy (our crates, no-deps, deny warnings)
-        entry: cargo clippy -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli --all-targets --no-deps -- -D warnings
-        language: system
-        pass_filenames: false
-        types: [rust]
-        stages: [pre-commit]
-
-      - id: eval-baseline-check
-        name: extraction eval baseline (non-blocking)
-        entry: bash -c 'cargo run -p da-cli --example eval_batch 2>/dev/null | grep "F1=" | head -1 || echo "eval skipped (GROBID not running)"'
+      - id: governor-trajectory
+        name: governor CLI (ADR invariants + artifact gates)
+        entry: bash -c 'PYTHONPATH=scripts python3 -m governor --phase preflight --check-only'
         language: system
         pass_filenames: false
         stages: [pre-commit]
-        always_run: false
-        verbose: true
-
-      - id: schema-check
-        name: schema-check (create_node vs registry)
-        entry: cargo run -p da-cli -- schema-check
-        language: system
-        pass_filenames: false
-        types: [rust]
-        stages: [pre-commit]
-        always_run: false
 
       - id: docs-drift-check
         name: docs drift check (schema tables present)
@@ -58,14 +41,4 @@ repos:
         pass_filenames: false
         types: [rust, markdown]
         stages: [pre-commit]
-        always_run: false
         verbose: true
-
-      - id: audit-fields
-        name: audit-fields (pipeline-set vs schema-declared)
-        entry: cargo run -p da-cli -- audit-fields
-        language: system
-        pass_filenames: false
-        types: [rust]
-        stages: [pre-commit]
-        always_run: false

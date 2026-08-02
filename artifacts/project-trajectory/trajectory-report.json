@@ -1,7 +1,7 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
   "phase": "preflight",
-  "verdict": "drift_risk",
+  "verdict": "blocked",
   "dimensions": {
     "schema_readiness": {
       "description": "Typed knowledge schema (node labels, property types, edge contracts)",
@@ -81,17 +81,33 @@
   },
   "drift_flags": [
     {
+      "flag": "reverse_adr_audit_violations",
+      "severity": "high",
+      "evidence": "1 violation(s) found"
+    },
+    {
       "flag": "missing_next_gate",
       "severity": "medium",
       "evidence": "README.md does not contain 'Next gate' section"
     }
   ],
   "reverse_adr_audit_details": {
-    "status": "clear",
-    "violations": [],
-    "violations_count": 0
+    "status": "violations",
+    "violations": [
+      {
+        "rule_id": "no_graph_writes_allowed_true_in_artifacts",
+        "file": "/root/daily-archive/artifacts/etl/_test_precommit.json",
+        "line": 1,
+        "anchor": "ADR-040 (Samyama sole KG store), D127",
+        "severity": "high",
+        "rationale": "graph_writes_allowed must remain false. Graph writes locked behind D127.",
+        "matched_text": "{\"test\": true, \"graph_writes_allowed\": true}"
+      }
+    ],
+    "violations_count": 1
   },
   "next_actions": [
+    "Fix blocking reverse-ADR violations before proceeding.",
     "Add 'Next gate' section to README.md."
   ],
   "milestone_context": {

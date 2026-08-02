@@ -54,6 +54,11 @@ def main() -> int:
         action="store_true",
         help="Show per-artifact field audit (graph_writes_allowed, import_eligible).",
     )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Run checks without writing trajectory-report.json (for pre-commit).",
+    )
     args = parser.parse_args()
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
@@ -87,13 +92,17 @@ def main() -> int:
     report = trajectory_service.build_report(phase=args.phase)
 
     # Write JSON artifact.
-    output_dir = project_root / "artifacts" / "project-trajectory"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = output_dir / "trajectory-report.json"
-    json_path.write_text(
-        json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    # Write JSON artifact (unless --check-only, used by pre-commit).
+    if not args.check_only:
+        output_dir = project_root / "artifacts" / "project-trajectory"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        json_path = output_dir / "trajectory-report.json"
+        json_path.write_text(
+            json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    else:
+        json_path = project_root / "artifacts" / "project-trajectory" / "trajectory-report.json"
 
     # Console summary.
     n_flags = len(report.drift_flags)
@@ -105,7 +114,9 @@ def main() -> int:
     print(f"  report: {json_path}")
 
     # Exit code: 0 = on_track or drift_risk, 1 = blocked.
-    if report.verdict == "blocked":
+    # Handle both str and Enum(str) verdict values.
+    verdict_value = report.verdict.value if hasattr(report.verdict, "value") else str(report.verdict)
+    if verdict_value == "blocked":
         return 1
     return 0
 
