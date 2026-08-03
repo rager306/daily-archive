@@ -2,6 +2,8 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
+mod analyze;
+
 /// daily-archive v2 — scientific knowledge engine
 #[derive(Parser)]
 #[command(
@@ -185,6 +187,10 @@ enum Commands {
         #[arg(long, default_value = "data/ontology")]
         output: String,
     },
+
+    /// Run graph algorithms (page-rank, wcc) on the knowledge graph.
+    /// Builds a GraphView projection from the graph store and prints results.
+    Analyze(analyze::AnalyzeArgs),
 }
 
 fn main() {
@@ -328,6 +334,17 @@ fn main() {
 
         Commands::OntologyExport { output } => {
             export_ontology_yaml(&output);
+        }
+
+        Commands::Analyze(args) => {
+            use da_adapters::SamyamaGraphStore;
+            let store = SamyamaGraphStore::from_env();
+            rt.block_on(async {
+                if let Err(e) = analyze::run_analyze(&store, &args).await {
+                    eprintln!("Error: {e:#}");
+                    std::process::exit(1);
+                }
+            });
         }
     }
 }
