@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Session 2026-08-03 — Wave 1 Milestone Closure (M293, M295, M296 closed; M294 gated)
+
+**Wave 1 is structurally complete. 4 milestones delivered, 3 formally closed in GSD.**
+
+#### GSD milestone closure
+
+- **M293-gluh0h** (Wave 1: Graph Algorithms Wiring) — CLOSED ✅
+- **M294-oz9u3a** (Wave 1A: Edge Property API) — all slices terminal, validated pass,
+  but gsd_complete_milestone blocked by Q5 gate (GSD v1.4 limitation: skipped
+  slices don't get gate rows in manual mode, MEM531)
+- **M295-s8je3g** (Wave 1B: Trait Honesty) — CLOSED ✅
+- **M296-4tghd9** (Wave 1C: Read Method Honesty, Pipeline) — CLOSED ✅
+
+#### Governor improvement recommendations (MEM530, MEM531)
+
+1. **trait_method_audit dimension** — flag ANY trait default impl returning zero
+   values (Ok(()), None, Vec::new(), 0, false). Would have caught all 6 trait
+   honesty bugs in one pass instead of requiring M294-M296.
+2. **GSD gate row lifecycle fix** — skipped slices should auto-create gate rows
+   or gsd_complete_milestone should bypass the gate check when UAT file exists.
+   Currently blocks milestone closure for manually-completed work.
+3. **doc_workspace_alignment** — verify AGENTS.md crate names match Cargo.toml
+   workspace members (caught phantom da-graph).
+4. **orphan_library_tracker** — flag kg-* crates with zero da-* consumers
+   (caught kg-pipeline orphan, now integrated).
+
 ### Session 2026-08-03 — M296 Wave 1C: Read Method Honesty, Pipeline Integration
 
 **Completed trait honesty: no silent defaults remain on any trait method.**
