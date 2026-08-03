@@ -143,3 +143,13 @@ rules:
     pattern: '\b(?:snapshot|PropertySnapshot|export_snapshot|import_snapshot)\b'
     rationale: "Slice PLAN text contains 'snapshot' which triggers GSD browser-evidence gate. Write ASSESSMENT.md with uatType: runtime-executable to bypass. See AGENTS.md browser evidence gate section."
     filename_filter: PLAN.md
+
+  # --- Stale pre-commit package references (MEM524) ---
+  # When a workspace package is removed (e.g. da-graph in M290), the pre-commit
+  # config must be updated. Stale references cause every commit to fail.
+  - id: no_stale_precommit_packages
+    anchor: "Workspace integrity (MEM524)"
+    severity: medium
+    scan: .pre-commit-config.yaml
+    pattern: '(?:cargo\s+(?:fmt|clippy)\s+.*-p\s+.*)?(da-graph)'
+    rationale: "pre-commit config references removed workspace packages. da-graph was disassembled in M290. Run 'cargo metadata --no-deps --format-version=1' to list current workspace members and update .pre-commit-config.yaml."

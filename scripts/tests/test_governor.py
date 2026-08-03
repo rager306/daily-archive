@@ -218,6 +218,40 @@ def test_kg_crate_da_domain_rust_import_caught():
     assert len(violations) >= 1, "Expected kg_crates_must_not_import_da_domain violation"
 
 
+def test_stale_precommit_package_caught():
+    """MEM524: stale workspace packages in pre-commit config should be caught."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+
+    # Simulate a stale pre-commit config referencing removed package.
+    _write(
+        root / ".pre-commit-config.yaml",
+        "repos:\n"
+        "  - repo: local\n"
+        "    hooks:\n"
+        "      - id: cargo-fmt\n"
+        "        name: cargo fmt\n"
+        "        entry: cargo fmt -p da-graph -p kg-storage -- --check\n"
+        "        language: system\n",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    violations = [
+        v
+        for r in report.results
+        if r.rule.id == "no_stale_precommit_packages"
+        for v in r.violations
+    ]
+    assert len(violations) >= 1, (
+        f"Expected no_stale_precommit_packages violation for da-graph reference, "
+        f"got {len(violations)} violations"
+    )
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -229,6 +263,7 @@ def _run_all_tests() -> int:
         test_artifact_reader_finds_json_files,
         test_forbidden_graph_store_in_cargo_caught,
         test_kg_crate_da_domain_rust_import_caught,
+        test_stale_precommit_package_caught,
     ]
     passed = 0
     failed = 0

@@ -81,6 +81,72 @@ impl MockGraphStore {
     pub fn set_snapshot_data(&self, data: Vec<u8>) {
         *self.inner.snapshot_data.lock().unwrap() = Some(data);
     }
+
+    /// Access the inner node store for validation/inspection.
+    /// Returns (node_id, label) pairs.
+    pub fn nodes_snapshot(&self) -> Vec<(u64, String)> {
+        self.inner
+            .nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(id, l)| (*id, l.clone()))
+            .collect()
+    }
+
+    /// Access all string properties for validation/inspection.
+    pub fn string_props_snapshot(&self) -> Vec<((u64, String), String)> {
+        self.inner
+            .props
+            .lock()
+            .unwrap()
+            .string_props
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
+    }
+
+    /// Access all int properties for validation/inspection.
+    pub fn int_props_snapshot(&self) -> Vec<((u64, String), i64)> {
+        self.inner
+            .props
+            .lock()
+            .unwrap()
+            .int_props
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect()
+    }
+
+    /// Access all float properties for validation/inspection.
+    pub fn float_props_snapshot(&self) -> Vec<((u64, String), f64)> {
+        self.inner
+            .props
+            .lock()
+            .unwrap()
+            .float_props
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect()
+    }
+
+    /// Access all bool properties for validation/inspection.
+    pub fn bool_props_snapshot(&self) -> Vec<((u64, String), bool)> {
+        self.inner
+            .props
+            .lock()
+            .unwrap()
+            .bool_props
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect()
+    }
+
+    /// Access all edges for validation/inspection.
+    /// Returns (edge_id, source, target, edge_type) tuples.
+    pub fn edges_snapshot(&self) -> Vec<(u64, u64, u64, String)> {
+        self.inner.edges.lock().unwrap().iter().cloned().collect()
+    }
 }
 
 impl Default for MockGraphStore {

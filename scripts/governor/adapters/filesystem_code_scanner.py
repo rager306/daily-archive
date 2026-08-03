@@ -10,7 +10,7 @@ from governor.ports.code_scanner import CodeScanner
 class FilesystemCodeScanner(CodeScanner):
     """Scans source files on the filesystem for pattern violations."""
 
-    DEFAULT_SUFFIXES = {".py", ".json", ".md", ".toml", ".rs"}
+    DEFAULT_SUFFIXES = {".py", ".json", ".md", ".toml", ".rs", ".yaml", ".yml"}
 
     def __init__(self, project_root: Path):
         self.root = project_root

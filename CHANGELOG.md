@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Session 2026-08-02 — M291 shadow closure + mock DRY + governor hardening
+
+**Debts closed: 4. 76 da-application tests pass. Governor rule added.**
+
+#### GSD state cleanup — M291 shadow duplicate closed
+
+- All 4 slices of shadow M291 (bare form) skipped + milestone completed
+- M291-p80wbx (suffixed form) remains the real record with all task data
+- STATE.md now shows both M291 and M291-p80wbx as ✅ complete
+
+#### Mock DRY refactor — da-application delegates to kg-storage
+
+- `da-application/tests/common/mock_graph_store.rs` now wraps
+  `kg_storage::MockGraphStore` instead of duplicating 460+ lines of
+  storage logic
+- Storage behavior (create_node, set_property, find_node, edges) is
+  delegated to the canonical kg-storage mock (single source of truth)
+- Domain-specific validation (schema, edge contracts, cross-refs)
+  preserved — it is the sole reason this mock exists
+- Added accessor methods to kg-storage MockGraphStore:
+  `nodes_snapshot()`, `edges_snapshot()`, `string/int/float/bool_props_snapshot()`
+- 76 da-application tests pass (including 11 healing_test, 13 enrich_test)
+
+#### Governor CLI hardening (MEM524)
+
+- New rule: `no_stale_precommit_packages` — catches removed workspace
+  packages referenced in `.pre-commit-config.yaml` (da-graph etc.)
+- Added `.yaml` and `.yml` to governor FilesystemCodeScanner suffixes
+- New governor self-test: `test_stale_precommit_package_caught`
+- 9/9 governor self-tests pass
+
 ### Session 2026-08-02 — M291-p80wbx ADR-051 P0: contract suites + serde
 
 **S01-S04 complete. 33+ tests added. Governor on_track.**

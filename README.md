@@ -18,6 +18,7 @@ explicit human go (D127).
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
 | **kg-* universal crates** | **Done (ADR-050)** — kg-ontology (9 modules), kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
 | **ADR-051 P0 contract suites** | **Done (M291)** — GraphStore + Embedder contract suites (public module, Mock + Samyama), serde roundtrip tests (12 types) |
+| **Mock DRY** | **Done** — da-application delegates to kg-storage MockGraphStore (460+ lines deduped) |
 | **da-domain → kg-ontology** | **Done (Phase A)** — re-exports universal types (Violation, TemporalEdge, NodeSchemaDef, Vid, RetryPolicy, HealingOperation) |
 | **da-ports → kg-storage** | **Done (Phase B)** — re-exports GraphStore/DirectGraphStore traits + SamyamaGraphStore impl behind feature |
 | **YAML data-driven ontology** | **Done (Phase D+F)** — da ontology-export → YAML → OntologyRegistry → YamlSchemaAdapter → NodeSchemaDef |
