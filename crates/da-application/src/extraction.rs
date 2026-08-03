@@ -50,6 +50,31 @@ impl ExtractionUseCase {
         self
     }
 
+    /// Build a kg-pipeline DSL describing the extraction workflow steps.
+    /// This makes the extraction pipeline explicit: each step has a name,
+    /// stage, and dependencies. The pipeline can be executed by ExecutionEngine
+    /// or inspected for observability.
+    ///
+    /// Steps:
+    /// 1. extract — run extractor on sections
+    /// 2. write_entities — write Entity nodes to graph
+    /// 3. write_edges — write MENTIONS/FOUND_IN edges
+    /// 4. write_evidence — write EvidenceBundle nodes
+    /// 5. embed (optional) — generate entity embeddings
+    pub fn build_extraction_pipeline() -> Result<kg_pipeline::builder::Pipeline, String> {
+        use kg_pipeline::builder::PipelineBuilder;
+        use kg_pipeline::failure::FailurePolicy;
+
+        PipelineBuilder::new("extraction")
+            .step("extract", "extract", &[])
+            .step_with_retry("write_entities", "write", &["extract"], "3x100ms")
+            .step_with_retry("write_edges", "write", &["write_entities"], "3x100ms")
+            .step("write_evidence", "write", &["write_entities"])
+            .step("embed", "embed", &["write_entities"])
+            .failure_policy(FailurePolicy::Abort)
+            .build()
+    }
+
     /// Extract entities from a parsed article and write Entity nodes to graph.
     /// ADR-038: entities are textually mentioned, grounded to source spans.
     /// Links each Entity to the Paper via MENTIONS edge (bibliographic).
@@ -568,5 +593,24 @@ mod tests {
     fn test_extract_metric_value_no_number() {
         let text = "We report accuracy in our experiments.";
         assert_eq!(extract_metric_value(text, "accuracy"), None);
+    }
+
+    #[test]
+    fn test_build_extraction_pipeline() {
+        let pipeline = ExtractionUseCase::build_extraction_pipeline()
+            .expect("pipeline must build successfully");
+        assert_eq!(pipeline.steps.len(), 5, "must have 5 steps");
+        assert_eq!(pipeline.steps[0].name, "extract");
+        assert_eq!(pipeline.steps[1].name, "write_entities");
+        assert_eq!(pipeline.steps[2].name, "write_edges");
+        assert_eq!(pipeline.steps[3].name, "write_evidence");
+        assert_eq!(pipeline.steps[4].name, "embed");
+        // write_edges depends on write_entities
+        assert!(
+            pipeline.steps[2]
+                .depends_on
+                .contains(&"write_entities".to_string()),
+            "write_edges must depend on write_entities"
+        );
     }
 }
