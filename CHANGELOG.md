@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Session 2026-08-03 — Wave 1 Complete: All 4 Milestones Closed in GSD
+
+**Wave 1 is DONE. All milestones formally closed through GSD. No debts remain.**
+
+#### GSD milestone closure
+
+- **M293-gluh0h** (Wave 1: Graph Algorithms Wiring) — CLOSED ✅
+- **M294-oz9u3a** (Wave 1A: Edge Property API) — CLOSED ✅
+- **M295-s8je3g** (Wave 1B: Trait Honesty) — CLOSED ✅
+- **M296-4tghd9** (Wave 1C: Read Method Honesty + Pipeline) — CLOSED ✅
+
+#### AGENTS.md updated: 'Closing milestones in manual mode (GSD v1.4+)'
+
+8-step closure protocol documented for future agents:
+1. Skip slices (work already delivered)
+2. Create UAT evidence via gsd_uat_exec + gsd_uat_result_save
+3. Prepare subjective UAT with stable criterionKey + SHA256 testedSourceRevision
+4. Get binding IDs from workflow_domain_events via gsd_exec
+5. Answer immediately with exact UUIDs
+6. Batch prepare→batch answer→validate (zero prepare between answers)
+7. UPDATE quality_gates via gsd_exec if Q5 still pending
+8. Checkpoint DB + complete milestone
+
+#### Governor improvement recommendations (MEM528-MEM533)
+
+1. trait_method_audit — flag default impls returning zero values
+2. doc_workspace_alignment — verify AGENTS.md matches workspace
+3. orphan_library_tracker — flag kg-* crates without consumers
+4. GSD gate lifecycle fix for manual mode
+5. Subjective UAT binding IDs should be returned in MCP tool output
+
 ### Session 2026-08-03 — Wave 1 Milestone Closure (M293, M295, M296 closed; M294 gated)
 
 **Wave 1 is structurally complete. 4 milestones delivered, 3 formally closed in GSD.**
