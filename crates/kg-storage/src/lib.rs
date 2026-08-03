@@ -7,6 +7,8 @@
 //!
 //! See ADR-050 for the full architecture decision.
 
+#[cfg(feature = "algorithms")]
+pub mod adapter;
 pub mod contract;
 pub mod error;
 pub mod mock;

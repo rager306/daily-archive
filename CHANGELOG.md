@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Session 2026-08-02 — M293 Wave 1: Graph Algorithms Wiring
+
+**S01: DirectGraphStore → CSR GraphView adapter. 6 TDD tests green.**
+
+#### New module: kg-storage/src/adapter.rs
+
+- `graph_view_from(store, label, edge_type, weight_property)` — projects any
+  `DirectGraphStore + GraphStore` into `samyama_graph_algorithms::GraphView`
+- Feature-gated under `algorithms` (requires `dep:samyama-graph-algorithms`)
+- `#[cfg(feature = "algorithms")]` on module re-export so default builds stay clean
+- Adapter uses `get_nodes_by_label`, `get_outgoing_edges`, `node_count` (all in trait)
+- Returns `GraphView::from_adjacency_list(...)` — zero-copy projection
+- Edge-type filter honored (CITES vs RELATED_TO test)
+- Empty graph and isolated components handled
+
+#### TDD test suite: tests/algo_adapter.rs (6 tests, all pass)
+
+1. `test_graph_view_from_citation_graph` — 3 papers → 3-node view
+2. `test_pagerank_cited_paper_ranks_highest` — most-cited Paper3 > Paper1
+3. `test_wcc_connected_graph` — single component for connected chain
+4. `test_wcc_two_isolated_papers` — two components for isolated nodes
+5. `test_empty_graph_returns_empty_view` — 0 nodes → 0-node view
+6. `test_edge_type_filter_excludes_other_types` — CITES only, not RELATED_TO
+
+#### Closure: GSD shadow duplicates M291/M258 still pending close
+
+M258 has 4 empty shadow duplicates (M258-420sqw, M258-9a5812, M258-ci1w0j,
+M258-ixjcww, M258-w3aodn) that GSD can't validate (FOREIGN KEY constraint).
+Left as-is: they don't block work since we work in manual mode, not auto.
+
 ### Session 2026-08-02 — M291 shadow closure + mock DRY + governor hardening
 
 **Debts closed: 4. 76 da-application tests pass. Governor rule added.**
