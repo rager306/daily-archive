@@ -2,6 +2,52 @@
 
 ## Unreleased
 
+### Session 2026-08-03 — M294 Wave 1A: Edge Property API Completeness
+
+**Fixed technical debt from M293 S01. 4 slices, all green.**
+
+#### S01: Edge Property API (kg-storage)
+
+- **Added `get_edge_property_float`** to DirectGraphStore trait (default impl
+  parses from `get_edge_property_string`, same pattern as node properties).
+  Override in SamyamaGraphStore (native Float read via `get_edge_properties`
+  + `as_float`) and MockGraphStore (string round-trip).
+- **Added `set_edge_property_float` override** to MockGraphStore — previously
+  silent no-op via default impl; edge weights were silently lost in tests.
+- **Renamed `set_edge_property_string_v2` → `set_edge_property_string`**
+  across trait + all impls + all callers (6 files). API consistency.
+- **Fixed `get_edges_between` default impl** — was fabricating edge_id=0
+  (contract violation); now returns empty Vec, forcing adapters to override
+  with real edge_id.
+- **Extended `graph_store_contract_suite`**: +test_edge_property_float_round_trip,
+  +test_get_edges_between_returns_real_edge_id.
+- **Fixed pre-existing doctest bug** in contract.rs (`#[tokio::test]` without
+  `async fn`).
+
+#### S03: Adapter Weight Wiring (kg-storage)
+
+- **Wired `weight_property` to `get_edge_property_float`** in adapter.rs
+  `graph_view_from` — removed silent 1.0 fallback. Logs debug warning when
+  weight_property is Some but edge returns None, then falls back to 1.0.
+- **Fixed self-loop dedup bug** — was desyncing weights from adjacency (dedup
+  happened after weights_per_node fill); now skips self-loops in main loop.
+- New test: `test_weighted_graph_preserves_edge_weights`.
+
+  **Finding:** `samyama-graph-algorithms::page_rank` ignores the `weights`
+  field. Weighted PageRank needs a custom impl in kg-algorithms (future wave).
+  Weights are honored by dijkstra, prim_mst, edmonds_karp.
+
+#### S04: CLI Analytics Command (da-cli)
+
+- **New command: `da analyze`** with `--algorithm page-rank|wcc`, `--label`,
+  `--edge`, `--weight`, `--top N` flags. Builds GraphView from SamyamaGraphStore
+  via kg-storage adapter and prints results.
+- 4 TDD unit tests in `analyze.rs`.
+
+#### Test counts: kg-storage lib 12 (+2), algo_adapter 7 (+1), da-cli 4 (+4)
+
+#### Guardrail: PASS. Governor: on_track.
+
 ### Session 2026-08-02 — M293 Wave 1: Graph Algorithms Wiring
 
 **S01: DirectGraphStore → CSR GraphView adapter. 6 TDD tests green.**
