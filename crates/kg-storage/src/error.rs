@@ -12,6 +12,8 @@ pub enum GraphStoreError {
     Vector(String),
     #[error("Storage error: {0}")]
     Storage(String),
+    #[error("Method not implemented by this adapter: {0}")]
+    NotImplemented(String),
 }
 
 pub type GraphResult<T> = Result<T, GraphStoreError>;

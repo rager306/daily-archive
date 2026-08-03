@@ -353,3 +353,135 @@ async fn test_cross_ref_validator_flags_missing_required_field() {
         violations
     );
 }
+
+#[tokio::test]
+async fn test_add_temporal_edge_invalidates_contradicted_old_edge() {
+    use chrono::{DateTime, Utc};
+    use common::mock_graph_store::MockGraphStore;
+    use da_application::healing::GraphHealingUseCase;
+    use da_ports::graph_store::DirectGraphStore;
+    use kg_ontology::temporal::TemporalEdge;
+
+    let store = MockGraphStore::new();
+    let uc = GraphHealingUseCase {
+        graph_store: Box::new(store.clone()),
+    };
+
+    // Create two papers.
+    let p1 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p1, "vid", "vid:paper:p1".to_string())
+        .await
+        .unwrap();
+    let p2 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p2, "vid", "vid:paper:p2".to_string())
+        .await
+        .unwrap();
+
+    // Create an old temporal edge p1→p2 (valid from 2020).
+    let old_edge = store.create_edge(p1, p2, "CITES").await.unwrap();
+    store
+        .set_edge_property_string(old_edge, "valid_at", "2020-01-01T00:00:00Z")
+        .await
+        .unwrap();
+    store
+        .set_edge_property_string(old_edge, "created_at", "2020-01-01T00:00:00Z")
+        .await
+        .unwrap();
+
+    // Add a new temporal edge that supersedes the old one (valid from 2024).
+    let new_temporal = TemporalEdge {
+        valid_at: "2024-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap(),
+        invalid_at: None,
+        expired_at: None,
+        reference_time: None,
+        created_at: "2024-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap(),
+    };
+
+    let invalidated = uc
+        .add_temporal_edge(
+            "vid:paper:p1",
+            "Paper",
+            "vid:paper:p2",
+            "Paper",
+            "CITES",
+            &new_temporal,
+        )
+        .await
+        .expect("add_temporal_edge must succeed");
+
+    // The old edge (valid from 2020) must be invalidated by the new one (valid from 2024).
+    assert_eq!(
+        invalidated, 1,
+        "exactly 1 old edge must be invalidated (supersede rule)"
+    );
+
+    // Verify the old edge now has invalid_at set to new edge's valid_at.
+    let old_invalid_at = store.get_edge_property_string(old_edge, "invalid_at").await;
+    assert!(
+        old_invalid_at.is_some(),
+        "old edge must have invalid_at set after supersede"
+    );
+}
+
+#[tokio::test]
+async fn test_add_temporal_edge_retains_both_on_overlap() {
+    use chrono::{DateTime, Utc};
+    use common::mock_graph_store::MockGraphStore;
+    use da_application::healing::GraphHealingUseCase;
+    use da_ports::graph_store::DirectGraphStore;
+    use kg_ontology::temporal::TemporalEdge;
+
+    let store = MockGraphStore::new();
+    let uc = GraphHealingUseCase {
+        graph_store: Box::new(store.clone()),
+    };
+
+    let p1 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p1, "vid", "vid:paper:p1".to_string())
+        .await
+        .unwrap();
+    let p2 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p2, "vid", "vid:paper:p2".to_string())
+        .await
+        .unwrap();
+
+    // Old edge with same valid_at as new edge → retain both (rule 4).
+    let old_edge = store.create_edge(p1, p2, "CITES").await.unwrap();
+    store
+        .set_edge_property_string(old_edge, "valid_at", "2024-01-01T00:00:00Z")
+        .await
+        .unwrap();
+    store
+        .set_edge_property_string(old_edge, "created_at", "2024-01-01T00:00:00Z")
+        .await
+        .unwrap();
+
+    let new_temporal = TemporalEdge {
+        valid_at: "2024-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap(),
+        invalid_at: None,
+        expired_at: None,
+        reference_time: None,
+        created_at: "2024-01-01T00:00:00Z".parse::<DateTime<Utc>>().unwrap(),
+    };
+
+    let invalidated = uc
+        .add_temporal_edge(
+            "vid:paper:p1",
+            "Paper",
+            "vid:paper:p2",
+            "Paper",
+            "CITES",
+            &new_temporal,
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(
+        invalidated, 0,
+        "retain_both rule must not invalidate any edge"
+    );
+}

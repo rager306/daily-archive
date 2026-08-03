@@ -104,7 +104,9 @@ pub trait DirectGraphStore: GraphStore {
         _key: &str,
         _value: f64,
     ) -> Result<(), GraphStoreError> {
-        Ok(())
+        Err(GraphStoreError::NotImplemented(
+            "set_edge_property_float not implemented by this adapter".into(),
+        ))
     }
     async fn add_vector(
         &self,
@@ -183,7 +185,9 @@ pub trait DirectGraphStore: GraphStore {
         _key: &str,
         _value: &str,
     ) -> Result<(), GraphStoreError> {
-        Ok(()) // default no-op; adapters override
+        Err(GraphStoreError::NotImplemented(
+            "set_edge_property_string not implemented by this adapter".into(),
+        ))
     }
 
     /// Read a float property from an edge. Used for edge weight reads
@@ -249,5 +253,47 @@ mod tests {
     fn test_graph_store_error_display() {
         let e = GraphStoreError::Query("syntax error".into());
         assert!(format!("{e}").contains("syntax error"));
+    }
+
+    #[test]
+    fn test_not_implemented_error_display() {
+        let e = GraphStoreError::NotImplemented("set_edge_property_float".into());
+        let msg = format!("{e}");
+        assert!(msg.contains("not implemented"), "msg: {msg}");
+    }
+
+    /// Verify that MockGraphStore overrides set_edge_property_float (does not
+    /// use the default Err(NotImplemented) impl). This is a regression guard:
+    /// if someone accidentally removes the override, edge weights will silently
+    /// error instead of being stored.
+    #[tokio::test]
+    async fn test_mock_overrides_set_edge_property_float() {
+        use crate::mock::MockGraphStore;
+        let store = MockGraphStore::new();
+        let a = store.create_node("Paper").await.unwrap();
+        let b = store.create_node("Entity").await.unwrap();
+        let edge = store.create_edge(a, b, "MENTIONS").await.unwrap();
+        let result = store.set_edge_property_float(edge, "weight", 0.5).await;
+        assert!(
+            result.is_ok(),
+            "MockGraphStore must override set_edge_property_float"
+        );
+    }
+
+    /// Verify that MockGraphStore overrides set_edge_property_string.
+    #[tokio::test]
+    async fn test_mock_overrides_set_edge_property_string() {
+        use crate::mock::MockGraphStore;
+        let store = MockGraphStore::new();
+        let a = store.create_node("Paper").await.unwrap();
+        let b = store.create_node("Entity").await.unwrap();
+        let edge = store.create_edge(a, b, "MENTIONS").await.unwrap();
+        let result = store
+            .set_edge_property_string(edge, "valid_at", "2024-01-01")
+            .await;
+        assert!(
+            result.is_ok(),
+            "MockGraphStore must override set_edge_property_string"
+        );
     }
 }

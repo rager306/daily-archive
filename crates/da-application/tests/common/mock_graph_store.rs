@@ -217,6 +217,16 @@ impl DirectGraphStore for MockGraphStore {
             .set_edge_property_string(edge_id, key, value)
             .await
     }
+    async fn set_edge_property_float(
+        &self,
+        edge_id: u64,
+        key: &str,
+        value: f64,
+    ) -> Result<(), GraphStoreError> {
+        self.inner
+            .set_edge_property_float(edge_id, key, value)
+            .await
+    }
     async fn node_count(&self) -> usize {
         self.inner.node_count().await
     }

@@ -223,4 +223,125 @@ impl GraphHealingUseCase {
             provenance,
         })
     }
+
+    /// Add a temporal edge between two nodes, resolving contradictions with
+    /// existing edges of the same type. Uses kg-algorithms::resolve_temporal_edges
+    /// to determine which existing edges should be invalidated.
+    ///
+    /// This wires ADR-047 temporal resolution into the healing use case.
+    /// Returns the number of edges invalidated.
+    pub async fn add_temporal_edge(
+        &self,
+        source_vid: &str,
+        source_label: &str,
+        target_vid: &str,
+        target_label: &str,
+        edge_type: &str,
+        new_edge: &kg_ontology::temporal::TemporalEdge,
+    ) -> anyhow::Result<usize> {
+        use kg_algorithms::temporal::resolve_temporal_edges;
+
+        let source_id = self
+            .graph_store
+            .find_node_by_string_property(source_label, "vid", source_vid)
+            .await
+            .ok_or_else(|| {
+                anyhow::anyhow!("Source node {source_vid} not found (label={source_label})")
+            })?;
+        let target_id = self
+            .graph_store
+            .find_node_by_string_property(target_label, "vid", target_vid)
+            .await
+            .ok_or_else(|| {
+                anyhow::anyhow!("Target node {target_vid} not found (label={target_label})")
+            })?;
+
+        // Gather existing edges between these nodes with the same type.
+        let existing_edges_meta = self
+            .graph_store
+            .get_edges_between(source_id, target_id, edge_type)
+            .await;
+
+        // Read temporal properties for each existing edge to build TemporalEdge structs.
+        let mut existing_temporal: Vec<kg_ontology::temporal::TemporalEdge> = Vec::new();
+        for (edge_id, _) in &existing_edges_meta {
+            let valid_at = self
+                .graph_store
+                .get_edge_property_string(*edge_id, "valid_at")
+                .await
+                .and_then(|s| s.parse().ok())
+                .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
+            let invalid_at = self
+                .graph_store
+                .get_edge_property_string(*edge_id, "invalid_at")
+                .await
+                .and_then(|s| s.parse().ok());
+            let created_at = self
+                .graph_store
+                .get_edge_property_string(*edge_id, "created_at")
+                .await
+                .and_then(|s| s.parse().ok())
+                .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
+            existing_temporal.push(kg_ontology::temporal::TemporalEdge {
+                valid_at,
+                invalid_at,
+                expired_at: None,
+                reference_time: None,
+                created_at,
+            });
+        }
+
+        // Resolve: determine which existing edges should be invalidated.
+        let outcomes = resolve_temporal_edges(new_edge, &existing_temporal);
+        let mut invalidated_count = 0usize;
+        for (idx, outcome) in outcomes.iter().enumerate() {
+            if outcome.should_invalidate {
+                let (edge_id, _) = &existing_edges_meta[idx];
+                // Invalidate the old edge by setting invalid_at to new edge's valid_at.
+                self.graph_store
+                    .set_edge_property_string(
+                        *edge_id,
+                        "invalid_at",
+                        &new_edge.valid_at.to_rfc3339(),
+                    )
+                    .await?;
+                invalidated_count += 1;
+                tracing::info!(
+                    edge_id,
+                    rule = ?outcome.rule,
+                    "Temporal edge invalidated"
+                );
+            }
+        }
+
+        // Create the new edge.
+        let new_edge_id = self
+            .graph_store
+            .create_edge(source_id, target_id, edge_type)
+            .await?;
+
+        // Write temporal properties.
+        self.graph_store
+            .set_edge_property_string(new_edge_id, "valid_at", &new_edge.valid_at.to_rfc3339())
+            .await?;
+        self.graph_store
+            .set_edge_property_string(new_edge_id, "created_at", &new_edge.created_at.to_rfc3339())
+            .await?;
+        if let Some(invalid_at) = new_edge.invalid_at {
+            self.graph_store
+                .set_edge_property_string(new_edge_id, "invalid_at", &invalid_at.to_rfc3339())
+                .await?;
+        }
+
+        tracing::info!(
+            new_edge_id,
+            source_vid,
+            target_vid,
+            edge_type,
+            invalidated = invalidated_count,
+            "Temporal edge added with contradiction resolution"
+        );
+
+        Ok(invalidated_count)
+    }
 }
