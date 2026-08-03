@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### Session 2026-08-03 — M296 Wave 1C: Read Method Honesty, Pipeline Integration
+
+**Completed trait honesty: no silent defaults remain on any trait method.**
+
+#### S01: Read method honesty — get_outgoing_edges, get_edge_property_string required
+
+- **Made `get_outgoing_edges` a required trait method** (was returning Vec::new()
+  by default — silent empty results for any adapter that forgot to override).
+- **Made `get_edge_property_string` a required trait method** (was returning None
+  by default — silent missing data).
+- Added `get_outgoing_edges` override to da-application mock delegate
+  ڈ (was missing — would have failed compilation after making it required).
+- This completes the trait honesty work: write methods return Err(NotImplemented),
+  read methods are required. **No silent defaults remain.**
+
+#### S02: kg-pipeline integrated into da-application extraction
+
+- **Added `build_extraction_pipeline()` to `ExtractionUseCase`** — first real
+  consumer of kg-pipeline crate (was orphan with zero consumers since ADR-050).
+- Pipeline DSL describes 5 extraction steps: extract → write_entities →
+  write_edges → write_evidence → embed. Uses PipelineBuilder + FailurePolicy.
+- TDD: test_build_extraction_pipeline verifies 5 steps + dependencies.
+
+#### Test counts: kg-storage lib 15, da-application lib 28 (+1), healing_test 13
+
+#### Guardrail: PASS. Governor: on_track.
+
+#### Audit findings (GitNexus)
+
+- detect_changes: 38 changed symbols, 8 affected processes, risk LOW
+- impact analysis: all changed symbols max risk LOW
+- No HIGH/CRITICAL findings
+- kg-pipeline no longer orphan (da-application is first consumer)
+
 ### Session 2026-08-03 — M295 Wave 1B: Trait Honesty and Temporal Healing
 
 **Fixed silent data loss bugs and wired kg-algorithms into healing.**
