@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+### Session 2026-08-03 — M295 Wave 1B: Trait Honesty and Temporal Healing
+
+**Fixed silent data loss bugs and wired kg-algorithms into healing.**
+
+#### S01: Trait honesty — no-op default impls must error
+
+- **Changed `set_edge_property_float` default impl** from silent `Ok(())` to
+  `Err(GraphStoreError::NotImplemented)`. Any adapter that forgets to override
+  now gets an explicit runtime error instead of silently losing edge weights.
+- **Changed `set_edge_property_string` default impl** likewise.
+- **Added `GraphStoreError::NotImplemented`** variant.
+- **Fixed da-application mock delegate**: added `set_edge_property_float`
+  override (was missing — would have used the new Err default).
+- 3 new regression tests guard against accidental override removal.
+
+#### S02: Documentation alignment
+
+- Removed phantom `da-graph` crate from AGENTS.md package map and test targets.
+  The crate does not exist in the workspace.
+
+#### S03: Wire kg-algorithms into da-application healing
+
+- **Added `add_temporal_edge` method** to `GraphHealingUseCase`. Uses
+  `kg_algorithms::resolve_temporal_edges` to detect temporal contradictions
+  (ADR-047 supersede rule) and invalidate old edges before creating new one.
+- **da-application now depends on kg-algorithms** — first real integration of
+  the universal algorithms crate into application code.
+- 2 new TDD tests: supersede contradiction, retain-both overlap.
+
+#### Audit findings (codebase clean)
+
+- Zero dead code warnings across all 10 crates (kg-* + da-*).
+- Zero TODO/FIXME/HACK markers in crates/.
+- kg-pipeline exists but is not yet integrated (tracked for future wave).
+
+#### Test counts: kg-storage lib 15 (+3), da-application healing_test 13 (+2)
+
+#### Guardrail: PASS. Governor: on_track.
+
 ### Session 2026-08-03 — M294 Wave 1A: Edge Property API Completeness
 
 **Fixed technical debt from M293 S01. 4 slices, all green.**
