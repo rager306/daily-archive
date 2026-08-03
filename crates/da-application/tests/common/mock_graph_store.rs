@@ -204,6 +204,9 @@ impl DirectGraphStore for MockGraphStore {
             .get_edges_between(source, target, edge_type)
             .await
     }
+    async fn get_outgoing_edges(&self, node_id: u64) -> Vec<(u64, String)> {
+        self.inner.get_outgoing_edges(node_id).await
+    }
     async fn get_edge_property_string(&self, edge_id: u64, key: &str) -> Option<String> {
         self.inner.get_edge_property_string(edge_id, key).await
     }

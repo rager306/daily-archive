@@ -131,9 +131,7 @@ pub trait DirectGraphStore: GraphStore {
         value: &str,
     ) -> Option<u64>;
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)>;
-    async fn get_outgoing_edges(&self, _node_id: u64) -> Vec<(u64, String)> {
-        Vec::new()
-    }
+    async fn get_outgoing_edges(&self, node_id: u64) -> Vec<(u64, String)>;
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String>;
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64>;
     async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
@@ -173,9 +171,7 @@ pub trait DirectGraphStore: GraphStore {
 
     /// Read a string property from an edge.
     /// Used for temporal field reads (valid_at, invalid_at, etc.).
-    async fn get_edge_property_string(&self, _edge_id: u64, _key: &str) -> Option<String> {
-        None // default: edges are opaque; adapters override
-    }
+    async fn get_edge_property_string(&self, edge_id: u64, key: &str) -> Option<String>;
 
     /// Set a string property on an edge. Used for temporal field writes
     /// (invalid_at, expired_at during edge invalidation).
