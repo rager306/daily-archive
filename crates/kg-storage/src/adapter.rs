@@ -89,21 +89,43 @@ where
             }
             // Only include edges whose target is also in the projected node set.
             if let Some(&tgt_idx) = node_to_index.get(&tgt_id) {
-                outgoing[idx].push(tgt_idx);
-                incoming[tgt_idx].push(idx);
+                // Skip self-loops early: they break algorithm assumptions
+                // (PageRank, WCC) and would desync weights from adjacency.
+                if tgt_idx == idx {
+                    continue;
+                }
                 let w = match weight_property {
-                    Some(_) => {
-                        // NOTE: DirectGraphStore trait only exposes
-                        // get_edge_property_string. We don't have
-                        // get_edge_property_float here. Default to 1.0
-                        // until the trait grows a float accessor; the
-                        // underlying edges_snapshot carries no weights
-                        // either. See ADR-050 §6 "edge property float"
-                        // for the planned extension.
-                        1.0
+                    Some(name) => {
+                        // Look up the real edge_id via get_edges_between, then
+                        // read the float property. If the adapter doesn't
+                        // override get_edges_between (returns empty) or the
+                        // property is absent, fall back to 1.0 with a warning.
+                        let edges_between = store.get_edges_between(src_id, tgt_id, &etype).await;
+                        let mut found_weight: Option<f64> = None;
+                        for (eid, _) in &edges_between {
+                            if let Some(val) = store.get_edge_property_float(*eid, name).await {
+                                found_weight = Some(val);
+                                break;
+                            }
+                        }
+                        match found_weight {
+                            Some(v) => v,
+                            None => {
+                                tracing::debug!(
+                                    src = src_id,
+                                    tgt = tgt_id,
+                                    edge_type = %etype,
+                                    weight_property = name,
+                                    "edge weight property not found; using default 1.0"
+                                );
+                                1.0
+                            }
+                        }
                     }
                     None => 1.0,
                 };
+                outgoing[idx].push(tgt_idx);
+                incoming[tgt_idx].push(idx);
                 weights_per_node[idx].push(w);
             }
         }
@@ -119,12 +141,6 @@ where
     } else {
         Some(weights_per_node)
     };
-
-    // 4. Dedup self-loops that would break algorithm assumptions.
-    for i in 0..node_count {
-        outgoing[i].retain(|&j| j != i);
-        incoming[i].retain(|&j| j != i);
-    }
 
     Ok(GraphView::from_adjacency_list(
         node_count,

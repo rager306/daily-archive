@@ -47,7 +47,7 @@ pub struct ResolutionOutcome {
 /// where `should_invalidate == true`.
 ///
 /// The invalidation itself (setting invalid_at + expired_at) is done
-/// by the caller via kg-storage's `set_edge_property_string_v2`, so
+/// by the caller via kg-storage's `set_edge_property_string`, so
 /// this function is pure logic with no IO.
 pub fn resolve_temporal_edges(
     new_edge: &TemporalEdge,

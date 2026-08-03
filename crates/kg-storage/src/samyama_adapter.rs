@@ -561,7 +561,7 @@ impl DirectGraphStore for SamyamaGraphStore {
             .and_then(|prop| prop.as_string().map(|s| s.to_string()))
     }
 
-    async fn set_edge_property_string_v2(
+    async fn set_edge_property_string(
         &self,
         edge_id: u64,
         key: &str,
@@ -591,5 +591,21 @@ impl DirectGraphStore for SamyamaGraphStore {
                 PropertyValue::Float(value),
             )
             .map_err(|e| GraphStoreError::Storage(e.to_string()))
+    }
+
+    async fn get_edge_property_float(&self, edge_id: u64, key: &str) -> Option<f64> {
+        // Override default impl: Samyama stores PropertyValue::Float directly,
+        // so we read it natively instead of parsing from string.
+        let store = self.store_read().await;
+        store
+            .get_edge_properties(EdgeId(edge_id))
+            .and_then(|props| props.get(key).cloned())
+            .and_then(|prop| {
+                // Try Float first, then String parse fallback.
+                if let Some(f) = prop.as_float() {
+                    return Some(f);
+                }
+                prop.as_string().and_then(|s| s.parse::<f64>().ok())
+            })
     }
 }

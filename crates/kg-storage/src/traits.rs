@@ -156,19 +156,17 @@ pub trait DirectGraphStore: GraphStore {
     ///
     /// Returns Vec of (edge_id, edge_type) pairs. Callers then read
     /// individual edge properties via `get_edge_property_*` methods.
+    ///
+    /// Default impl returns empty Vec because it cannot recover real
+    /// edge_id from `get_outgoing_edges` (which returns (target, type)
+    /// without edge_id). Adapters MUST override to return correct edge_id.
     async fn get_edges_between(
         &self,
-        source: u64,
-        target: u64,
-        edge_type: &str,
+        _source: u64,
+        _target: u64,
+        _edge_type: &str,
     ) -> Vec<(u64, String)> {
-        // Default: filter outgoing edges from source by type + target.
-        let outgoing = self.get_outgoing_edges(source).await;
-        outgoing
-            .into_iter()
-            .filter(|(t, et)| *t == target && et == edge_type)
-            .map(|(_, et)| (0u64, et)) // edge_id unknown by default impl
-            .collect()
+        Vec::new() // default: adapters must override to return real edge_id
     }
 
     /// Read a string property from an edge.
@@ -179,13 +177,21 @@ pub trait DirectGraphStore: GraphStore {
 
     /// Set a string property on an edge. Used for temporal field writes
     /// (invalid_at, expired_at during edge invalidation).
-    async fn set_edge_property_string_v2(
+    async fn set_edge_property_string(
         &self,
         _edge_id: u64,
         _key: &str,
         _value: &str,
     ) -> Result<(), GraphStoreError> {
         Ok(()) // default no-op; adapters override
+    }
+
+    /// Read a float property from an edge. Used for edge weight reads
+    /// (e.g., MENTIONS weight for weighted PageRank).
+    async fn get_edge_property_float(&self, edge_id: u64, key: &str) -> Option<f64> {
+        self.get_edge_property_string(edge_id, key)
+            .await
+            .and_then(|s| s.parse::<f64>().ok())
     }
 }
 

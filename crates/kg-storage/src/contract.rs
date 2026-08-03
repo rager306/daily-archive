@@ -19,7 +19,7 @@
 //! - find_node_by_string_property label isolation (Paper vs Citation)
 //! - get_nodes_by_label filtering
 //! - get_edges_between type filter
-//! - edge property set/get via set_edge_property_string_v2 + get_edge_property_string
+//! - edge property set/get via set_edge_property_string + get_edge_property_string
 //! - health() == Ok(true)
 //! - export_snapshot Ok non-empty
 
@@ -39,9 +39,9 @@ use crate::traits::{DirectGraphStore, GraphStore};
 /// use kg_storage::traits::{DirectGraphStore, GraphStore};
 ///
 /// #[tokio::test]
-/// fn mock_passes_graph_store_contract() {
+/// async fn mock_passes_graph_store_contract() {
 ///     let store = MockGraphStore::new();
-///     graph_store_contract_suite(&store);
+///     graph_store_contract_suite(&store).await;
 /// }
 /// ```
 pub async fn graph_store_contract_suite<T>(store: &T)
@@ -62,6 +62,8 @@ where
     test_get_nodes_by_label(store).await;
     test_get_edges_between_type_filter(store).await;
     test_edge_property_set_and_get(store).await;
+    test_edge_property_float_round_trip(store).await;
+    test_get_edges_between_returns_real_edge_id(store).await;
     test_health_returns_true(store).await;
     test_export_snapshot_non_empty(store).await;
 }
@@ -287,7 +289,7 @@ where
     let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
 
     store
-        .set_edge_property_string_v2(edge_id, "valid_at", "2024-01-01T00:00:00Z")
+        .set_edge_property_string(edge_id, "valid_at", "2024-01-01T00:00:00Z")
         .await
         .unwrap();
 
@@ -295,7 +297,50 @@ where
     assert_eq!(
         val.as_deref(),
         Some("2024-01-01T00:00:00Z"),
-        "edge property set via set_edge_property_string_v2 must be readable via get_edge_property_string"
+        "edge property set via set_edge_property_string must be readable via get_edge_property_string"
+    );
+}
+
+async fn test_edge_property_float_round_trip<T>(store: &T)
+where
+    T: DirectGraphStore + GraphStore,
+{
+    let a = store.create_node("Paper").await.unwrap();
+    let b = store.create_node("Entity").await.unwrap();
+    let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
+
+    store
+        .set_edge_property_float(edge_id, "weight", 0.75)
+        .await
+        .unwrap();
+
+    let w = store.get_edge_property_float(edge_id, "weight").await;
+    assert!(w.is_some(), "edge float property must be readable");
+    assert!(
+        (w.unwrap() - 0.75).abs() < 1e-12,
+        "edge float value must round-trip"
+    );
+}
+
+async fn test_get_edges_between_returns_real_edge_id<T>(store: &T)
+where
+    T: DirectGraphStore + GraphStore,
+{
+    let a = store.create_node("Paper").await.unwrap();
+    let b = store.create_node("Entity").await.unwrap();
+    let real_edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
+
+    let edges = store.get_edges_between(a, b, "MENTIONS").await;
+    assert!(!edges.is_empty(), "get_edges_between must find the edge");
+    let (found_edge_id, found_type) = &edges[0];
+    assert_eq!(found_type, "MENTIONS");
+    assert_ne!(
+        found_edge_id, &0,
+        "get_edges_between must return real edge_id, not fabricated 0"
+    );
+    assert_eq!(
+        found_edge_id, &real_edge_id,
+        "get_edges_between must return the same edge_id as create_edge"
     );
 }
 

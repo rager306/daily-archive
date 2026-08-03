@@ -373,12 +373,27 @@ impl DirectGraphStore for MockGraphStore {
             .get(&(edge_id, key.to_string()))
             .cloned()
     }
-    async fn set_edge_property_string_v2(
+    async fn set_edge_property_string(
         &self,
         edge_id: u64,
         key: &str,
         value: &str,
     ) -> Result<(), GraphStoreError> {
+        self.inner
+            .edge_props
+            .lock()
+            .unwrap()
+            .insert((edge_id, key.to_string()), value.to_string());
+        Ok(())
+    }
+    async fn set_edge_property_float(
+        &self,
+        edge_id: u64,
+        key: &str,
+        value: f64,
+    ) -> Result<(), GraphStoreError> {
+        // Store as string so both get_edge_property_string and the default
+        // get_edge_property_float (which parses) can read it back.
         self.inner
             .edge_props
             .lock()
@@ -522,10 +537,30 @@ async fn test_edge_property_set_and_get() {
     let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
 
     store
-        .set_edge_property_string_v2(edge_id, "valid_at", "2024-01-01T00:00:00Z")
+        .set_edge_property_string(edge_id, "valid_at", "2024-01-01T00:00:00Z")
         .await
         .unwrap();
 
     let val = store.get_edge_property_string(edge_id, "valid_at").await;
     assert_eq!(val, Some("2024-01-01T00:00:00Z".to_string()));
+}
+
+#[tokio::test]
+async fn test_edge_property_float_round_trip() {
+    let store = MockGraphStore::new();
+    let a = store.create_node("Paper").await.unwrap();
+    let b = store.create_node("Entity").await.unwrap();
+    let edge_id = store.create_edge(a, b, "MENTIONS").await.unwrap();
+
+    store
+        .set_edge_property_float(edge_id, "weight", 0.75)
+        .await
+        .unwrap();
+
+    let w = store.get_edge_property_float(edge_id, "weight").await;
+    assert!(w.is_some(), "edge float property must be readable");
+    assert!(
+        (w.unwrap() - 0.75).abs() < 1e-12,
+        "edge float value must round-trip"
+    );
 }
