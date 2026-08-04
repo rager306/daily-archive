@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M310 graph-ping RESP health client
+
+**Multi-process health path:** `da graph-ping` sends RESP PING to a running `serve-graph`.
+
+```bash
+da serve-graph --port 16379          # terminal A
+da graph-ping --port 16379           # terminal B → PONG
+cargo test -p da-cli --bin da graph_ping
+```
+
+- Not a full remote GraphStore; `open_for_mode` / `open_graph_store` untouched
+- D127 locked; GraphMode::Remote still NotConfigured for store open
+- 4 tests: defaults, parse PONG, unreachable error, live spawn+ping
+
+
 ### Session 2026-08-05 — M309 serve-graph snapshot preload
 
 **Empty-server gap closed:** `da serve-graph --snapshot PATH.sgsnap` imports into process memory before listen.

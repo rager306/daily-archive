@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 mod analyze;
+mod graph_ping;
 mod serve_graph;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
@@ -208,6 +209,10 @@ enum Commands {
     /// Start in-memory Samyama RespServer (PING health). No RocksDB, no D127.
     /// Does not change DA_GRAPH_MODE / open_graph_store. Opt-in only.
     ServeGraph(serve_graph::ServeGraphArgs),
+
+    /// RESP health probe against a running serve-graph (PING → PONG).
+    /// Not a full remote GraphStore; does not change open_graph_store.
+    GraphPing(graph_ping::GraphPingArgs),
 }
 
 fn main() {
@@ -357,6 +362,12 @@ fn main() {
             println!("serve-graph: starting (Ctrl-C to stop)");
             if let Err(e) = rt.block_on(async { serve_graph::run_in_memory_server(&args).await }) {
                 eprintln!("❌ serve-graph failed: {e}");
+                std::process::exit(1);
+            }
+        }
+        Commands::GraphPing(args) => {
+            if let Err(e) = rt.block_on(async { graph_ping::run_graph_ping(&args).await }) {
+                eprintln!("❌ graph-ping failed: {e}");
                 std::process::exit(1);
             }
         }
