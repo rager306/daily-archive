@@ -26,6 +26,16 @@ cargo test -p kg-algorithms --features solver --lib   # 21 passed (11 csr)
 cargo clippy -p kg-algorithms --features solver --all-targets --no-deps -- -D warnings
 ```
 
+#### Compose contract (audit gap closed)
+
+- `crates/kg-storage/tests/csr_export_compose.rs` — Mock → `subgraph_view_from`/`graph_view_from` → `csr_matrix_from_graph_view`.
+- **dev-dep only** `kg-algorithms` with feature `solver` on kg-storage (no prod onion inversion; D141).
+- 5 tests: weighted export, unweighted hard-fail, materialize_unit_weights path, empty, full graph_view_from.
+
+```bash
+cargo test -p kg-storage --features algorithms --test csr_export_compose   # 5 passed
+```
+
 #### GSD process debt (open)
 
 - DB: T01+T02 done; T03 **code complete** but `gsd_task_complete` needs running Attempt.
@@ -36,6 +46,7 @@ cargo clippy -p kg-algorithms --features solver --all-targets --no-deps -- -D wa
 - Hexagonal: export in `kg-algorithms` (universal), not `da-*`. No kg-storage re-export. No CLI/solver invoke.
 - kg-storage fold all-1.0→None remains intentional; unit path = explicit `materialize_unit_weights`.
 - Local f64 validation (vendor `validate_csr_matrix` is f32-only) — D142.
+- Compose tests live under kg-storage (adapter owner) with solver only as dev-dep.
 
 ### Session 2026-08-03 — Wave 1 Complete: All 4 Milestones Closed in GSD
 
