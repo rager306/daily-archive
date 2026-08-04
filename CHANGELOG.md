@@ -26,6 +26,13 @@ cargo test -p kg-storage --features samyama --test contract_samyama
 - kg-storage only; no server, D127 unchanged
 - Process lesson (MEM564): contract cargo only async + progress; concurrent cargo on `target/` stalls
 
+#### Process / governor
+
+- D144: M306 seal requires auto Attempt — no hand-edit of gsd.db
+- Governor rule `gsd_lifecycle_attempt_desync_in_summary` (medium): flags SUMMARY text about blocked Attempt
+- Gates Q3–Q7 recorded for S01/T01 (Q6 omitted)
+
+
 
 ### Session 2026-08-04 — M305 GraphMode factory (embedded | remote)
 

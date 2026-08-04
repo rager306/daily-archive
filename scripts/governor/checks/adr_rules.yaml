@@ -195,3 +195,13 @@ rules:
     pattern: 'const ANALYZE_ALGORITHMS_MISSING_SENTINEL'
     rationale: "Sentinel-only rule: never matches while ANALYZE_ALGORITHMS exists. If constant is renamed without updating governor, add a positive existence check in a later rule."
     filename_filter: analyze.rs
+
+  # --- GSD lifecycle desync after manual execute (D144 / MEM564 follow-on) ---
+  # When a task SUMMARY reports gsd_task_complete blocked for missing Attempt,
+  # code may be green while DB lifecycle stays pending. Seal via /gsd auto.
+  - id: gsd_lifecycle_attempt_desync_in_summary
+    anchor: "GSD canonical Attempt (D144)"
+    severity: medium
+    scan: .gsd/phases/
+    pattern: 'blocked without running Attempt|requires a running or replay-matched Attempt'
+    rationale: "SUMMARY notes gsd_task_complete blocked without Attempt while work may already be committed. Do not hand-edit gsd.db; run /gsd auto <milestone> so attempt.claim then complete. See D144."
