@@ -205,3 +205,12 @@ rules:
     scan: .gsd/phases/
     pattern: 'blocked without running Attempt|requires a running or replay-matched Attempt'
     rationale: "SUMMARY notes gsd_task_complete blocked without Attempt while work may already be committed. Do not hand-edit gsd.db; run /gsd auto <milestone> so attempt.claim then complete. See D144."
+
+  # --- M311 Wave 3: serve-graph must stay in-memory (no RocksDB creep) ---
+  - id: serve_graph_must_not_use_rocksdb_persistence
+    anchor: "M307–M311 Wave 3 in-memory RespServer"
+    severity: high
+    scan: crates/da-cli/src/
+    pattern: 'new_with_persistence|data_path:\s*Some\('
+    rationale: "da serve-graph must use RespServer::new with data_path=None. RocksDB/persistence is a later explicit-flag slice; do not sneak into serve_graph.rs."
+    filename_filter: serve_graph.rs

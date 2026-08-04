@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M311 Wave 3 operator hygiene
+
+**Docs/env/port honesty after M307–M310:**
+
+- `graph_ping` reuses `serve_graph::DEFAULT_HOST` / `DEFAULT_PORT` (16379)
+- README: Wave 3 serve-graph + graph-ping quick-start and CLI table
+- `.env.example`: `DA_GRAPH_MODE=embedded`; clarify 6380 vendor vs 16379 `da serve-graph`
+- Governor: `serve_graph_must_not_use_rocksdb_persistence` (high)
+
+```bash
+cargo test -p da-cli --bin da graph_ping
+cargo test -p da-cli --bin da serve_graph
+python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M310 graph-ping RESP health client
 
 **Multi-process health path:** `da graph-ping` sends RESP PING to a running `serve-graph`.

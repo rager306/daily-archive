@@ -14,10 +14,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
-/// Default host: loopback only.
-pub const DEFAULT_HOST: &str = "127.0.0.1";
-/// Default port: matches `serve_graph::DEFAULT_PORT`.
-pub const DEFAULT_PORT: u16 = 16379;
+// Single source of truth — keep aligned with `da serve-graph` (M311).
+pub use crate::serve_graph::{DEFAULT_HOST, DEFAULT_PORT};
 /// Connect + read timeout for a single probe.
 pub const DEFAULT_TIMEOUT_MS: u64 = 2000;
 
@@ -116,7 +114,8 @@ mod tests {
 
     #[test]
     fn defaults_match_serve_graph_port() {
-        assert_eq!(DEFAULT_HOST, "127.0.0.1");
+        assert_eq!(DEFAULT_HOST, crate::serve_graph::DEFAULT_HOST);
+        assert_eq!(DEFAULT_PORT, crate::serve_graph::DEFAULT_PORT);
         assert_eq!(DEFAULT_PORT, 16379);
         assert_ne!(DEFAULT_PORT, 6379);
     }

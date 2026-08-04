@@ -11,26 +11,21 @@ explicit human go (D127).
 
 ---
 
-## Current state (2026-08-02)
+## Current state (2026-08-05)
 
 | Area | Status |
 |------|--------|
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
-| **kg-* universal crates** | **Done (ADR-050)** — kg-ontology (9 modules), kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
-| **ADR-051 P0 contract suites** | **Done (M291)** — GraphStore + Embedder contract suites (public module, Mock + Samyama), serde roundtrip tests (12 types) |
-| **Mock DRY** | **Done** — da-application delegates to kg-storage MockGraphStore (460+ lines deduped) |
-| **da-domain → kg-ontology** | **Done (Phase A)** — re-exports universal types (Violation, TemporalEdge, NodeSchemaDef, Vid, RetryPolicy, HealingOperation) |
-| **da-ports → kg-storage** | **Done (Phase B)** — re-exports GraphStore/DirectGraphStore traits + SamyamaGraphStore impl behind feature |
-| **YAML data-driven ontology** | **Done (Phase D+F)** — da ontology-export → YAML → OntologyRegistry → YamlSchemaAdapter → NodeSchemaDef |
+| **kg-* universal crates** | **Done (ADR-050)** — kg-ontology, kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
+| **ADR-051 P0 contract suites** | **Done** — GraphStore + Embedder contracts; export/import round-trip (M306) |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
-| Extraction corpus | **104 sources** (100 arxiv PDF + 4 GNN textbook HTML), 746 gold |
-| Extraction metrics | **P=0.759 R=0.999 F1=0.862** (1 FN: `generalization`) |
 | Graph schema | **Done** — 31 node types, 26 indexes, `da schema init` |
-| **Governor CLI** | **Done (M286+M287)** — hexagonal Python package, 16 YAML rules, 8 dimensions, --validate-yaml, --self-test, --check-dead-code |
-| OpenAlex enrichment | **Done** — `da enrich` fetches topics, authors from OpenAlex API |
+| **Governor CLI** | **Done** — YAML rules, trajectory, dead-code scan |
+| OpenAlex enrichment | **Done** — `da enrich` |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
-| Cross-process live graph | **Not yet** — needs Samyama server mode (Phase 3+) |
-| RuVector GNN (Tier 2) | **Port traits ready** (9/10 GNN readiness), adapter pending |
+| **Wave 3 health path** | **Done (M307–M310)** — `da serve-graph` (in-memory RESP, optional `--snapshot`), `da graph-ping` |
+| Cross-process **full** GraphStore | **Not yet** — `DA_GRAPH_MODE=remote` → RemoteNotConfigured; health only via RESP |
+| RuVector GNN (Tier 2) | Port traits ready; adapter pending |
 | Agent layer (RuVector/SONA) | Vendored, port traits defined |
 
 Architecture:
@@ -83,9 +78,17 @@ cargo build -p da-cli
 # Extract entities from a paper
 ./target/debug/da extract --id 2507.19457
 
-# Restore snapshot into this process
+# Restore snapshot into this process (still dies when process exits)
 ./target/debug/da load-snapshot --input data/samyama/batch.sgsnap
 ./target/debug/da graph-stats
+
+# Wave 3 multi-process HEALTH (in-memory RespServer — no RocksDB)
+# Terminal A: serve (optional --snapshot to preload .sgsnap into this process)
+./target/debug/da serve-graph --host 127.0.0.1 --port 16379
+# or: da serve-graph --snapshot data/samyama/batch.sgsnap --port 16379
+# Terminal B: health probe
+./target/debug/da graph-ping --port 16379   # → PONG
+# Note: default port 16379 (not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380)
 ```
 
 ### Sidecars
@@ -156,8 +159,11 @@ pre-commit run --all-files
 | `da version` | Version + ADR pin |
 | `da ingest --pdf … --id …` | Single-paper HOT path |
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
-| `da load-snapshot --input f.sgsnap` | Restore snapshot (same process) |
+| `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
+| `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
+| `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph (M310; not full remote store) |
 | `da graph-stats` | Node/edge counts |
+| `da analyze --algorithm ppr --seed …` | Graph algorithms on process-local store (Wave 1–2) |
 | `da schema-init` | Initialize all 26 graph indexes |
 | `da schema-check` | Audit create_node sites vs schema registry (ADR-045) |
 | `da edge-contracts` | Print edge endpoint contract matrix (ADR-045 Wave G) |
