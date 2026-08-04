@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M312 da health graph mode honesty
+
+**Honesty gap closed:** `da health` no longer process-exits on `DA_GRAPH_MODE=remote`.
+
+- Prints `DA_GRAPH_MODE` + open/health status via pure `health_report` helper
+- RemoteNotConfigured → clear message + Wave 3 tip (`serve-graph` / `graph-ping` :16379)
+- `open_graph_store` unchanged (other commands still exit 1 on remote)
+- AGENTS operators: Wave 3 health block; P1 backlog updated
+
+```bash
+cargo test -p da-cli --bin da health_report
+DA_GRAPH_MODE=remote cargo run -p da-cli -- health
+```
+
+
 ### Session 2026-08-05 — M311 Wave 3 operator hygiene
 
 **Docs/env/port honesty after M307–M310:**

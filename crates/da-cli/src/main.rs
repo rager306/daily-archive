@@ -4,6 +4,7 @@ use tracing_subscriber::EnvFilter;
 
 mod analyze;
 mod graph_ping;
+mod health_report;
 mod serve_graph;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
@@ -234,7 +235,6 @@ fn main() {
 
     match cli.command {
         Commands::Health => {
-            println!("daily-archive v2 — health check");
             rt.block_on(async {
                 check_health().await;
             });
@@ -387,16 +387,38 @@ async fn check_health() {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_ports::embedder::Embedder;
     use da_ports::graph_store::GraphStore;
+    use kg_storage::GraphMode;
 
-    // Samyama (embedded)
-    let graph = open_graph_store();
-    let graph_ok = GraphStore::health(&graph).await.unwrap_or(false);
-    let nodes = graph.node_count().await;
-    println!(
-        "  Samyama Graph:  {} ({} nodes)",
-        if graph_ok { "✅ healthy" } else { "❌ down" },
-        nodes
-    );
+    println!("daily-archive v2 — health check");
+
+    // Graph mode honesty (M312): do NOT call open_graph_store() here — that
+    // process-exits on RemoteNotConfigured. Health must report and continue.
+    let mode_text = match GraphMode::from_env() {
+        Ok(m) => health_report::mode_label(m).to_string(),
+        Err(e) => health_report::open_error_detail(&e),
+    };
+    match da_adapters::SamyamaGraphStore::try_from_env() {
+        Ok(graph) => {
+            let healthy = GraphStore::health(&graph).await.unwrap_or(false);
+            let nodes = graph.node_count().await;
+            for line in health_report::format_graph_health_lines(
+                &mode_text,
+                true,
+                healthy,
+                &nodes.to_string(),
+            ) {
+                println!("{line}");
+            }
+        }
+        Err(e) => {
+            let detail = health_report::open_error_detail(&e);
+            // Prefer resolved mode_text; if mode parse failed, still show detail.
+            for line in health_report::format_graph_health_lines(&mode_text, false, false, &detail)
+            {
+                println!("{line}");
+            }
+        }
+    }
 
     // GROBID
     let grobid = GrobidParser::from_env();
