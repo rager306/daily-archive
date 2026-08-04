@@ -36,10 +36,11 @@ cargo clippy -p kg-algorithms --features solver --all-targets --no-deps -- -D wa
 cargo test -p kg-storage --features algorithms --test csr_export_compose   # 5 passed
 ```
 
-#### GSD process debt (open)
+#### GSD closeout (manual mode — auto unavailable)
 
-- DB: T01+T02 done; T03 **code complete** but `gsd_task_complete` needs running Attempt.
-- Operator: `/gsd auto M298-nu7b4d` to flip T03 + close S01.
+- Closed via AGENTS.md protocol: `gsd_skip_slice` (delivered) → UAT → subjective UAT on **current** `captureMilestoneVerificationSourceRevision` → validate pass → quality_gates pass → `gsd_complete_milestone`.
+- Milestone **M298-nu7b4d COMPLETE**.
+- Lesson: free-form sessions cannot invent Task Attempts; do **not** rely on `/gsd auto` when that path is broken — use skip+UAT closeout.
 
 #### Architecture
 
