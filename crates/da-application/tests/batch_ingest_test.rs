@@ -155,9 +155,14 @@ async fn test_batch_ingest_snapshot_export() {
     assert_eq!(result.ok, 1);
     assert!(result.snapshot_path.is_some());
     assert_eq!(store.snapshot_call_count(), 1);
-    // Snapshot file written
+    // Export must write non-empty bytes; MockGraphStore now serializes real
+    // state as JSON (M306) rather than opaque canned "mock-snapshot-data".
     let content = std::fs::read(tmp.path()).unwrap();
-    assert_eq!(content, b"mock-snapshot-data");
+    assert!(!content.is_empty(), "export payload must be non-empty");
+    assert!(
+        serde_json::from_slice::<serde_json::Value>(&content).is_ok(),
+        "default Mock export must be valid JSON state dump"
+    );
 }
 
 #[tokio::test]

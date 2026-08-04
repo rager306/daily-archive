@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M306 export/import round-trip contract suite
+
+**Debt closeout after stalled auto:** prove Mock + Samyama create→export→import→count/label/property parity.
+
+#### Shipped
+
+- `MockGraphStore` stateful export/import via JSON `MockStateDump` (canned `set_snapshot_data` still wins)
+- Shared `export_import_round_trip_suite(factory)` in `kg_storage::contract` (ADR-051 Contour 4)
+- Wired into `contract_graph_store` + `contract_samyama`
+- Samyama `get_node_property_*` HashMap → ColumnStore fallback (sgsnap v2 honesty)
+- Consumer fix: `batch_ingest_test` accepts non-empty JSON export (not opaque `mock-snapshot-data`)
+- Unit tests: empty export non-empty JSON, stateful restore, opaque import no-op
+
+```bash
+cargo test -p kg-storage --lib mock
+cargo test -p kg-storage --test contract_graph_store
+cargo test -p kg-storage --features samyama --test contract_samyama
+```
+
+#### Architecture
+
+- kg-storage only; no server, D127 unchanged
+- Process lesson (MEM564): contract cargo only async + progress; concurrent cargo on `target/` stalls
+
+
 ### Session 2026-08-04 — M305 GraphMode factory (embedded | remote)
 
 **First thin Wave 3 entry:** mode-aware graph store open without shipping a server.

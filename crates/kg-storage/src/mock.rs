@@ -32,6 +32,22 @@ pub struct MockProps {
     pub bool_props: HashMap<(u64, String), bool>,
 }
 
+/// Serializable dump of MockGraphStore state for export/import round-trips.
+///
+/// Used when no canned payload is set via [`MockGraphStore::set_snapshot_data`].
+/// Format is JSON so empty stores still export non-empty bytes (`{}` fields).
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+struct MockStateDump {
+    nodes: Vec<(u64, String)>,
+    edges: Vec<(u64, u64, u64, String)>,
+    counter: usize,
+    string_props: Vec<((u64, String), String)>,
+    int_props: Vec<((u64, String), i64)>,
+    float_props: Vec<((u64, String), f64)>,
+    bool_props: Vec<((u64, String), bool)>,
+    edge_props: Vec<((u64, String), String)>,
+}
+
 /// Inner state — behind Arc so MockGraphStore is Clone-able while
 /// keeping shared state across clones.
 #[derive(Debug, Default)]
@@ -192,17 +208,81 @@ impl GraphStore for MockGraphStore {
     }
     async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
         self.inner.snapshot_calls.fetch_add(1, Ordering::SeqCst);
-        let data = self
+        // Canned override for tests that only need opaque bytes.
+        if let Some(data) = self.inner.snapshot_data.lock().unwrap().clone() {
+            return Ok(data);
+        }
+        // Snapshot under short-lived std locks (no .await while held).
+        // Fixed order: nodes → edges → props → edge_props.
+        let nodes = self.inner.nodes.lock().unwrap().clone();
+        let edges = self.inner.edges.lock().unwrap().clone();
+        let counter = self.inner.counter.load(Ordering::SeqCst);
+        let (string_props, int_props, float_props, bool_props) = {
+            let props = self.inner.props.lock().unwrap();
+            (
+                props
+                    .string_props
+                    .iter()
+                    .map(|(k, v)| (k.clone(), v.clone()))
+                    .collect(),
+                props
+                    .int_props
+                    .iter()
+                    .map(|(k, v)| (k.clone(), *v))
+                    .collect(),
+                props
+                    .float_props
+                    .iter()
+                    .map(|(k, v)| (k.clone(), *v))
+                    .collect(),
+                props
+                    .bool_props
+                    .iter()
+                    .map(|(k, v)| (k.clone(), *v))
+                    .collect(),
+            )
+        };
+        let edge_props = self
             .inner
-            .snapshot_data
+            .edge_props
             .lock()
             .unwrap()
-            .clone()
-            .unwrap_or_else(|| b"mock-snapshot-data".to_vec());
-        Ok(data)
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let dump = MockStateDump {
+            nodes,
+            edges,
+            counter,
+            string_props,
+            int_props,
+            float_props,
+            bool_props,
+            edge_props,
+        };
+        serde_json::to_vec(&dump).map_err(|e| GraphStoreError::Storage(e.to_string()))
     }
-    async fn import_snapshot(&self, _data: &[u8]) -> GraphResult<()> {
+
+    async fn import_snapshot(&self, data: &[u8]) -> GraphResult<()> {
         self.inner.import_calls.fetch_add(1, Ordering::SeqCst);
+        // Canned-only payloads (non-JSON) are accepted as no-ops so legacy
+        // tests that only count import calls still pass.
+        let dump: MockStateDump = match serde_json::from_slice(data) {
+            Ok(d) => d,
+            Err(_) => return Ok(()),
+        };
+        // Same lock order as export: nodes → edges → props → edge_props.
+        *self.inner.nodes.lock().unwrap() = dump.nodes;
+        *self.inner.edges.lock().unwrap() = dump.edges;
+        self.inner.counter.store(dump.counter, Ordering::SeqCst);
+        {
+            let mut props = self.inner.props.lock().unwrap();
+            props.string_props = dump.string_props.into_iter().collect();
+            props.int_props = dump.int_props.into_iter().collect();
+            props.float_props = dump.float_props.into_iter().collect();
+            props.bool_props = dump.bool_props.into_iter().collect();
+        }
+        *self.inner.edge_props.lock().unwrap() = dump.edge_props.into_iter().collect();
         Ok(())
     }
     async fn health(&self) -> GraphResult<bool> {
@@ -509,6 +589,63 @@ mod tests {
         let data = store.export_snapshot().await.unwrap();
         assert_eq!(data, b"test-payload");
         assert_eq!(store.snapshot_call_count(), 1);
+    }
+
+    /// Stateful export/import: real nodes/edges/props survive round-trip
+    /// when no canned payload is set (M306 honesty path).
+    #[tokio::test]
+    async fn test_export_import_restores_state() {
+        let a = MockGraphStore::new();
+        let n1 = a.create_node("Paper").await.unwrap();
+        let n2 = a.create_node("Entity").await.unwrap();
+        a.set_node_property_string(n1, "title", "Seed".to_string())
+            .await
+            .unwrap();
+        let e = a.create_edge(n1, n2, "MENTIONS").await.unwrap();
+        a.set_edge_property_string(e, "weight", "0.9")
+            .await
+            .unwrap();
+
+        let payload = a.export_snapshot().await.unwrap();
+        assert!(!payload.is_empty());
+        // Must be JSON state dump, not opaque canned bytes.
+        assert!(serde_json::from_slice::<serde_json::Value>(&payload).is_ok());
+
+        let b = MockGraphStore::new();
+        b.import_snapshot(&payload).await.unwrap();
+        assert_eq!(b.node_count_total(), 2);
+        assert_eq!(b.edge_count_total(), 1);
+        assert_eq!(b.get_nodes_by_label("Paper").await, vec![n1]);
+        assert_eq!(
+            b.get_node_property_string(n1, "title").await.as_deref(),
+            Some("Seed")
+        );
+        assert_eq!(
+            b.get_edge_property_string(e, "weight").await.as_deref(),
+            Some("0.9")
+        );
+        assert_eq!(b.import_call_count(), 1);
+    }
+
+    /// Empty store still exports non-empty JSON so contract "non-empty" holds.
+    #[tokio::test]
+    async fn test_empty_export_is_non_empty_json() {
+        let store = MockGraphStore::new();
+        let payload = store.export_snapshot().await.unwrap();
+        assert!(!payload.is_empty());
+        let v: serde_json::Value = serde_json::from_slice(&payload).unwrap();
+        assert!(v.is_object());
+    }
+
+    /// Non-JSON canned payloads remain no-op on import (legacy call-count tests).
+    #[tokio::test]
+    async fn test_import_opaque_bytes_is_noop() {
+        let store = MockGraphStore::new();
+        let n = store.create_node("Keep").await.unwrap();
+        store.import_snapshot(b"not-json").await.unwrap();
+        assert_eq!(store.node_count_total(), 1);
+        assert_eq!(store.get_nodes_by_label("Keep").await, vec![n]);
+        assert_eq!(store.import_call_count(), 1);
     }
 }
 

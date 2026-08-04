@@ -22,6 +22,7 @@
 //! - edge property set/get via set_edge_property_string + get_edge_property_string
 //! - health() == Ok(true)
 //! - export_snapshot Ok non-empty
+//! - export → import into fresh store restores node/edge counts and labels (round-trip)
 
 use crate::traits::{DirectGraphStore, GraphStore};
 
@@ -356,9 +357,99 @@ async fn test_export_snapshot_non_empty<T>(store: &T)
 where
     T: DirectGraphStore + GraphStore,
 {
-    let snapshot = store.export_snapshot().await.unwrap();
+    let payload = store.export_snapshot().await.unwrap();
     assert!(
-        !snapshot.is_empty(),
+        !payload.is_empty(),
         "export_snapshot must return Ok(non-empty) bytes"
+    );
+}
+
+/// Export → import round-trip suite (ADR-051 Contour 4 honesty).
+///
+/// `make_empty` must return a **fresh empty** store each call. The suite:
+/// 1. seeds store A with labeled nodes, a string property, and an edge
+/// 2. exports bytes from A
+/// 3. imports into empty store B
+/// 4. asserts node/edge counts and label/property presence on B
+///
+/// Separate from [`graph_store_contract_suite`] so adapters that only share
+/// one store instance can still run the CRUD suite without needing a factory.
+pub async fn export_import_round_trip_suite<T, F>(make_empty: F)
+where
+    T: DirectGraphStore + GraphStore,
+    F: Fn() -> T,
+{
+    let store_a = make_empty();
+    let n1 = store_a.create_node("Paper").await.unwrap();
+    let n2 = store_a.create_node("Paper").await.unwrap();
+    store_a
+        .set_node_property_string(n1, "title", "Round Trip Seed".to_string())
+        .await
+        .unwrap();
+    let _e = store_a.create_edge(n1, n2, "CITES").await.unwrap();
+
+    let nodes_a = store_a.node_count().await;
+    let edges_a = store_a.edge_count().await;
+    assert!(
+        nodes_a >= 2,
+        "seed store must have >= 2 nodes, got {nodes_a}"
+    );
+    assert!(
+        edges_a >= 1,
+        "seed store must have >= 1 edge, got {edges_a}"
+    );
+
+    let payload = store_a.export_snapshot().await.unwrap();
+    assert!(
+        !payload.is_empty(),
+        "export must produce non-empty payload for seeded store"
+    );
+
+    let store_b = make_empty();
+    assert_eq!(
+        store_b.node_count().await,
+        0,
+        "fresh store B must start empty (nodes)"
+    );
+    assert_eq!(
+        store_b.edge_count().await,
+        0,
+        "fresh store B must start empty (edges)"
+    );
+
+    store_b.import_snapshot(&payload).await.unwrap();
+
+    let nodes_b = store_b.node_count().await;
+    let edges_b = store_b.edge_count().await;
+    assert_eq!(
+        nodes_b, nodes_a,
+        "after import, node_count must match export source ({nodes_a}), got {nodes_b}"
+    );
+    assert_eq!(
+        edges_b, edges_a,
+        "after import, edge_count must match export source ({edges_a}), got {edges_b}"
+    );
+
+    let papers = store_b.get_nodes_by_label("Paper").await;
+    assert_eq!(
+        papers.len(),
+        2,
+        "imported store must restore Paper labels (expected 2), got {}",
+        papers.len()
+    );
+
+    // Property presence: at least one Paper has title restored.
+    let mut found_title = false;
+    for id in &papers {
+        if let Some(t) = store_b.get_node_property_string(*id, "title").await
+            && t == "Round Trip Seed"
+        {
+            found_title = true;
+            break;
+        }
+    }
+    assert!(
+        found_title,
+        "imported store must restore node string property title=Round Trip Seed"
     );
 }

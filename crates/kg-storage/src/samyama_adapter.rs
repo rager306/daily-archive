@@ -84,6 +84,27 @@ impl SamyamaGraphStore {
         self.store.write().await
     }
 
+    /// Resolve a node property from HashMap first, then ColumnStore.
+    ///
+    /// Samyama snapshot import (sgsnap v2) writes simple scalar properties into
+    /// `node_columns` via `set_column_property`, not into the node HashMap.
+    /// Getters must read both or export→import round-trips look empty.
+    fn resolve_node_property(
+        store: &SamyamaStore,
+        node_id: u64,
+        key: &str,
+    ) -> Option<PropertyValue> {
+        if let Some(prop) = store
+            .get_node(NodeId(node_id))
+            .and_then(|node| node.properties.get(key))
+            .cloned()
+        {
+            return Some(prop);
+        }
+        let col = store.node_columns.get_property(node_id as usize, key);
+        if col.is_null() { None } else { Some(col) }
+    }
+
     /// Direct node creation (HOT path — no Cypher).
     pub async fn create_node_direct(&self, label: &str) -> NodeId {
         let mut store = self.store_write().await;
@@ -514,34 +535,23 @@ impl DirectGraphStore for SamyamaGraphStore {
 
     async fn get_node_property_string(&self, node_id: u64, key: &str) -> Option<String> {
         let store = self.store_read().await;
-        store
-            .get_node(NodeId(node_id))
-            .and_then(|node| node.properties.get(key))
+        Self::resolve_node_property(&store, node_id, key)
             .and_then(|prop| prop.as_string().map(|s| s.to_string()))
     }
 
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64> {
         let store = self.store_read().await;
-        store
-            .get_node(NodeId(node_id))
-            .and_then(|node| node.properties.get(key))
-            .and_then(|prop| prop.as_integer())
+        Self::resolve_node_property(&store, node_id, key).and_then(|prop| prop.as_integer())
     }
 
     async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
         let store = self.store_read().await;
-        store
-            .get_node(NodeId(node_id))
-            .and_then(|node| node.properties.get(key))
-            .and_then(|prop| prop.as_boolean())
+        Self::resolve_node_property(&store, node_id, key).and_then(|prop| prop.as_boolean())
     }
 
     async fn get_node_property_float(&self, node_id: u64, key: &str) -> Option<f64> {
         let store = self.store_read().await;
-        store
-            .get_node(NodeId(node_id))
-            .and_then(|node| node.properties.get(key))
-            .and_then(|prop| prop.as_float())
+        Self::resolve_node_property(&store, node_id, key).and_then(|prop| prop.as_float())
     }
 
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
