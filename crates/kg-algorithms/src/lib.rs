@@ -23,3 +23,9 @@ pub mod ppr;
 
 #[cfg(feature = "ppr")]
 pub use ppr::{PprError, personalized_pagerank_from_graph_view};
+
+#[cfg(feature = "ppr")]
+pub mod view_algorithms;
+
+#[cfg(feature = "ppr")]
+pub use view_algorithms::GraphViewAlgorithms;
