@@ -5,11 +5,14 @@
 //! from any DirectGraphStore.
 //!
 //! - `page-rank` — classical PR (samyama-graph-algorithms)
-//! - `ppr` — personalized PR (GraphViewAlgorithms / ForwardPush); requires `--seed`
+//! - `ppr` — personalized PR (GraphViewAlgorithms / ForwardPush); requires ≥1 `--seed`
 //! - `wcc` — weakly connected components
 //!
 //! ForwardPush PPR is **degree-count** (ignores edge weights). D127 import gate
 //! is unchanged — this path is read-only analysis.
+//!
+//! Multi-seed: repeat `--seed` (e.g. `--seed 1 --seed 2`). Equal mass per seed
+//! is applied inside the pure PPR helper.
 
 use clap::Args;
 use kg_algorithms::GraphViewAlgorithms;
@@ -17,6 +20,9 @@ use kg_algorithms::port::GraphAlgorithms;
 use kg_storage::adapter::graph_view_from;
 use kg_storage::traits::DirectGraphStore;
 use samyama_graph_algorithms::{PageRankConfig, page_rank, weakly_connected_components};
+
+/// Canonical algorithm names for `da analyze` (single source for match + errors).
+pub const ANALYZE_ALGORITHMS: &[&str] = &["page-rank", "ppr", "wcc"];
 
 /// Arguments for `da analyze` subcommand.
 #[derive(Args, Debug)]
@@ -42,9 +48,10 @@ pub struct AnalyzeArgs {
     #[arg(long, default_value = "10")]
     pub top: usize,
 
-    /// Seed NodeId for personalized PageRank (`--algorithm ppr`). Required for ppr.
-    #[arg(long)]
-    pub seed: Option<u64>,
+    /// Seed NodeId(s) for personalized PageRank (`--algorithm ppr`).
+    /// Repeat flag for multi-seed: `--seed 1 --seed 2`. Required (≥1) for ppr.
+    #[arg(long = "seed", action = clap::ArgAction::Append)]
+    pub seeds: Vec<u64>,
 
     /// Teleport probability for PPR (default 0.85). Ignored for page-rank/wcc.
     #[arg(long, default_value = "0.85")]
@@ -74,29 +81,35 @@ pub async fn run_analyze(store: &dyn DirectGraphStore, args: &AnalyzeArgs) -> an
             print_pagerank_results(&ranks, args.top);
         }
         "ppr" => {
-            let seed = args.seed.ok_or_else(|| {
-                anyhow::anyhow!("--seed <NodeId> is required for --algorithm ppr")
-            })?;
+            if args.seeds.is_empty() {
+                anyhow::bail!(
+                    "--seed <NodeId> is required for --algorithm ppr (repeat for multi-seed)"
+                );
+            }
             if !(args.alpha > 0.0 && args.alpha < 1.0) {
                 anyhow::bail!("--alpha must be in (0, 1), got {}", args.alpha);
             }
             let alg = GraphViewAlgorithms::new(view, edge.map(|s| s.to_string()));
-            let scores = alg.personalized_pagerank(&[seed], args.alpha, 0).await;
+            let scores = alg.personalized_pagerank(&args.seeds, args.alpha, 0).await;
             if scores.is_empty() {
-                // Trait fail-soft: empty means empty graph, empty seeds (guarded),
-                // or unknown seed / CSR export failure.
+                // Trait fail-soft: empty means empty graph, or any unknown seed /
+                // CSR export failure (pure helper rejects unknown seeds).
                 anyhow::bail!(
-                    "ppr returned no scores for seed {seed} (unknown seed or empty/invalid view)"
+                    "ppr returned no scores for seeds {:?} (unknown seed or empty/invalid view)",
+                    args.seeds
                 );
             }
-            print_ppr_results(&scores, args.top, seed);
+            print_ppr_results(&scores, args.top, &args.seeds);
         }
         "wcc" => {
             let components = weakly_connected_components(&view);
             print_wcc_results(&components);
         }
         other => {
-            anyhow::bail!("unknown algorithm: {other}. Available: page-rank, ppr, wcc");
+            anyhow::bail!(
+                "unknown algorithm: {other}. Available: {}",
+                ANALYZE_ALGORITHMS.join(", ")
+            );
         }
     }
 
@@ -118,8 +131,13 @@ fn print_pagerank_results(ranks: &std::collections::HashMap<u64, f64>, top: usiz
     }
 }
 
-fn print_ppr_results(scores: &[(u64, f64)], top: usize, seed: u64) {
-    println!("Personalized PageRank (seed={seed}, top {top}):");
+fn print_ppr_results(scores: &[(u64, f64)], top: usize, seeds: &[u64]) {
+    let seeds_fmt = seeds
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>()
+        .join(",");
+    println!("Personalized PageRank (seeds=[{seeds_fmt}], top {top}):");
     println!("  {:<20} {:>12}", "Node ID", "Score");
     println!("  {:<20} {:>12}", "-------", "-----");
     for (node_id, score) in scores.iter().take(top) {
@@ -153,7 +171,7 @@ mod tests {
             edge: Some("CITES".to_string()),
             weight: None,
             top: 10,
-            seed: None,
+            seeds: Vec::new(),
             alpha: 0.85,
         }
     }
@@ -182,7 +200,9 @@ mod tests {
         assert!(result.is_err(), "unknown algorithm should error");
         let msg = format!("{}", result.unwrap_err());
         assert!(msg.contains("unknown algorithm"), "error message: {msg}");
-        assert!(msg.contains("ppr"), "help should list ppr: {msg}");
+        for name in ANALYZE_ALGORITHMS {
+            assert!(msg.contains(name), "help should list {name}: {msg}");
+        }
     }
 
     #[tokio::test]
@@ -217,9 +237,27 @@ mod tests {
         store.create_edge(p2, p3, "CITES").await.unwrap();
 
         let mut args = empty_args("ppr");
-        args.seed = Some(p1);
+        args.seeds = vec![p1];
         let result = run_analyze(&store, &args).await;
         assert!(result.is_ok(), "ppr with seed should succeed: {result:?}");
+    }
+
+    #[tokio::test]
+    async fn test_ppr_multi_seed_on_citation_graph() {
+        let store = MockGraphStore::new();
+        let p1 = store.create_node("Paper").await.unwrap();
+        let p2 = store.create_node("Paper").await.unwrap();
+        let p3 = store.create_node("Paper").await.unwrap();
+        store.create_edge(p1, p2, "CITES").await.unwrap();
+        store.create_edge(p2, p3, "CITES").await.unwrap();
+
+        let mut args = empty_args("ppr");
+        args.seeds = vec![p1, p3];
+        let result = run_analyze(&store, &args).await;
+        assert!(
+            result.is_ok(),
+            "ppr with multi-seed should succeed: {result:?}"
+        );
     }
 
     #[tokio::test]
@@ -230,7 +268,7 @@ mod tests {
         store.create_edge(p1, p2, "CITES").await.unwrap();
 
         let mut args = empty_args("ppr");
-        args.seed = Some(999_999);
+        args.seeds = vec![999_999];
         let result = run_analyze(&store, &args).await;
         assert!(result.is_err(), "unknown seed must error");
         let msg = format!("{}", result.unwrap_err());
@@ -244,11 +282,17 @@ mod tests {
     async fn test_ppr_invalid_alpha_errors() {
         let store = MockGraphStore::new();
         let mut args = empty_args("ppr");
-        args.seed = Some(1);
+        args.seeds = vec![1];
         args.alpha = 1.5;
         let result = run_analyze(&store, &args).await;
         assert!(result.is_err());
         let msg = format!("{}", result.unwrap_err());
         assert!(msg.contains("alpha"), "msg={msg}");
+    }
+
+    #[test]
+    fn analyze_algorithms_constant_matches_match_arms() {
+        // Hygiene: constant is the single source for help text.
+        assert_eq!(ANALYZE_ALGORITHMS, &["page-rank", "ppr", "wcc"]);
     }
 }
