@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M302 CLI analyze personalized PageRank
+
+**Operator surface for Wave 2 PPR stack.**
+
+#### Shipped
+
+- `da analyze --algorithm ppr --seed <NodeId>` via `GraphViewAlgorithms`
+- Flags: `--seed` (required for ppr), `--alpha` (default 0.85)
+- da-cli depends on `kg-algorithms` feature `ppr` (composition root only)
+- Errors: missing seed, invalid alpha, unknown seed / empty scores
+- Regression: page-rank + wcc unchanged
+- Tests: 8 analyze unit tests green (4 ppr + 4 regression)
+- Stale doc fix in `ppr.rs` (references M301 façade)
+
+```bash
+# binary unit tests (cargo test output may be quiet; binary harness is authoritative)
+cargo test -p da-cli --bin da
+# or: target/debug/deps/da-* analyze::
+```
+
+#### Architecture
+
+- HIGH impact on `run_analyze` — additive match arm only
+- ForwardPush still degree-count; D127 unchanged (read-only analyze)
+- No kg-storage prod solver dep
+
 ### Session 2026-08-04 — M301 GraphAlgorithms façade over GraphView
 
 **Dead-port debt closed:** first concrete `impl GraphAlgorithms`.
