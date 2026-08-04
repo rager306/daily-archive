@@ -188,7 +188,7 @@ enum Commands {
         output: String,
     },
 
-    /// Run graph algorithms (page-rank, wcc) on the knowledge graph.
+    /// Run graph algorithms (page-rank, ppr, wcc) on the knowledge graph.
     /// Builds a GraphView projection from the graph store and prints results.
     Analyze(analyze::AnalyzeArgs),
 }

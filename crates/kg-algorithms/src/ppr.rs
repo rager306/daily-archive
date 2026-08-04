@@ -9,8 +9,8 @@
 //! - **ForwardPush ignores CSR edge values** and normalizes by out-degree (count).
 //!   When `weights` is `None` (kg-storage all-1.0 fold), this helper builds a
 //!   unit-value CSR for construction only — topology walk is unchanged.
-//! - Does not implement the full async [`crate::port::GraphAlgorithms`] trait;
-//!   that remains a later adapter.
+//! - Async trait surface: [`crate::view_algorithms::GraphViewAlgorithms`]
+//!   implements [`crate::port::GraphAlgorithms`] (M301) by wrapping this helper.
 
 use crate::csr::{CsrExportError, csr_matrix_from_graph_view};
 use ruvector_solver::forward_push::ForwardPushSolver;
