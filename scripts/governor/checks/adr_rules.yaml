@@ -153,3 +153,24 @@ rules:
     scan: .pre-commit-config.yaml
     pattern: '(?:cargo\s+(?:fmt|clippy)\s+.*-p\s+.*)?(da-graph)'
     rationale: "pre-commit config references removed workspace packages. da-graph was disassembled in M290. Run 'cargo metadata --no-deps --format-version=1' to list current workspace members and update .pre-commit-config.yaml."
+
+  # --- M298 / ADR-040 Wave 2: ruvector-solver feature hygiene ---
+  # ruvector-solver default features enable neumann/cg/forward-push. Consumers
+  # that only need CsrMatrix types must set default-features = false (D141/D142).
+  - id: ruvector_solver_must_disable_default_features
+    anchor: "ADR-040 (ruvector-solver types-only path), M298 D141/D142"
+    severity: medium
+    scan: crates/
+    pattern: '^ruvector-solver\s*=\s*\{(?!.*default-features\s*=\s*false)[^}]*\}'
+    rationale: "ruvector-solver default features pull solver algorithms (neumann/cg/forward-push). Types-only consumers must declare default-features = false."
+    filename_filter: Cargo.toml
+
+  # kg-storage owns GraphView producers; solver matrix export lives in kg-algorithms.
+  # Production deps must not pull ruvector-solver (compose tests use dev-dep only).
+  - id: kg_storage_must_not_prod_depend_on_ruvector_solver
+    anchor: "ADR-040 / D141 (solver bridge in kg-algorithms, not storage)"
+    severity: high
+    scan: crates/kg-storage/Cargo.toml
+    pattern: '^ruvector-solver\s*='
+    rationale: "kg-storage must not depend on ruvector-solver in [dependencies]. Export lives in kg-algorithms; compose tests may use dev-dep only."
+    section_filter: dependencies

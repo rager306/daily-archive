@@ -48,6 +48,13 @@ cargo test -p kg-storage --features algorithms --test csr_export_compose   # 5 p
 - Local f64 validation (vendor `validate_csr_matrix` is f32-only) — D142.
 - Compose tests live under kg-storage (adapter owner) with solver only as dev-dep.
 
+#### Governor (trajectory hygiene)
+
+- New ADR rules in `scripts/governor/checks/adr_rules.yaml`:
+  - `ruvector_solver_must_disable_default_features` (medium)
+  - `kg_storage_must_not_prod_depend_on_ruvector_solver` (high, `[dependencies]` only)
+- Audit: both CLEAR on current tree; trajectory ON_TRACK.
+
 ### Session 2026-08-03 — Wave 1 Complete: All 4 Milestones Closed in GSD
 
 **Wave 1 is DONE. All milestones formally closed through GSD. No debts remain.**
