@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M314 Task end-index parity + post-M313 eval
+
+**Span honesty (Task):** section + global Task passes use lowercased needle length
+for `char_end` (same fix as Method M313). Unit test for Task phrase span.
+
+**Corpus re-eval** (`cargo run -p da-cli --example eval_batch`, 193 papers):
+
+| Metric | Value |
+|--------|--------|
+| Micro P / R / F1 | **0.729 / 1.000 / 0.843** |
+| Macro P / R / F1 | **0.735 / 1.000 / 0.838** |
+| TP / FP / FN | 1326 / 494 / **0** |
+
+```bash
+cargo test -p da-adapters --lib rule_extractor -- --test-threads=1
+cargo run -p da-cli --example eval_batch
+```
+
+
 ### Session 2026-08-05 — M313 Method section phrase parity (E1)
 
 **Logic gap:** Method section-scoped extraction scanned acronyms only; multi-word

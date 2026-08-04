@@ -373,6 +373,7 @@ impl RuleBasedExtractor {
             EntityType::Task => {
                 // Known task phrases + acronyms. Case-insensitive with word
                 // boundary to avoid substring false positives.
+                // M314: end index must use lowercased needle length (same as Method M313).
                 let task_phrases = &self.config.tasks.phrases;
                 let task_acronyms = &self.config.tasks.acronyms;
                 let lower = text.to_lowercase();
@@ -381,7 +382,7 @@ impl RuleBasedExtractor {
                     let mut start = 0;
                     while let Some(pos) = lower[start..].find(&p_lower) {
                         let abs = start + pos;
-                        let end = abs + phrase.len();
+                        let end = abs + p_lower.len();
                         if Self::word_boundary(text, abs, end) {
                             results.push((abs, end, phrase.to_string()));
                         }
@@ -393,7 +394,7 @@ impl RuleBasedExtractor {
                     let mut start = 0;
                     while let Some(pos) = lower[start..].find(&a_lower) {
                         let abs = start + pos;
-                        let end = abs + acr.len();
+                        let end = abs + a_lower.len();
                         if Self::word_boundary(text, abs, end) {
                             results.push((abs, end, acr.to_string()));
                         }
@@ -622,7 +623,8 @@ impl Extractor for RuleBasedExtractor {
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&p_lower) {
                     let abs = start + pos;
-                    let end = abs + phrase.len();
+                    // M314: lowercased needle length (indices into `lower`).
+                    let end = abs + p_lower.len();
                     if Self::word_boundary(&scan_text, abs, end) {
                         let key = (p_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
@@ -645,7 +647,7 @@ impl Extractor for RuleBasedExtractor {
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(&a_lower) {
                     let abs = start + pos;
-                    let end = abs + acr.len();
+                    let end = abs + a_lower.len();
                     if Self::word_boundary(&scan_text, abs, end) {
                         let key = (a_lower.clone(), "task".to_string());
                         if !seen.contains(&key) {
@@ -1360,6 +1362,33 @@ async fn test_extract_task_phrases_global() {
         !tasks.contains(&"question answering"),
         "question answering should NOT be extracted (too generic), got: {tasks:?}"
     );
+}
+
+/// M314: Task phrase spans must use lowercased match length (char_end - char_start).
+/// Global pass indexes into `title + " " + body`, not body alone.
+#[tokio::test]
+async fn test_task_phrase_span_uses_lower_needle_len() {
+    let extractor = RuleBasedExtractor::new();
+    let title = "Abstract";
+    let body = "We study prompt optimization carefully.";
+    let sections = vec![(title.to_string(), body.to_string())];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let hit = entities
+        .iter()
+        .find(|e| e.entity_type == EntityType::Task && e.label == "prompt optimization")
+        .expect("prompt optimization Task should extract");
+    let expected_len = "prompt optimization".len();
+    assert_eq!(
+        hit.char_end - hit.char_start,
+        expected_len,
+        "Task phrase span must equal lowercased needle length, got start={} end={}",
+        hit.char_start,
+        hit.char_end
+    );
+    // Spans are into scan_text = "{title} {body}" (global Task pass).
+    let scan = format!("{title} {body}");
+    let slice = &scan[hit.char_start..hit.char_end];
+    assert_eq!(slice.to_lowercase(), "prompt optimization");
 }
 
 #[test]
