@@ -27,6 +27,7 @@ cargo test -p kg-storage --features samyama --test contract_samyama
 - Process lesson (MEM564): contract cargo only async + progress; concurrent cargo on `target/` stalls
 
 #### Process / governor
+- M306 sealed via skip-delivered + UAT + validate + complete (Attempt path unavailable)
 
 - D144: M306 seal requires auto Attempt — no hand-edit of gsd.db
 - Governor rule `gsd_lifecycle_attempt_desync_in_summary` (medium): flags SUMMARY text about blocked Attempt
