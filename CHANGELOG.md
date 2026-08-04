@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M300 Mock compose GraphView to PPR
+
+**Wave 2 integration gap closed:** Mock k-hop cut → pure ForwardPush PPR.
+
+#### Shipped
+
+- kg-storage dev-dep `kg-algorithms` features: `solver` → **`ppr`** (still dev-only).
+- `crates/kg-storage/tests/ppr_export_compose.rs` (3 tests):
+  1. weighted subgraph → PPR seed ranks first
+  2. unweighted fold (`weights=None`) → topology PPR still works
+  3. unknown seed → `PprError::MissingSeed`
+
+```bash
+cargo test -p kg-storage --features algorithms --test ppr_export_compose  # 3 passed
+cargo test -p kg-storage --features algorithms --test csr_export_compose  # 5 still pass
+```
+
+#### Architecture
+
+- No prod `ruvector-solver` on kg-storage (D141).
+- Reuses M297 adapters + M299 pure helper; no CLI/trait impl.
+
 ### Session 2026-08-04 — M299 PPR smoke on exported CSR
 
 **Wave 2 next step after M298:** pure ForwardPush PPR over GraphView via CSR export.
