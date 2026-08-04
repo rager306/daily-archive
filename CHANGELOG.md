@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M305 GraphMode factory (embedded | remote)
+
+**First thin Wave 3 entry:** mode-aware graph store open without shipping a server.
+
+#### Shipped
+
+- `kg_storage::GraphMode` + `GraphModeError` (`DA_GRAPH_MODE=embedded|remote`, default embedded)
+- `SamyamaGraphStore::open_for_mode` / `try_from_env` — remote → `RemoteNotConfigured` (no fake client)
+- `da-cli` `open_graph_store()` used for all store open sites (14+ call sites)
+- Tests: 6 graph_mode + 2 open_for_mode (samyama feature)
+
+```bash
+cargo test -p kg-storage --lib graph_mode
+cargo test -p kg-storage --features samyama --lib mode_tests
+# DA_GRAPH_MODE=remote da analyze ...  → clear error, exit 1
+```
+
+#### Architecture
+
+- No RespServer, no RocksDB in default path, D127 unchanged
+- `from_env()` remains embedded convenience for tests; composition roots use try_from_env
+
 ### Session 2026-08-04 — M304 load-snapshot honesty + Wave 3 entry hygiene
 
 **Process logic debt:** `da load-snapshot` imported into dying in-memory process and sounded durable.

@@ -48,12 +48,30 @@ impl SamyamaGraphStore {
         }
     }
 
+    /// Open an **embedded** process-local store (ignores `DA_GRAPH_MODE`).
+    /// Prefer [`Self::try_from_env`] at composition roots so remote mode fails honestly.
     pub fn from_env() -> Self {
         let tenant =
             std::env::var("SAMYAMA_DEFAULT_TENANT").unwrap_or_else(|_| "default".to_string());
         let mut s = Self::new();
         s.tenant = tenant;
         s
+    }
+
+    /// Open store for an already-resolved [`crate::GraphMode`].
+    ///
+    /// `Embedded` → process-local Samyama; `Remote` → typed not-configured error.
+    pub fn open_for_mode(mode: crate::GraphMode) -> Result<Self, crate::GraphModeError> {
+        match mode {
+            crate::GraphMode::Embedded => Ok(Self::from_env()),
+            crate::GraphMode::Remote => Err(crate::GraphModeError::RemoteNotConfigured),
+        }
+    }
+
+    /// Mode-aware open: `DA_GRAPH_MODE=embedded` (default) → process-local store;
+    /// `remote` → [`crate::GraphModeError::RemoteNotConfigured`] (no fake client).
+    pub fn try_from_env() -> Result<Self, crate::GraphModeError> {
+        Self::open_for_mode(crate::GraphMode::from_env()?)
     }
 
     // ─── HOT PATH: Direct GraphStore API ──────────────────────
@@ -607,5 +625,32 @@ impl DirectGraphStore for SamyamaGraphStore {
                 }
                 prop.as_string().and_then(|s| s.parse::<f64>().ok())
             })
+    }
+}
+
+#[cfg(test)]
+mod mode_tests {
+    use super::*;
+    use crate::{GraphMode, GraphModeError};
+
+    #[test]
+    fn open_for_mode_embedded_ok() {
+        assert_eq!(GraphMode::parse(None).unwrap(), GraphMode::Embedded);
+        let store = SamyamaGraphStore::open_for_mode(GraphMode::Embedded).expect("embedded");
+        let _ = store;
+    }
+
+    #[test]
+    fn open_for_mode_remote_not_configured() {
+        // Avoid unwrap_err: SamyamaGraphStore is not Debug.
+        let result = SamyamaGraphStore::open_for_mode(GraphMode::Remote);
+        let err = match result {
+            Ok(_) => panic!("remote must not open a store"),
+            Err(e) => e,
+        };
+        assert_eq!(err, GraphModeError::RemoteNotConfigured);
+        let msg = err.to_string();
+        assert!(msg.contains("not configured"), "{msg}");
+        assert!(msg.contains("embedded"), "{msg}");
     }
 }

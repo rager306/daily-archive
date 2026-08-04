@@ -4,6 +4,18 @@ use tracing_subscriber::EnvFilter;
 
 mod analyze;
 
+/// Open graph store via DA_GRAPH_MODE (default embedded).
+/// Remote mode exits with a clear error — no fake success, no server auto-start.
+fn open_graph_store() -> da_adapters::SamyamaGraphStore {
+    match da_adapters::SamyamaGraphStore::try_from_env() {
+        Ok(store) => store,
+        Err(e) => {
+            eprintln!("❌ graph store open failed: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
 /// daily-archive v2 — scientific knowledge engine
 #[derive(Parser)]
 #[command(
@@ -337,8 +349,7 @@ fn main() {
         }
 
         Commands::Analyze(args) => {
-            use da_adapters::SamyamaGraphStore;
-            let store = SamyamaGraphStore::from_env();
+            let store = open_graph_store();
             rt.block_on(async {
                 if let Err(e) = analyze::run_analyze(&store, &args).await {
                     eprintln!("Error: {e:#}");
@@ -350,12 +361,12 @@ fn main() {
 }
 
 async fn check_health() {
-    use da_adapters::{FdApiEmbedder, GrobidParser, SamyamaGraphStore};
+    use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_ports::embedder::Embedder;
     use da_ports::graph_store::GraphStore;
 
     // Samyama (embedded)
-    let graph = SamyamaGraphStore::from_env();
+    let graph = open_graph_store();
     let graph_ok = GraphStore::health(&graph).await.unwrap_or(false);
     let nodes = graph.node_count().await;
     println!(
@@ -382,12 +393,12 @@ async fn check_health() {
 }
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
-    use da_adapters::{FdApiEmbedder, GrobidParser, SamyamaGraphStore};
+    use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::IngestUseCase;
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let graph_store = Box::new(open_graph_store());
     // DirectGraphStore is implemented by SamyamaGraphStore (ADR-041 HOT path)
 
     let use_case = IngestUseCase::new(parser, embedder, graph_store);
@@ -424,7 +435,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
 }
 
 async fn batch_ingest(ids_str: &str, output: Option<&str>) {
-    use da_adapters::{FdApiEmbedder, GrobidParser, SamyamaGraphStore};
+    use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::{IngestUseCase, batch_ingest_pdfs};
 
     let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
@@ -453,7 +464,7 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
-    let graph_store = Box::new(SamyamaGraphStore::new());
+    let graph_store = Box::new(open_graph_store());
 
     let ingest = IngestUseCase::new(parser, embedder, graph_store);
 
@@ -489,7 +500,6 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
 }
 
 async fn load_snapshot(input: &str) {
-    use da_adapters::SamyamaGraphStore;
     use da_ports::graph_store::GraphStore;
 
     let data = match std::fs::read(input) {
@@ -505,7 +515,7 @@ async fn load_snapshot(input: &str) {
     // import_snapshot here only verifies the bytes decode into a live store;
     // the store dies when this CLI process exits. Cross-process durability is
     // Wave 3 (Samyama server / PersistenceManager) — see doc/PERSISTENCE-ANALYSIS.md.
-    let graph = SamyamaGraphStore::from_env();
+    let graph = open_graph_store();
     match graph.import_snapshot(&data).await {
         Ok(()) => {
             let nodes = graph.node_count().await;
@@ -528,9 +538,7 @@ async fn load_snapshot(input: &str) {
 }
 
 async fn graph_stats() {
-    use da_adapters::SamyamaGraphStore;
-
-    let graph = SamyamaGraphStore::from_env();
+    let graph = open_graph_store();
     let nodes = graph.node_count().await;
     let edges = graph.edge_count().await;
     println!("daily-archive v2 — graph statistics");
@@ -599,9 +607,8 @@ async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
     println!("Cypher: {cypher}");
 
     // Execute via SamyamaGraphStore (WARM path — embedded Cypher)
-    use da_adapters::SamyamaGraphStore;
     use da_ports::graph_store::GraphStore;
-    let store = SamyamaGraphStore::from_env();
+    let store = open_graph_store();
     match store.query_readonly("daily_archive", &cypher).await {
         Ok(result) => {
             println!("Columns: {:?}", result.columns);
@@ -621,7 +628,7 @@ async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
 }
 
 async fn extract_entities(paper_id: &str) {
-    use da_adapters::{GrobidParser, RuleBasedExtractor, SamyamaGraphStore};
+    use da_adapters::{GrobidParser, RuleBasedExtractor};
     use da_application::ExtractionUseCase;
     use da_ports::parser::ParserPort;
 
@@ -665,7 +672,7 @@ async fn extract_entities(paper_id: &str) {
 
     // Extract via rule-based extractor
     let extractor = Box::new(RuleBasedExtractor::new());
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let graph_store = Box::new(open_graph_store());
     let use_case = ExtractionUseCase::new(extractor, graph_store);
 
     match use_case.extract_from_parsed(&parsed).await {
@@ -727,9 +734,8 @@ fn schema_init(dimensions: usize) {
 
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
-        use da_adapters::SamyamaGraphStore;
         use da_ports::graph_store::{GraphStore, VectorMetric};
-        let store = SamyamaGraphStore::from_env();
+        let store = open_graph_store();
         let mut ok = 0;
         let mut fail = 0;
 
@@ -779,11 +785,10 @@ async fn heal_graph(
     keep: Option<&str>,
     reason: &str,
 ) {
-    use da_adapters::SamyamaGraphStore;
     use da_application::GraphHealingUseCase;
     use da_domain::healing::HealingActor;
 
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let graph_store = Box::new(open_graph_store());
     let use_case = GraphHealingUseCase::new(graph_store);
     let actor = HealingActor::Human("cli".to_string());
 
@@ -829,13 +834,13 @@ async fn heal_graph(
 }
 
 async fn enrich_from_openalex(arxiv_id: &str) {
-    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_adapters::OpenAlexHttpAdapter;
     use da_application::EnrichUseCase;
 
     println!("Enriching {arxiv_id} from OpenAlex...");
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let graph_store = Box::new(open_graph_store());
     let use_case = EnrichUseCase::new(openalex, graph_store);
 
     match use_case.enrich_by_arxiv_id(arxiv_id).await {
@@ -864,14 +869,14 @@ async fn enrich_from_openalex(arxiv_id: &str) {
 }
 
 async fn batch_enrich_from_openalex(ids_str: &str) {
-    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_adapters::OpenAlexHttpAdapter;
     use da_application::EnrichUseCase;
 
     let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
     println!("Batch enriching {} papers from OpenAlex...", ids.len());
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
-    let graph_store = Box::new(SamyamaGraphStore::from_env());
+    let graph_store = Box::new(open_graph_store());
     let use_case = EnrichUseCase::new(openalex, graph_store);
 
     let mut ok = 0;
@@ -917,7 +922,7 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
 async fn run_scheduler(_queue_dir: &str) {
     // D135: scheduler state must survive restart.
     // Load snapshot → process due tasks → save snapshot.
-    use da_adapters::{OpenAlexHttpAdapter, SamyamaGraphStore};
+    use da_adapters::OpenAlexHttpAdapter;
     use da_application::{EnrichUseCase, GraphScheduler};
     use da_ports::graph_store::GraphStore;
     use std::path::PathBuf;
@@ -925,7 +930,7 @@ async fn run_scheduler(_queue_dir: &str) {
     let snapshot_path = PathBuf::from("data/samyama/scheduler-state.sgsnap");
 
     // Single shared store for both scheduler and enrich
-    let shared_store = SamyamaGraphStore::from_env();
+    let shared_store = open_graph_store();
 
     // Restore state from snapshot
     if snapshot_path.exists() {
@@ -970,7 +975,7 @@ async fn run_scheduler(_queue_dir: &str) {
         let openalex = Box::new(OpenAlexHttpAdapter::new());
         // Clone shared_store for enrich (Samyama in-memory is per-instance)
         // In Phase 3+ (server mode), both will share the same persistent store
-        let enrich_store = Box::new(SamyamaGraphStore::from_env());
+        let enrich_store = Box::new(open_graph_store());
         let use_case = EnrichUseCase::new(openalex, enrich_store);
 
         match use_case.enrich_by_arxiv_id(arxiv_id).await {
@@ -1377,7 +1382,6 @@ fn export_ontology_yaml(output_dir: &str) {
 /// This is the production-side counterpart of `assert_graph_conforms`
 /// in integration tests. Wave D production-side enforcement.
 async fn validate_graph(label_filter: Option<&str>) {
-    use da_adapters::SamyamaGraphStore;
     use da_domain::validator::{PropertySnapshot, format_violations, validate_node_properties};
     use da_ports::graph_store::DirectGraphStore;
     use serde_json::json;
@@ -1385,7 +1389,7 @@ async fn validate_graph(label_filter: Option<&str>) {
     println!("daily-archive v2 — validate-graph (ADR-045 Wave D production)");
     println!();
 
-    let store = SamyamaGraphStore::from_env();
+    let store = open_graph_store();
     let labels: Vec<String> = match label_filter {
         Some(l) => vec![l.to_string()],
         None => da_domain::schema::all_node_schemas()

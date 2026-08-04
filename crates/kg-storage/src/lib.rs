@@ -11,6 +11,7 @@
 pub mod adapter;
 pub mod contract;
 pub mod error;
+pub mod graph_mode;
 pub mod mock;
 pub mod traits;
 
@@ -18,6 +19,7 @@ pub mod traits;
 pub mod samyama_adapter;
 
 pub use error::{GraphResult, GraphStoreError};
+pub use graph_mode::{GraphMode, GraphModeError};
 pub use mock::MockGraphStore;
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
