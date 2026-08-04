@@ -11,3 +11,9 @@ pub mod temporal;
 
 pub use temporal::{ResolutionOutcome, ResolutionRule, resolve_temporal_edges};
 pub mod port;
+
+#[cfg(feature = "solver")]
+pub mod csr;
+
+#[cfg(feature = "solver")]
+pub use csr::{CsrExportError, csr_matrix_from_graph_view};

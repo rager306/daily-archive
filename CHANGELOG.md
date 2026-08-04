@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M298 S01: GraphView → CsrMatrix pure export (code complete)
+
+**Wave 2 type boundary:** pure `csr_matrix_from_graph_view` in `kg-algorithms` behind optional feature `solver`.
+
+#### Shipped
+
+- **T01** — optional deps `samyama-graph-algorithms` + `ruvector-solver` (`default-features = false`); feature `solver` enables both; package defaults unchanged.
+- **T02** — `crates/kg-algorithms/src/csr.rs`: `csr_matrix_from_graph_view(&GraphView) -> Result<CsrMatrix<f64>, CsrExportError>`.
+  - Map: `out_offsets→row_ptr`, `out_targets→col_indices`, `weights→values`, square `node_count`.
+  - Construct via public CSR fields (clone arrays), not `from_coo`.
+  - `weights=None` + `n>0` → `MissingWeights`; `n==0` → Ok empty matrix; structural checks on offsets/weight length.
+- **T03** — contract suite (8 tests): weighted non-uniform fixture, missing weights, empty view, nnz/row_ptr consistency, weight length mismatch, offsets length/monotonicity/final≠nnz.
+
+#### Verification
+
+```bash
+cargo test -p kg-algorithms --features solver --lib   # 18 passed
+cargo clippy -p kg-algorithms --features solver --all-targets --no-deps -- -D warnings
+```
+
+#### GSD note
+
+- DB: T01+T02 done; T03 code+tests landed, but `gsd_task_complete` requires a running Attempt (auto-mode). Close via `/gsd auto M298-nu7b4d` so host verification can mark T03 and complete S01.
+
+#### Architecture
+
+- Hexagonal: export lives in `kg-algorithms` (universal), not `da-*`. No kg-storage re-export. No CLI/solver invoke. kg-storage fold all-1.0→None is intentional hard-fail at export (documented).
+
 ### Session 2026-08-03 — Wave 1 Complete: All 4 Milestones Closed in GSD
 
 **Wave 1 is DONE. All milestones formally closed through GSD. No debts remain.**
