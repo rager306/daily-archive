@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M309 serve-graph snapshot preload
+
+**Empty-server gap closed:** `da serve-graph --snapshot PATH.sgsnap` imports into process memory before listen.
+
+```bash
+da serve-graph --snapshot data/samyama/batch-10.sgsnap --port 16379
+cargo test -p da-cli --bin da serve_graph
+```
+
+- Still non-persistent (dies on process exit); banners honest
+- No RocksDB; open_graph_store untouched; D127 locked
+- 8 tests (load synthetic, missing file, spawn with/without snapshot)
+
+
 ### Session 2026-08-05 — M308 CLI serve-graph in-memory
 
 **Operator surface for M307:** `da serve-graph` starts `RespServer::new` (no RocksDB) on loopback.
