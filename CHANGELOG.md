@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M301 GraphAlgorithms façade over GraphView
+
+**Dead-port debt closed:** first concrete `impl GraphAlgorithms`.
+
+#### Shipped
+
+- `GraphViewAlgorithms` (feature `ppr`): owns `GraphView`, optional projected edge-type label.
+- `personalized_pagerank` → pure ForwardPush helper; fail-soft empty `Vec` on error; `max_iterations` unused (epsilon fixed `1e-8`).
+- `get_neighbors` / `get_all_neighbors` from projected topology (`edge_type` ignored).
+- `tokio` as **dev-dep only** for async trait tests.
+- Contract suite: 6 façade tests; full `--features ppr --lib` → **33 passed**.
+
+```bash
+cargo test -p kg-algorithms --features ppr --lib
+cargo clippy -p kg-algorithms --features ppr --all-targets --no-deps -- -D warnings
+```
+
+#### Architecture
+
+- Trait no longer orphan; pure helper remains the core.
+- No CLI wiring; no D127; da-ports re-export unchanged.
+
 ### Session 2026-08-04 — M300 Mock compose GraphView to PPR
 
 **Wave 2 integration gap closed:** Mock k-hop cut → pure ForwardPush PPR.
