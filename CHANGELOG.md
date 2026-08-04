@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M299 PPR smoke on exported CSR
+
+**Wave 2 next step after M298:** pure ForwardPush PPR over GraphView via CSR export.
+
+#### Shipped
+
+- Feature `ppr` = `solver` + `ruvector-solver/forward-push` (defaults unchanged).
+- `personalized_pagerank_from_graph_view(view, seeds, alpha, epsilon)`:
+  - NodeId seeds → dense index → `ForwardPushSolver::ppr_multi_seed` → NodeId scores
+  - Typed `PprError` (EmptySeeds, MissingSeed, Csr, Solver)
+  - Topology path when `weights=None` (unit CSR for construction; ForwardPush ignores values)
+- Contract suite: 6 ppr tests; full `--features ppr --lib` → **27 passed**
+
+```bash
+cargo test -p kg-algorithms --features ppr --lib
+```
+
+#### Architecture
+
+- Still pure kg-algorithms; no da-*, no CLI, no GraphAlgorithms trait impl yet.
+- Documented: ForwardPush is degree-count PPR, not weighted SpMV PPR.
+
 ### Session 2026-08-04 — M298 S01: GraphView → CsrMatrix pure export + audit harden
 
 **Wave 2 type boundary:** pure `csr_matrix_from_graph_view` in `kg-algorithms` behind optional feature `solver`.
