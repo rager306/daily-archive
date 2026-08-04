@@ -17,3 +17,9 @@ pub mod csr;
 
 #[cfg(feature = "solver")]
 pub use csr::{CsrExportError, csr_matrix_from_graph_view, materialize_unit_weights};
+
+#[cfg(feature = "ppr")]
+pub mod ppr;
+
+#[cfg(feature = "ppr")]
+pub use ppr::{PprError, personalized_pagerank_from_graph_view};
