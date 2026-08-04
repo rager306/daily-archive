@@ -25,6 +25,7 @@ serde_json = { workspace = true }
 bincode = "1.3"
 kg-ontology = { path = "../kg-ontology" }
 kg-embeddings = { path = "../kg-embeddings" }
-# Compose tests only (Mock → GraphView → CsrMatrix). Not a prod dep — keeps
-# kg-storage free of ruvector-solver (D141 / onion).
-kg-algorithms = { path = "../kg-algorithms", features = ["solver"] }
+# Compose tests only (Mock → GraphView → CsrMatrix / PPR). Not a prod dep —
+# keeps kg-storage free of ruvector-solver (D141 / onion).
+# feature ppr implies solver + ruvector-solver/forward-push for M300 compose.
+kg-algorithms = { path = "../kg-algorithms", features = ["ppr"] }
