@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M304 load-snapshot honesty + Wave 3 entry hygiene
+
+**Process logic debt:** `da load-snapshot` imported into dying in-memory process and sounded durable.
+
+#### Shipped
+
+- `load_snapshot`: success text is **verify-only** + explicit `NON-PERSISTENT` warning (batch-ingest durable path, Wave 3 server not shipped, D127 locked).
+- `graph_stats` empty-state no longer claims load-snapshot "restores" durable graph.
+- Governor rules:
+  - `analyze_must_not_hardcode_available_algorithm_list`
+  - `analyze_algorithms_constant_must_exist` (sentinel)
+- Research brief: `304-RESEARCH.md` — Solution A/B/C, recommended thin Wave 3 slices (store factory → snapshot contract → RespServer smoke).
+
+#### Architecture
+
+- No server built; no D127 open; no RocksDB in default CLI path.
+- Trajectory ON_TRACK; audit CLEAR.
+
 ### Session 2026-08-04 — M303 CLI multi-seed PPR + algorithm list hygiene
 
 **Residual CLI gap after M302:** pure/trait PPR already multi-seed; CLI was single-seed only.

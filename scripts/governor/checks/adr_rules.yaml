@@ -174,3 +174,24 @@ rules:
     pattern: '^ruvector-solver\s*='
     rationale: "kg-storage must not depend on ruvector-solver in [dependencies]. Export lives in kg-algorithms; compose tests may use dev-dep only."
     section_filter: dependencies
+
+  # --- M303/M304: da analyze algorithm list hygiene ---
+  # ANALYZE_ALGORITHMS must remain the single source for unknown-algorithm help.
+  # If removed, help/match arms drift (MEM557). Pattern flags hard-coded Available:
+  # lists that bypass the constant.
+  - id: analyze_must_not_hardcode_available_algorithm_list
+    anchor: "M303 ANALYZE_ALGORITHMS hygiene / API-CLI parity"
+    severity: medium
+    scan: crates/da-cli/src/analyze.rs
+    pattern: 'Available:\s*page-rank,\s*ppr,\s*wcc'
+    rationale: "da-cli analyze unknown-algorithm help must use ANALYZE_ALGORITHMS.join, not a hard-coded list. Prevents help/match arm drift."
+
+  # Require the constant to exist (negative: missing constant name is a process smell;
+  # enforced by also flagging if constant declaration disappears — scan for typo path).
+  - id: analyze_algorithms_constant_must_exist
+    anchor: "M303 ANALYZE_ALGORITHMS hygiene"
+    severity: medium
+    scan: crates/da-cli/src/
+    pattern: 'const ANALYZE_ALGORITHMS_MISSING_SENTINEL'
+    rationale: "Sentinel-only rule: never matches while ANALYZE_ALGORITHMS exists. If constant is renamed without updating governor, add a positive existence check in a later rule."
+    filename_filter: analyze.rs

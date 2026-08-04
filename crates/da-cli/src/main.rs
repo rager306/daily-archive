@@ -501,11 +501,24 @@ async fn load_snapshot(input: &str) {
     };
 
     println!("Loading snapshot: {} ({} bytes)...", input, data.len());
+    // Embedded Samyama is process-local in-memory (GraphStore::new / from_env).
+    // import_snapshot here only verifies the bytes decode into a live store;
+    // the store dies when this CLI process exits. Cross-process durability is
+    // Wave 3 (Samyama server / PersistenceManager) — see doc/PERSISTENCE-ANALYSIS.md.
     let graph = SamyamaGraphStore::from_env();
     match graph.import_snapshot(&data).await {
         Ok(()) => {
             let nodes = graph.node_count().await;
-            println!("✅ Snapshot loaded — {} nodes now in graph", nodes);
+            println!(
+                "✅ Snapshot verified — {} nodes loaded in this process",
+                nodes
+            );
+            eprintln!(
+                "⚠  NON-PERSISTENT: in-memory store dies when this process exits.\n\
+                   Durable write path today: `da batch-ingest --output <snapshot.sgsnap>`.\n\
+                   Cross-process live graph requires Wave 3 server mode (not yet shipped).\n\
+                   D127 import_eligible remains locked."
+            );
         }
         Err(e) => {
             eprintln!("❌ Snapshot load failed: {e}");
@@ -524,7 +537,11 @@ async fn graph_stats() {
     println!("  Nodes: {}", nodes);
     println!("  Edges: {}", edges);
     if nodes == 0 {
-        println!("  ⚠  Graph is empty (in-memory store reset). Use `da load-snapshot` to restore.");
+        println!(
+            "  ⚠  Graph is empty (process-local in-memory store).\
+             \n     `da load-snapshot` only verifies a snapshot in this process — it does not persist.\
+             \n     Durable path: `da batch-ingest --output <snapshot.sgsnap>` (Wave 3 server not shipped)."
+        );
     }
 }
 
