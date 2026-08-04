@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M308 CLI serve-graph in-memory
+
+**Operator surface for M307:** `da serve-graph` starts `RespServer::new` (no RocksDB) on loopback.
+
+```bash
+da serve-graph --host 127.0.0.1 --port 16379
+# RESP: PING → PONG
+cargo test -p da-cli --bin da serve_graph
+```
+
+- Does **not** edit `open_graph_store` (CRITICAL callers)
+- Banners: non-persistent, D127 false, remote NotConfigured
+- Default port **16379** (not Redis 6379)
+
+
 ### Session 2026-08-05 — M307 RespServer in-memory PING smoke
 
 **Wave 3 thin entry:** vendor `RespServer::new` (no RocksDB) on ephemeral port answers RESP `PING` with `PONG`.

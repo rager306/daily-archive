@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 mod analyze;
+mod serve_graph;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
 /// Remote mode exits with a clear error — no fake success, no server auto-start.
@@ -203,6 +204,10 @@ enum Commands {
     /// Run graph algorithms (page-rank, ppr, wcc) on the knowledge graph.
     /// Builds a GraphView projection from the graph store and prints results.
     Analyze(analyze::AnalyzeArgs),
+
+    /// Start in-memory Samyama RespServer (PING health). No RocksDB, no D127.
+    /// Does not change DA_GRAPH_MODE / open_graph_store. Opt-in only.
+    ServeGraph(serve_graph::ServeGraphArgs),
 }
 
 fn main() {
@@ -348,6 +353,13 @@ fn main() {
             export_ontology_yaml(&output);
         }
 
+        Commands::ServeGraph(args) => {
+            println!("serve-graph: starting (Ctrl-C to stop)");
+            if let Err(e) = rt.block_on(async { serve_graph::run_in_memory_server(&args).await }) {
+                eprintln!("❌ serve-graph failed: {e}");
+                std::process::exit(1);
+            }
+        }
         Commands::Analyze(args) => {
             let store = open_graph_store();
             rt.block_on(async {
