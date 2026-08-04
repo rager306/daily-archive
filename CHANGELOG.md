@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M307 RespServer in-memory PING smoke
+
+**Wave 3 thin entry:** vendor `RespServer::new` (no RocksDB) on ephemeral port answers RESP `PING` with `PONG`.
+
+```bash
+cargo test -p kg-storage --features samyama --test resp_server_smoke
+```
+
+- Behind `samyama` feature only; D127 unchanged; `GraphMode::Remote` still NotConfigured
+- No daemon install, no remote client wire-up
+
+
+## Unreleased
+
 ### Session 2026-08-04 — M306 export/import round-trip contract suite
 
 **Debt closeout after stalled auto:** prove Mock + Samyama create→export→import→count/label/property parity.
