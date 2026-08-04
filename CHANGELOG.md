@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### Session 2026-08-04 — M298 S01: GraphView → CsrMatrix pure export (code complete)
+### Session 2026-08-04 — M298 S01: GraphView → CsrMatrix pure export + audit harden
 
 **Wave 2 type boundary:** pure `csr_matrix_from_graph_view` in `kg-algorithms` behind optional feature `solver`.
 
@@ -13,22 +13,29 @@
   - Map: `out_offsets→row_ptr`, `out_targets→col_indices`, `weights→values`, square `node_count`.
   - Construct via public CSR fields (clone arrays), not `from_coo`.
   - `weights=None` + `n>0` → `MissingWeights`; `n==0` → Ok empty matrix; structural checks on offsets/weight length.
-- **T03** — contract suite (8 tests): weighted non-uniform fixture, missing weights, empty view, nnz/row_ptr consistency, weight length mismatch, offsets length/monotonicity/final≠nnz.
+- **T03** — contract suite + audit harden (11 csr tests):
+  - weighted / missing / empty / offsets / weight length
+  - **NEW:** `ColumnIndexOutOfBounds`, `NonFiniteWeight` (NaN/Inf)
+  - **NEW:** `materialize_unit_weights` — explicit post-fold unit fill (never silent 1.0 in export)
+  - **Docs:** ForwardPush ignores CSR values (degree-count PPR); maps stay on GraphView
 
 #### Verification
 
 ```bash
-cargo test -p kg-algorithms --features solver --lib   # 18 passed
+cargo test -p kg-algorithms --features solver --lib   # 21 passed (11 csr)
 cargo clippy -p kg-algorithms --features solver --all-targets --no-deps -- -D warnings
 ```
 
-#### GSD note
+#### GSD process debt (open)
 
-- DB: T01+T02 done; T03 code+tests landed, but `gsd_task_complete` requires a running Attempt (auto-mode). Close via `/gsd auto M298-nu7b4d` so host verification can mark T03 and complete S01.
+- DB: T01+T02 done; T03 **code complete** but `gsd_task_complete` needs running Attempt.
+- Operator: `/gsd auto M298-nu7b4d` to flip T03 + close S01.
 
 #### Architecture
 
-- Hexagonal: export lives in `kg-algorithms` (universal), not `da-*`. No kg-storage re-export. No CLI/solver invoke. kg-storage fold all-1.0→None is intentional hard-fail at export (documented).
+- Hexagonal: export in `kg-algorithms` (universal), not `da-*`. No kg-storage re-export. No CLI/solver invoke.
+- kg-storage fold all-1.0→None remains intentional; unit path = explicit `materialize_unit_weights`.
+- Local f64 validation (vendor `validate_csr_matrix` is f32-only) — D142.
 
 ### Session 2026-08-03 — Wave 1 Complete: All 4 Milestones Closed in GSD
 

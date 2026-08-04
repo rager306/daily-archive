@@ -3,10 +3,19 @@
 //! Feature-gated behind `solver`. Maps only outgoing topology + weights;
 //! does not copy `index_to_node` / `node_to_index` and does not invoke solvers.
 //!
-//! Contract note: kg-storage folds uniform all-1.0 weight vectors to
-//! `weights=None`. This export therefore hard-fails those views via
-//! [`CsrExportError::MissingWeights`] by design — callers that need unit
-//! weights must materialize them before export.
+//! # Contract notes
+//!
+//! - **kg-storage fold:** adapters fold uniform all-1.0 weight vectors to
+//!   `weights=None`. This export hard-fails those views via
+//!   [`CsrExportError::MissingWeights`]. Callers that need unit weights must
+//!   call [`materialize_unit_weights`] (explicit) before export — never silent.
+//! - **ForwardPush / PPR:** ruvector `ForwardPushSolver` walks topology and
+//!   normalizes by **out-degree (edge count)**, ignoring CSR `values`.
+//!   Exporting weights is correct for SpMV / future weighted solvers; it does
+//!   **not** make current PPR weight-sensitive. Map dense scores back with
+//!   `GraphView.index_to_node`.
+//! - **Validation:** local f64 structural checks (vendor `validate_csr_matrix`
+//!   is f32-only). Covers offsets, col bounds, and finite values.
 
 use ruvector_solver::types::CsrMatrix;
 use samyama_graph_algorithms::common::GraphView;
@@ -23,6 +32,10 @@ pub enum CsrExportError {
     OffsetsLengthMismatch { offsets_len: usize, expected: usize },
     /// `out_offsets` is non-monotonic or final offset does not equal nnz.
     OffsetsInconsistent { detail: &'static str },
+    /// An `out_targets` entry is `>= node_count` (square adjacency OOB).
+    ColumnIndexOutOfBounds { index: usize, cols: usize },
+    /// A weight is NaN or ±Inf (ruvector SpMV / PPR refuse non-finite values).
+    NonFiniteWeight { index: usize },
 }
 
 impl fmt::Display for CsrExportError {
@@ -52,11 +65,37 @@ impl fmt::Display for CsrExportError {
             Self::OffsetsInconsistent { detail } => {
                 write!(f, "out_offsets inconsistent: {detail}")
             }
+            Self::ColumnIndexOutOfBounds { index, cols } => {
+                write!(f, "column index {index} out of bounds for cols={cols}")
+            }
+            Self::NonFiniteWeight { index } => {
+                write!(f, "non-finite weight at nnz index {index}")
+            }
         }
     }
 }
 
 impl std::error::Error for CsrExportError {}
+
+/// Explicitly fill missing weights with `1.0` so export can succeed after
+/// kg-storage's all-1.0 → `None` fold.
+///
+/// No-op when weights already present or `node_count == 0`.
+/// Does **not** change topology. Callers choose this; export never injects 1.0.
+///
+/// # Errors
+///
+/// [`CsrExportError::OffsetsInconsistent`] / [`OffsetsLengthMismatch`] if
+/// outgoing CSR is broken (cannot know nnz safely).
+pub fn materialize_unit_weights(view: &mut GraphView) -> Result<(), CsrExportError> {
+    if view.node_count == 0 || view.weights.is_some() {
+        return Ok(());
+    }
+    let nnz = view.out_targets.len();
+    validate_out_offsets(&view.out_offsets, view.node_count, nnz)?;
+    view.weights = Some(vec![1.0; nnz]);
+    Ok(())
+}
 
 /// Build a square [`CsrMatrix<f64>`] from the outgoing CSR of `view`.
 ///
@@ -71,7 +110,7 @@ impl std::error::Error for CsrExportError {}
 /// # Errors
 ///
 /// - [`CsrExportError::MissingWeights`] when `weights` is `None` and `node_count > 0`
-/// - structural failures on broken `out_offsets` or weight/nnz mismatch
+/// - structural failures: offsets, weight length, column OOB, non-finite weights
 ///
 /// Empty graphs (`node_count == 0`) return an empty matrix without requiring weights.
 pub fn csr_matrix_from_graph_view(view: &GraphView) -> Result<CsrMatrix<f64>, CsrExportError> {
@@ -101,6 +140,7 @@ pub fn csr_matrix_from_graph_view(view: &GraphView) -> Result<CsrMatrix<f64>, Cs
     }
 
     validate_out_offsets(&view.out_offsets, n, nnz)?;
+    validate_columns_and_weights(&view.out_targets, weights, n)?;
 
     Ok(CsrMatrix {
         row_ptr: view.out_offsets.clone(),
@@ -144,6 +184,25 @@ fn validate_out_offsets(
         });
     }
 
+    Ok(())
+}
+
+fn validate_columns_and_weights(
+    out_targets: &[usize],
+    weights: &[f64],
+    node_count: usize,
+) -> Result<(), CsrExportError> {
+    for (i, &col) in out_targets.iter().enumerate() {
+        if col >= node_count {
+            return Err(CsrExportError::ColumnIndexOutOfBounds {
+                index: col,
+                cols: node_count,
+            });
+        }
+        if !weights[i].is_finite() {
+            return Err(CsrExportError::NonFiniteWeight { index: i });
+        }
+    }
     Ok(())
 }
 
@@ -289,5 +348,49 @@ mod tests {
             }
             other => panic!("expected OffsetsInconsistent, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn column_index_out_of_bounds_returns_err() {
+        let mut view = weighted_triangle();
+        // Corrupt: target index == n (OOB for square n×n).
+        view.out_targets[1] = 3;
+        let err = csr_matrix_from_graph_view(&view).expect_err("col OOB");
+        assert_eq!(
+            err,
+            CsrExportError::ColumnIndexOutOfBounds { index: 3, cols: 3 }
+        );
+    }
+
+    #[test]
+    fn non_finite_weight_returns_err() {
+        let mut view = weighted_triangle();
+        view.weights = Some(vec![0.5, f64::NAN, 2.5]);
+        let err = csr_matrix_from_graph_view(&view).expect_err("NaN weight");
+        assert_eq!(err, CsrExportError::NonFiniteWeight { index: 1 });
+
+        view.weights = Some(vec![0.5, f64::INFINITY, 2.5]);
+        let err = csr_matrix_from_graph_view(&view).expect_err("Inf weight");
+        assert_eq!(err, CsrExportError::NonFiniteWeight { index: 1 });
+    }
+
+    #[test]
+    fn materialize_unit_weights_enables_export_after_fold() {
+        let mut view = weighted_triangle();
+        view.weights = None; // simulates kg-storage all-1.0 fold
+        assert_eq!(
+            csr_matrix_from_graph_view(&view).unwrap_err(),
+            CsrExportError::MissingWeights
+        );
+
+        materialize_unit_weights(&mut view).expect("materialize");
+        let m = csr_matrix_from_graph_view(&view).expect("export after materialize");
+        assert_eq!(m.values, vec![1.0, 1.0, 1.0]);
+        assert_eq!(m.rows, 3);
+
+        // Already present: no-op, preserves non-uniform.
+        let mut w2 = weighted_triangle();
+        materialize_unit_weights(&mut w2).expect("noop");
+        assert_eq!(w2.weights.as_ref().unwrap(), &vec![0.5, 1.5, 2.5]);
     }
 }

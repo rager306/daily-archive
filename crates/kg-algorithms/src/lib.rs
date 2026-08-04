@@ -16,4 +16,4 @@ pub mod port;
 pub mod csr;
 
 #[cfg(feature = "solver")]
-pub use csr::{CsrExportError, csr_matrix_from_graph_view};
+pub use csr::{CsrExportError, csr_matrix_from_graph_view, materialize_unit_weights};
