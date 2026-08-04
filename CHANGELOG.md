@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M313 Method section phrase parity (E1)
+
+**Logic gap:** Method section-scoped extraction scanned acronyms only; multi-word
+phrases lived only in the global pass (Task section already had phrases).
+
+- Method arm now scans `method_phrases` with word boundaries
+- Global phrase end index uses `p_lower.len()` (match length honesty)
+- YAML: add `generalization` to `methods.phrases` (gold FN 2603.21520)
+- AGENTS E1 marked closed for whitelist path
+
+```bash
+cargo test -p da-adapters --lib rule_extractor -- --test-threads=1
+```
+
+
 ### Session 2026-08-05 — M312 da health graph mode honesty
 
 **Honesty gap closed:** `da health` no longer process-exits on `DA_GRAPH_MODE=remote`.

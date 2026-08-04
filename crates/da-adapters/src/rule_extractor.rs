@@ -328,10 +328,12 @@ impl RuleBasedExtractor {
                 // No section-specific extraction needed here.
             }
             EntityType::Method => {
-                // Use the same known-methods whitelist as the global pass.
+                // Same whitelist as global pass: acronyms + multi-word phrases.
                 // Blind all-caps scan produced too many false positives (87 Methods
                 // in one paper). Whitelist keeps precision high.
                 // Case-insensitive search: GROBID may normalize casing (ppo, Cot).
+                // M313: section arm previously scanned acronyms only — phrases
+                // lived only in the global pass (logic gap vs Task section).
                 let lower_text = text.to_lowercase();
                 for (method_lower, method_canonical) in self
                     .lowered
@@ -345,6 +347,24 @@ impl RuleBasedExtractor {
                         let end = abs + method_lower.len();
                         if Self::word_boundary(text, abs, end) {
                             results.push((abs, end, method_canonical.clone()));
+                        }
+                        start = end;
+                    }
+                }
+                for (p_lower, phrase_canonical) in self
+                    .lowered
+                    .method_phrases_lower
+                    .iter()
+                    .zip(self.config.methods.phrases.iter())
+                {
+                    let mut start = 0;
+                    while let Some(pos) = lower_text[start..].find(p_lower.as_str()) {
+                        let abs = start + pos;
+                        // Match length must come from the lowercased needle
+                        // (same bytes as lower_text), not the canonical label.
+                        let end = abs + p_lower.len();
+                        if Self::word_boundary(text, abs, end) {
+                            results.push((abs, end, phrase_canonical.clone()));
                         }
                         start = end;
                     }
@@ -483,7 +503,9 @@ impl Extractor for RuleBasedExtractor {
                 let mut start = 0;
                 while let Some(pos) = lower[start..].find(p_lower.as_str()) {
                     let abs = start + pos;
-                    let end = abs + phrase_canonical.len();
+                    // end must use lowercased needle length (indices into `lower` /
+                    // same UTF-8 length for ASCII phrases). M313: was phrase_canonical.len().
+                    let end = abs + p_lower.len();
                     if Self::word_boundary(&scan_text, abs, end) {
                         let key = (p_lower.clone(), "method".to_string());
                         if !seen.contains(&key) {
@@ -1129,6 +1151,33 @@ async fn test_multi_word_method_phrase_extraction() {
     assert!(
         methods2.contains(&"self-evolving memory"),
         "'Self-Evolving Memory' (title case) should be extracted, got: {methods2:?}"
+    );
+}
+
+/// M313: Method *section* arm must scan phrases (not only acronyms).
+/// Body text under a Method-classified section title must hit method_phrases
+/// without relying solely on the later global phrase pass.
+#[tokio::test]
+async fn test_method_section_arm_extracts_phrases() {
+    let extractor = RuleBasedExtractor::new();
+    // Title "Method" classifies the section as Method → section arm runs.
+    let sections = vec![(
+        "Method".to_string(),
+        "Our approach uses self-evolving memory and tests generalization.".to_string(),
+    )];
+    let entities = extractor.extract(&sections).await.unwrap();
+    let methods: Vec<&str> = entities
+        .iter()
+        .filter(|e| e.entity_type == EntityType::Method)
+        .map(|e| e.label.as_str())
+        .collect();
+    assert!(
+        methods.contains(&"self-evolving memory"),
+        "section Method arm should extract phrase, got: {methods:?}"
+    );
+    assert!(
+        methods.contains(&"generalization"),
+        "E1 gold FN phrase 'generalization' should extract, got: {methods:?}"
     );
 }
 
