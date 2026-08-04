@@ -5,8 +5,8 @@ structure → embed → write to a durable knowledge graph (Samyama) → agent
 retrieval. Graph import is **fail-closed** (`import_eligible=false`) until
 explicit human go (D127).
 
-**Runtime:** Rust workspace under `crates/` (hexagonal / onion).  
-**Frozen evidence:** Python stack under `legacy/` (M274–M284, Wave B, hybrid bodies).  
+**Runtime:** Rust workspace under `crates/` (hexagonal / onion).
+**Frozen evidence:** Python stack cold-archived in `archive/python-era-cold-*/` (`archive/PYTHON-ERA-COLD.md`); `legacy/` stub only.
 **Binding ADRs:** `doc/adr/ADR-INDEX.md` (037–042).
 
 ---
