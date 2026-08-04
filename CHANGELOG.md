@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Session 2026-08-04 — M303 CLI multi-seed PPR + algorithm list hygiene
+
+**Residual CLI gap after M302:** pure/trait PPR already multi-seed; CLI was single-seed only.
+
+#### Shipped
+
+- `--seed` is now **repeatable** (`Vec<u64>`, clap Append): `--seed 1 --seed 2`
+- Single-seed UX preserved; empty seeds still error
+- `ANALYZE_ALGORITHMS` constant is single source for unknown-algorithm help
+- Tests: **10** analyze unit tests (multi-seed + constant hygiene + prior 8)
+
+```bash
+da analyze --algorithm ppr --seed 1 --seed 2 [--alpha 0.85] [--top 10]
+```
+
+#### Architecture
+
+- No kg-layer change; reuses M299 equal-mass multi-seed path
+- D127 unchanged (read-only)
+
 ### Session 2026-08-04 — M302 CLI analyze personalized PageRank
 
 **Operator surface for Wave 2 PPR stack.**
