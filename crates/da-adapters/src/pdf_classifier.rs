@@ -39,23 +39,21 @@ impl PdfClassificationPort for PdfInspectorClassifier {
 }
 
 /// Synchronous classification via pdf_inspector.
+///
+/// M349: single source of truth is `process_pdf_mem`.
+/// Mixing `classify_pdf_mem` pages_needing_ocr with `process_pdf_mem`
+/// has_encoding_issues produced inconsistent pairs (e.g. 0 OCR pages +
+/// encoding_issues=true from document-level markdown detectors).
 fn classify_sync(pdf_bytes: &[u8]) -> ClassificationResult<PdfClassification> {
-    let result = pdf_inspector::classify_pdf_mem(pdf_bytes)
-        .map_err(|e| ClassificationError::Failed(format!("pdf-inspector error: {e}")))?;
-
-    // Run full process to get ocr_reasons_by_page and has_encoding_issues
     let full = pdf_inspector::process_pdf_mem(pdf_bytes)
         .map_err(|e| ClassificationError::Failed(format!("pdf-inspector process error: {e}")))?;
 
-    let pdf_type = map_pdf_type(&result.pdf_type);
-    let ocr_reasons = map_ocr_reasons(&full.ocr_reasons_by_page);
-
     Ok(PdfClassification {
-        pdf_type,
-        page_count: result.page_count,
-        pages_needing_ocr: result.pages_needing_ocr,
-        ocr_reasons_by_page: ocr_reasons,
-        confidence: result.confidence,
+        pdf_type: map_pdf_type(&full.pdf_type),
+        page_count: full.page_count,
+        pages_needing_ocr: full.pages_needing_ocr,
+        ocr_reasons_by_page: map_ocr_reasons(&full.ocr_reasons_by_page),
+        confidence: full.confidence,
         has_encoding_issues: full.has_encoding_issues,
     })
 }
@@ -126,12 +124,25 @@ mod tests {
             "confidence should be > 0.5, got {}",
             result.confidence
         );
-        // Digital-born should have few or no pages needing OCR
+        // M349: single process_pdf_mem source — every reason page ⊆ OCR list
+        // (OCR list may be a superset via gid-encoded merge).
+        for r in &result.ocr_reasons_by_page {
+            assert!(
+                result.pages_needing_ocr.contains(&r.page),
+                "reason page {} missing from pages_needing_ocr={:?}",
+                r.page,
+                result.pages_needing_ocr
+            );
+        }
+        // Soft encoding alone does not block extractability.
+        if result.pages_needing_ocr.is_empty() {
+            assert!(result.is_text_extractable());
+        }
         eprintln!(
-            "pdf_type={:?} pages={} ocr_pages={} confidence={:.2} encoding_issues={}",
+            "pdf_type={:?} pages={} ocr_pages={:?} confidence={:.2} encoding_issues={}",
             result.pdf_type,
             result.page_count,
-            result.pages_needing_ocr.len(),
+            result.pages_needing_ocr,
             result.confidence,
             result.has_encoding_issues
         );

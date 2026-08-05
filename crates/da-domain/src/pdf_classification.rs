@@ -63,14 +63,23 @@ pub struct PdfClassification {
     pub ocr_reasons_by_page: Vec<PageOcrReasons>,
     /// Detection confidence score (0.0–1.0).
     pub confidence: f32,
-    /// True when broken font encodings are detected (garbled text).
+    /// Soft encoding signal from pdf-inspector (M349).
+    ///
+    /// Can be `true` when document-level markdown shows CID/ToUnicode
+    /// quirks **without** any page listed in `pages_needing_ocr`.
+    /// Treat as operator warning, not a hard block: GROBID may still
+    /// extract usable TEI. Hard routing uses `pages_needing_ocr` only.
     pub has_encoding_issues: bool,
 }
 
 impl PdfClassification {
-    /// Returns true if the PDF is fully text-extractable (no pages need OCR).
+    /// Returns true if no page is flagged for OCR.
+    ///
+    /// Soft `has_encoding_issues` alone does **not** make the PDF
+    /// non-extractable (M349). Hub PDF 2507.19457 is Text / 0 OCR pages
+    /// with encoding_issues=true — still GROBID-eligible.
     pub fn is_text_extractable(&self) -> bool {
-        self.pages_needing_ocr.is_empty() && !self.has_encoding_issues
+        self.pages_needing_ocr.is_empty()
     }
 
     /// Returns true if the PDF needs OCR on all content pages.
@@ -161,7 +170,8 @@ mod tests {
     }
 
     #[test]
-    fn classification_encoding_issues() {
+    fn classification_soft_encoding_still_extractable() {
+        // M349: encoding_issues without OCR pages is soft (hub PDF pattern).
         let c = PdfClassification {
             pdf_type: PdfType::Text,
             page_count: 5,
@@ -170,7 +180,8 @@ mod tests {
             confidence: 0.7,
             has_encoding_issues: true,
         };
-        assert!(!c.is_text_extractable());
+        assert!(c.is_text_extractable());
+        assert!(c.pdf_type.grobid_eligible());
     }
 
     // --- ADR-051 P0 roundtrip (M346) ---

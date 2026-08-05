@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M349 PDF classifier consistency + heal_graph clippy
+
+**Debt fix: dual-source inconsistency + false hard-fail on soft encoding**
+
+Root cause (hub PDF 2507.19457):
+- Adapter mixed `classify_pdf_mem.pages_needing_ocr` with
+  `process_pdf_mem.has_encoding_issues` → inconsistent pair
+  (0 OCR pages + encoding_issues=true).
+- `process_pdf_mem` alone reports **2 OCR pages** + encoding_issues on hub PDF.
+- `has_encoding_issues` can also be soft (document-level markdown CID detectors)
+  without any OCR page.
+
+Fixes:
+1. `PdfInspectorClassifier`: single source = `process_pdf_mem` only
+2. `is_text_extractable()`: only `pages_needing_ocr.is_empty()` (encoding is soft)
+3. Docs on soft encoding semantics
+4. `HealGraphArgs` struct — clippy `too_many_arguments` on `heal_graph` gone
+
+```bash
+cargo test -p da-domain --lib pdf_classification
+cargo test -p da-adapters --features pdf-classifier --lib pdf_classifier -- --nocapture
+# hub: pdf_type=Text pages=96 ocr_pages=[…] encoding_issues=true
+cargo clippy -p da-cli --bin da --no-deps -- -D warnings
+```
+
+
 ### Session 2026-08-05 — M348 CLI wire PdfInspectorClassifier (feature-gated)
 
 **Close M346/M347 composition-root gap:**

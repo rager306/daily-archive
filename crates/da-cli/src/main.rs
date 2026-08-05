@@ -419,17 +419,17 @@ fn main() {
             output_snapshot,
         } => {
             rt.block_on(async {
-                heal_graph(
-                    &op,
-                    &vid,
-                    &label,
-                    key.as_deref(),
-                    value.as_deref(),
-                    keep.as_deref(),
-                    &reason,
-                    snapshot.as_deref(),
-                    output_snapshot.as_deref(),
-                )
+                heal_graph(HealGraphArgs {
+                    op: &op,
+                    vid: &vid,
+                    label: &label,
+                    key: key.as_deref(),
+                    value: value.as_deref(),
+                    keep: keep.as_deref(),
+                    reason: &reason,
+                    snapshot: snapshot.as_deref(),
+                    output_snapshot: output_snapshot.as_deref(),
+                })
                 .await;
             });
         }
@@ -1173,19 +1173,34 @@ fn schema_init(dimensions: usize) {
     });
 }
 
-async fn heal_graph(
-    op: &str,
-    vid: &str,
-    label: &str,
-    key: Option<&str>,
-    value: Option<&str>,
-    keep: Option<&str>,
-    reason: &str,
-    snapshot: Option<&std::path::Path>,
-    output_snapshot: Option<&std::path::Path>,
-) {
+/// Args for `heal_graph` (M349: avoids clippy `too_many_arguments`).
+struct HealGraphArgs<'a> {
+    op: &'a str,
+    vid: &'a str,
+    label: &'a str,
+    key: Option<&'a str>,
+    value: Option<&'a str>,
+    keep: Option<&'a str>,
+    reason: &'a str,
+    snapshot: Option<&'a std::path::Path>,
+    output_snapshot: Option<&'a std::path::Path>,
+}
+
+async fn heal_graph(args: HealGraphArgs<'_>) {
     use da_application::GraphHealingUseCase;
     use da_domain::healing::HealingActor;
+
+    let HealGraphArgs {
+        op,
+        vid,
+        label,
+        key,
+        value,
+        keep,
+        reason,
+        snapshot,
+        output_snapshot,
+    } = args;
 
     let graph_store = Box::new(open_graph_store_with_optional_snapshot(snapshot).await);
     let use_case = GraphHealingUseCase::new(graph_store);
