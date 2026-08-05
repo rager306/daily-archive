@@ -214,7 +214,7 @@ async fn run_task(
                 .first()
                 .and_then(|r| r.first())
                 .and_then(json_cell_number);
-            let verdict = classify_result_rows(rows, first_num, task.min_rows);
+            let verdict = task.classify(rows, first_num);
             TaskResultRow {
                 id: task.id.clone(),
                 title: task.title.clone(),

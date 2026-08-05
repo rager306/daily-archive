@@ -6,7 +6,9 @@
 use serde::{Deserialize, Serialize};
 
 /// One showcase (or scale) task from a suite file.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// `Eq` dropped: `expect_min_value: Option<f64>` — f64 has no `Eq` (NaN).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GraphTask {
     pub id: String,
     pub title: String,
@@ -16,10 +18,43 @@ pub struct GraphTask {
     pub min_rows: usize,
     /// If true, EMPTY does not fail the suite (rare; must be justified in insight).
     pub allow_empty: bool,
+    /// Exact row count assertion (M338). None = skip check.
+    pub expect_rows: Option<usize>,
+    /// First numeric cell >= assertion (M338). None = skip check.
+    pub expect_min_value: Option<f64>,
+}
+
+impl GraphTask {
+    /// Full classification: base `classify_result_rows` + expect bounds (M338).
+    ///
+    /// Bound failures downgrade to `Empty` — the task didn't prove what it
+    /// asserted, so it is treated as a non-passing result in the suite gate.
+    pub fn classify(
+        &self,
+        row_count: usize,
+        first_cell_number: Option<f64>,
+    ) -> TaskVerdict {
+        let base = classify_result_rows(row_count, first_cell_number, self.min_rows);
+        if base != TaskVerdict::Pass {
+            return base;
+        }
+        if let Some(expected) = self.expect_rows {
+            if row_count != expected {
+                return TaskVerdict::Empty;
+            }
+        }
+        if let Some(min_val) = self.expect_min_value {
+            match first_cell_number {
+                Some(actual) if actual >= min_val => {}
+                _ => return TaskVerdict::Empty,
+            }
+        }
+        TaskVerdict::Pass
+    }
 }
 
 /// Suite file parse result.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct GraphTaskSuite {
     pub tasks: Vec<GraphTask>,
 }
@@ -95,12 +130,16 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
     let mut pending_insight = String::new();
     let mut pending_min_rows: usize = 1;
     let mut pending_allow_empty = false;
+    let mut pending_expect_rows: Option<usize> = None;
+    let mut pending_expect_min_value: Option<f64> = None;
     let mut cypher_buf: Vec<String> = Vec::new();
 
     let flush = |title: &Option<String>,
                  insight: &str,
                  min_rows: usize,
                  allow_empty: bool,
+                 expect_rows: Option<usize>,
+                 expect_min_value: Option<f64>,
                  buf: &mut Vec<String>,
                  out: &mut Vec<GraphTask>|
      -> Result<(), String> {
@@ -123,6 +162,8 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
             cypher,
             min_rows,
             allow_empty,
+            expect_rows,
+            expect_min_value,
         });
         Ok(())
     };
@@ -138,12 +179,16 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
                 &pending_insight,
                 pending_min_rows,
                 pending_allow_empty,
+                pending_expect_rows,
+                pending_expect_min_value,
                 &mut cypher_buf,
                 &mut tasks,
             )
             .map_err(|e| format!("line {}: {e}", lineno + 1))?;
             pending_min_rows = 1;
             pending_allow_empty = false;
+            pending_expect_rows = None;
+            pending_expect_min_value = None;
             let rest = rest.trim();
             let (title, insight) = match rest.split_once('|') {
                 Some((t, i)) => (t.trim().to_string(), i.trim().to_string()),
@@ -174,6 +219,27 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
             continue;
         }
 
+        if let Some(rest) = trimmed.strip_prefix("// @expect_rows") {
+            let n = rest
+                .trim()
+                .parse::<usize>()
+                .map_err(|_| format!("line {}: invalid @expect_rows", lineno + 1))?;
+            pending_expect_rows = Some(n);
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("// @expect_min_value") {
+            let v = rest
+                .trim()
+                .parse::<f64>()
+                .map_err(|_| format!("line {}: invalid @expect_min_value", lineno + 1))?;
+            if !v.is_finite() {
+                return Err(format!("line {}: @expect_min_value must be finite", lineno + 1));
+            }
+            pending_expect_min_value = Some(v);
+            continue;
+        }
+
         // Skip other comments and blank lines outside cypher accumulation
         if pending_title.is_none() {
             if trimmed.is_empty() || trimmed.starts_with("//") {
@@ -199,6 +265,8 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
         &pending_insight,
         pending_min_rows,
         pending_allow_empty,
+        pending_expect_rows,
+        pending_expect_min_value,
         &mut cypher_buf,
         &mut tasks,
     )?;
@@ -316,5 +384,126 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
         assert_eq!(json_cell_number(&serde_json::json!(24)), Some(24.0));
         assert_eq!(json_cell_number(&serde_json::json!("3.5")), Some(3.5));
         assert_eq!(json_cell_number(&serde_json::json!("x")), None);
+    }
+
+    // --- M338: expect bounds ---
+
+    #[test]
+    fn parse_expect_rows_and_min_value() {
+        let src = r#"
+// @query Paper count | Scale
+// @expect_rows 1
+// @expect_min_value 24
+MATCH (n:Paper) RETURN count(n) AS papers;
+"#;
+        let suite = parse_tasks_cypher(src).unwrap();
+        assert_eq!(suite.tasks[0].expect_rows, Some(1));
+        assert_eq!(suite.tasks[0].expect_min_value, Some(24.0));
+    }
+
+    #[test]
+    fn parse_resets_expect_between_tasks() {
+        let src = r#"
+// @query Task A | a
+// @expect_rows 1
+MATCH (n) RETURN count(n);
+
+// @query Task B | b
+MATCH (n) RETURN n LIMIT 1;
+"#;
+        let suite = parse_tasks_cypher(src).unwrap();
+        assert_eq!(suite.tasks[0].expect_rows, Some(1));
+        assert_eq!(suite.tasks[1].expect_rows, None);
+    }
+
+    #[test]
+    fn reject_invalid_expect_rows() {
+        let src = "// @query T | x\n// @expect_rows abc\nMATCH (n) RETURN n;";
+        assert!(parse_tasks_cypher(src).is_err());
+    }
+
+    #[test]
+    fn reject_nan_expect_min_value() {
+        let src = "// @query T | x\n// @expect_min_value NaN\nMATCH (n) RETURN n;";
+        let err = parse_tasks_cypher(src).unwrap_err();
+        // f64::parse("NaN") succeeds but is_finite() must reject it
+        assert!(err.contains("finite"));
+    }
+
+    #[test]
+    fn classify_expect_rows_pass() {
+        let task = GraphTask {
+            id: "t".into(),
+            title: "T".into(),
+            insight: "".into(),
+            cypher: "MATCH (n) RETURN n;".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: Some(1),
+            expect_min_value: None,
+        };
+        assert_eq!(task.classify(1, None), TaskVerdict::Pass);
+    }
+
+    #[test]
+    fn classify_expect_rows_fail() {
+        let task = GraphTask {
+            id: "t".into(),
+            title: "T".into(),
+            insight: "".into(),
+            cypher: "MATCH (n) RETURN n;".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: Some(1),
+            expect_min_value: None,
+        };
+        // Engine returns 24 rows (per-paper grouping) but we expected 1 aggregate
+        assert_eq!(task.classify(24, Some(24.0)), TaskVerdict::Empty);
+    }
+
+    #[test]
+    fn classify_expect_min_value_pass() {
+        let task = GraphTask {
+            id: "t".into(),
+            title: "T".into(),
+            insight: "".into(),
+            cypher: "MATCH (n) RETURN count(n);".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: None,
+            expect_min_value: Some(20.0),
+        };
+        assert_eq!(task.classify(1, Some(24.0)), TaskVerdict::Pass);
+    }
+
+    #[test]
+    fn classify_expect_min_value_fail() {
+        let task = GraphTask {
+            id: "t".into(),
+            title: "T".into(),
+            insight: "".into(),
+            cypher: "MATCH (n) RETURN count(n);".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: None,
+            expect_min_value: Some(30.0),
+        };
+        assert_eq!(task.classify(1, Some(24.0)), TaskVerdict::Empty);
+    }
+
+    #[test]
+    fn classify_expect_min_value_missing_cell() {
+        let task = GraphTask {
+            id: "t".into(),
+            title: "T".into(),
+            insight: "".into(),
+            cypher: "MATCH (n) RETURN n;".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: None,
+            expect_min_value: Some(1.0),
+        };
+        // Rows returned but first cell is not numeric → cannot verify bound → EMPTY
+        assert_eq!(task.classify(1, None), TaskVerdict::Empty);
     }
 }

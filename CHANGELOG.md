@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M338 graph task suite expect bounds
+
+**Tighten ADR-051 §8.1 suite from min_rows=1 to exact count/value bounds:**
+
+- `// @expect_rows N` — exact row count assertion (catches engine grouping surprises)
+- `// @expect_min_value N` — first numeric cell >= assertion
+- `GraphTask::classify` method wraps `classify_result_rows` + bounds
+- Suite file updated: Paper count expects 1 row ≥ 24; Hub CITES expects 1 row ≥ 1
+- Engine note: Samyama returns per-Paper rows for count() without GROUP BY
+- 9 new unit tests (16 total); E2E PASS=7; D175/D176 in effect
+
+```bash
+cargo test -p da-cli --lib graph_tasks
+cargo run -p da-cli --example graph_task_suite -- \
+  --snapshot artifacts/gepa_hub_production/hub.sgsnap \
+  --tasks data/graph_tasks/gepa_hub.tasks.cypher
+```
+
+
 ### Session 2026-08-05 — M337 graph task suite CI + governor wire ban
 
 **Trajectory lock for ADR-051 §8.1:**

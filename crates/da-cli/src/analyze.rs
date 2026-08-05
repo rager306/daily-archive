@@ -177,6 +177,7 @@ mod tests {
             top: 10,
             seeds: Vec::new(),
             alpha: 0.85,
+            snapshot: None,
         }
     }
 
