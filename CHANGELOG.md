@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M351 hub PDF OCR pages 69/84 diagnosis
+
+**Investigation closed (debt from M349/M350):**
+
+Hub PDF `2507.19457` (GEPA, 96 pages):
+- `pdf_type=Text`, confidence=1.0
+- `pages_needing_ocr=[69, 84]`
+- reasons: **both** `suspected_garbled_text` (not `scanned` / not `no_text`)
+- `has_encoding_issues=true` (soft document-level signal; whole markdown has no U+FFFD)
+
+Interpretation (pdf-inspector text-quality):
+- Page-local broken ToUnicode / CID / cipher-letter heuristics on appendix-like pages
+- Document remains GROBID-eligible overall (`is_text_extractable` false only because OCR pages non-empty)
+- Operator action: treat pages 69/84 as quality flags, not full-document OCR
+
+Deliverables:
+- Permanent regression: `crates/da-adapters/tests/hub_ocr_probe.rs` (feature `pdf-classifier`)
+- CLI ingest prints `OCR why: 69=suspected_garbled_text, 84=…`
+
+```bash
+cargo test -p da-adapters --features pdf-classifier --test hub_ocr_probe -- --nocapture
+cargo check -p da-cli
+```
+
+
 ### Session 2026-08-05 — M350 IngestResult carries optional PDF classification
 
 **Close observability gap: triage was logged only, never returned**

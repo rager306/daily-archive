@@ -666,7 +666,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
                     "locked"
                 }
             );
-            // M350: machine-readable pre-GROBID triage when classifier ran
+            // M350/M351: machine-readable pre-GROBID triage when classifier ran
             if let Some(ref c) = result.pdf_classification {
                 println!(
                     "   PDF:      type={:?} pages={} ocr_pages={:?} encoding_issues={} conf={:.2}",
@@ -676,6 +676,15 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
                     c.has_encoding_issues,
                     c.confidence
                 );
+                // Compact per-page OCR reasons (e.g. 69=suspected_garbled_text)
+                if !c.ocr_reasons_by_page.is_empty() {
+                    let reasons: Vec<String> = c
+                        .ocr_reasons_by_page
+                        .iter()
+                        .map(|p| format!("{}={}", p.page, p.reasons.join("+")))
+                        .collect();
+                    println!("   OCR why:  {}", reasons.join(", "));
+                }
             }
         }
         Err(e) => {
