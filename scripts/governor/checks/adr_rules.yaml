@@ -260,3 +260,26 @@ rules:
     pattern: 'new_with_persistence|data_path:\s*Some\('
     rationale: "da serve-graph must use RespServer::new with data_path=None. RocksDB/persistence is a later explicit-flag slice; do not sneak into serve_graph.rs."
     filename_filter: serve_graph.rs
+
+  # --- M336/M337: graph task suites must use ontology wire strings (ADR-051 §8.1) ---
+  # Ban Rust const *names* that are not graph wire strings (HAS_PART vs hasPart, etc.).
+  # Suffix .cypher is not in DEFAULT_SUFFIXES — must allowlist.
+  - id: graph_tasks_must_not_use_wrong_edge_wires
+    anchor: "ADR-051 §8.1 + ADR-050 meta-ontology (edge_contracts.yaml wire strings)"
+    severity: high
+    scan: data/graph_tasks/
+    pattern: '\[:(?:HAS_PART|AUTHORED_BY|HAS_TOPIC|FOUND_IN|IN_CATEGORY)\b'
+    rationale: "Graph task Cypher must use ontology wire strings (hasPart, authoredBy, hasTopic, foundIn, inCategory), not Rust const names (HAS_PART, …). Source: data/ontology/edge_contracts.yaml."
+    suffix_allowlist:
+      - .cypher
+
+  # Soft hygiene: tasks dir should exist with at least one suite (process smell if empty after M336).
+  # Pattern never matches a real line — existence of suite is checked by unit tests in verify script.
+  - id: graph_tasks_suite_file_sentinel
+    anchor: "ADR-051 §8.1 semantic graph task suite"
+    severity: medium
+    scan: data/graph_tasks/
+    pattern: '@query_MISSING_SENTINEL_NEVER_MATCHES'
+    rationale: "Sentinel-only: ensures data/graph_tasks/ is scanned. Real suite presence enforced by cargo test -p da-cli --lib graph_tasks + E2E suite runner."
+    suffix_allowlist:
+      - .cypher

@@ -104,6 +104,8 @@ cargo test -p kg-pipeline --lib
 cargo test -p da-domain --lib
 cargo test -p da-application --tests
 cargo test -p da-adapters --lib
+# ADR-051 §8.1: pure graph task suite parser (M336/M337) — no rocksdb, no snap required
+cargo test -p da-cli --lib graph_tasks
 
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: architecture guardrail failed"

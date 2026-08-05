@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M337 graph task suite CI + governor wire ban
+
+**Trajectory lock for ADR-051 §8.1:**
+
+- Governor high: `graph_tasks_must_not_use_wrong_edge_wires` bans `[:HAS_PART]` etc. in `data/graph_tasks/*.cypher`
+- `scripts/verify_rust_architecture.sh` runs `cargo test -p da-cli --lib graph_tasks`
+- Full suite (needs snap) remains operator/CI-optional; unit tests always gate
+
+```bash
+python3 scripts/check_project_trajectory.py --phase preflight
+cargo test -p da-cli --lib graph_tasks
+# full suite when snap present:
+cargo run -p da-cli --example graph_task_suite -- \
+  --snapshot artifacts/gepa_hub_production/hub.sgsnap \
+  --tasks data/graph_tasks/gepa_hub.tasks.cypher
+```
+
+
 ### Session 2026-08-05 — M336 semantic graph task suite runner
 
 **ADR-051 §8.1 implementation** (Samyama case-study DoD pattern):
