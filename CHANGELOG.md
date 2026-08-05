@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M354 EntityType/RelationType proptest wire stability
+
+**ADR-051 P1 domain closed vocabularies:**
+
+- `EntityType::all()` + `ENTITY_TYPES` (21 types) — mirrors `RelationType::all`
+- proptest (9 tests):
+  - EntityType: as_str nonempty, serde roundtrip, as_str==serde wire (PascalCase)
+  - RelationType: as_str nonempty, serde roundtrip, as_str==serde wire (SCREAMING_SNAKE)
+  - exhaustive uniqueness for both; structure/bibliographic wire constants nonempty
+- `verify_rust_architecture.sh` runs `cargo test -p da-domain --lib proptest`
+
+```bash
+cargo test -p da-domain --lib proptest
+```
+
+
 ### Session 2026-08-05 — M353 TemporalEdge proptest + pdf_triage shape lock
 
 **ADR-051 P1 domain semantic + M352 regression prevention:**

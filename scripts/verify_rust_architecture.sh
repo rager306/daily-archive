@@ -108,6 +108,8 @@ cargo test -p da-adapters --lib
 cargo test -p da-cli --lib graph_tasks
 # ADR-051 P1: TemporalEdge property suite (M353)
 cargo test -p kg-ontology --lib proptest
+# ADR-051 P1: EntityType / RelationType wire stability (M354)
+cargo test -p da-domain --lib proptest
 
 # M352/M353: BatchIngestResult must keep pdf_triage (batch triage shape lock)
 if ! grep -q 'pdf_triage' crates/da-application/src/batch_ingest.rs; then

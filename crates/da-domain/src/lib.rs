@@ -37,7 +37,7 @@ pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
     edge_contracts_or_yaml, render_edge_contracts_yaml, render_markdown_table,
 };
-pub use entity::{Entity, EntitySchema, EntityType};
+pub use entity::{Entity, EntitySchema, EntityType, ENTITY_TYPES};
 pub use eval::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
     promote_candidates,

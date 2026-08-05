@@ -451,3 +451,73 @@ mod tests {
         assert!(hypergraph::MEMBER_OF_CLUSTER != "PARTICIPATES_IN");
     }
 }
+
+// ─── ADR-051 P1: Property-based tests (M354) ───
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+    use std::collections::HashSet;
+
+    fn arb_relation_type() -> impl Strategy<Value = RelationType> {
+        (0usize..RELATION_TYPES.len()).prop_map(|i| RELATION_TYPES[i].clone())
+    }
+
+    proptest! {
+        /// Property 1: as_str is never empty.
+        #[test]
+        fn prop_as_str_nonempty(t in arb_relation_type()) {
+            prop_assert!(!t.as_str().is_empty());
+        }
+
+        /// Property 2: serde JSON roundtrip (SCREAMING_SNAKE_CASE wire).
+        #[test]
+        fn prop_serde_roundtrip(t in arb_relation_type()) {
+            let json = serde_json::to_string(&t).expect("serialize");
+            let back: RelationType = serde_json::from_str(&json).expect("deserialize");
+            prop_assert_eq!(t, back);
+            let inner = json.trim_matches('"');
+            prop_assert!(!inner.is_empty());
+            prop_assert!(inner.chars().all(|c| c.is_ascii_uppercase() || c == '_'));
+        }
+
+        /// Property 3: as_str equals serde wire string.
+        #[test]
+        fn prop_as_str_matches_serde_wire(t in arb_relation_type()) {
+            let json = serde_json::to_string(&t).unwrap();
+            let wire = json.trim_matches('"');
+            prop_assert_eq!(t.as_str(), wire);
+        }
+    }
+
+    #[test]
+    fn prop_all_as_str_unique_and_count_18() {
+        let mut seen = HashSet::new();
+        for t in RelationType::all() {
+            assert!(seen.insert(t.as_str()), "duplicate as_str: {}", t.as_str());
+        }
+        assert_eq!(seen.len(), 18);
+        assert_eq!(RELATION_TYPES.len(), 18);
+    }
+
+    #[test]
+    fn prop_structure_and_bibliographic_wires_nonempty() {
+        for label in [
+            structure::HAS_PART,
+            structure::HAS_TOPIC,
+            structure::AUTHORED_BY,
+            structure::FROM_SOURCE,
+            structure::FOUND_IN,
+            structure::IN_CATEGORY,
+            bibliographic::CITES,
+            bibliographic::CITED_BY,
+            bibliographic::CO_AUTHORED,
+            bibliographic::MENTIONS,
+            bibliographic::SUPERSEDES,
+            bibliographic::SPLITS,
+        ] {
+            assert!(!label.is_empty());
+        }
+    }
+}

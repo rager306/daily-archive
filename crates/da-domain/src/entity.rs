@@ -66,7 +66,37 @@ impl EntityType {
             EntityType::FutureWork => "FutureWork",
         }
     }
+
+    /// All closed-vocabulary entity types (ADR-028 + ADR-038).
+    pub fn all() -> &'static [EntityType] {
+        &ENTITY_TYPES
+    }
 }
+
+/// All 21 adopted entity types (concrete + abstract).
+pub const ENTITY_TYPES: [EntityType; 21] = [
+    EntityType::Task,
+    EntityType::Method,
+    EntityType::Dataset,
+    EntityType::Model,
+    EntityType::Metric,
+    EntityType::Figure,
+    EntityType::Table,
+    EntityType::Equation,
+    EntityType::Concept,
+    EntityType::Implementation,
+    EntityType::Theorem,
+    EntityType::Definition,
+    EntityType::Problem,
+    EntityType::Motivation,
+    EntityType::Gap,
+    EntityType::Contribution,
+    EntityType::Hypothesis,
+    EntityType::Finding,
+    EntityType::Mechanism,
+    EntityType::Limitation,
+    EntityType::FutureWork,
+];
 
 /// An entity extracted from a paper (Module B).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -164,5 +194,62 @@ mod tests {
             names.contains(&"domain_tags"),
             "EntitySchema must have 'domain_tags' for cross-domain support"
         );
+    }
+
+    #[test]
+    fn test_entity_types_count_21() {
+        assert_eq!(ENTITY_TYPES.len(), 21);
+        assert_eq!(EntityType::all().len(), 21);
+    }
+}
+
+// ─── ADR-051 P1: Property-based tests (M354) ───
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+    use std::collections::HashSet;
+
+    fn arb_entity_type() -> impl Strategy<Value = EntityType> {
+        (0usize..ENTITY_TYPES.len()).prop_map(|i| ENTITY_TYPES[i].clone())
+    }
+
+    proptest! {
+        /// Property 1: as_str is never empty for any entity type.
+        #[test]
+        fn prop_as_str_nonempty(t in arb_entity_type()) {
+            prop_assert!(!t.as_str().is_empty());
+        }
+
+        /// Property 2: serde JSON roundtrip preserves EntityType.
+        #[test]
+        fn prop_serde_roundtrip(t in arb_entity_type()) {
+            let json = serde_json::to_string(&t).expect("serialize");
+            let back: EntityType = serde_json::from_str(&json).expect("deserialize");
+            prop_assert_eq!(t, back);
+            // PascalCase wire: no spaces, starts with uppercase letter
+            prop_assert!(json.starts_with('"') && json.ends_with('"'));
+            let inner = &json[1..json.len() - 1];
+            prop_assert!(!inner.is_empty());
+            prop_assert!(inner.chars().next().unwrap().is_ascii_uppercase());
+        }
+
+        /// Property 3: as_str equals serde wire string (PascalCase).
+        #[test]
+        fn prop_as_str_matches_serde_wire(t in arb_entity_type()) {
+            let json = serde_json::to_string(&t).unwrap();
+            let wire = json.trim_matches('"');
+            prop_assert_eq!(t.as_str(), wire);
+        }
+    }
+
+    #[test]
+    fn prop_all_as_str_unique() {
+        let mut seen = HashSet::new();
+        for t in EntityType::all() {
+            assert!(seen.insert(t.as_str()), "duplicate as_str: {}", t.as_str());
+        }
+        assert_eq!(seen.len(), 21);
     }
 }
