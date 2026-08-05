@@ -30,3 +30,91 @@ pub use temporal_stamp::{
     create_edge_with_temporal, edge_type_is_temporal_fact, open_fact_edge_now,
     stamp_edge_temporal_fields,
 };
+
+/// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
+#[cfg(test)]
+pub(crate) fn roundtrip_json<T>(value: &T)
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let json1 = serde_json::to_string(value).expect("serialize failed");
+    let back: T = serde_json::from_str(&json1).expect("deserialize failed");
+    let json2 = serde_json::to_string(&back).expect("re-serialize failed");
+    assert_eq!(json1, json2, "roundtrip JSON mismatch");
+}
+
+#[cfg(test)]
+mod serde_roundtrip_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn roundtrip_ingest_result() {
+        use crate::ingest::IngestResult;
+        roundtrip_json(&IngestResult {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            body_chars: 50000,
+            section_count: 8,
+            citation_count: 42,
+            references_written: 42,
+            cites_resolved: 35,
+            vector_dimensions: 1024,
+            graph_node_id: Some(123),
+            import_eligible: false,
+        });
+    }
+
+    #[test]
+    fn roundtrip_batch_ingest_result() {
+        roundtrip_json(&BatchIngestResult {
+            total: 24,
+            ok: 24,
+            fail: 0,
+            total_body_chars: 1_200_000,
+            total_sections: 192,
+            total_citations: 1008,
+            total_cites_resolved: 840,
+            total_references_written: 1008,
+            duration_ms: 45000,
+            snapshot_path: Some("/tmp/hub.sgsnap".into()),
+            errors: vec![],
+            import_eligible: false,
+        });
+    }
+
+    #[test]
+    fn roundtrip_batch_ingest_result_with_errors() {
+        roundtrip_json(&BatchIngestResult {
+            total: 3,
+            ok: 2,
+            fail: 1,
+            total_body_chars: 100000,
+            total_sections: 16,
+            total_citations: 80,
+            total_cites_resolved: 60,
+            total_references_written: 80,
+            duration_ms: 5000,
+            snapshot_path: None,
+            errors: vec![("2401.99999".into(), "parse failed".into())],
+            import_eligible: false,
+        });
+    }
+
+    #[test]
+    fn roundtrip_graph_inventory() {
+        let mut node_counts = BTreeMap::new();
+        node_counts.insert("Paper".into(), 24);
+        node_counts.insert("Entity".into(), 96);
+        node_counts.insert("Reference".into(), 0);
+        let mut edge_hist = BTreeMap::new();
+        edge_hist.insert("CITES".into(), 2741);
+        edge_hist.insert("hasPart".into(), 192);
+        roundtrip_json(&GraphInventory {
+            node_counts,
+            edge_type_histogram: edge_hist,
+            total_nodes: 120,
+            total_edges: 2933,
+        });
+    }
+}

@@ -3,3 +3,84 @@
 pub mod batch_ids;
 pub mod graph_tasks;
 pub mod health_report;
+
+/// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
+#[cfg(test)]
+pub(crate) fn roundtrip_json<T>(value: &T)
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let json1 = serde_json::to_string(value).expect("serialize failed");
+    let back: T = serde_json::from_str(&json1).expect("deserialize failed");
+    let json2 = serde_json::to_string(&back).expect("re-serialize failed");
+    assert_eq!(json1, json2, "roundtrip JSON mismatch");
+}
+
+#[cfg(test)]
+mod serde_roundtrip_tests {
+    use super::*;
+    use crate::graph_tasks::{GraphTask, GraphTaskSuite, TaskVerdict};
+
+    #[test]
+    fn roundtrip_graph_task_basic() {
+        roundtrip_json(&GraphTask {
+            id: "paper_count".into(),
+            title: "Paper count | Scale".into(),
+            insight: "Scale check".into(),
+            cypher: "MATCH (n:Paper) RETURN count(n)".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: None,
+            expect_min_value: None,
+        });
+    }
+
+    #[test]
+    fn roundtrip_graph_task_with_bounds() {
+        roundtrip_json(&GraphTask {
+            id: "paper_count".into(),
+            title: "Paper count | Scale".into(),
+            insight: "Scale check".into(),
+            cypher: "MATCH (n:Paper) RETURN count(n)".into(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: Some(1),
+            expect_min_value: Some(24.0),
+        });
+    }
+
+    #[test]
+    fn roundtrip_graph_task_suite() {
+        roundtrip_json(&GraphTaskSuite {
+            tasks: vec![
+                GraphTask {
+                    id: "t1".into(),
+                    title: "T1 | x".into(),
+                    insight: "".into(),
+                    cypher: "MATCH (n) RETURN n LIMIT 1".into(),
+                    min_rows: 1,
+                    allow_empty: false,
+                    expect_rows: None,
+                    expect_min_value: None,
+                },
+                GraphTask {
+                    id: "t2".into(),
+                    title: "T2 | y".into(),
+                    insight: "".into(),
+                    cypher: "MATCH (n) RETURN count(n)".into(),
+                    min_rows: 1,
+                    allow_empty: true,
+                    expect_rows: Some(1),
+                    expect_min_value: None,
+                },
+            ],
+        });
+    }
+
+    #[test]
+    fn roundtrip_task_verdict_all_variants() {
+        roundtrip_json(&TaskVerdict::Pass);
+        roundtrip_json(&TaskVerdict::Empty);
+        roundtrip_json(&TaskVerdict::Error);
+    }
+}

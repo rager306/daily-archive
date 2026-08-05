@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M342 serde roundtrip: remaining crates (ADR-051 P0 complete)
+
+**Completes ADR-051 P0 for all project crates with Serialize+Deserialize types:**
+
+- kg-storage: QueryResult, VectorSearchResult, VectorMetric (4 tests)
+- da-application: IngestResult, BatchIngestResult (with errors), GraphInventory (4 tests)
+- da-cli: GraphTask (basic + bounds), GraphTaskSuite, TaskVerdict (4 tests)
+- 12 new roundtrip tests; all 3 crates green
+
+ADR-051 P0 coverage summary:
+| Crate | Types | Tests |
+|-------|-------|-------|
+| kg-ontology | 8 | 16 (M340) |
+| da-domain | 20 | 22 (M341) |
+| kg-storage | 3 | 4 (M342) |
+| da-application | 3 | 4 (M342) |
+| da-cli | 3 | 4 (M342) |
+| **Total** | **37** | **50** |
+
+
 ### Session 2026-08-05 — M341 serde roundtrip tests for da-domain (ADR-051 P0)
 
 **Completes ADR-051 P0 for da-domain — wire-format stability for all domain types:**
