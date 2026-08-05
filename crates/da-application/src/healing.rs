@@ -345,7 +345,7 @@ impl GraphHealingUseCase {
             source_id,
             target_id,
             edge_type,
-            &new_edge,
+            new_edge,
         )
         .await?;
 

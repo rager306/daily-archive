@@ -11,6 +11,7 @@ use da_domain::vid;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParserPort;
+use da_ports::PdfClassificationPort;
 use serde::{Deserialize, Serialize};
 
 /// Ingest pipeline dependencies (injected ports).
@@ -20,6 +21,9 @@ pub struct IngestUseCase {
     pub graph_store: Box<dyn DirectGraphStore>,
     /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
+    /// Optional PDF classifier (M347). When present, classifies PDF
+    /// before GROBID parse to detect scanned/garbled pages.
+    pub pdf_classifier: Option<std::sync::Arc<dyn PdfClassificationPort>>,
 }
 
 /// Result of ingesting one paper.
@@ -62,7 +66,14 @@ impl IngestUseCase {
             embedder,
             graph_store,
             clock,
+            pdf_classifier: None,
         }
+    }
+
+    /// Set optional PDF classifier (M347). Enables pre-GROBID triage.
+    pub fn with_pdf_classifier(mut self, classifier: std::sync::Arc<dyn PdfClassificationPort>) -> Self {
+        self.pdf_classifier = Some(classifier);
+        self
     }
 
     /// Ingest a single PDF: parse → embed → write to graph via HOT path.
@@ -81,6 +92,41 @@ impl IngestUseCase {
             source_code = source_code.as_deref(),
             "Source detected"
         );
+
+        // M347: Pre-GROBID PDF classification (optional)
+        if let Some(classifier) = &self.pdf_classifier {
+            match std::fs::read(pdf_path) {
+                Ok(pdf_bytes) => {
+                    match classifier.classify(&pdf_bytes).await {
+                        Ok(classification) => {
+                            tracing::info!(
+                                paper_id,
+                                pdf_type = ?classification.pdf_type,
+                                page_count = classification.page_count,
+                                pages_needing_ocr = classification.pages_needing_ocr.len(),
+                                has_encoding_issues = classification.has_encoding_issues,
+                                confidence = classification.confidence,
+                                "PDF classified (pre-GROBID)"
+                            );
+                            if !classification.is_text_extractable() {
+                                tracing::warn!(
+                                    paper_id,
+                                    pdf_type = ?classification.pdf_type,
+                                    pages_needing_ocr = ?classification.pages_needing_ocr,
+                                    "PDF not fully text-extractable; GROBID may produce partial results"
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!(paper_id, error = %e, "PDF classification failed; continuing to GROBID");
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(paper_id, error = %e, "Cannot read PDF for classification; continuing to GROBID");
+                }
+            }
+        }
 
         // 1. Parse via GROBID
         let parsed = self.parser.parse_pdf(pdf_path, paper_id).await?;

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M347 wire PDF classifier into ingest use-case
+
+**Close the port-to-application gap from M346:**
+
+- `IngestUseCase` accepts optional `Arc<dyn PdfClassificationPort>` via `with_pdf_classifier()`
+- When present, `ingest_pdf` classifies PDF **before** GROBID `parse_pdf`
+- Logs: `pdf_type`, `page_count`, `pages_needing_ocr`, `has_encoding_issues`, `confidence`
+- Warns when PDF is not fully text-extractable (scanned/mixed/encoding issues)
+- Classifier failure is non-blocking (log + continue to GROBID)
+- Backward compatible: `None` classifier = previous behavior
+- 3 integration tests: called-before-parser, without-classifier, failure-does-not-block
+- Debt fix: clippy needless_borrow in `healing.rs` (`&new_edge` → `new_edge`)
+
+```bash
+cargo test -p da-application --test pdf_classifier_test
+cargo test -p da-application --lib
+```
+
+Next: wire `PdfInspectorClassifier` from CLI composition root (feature `pdf-classifier`).
+
+
 ### Session 2026-08-05 — M346 PDF OCR triage via pdf-inspector pre-filter
 
 **New capability: pure-Rust PDF classification before GROBID (~10ms):**
