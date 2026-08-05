@@ -1,8 +1,9 @@
-//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318).
+//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318/M319).
 //!
 //! - Parses hub + cited arXiv PDFs via GROBID
 //! - Ingests with **kg_embeddings::MockEmbedder** (no FD_API auth)
-//! - Reports citation/Reference/CITES connectivity
+//! - Reports citation/Reference/CITES/hasPart connectivity
+//! - Edge inventory uses **ontology string constants** (`hasPart`, not `HAS_PART`)
 //! - Exports snapshot + JSON/MD under artifacts/gepa_hub_research/
 //!
 //! D127: import_eligible stays false.
@@ -49,11 +50,18 @@ struct IngestSummary {
 struct GraphSummary {
     paper_nodes: usize,
     reference_nodes: usize,
+    section_nodes: usize,
+    category_nodes: usize,
+    citation_nodes: usize,
     entity_nodes: usize,
     source_nodes: usize,
     total_nodes: usize,
+    /// Edge histogram by ontology string (e.g. `hasPart`, `CITES`, `inCategory`).
+    edge_type_histogram: HashMap<String, usize>,
     cites_edges: usize,
     has_part_edges: usize,
+    from_source_edges: usize,
+    in_category_edges: usize,
     mentions_edges: usize,
     paper_ids_in_graph: Vec<String>,
 }
@@ -226,6 +234,9 @@ async fn main() -> anyhow::Result<()> {
 
     let papers = ingest.graph_store.get_nodes_by_label("Paper").await;
     let references = ingest.graph_store.get_nodes_by_label("Reference").await;
+    let sections = ingest.graph_store.get_nodes_by_label("Section").await;
+    let categories = ingest.graph_store.get_nodes_by_label("Category").await;
+    let citations = ingest.graph_store.get_nodes_by_label("Citation").await;
     let entities = ingest.graph_store.get_nodes_by_label("Entity").await;
     let sources = ingest.graph_store.get_nodes_by_label("Source").await;
 
@@ -241,22 +252,48 @@ async fn main() -> anyhow::Result<()> {
     }
     paper_ids.sort();
 
-    let mut cites = 0usize;
-    let mut has_part = 0usize;
-    let mut mentions = 0usize;
+    // M319: match ontology wire strings, not Rust constant *names*.
+    // structure::HAS_PART == "hasPart"; bibliographic::CITES == "CITES".
+    use da_domain::relation::{bibliographic, structure};
+    let mut edge_hist: HashMap<String, usize> = HashMap::new();
     let mut all_nodes = papers.clone();
     all_nodes.extend(references.iter().copied());
+    all_nodes.extend(sections.iter().copied());
+    all_nodes.extend(categories.iter().copied());
+    all_nodes.extend(citations.iter().copied());
     all_nodes.extend(entities.iter().copied());
+    all_nodes.extend(sources.iter().copied());
     for nid in &all_nodes {
         let edges = ingest.graph_store.get_outgoing_edges(*nid).await;
         for (_target, rel_type) in edges {
-            match rel_type.as_str() {
-                "CITES" => cites += 1,
-                "HAS_PART" => has_part += 1,
-                "MENTIONS" => mentions += 1,
-                _ => {}
-            }
+            *edge_hist.entry(rel_type).or_default() += 1;
         }
+    }
+    let cites = *edge_hist.get(bibliographic::CITES).unwrap_or(&0);
+    let has_part = *edge_hist.get(structure::HAS_PART).unwrap_or(&0);
+    let from_source = *edge_hist.get(structure::FROM_SOURCE).unwrap_or(&0);
+    let in_category = *edge_hist.get(structure::IN_CATEGORY).unwrap_or(&0);
+    let mentions = *edge_hist.get(bibliographic::MENTIONS).unwrap_or(&0);
+    println!(
+        "Edge histogram (ontology strings): cites={cites} hasPart={has_part} FROM_SOURCE={from_source} inCategory={in_category} MENTIONS={mentions} full={edge_hist:?}"
+    );
+    println!(
+        "Node inventory: Paper={} Reference={} Section={} (ingest total_sections={}) Category={} Citation={} Source={}",
+        papers.len(),
+        references.len(),
+        sections.len(),
+        batch.total_sections,
+        categories.len(),
+        citations.len(),
+        sources.len()
+    );
+    if sections.len() as u64 != batch.total_sections as u64 && batch.total_sections > sections.len()
+    {
+        eprintln!(
+            "WARN: get_nodes_by_label(Section) undercount: label_index={} vs ingest.total_sections={} — use ingest counter as ground truth",
+            sections.len(),
+            batch.total_sections
+        );
     }
 
     let paper_set: HashSet<_> = paper_ids.iter().cloned().collect();
@@ -300,11 +337,23 @@ async fn main() -> anyhow::Result<()> {
         graph: GraphSummary {
             paper_nodes: papers.len(),
             reference_nodes: references.len(),
+            section_nodes: sections.len(),
+            category_nodes: categories.len(),
+            citation_nodes: citations.len(),
             entity_nodes: entities.len(),
             source_nodes: sources.len(),
-            total_nodes: papers.len() + references.len() + entities.len() + sources.len(),
+            total_nodes: papers.len()
+                + references.len()
+                + sections.len()
+                + categories.len()
+                + citations.len()
+                + entities.len()
+                + sources.len(),
+            edge_type_histogram: edge_hist.clone(),
             cites_edges: cites,
             has_part_edges: has_part,
+            from_source_edges: from_source,
+            in_category_edges: in_category,
             mentions_edges: mentions,
             paper_ids_in_graph: paper_ids.clone(),
         },
@@ -319,6 +368,8 @@ async fn main() -> anyhow::Result<()> {
             "Research embedder: kg_embeddings::MockEmbedder (FD_API 401 avoided).".into(),
             "CITES resolves only when cited arxiv_id matches an ingested Paper.".into(),
             "All bibliography entries become Reference nodes (references_written).".into(),
+            "Edge inventory uses ontology wire strings (hasPart not HAS_PART) — M319.".into(),
+            "MENTIONS=0 is expected: ingest does not write Entity MENTIONS edges.".into(),
             "D127 import_eligible=false.".into(),
         ],
     };
@@ -354,17 +405,24 @@ async fn main() -> anyhow::Result<()> {
 | CITES resolved to Paper | {cr} |
 | Snapshot | `{snap}` |
 
-## Graph inventory
+## Graph inventory (M319 ontology-string honest counts)
 
 | Metric | Value |
 |--------|--------|
 | Paper nodes | {pn} |
 | Reference nodes | {rn} |
+| Section nodes | {sec} |
+| Category nodes | {catn} |
+| Citation nodes | {citn} |
 | Entity nodes | {en} |
 | Source nodes | {sn} |
+| Total nodes | {tn} |
 | CITES edges | {ce} |
-| HAS_PART edges | {hp} |
+| hasPart edges | {hp} |
+| FROM_SOURCE edges | {fs} |
+| inCategory edges | {ic} |
 | MENTIONS edges | {me} |
+| Edge histogram | `{hist}` |
 
 ## Hub extraction (RuleBasedExtractor)
 
@@ -379,7 +437,9 @@ async fn main() -> anyhow::Result<()> {
 ## Notes
 
 - Research used **MockEmbedder** (FD_API returned 401 with current key).
-- Structural graph (Paper/Reference/CITES/HAS_PART) is valid for connectivity research.
+- Structural graph (Paper/Reference/CITES/hasPart) is valid for connectivity research.
+- Edge inventory matches ontology wire strings (`hasPart`, not Rust name `HAS_PART`).
+- MENTIONS=0 expected: ingest does not write Entity MENTIONS (extract-only path).
 - Vectors are **not** production TEI embeddings.
 - `import_eligible=false` (D127).
 
@@ -388,6 +448,7 @@ async fn main() -> anyhow::Result<()> {
 ```bash
 python3 scripts/download_arxiv_to_catalog.py --ids-file artifacts/gepa_hub_research/missing_arxiv.txt --skip-meta
 cargo test -p da-adapters --lib real_tei -- --test-threads=1
+cargo test -p da-domain --lib relation -- --test-threads=1
 cargo run -p da-cli --example gepa_hub_research
 ```
 "#,
@@ -406,11 +467,18 @@ cargo run -p da-cli --example gepa_hub_research
         snap = report.ingest.snapshot_path.as_deref().unwrap_or("none"),
         pn = report.graph.paper_nodes,
         rn = report.graph.reference_nodes,
+        sec = report.graph.section_nodes,
+        catn = report.graph.category_nodes,
+        citn = report.graph.citation_nodes,
         en = report.graph.entity_nodes,
         sn = report.graph.source_nodes,
+        tn = report.graph.total_nodes,
         ce = report.graph.cites_edges,
         hp = report.graph.has_part_edges,
+        fs = report.graph.from_source_edges,
+        ic = report.graph.in_category_edges,
         me = report.graph.mentions_edges,
+        hist = format!("{:?}", report.graph.edge_type_histogram),
         he = report.hub_extract.entities,
         bt = format!("{:?}", report.hub_extract.by_type),
         ls = report.hub_extract.labels_sample.join(", "),

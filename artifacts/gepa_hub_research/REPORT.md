@@ -22,22 +22,29 @@
 | CITES resolved to Paper | 419 |
 | Snapshot | `artifacts/gepa_hub_research/hub_and_refs_research.sgsnap` |
 
-## Graph inventory
+## Graph inventory (M319 ontology-string honest counts)
 
 | Metric | Value |
 |--------|--------|
 | Paper nodes | 24 |
 | Reference nodes | 1255 |
+| Section nodes | 85 |
+| Category nodes | 1 |
+| Citation nodes | 325 |
 | Entity nodes | 0 |
 | Source nodes | 1 |
+| Total nodes | 1691 |
 | CITES edges | 419 |
-| HAS_PART edges | 0 |
+| hasPart edges | 2297 |
+| FROM_SOURCE edges | 24 |
+| inCategory edges | 1 |
 | MENTIONS edges | 0 |
+| Edge histogram | `{"FROM_SOURCE": 24, "inCategory": 1, "CITES": 419, "hasPart": 2297}` |
 
 ## Hub extraction (RuleBasedExtractor)
 
 - Entities: **24**
-- By type: `{"Task": 2, "Model": 6, "Dataset": 5, "Method": 5, "Metric": 6}`
+- By type: `{"Method": 5, "Dataset": 5, "Model": 6, "Metric": 6, "Task": 2}`
 - Sample labels: HotpotQA, LiveBench, MATH, GEPA, GRPO, RLVR, generalization, chain-of-thought reasoning, DROP, WMT, GPT-4, Qwen, BERT, GPT-4o, Gemini, LLaMA, F1, MSE, precision, accuracy
 
 ## Papers in graph
@@ -70,7 +77,9 @@
 ## Notes
 
 - Research used **MockEmbedder** (FD_API returned 401 with current key).
-- Structural graph (Paper/Reference/CITES/HAS_PART) is valid for connectivity research.
+- Structural graph (Paper/Reference/CITES/hasPart) is valid for connectivity research.
+- Edge inventory matches ontology wire strings (`hasPart`, not Rust name `HAS_PART`).
+- MENTIONS=0 expected: ingest does not write Entity MENTIONS (extract-only path).
 - Vectors are **not** production TEI embeddings.
 - `import_eligible=false` (D127).
 
@@ -79,5 +88,6 @@
 ```bash
 python3 scripts/download_arxiv_to_catalog.py --ids-file artifacts/gepa_hub_research/missing_arxiv.txt --skip-meta
 cargo test -p da-adapters --lib real_tei -- --test-threads=1
+cargo test -p da-domain --lib relation -- --test-threads=1
 cargo run -p da-cli --example gepa_hub_research
 ```

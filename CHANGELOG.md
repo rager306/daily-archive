@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M319 research inventory edge type honesty
+
+**Bug:** `gepa_hub_research` reported `hasPart=0` after GEPA ingest because inventory matched `"HAS_PART"` instead of ontology wire string **`hasPart`**.
+
+- Inventory uses `da_domain::relation::{structure,bibliographic}` constants
+- Counts Section/Category/Citation nodes + full edge histogram
+- Re-run: **hasPart=2297**, CITES=419, FROM_SOURCE=24, inCategory=1, MENTIONS=0 (expected)
+- MENTIONS=0 honest: ingest does not write Entity MENTIONS
+
+```bash
+cargo test -p da-domain --lib relation -- --test-threads=1
+cargo run -p da-cli --example gepa_hub_research
+```
+
+
 ### Session 2026-08-05 — M318 GEPA hub bibliography corpus + engine research
 
 **Hub paper 2507.19457 (GEPA)** — largest GROBID bibliography in m033 probe (~80 citations).
