@@ -106,6 +106,16 @@ cargo test -p da-application --tests
 cargo test -p da-adapters --lib
 # ADR-051 §8.1: pure graph task suite parser (M336/M337) — no rocksdb, no snap required
 cargo test -p da-cli --lib graph_tasks
+# ADR-051 P1: TemporalEdge property suite (M353)
+cargo test -p kg-ontology --lib proptest
+
+# M352/M353: BatchIngestResult must keep pdf_triage (batch triage shape lock)
+if ! grep -q 'pdf_triage' crates/da-application/src/batch_ingest.rs; then
+  echo "ERROR: BatchIngestResult.pdf_triage missing from batch_ingest.rs (M352 shape lock)"
+  fail=1
+else
+  echo "  batch_ingest.pdf_triage: OK"
+fi
 
 if [ "$fail" -ne 0 ]; then
   echo "FAIL: architecture guardrail failed"

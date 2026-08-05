@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M353 TemporalEdge proptest + pdf_triage shape lock
+
+**ADR-051 P1 domain semantic + M352 regression prevention:**
+
+1. **proptest on `TemporalEdge`** (`kg-ontology`, 8 properties):
+   - consistent edges pass `validate_temporal_edge`
+   - inverted valid range flagged
+   - `is_active_at` half-open `[start, end)`
+   - `was_known_at` half-open `[created, expired)`
+   - open `invalid_at` active for all `t >= valid_at`
+   - `invalidate` sets `expired_at` (+ fills open `invalid_at`)
+   - retroactive_to > valid_at flagged
+   - arbitrary edge never panics on queries
+
+2. **Shape lock `BatchIngestResult.pdf_triage`**:
+   - unit test: JSON must contain `pdf_triage` key
+   - `scripts/verify_rust_architecture.sh` greps field presence
+   - (governor is line-ban only — presence enforced in verify script)
+
+```bash
+cargo test -p kg-ontology --lib proptest
+cargo test -p da-application --lib batch_ingest_result_json_has_pdf_triage_key
+```
+
+
 ### Session 2026-08-05 — M352 batch PDF triage summary
 
 **Process gap closed:** single ingest returned `pdf_classification`, batch dropped it.

@@ -353,3 +353,216 @@ mod tests {
         assert!(parse_datetime("").is_none());
     }
 }
+
+// ─── ADR-051 P1: Property-based tests (M353) ───
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Bounded unix seconds (avoids chrono edge overflow).
+    fn arb_ts() -> impl Strategy<Value = DateTime<Utc>> {
+        (0i64..=2_000_000_000i64).prop_map(|s| DateTime::from_timestamp(s, 0).unwrap())
+    }
+
+    fn arb_edge() -> impl Strategy<Value = TemporalEdge> {
+        (
+            arb_ts(),
+            prop::option::of(arb_ts()),
+            prop::option::of(arb_ts()),
+            prop::option::of(arb_ts()),
+            arb_ts(),
+        )
+            .prop_map(|(valid_at, invalid_at, expired_at, reference_time, created_at)| {
+                TemporalEdge {
+                    valid_at,
+                    invalid_at,
+                    expired_at,
+                    reference_time,
+                    created_at,
+                }
+            })
+    }
+
+    /// Consistent edges: valid_at <= invalid_at (if set), created_at <= expired_at (if set).
+    fn arb_consistent_edge() -> impl Strategy<Value = TemporalEdge> {
+        (
+            arb_ts(),
+            prop::option::of(0u32..=86_400u32), // invalid after valid by 0..1 day secs offset via map
+            prop::option::of(0u32..=86_400u32),
+            arb_ts(),
+        )
+            .prop_map(|(valid_at, inv_off, exp_off, created_at)| {
+                let invalid_at = inv_off.map(|o| {
+                    DateTime::from_timestamp(valid_at.timestamp().saturating_add(o as i64), 0)
+                        .unwrap()
+                });
+                let expired_at = exp_off.map(|o| {
+                    DateTime::from_timestamp(created_at.timestamp().saturating_add(o as i64), 0)
+                        .unwrap()
+                });
+                TemporalEdge {
+                    valid_at,
+                    invalid_at,
+                    expired_at,
+                    reference_time: None,
+                    created_at,
+                }
+            })
+    }
+
+    proptest! {
+        /// Property 1: consistent edges always pass validate_temporal_edge.
+        #[test]
+        fn prop_consistent_edge_validates_clean(edge in arb_consistent_edge()) {
+            let issues = validate_temporal_edge(&edge, None);
+            prop_assert!(issues.is_empty(), "issues={issues:?} edge={edge:?}");
+        }
+
+        /// Property 2: if invalid_at < valid_at, validate reports inverted valid range.
+        #[test]
+        fn prop_inverted_valid_range_is_flagged(
+            a in arb_ts(),
+            b in arb_ts(),
+            created in arb_ts(),
+        ) {
+            prop_assume!(a != b);
+            let (valid_at, invalid_at) = if a < b { (b, a) } else { (a, b) };
+            // now valid_at > invalid_at
+            prop_assume!(valid_at > invalid_at);
+            let edge = TemporalEdge {
+                valid_at,
+                invalid_at: Some(invalid_at),
+                expired_at: None,
+                reference_time: None,
+                created_at: created,
+            };
+            let issues = validate_temporal_edge(&edge, None);
+            prop_assert!(
+                issues.iter().any(|s| s.contains("valid_at") && s.contains("invalid_at")),
+                "issues={issues:?}"
+            );
+        }
+
+        /// Property 3: is_active_at is half-open [valid_at, invalid_at).
+        #[test]
+        fn prop_is_active_at_half_open(
+            start in 0i64..=1_000_000i64,
+            len in 1i64..=100_000i64,
+        ) {
+            let valid_at = DateTime::from_timestamp(start, 0).unwrap();
+            let invalid_at = DateTime::from_timestamp(start + len, 0).unwrap();
+            let edge = TemporalEdge {
+                valid_at,
+                invalid_at: Some(invalid_at),
+                expired_at: None,
+                reference_time: None,
+                created_at: valid_at,
+            };
+            // start inclusive
+            prop_assert!(edge.is_active_at(valid_at, None));
+            // end exclusive
+            prop_assert!(!edge.is_active_at(invalid_at, None));
+            // midpoint active
+            let mid = DateTime::from_timestamp(start + len / 2, 0).unwrap();
+            prop_assert!(edge.is_active_at(mid, None));
+            // before start inactive
+            if start > 0 {
+                let before = DateTime::from_timestamp(start - 1, 0).unwrap();
+                prop_assert!(!edge.is_active_at(before, None));
+            }
+        }
+
+        /// Property 4: was_known_at is half-open [created_at, expired_at).
+        #[test]
+        fn prop_was_known_at_half_open(
+            start in 0i64..=1_000_000i64,
+            len in 1i64..=100_000i64,
+        ) {
+            let created_at = DateTime::from_timestamp(start, 0).unwrap();
+            let expired_at = DateTime::from_timestamp(start + len, 0).unwrap();
+            let edge = TemporalEdge {
+                valid_at: created_at,
+                invalid_at: None,
+                expired_at: Some(expired_at),
+                reference_time: None,
+                created_at,
+            };
+            prop_assert!(edge.was_known_at(created_at));
+            prop_assert!(!edge.was_known_at(expired_at));
+            let mid = DateTime::from_timestamp(start + len / 2, 0).unwrap();
+            prop_assert!(edge.was_known_at(mid));
+        }
+
+        /// Property 5: open invalid_at means active for all t >= valid_at.
+        #[test]
+        fn prop_open_invalid_active_from_start(
+            start in 0i64..=1_000_000i64,
+            delta in 0i64..=100_000i64,
+        ) {
+            let valid_at = DateTime::from_timestamp(start, 0).unwrap();
+            let edge = TemporalEdge {
+                valid_at,
+                invalid_at: None,
+                expired_at: None,
+                reference_time: None,
+                created_at: valid_at,
+            };
+            let at = DateTime::from_timestamp(start + delta, 0).unwrap();
+            prop_assert!(edge.is_active_at(at, None));
+            if start > 0 {
+                let before = DateTime::from_timestamp(start - 1, 0).unwrap();
+                prop_assert!(!edge.is_active_at(before, None));
+            }
+        }
+
+        /// Property 6: invalidate sets expired_at and fills invalid_at if open.
+        #[test]
+        fn prop_invalidate_sets_expired(edge in arb_edge(), at in arb_ts()) {
+            let mut e = edge;
+            let had_invalid = e.invalid_at.is_some();
+            e.invalidate(at);
+            prop_assert_eq!(e.expired_at, Some(at));
+            prop_assert!(e.is_expired());
+            if !had_invalid {
+                prop_assert_eq!(e.invalid_at, Some(at));
+            }
+        }
+
+        /// Property 7: retroactive_to > valid_at is flagged.
+        #[test]
+        fn prop_retro_after_valid_flagged(
+            valid in 1i64..=1_000_000i64,
+            delta in 1i64..=100_000i64,
+        ) {
+            let valid_at = DateTime::from_timestamp(valid, 0).unwrap();
+            let retro_to = DateTime::from_timestamp(valid + delta, 0).unwrap();
+            let edge = TemporalEdge {
+                valid_at,
+                invalid_at: None,
+                expired_at: None,
+                reference_time: None,
+                created_at: valid_at,
+            };
+            let retro = RetroactiveExtension {
+                retroactive_to: Some(retro_to),
+                retroactivity_basis: Some("test".into()),
+            };
+            let issues = validate_temporal_edge(&edge, Some(&retro));
+            prop_assert!(
+                issues.iter().any(|s| s.contains("retroactivity must point backwards")),
+                "issues={issues:?}"
+            );
+        }
+
+        /// Property 8: arbitrary edge never panics validate / is_active / was_known.
+        #[test]
+        fn prop_never_panic_queries(edge in arb_edge(), at in arb_ts()) {
+            let _ = validate_temporal_edge(&edge, None);
+            let _ = edge.is_active_at(at, None);
+            let _ = edge.was_known_at(at);
+            let _ = edge.is_expired();
+        }
+    }
+}

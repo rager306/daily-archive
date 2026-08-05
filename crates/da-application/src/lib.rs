@@ -135,6 +135,31 @@ mod serde_roundtrip_tests {
         });
     }
 
+    /// M353: shape lock — BatchIngestResult JSON must expose pdf_triage key.
+    #[test]
+    fn batch_ingest_result_json_has_pdf_triage_key() {
+        let r = BatchIngestResult {
+            total: 1,
+            ok: 1,
+            fail: 0,
+            total_body_chars: 1,
+            total_sections: 0,
+            total_citations: 0,
+            total_cites_resolved: 0,
+            total_references_written: 0,
+            duration_ms: 1,
+            snapshot_path: None,
+            errors: vec![],
+            import_eligible: false,
+            pdf_triage: BatchPdfTriageSummary::default(),
+        };
+        let v = serde_json::to_value(&r).unwrap();
+        assert!(
+            v.get("pdf_triage").is_some(),
+            "BatchIngestResult must serialize pdf_triage (M352/M353 shape lock)"
+        );
+    }
+
     #[test]
     fn roundtrip_graph_inventory() {
         let mut node_counts = BTreeMap::new();
