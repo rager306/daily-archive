@@ -11,11 +11,12 @@
 //! on `OntologyRegistry` and this module becomes the single home for
 //! all validation types and logic.
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
 /// Severity of a schema violation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Severity {
     /// Missing required field, broken architectural invariant (D127/D134),
     /// or unknown node label. Must be fixed.
@@ -35,7 +36,7 @@ impl Severity {
 }
 
 /// One rule violation found by the validator.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Violation {
     pub severity: Severity,
     pub rule: String,

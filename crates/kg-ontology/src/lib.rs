@@ -239,4 +239,77 @@ mod serde_roundtrip_tests {
         };
         roundtrip(&contract);
     }
+
+    // --- M345: TemporalEdge, RetroactiveExtension, Violation, Severity ---
+
+    #[test]
+    fn roundtrip_temporal_edge() {
+        use chrono::TimeZone;
+        use chrono::Utc;
+        let edge = crate::temporal::TemporalEdge {
+            valid_at: Utc.timestamp_opt(1700000000, 0).unwrap(),
+            invalid_at: None,
+            expired_at: Some(Utc.timestamp_opt(1700001000, 0).unwrap()),
+            reference_time: Some(Utc.timestamp_opt(1699999000, 0).unwrap()),
+            created_at: Utc.timestamp_opt(1700000500, 0).unwrap(),
+        };
+        roundtrip(&edge);
+    }
+
+    #[test]
+    fn roundtrip_temporal_edge_open() {
+        use chrono::TimeZone;
+        use chrono::Utc;
+        let edge = crate::temporal::TemporalEdge {
+            valid_at: Utc.timestamp_opt(1700000000, 0).unwrap(),
+            invalid_at: None,
+            expired_at: None,
+            reference_time: None,
+            created_at: Utc.timestamp_opt(1700000000, 0).unwrap(),
+        };
+        roundtrip(&edge);
+    }
+
+    #[test]
+    fn roundtrip_retroactive_extension() {
+        use chrono::TimeZone;
+        use chrono::Utc;
+        let ext = crate::temporal::RetroactiveExtension {
+            retroactive_to: Some(Utc.timestamp_opt(1600000000, 0).unwrap()),
+            retroactivity_basis: Some("regulatory".into()),
+        };
+        roundtrip(&ext);
+    }
+
+    #[test]
+    fn roundtrip_retroactive_extension_default() {
+        let ext = crate::temporal::RetroactiveExtension::default();
+        roundtrip(&ext);
+    }
+
+    #[test]
+    fn roundtrip_severity_all_variants() {
+        roundtrip(&crate::validator::Severity::Critical);
+        roundtrip(&crate::validator::Severity::Warning);
+    }
+
+    #[test]
+    fn roundtrip_violation() {
+        let v = crate::validator::Violation::critical(
+            "required_field_missing",
+            "vid",
+            "node vid is required",
+        );
+        roundtrip(&v);
+    }
+
+    #[test]
+    fn roundtrip_violation_warning() {
+        let v = crate::validator::Violation::warn(
+            "type_mismatch",
+            "embedding",
+            "expected Vector(1024), got String",
+        );
+        roundtrip(&v);
+    }
 }

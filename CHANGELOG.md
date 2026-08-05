@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M345 Serialize derives for core ontology types
+
+**ADR-051 P0 extension — 5 types crossing persistence boundary:**
+
+- Added `Serialize+Deserialize` to 4 core types:
+  `TemporalEdge` (5-field temporal model),
+  `RetroactiveExtension` (retroactive fact metadata),
+  `Violation` (validation result),
+  `Severity` (Critical/Warning enum)
+- `PropertySnapshot` already serializable (`type HashMap<String, Value>`)
+- 7 new roundtrip tests: TemporalEdge (active/expired), RetroactiveExtension
+  (with/default), Severity (2 variants), Violation (critical/warn)
+- Total kg-ontology tests: **83 passed** (76 existing + 7 new)
+
+```bash
+cargo test -p kg-ontology --lib
+```
+
+
 ### Session 2026-08-05 — M344 property tests for graph_tasks parser (ADR-051 P1)
 
 **First ADR-051 P1 implementation — proptest finds real bug:**

@@ -17,6 +17,7 @@
 //!   valid time (valid_at → invalid_at): when the fact was true in the world
 //!   transaction time (created_at → expired_at): when the system knew it
 
+use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
 /// Sentinel string value for open temporal bounds (invalid_at, expired_at).
@@ -27,7 +28,7 @@ pub const OPEN: &str = "OPEN";
 /// The 5-field temporal edge model. Every temporal edge carries these
 /// fields. Non-temporal edges (HAS_PART, FROM_SOURCE) carry only
 /// `created_at`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TemporalEdge {
     /// When the fact became true in the real world.
     pub valid_at: DateTime<Utc>,
@@ -43,7 +44,7 @@ pub struct TemporalEdge {
 
 /// Optional retroactivity extension for domains where facts can have
 /// retroactive effect (law, accounting, regulatory compliance).
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub struct RetroactiveExtension {
     /// Fact applies retroactively from this date (earlier than valid_at).
     pub retroactive_to: Option<DateTime<Utc>>,
