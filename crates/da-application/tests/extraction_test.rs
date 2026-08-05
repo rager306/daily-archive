@@ -670,4 +670,11 @@ async fn test_extraction_found_in_structural_no_valid_at() {
             .is_none(),
         "foundIn structural edge must not have valid_at"
     );
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "created_at")
+            .await
+            .is_some(),
+        "foundIn must carry created_at (structural provenance M331)"
+    );
 }

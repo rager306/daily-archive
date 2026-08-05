@@ -139,9 +139,16 @@ impl EnrichUseCase {
                 .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
                 .await
             {
-                self.graph_store
-                    .create_edge(work_id, node_id, da_domain::relation::structure::HAS_TOPIC)
-                    .await?;
+                // Structural hasTopic — created_at only (M331).
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    work_id,
+                    node_id,
+                    da_domain::relation::structure::HAS_TOPIC,
+                    &temporal,
+                )
+                .await?;
             }
             topics_written += 1;
         }
@@ -193,13 +200,16 @@ impl EnrichUseCase {
                 .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
                 .await
             {
-                self.graph_store
-                    .create_edge(
-                        node_id,
-                        paper_id,
-                        da_domain::relation::structure::AUTHORED_BY,
-                    )
-                    .await?;
+                // Structural authoredBy — created_at only (M331).
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    paper_id,
+                    da_domain::relation::structure::AUTHORED_BY,
+                    &temporal,
+                )
+                .await?;
             }
             authors_written += 1;
         }

@@ -341,6 +341,14 @@ async fn test_ingest_has_part_structural_no_valid_at() {
             .is_none(),
         "hasPart must not carry valid_at (structural)"
     );
+    // M331: structural edges still get created_at provenance.
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "created_at")
+            .await
+            .is_some(),
+        "hasPart must carry created_at (structural provenance)"
+    );
 }
 
 #[tokio::test]

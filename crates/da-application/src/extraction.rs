@@ -209,14 +209,16 @@ impl ExtractionUseCase {
                     .find_node_by_string_property("Section", "title", &ext.section_title)
                     .await
                 {
-                    let _ = self
-                        .graph_store
-                        .create_edge(
-                            node_id,
-                            section_node,
-                            da_domain::relation::structure::FOUND_IN,
-                        )
-                        .await;
+                    // Structural foundIn — created_at only (M331).
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    let _ = crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        node_id,
+                        section_node,
+                        da_domain::relation::structure::FOUND_IN,
+                        &temporal,
+                    )
+                    .await;
                     found_in_edges += 1;
                 }
             }

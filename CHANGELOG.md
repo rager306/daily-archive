@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M331 structural created_at + Utc::now governor ban
+
+**Debt:** structural edges (hasPart, FROM_SOURCE, foundIn, …) had no `created_at`;
+Clock port could regress via bare `chrono::Utc::now` in application.
+
+- Wire structural `create_edge` through `create_edge_with_temporal` (created_at only)
+  in ingest / extraction / enrich
+- Tests: hasPart + foundIn assert `created_at` present, `valid_at` absent
+- Governor: `no_bare_utc_now_in_application` on `crates/da-application/src/`
+- Zero `chrono::Utc::now` in application src (CLI composition root still OK)
+
+```bash
+cargo test -p da-application --test batch_ingest_test
+cargo test -p da-application --test extraction_test
+python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M330 Clock port for deterministic temporal stamps
 
 **ADR-051 Contour 1:** application no longer calls bare `chrono::Utc::now()` for

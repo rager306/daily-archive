@@ -187,14 +187,16 @@ impl IngestUseCase {
                 }
             };
             // Link Paper → Source via FROM_SOURCE edge
-            let _ = self
-                .graph_store
-                .create_edge(
-                    node_id,
-                    source_node,
-                    da_domain::relation::structure::FROM_SOURCE,
-                )
-                .await;
+            // Structural FROM_SOURCE — created_at only (M331).
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            let _ = crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                node_id,
+                source_node,
+                da_domain::relation::structure::FROM_SOURCE,
+                &temporal,
+            )
+            .await;
             tracing::debug!(paper_id, source_code = %code, "Source node linked");
         }
 
@@ -237,14 +239,16 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_int(cat_node, "schema_version", 1)
                 .await?;
-            let _ = self
-                .graph_store
-                .create_edge(
-                    node_id,
-                    cat_node,
-                    da_domain::relation::structure::IN_CATEGORY,
-                )
-                .await;
+            // Structural inCategory — created_at only (M331).
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            let _ = crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                node_id,
+                cat_node,
+                da_domain::relation::structure::IN_CATEGORY,
+                &temporal,
+            )
+            .await;
         }
 
         // Section + citation metadata (enables Phase 3 extraction queries)
@@ -299,14 +303,16 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_int(section_node, "char_count", section.text.len() as i64)
                 .await?;
-            // Link Section to Paper via hasPart edge
-            self.graph_store
-                .create_edge(
-                    node_id,
-                    section_node,
-                    da_domain::relation::structure::HAS_PART,
-                )
-                .await?;
+            // Structural hasPart (Section) — created_at only (M331).
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                node_id,
+                section_node,
+                da_domain::relation::structure::HAS_PART,
+                &temporal,
+            )
+            .await?;
             section_nodes += 1;
         }
         tracing::info!(paper_id, section_nodes, "Section nodes created");
@@ -374,10 +380,16 @@ impl IngestUseCase {
                     .set_node_property_int(ref_node, "schema_version", 1)
                     .await?;
                 // Link Paper → Reference via hasPart edge (FaBiO)
-                let _ = self
-                    .graph_store
-                    .create_edge(node_id, ref_node, da_domain::relation::structure::HAS_PART)
-                    .await;
+                // Structural hasPart (Reference) — created_at only (M331).
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                let _ = crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    ref_node,
+                    da_domain::relation::structure::HAS_PART,
+                    &temporal,
+                )
+                .await;
                 references_written += 1;
             }
 

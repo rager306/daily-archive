@@ -141,6 +141,16 @@ rules:
     suffix_allowlist:
       - .rs
 
+  # --- M330/M331: application must use Clock port, not chrono::Utc::now (ADR-051) ---
+  - id: no_bare_utc_now_in_application
+    anchor: "ADR-051 Contour 1 + M330 (Clock port; no bare Utc::now in application)"
+    severity: medium
+    scan: crates/da-application/src/
+    pattern: 'chrono::Utc::now|Utc::now\s*\('
+    rationale: "Application must inject da_ports::Clock (SystemClock/FixedClock). Bare chrono::Utc::now breaks deterministic TemporalEdge stamps. Composition root (da-cli) may call Utc::now when passing explicit now to associate functions."
+    suffix_allowlist:
+      - .rs
+
   - id: no_dspy_enabled_in_artifacts
     anchor: "D136 (DSPy not enabled until eval metrics + benchmark fixtures verified)"
     severity: medium
