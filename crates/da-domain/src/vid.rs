@@ -83,3 +83,89 @@ mod tests {
         assert_ne!(vid1, vid2);
     }
 }
+
+// ─── ADR-051 P1: Property-based tests (M355) ───
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Non-empty trimmed-ish keys (avoid pure whitespace collapse edge cases).
+    fn arb_key() -> impl Strategy<Value = String> {
+        "[a-zA-Z0-9._-]{1,64}".prop_map(|s| s)
+    }
+
+    fn is_sha256_hex(s: &str) -> bool {
+        s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit())
+    }
+
+    proptest! {
+        /// Property 1: paper_vid is always 64 hex chars and deterministic.
+        #[test]
+        fn prop_paper_vid_hex_deterministic(id in arb_key()) {
+            let v1 = paper_vid(&id);
+            let v2 = paper_vid(&id);
+            prop_assert_eq!(&v1, &v2);
+            prop_assert!(is_sha256_hex(&v1), "vid={v1}");
+        }
+
+        /// Property 2: paper_vid strips arxiv: prefix (case-sensitive strip of exact prefix).
+        #[test]
+        fn prop_paper_vid_strips_arxiv_prefix(id in arb_key()) {
+            let bare = paper_vid(&id);
+            let with = paper_vid(&format!("arxiv:{id}"));
+            prop_assert_eq!(bare, with);
+        }
+
+        /// Property 3: entity_vid is case-insensitive on label and hex.
+        #[test]
+        fn prop_entity_vid_case_insensitive_label(
+            et in arb_key(),
+            label in arb_key(),
+        ) {
+            let lower = entity_vid(&et, &label.to_lowercase());
+            let upper = entity_vid(&et, &label.to_uppercase());
+            prop_assert_eq!(lower, upper);
+            prop_assert!(is_sha256_hex(&entity_vid(&et, &label)));
+        }
+
+        /// Property 4: different entity_type ⇒ different vid for same label.
+        #[test]
+        fn prop_entity_type_separates(label in arb_key()) {
+            let a = entity_vid("Method", &label);
+            let b = entity_vid("Model", &label);
+            prop_assert_ne!(a, b);
+        }
+
+        /// Property 5: author_vid case-insensitive and hex.
+        #[test]
+        fn prop_author_vid_case_insensitive(name in arb_key()) {
+            let a = author_vid(&name.to_lowercase());
+            let b = author_vid(&name.to_uppercase());
+            prop_assert_eq!(a, b);
+            prop_assert!(is_sha256_hex(&author_vid(&name)));
+        }
+
+        /// Property 6: reference_vid deterministic and hex.
+        #[test]
+        fn prop_reference_vid_deterministic(text in arb_key()) {
+            let v1 = reference_vid(&text);
+            let v2 = reference_vid(&text);
+            prop_assert_eq!(v1, v2);
+            prop_assert!(is_sha256_hex(&reference_vid(&text)));
+        }
+
+        /// Property 7: institution_vid hex; display_name case-insensitive.
+        #[test]
+        fn prop_institution_vid_case_insensitive_name(
+            name in arb_key(),
+            oid in arb_key(),
+        ) {
+            let a = institution_vid(&name.to_lowercase(), &oid);
+            let b = institution_vid(&name.to_uppercase(), &oid);
+            prop_assert_eq!(a, b);
+            prop_assert!(is_sha256_hex(&institution_vid(&name, &oid)));
+        }
+    }
+}

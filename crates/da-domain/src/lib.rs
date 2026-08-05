@@ -51,6 +51,9 @@ pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
 };
+pub mod confidence;
+pub use confidence::{clamp_confidence, is_unit_interval};
+
 pub mod pdf_classification;
 pub use pdf_classification::{
     PageOcrReasons, PdfClassification, PdfType, OCR_REASON_NO_TEXT, OCR_REASON_SCANNED,

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M355 Vid determinism + confidence unit-interval proptest
+
+**ADR-051 P1 continuation:**
+
+- `confidence::{is_unit_interval, clamp_confidence}` free helpers (non-breaking)
+- proptest confidence: clamp always unit; idempotent on [0,1]; non-finite → 0
+- proptest VID helpers (7): hex length 64, deterministic, arxiv: strip,
+  entity label case-insensitive, type separation, author/institution case
+- da-domain proptest total: **19** (entity/relation 9 + confidence 3 + vid 7)
+
+```bash
+cargo test -p da-domain --lib proptest
+```
+
+
 ### Session 2026-08-05 — M354 EntityType/RelationType proptest wire stability
 
 **ADR-051 P1 domain closed vocabularies:**
