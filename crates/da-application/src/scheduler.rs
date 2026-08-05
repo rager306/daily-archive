@@ -16,6 +16,8 @@ use da_ports::graph_store::DirectGraphStore;
 pub struct GraphScheduler {
     pub graph_store: Box<dyn DirectGraphStore>,
     pub policy: RetryPolicy,
+    /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 impl GraphScheduler {
@@ -23,7 +25,13 @@ impl GraphScheduler {
         Self {
             graph_store,
             policy: RetryPolicy::default(),
+            clock: std::sync::Arc::new(da_ports::SystemClock),
         }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn da_ports::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     pub fn with_policy(mut self, policy: RetryPolicy) -> Self {
@@ -33,12 +41,14 @@ impl GraphScheduler {
 
     /// Add a paper to the pending queue (creates SchedulerTask node).
     pub async fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
-        Self::add_pending_to(&*self.graph_store, &self.policy, arxiv_id).await
+        let now = self.clock.now().timestamp();
+        Self::add_pending_to(&*self.graph_store, &self.policy, arxiv_id, now).await
     }
 
     /// Load all due pending tasks (next_retry <= now, status=pending).
     pub async fn load_due_tasks(&self) -> Vec<(u64, String)> {
-        Self::load_due_tasks_from(&*self.graph_store).await
+        let now = self.clock.now().timestamp();
+        Self::load_due_tasks_from(&*self.graph_store, now).await
     }
 
     /// Record a retry attempt for a task.
@@ -61,9 +71,8 @@ impl GraphScheduler {
         store: &dyn DirectGraphStore,
         policy: &RetryPolicy,
         arxiv_id: &str,
+        now: i64,
     ) -> anyhow::Result<()> {
-        let now = chrono::Utc::now().timestamp();
-
         // Skip if already pending
         if let Some(existing) = store
             .find_node_by_string_property("SchedulerTask", "arxiv_id", arxiv_id)
@@ -119,8 +128,7 @@ impl GraphScheduler {
 
     /// Load all due pending tasks (next_retry <= now, status=pending) from a
     /// given store.
-    pub async fn load_due_tasks_from(store: &dyn DirectGraphStore) -> Vec<(u64, String)> {
-        let now = chrono::Utc::now().timestamp();
+    pub async fn load_due_tasks_from(store: &dyn DirectGraphStore, now: i64) -> Vec<(u64, String)> {
         let nodes = store.get_nodes_by_label("SchedulerTask").await;
 
         let mut due = Vec::new();

@@ -11,6 +11,8 @@ use da_ports::openalex::OpenAlexClient;
 pub struct EnrichUseCase {
     pub openalex: Box<dyn OpenAlexClient>,
     pub graph_store: Box<dyn DirectGraphStore>,
+    /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 /// Result of enriching one work.
@@ -35,7 +37,13 @@ impl EnrichUseCase {
         Self {
             openalex,
             graph_store,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
         }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn da_ports::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Fetch metadata from OpenAlex and write Topic/Author nodes to graph.
@@ -64,7 +72,7 @@ impl EnrichUseCase {
         arxiv_id: &str,
         work: da_ports::openalex::OpenAlexWork,
     ) -> anyhow::Result<EnrichResult> {
-        let now = chrono::Utc::now().timestamp();
+        let now = self.clock.now().timestamp();
         let mut topics_written = 0;
         let mut authors_written = 0;
 
@@ -262,7 +270,7 @@ impl EnrichUseCase {
                 // Wire Author → Institution (AFFILIATED_WITH) if we resolved the Author.
                 if let Some(author_id) = author_node {
                     // AFFILIATED_WITH is temporal fact — M329.
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                     let _ = crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         author_id,
@@ -307,7 +315,7 @@ impl EnrichUseCase {
     /// Create a stub Work node when OpenAlex has no data.
     /// Marks the Paper node with openalex_pending=true for later enrichment.
     async fn create_pending_stub(&self, arxiv_id: &str) -> anyhow::Result<EnrichResult> {
-        let now = chrono::Utc::now().timestamp();
+        let now = self.clock.now().timestamp();
         // Find the Paper node (created by ingest) and mark it pending
         if let Some(paper_id) = self
             .graph_store

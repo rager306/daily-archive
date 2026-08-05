@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M330 Clock port for deterministic temporal stamps
+
+**ADR-051 Contour 1:** application no longer calls bare `chrono::Utc::now()` for
+TemporalEdge / domain timestamps.
+
+- `da_ports::Clock` + `SystemClock` + `FixedClock`
+- Injected into Ingest / Extraction / Healing / Cluster / Enrich / Scheduler
+  (`new()` defaults to SystemClock; `with_clock` for tests)
+- Fact-stamp and `created_at` paths use `self.clock.now()`
+- Scheduler associate fns take explicit `now: i64` (CLI/tests pass time)
+- Test: FixedClock freezes CITES `valid_at`/`created_at` to epoch 1700000000
+
+```bash
+cargo test -p da-ports --lib
+cargo test -p da-application --test batch_ingest_test test_ingest_cites_valid_at_frozen
+cargo test -p da-application --tests
+```
+
+
 ### Session 2026-08-05 — M329 residual fact edge stamps + write-path audit
 
 **Gap:** After M327–M328, bare `create_edge` remained for fact wires:

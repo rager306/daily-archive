@@ -18,7 +18,7 @@ async fn test_add_pending_creates_scheduler_task_with_default_status() {
     let policy = RetryPolicy::default();
 
     // Add a pending task
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00001")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00001", 1_700_000_000)
         .await
         .unwrap();
 
@@ -43,11 +43,11 @@ async fn test_add_pending_idempotent() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
 
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00002")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00002", 1_700_000_000)
         .await
         .unwrap();
     // Second add should succeed without creating a duplicate
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00002")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00002", 1_700_000_000)
         .await
         .unwrap();
 
@@ -64,7 +64,7 @@ async fn test_load_due_tasks_filters_by_next_retry() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
 
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00003")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00003", 1_700_000_000)
         .await
         .unwrap();
     let nodes = store.get_nodes_by_label("SchedulerTask").await;
@@ -76,7 +76,7 @@ async fn test_load_due_tasks_filters_by_next_retry() {
         .await
         .unwrap();
 
-    let due = GraphScheduler::load_due_tasks_from(&store).await;
+    let due = GraphScheduler::load_due_tasks_from(&store, 1_700_000_000).await;
     assert_eq!(due.len(), 1);
     assert_eq!(due[0].1, "2401.00003");
 }
@@ -86,7 +86,7 @@ async fn test_record_retry_sets_failed_after_max_retries() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
 
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00004")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00004", 1_700_000_000)
         .await
         .unwrap();
     let nodes = store.get_nodes_by_label("SchedulerTask").await;
@@ -119,7 +119,7 @@ async fn test_record_retry_schedules_future_when_not_maxed() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
 
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00005")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00005", 1_700_000_000)
         .await
         .unwrap();
     let nodes = store.get_nodes_by_label("SchedulerTask").await;
@@ -149,7 +149,7 @@ async fn test_complete_task_marks_completed() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
 
-    GraphScheduler::add_pending_to(&store, &policy, "2401.00006")
+    GraphScheduler::add_pending_to(&store, &policy, "2401.00006", 1_700_000_000)
         .await
         .unwrap();
     let nodes = store.get_nodes_by_label("SchedulerTask").await;
@@ -170,7 +170,7 @@ async fn test_complete_task_marks_completed() {
         .unwrap_or_default();
     assert_eq!(status, "completed", "task should be marked completed");
 
-    let due_after = GraphScheduler::load_due_tasks_from(&store).await;
+    let due_after = GraphScheduler::load_due_tasks_from(&store, 1_700_000_000).await;
     assert!(
         due_after.is_empty(),
         "completed task should not appear in due list"

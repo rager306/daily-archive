@@ -17,6 +17,8 @@ pub struct ExtractionUseCase {
     /// When Some, each unique entity label gets a bge-m3 embedding written
     /// to the Entity node's vector index.
     pub embedder: Option<Box<dyn da_ports::embedder::Embedder>>,
+    /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 /// Result of extracting entities from one paper.
@@ -41,7 +43,13 @@ impl ExtractionUseCase {
             extractor,
             graph_store,
             embedder: None,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
         }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn da_ports::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Attach an embedder for entity label embeddings (Phase 3).
@@ -105,7 +113,7 @@ impl ExtractionUseCase {
             .await;
 
         // 4. Write Entity nodes to graph (HOT path) + MENTIONS edges
-        let now = chrono::Utc::now().timestamp();
+        let now = self.clock.now().timestamp();
         let mut node_ids = Vec::new();
         let mut entity_types = Vec::new();
         let mut mentions_edges = 0usize;
@@ -174,7 +182,7 @@ impl ExtractionUseCase {
             // Link Entity to Paper via MENTIONS edge (if Paper node exists)
             if let Some(paper_id) = paper_node_id {
                 // MENTIONS is temporal fact (meta-ontology temporal_class: fact) — M328.
-                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                 let edge_id = crate::temporal_stamp::create_edge_with_temporal(
                     self.graph_store.as_ref(),
                     paper_id,
@@ -313,8 +321,7 @@ impl ExtractionUseCase {
                 for (idx, _) in members {
                     if let Some(&entity_node) = node_ids.get(*idx) {
                         // PARTICIPATES_IN is temporal fact — M328.
-                        let temporal =
-                            crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                         let _ = crate::temporal_stamp::create_edge_with_temporal(
                             self.graph_store.as_ref(),
                             entity_node,
@@ -366,7 +373,7 @@ impl ExtractionUseCase {
                     .set_node_property_int(claim_node, "schema_version", 1)
                     .await?;
                 // EvidenceBundle SUPPORTS Claim — temporal fact (M328).
-                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                 let _ = crate::temporal_stamp::create_edge_with_temporal(
                     self.graph_store.as_ref(),
                     bundle_node,
@@ -428,7 +435,7 @@ impl ExtractionUseCase {
                     .set_node_property_int(prob_node, "schema_version", 1)
                     .await?;
                 // Paper MENTIONS ResearchProblem — temporal fact (M329).
-                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                 let _ = crate::temporal_stamp::create_edge_with_temporal(
                     self.graph_store.as_ref(),
                     paper_id,
@@ -506,7 +513,7 @@ impl ExtractionUseCase {
                         .set_node_property_int(obs_node, "schema_version", 1)
                         .await?;
                     // Paper MENTIONS MetricObservation — temporal fact (M329).
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                     let _ = crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         paper_node,

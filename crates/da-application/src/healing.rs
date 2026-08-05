@@ -11,11 +11,21 @@ use da_ports::graph_store::DirectGraphStore;
 /// Graph healing use case: correct, merge, silence nodes in the graph.
 pub struct GraphHealingUseCase {
     pub graph_store: Box<dyn DirectGraphStore>,
+    /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 impl GraphHealingUseCase {
     pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
-        Self { graph_store }
+        Self {
+            graph_store,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
+        }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn da_ports::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// SILENCE: set retrieval_eligible=false on a node.
@@ -142,7 +152,7 @@ impl GraphHealingUseCase {
             .await?;
 
         // Create SUPERSEDES edge: merge → keep — temporal fact (M329).
-        let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
         crate::temporal_stamp::create_edge_with_temporal(
             self.graph_store.as_ref(),
             merge_id,
@@ -161,7 +171,7 @@ impl GraphHealingUseCase {
             if edge_type != da_domain::relation::bibliographic::SUPERSEDES {
                 // Fact edges must carry TemporalEdge fields (M329).
                 if crate::temporal_stamp::edge_type_is_temporal_fact(edge_type) {
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                     crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         *source_id,

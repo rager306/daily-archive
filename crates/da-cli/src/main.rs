@@ -1187,7 +1187,7 @@ async fn run_scheduler(_queue_dir: &str) {
     }
 
     // Load due tasks from the restored graph via GraphScheduler associate fn
-    let due_tasks = GraphScheduler::load_due_tasks_from(&shared_store).await;
+    let due_tasks = GraphScheduler::load_due_tasks_from(&shared_store, chrono::Utc::now().timestamp()).await;
 
     if due_tasks.is_empty() {
         println!("Scheduler: no due tasks in graph");

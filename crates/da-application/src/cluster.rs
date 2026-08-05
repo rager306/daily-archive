@@ -30,11 +30,20 @@ pub struct ClusterResult {
 /// (entity label → entity type + set of paper IDs where it appears).
 pub struct ClusterUseCase {
     pub graph_store: Box<dyn DirectGraphStore>,
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 impl ClusterUseCase {
     pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
-        Self { graph_store }
+        Self {
+            graph_store,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
+        }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn da_ports::Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Detect clusters from EntityPapers and materialize in graph.
@@ -90,7 +99,7 @@ impl ClusterUseCase {
             for (member_label, _member_type) in dc.members.iter().zip(dc.member_types.iter()) {
                 if let Some(&entity_node_id) = entity_node_ids.get(member_label) {
                     // MEMBER_OF_CLUSTER is temporal fact (meta-ontology) — M329.
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                     let _ = crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         entity_node_id,

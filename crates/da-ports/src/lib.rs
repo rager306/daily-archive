@@ -4,6 +4,7 @@
 //! These traits define the boundaries between our application and external systems.
 
 pub mod algorithms;
+pub mod clock;
 pub mod embedder;
 pub mod evidence_store;
 pub mod extractor;
@@ -13,6 +14,7 @@ pub mod openalex;
 pub mod parser;
 
 pub use algorithms::GraphAlgorithms;
+pub use clock::{Clock, FixedClock, SystemClock};
 pub use embedder::Embedder;
 pub use evidence_store::EvidenceStore;
 pub use extractor::{ExtractedEntity, Extractor};

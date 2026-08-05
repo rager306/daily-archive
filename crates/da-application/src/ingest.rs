@@ -18,6 +18,8 @@ pub struct IngestUseCase {
     pub parser: Box<dyn ParserPort>,
     pub embedder: Box<dyn Embedder>,
     pub graph_store: Box<dyn DirectGraphStore>,
+    /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
+    pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 /// Result of ingesting one paper.
@@ -41,10 +43,25 @@ impl IngestUseCase {
         embedder: Box<dyn Embedder>,
         graph_store: Box<dyn DirectGraphStore>,
     ) -> Self {
+        Self::with_clock(
+            parser,
+            embedder,
+            graph_store,
+            std::sync::Arc::new(da_ports::SystemClock),
+        )
+    }
+
+    pub fn with_clock(
+        parser: Box<dyn ParserPort>,
+        embedder: Box<dyn Embedder>,
+        graph_store: Box<dyn DirectGraphStore>,
+        clock: std::sync::Arc<dyn da_ports::Clock>,
+    ) -> Self {
         Self {
             parser,
             embedder,
             graph_store,
+            clock,
         }
     }
 
@@ -87,7 +104,7 @@ impl IngestUseCase {
         // 3. Create domain Paper (compute VID)
         let paper = Paper::new(paper_id, &parsed.title);
         let vid_str = vid::paper_vid(paper_id);
-        let now = chrono::Utc::now().timestamp();
+        let now = self.clock.now().timestamp();
 
         // 3b. Validate against schema before writing (GRAPH-SCHEMA.md)
         let paper_schema = da_domain::paper::PaperSchema;
@@ -304,7 +321,7 @@ impl IngestUseCase {
         // Idempotent: reuses existing Citation node if one with same arxiv_id exists.
         let mut cites_resolved = 0usize;
         let mut references_written = 0usize;
-        let now_ts = chrono::Utc::now().timestamp();
+        let now_ts = self.clock.now().timestamp();
         for citation in &parsed.citations {
             // Create Reference node for ALL citations (full bibliography).
             // Reference stores raw_text + metadata, even for unresolved citations.
@@ -409,7 +426,7 @@ impl IngestUseCase {
                 };
                 // CITES is a temporal fact edge (meta-ontology temporal_class: fact).
                 // Stamp open TemporalEdge at ingest time (M327 write-path).
-                let fact_now = chrono::Utc::now();
+                let fact_now = self.clock.now();
                 let temporal = crate::temporal_stamp::open_fact_edge_now(fact_now);
                 crate::temporal_stamp::create_edge_with_temporal(
                     self.graph_store.as_ref(),

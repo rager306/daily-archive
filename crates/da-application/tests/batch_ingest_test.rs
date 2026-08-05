@@ -342,3 +342,50 @@ async fn test_ingest_has_part_structural_no_valid_at() {
         "hasPart must not carry valid_at (structural)"
     );
 }
+
+#[tokio::test]
+async fn test_ingest_cites_valid_at_frozen_with_fixed_clock() {
+    // M330: FixedClock freezes TemporalEdge.valid_at on CITES stamp.
+    use chrono::{DateTime, Utc};
+    use da_ports::graph_store::DirectGraphStore;
+    use da_ports::parser::CitationEntry;
+    use da_ports::{Clock, FixedClock};
+    use std::sync::Arc;
+
+    let frozen = DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+    let citations = vec![CitationEntry {
+        raw_text: "Smith et al 2023".to_string(),
+        doi: None,
+        arxiv_id: Some("2301.00001".to_string()),
+        title: Some("Cited Paper A".to_string()),
+    }];
+    let (mut ingest, store) = make_ingest_with_citations(vec![], citations);
+    ingest.clock = Arc::new(FixedClock::new(frozen));
+
+    let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
+    let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
+    assert_eq!(result.ok, 1);
+    assert_eq!(result.total_cites_resolved, 1);
+
+    let papers = store.get_nodes_by_label("Paper").await;
+    let citations = store.get_nodes_by_label("Citation").await;
+    let cites = store
+        .get_edges_between(papers[0], citations[0], "CITES")
+        .await;
+    assert_eq!(cites.len(), 1);
+    let (edge_id, _) = cites[0];
+    let valid_at = store
+        .get_edge_property_string(edge_id, "valid_at")
+        .await
+        .expect("valid_at");
+    let expected = frozen.to_rfc3339();
+    assert_eq!(
+        valid_at, expected,
+        "CITES valid_at must equal FixedClock instant"
+    );
+    let created_at = store
+        .get_edge_property_string(edge_id, "created_at")
+        .await
+        .expect("created_at");
+    assert_eq!(created_at, expected);
+}
