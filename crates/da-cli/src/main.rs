@@ -72,7 +72,8 @@ async fn open_graph_store_with_optional_snapshot(
         let nodes = store.node_count().await;
         let edges = store.edge_count().await;
         println!("  loaded: {nodes} nodes, {edges} edges (this process only)");
-        println!("  ⚠  NON-PERSISTENT — dies when this process exits (D127 locked)");
+        println!("  ⚠  NON-PERSISTENT — dies when this process exits");
+        println!("  D127: import_eligible default Locked; use --enable-import to unlock");
     }
     store
 }

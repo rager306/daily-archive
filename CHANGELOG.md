@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M357 S02 HISTORIC: first production import
+
+**First `import_eligible=Eligible` graph in project history.**
+
+User explicit yes → real hub PDF ingest with `--enable-import`:
+
+```bash
+da batch-ingest --ids 2507.19457 --enable-import \
+  --output artifacts/d127_unlock/hub_imported.sgsnap
+```
+
+Results:
+- GROBID parsed: title="GEPA: REFLECTIVE PROMPT EVOLUTION...", body=229289, sections=85, citations=80
+- Embedded: 1024d via FD_API (bge-m3)
+- Graph written: **191 nodes, 190 edges** (1 Paper + 85 Section + 80 Reference + 25 Entity)
+- `import_eligible=Eligible` on all nodes
+- Snapshot: `artifacts/d127_unlock/hub_imported.sgsnap` (92KB)
+- 23/80 citations resolved to arxiv IDs
+
+D127 lock released after 94 milestones (M263→M357).
+
+
 ### Session 2026-08-05 — M357 S01 D127 phased unlock: ImportEligibility + CLI flag
 
 **User explicit yes: "давно уже надо тестировать и импортировать"**
