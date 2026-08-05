@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M356 documentation sync AGENTS.md and README
+
+**Close documentation drift from M336–M355 arc:**
+
+AGENTS.md:
+- Operators: ADR-051 P1 proptest commands (kg-ontology, da-domain, da-cli)
+- Operators: ADR-051 §8.1 graph_task_suite command
+- Operators: PDF OCR triage via pdf-classifier feature
+- Package map: PdfClassificationPort (da-ports), PdfInspectorClassifier (da-adapters)
+- Implementation priorities: P0 serde roundtrip ✅; P1 proptest ✅ started; graph task suite ✅
+
+README.md:
+- Current state: ADR-051 §8.1 graph task suite; P1 proptest; PDF OCR triage rows
+- Development: proptest commands; graph_task_suite; pdf-classifier feature
+
+
 ### Session 2026-08-05 — M355 Vid determinism + confidence unit-interval proptest
 
 **ADR-051 P1 continuation:**

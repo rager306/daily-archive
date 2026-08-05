@@ -17,7 +17,10 @@ explicit human go (D127).
 |------|--------|
 | Phase 1 domain + ports | Done (`da-domain`, `da-ports`) |
 | **kg-* universal crates** | **Done (ADR-050)** — kg-ontology, kg-storage, kg-embeddings, kg-algorithms, kg-pipeline |
-| **ADR-051 P0 contract suites** | **Done** — GraphStore + Embedder contracts; export/import round-trip (M306) |
+| **ADR-051 P0 contract suites** | **Done** — GraphStore + Embedder contracts; export/import round-trip (M306); serde roundtrip 40 types / 53 tests (M340–M343) |
+| **ADR-051 §8.1 graph task suite** | **Done (M336–M338)** — `graph_task_suite` runner; `@expect_rows` / `@expect_min_value` bounds |
+| **ADR-051 P1 proptest** | **Started (M344/M353–M355)** — 33 proptest: TemporalEdge, EntityType/RelationType, VID, confidence, graph_tasks |
+| **PDF OCR triage** | **Done (M346–M351)** — `pdf-inspector` pre-GROBID classifier (feature `pdf-classifier`); hub pages 69/84 = `suspected_garbled_text` |
 | Phase 2 ingest (HOT path) | Done — GROBID → embed → direct GraphStore write |
 | Graph schema | **Done** — 31 node types, 26 indexes, `da schema init` |
 | **Governor CLI** | **Done** — YAML rules, trajectory, dead-code scan |
@@ -139,6 +142,20 @@ cargo test -p da-domain --lib
 cargo test -p da-graph --lib
 cargo test -p da-application --tests
 cargo test -p da-adapters --lib
+
+# ADR-051 P1 property tests (M344/M353–M355)
+cargo test -p kg-ontology --lib proptest   # TemporalEdge (8)
+cargo test -p da-domain --lib proptest     # EntityType/RelationType/VID/confidence (19)
+cargo test -p da-cli --lib proptest        # graph_tasks parser (6)
+
+# ADR-051 §8.1 semantic graph task suite (M336–M338)
+cargo run -p da-cli --example graph_task_suite -- \
+  --snapshot artifacts/gepa_hub_production/hub.sgsnap \
+  --tasks data/graph_tasks/gepa_hub.tasks.cypher
+
+# PDF OCR triage via pdf-inspector (M346–M351; optional feature)
+cargo test -p da-adapters --features pdf-classifier --lib pdf_classifier
+# cargo build -p da-cli --features pdf-classifier  # CLI with pre-GROBID triage
 
 # Pre-commit (cargo fmt + cargo check + cargo clippy + eval_batch)
 pre-commit install
