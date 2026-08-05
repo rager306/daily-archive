@@ -173,14 +173,16 @@ impl ExtractionUseCase {
             };
             // Link Entity to Paper via MENTIONS edge (if Paper node exists)
             if let Some(paper_id) = paper_node_id {
-                let edge_id = self
-                    .graph_store
-                    .create_edge(
-                        paper_id,
-                        node_id,
-                        da_domain::relation::bibliographic::MENTIONS,
-                    )
-                    .await?;
+                // MENTIONS is temporal fact (meta-ontology temporal_class: fact) — M328.
+                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let edge_id = crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    paper_id,
+                    node_id,
+                    da_domain::relation::bibliographic::MENTIONS,
+                    &temporal,
+                )
+                .await?;
                 // Set edge weight = extraction confidence (Phase 3 GNN readiness)
                 // Rule-based extractor has uniform confidence 1.0
                 self.graph_store
@@ -310,14 +312,17 @@ impl ExtractionUseCase {
                 // Create PARTICIPATES_IN edges: Entity → EvidenceBundle
                 for (idx, _) in members {
                     if let Some(&entity_node) = node_ids.get(*idx) {
-                        let _ = self
-                            .graph_store
-                            .create_edge(
-                                entity_node,
-                                bundle_node,
-                                da_domain::relation::hypergraph::PARTICIPATES_IN,
-                            )
-                            .await;
+                        // PARTICIPATES_IN is temporal fact — M328.
+                        let temporal =
+                            crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                        let _ = crate::temporal_stamp::create_edge_with_temporal(
+                            self.graph_store.as_ref(),
+                            entity_node,
+                            bundle_node,
+                            da_domain::relation::hypergraph::PARTICIPATES_IN,
+                            &temporal,
+                        )
+                        .await;
                         participates_in_edges += 1;
                     }
                 }
@@ -360,15 +365,16 @@ impl ExtractionUseCase {
                 self.graph_store
                     .set_node_property_int(claim_node, "schema_version", 1)
                     .await?;
-                // EvidenceBundle SUPPORTS Claim
-                let _ = self
-                    .graph_store
-                    .create_edge(
-                        bundle_node,
-                        claim_node,
-                        da_domain::relation::hypergraph::SUPPORTS,
-                    )
-                    .await;
+                // EvidenceBundle SUPPORTS Claim — temporal fact (M328).
+                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let _ = crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    bundle_node,
+                    claim_node,
+                    da_domain::relation::hypergraph::SUPPORTS,
+                    &temporal,
+                )
+                .await;
                 claims_created += 1;
             }
         }

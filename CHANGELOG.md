@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M328 stamp TemporalEdge on extract fact edges
+
+**Write-path gap:** Extraction created MENTIONS / PARTICIPATES_IN / SUPPORTS
+without `valid_at` / `created_at` after M327 only fixed ingest CITES.
+
+- Reuse `temporal_stamp::create_edge_with_temporal` + `open_fact_edge_now`
+- **Fact stamped:** MENTIONS, PARTICIPATES_IN, SUPPORTS
+- **Structural unchanged:** FOUND_IN (`foundIn`) — no `valid_at`
+- MENTIONS keeps `weight` float after stamp
+- Tests: extraction 15 (incl. MENTIONS temporal + FOUND_IN structural); unit 3
+
+```bash
+cargo test -p da-application --test extraction_test
+cargo test -p da-application --lib temporal_stamp
+```
+
+
 ### Session 2026-08-05 — M327 stamp TemporalEdge on fact edges at ingest
 
 **Write-path gap:** M326 encoded `temporal_class` as DATA, but ingest created

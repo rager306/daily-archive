@@ -558,3 +558,116 @@ async fn test_extraction_produces_schema_valid_nodes() {
         da_domain::validator::format_violations(&violations)
     );
 }
+
+#[tokio::test]
+async fn test_extraction_mentions_stamped_with_temporal_fields() {
+    // M328: MENTIONS is a fact edge — must carry valid_at + created_at after extract.
+    use da_ports::graph_store::DirectGraphStore;
+    let entities = vec![ExtractedEntity {
+        label: "GEPA".to_string(),
+        entity_type: EntityType::Method,
+        section_title: "Method".to_string(),
+        char_start: 0,
+        char_end: 4,
+        surface: "GEPA".to_string(),
+    }];
+    let store = make_store();
+    let paper_node = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(paper_node, "vid", "vid:paper:2401.00001".to_string())
+        .await
+        .unwrap();
+
+    let use_case = ExtractionUseCase::new(
+        Box::new(MockExtractor { entities }),
+        Box::new(store.clone()),
+    );
+    let result = use_case.extract_from_parsed(&make_parsed()).await.unwrap();
+    assert_eq!(result.mentions_edges, 1);
+    assert_eq!(result.entities_extracted, 1);
+
+    let entities = store.get_nodes_by_label("Entity").await;
+    assert_eq!(entities.len(), 1);
+    let mentions = store
+        .get_edges_between(paper_node, entities[0], "MENTIONS")
+        .await;
+    assert_eq!(mentions.len(), 1);
+    let (edge_id, _) = mentions[0];
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "valid_at")
+            .await
+            .is_some(),
+        "MENTIONS fact edge must have valid_at (M328)"
+    );
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "created_at")
+            .await
+            .is_some(),
+        "MENTIONS fact edge must have created_at (M328)"
+    );
+    // weight still set
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "weight")
+            .await
+            .is_some()
+            || store
+                .get_edge_property_float(edge_id, "weight")
+                .await
+                .is_some()
+    );
+}
+
+#[tokio::test]
+async fn test_extraction_found_in_structural_no_valid_at() {
+    // FOUND_IN is structural — must not carry valid_at.
+    use da_ports::graph_store::DirectGraphStore;
+    let entities = vec![ExtractedEntity {
+        label: "BERT".to_string(),
+        entity_type: EntityType::Model,
+        section_title: "Method".to_string(),
+        char_start: 0,
+        char_end: 4,
+        surface: "BERT".to_string(),
+    }];
+    let store = make_store();
+    let paper_node = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+    // Section with matching title for FOUND_IN
+    let section = store.create_node("Section").await.unwrap();
+    store
+        .set_node_property_string(section, "title", "Method".to_string())
+        .await
+        .unwrap();
+
+    let use_case = ExtractionUseCase::new(
+        Box::new(MockExtractor { entities }),
+        Box::new(store.clone()),
+    );
+    let result = use_case.extract_from_parsed(&make_parsed()).await.unwrap();
+    assert_eq!(result.found_in_edges, 1);
+
+    let entities = store.get_nodes_by_label("Entity").await;
+    assert_eq!(entities.len(), 1);
+    let found = store
+        .get_edges_between(entities[0], section, "foundIn")
+        .await;
+    assert_eq!(found.len(), 1, "expected foundIn edge");
+    let (edge_id, _) = found[0];
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "valid_at")
+            .await
+            .is_none(),
+        "foundIn structural edge must not have valid_at"
+    );
+}
