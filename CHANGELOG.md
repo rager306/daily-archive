@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M318 GEPA hub bibliography corpus + engine research
+
+**Hub paper 2507.19457 (GEPA)** — largest GROBID bibliography in m033 probe (~80 citations).
+
+- Pin tests: `real_tei` ≥80 citations for GEPA hub; ≥70 for 2605.26525v1
+- Downloaded **23/23** resolvable arXiv cited PDFs into canonical catalog (`scripts/download_arxiv_to_catalog.py`)
+- Engine research (`gepa_hub_research` example, MockEmbedder — FD_API 401 avoided):
+  - Ingest **24/24** OK (hub + cites)
+  - **1332** Reference nodes written; **419** CITES resolved to Paper
+  - Graph: 24 Paper + 1255 Reference nodes
+  - Hub extract: 24 entities (GEPA, GRPO, MATH, GPT-4, …)
+- Report: `artifacts/gepa_hub_research/REPORT.md` + `engine_research.json`
+- D127 import_eligible=**false**
+
+```bash
+python3 scripts/download_arxiv_to_catalog.py --ids-file artifacts/gepa_hub_research/missing_arxiv.txt --skip-meta
+cargo test -p da-adapters --lib real_tei -- --test-threads=1
+cargo run -p da-cli --example gepa_hub_research
+```
+
+
 ### Session 2026-08-05 — M317 corpus eval remeasure after gold promote
 
 **Metrics honesty after M315/M316:** full `eval_batch` on 193 papers.

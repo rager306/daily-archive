@@ -440,8 +440,13 @@ mod tests {
 #[cfg(test)]
 mod real_tei_tests {
     use super::*;
+
+    /// Hub paper for large bibliography regression: arXiv **2507.19457** (GEPA).
+    /// Real GROBID TEI has ~80 `<biblStruct>` in `<back>` (largest in m033 probe).
+    /// Changelog historically called this out as "80 citations with DOI/arXiv id".
+    /// Previous pin was only `citations.len() > 5` — too weak to catch bibliography drops.
     #[test]
-    fn test_real_grobid_tei_sections_and_citations() {
+    fn test_real_grobid_tei_gepa_hub_bibliography_2507_19457() {
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
@@ -449,28 +454,82 @@ mod real_tei_tests {
         let tei = match std::fs::read_to_string(path) {
             Ok(t) => t,
             Err(_) => {
-                eprintln!("skipping real TEI test (file not found)");
+                eprintln!("skipping real TEI test (file not found): {path}");
                 return;
             }
         };
         let sections = GrobidParser::extract_sections(&tei);
         let citations = GrobidParser::extract_citations(&tei);
         println!(
-            "real TEI: {} sections, {} citations",
+            "GEPA hub TEI 2507.19457: {} sections, {} citations",
             sections.len(),
             citations.len()
         );
         assert!(
-            sections.len() > 10,
-            "expected many sections, got {}",
+            sections.len() >= 80,
+            "GEPA hub expected ≥80 sections, got {}",
             sections.len()
         );
+        // Pin the large bibliography: must stay at full hub scale (not toy >5).
         assert!(
-            citations.len() > 5,
-            "expected many citations, got {}",
+            citations.len() >= 80,
+            "GEPA hub expected ≥80 bibliography citations, got {} — bibliography extract regressed",
             citations.len()
         );
         // First section should be INTRODUCTION
         assert_eq!(sections[0].title, "INTRODUCTION");
+        // At least some resolvable identifiers in the hub bibliography.
+        let with_arxiv = citations.iter().filter(|c| c.arxiv_id.is_some()).count();
+        let with_doi = citations.iter().filter(|c| c.doi.is_some()).count();
+        let with_title = citations.iter().filter(|c| c.title.is_some()).count();
+        println!("  arxiv_id={with_arxiv} doi={with_doi} title={with_title}");
+        // Real GEPA TEI: ~23 arXiv + ~6 DOI (many refs are monographs/venues without idno).
+        // Pin floor against total extract collapse, not against optimistic id coverage.
+        assert!(
+            with_arxiv >= 20,
+            "expected ≥20 arXiv ids in hub bibliography, got {with_arxiv}"
+        );
+        assert!(
+            with_arxiv + with_doi >= 25,
+            "expected ≥25 DOI/arXiv ids combined, arxiv={with_arxiv} doi={with_doi}"
+        );
+        assert!(
+            with_title >= 15,
+            "expected ≥15 citation titles (analytic title present), got {with_title}"
+        );
+        // raw_text must be non-empty for Reference-node path honesty
+        assert!(
+            citations.iter().all(|c| !c.raw_text.trim().is_empty()),
+            "every citation must carry non-empty raw_text for Reference nodes"
+        );
+    }
+
+    /// Second large-bibliography pin (m033 probe): 2605.26525v1 ~78 back biblStruct.
+    #[test]
+    fn test_real_grobid_tei_large_bibliography_2605_26525() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2605.26525v1/grobid.tei.xml"
+        );
+        let tei = match std::fs::read_to_string(path) {
+            Ok(t) => t,
+            Err(_) => {
+                eprintln!("skipping real TEI test (file not found): {path}");
+                return;
+            }
+        };
+        let citations = GrobidParser::extract_citations(&tei);
+        println!("2605.26525v1 TEI: {} citations", citations.len());
+        assert!(
+            citations.len() >= 70,
+            "expected large bibliography ≥70 citations, got {}",
+            citations.len()
+        );
+    }
+
+    /// Backward-compatible alias of the hub pin (historical test name).
+    #[test]
+    fn test_real_grobid_tei_sections_and_citations() {
+        test_real_grobid_tei_gepa_hub_bibliography_2507_19457();
     }
 }
