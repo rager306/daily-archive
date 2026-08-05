@@ -101,12 +101,15 @@ def check_memory() -> dict:
         }
 
 
-def check_target_dir(workspace: str = ".") -> dict:
+def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) -> dict:
     """Check target/ directory size with detailed breakdown.
 
-    Identifies which subdirectories consume the most space and gives
-    specific recommendations for partial cleanup (incremental, deps,
-    debug vs release).
+    Thresholds are ADAPTIVE based on available disk space:
+    - If disk has >100GB free: tolerate larger target/ (warn >40GB, critical >80GB)
+    - If disk has 20–100GB free: warn >20GB, critical >50GB
+    - If disk has <20GB free: warn >5GB, critical >15GB
+
+    Recommendations adapt: "plenty of space" vs "disk pressure — clean now".
     """
     target = Path(workspace) / "target"
     if not target.exists():
@@ -164,15 +167,41 @@ def check_target_dir(workspace: str = ".") -> dict:
             f"Debug profile {debug_gb:.1f}GB — run 'cargo clean' before workspace builds"
         )
 
-    if size_gb > 50:
+    # Adaptive thresholds based on available disk space (M360+)
+    if disk_free_gb is not None:
+        if disk_free_gb > 100:
+            # Plenty of space — tolerate larger target/
+            warn_threshold = 40
+            crit_threshold = 80
+            disk_context = f"{disk_free_gb:.0f}GB free on disk"
+        elif disk_free_gb > 20:
+            # Moderate space — standard thresholds
+            warn_threshold = 20
+            crit_threshold = 50
+            disk_context = f"{disk_free_gb:.0f}GB free on disk"
+        else:
+            # Low space — aggressive thresholds
+            warn_threshold = 5
+            crit_threshold = 15
+            disk_context = f"only {disk_free_gb:.0f}GB free — disk pressure"
+    else:
+        warn_threshold = 20
+        crit_threshold = 50
+        disk_context = "disk space unknown"
+
+    if size_gb > crit_threshold:
         status = "critical"
-        message = f"target/ is {size_gb:.1f}GB — run 'cargo clean' immediately"
-    elif size_gb > 20:
+        message = f"target/ is {size_gb:.1f}GB ({disk_context}) — run 'cargo clean' immediately"
+        if disk_free_gb is not None and disk_free_gb <= 20:
+            recommendations.insert(0, "DISK PRESSURE: cargo clean is urgent — not enough space for builds")
+    elif size_gb > warn_threshold:
         status = "warning"
-        message = f"target/ is {size_gb:.1f}GB — consider 'cargo clean' before workspace builds"
+        message = f"target/ is {size_gb:.1f}GB ({disk_context}) — consider 'cargo clean' before workspace builds"
     else:
         status = "healthy"
-        message = f"target/ is {size_gb:.1f}GB"
+        message = f"target/ is {size_gb:.1f}GB ({disk_context})"
+        if not recommendations:
+            recommendations.append("target/ size appropriate for available disk space")
 
     return {
         "exists": True,
@@ -195,7 +224,7 @@ def preflight_check(workspace: str = ".") -> dict:
     """
     disk = check_disk_space("/")
     mem = check_memory()
-    target = check_target_dir(workspace)
+    target = check_target_dir(workspace, disk_free_gb=disk["free_gb"])
 
     statuses = [disk["status"], mem["status"], target["status"]]
     if "critical" in statuses:
