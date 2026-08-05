@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M333 D127 health honesty and source governor lock
+
+**Process gap:** `da health` did not surface D127 `import_eligible=false`
+(serve-graph already did). Governor only scanned artifacts for
+`import_eligible: true`, not crates source.
+
+- Pure `d127_import_status_line()` — always locked false
+- Health graph section includes **Import:** D127 locked line
+- Governor high rule `no_import_eligible_true_in_crates` on `crates/`
+- **No import unlock** (D127 remains locked)
+
+```bash
+cargo test -p da-cli --lib health_report
+python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M332 explicit graph persistence policy honesty
 
 **Gap:** process-local Samyama is always in-memory, but a mistaken

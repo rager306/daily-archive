@@ -80,6 +80,11 @@ pub fn persistence_status_line() -> String {
     }
 }
 
+/// Always-honest D127 import gate status (M333). Never unlocks import.
+pub fn d127_import_status_line() -> String {
+    "🔒 import_eligible=false (D127 locked — needs explicit user yes)".into()
+}
+
 /// Operator tip for multi-process health path (M307–M310).
 pub fn wave3_tip() -> &'static str {
     "  tip: multi-process RESP health uses `da serve-graph` + `da graph-ping` (port 16379); full GraphMode::remote store is not configured"
@@ -107,6 +112,7 @@ pub fn format_graph_health_lines(
 ) -> Vec<String> {
     let mut lines = vec![format!("  DA_GRAPH_MODE:  {mode_text}")];
     lines.push(format!("  Persistence:    {}", persistence_status_line()));
+    lines.push(format!("  Import:         {}", d127_import_status_line()));
     if opened {
         let status = if healthy { "✅ healthy" } else { "❌ down" };
         lines.push(format!("  Samyama Graph:  {status} ({detail} nodes)"));
@@ -145,6 +151,7 @@ mod tests {
         let joined = lines.join("\n");
         assert!(joined.contains("DA_GRAPH_MODE:  embedded"));
         assert!(joined.contains("Persistence:"));
+        assert!(joined.contains("import_eligible=false") || joined.contains("D127"));
         assert!(joined.contains("✅ healthy (12 nodes)"));
         assert!(!joined.contains("serve-graph"));
     }
@@ -252,5 +259,12 @@ mod tests {
             line.contains("none") || line.contains("DA_GRAPH_DATA_PATH"),
             "{line}"
         );
+    }
+    #[test]
+    fn d127_import_status_line_locked() {
+        let line = d127_import_status_line();
+        assert!(line.contains("import_eligible=false"), "{line}");
+        assert!(line.contains("D127"), "{line}");
+        assert!(!line.contains("true"));
     }
 }

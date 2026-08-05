@@ -31,6 +31,17 @@ rules:
     pattern: '"import_eligible"\s*:\s*true'
     rationale: "import_eligible must remain false until independent review and explicit user yes (D127)."
 
+  # --- M333: D127 source lock — import_eligible must not be set true in crates ---
+  # Artifacts already covered by no_import_eligible_true_in_artifacts.
+  - id: no_import_eligible_true_in_crates
+    anchor: "D127 + ADR-005 (import_eligible=false until explicit user yes)"
+    severity: high
+    scan: crates/
+    pattern: 'import_eligible\s*[:=]\s*true|"import_eligible"\s*:\s*true'
+    rationale: "import_eligible must remain false in Rust sources until independent review and explicit user yes (D127). Do not hardcode true or assign true."
+    suffix_allowlist:
+      - .rs
+
   - id: no_graph_writes_allowed_true_in_artifacts
     anchor: "ADR-040 (Samyama sole KG store), D127"
     severity: high
