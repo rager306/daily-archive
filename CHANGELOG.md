@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M317 corpus eval remeasure after gold promote
+
+**Metrics honesty after M315/M316:** full `eval_batch` on 193 papers.
+
+| Metric | M314 (pre-promote) | M317 (post-promote) |
+|--------|--------------------|---------------------|
+| Micro P | 0.729 | **0.769** |
+| Micro R | 1.000 | **1.000** |
+| Micro F1 | 0.843 | **0.869** |
+| Macro F1 | 0.838 | **0.859** |
+| FP | 494 | **421** (−73) |
+| FN | 0 | **0** |
+| Gold entities | 1326 | **1399** |
+
+```bash
+cargo run -p da-cli --example eval_batch
+```
+
+
 ### Session 2026-08-05 — M316 batch evidence-based gold promote
 
 **Batch E2 hygiene:** `batch_promote_gold` example runs extract → FP → multi-paper promote across weak papers.
