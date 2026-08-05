@@ -163,7 +163,7 @@ pub async fn batch_ingest_pdfs(
         duration_ms,
         snapshot_path,
         errors,
-        import_eligible: false, // D127
+        import_eligible: ingest.eligibility.is_eligible(),
         pdf_triage,
     })
 }

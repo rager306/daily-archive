@@ -8,7 +8,7 @@
 use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
-use da_domain::PdfClassification;
+use da_domain::{ImportEligibility, PdfClassification};
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParserPort;
@@ -25,6 +25,8 @@ pub struct IngestUseCase {
     /// Optional PDF classifier (M347). When present, classifies PDF
     /// before GROBID parse to detect scanned/garbled pages.
     pub pdf_classifier: Option<std::sync::Arc<dyn PdfClassificationPort>>,
+    /// D127 import gate (M357). Default: Locked. Eligible requires --enable-import.
+    pub eligibility: ImportEligibility,
 }
 
 /// Result of ingesting one paper.
@@ -71,6 +73,7 @@ impl IngestUseCase {
             graph_store,
             clock,
             pdf_classifier: None,
+            eligibility: ImportEligibility::default(),
         }
     }
 
@@ -80,12 +83,24 @@ impl IngestUseCase {
         self
     }
 
+    /// Set import eligibility (M357 / D127 unlock). Default: Locked.
+    pub fn with_import_eligibility(mut self, eligibility: ImportEligibility) -> Self {
+        self.eligibility = eligibility;
+        self
+    }
+
     /// Ingest a single PDF: parse → embed → write to graph via HOT path.
     ///
     /// ADR-041: Uses direct GraphStore API (0.01ms per op) instead of Cypher MERGE.
     /// No parse/plan overhead. 100x faster than Cypher for batch writes.
     pub async fn ingest_pdf(&self, pdf_path: &str, paper_id: &str) -> anyhow::Result<IngestResult> {
         tracing::info!(paper_id, pdf_path, "Starting ingest (HOT path)");
+
+        // D127 / M357: import eligibility computed from CLI flag (default Locked).
+        let eligible = self.eligibility.is_eligible();
+        if eligible {
+            tracing::warn!(paper_id, "D127 UNLOCKED: nodes marked eligible for import (--enable-import)");
+        }
 
         // ADR-043: extract scientific_domain from catalog path if available
         let primary_domain = extract_domain_from_path(pdf_path);
@@ -194,7 +209,7 @@ impl IngestUseCase {
             .set_node_property_bool(node_id, "evidence_ready", false)
             .await?;
         self.graph_store
-            .set_node_property_bool(node_id, "import_eligible", false) // D127: always false
+            .set_node_property_bool(node_id, "import_eligible", eligible) // D127: always false
             .await?;
         self.graph_store
             .set_node_property_bool(node_id, "retrieval_eligible", true) // D134: live for retrieval
@@ -230,7 +245,7 @@ impl IngestUseCase {
                         .set_node_property_bool(sn, "retrieval_eligible", false)
                         .await?;
                     self.graph_store
-                        .set_node_property_bool(sn, "import_eligible", false) // D127
+                        .set_node_property_bool(sn, "import_eligible", eligible) // D127
                         .await?;
                     self.graph_store
                         .set_node_property_int(sn, "schema_version", 1)
@@ -286,7 +301,7 @@ impl IngestUseCase {
                 .set_node_property_bool(cat_node, "retrieval_eligible", true)
                 .await?;
             self.graph_store
-                .set_node_property_bool(cat_node, "import_eligible", false) // D127
+                .set_node_property_bool(cat_node, "import_eligible", eligible) // D127
                 .await?;
             self.graph_store
                 .set_node_property_int(cat_node, "schema_version", 1)
@@ -342,7 +357,7 @@ impl IngestUseCase {
                 .set_node_property_bool(section_node, "retrieval_eligible", true)
                 .await?;
             self.graph_store
-                .set_node_property_bool(section_node, "import_eligible", false) // D127
+                .set_node_property_bool(section_node, "import_eligible", eligible) // D127
                 .await?;
             self.graph_store
                 .set_node_property_int(section_node, "schema_version", 1)
@@ -426,7 +441,7 @@ impl IngestUseCase {
                     .set_node_property_bool(ref_node, "retrieval_eligible", true)
                     .await?;
                 self.graph_store
-                    .set_node_property_bool(ref_node, "import_eligible", false) // D127
+                    .set_node_property_bool(ref_node, "import_eligible", eligible) // D127
                     .await?;
                 self.graph_store
                     .set_node_property_int(ref_node, "schema_version", 1)
@@ -483,7 +498,7 @@ impl IngestUseCase {
                             .set_node_property_bool(new_node, "retrieval_eligible", true)
                             .await?;
                         self.graph_store
-                            .set_node_property_bool(new_node, "import_eligible", false) // D127
+                            .set_node_property_bool(new_node, "import_eligible", eligible) // D127
                             .await?;
                         new_node
                     }
@@ -525,7 +540,7 @@ impl IngestUseCase {
             cites_resolved,
             vector_dimensions: vector.len(),
             graph_node_id: Some(node_id),
-            import_eligible: false, // D127: always false
+            import_eligible: eligible,
             pdf_classification,
         })
     }

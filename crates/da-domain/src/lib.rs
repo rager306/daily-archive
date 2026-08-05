@@ -54,6 +54,9 @@ pub use relation::hypergraph::{
 pub mod confidence;
 pub use confidence::{clamp_confidence, is_unit_interval};
 
+pub mod import_eligibility;
+pub use import_eligibility::ImportEligibility;
+
 pub mod pdf_classification;
 pub use pdf_classification::{
     PageOcrReasons, PdfClassification, PdfType, OCR_REASON_NO_TEXT, OCR_REASON_SCANNED,

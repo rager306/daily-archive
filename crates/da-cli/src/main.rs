@@ -110,6 +110,11 @@ enum Commands {
         /// Paper ID (arxiv id)
         #[arg(long)]
         id: String,
+
+        /// Enable production import (D127 unlock, M357). Default: locked.
+        /// When set, nodes are marked import_eligible=Eligible.
+        #[arg(long, default_value = "false")]
+        enable_import: bool,
     },
 
     /// Batch ingest multiple PDFs in one process (HOT path + snapshot export)
@@ -129,6 +134,10 @@ enum Commands {
         /// Write inventory JSON/MD under this directory (ontology-string honest counts)
         #[arg(long)]
         inventory_dir: Option<PathBuf>,
+
+        /// Enable production import (D127 unlock, M357). Default: locked.
+        #[arg(long, default_value = "false")]
+        enable_import: bool,
     },
 
     /// Load a snapshot file into the graph (restore durability)
@@ -353,10 +362,13 @@ fn main() {
             println!("ADR-037/038/039/040/041 — Samyama Graph + RuVector + RVF");
             println!("Phase: ingest + extraction + healing + schema + enrich");
         }
-        Commands::Ingest { pdf, id } => {
+        Commands::Ingest { pdf, id, enable_import } => {
             println!("Ingesting: {} → {}", pdf, id);
+            if enable_import {
+                println!("⚠  D127 UNLOCKED: --enable-import set; nodes will be marked Eligible");
+            }
             rt.block_on(async {
-                ingest_pdf(&pdf, &id).await;
+                ingest_pdf(&pdf, &id, enable_import).await;
             });
         }
         Commands::BatchIngest {
@@ -364,6 +376,7 @@ fn main() {
             ids_file,
             output,
             inventory_dir,
+            enable_import,
         } => {
             rt.block_on(async {
                 batch_ingest(
@@ -371,6 +384,7 @@ fn main() {
                     ids_file.as_deref(),
                     output.as_deref(),
                     inventory_dir.as_deref(),
+                    enable_import,
                 )
                 .await;
             });
@@ -630,7 +644,7 @@ fn require_fd_api_key_for_ingest() {
     }
 }
 
-async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
+async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::IngestUseCase;
 
@@ -642,6 +656,11 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
     // DirectGraphStore is implemented by SamyamaGraphStore (ADR-041 HOT path)
 
     let use_case = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
+    let use_case = if enable_import {
+        use_case.with_import_eligibility(da_domain::ImportEligibility::Eligible)
+    } else {
+        use_case
+    };
 
     match use_case.ingest_pdf(pdf_path, paper_id).await {
         Ok(result) => {
@@ -699,6 +718,7 @@ async fn batch_ingest(
     ids_file: Option<&std::path::Path>,
     output: Option<&str>,
     inventory_dir: Option<&std::path::Path>,
+    enable_import: bool,
 ) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::{IngestUseCase, batch_ingest_pdfs};
@@ -751,6 +771,11 @@ async fn batch_ingest(
     let graph_store = Box::new(open_graph_store());
 
     let ingest = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
+    let ingest = if enable_import {
+        ingest.with_import_eligibility(da_domain::ImportEligibility::Eligible)
+    } else {
+        ingest
+    };
 
     let snapshot_path = output.map(PathBuf::from);
 
