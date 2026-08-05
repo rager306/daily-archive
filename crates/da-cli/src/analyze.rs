@@ -27,6 +27,10 @@ pub const ANALYZE_ALGORITHMS: &[&str] = &["page-rank", "ppr", "wcc"];
 /// Arguments for `da analyze` subcommand.
 #[derive(Args, Debug)]
 pub struct AnalyzeArgs {
+    /// Optional `.sgsnap` preload into this process before analyze (M335).
+    #[arg(long)]
+    pub snapshot: Option<std::path::PathBuf>,
+
     /// Algorithm to run: page-rank, ppr, wcc
     #[arg(long)]
     pub algorithm: String,

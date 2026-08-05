@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M336 semantic graph task suite runner
+
+**ADR-051 §8.1 implementation** (Samyama case-study DoD pattern):
+
+- `data/graph_tasks/gepa_hub.tasks.cypher` — 7 showcase tasks (fact CITES + structural hasPart/FROM_SOURCE/inCategory)
+- Pure parser `da_cli::graph_tasks` — `// @query`, `@min_rows`, `@allow_empty`; unit tests 7/7
+- Example `graph_task_suite`: import `.sgsnap` same-process → PASS/EMPTY/ERROR → exit 1 on fail
+- E2E hub.sgsnap: **PASS=7 EMPTY=0 ERROR=0**, nodes 2571, edges 2741
+- Report: `artifacts/graph_tasks/gepa_hub_report.json`
+- D127 locked; Number(0) count treated as EMPTY
+
+```bash
+cargo test -p da-cli --lib graph_tasks
+cargo run -p da-cli --example graph_task_suite -- \
+  --snapshot artifacts/gepa_hub_production/hub.sgsnap \
+  --tasks data/graph_tasks/gepa_hub.tasks.cypher \
+  --report artifacts/graph_tasks/gepa_hub_report.json
+```
+
+
+### Session 2026-08-05 — M335 snapshot on mutate/validate CLI
+
+**Process gap:** extract/heal/enrich/validate-graph/analyze opened empty
+process-local stores after M334 only wired query/graph-stats.
+
+- `--snapshot` preload via `open_graph_store_with_optional_snapshot` on extract, heal, enrich, validate-graph, analyze
+- `--output-snapshot` re-export after extract/heal/enrich mutations
+- E2E: `da validate-graph --snapshot hub.sgsnap` → 2571 nodes, 0 violations
+
+```bash
+./target/debug/da validate-graph --snapshot artifacts/gepa_hub_production/hub.sgsnap
+./target/debug/da extract --id 2507.19457 --snapshot hub.sgsnap --output-snapshot out.sgsnap
+```
+
+
 ### Session 2026-08-05 — ADR-051 semantic graph task pipeline (Samyama pattern)
 
 Documented Contour 6 **semantic graph task pipeline** in ADR-051 §8.1:

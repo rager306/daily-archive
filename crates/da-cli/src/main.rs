@@ -151,6 +151,14 @@ enum Commands {
         /// Paper arxiv_id to extract from
         #[arg(long)]
         id: String,
+
+        /// Optional `.sgsnap` preload into this process before extract (M335).
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
+
+        /// Optional path to re-export graph after extract (MENTIONS written).
+        #[arg(long)]
+        output_snapshot: Option<PathBuf>,
     },
 
     /// Initialize graph schema (indexes) before loading data
@@ -189,6 +197,14 @@ enum Commands {
         /// Reason for the healing operation
         #[arg(long, default_value = "manual")]
         reason: String,
+
+        /// Optional `.sgsnap` preload into this process before heal (M335).
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
+
+        /// Optional path to re-export graph after heal.
+        #[arg(long)]
+        output_snapshot: Option<PathBuf>,
     },
 
     /// Enrich paper metadata from OpenAlex (topics, authors, concepts)
@@ -196,6 +212,14 @@ enum Commands {
         /// arXiv ID to enrich
         #[arg(long)]
         id: String,
+
+        /// Optional `.sgsnap` preload into this process before enrich (M335).
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
+
+        /// Optional path to re-export graph after enrich.
+        #[arg(long)]
+        output_snapshot: Option<PathBuf>,
     },
 
     /// Batch enrich multiple papers from OpenAlex
@@ -241,6 +265,10 @@ enum Commands {
         /// Optional: validate only this label (default: all).
         #[arg(long)]
         label: Option<String>,
+
+        /// Optional `.sgsnap` preload before validate (M335).
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
     },
 
     /// Validate a single node property snapshot (JSON on stdin).
@@ -347,9 +375,13 @@ fn main() {
                 query_graph(&kind, id.as_deref(), hops, snapshot.as_deref()).await;
             });
         }
-        Commands::Extract { id } => {
+        Commands::Extract {
+            id,
+            snapshot,
+            output_snapshot,
+        } => {
             rt.block_on(async {
-                extract_entities(&id).await;
+                extract_entities(&id, snapshot.as_deref(), output_snapshot.as_deref()).await;
             });
         }
         Commands::SchemaInit { dimensions } => {
@@ -363,6 +395,8 @@ fn main() {
             value,
             keep,
             reason,
+            snapshot,
+            output_snapshot,
         } => {
             rt.block_on(async {
                 heal_graph(
@@ -373,13 +407,19 @@ fn main() {
                     value.as_deref(),
                     keep.as_deref(),
                     &reason,
+                    snapshot.as_deref(),
+                    output_snapshot.as_deref(),
                 )
                 .await;
             });
         }
-        Commands::Enrich { id } => {
+        Commands::Enrich {
+            id,
+            snapshot,
+            output_snapshot,
+        } => {
             rt.block_on(async {
-                enrich_from_openalex(&id).await;
+                enrich_from_openalex(&id, snapshot.as_deref(), output_snapshot.as_deref()).await;
             });
         }
         Commands::BatchEnrich { ids } => {
@@ -422,9 +462,9 @@ fn main() {
         Commands::AuditFields => {
             audit_fields();
         }
-        Commands::ValidateGraph { label } => {
+        Commands::ValidateGraph { label, snapshot } => {
             rt.block_on(async {
-                validate_graph(label.as_deref()).await;
+                validate_graph(label.as_deref(), snapshot.as_deref()).await;
             });
         }
         Commands::ValidateNode { label } => {
@@ -449,14 +489,37 @@ fn main() {
             }
         }
         Commands::Analyze(args) => {
-            let store = open_graph_store();
             rt.block_on(async {
+                let store = open_graph_store_with_optional_snapshot(args.snapshot.as_deref()).await;
                 if let Err(e) = analyze::run_analyze(&store, &args).await {
                     eprintln!("Error: {e:#}");
                     std::process::exit(1);
                 }
             });
         }
+    }
+}
+
+/// Export current process-local store to a `.sgsnap` path (M335).
+async fn export_store_snapshot(
+    store: &dyn da_ports::graph_store::GraphStore,
+    path: &std::path::Path,
+) {
+    match store.export_snapshot().await {
+        Ok(bytes) => {
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            match std::fs::write(path, &bytes) {
+                Ok(()) => println!(
+                    "  exported snapshot: {} ({} bytes)",
+                    path.display(),
+                    bytes.len()
+                ),
+                Err(e) => eprintln!("❌ write snapshot {}: {e}", path.display()),
+            }
+        }
+        Err(e) => eprintln!("❌ export_snapshot failed: {e}"),
     }
 }
 
@@ -934,7 +997,11 @@ async fn query_graph(
     }
 }
 
-async fn extract_entities(paper_id: &str) {
+async fn extract_entities(
+    paper_id: &str,
+    snapshot: Option<&std::path::Path>,
+    output_snapshot: Option<&std::path::Path>,
+) {
     use da_adapters::{GrobidParser, RuleBasedExtractor};
     use da_application::ExtractionUseCase;
     use da_ports::parser::ParserPort;
@@ -979,7 +1046,7 @@ async fn extract_entities(paper_id: &str) {
 
     // Extract via rule-based extractor
     let extractor = Box::new(RuleBasedExtractor::new());
-    let graph_store = Box::new(open_graph_store());
+    let graph_store = Box::new(open_graph_store_with_optional_snapshot(snapshot).await);
     let use_case = ExtractionUseCase::new(extractor, graph_store);
 
     match use_case.extract_from_parsed(&parsed).await {
@@ -995,6 +1062,9 @@ async fn extract_entities(paper_id: &str) {
                 println!("   {t}: {count}");
             }
             println!("   Graph nodes written: {}", result.graph_node_ids.len());
+            if let Some(out) = output_snapshot {
+                export_store_snapshot(use_case.graph_store.as_ref(), out).await;
+            }
         }
         Err(e) => {
             eprintln!("❌ Extraction failed: {e:#}");
@@ -1091,11 +1161,13 @@ async fn heal_graph(
     value: Option<&str>,
     keep: Option<&str>,
     reason: &str,
+    snapshot: Option<&std::path::Path>,
+    output_snapshot: Option<&std::path::Path>,
 ) {
     use da_application::GraphHealingUseCase;
     use da_domain::healing::HealingActor;
 
-    let graph_store = Box::new(open_graph_store());
+    let graph_store = Box::new(open_graph_store_with_optional_snapshot(snapshot).await);
     let use_case = GraphHealingUseCase::new(graph_store);
     let actor = HealingActor::Human("cli".to_string());
 
@@ -1138,16 +1210,23 @@ async fn heal_graph(
         eprintln!("❌ Heal failed: {e:#}");
         std::process::exit(1);
     }
+    if let Some(out) = output_snapshot {
+        export_store_snapshot(use_case.graph_store.as_ref(), out).await;
+    }
 }
 
-async fn enrich_from_openalex(arxiv_id: &str) {
+async fn enrich_from_openalex(
+    arxiv_id: &str,
+    snapshot: Option<&std::path::Path>,
+    output_snapshot: Option<&std::path::Path>,
+) {
     use da_adapters::OpenAlexHttpAdapter;
     use da_application::EnrichUseCase;
 
     println!("Enriching {arxiv_id} from OpenAlex...");
 
     let openalex = Box::new(OpenAlexHttpAdapter::new());
-    let graph_store = Box::new(open_graph_store());
+    let graph_store = Box::new(open_graph_store_with_optional_snapshot(snapshot).await);
     let use_case = EnrichUseCase::new(openalex, graph_store);
 
     match use_case.enrich_by_arxiv_id(arxiv_id).await {
@@ -1166,6 +1245,9 @@ async fn enrich_from_openalex(arxiv_id: &str) {
                 println!("   Authors: {}", result.authors_written);
                 println!("   Concepts: {} (deprecated)", result.concepts_written);
                 println!("   Cited by: {}", result.cited_by_count);
+            }
+            if let Some(out) = output_snapshot {
+                export_store_snapshot(use_case.graph_store.as_ref(), out).await;
             }
         }
         Err(e) => {
@@ -1701,7 +1783,7 @@ fn export_ontology_yaml(output_dir: &str) {
 ///
 /// This is the production-side counterpart of `assert_graph_conforms`
 /// in integration tests. Wave D production-side enforcement.
-async fn validate_graph(label_filter: Option<&str>) {
+async fn validate_graph(label_filter: Option<&str>, snapshot: Option<&std::path::Path>) {
     use da_domain::validator::{PropertySnapshot, format_violations, validate_node_properties};
     use da_ports::graph_store::DirectGraphStore;
     use serde_json::json;
@@ -1709,7 +1791,7 @@ async fn validate_graph(label_filter: Option<&str>) {
     println!("daily-archive v2 — validate-graph (ADR-045 Wave D production)");
     println!();
 
-    let store = open_graph_store();
+    let store = open_graph_store_with_optional_snapshot(snapshot).await;
     let labels: Vec<String> = match label_filter {
         Some(l) => vec![l.to_string()],
         None => da_domain::schema::all_node_schemas()
