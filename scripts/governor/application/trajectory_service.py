@@ -139,12 +139,13 @@ class TrajectoryService:
         # target/ size check
         target = result.get("target_dir", {})
         if target.get("status") in ("warning", "critical"):
+            recs = "; ".join(target.get("recommendations", ["Run 'cargo clean'"]))
             flags.append(DriftFlag(
                 flag_id="resource_target_bloat",
                 dimension="resource_safety",
                 status="warning" if target["status"] == "warning" else "critical",
                 message=target["message"],
-                recommendation="Run 'cargo clean' to reclaim disk space before continuing.",
+                recommendation=recs,
             ))
 
         return flags

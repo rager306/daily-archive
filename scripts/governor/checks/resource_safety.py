@@ -102,31 +102,74 @@ def check_memory() -> dict:
 
 
 def check_target_dir(workspace: str = ".") -> dict:
-    """Check target/ directory size if it exists.
+    """Check target/ directory size with detailed breakdown.
 
-    Returns dict with size_gb and recommendation.
+    Identifies which subdirectories consume the most space and gives
+    specific recommendations for partial cleanup (incremental, deps,
+    debug vs release).
     """
     target = Path(workspace) / "target"
     if not target.exists():
         return {"exists": False, "size_gb": 0, "status": "healthy", "message": "target/ not found"}
 
     total = 0
+    subdir_sizes = {}
     for dirpath, _dirnames, filenames in os.walk(target):
+        dir_total = 0
         for f in filenames:
             fp = os.path.join(dirpath, f)
             try:
-                total += os.path.getsize(fp)
+                dir_total += os.path.getsize(fp)
             except OSError:
                 pass
+        total += dir_total
+
+        # Categorize by top-level subdir
+        rel = os.path.relpath(dirpath, target)
+        top_subdir = rel.split(os.sep)[0] if rel != "." else "(root)"
+        subdir_sizes[top_subdir] = subdir_sizes.get(top_subdir, 0) + dir_total
 
     size_gb = total / (1024**3)
 
-    if size_gb > 20:
-        status = "warning"
-        message = f"target/ is {size_gb:.1f}GB — consider 'cargo clean' before workspace builds"
-    elif size_gb > 50:
+    # Sort subdirs by size descending
+    sorted_subdirs = sorted(subdir_sizes.items(), key=lambda x: -x[1])
+    top_consumers = [
+        {"dir": d, "size_gb": round(s / (1024**3), 2)}
+        for d, s in sorted_subdirs[:5]
+        if s > 100 * 1024 * 1024  # only show >100MB
+    ]
+
+    # Specific recommendations based on breakdown
+    recommendations = []
+    incremental_gb = subdir_sizes.get("debug" + os.sep + "incremental", 0) / (1024**3)
+    deps_gb = subdir_sizes.get("debug" + os.sep + "deps", 0) / (1024**3)
+    release_exists = "release" in subdir_sizes
+    debug_gb = subdir_sizes.get("debug", 0) / (1024**3)
+    release_gb = subdir_sizes.get("release", 0) / (1024**3)
+
+    if incremental_gb > 2:
+        recommendations.append(
+            f"Remove incremental cache: rm -rf target/debug/incremental ({incremental_gb:.1f}GB)"
+        )
+    if release_exists and release_gb > 5:
+        recommendations.append(
+            f"Remove release profile if unused: rm -rf target/release ({release_gb:.1f}GB)"
+        )
+    if deps_gb > 5:
+        recommendations.append(
+            f"Dependencies cache large ({deps_gb:.1f}GB) — cargo clean -p <crate> to prune specific deps"
+        )
+    if debug_gb > 15:
+        recommendations.append(
+            f"Debug profile {debug_gb:.1f}GB — run 'cargo clean' before workspace builds"
+        )
+
+    if size_gb > 50:
         status = "critical"
         message = f"target/ is {size_gb:.1f}GB — run 'cargo clean' immediately"
+    elif size_gb > 20:
+        status = "warning"
+        message = f"target/ is {size_gb:.1f}GB — consider 'cargo clean' before workspace builds"
     else:
         status = "healthy"
         message = f"target/ is {size_gb:.1f}GB"
@@ -136,6 +179,12 @@ def check_target_dir(workspace: str = ".") -> dict:
         "size_gb": round(size_gb, 1),
         "status": status,
         "message": message,
+        "top_consumers": top_consumers,
+        "incremental_cache_gb": round(incremental_gb, 1),
+        "deps_cache_gb": round(deps_gb, 1),
+        "debug_profile_gb": round(debug_gb, 1),
+        "release_profile_gb": round(release_gb, 1),
+        "recommendations": recommendations if recommendations else ["target/ size within healthy range"],
     }
 
 
