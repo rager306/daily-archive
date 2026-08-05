@@ -1,9 +1,10 @@
-//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318/M319).
+//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318–M320).
 //!
 //! - Parses hub + cited arXiv PDFs via GROBID
 //! - Ingests with **kg_embeddings::MockEmbedder** (no FD_API auth)
 //! - Reports citation/Reference/CITES/hasPart connectivity
 //! - Edge inventory uses **ontology string constants** (`hasPart`, not `HAS_PART`)
+//! - Graph `section_nodes` from `get_nodes_by_label` — never hub TEI section Vec (M320)
 //! - Exports snapshot + JSON/MD under artifacts/gepa_hub_research/
 //!
 //! D127: import_eligible stays false.
@@ -232,13 +233,30 @@ async fn main() -> anyhow::Result<()> {
         eprintln!("  fail {id}: {e}");
     }
 
+    // M320: capture graph label inventory *before* hub extract — hub TEI uses a
+    // different `sections` name so it cannot shadow Section node IDs (M319 false 85).
     let papers = ingest.graph_store.get_nodes_by_label("Paper").await;
     let references = ingest.graph_store.get_nodes_by_label("Reference").await;
-    let sections = ingest.graph_store.get_nodes_by_label("Section").await;
+    let section_nodes = ingest.graph_store.get_nodes_by_label("Section").await;
     let categories = ingest.graph_store.get_nodes_by_label("Category").await;
     let citations = ingest.graph_store.get_nodes_by_label("Citation").await;
     let entities = ingest.graph_store.get_nodes_by_label("Entity").await;
     let sources = ingest.graph_store.get_nodes_by_label("Source").await;
+
+    let paper_node_count = papers.len();
+    let reference_node_count = references.len();
+    let section_node_count = section_nodes.len();
+    let category_node_count = categories.len();
+    let citation_node_count = citations.len();
+    let entity_node_count = entities.len();
+    let source_node_count = sources.len();
+    let total_node_count = paper_node_count
+        + reference_node_count
+        + section_node_count
+        + category_node_count
+        + citation_node_count
+        + entity_node_count
+        + source_node_count;
 
     let mut paper_ids = Vec::new();
     for nid in &papers {
@@ -258,7 +276,7 @@ async fn main() -> anyhow::Result<()> {
     let mut edge_hist: HashMap<String, usize> = HashMap::new();
     let mut all_nodes = papers.clone();
     all_nodes.extend(references.iter().copied());
-    all_nodes.extend(sections.iter().copied());
+    all_nodes.extend(section_nodes.iter().copied());
     all_nodes.extend(categories.iter().copied());
     all_nodes.extend(citations.iter().copied());
     all_nodes.extend(entities.iter().copied());
@@ -278,20 +296,19 @@ async fn main() -> anyhow::Result<()> {
         "Edge histogram (ontology strings): cites={cites} hasPart={has_part} FROM_SOURCE={from_source} inCategory={in_category} MENTIONS={mentions} full={edge_hist:?}"
     );
     println!(
-        "Node inventory: Paper={} Reference={} Section={} (ingest total_sections={}) Category={} Citation={} Source={}",
-        papers.len(),
-        references.len(),
-        sections.len(),
+        "Node inventory: Paper={paper_node_count} Reference={reference_node_count} Section={section_node_count} (ingest total_sections={}) Category={category_node_count} Citation={citation_node_count} Source={source_node_count}",
         batch.total_sections,
-        categories.len(),
-        citations.len(),
-        sources.len()
     );
-    if sections.len() as u64 != batch.total_sections as u64 && batch.total_sections > sections.len()
-    {
+    // Reference: references_written counts every hasPart link; unique nodes dedupe by vid.
+    if batch.total_references_written > reference_node_count {
+        println!(
+            "Note: Reference unique nodes ({reference_node_count}) < references_written ({}) — expected vid dedup across papers",
+            batch.total_references_written
+        );
+    }
+    if section_node_count != batch.total_sections && batch.total_sections > section_node_count {
         eprintln!(
-            "WARN: get_nodes_by_label(Section) undercount: label_index={} vs ingest.total_sections={} — use ingest counter as ground truth",
-            sections.len(),
+            "WARN: get_nodes_by_label(Section) undercount: label_index={section_node_count} vs ingest.total_sections={} — investigate Samyama/adapter",
             batch.total_sections
         );
     }
@@ -303,22 +320,26 @@ async fn main() -> anyhow::Result<()> {
         .filter(|a| paper_set.contains(*a))
         .count();
 
-    // Hub extract
+    // Hub extract — MUST NOT reuse name `sections` (shadows graph Section node IDs).
     let hub_pdf = find_pdf(&hub_id).expect("hub pdf");
     let parser2 = GrobidParser::from_env();
     let parsed = parser2.parse_pdf(&hub_pdf, &hub_id).await?;
-    let sections: Vec<(String, String)> = parsed
+    let hub_sections: Vec<(String, String)> = parsed
         .sections
         .iter()
         .map(|s| (s.title.clone(), s.text.clone()))
         .collect();
+    let hub_tei_section_count = hub_sections.len();
     let extractor = RuleBasedExtractor::new();
-    let extracted = extractor.extract(&sections).await?;
+    let extracted = extractor.extract(&hub_sections).await?;
     let mut by_type: HashMap<String, usize> = HashMap::new();
     for e in &extracted {
         *by_type.entry(format!("{:?}", e.entity_type)).or_default() += 1;
     }
     let labels_sample: Vec<String> = extracted.iter().take(20).map(|e| e.label.clone()).collect();
+    println!(
+        "Hub TEI sections for extract: {hub_tei_section_count} (must not be used as graph section_nodes)"
+    );
 
     let report = ResearchReport {
         hub_id: hub_id.clone(),
@@ -335,20 +356,14 @@ async fn main() -> anyhow::Result<()> {
             snapshot_path: batch.snapshot_path,
         },
         graph: GraphSummary {
-            paper_nodes: papers.len(),
-            reference_nodes: references.len(),
-            section_nodes: sections.len(),
-            category_nodes: categories.len(),
-            citation_nodes: citations.len(),
-            entity_nodes: entities.len(),
-            source_nodes: sources.len(),
-            total_nodes: papers.len()
-                + references.len()
-                + sections.len()
-                + categories.len()
-                + citations.len()
-                + entities.len()
-                + sources.len(),
+            paper_nodes: paper_node_count,
+            reference_nodes: reference_node_count,
+            section_nodes: section_node_count,
+            category_nodes: category_node_count,
+            citation_nodes: citation_node_count,
+            entity_nodes: entity_node_count,
+            source_nodes: source_node_count,
+            total_nodes: total_node_count,
             edge_type_histogram: edge_hist.clone(),
             cites_edges: cites,
             has_part_edges: has_part,
@@ -368,7 +383,10 @@ async fn main() -> anyhow::Result<()> {
             "Research embedder: kg_embeddings::MockEmbedder (FD_API 401 avoided).".into(),
             "CITES resolves only when cited arxiv_id matches an ingested Paper.".into(),
             "All bibliography entries become Reference nodes (references_written).".into(),
+            "Reference unique nodes may be < references_written (vid dedup across papers).".into(),
             "Edge inventory uses ontology wire strings (hasPart not HAS_PART) — M319.".into(),
+            "section_nodes is get_nodes_by_label(Section), not hub TEI section count — M320."
+                .into(),
             "MENTIONS=0 is expected: ingest does not write Entity MENTIONS edges.".into(),
             "D127 import_eligible=false.".into(),
         ],

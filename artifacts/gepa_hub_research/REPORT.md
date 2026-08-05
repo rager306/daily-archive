@@ -28,23 +28,23 @@
 |--------|--------|
 | Paper nodes | 24 |
 | Reference nodes | 1255 |
-| Section nodes | 85 |
+| Section nodes | 965 |
 | Category nodes | 1 |
 | Citation nodes | 325 |
 | Entity nodes | 0 |
 | Source nodes | 1 |
-| Total nodes | 1691 |
+| Total nodes | 2571 |
 | CITES edges | 419 |
 | hasPart edges | 2297 |
 | FROM_SOURCE edges | 24 |
 | inCategory edges | 1 |
 | MENTIONS edges | 0 |
-| Edge histogram | `{"FROM_SOURCE": 24, "inCategory": 1, "CITES": 419, "hasPart": 2297}` |
+| Edge histogram | `{"CITES": 419, "inCategory": 1, "FROM_SOURCE": 24, "hasPart": 2297}` |
 
 ## Hub extraction (RuleBasedExtractor)
 
 - Entities: **24**
-- By type: `{"Method": 5, "Dataset": 5, "Model": 6, "Metric": 6, "Task": 2}`
+- By type: `{"Model": 6, "Task": 2, "Metric": 6, "Dataset": 5, "Method": 5}`
 - Sample labels: HotpotQA, LiveBench, MATH, GEPA, GRPO, RLVR, generalization, chain-of-thought reasoning, DROP, WMT, GPT-4, Qwen, BERT, GPT-4o, Gemini, LLaMA, F1, MSE, precision, accuracy
 
 ## Papers in graph

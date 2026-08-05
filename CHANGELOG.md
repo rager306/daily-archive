@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M320 research section inventory unshadow
+
+**Bug:** `gepa_hub_research` reported `section_nodes=85` after full hub ingest
+because hub TEI extract rebound `let sections` over graph Section node IDs.
+Hub `body_head_count=85` was written into GraphSummary instead of
+`get_nodes_by_label("Section")`.
+
+- Capture graph label counts before hub extract; rename hub TEI to `hub_sections`
+- Re-run: **Section=965** (= total_sections); hub TEI still 85 for extract only
+- Reference 1332 written / 1255 unique = expected vid dedup (not a bug)
+- hasPart=2297, CITES=419 unchanged
+
+```bash
+cargo run -p da-cli --example gepa_hub_research -- --ids-file artifacts/gepa_hub_research/ingest_ids.txt
+```
+
+
 ### Session 2026-08-05 — M319 research inventory edge type honesty
 
 **Bug:** `gepa_hub_research` reported `hasPart=0` after GEPA ingest because inventory matched `"HAS_PART"` instead of ontology wire string **`hasPart`**.
