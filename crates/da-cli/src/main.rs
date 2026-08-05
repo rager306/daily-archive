@@ -217,6 +217,11 @@ enum Commands {
 }
 
 fn main() {
+    // Composition root: load project `.env` so FD_API_KEY / FD_EMBEDDINGS_ENDPOINT
+    // reach `from_env` adapters. Missing file is OK (CI / exported env).
+    // Never logs secret values. Does not override already-exported vars.
+    let _ = dotenvy::dotenv();
+
     let cli = Cli::parse();
 
     let filter = if cli.verbose {
@@ -428,18 +433,53 @@ async fn check_health() {
         if grobid_ok { "✅ alive" } else { "❌ down" }
     );
 
-    // Embedder
+    // Embedder env + live probe (M321) — never print key material
+    let key_status =
+        health_report::FdApiKeyStatus::from_env_value(std::env::var("FD_API_KEY").ok().as_deref());
+    println!("  FD_API_KEY:     {}", key_status.display_line());
+    if !key_status.is_present() {
+        println!("{}", health_report::fd_api_key_tip());
+    }
     let embedder = FdApiEmbedder::from_env();
     println!(
         "  Embedder:       {} (dim: {})",
         Embedder::model_id(&embedder),
         Embedder::dimensions(&embedder)
     );
+    let probe = if key_status.is_present() {
+        match Embedder::embed(&embedder, "daily-archive health probe").await {
+            Ok(v) => health_report::EmbedProbeStatus::Ok {
+                dimensions: v.len(),
+            },
+            Err(e) => health_report::EmbedProbeStatus::Failed {
+                message: format!("{e}"),
+            },
+        }
+    } else {
+        health_report::EmbedProbeStatus::SkippedNoKey
+    };
+    println!("  Embed probe:    {}", probe.display_line());
+}
+
+/// Fail fast when production FdApi path has no key (empty Bearer → 401).
+fn require_fd_api_key_for_ingest() {
+    let status =
+        health_report::FdApiKeyStatus::from_env_value(std::env::var("FD_API_KEY").ok().as_deref());
+    if !status.is_present() {
+        eprintln!(
+            "❌ FD_API_KEY missing after .env load — production embed will 401.\
+\n   Set FD_API_KEY in project .env (da loads it at startup) or export it.\
+\n   Research path without FD: cargo run -p da-cli --example gepa_hub_research"
+        );
+        std::process::exit(1);
+    }
 }
 
 async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::IngestUseCase;
+
+    require_fd_api_key_for_ingest();
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
@@ -506,6 +546,8 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
     }
 
     println!("Batch ingesting {} papers (HOT path)...", pdfs.len());
+
+    require_fd_api_key_for_ingest();
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());

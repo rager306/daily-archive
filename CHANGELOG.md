@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M321 FD_API dotenv composition root
+
+**Bug:** `da batch-ingest` / `da ingest` returned FD_API **401** even with a valid
+key in project `.env`. Root cause: composition root never loaded dotenv —
+`FdApiEmbedder::from_env` saw empty `FD_API_KEY` and sent empty Bearer.
+
+- `dotenvy::dotenv()` at start of `da` main (does not override exported env)
+- Health: `FD_API_KEY` presence (len only) + live embed probe
+- Fail-fast on ingest/batch-ingest when key missing after dotenv
+- Pure helpers + unit tests (7/7); no secret leakage
+- Smoke: hub paper ingest with real TEI embeddings → Vector 1024d
+
+```bash
+cargo test -p da-cli --lib
+./target/debug/da health   # FD_API_KEY present + Embed probe ok
+```
+
+
 ### Session 2026-08-05 — M320 research section inventory unshadow
 
 **Bug:** `gepa_hub_research` reported `section_nodes=85` after full hub ingest

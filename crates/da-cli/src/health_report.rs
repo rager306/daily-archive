@@ -1,14 +1,69 @@
-//! Pure report lines for `da health` graph section (M312).
+//! Pure report lines for `da health` graph section (M312) + embedder env (M321).
 //!
 //! Honesty goals:
 //! - Always print `DA_GRAPH_MODE` (resolved or invalid)
 //! - Never process-exit inside the reporter (caller owns exit policy)
 //! - On remote / open failure: clear error text, Wave 3 tip (serve-graph / graph-ping)
 //! - On success: healthy + node count (same as pre-M312)
+//! - FD_API_KEY presence without printing the secret (M321)
 //!
 //! Does **not** change `open_graph_store` (other commands still exit 1 on remote).
 
 use kg_storage::{GraphMode, GraphModeError};
+
+/// Whether `FD_API_KEY` is usable after dotenv / process env load.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FdApiKeyStatus {
+    /// Non-empty key present (length only is safe to display).
+    Present { len: usize },
+    /// Missing or empty — production embed will 401 with empty Bearer.
+    Missing,
+}
+
+impl FdApiKeyStatus {
+    /// Classify raw env value (do not log the value itself).
+    pub fn from_env_value(value: Option<&str>) -> Self {
+        match value.map(str::trim).filter(|s| !s.is_empty()) {
+            Some(s) => Self::Present { len: s.len() },
+            None => Self::Missing,
+        }
+    }
+
+    pub fn is_present(self) -> bool {
+        matches!(self, Self::Present { .. })
+    }
+
+    /// Single health line fragment — never includes key material.
+    pub fn display_line(self) -> String {
+        match self {
+            Self::Present { len } => format!("✅ present (len={len})"),
+            Self::Missing => "❌ missing — set FD_API_KEY in .env (loaded by da) or export".into(),
+        }
+    }
+}
+
+/// Format embed probe result for health (no secrets).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EmbedProbeStatus {
+    SkippedNoKey,
+    Ok { dimensions: usize },
+    Failed { message: String },
+}
+
+impl EmbedProbeStatus {
+    pub fn display_line(&self) -> String {
+        match self {
+            Self::SkippedNoKey => "⏭ skipped (no FD_API_KEY)".into(),
+            Self::Ok { dimensions } => format!("✅ ok (dim {dimensions})"),
+            Self::Failed { message } => format!("❌ {message}"),
+        }
+    }
+}
+
+/// Operator tip when key is missing (composition root loads `.env`).
+pub fn fd_api_key_tip() -> &'static str {
+    "  tip: da loads project .env at startup (M321); export FD_API_KEY if running without .env"
+}
 
 /// Operator tip for multi-process health path (M307–M310).
 pub fn wave3_tip() -> &'static str {
@@ -107,5 +162,50 @@ mod tests {
     fn mode_label_stable() {
         assert_eq!(mode_label(GraphMode::Embedded), "embedded");
         assert_eq!(mode_label(GraphMode::Remote), "remote");
+    }
+
+    #[test]
+    fn fd_key_status_present_and_missing() {
+        assert_eq!(
+            FdApiKeyStatus::from_env_value(None),
+            FdApiKeyStatus::Missing
+        );
+        assert_eq!(
+            FdApiKeyStatus::from_env_value(Some("")),
+            FdApiKeyStatus::Missing
+        );
+        assert_eq!(
+            FdApiKeyStatus::from_env_value(Some("   ")),
+            FdApiKeyStatus::Missing
+        );
+        assert_eq!(
+            FdApiKeyStatus::from_env_value(Some("abc123")),
+            FdApiKeyStatus::Present { len: 6 }
+        );
+        let line = FdApiKeyStatus::Present { len: 43 }.display_line();
+        assert!(line.contains("present"));
+        assert!(line.contains("43"));
+        assert!(!line.contains("abc"));
+        assert!(!FdApiKeyStatus::Missing.display_line().contains("Bearer"));
+    }
+
+    #[test]
+    fn embed_probe_status_lines_have_no_secret_shape() {
+        assert!(
+            EmbedProbeStatus::SkippedNoKey
+                .display_line()
+                .contains("skipped")
+        );
+        assert!(
+            EmbedProbeStatus::Ok { dimensions: 1024 }
+                .display_line()
+                .contains("1024")
+        );
+        let fail = EmbedProbeStatus::Failed {
+            message: "fd_api returned 401 Unauthorized".into(),
+        };
+        let line = fail.display_line();
+        assert!(line.contains("401"));
+        assert!(!line.contains("Bearer sk"));
     }
 }
