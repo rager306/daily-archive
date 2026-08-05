@@ -1,0 +1,27 @@
+# Cargo configuration template — copy to .cargo/config.toml and adjust paths.
+#
+# This file avoids recompiling RocksDB C++ source (cc1plus, 5-10 minutes) on
+# every cargo invocation. With ROCKSDB_LIB_DIR set, librocksdb-sys links the
+# pre-built system library instead.
+#
+# Setup (one-time, ~10 minutes):
+#   1. Install build deps: apt install cmake liblz4-dev libzstd-dev libgflags-dev libbz2-dev
+#   2. Build RocksDB 8.10.0 (must match librocksdb-sys version in Cargo.lock):
+#      git clone --depth 1 --branch v8.10.0 https://github.com/facebook/rocksdb.git /tmp/rdb
+#      cd /tmp/rdb && mkdir build && cd build
+#      cmake .. -DCMAKE_BUILD_TYPE=Release -DPORTABLE=1 \
+#        -DWITH_TESTS=OFF -DWITH_BENCHMARK=OFF -DWITH_TOOLS=OFF \
+#        -DWITH_SNAPPY=OFF -DWITH_LZ4=ON -DWITH_ZSTD=ON -DWITH_ZLIB=OFF -DWITH_BZIP2=OFF
+#      make -j$(nproc) && make install
+#   3. Copy this file: cp .cargo/config.example.toml .cargo/config.toml
+#   4. Verify: cargo clean -p librocksdb-sys && time cargo check -p da-cli
+#      Should finish in ~6s instead of 5-10 minutes.
+#
+# See:
+#   - https://github.com/rust-rocksdb/rust-rocksdb/issues/310
+#   - https://github.com/surrealdb/surrealdb/issues/1940
+
+[env]
+ROCKSDB_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
+LZ4_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
+ZSTD_LIB_DIR = "/usr/lib/x86_64-linux-gnu"
