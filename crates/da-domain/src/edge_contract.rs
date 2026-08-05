@@ -148,11 +148,33 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
     }
     edge_contracts()
         .into_iter()
-        .map(|c| kg_ontology::registry::YamlEdgeContract {
-            edge_constant: c.edge_constant.to_string(),
-            source_label: c.source_label.to_string(),
-            target_labels: c.target_labels.iter().map(|s| (*s).to_string()).collect(),
-            rationale: c.rationale.to_string(),
+        .map(|c| {
+            use crate::relation::{bibliographic, hypergraph, structure};
+            use kg_ontology::registry::{TemporalClass, YamlEdgeContract};
+            // Compiled fallback policy (ADR-046): mirrors data/ontology/edge_contracts.yaml.
+            let temporal_class = match c.edge_constant {
+                bibliographic::CITES
+                | bibliographic::MENTIONS
+                | bibliographic::AFFILIATED_WITH
+                | bibliographic::SUPERSEDES
+                | hypergraph::SUPPORTS
+                | hypergraph::PARTICIPATES_IN
+                | hypergraph::MEMBER_OF_CLUSTER => TemporalClass::Fact,
+                structure::HAS_PART
+                | structure::FROM_SOURCE
+                | structure::AUTHORED_BY
+                | structure::FOUND_IN
+                | structure::HAS_TOPIC
+                | structure::IN_CATEGORY => TemporalClass::Structural,
+                _ => TemporalClass::Structural,
+            };
+            YamlEdgeContract {
+                edge_constant: c.edge_constant.to_string(),
+                source_label: c.source_label.to_string(),
+                target_labels: c.target_labels.iter().map(|s| (*s).to_string()).collect(),
+                temporal_class,
+                rationale: c.rationale.to_string(),
+            }
         })
         .collect()
 }
@@ -170,6 +192,7 @@ pub fn render_edge_contracts_yaml() -> Result<String, serde_yaml::Error> {
         edge_constant: String,
         source_label: String,
         target_labels: Vec<String>,
+        temporal_class: String,
         rationale: String,
     }
 
@@ -179,6 +202,7 @@ pub fn render_edge_contracts_yaml() -> Result<String, serde_yaml::Error> {
             edge_constant: c.edge_constant,
             source_label: c.source_label,
             target_labels: c.target_labels,
+            temporal_class: c.temporal_class.as_str().to_string(),
             rationale: c.rationale,
         })
         .collect();
@@ -253,6 +277,7 @@ mod tests {
         assert!(yaml.contains("edge_contracts:"), "{yaml}");
         assert!(yaml.contains("hasPart"), "{yaml}");
         assert!(yaml.contains("CITES"), "{yaml}");
+        assert!(yaml.contains("temporal_class"), "{yaml}");
         // parse back
         let v: serde_yaml::Value = serde_yaml::from_str(&yaml).expect("parse");
         let arr = v

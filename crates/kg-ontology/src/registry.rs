@@ -28,6 +28,33 @@ pub struct YamlNodeSchema {
     pub optional_fields: Vec<YamlFieldDef>,
 }
 
+/// Whether an edge type is a temporal fact or structural composition (ADR-046 / M326).
+///
+/// - [`Structural`]: composition/provenance; only `created_at` expected.
+/// - [`Fact`]: assertion that can become false; full 5-field [`crate::temporal::TemporalEdge`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum TemporalClass {
+    /// Composition / classification / provenance — not invalidated by newer facts.
+    #[default]
+    Structural,
+    /// Fact assertion — carries valid_at/invalid_at/expired_at/reference_time/created_at.
+    Fact,
+}
+
+impl TemporalClass {
+    pub fn is_fact(self) -> bool {
+        matches!(self, Self::Fact)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Structural => "structural",
+            Self::Fact => "fact",
+        }
+    }
+}
+
 /// One edge endpoint contract loaded from YAML (owned strings — runtime meta-ontology).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct YamlEdgeContract {
@@ -35,6 +62,9 @@ pub struct YamlEdgeContract {
     pub edge_constant: String,
     pub source_label: String,
     pub target_labels: Vec<String>,
+    /// ADR-046: fact edges get TemporalEdge fields; structural do not.
+    #[serde(default)]
+    pub temporal_class: TemporalClass,
     #[serde(default)]
     pub rationale: String,
 }
@@ -43,6 +73,11 @@ impl YamlEdgeContract {
     /// Check whether a (source, target) pair satisfies this contract.
     pub fn matches(&self, source: &str, target: &str) -> bool {
         self.source_label == source && self.target_labels.iter().any(|t| t == target)
+    }
+
+    /// True if this edge type should carry the 5-field temporal model.
+    pub fn is_temporal_fact(&self) -> bool {
+        self.temporal_class.is_fact()
     }
 }
 
@@ -211,6 +246,38 @@ impl OntologyRegistry {
         seen.into_iter().collect()
     }
 
+    /// Wire strings classified as temporal **fact** edges (ADR-046).
+    pub fn temporal_fact_edge_types(&self) -> Vec<String> {
+        self.edge_contracts
+            .iter()
+            .filter(|c| c.is_temporal_fact())
+            .map(|c| c.edge_constant.clone())
+            .collect()
+    }
+
+    /// Wire strings classified as **structural** edges.
+    pub fn structural_edge_types(&self) -> Vec<String> {
+        self.edge_contracts
+            .iter()
+            .filter(|c| !c.is_temporal_fact())
+            .map(|c| c.edge_constant.clone())
+            .collect()
+    }
+
+    /// Lookup temporal class for a wire string. Unknown → None.
+    pub fn temporal_class_of(&self, edge_constant: &str) -> Option<TemporalClass> {
+        self.edge_contracts
+            .iter()
+            .find(|c| c.edge_constant == edge_constant)
+            .map(|c| c.temporal_class)
+    }
+
+    /// True if the edge wire string is a temporal fact (false if structural or unknown).
+    pub fn is_temporal_edge_type(&self, edge_constant: &str) -> bool {
+        self.temporal_class_of(edge_constant)
+            .is_some_and(TemporalClass::is_fact)
+    }
+
     /// Number of node schemas loaded.
     pub fn len(&self) -> usize {
         self.schemas.len()
@@ -361,5 +428,73 @@ edge_contracts:
         let paper = reg.get_schema("Paper").unwrap();
         assert!(!paper.required_fields.is_empty());
         assert!(paper.required_fields.iter().any(|f| f.name == "vid"));
+    }
+
+    #[test]
+    fn test_temporal_class_from_project_yaml() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("data/ontology");
+        if !dir.join("edge_contracts.yaml").exists() {
+            eprintln!("skip: no edge_contracts.yaml");
+            return;
+        }
+        let reg = OntologyRegistry::load_from_dir(&dir).unwrap();
+        assert!(reg.is_temporal_edge_type("CITES"));
+        assert!(reg.is_temporal_edge_type("MENTIONS"));
+        assert!(reg.is_temporal_edge_type("SUPPORTS"));
+        assert!(reg.is_temporal_edge_type("SUPERSEDES"));
+        assert!(!reg.is_temporal_edge_type("hasPart"));
+        assert!(!reg.is_temporal_edge_type("FROM_SOURCE"));
+        assert!(!reg.is_temporal_edge_type("inCategory"));
+        let facts = reg.temporal_fact_edge_types();
+        assert!(facts.iter().any(|e| e == "CITES"));
+        assert!(!facts.iter().any(|e| e == "hasPart"));
+        let structural = reg.structural_edge_types();
+        assert!(structural.iter().any(|e| e == "hasPart"));
+        assert_eq!(
+            reg.temporal_class_of("hasPart"),
+            Some(TemporalClass::Structural)
+        );
+        assert_eq!(reg.temporal_class_of("CITES"), Some(TemporalClass::Fact));
+        assert_eq!(reg.temporal_class_of("NO_SUCH_EDGE"), None);
+    }
+
+    #[test]
+    fn test_temporal_class_defaults_to_structural() {
+        let edges = OntologyRegistry::load_edge_contracts_from_str(
+            r#"
+edge_contracts:
+  - edge_constant: hasPart
+    source_label: Paper
+    target_labels: [Section]
+    rationale: no class field
+"#,
+            "test",
+        )
+        .unwrap();
+        assert_eq!(edges[0].temporal_class, TemporalClass::Structural);
+        assert!(!edges[0].is_temporal_fact());
+    }
+
+    #[test]
+    fn test_temporal_class_fact_from_str() {
+        let edges = OntologyRegistry::load_edge_contracts_from_str(
+            r#"
+edge_contracts:
+  - edge_constant: CITES
+    source_label: Paper
+    target_labels: [Citation]
+    temporal_class: fact
+    rationale: citation fact
+"#,
+            "test",
+        )
+        .unwrap();
+        assert_eq!(edges[0].temporal_class, TemporalClass::Fact);
+        assert!(edges[0].is_temporal_fact());
     }
 }

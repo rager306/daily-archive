@@ -41,3 +41,4 @@ pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 // schema_inner removed (M289-u4fzx5/S02): schema is now file-based.
 
 pub mod registry;
+pub use registry::{OntologyRegistry, TemporalClass, YamlEdgeContract};

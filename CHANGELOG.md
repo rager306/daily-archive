@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M326 temporal edge policy in meta-ontology
+
+**Design:** ADR-046 fact vs structural edges as external DATA, not docs-only.
+
+- `temporal_class: fact | structural` on every row in `data/ontology/edge_contracts.yaml`
+  - **fact** (7): CITES, MENTIONS, SUPPORTS, SUPERSEDES, AFFILIATED_WITH, PARTICIPATES_IN, MEMBER_OF_CLUSTER
+  - **structural** (6): hasPart, FROM_SOURCE, authoredBy, foundIn, hasTopic, inCategory
+- `TemporalClass` + `YamlEdgeContract.temporal_class` in kg-ontology registry
+- Helpers: `is_temporal_edge_type`, `temporal_fact_edge_types`, `structural_edge_types`
+- Scenario tests: CITES correction supersede, SUPERSEDES chain, competing metrics retain-both, bi-temporal axes, structural exclusion
+- Export includes `temporal_class`; compiled Rust fallback mirrors YAML policy
+
+```bash
+cargo test -p kg-ontology --lib
+cargo test -p kg-algorithms --lib temporal
+cargo test -p da-application --test healing_test
+```
+
+
 ### Session 2026-08-05 — M325 ontology-export edges + governor inventory rule
 
 **Process gap:** `da ontology-export` wrote only `node_schemas.yaml`.

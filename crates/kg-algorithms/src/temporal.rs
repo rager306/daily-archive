@@ -216,4 +216,104 @@ mod tests {
         assert_eq!(outcomes[0].rule, ResolutionRule::RetainBoth);
         assert!(!outcomes[0].should_invalidate);
     }
+
+    /// Scientific KG: corrected citation (newer CITES fact) supersedes older one.
+    #[test]
+    fn test_scenario_cites_correction_supersedes() {
+        // Paper A cited wrong target in 2020; corrected in 2024 re-extraction.
+        let new_cites = edge(2024_0101, None);
+        let old_cites = edge(2020_0101, None);
+        let outcomes = resolve_temporal_edges(&new_cites, &[old_cites]);
+        assert_eq!(outcomes[0].rule, ResolutionRule::Supersede);
+        assert!(outcomes[0].should_invalidate);
+        // After supersede, caller invalidates old:
+        let mut old = edge(2020_0101, None);
+        old.invalidate(ts(2024_0101));
+        assert!(old.is_expired());
+        assert_eq!(old.invalid_at, Some(ts(2024_0101)));
+        assert!(!old.is_active_at(ts(2024_0601), None));
+        assert!(old.is_active_at(ts(2021_0101), None));
+    }
+
+    /// Entity merge: SUPERSEDES fact edge — newer merge supersedes older link.
+    #[test]
+    fn test_scenario_entity_supersedes_chain() {
+        let newer = edge(2024_0601, None);
+        let older = edge(2023_0101, None);
+        let outcomes = resolve_temporal_edges(&newer, &[older]);
+        assert_eq!(outcomes[0].rule, ResolutionRule::Supersede);
+        assert!(outcomes[0].should_invalidate);
+    }
+
+    /// Simultaneous competing MetricObservations (same day) → retain both.
+    #[test]
+    fn test_scenario_competing_metric_observations_retain_both() {
+        let obs_a = edge(2024_0315, None);
+        let obs_b = edge(2024_0315, None);
+        let outcomes = resolve_temporal_edges(&obs_a, &[obs_b]);
+        assert_eq!(outcomes[0].rule, ResolutionRule::RetainBoth);
+        assert!(!outcomes[0].should_invalidate);
+    }
+
+    /// SUPPORTS evidence later retracted (invalid_at set on new) vs open old.
+    #[test]
+    fn test_scenario_supports_retraction_window() {
+        // Old support open; new support already closed before old started → skip new
+        let new_closed_early = edge(1000, Some(1500));
+        let old_open_later = edge(2000, None);
+        let outcomes = resolve_temporal_edges(&new_closed_early, &[old_open_later]);
+        assert_eq!(outcomes[0].rule, ResolutionRule::SkipNewWasInvalid);
+        assert!(!outcomes[0].should_invalidate);
+    }
+
+    /// Policy pin: structural edges are not temporal facts (meta-ontology).
+    #[test]
+    fn test_scenario_structural_edges_not_temporal_facts() {
+        use kg_ontology::registry::OntologyRegistry;
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("data/ontology");
+        if !dir.join("edge_contracts.yaml").exists() {
+            eprintln!("skip: no edge_contracts.yaml");
+            return;
+        }
+        let reg = OntologyRegistry::load_from_dir(&dir).unwrap();
+        // Structural — inventory composition, not resolve_temporal_edges targets
+        for w in [
+            "hasPart",
+            "FROM_SOURCE",
+            "inCategory",
+            "hasTopic",
+            "authoredBy",
+            "foundIn",
+        ] {
+            assert!(!reg.is_temporal_edge_type(w), "{w} should be structural");
+        }
+        // Fact — eligible for TemporalEdge + resolve_temporal_edges
+        for w in [
+            "CITES",
+            "MENTIONS",
+            "SUPPORTS",
+            "SUPERSEDES",
+            "PARTICIPATES_IN",
+        ] {
+            assert!(reg.is_temporal_edge_type(w), "{w} should be fact");
+        }
+    }
+
+    /// Bi-temporal axes: was_known_at vs is_active_at diverge after expire.
+    #[test]
+    fn test_scenario_bitemporal_axes_diverge_after_invalidation() {
+        let mut e = edge(1000, None);
+        e.created_at = ts(1000);
+        // Fact was true from 1000; system later learned correction at 2000
+        e.invalidate(ts(2000));
+        assert!(e.is_active_at(ts(1500), None)); // valid time still true in past
+        assert!(!e.is_active_at(ts(2500), None)); // not true after invalid_at
+        assert!(e.was_known_at(ts(1500))); // system knew it then
+        assert!(!e.was_known_at(ts(2500))); // expired in transaction time
+    }
 }
