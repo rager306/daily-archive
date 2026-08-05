@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — governor resource safety + build correctness rules
+
+**Governor improvements (M360+ post-session):**
+
+1. **resource_safety dimension** (`scripts/governor/checks/resource_safety.py`):
+   - Disk: warning <10GB free, critical <2GB
+   - Memory: warning <2GB, critical <512MB
+   - target/ dir: warning >20GB, critical >50GB
+   - Integrated into trajectory_service preflight as drift_flags
+
+2. **no_workspace_build_in_scripts** rule (high):
+   - Bans `cargo build/test/check --workspace` in .sh scripts
+   - Pattern: `cargo (build|test|check)\s+--workspace`
+   - Exempt via comment rephrase (verify_rust_architecture.sh)
+
+3. **no_cargo_build_in_dev_scripts** rule (medium):
+   - Bans `cargo build -p` without `--quiet` in .sh scripts
+   - Pattern: negative lookahead for --quiet (docs_drift_check.sh exempt)
+
+4. **Negative test verified**: inject bad script → BLOCKED; remove → ON_TRACK
+
+
 ### Session 2026-08-05 — M359 structured logging (ADR-052)
 
 **Dual-layer JSON file + stderr logging with span hierarchy:**

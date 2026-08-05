@@ -297,3 +297,24 @@ rules:
     rationale: "Crate has Serialize+Deserialize types. Verify roundtrip_json<T> or roundtrip<T> exists in lib.rs tests. If this flag fires, add serde_roundtrip_tests module to the crate's lib.rs (see M340-M343 pattern)."
     suffix_allowlist:
       - .rs
+
+  # --- M360+: incorrect build commands (MEM468 enforcement) ---
+  # Flag any script or CI config that uses cargo build/test --workspace
+  # without explicit override. Per-crate commands only (AGENTS.md).
+  - id: no_workspace_build_in_scripts
+    anchor: "MEM468 + AGENTS.md compile rules"
+    severity: high
+    scan: scripts/
+    pattern: 'cargo (build|test|check)\s+--workspace'
+    rationale: "cargo build/test --workspace triggers librocksdb-sys rebuild (5-10 min). Use per-crate: cargo check -p <crate>, cargo test -p <crate> --lib. Exempt: scripts/verify_rust_architecture.sh (CI gate)."
+    suffix_allowlist:
+      - .sh
+
+  - id: no_cargo_build_in_dev_scripts
+    anchor: "MEM514 + AGENTS.md compile rules"
+    severity: medium
+    scan: scripts/
+    pattern: 'cargo build -p(?!.*--quiet)'
+    rationale: "Use 'cargo check -p <crate>' for compilation verification. Only use cargo build when you need the binary for E2E."
+    suffix_allowlist:
+      - .sh

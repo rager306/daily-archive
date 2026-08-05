@@ -38,6 +38,11 @@ class TrajectoryService:
         audit_report = self.audit.run_audit()
         dimensions = self._build_dimensions()
         drift_flags = self._build_drift_flags(audit_report, dimensions)
+
+        # M360+: resource safety check — disk and memory before heavy builds
+        resource_flags = self._check_resource_safety()
+        drift_flags.extend(resource_flags)
+
         verdict = self._derive_verdict(audit_report, drift_flags)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -95,6 +100,54 @@ class TrajectoryService:
         if expr.startswith("artifacts/"):
             return (self.root / expr.split(" exists")[0].strip()).exists()
         return False
+
+    def _check_resource_safety(self) -> list:
+        """M360+: disk/memory/target size checks. Returns DriftFlag list."""
+        import sys
+        sys.path.insert(0, str(self.root / "scripts"))
+        try:
+            from governor.checks.resource_safety import preflight_check
+            result = preflight_check(str(self.root))
+        except Exception:
+            return []
+
+        flags = []
+        from governor.domain.trajectory import DriftFlag
+
+        # Disk check
+        disk = result.get("disk", {})
+        if disk.get("status") in ("warning", "critical"):
+            flags.append(DriftFlag(
+                flag_id="resource_disk_pressure",
+                dimension="resource_safety",
+                status="warning" if disk["status"] == "warning" else "critical",
+                message=disk["message"],
+                recommendation="Run 'cargo clean' or remove stale artifacts before heavy builds.",
+            ))
+
+        # Memory check
+        mem = result.get("memory", {})
+        if mem.get("status") in ("warning", "critical"):
+            flags.append(DriftFlag(
+                flag_id="resource_memory_pressure",
+                dimension="resource_safety",
+                status="warning" if mem["status"] == "warning" else "critical",
+                message=mem["message"],
+                recommendation="Close other processes. Avoid cargo test --workspace (rocksdb memory heavy).",
+            ))
+
+        # target/ size check
+        target = result.get("target_dir", {})
+        if target.get("status") in ("warning", "critical"):
+            flags.append(DriftFlag(
+                flag_id="resource_target_bloat",
+                dimension="resource_safety",
+                status="warning" if target["status"] == "warning" else "critical",
+                message=target["message"],
+                recommendation="Run 'cargo clean' to reclaim disk space before continuing.",
+            ))
+
+        return flags
 
     def _build_drift_flags(self, audit_report, dimensions) -> list[DriftFlag]:
         flags = []

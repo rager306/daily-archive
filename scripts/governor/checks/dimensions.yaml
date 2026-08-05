@@ -104,3 +104,17 @@ dimensions:
       - "Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]"
       - "test_coverage_delta dimension added M287 post-session"
     artifact_ref: "scripts/governor/adapters/clippy_scanner.py"
+
+  - id: resource_safety
+    description: "Disk space and memory checks — prevent mid-process crashes (M360+)"
+    status_logic:
+      healthy: "always (runtime check in trajectory_service)"
+      warning: "disk < 10GB free OR memory < 2GB free"
+      critical: "disk < 2GB free OR memory < 512MB free"
+      not_started: "always (fallback)"
+    evidence:
+      - "Preflight disk/memory check before cargo builds and long-running pipelines"
+      - "df -h / and free -m via psutil or /proc/meminfo"
+      - "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)"
+      - "Added after disk pollution incident from excessive cargo build calls"
+    artifact_ref: "scripts/governor/checks/resource_safety.py"
