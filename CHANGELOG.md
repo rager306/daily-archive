@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M361 docs sync + instrument heal/enrich + gitignore
+
+**Close documentation drift after M357–M360:**
+
+1. `.gitignore`: add `logs/` — prevent log files in git
+2. `ADR-INDEX.md`: register ADR-052 (Structured Logging)
+3. `AGENTS.md`: add ADR-052 section with config, jq examples, hexagonal rules
+4. `#[instrument]` on heal_silence, heal_correct, heal_merge, enrich_by_arxiv_id
+5. All 5 healing/enrich spans propagate in JSON logs via ADR-052
+
+```bash
+jq 'select(.span.name == "heal_merge")' logs/da.log.*
+jq 'select(.span.name == "enrich")' logs/da.log.*
+```
+
+
 ### Session 2026-08-05 — governor resource safety + build correctness rules
 
 **Governor improvements (M360+ post-session):**

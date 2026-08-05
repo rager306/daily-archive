@@ -30,6 +30,7 @@ impl GraphHealingUseCase {
 
     /// SILENCE: set retrieval_eligible=false on a node.
     /// The node stays in the graph for audit but is excluded from all retrieval.
+    #[tracing::instrument(skip(self, vid, label, reason), fields(vid = %vid, label = %label), name = "heal_silence")]
     pub async fn silence(
         &self,
         vid: &str,
@@ -73,6 +74,7 @@ impl GraphHealingUseCase {
 
     /// CORRECT: fix a wrong string property on a node.
     /// Logs the old→new change for audit.
+    #[tracing::instrument(skip(self, vid, label, key, new_value, reason), fields(vid = %vid, key = %key), name = "heal_correct")]
     pub async fn correct(
         &self,
         vid: &str,
@@ -124,6 +126,7 @@ impl GraphHealingUseCase {
 
     /// MERGE: fuse two duplicate entities.
     /// vid_merge gets retrieval_eligible=false + SUPERSEDES edge → vid_keep.
+    #[tracing::instrument(skip(self, vid_keep, vid_merge, reason), fields(vid_keep = %vid_keep, vid_merge = %vid_merge), name = "heal_merge")]
     pub async fn merge(
         &self,
         vid_keep: &str,

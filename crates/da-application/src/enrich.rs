@@ -48,6 +48,7 @@ impl EnrichUseCase {
 
     /// Fetch metadata from OpenAlex and write Topic/Author nodes to graph.
     /// Lazy load: if OpenAlex has no data, creates stub with openalex_pending=true.
+    #[tracing::instrument(skip(self), fields(arxiv_id = %arxiv_id), name = "enrich")]
     pub async fn enrich_by_arxiv_id(&self, arxiv_id: &str) -> anyhow::Result<EnrichResult> {
         tracing::info!(arxiv_id, "Fetching OpenAlex metadata");
 
