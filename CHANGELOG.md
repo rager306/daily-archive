@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — ADR-051 semantic graph task pipeline (Samyama pattern)
+
+Documented Contour 6 **semantic graph task pipeline** in ADR-051 §8.1:
+
+- Materialise `.sgsnap` → task suite → **same-process** import+query → PASS/EMPTY/ERROR
+- Samyama sources: `case_studies/DEFINITION_OF_DONE.md`, `test_kg_queries.rs`, `validate_queries.py`
+- Distinct from extraction `eval_batch` (gold entities); both required for readiness
+- DoD checklist, task file format (`// @query`), anti-patterns (cross-process load/query)
+- AGENTS.md testing map updated (P1 priority + key rules)
+
+```bash
+# existing disk→query path (M334) — foundation for suite runner
+./target/debug/da graph-stats --snapshot artifacts/gepa_hub_production/hub.sgsnap
+./target/debug/da query --kind count --snapshot artifacts/gepa_hub_production/hub.sgsnap
+```
+
+
 ### Session 2026-08-05 — M334 disk snapshot to query same-process chain
 
 **Process gap (user-reported):** `da load-snapshot` verified 2571 nodes then

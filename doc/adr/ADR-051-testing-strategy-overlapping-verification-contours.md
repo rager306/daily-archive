@@ -7,8 +7,11 @@
 - ADR-040 (Samyama sole KG+vector+persist store)
 - ADR-050 (kg-* universal crate family — traits must have contract suites)
 - ADR-034 (hexagonal/onion overlay — crate boundaries are test boundaries)
+- ADR-046 (bi-temporal edge model — fact vs structural write path)
 - Research (2026-07-28): Cockburn Hexagonal Architecture, proptest-state-machine,
   Rust test stack 2026, RuVector/Samyama/grok-build/EdgeQuake/iwe vendor analysis
+- Samyama upstream: `case_studies/DEFINITION_OF_DONE.md`, `examples/test_kg_queries.rs`,
+  `case_studies/_lib/validate_queries.py`, UC1–UC5 executable specs
 
 ## Context
 
@@ -25,6 +28,8 @@ Key gaps identified:
 2. **No serde roundtrip tests** — public Serialize types lack
    wire-format stability verification.
 3. **No lifecycle/E2E tests** — snapshot export/import, use-case specs.
+    **Partial (2026-08):** disk→same-process query exists (`da query|graph-stats
+    --snapshot`); extraction eval (`eval_batch`) is **not** a graph-task suite.
 4. **No deterministic test infrastructure** — tests rely on system time,
    random UUIDs, shared state.
 5. **No property-based or metamorphic tests** — bi-temporal intervals,
@@ -516,6 +521,161 @@ async fn uc1_ingest_paper_and_verify_graph() {
 }
 ```
 
+### 8.1 Semantic graph task pipeline (Samyama case-study pattern)
+
+**Problem this solves:** unit/contract/extraction-F1 tests do not prove that a
+**durable graph artifact** answers domain questions. Samyama treats a case study
+as Done only when a pinned `.sgsnap` is imported and **every** showcase query
+returns ≥1 row (machine gate). daily-archive adopts the same **task-through-graph**
+shape for scientific KG readiness.
+
+#### Canonical pipeline (must not be short-circuited)
+
+```text
+┌──────────────┐    ┌──────────────┐    ┌────────────────────┐
+│ 1. Materialise│ →  │ 2. Task suite│ →  │ 3. Import + execute │
+│ durable graph │    │ (tasks file) │    │ in ONE process      │
+│ (.sgsnap)     │    │              │    │                     │
+└──────────────┘    └──────────────┘    └──────────┬─────────┘
+                                                   │
+                     ┌─────────────────────────────▼─────────┐
+                     │ 4. Per-task verdict                     │
+                     │    PASS  = rows ≥ min_rows (default 1) │
+                     │    EMPTY = 0 rows                       │
+                     │    ERROR = Cypher/runtime failure       │
+                     └─────────────────────────────┬─────────┘
+                                                   │
+                     ┌─────────────────────────────▼─────────┐
+                     │ 5. Suite gate                           │
+                     │    FAIL if any EMPTY or ERROR           │
+                     │    Report: pass / empty / error + ms    │
+                     └─────────────────────────────────────────┘
+```
+
+**Operator mapping (daily-archive CLI today):**
+
+| Step | Command / artifact |
+|------|--------------------|
+| Materialise | `da batch-ingest … --output artifacts/…/hub.sgsnap` |
+| Task suite | `data/graph_tasks/<suite>.tasks.cypher` (or YAML; see format below) |
+| Import+query | **Same process:** `da query --snapshot <file.sgsnap> --kind …` or suite runner |
+| Verify-only | `da load-snapshot` — does **not** feed a later process (process-local store dies) |
+| Stats | `da graph-stats --snapshot <file.sgsnap>` |
+
+**Hard rule (M334 lesson):** never treat `load-snapshot` in process A + `query`
+in process B as a valid E2E chain. Contour 6 disk→query **must** use
+`--snapshot` (or a future live daemon client when `DA_GRAPH_MODE=remote` is real).
+
+#### Task suite file format (Samyama-compatible markers)
+
+Primary format: Cypher file with showcase markers (same spirit as
+`case_studies/*/queries.cypher`):
+
+```cypher
+// @query Paper count (retrieval-eligible) | Scale check — GEPA hub batch has 24 papers
+MATCH (n:Paper) WHERE n.retrieval_eligible = true RETURN count(n) AS papers;
+
+// @query Hub paper by arxiv_id | Orient — GEPA hub 2507.19457 exists
+MATCH (n:Paper {arxiv_id: "2507.19457"}) RETURN n.arxiv_id, n.title LIMIT 1;
+
+// @query Citation edges from hub | Multi-hop readiness — CITES fact edges present
+MATCH (p:Paper {arxiv_id: "2507.19457"})-[:CITES]->(c)
+RETURN count(c) AS cites;
+
+// @query Structural hasPart | Composition — sections/refs hang off papers
+MATCH (p:Paper)-[:hasPart]->(x) RETURN count(x) AS parts;
+```
+
+Rules:
+
+1. **`// @query Title | insight`** — title for the report; insight is what an SME
+   learns (not a restate of the Cypher).
+2. **Project properties**, not bare nodes (`RETURN n.arxiv_id`, not only `RETURN n`)
+   when the query engine/columnar store may blank bare-node renders.
+3. **Use ontology wire strings** for relationship types (`hasPart`, `CITES`, not
+   inventing `HAS_PART`). Source: `data/ontology/edge_contracts.yaml`.
+4. **String literals double-quoted** in Cypher; numeric bounds match property types.
+5. **min_rows default = 1** for showcase tasks (Samyama DoD). Scale/count tasks may
+   set `// @min_rows N` or suite-level thresholds when asserting exact counts.
+
+Optional YAML companion (for expected counts / temporal as-of):
+
+```yaml
+# data/graph_tasks/gepa_hub.tasks.yaml
+suite_id: gepa_hub_v1
+snapshot: artifacts/gepa_hub_production/hub.sgsnap
+import_eligible: false   # D127 — suite never unlocks import
+tasks:
+  - id: paper_count
+    title: Paper count
+    insight: GEPA hub batch scale
+    cypher: |
+      MATCH (n:Paper) WHERE n.retrieval_eligible = true RETURN count(n) AS papers
+    min_rows: 1
+    # optional oracle (Contour 6 only when deterministic):
+    expect:
+      papers_gte: 24
+```
+
+#### Suite runner contract (Contour 6 harness)
+
+A suite runner (CLI example or `cargo test` harness) must:
+
+1. Load snapshot bytes → `import_snapshot` into **this** process store.
+2. Refuse non-empty `DA_GRAPH_DATA_PATH` (M332) and keep `import_eligible=false` (D127).
+3. Parse tasks; for each task run Cypher via GraphStore WARM path (`query_readonly`)
+   or domain builders (`PaperQueries`, etc.) — **same port**, not a parallel oracle.
+4. Classify PASS / EMPTY / ERROR; record wall ms.
+5. Exit non-zero if any task is EMPTY or ERROR (showcase gate), unless task is
+   marked `allow_empty: true` (rare; must justify in insight).
+6. Emit a machine-readable summary (`*.json`) + human table for CI artifacts.
+
+Reference implementations to mirror (vendor, not runtime deps):
+
+| Upstream | Role |
+|----------|------|
+| `samyama-graph/examples/test_kg_queries.rs` | Import snap → loop CSV queries → pass/empty/error tallies |
+| `samyama-graph/case_studies/_lib/validate_queries.py` | DoD gate: every `// @query` ≥ min_rows |
+| `samyama-graph/case_studies/DEFINITION_OF_DONE.md` | Independent verification, pinned snap, SME narrative |
+| `samyama-graph/tests/uc*.rs` | Executable use-case specs (UC1–UC5) |
+
+#### Relation to extraction evaluation (`eval_batch`)
+
+| Lane | Input | Oracle | Proves |
+|------|-------|--------|--------|
+| **Extraction eval** (`eval_batch`) | PDF/HTML + `data/gold_standard/*.gold.json` | Gold entity labels | RuleBasedExtractor P/R/F1 |
+| **Semantic graph task suite** | `.sgsnap` + `data/graph_tasks/*` | Rows ≥ min_rows (+ optional count bounds) | Graph answers domain questions after ingest/extract |
+
+Both are required. High extraction F1 with empty graph tasks = **not ready**.
+Graph tasks with no extraction gold = structure/citation readiness only.
+
+#### Definition of Done for a semantic suite (daily-archive)
+
+A suite is **Done** when:
+
+- [ ] Snapshot path is pinned (repo artifact or content-addressed); D127 locked.
+- [ ] `da graph-stats --snapshot <snap>` shows non-zero nodes/edges.
+- [ ] Suite runner imports that snap and runs **all** tasks in one process.
+- [ ] Every showcase task is PASS (no EMPTY/ERROR).
+- [ ] At least one multi-hop or cross-label task (graph-native strength).
+- [ ] At least one task uses a **fact** edge wire (`CITES`, `MENTIONS`, …) and one
+      **structural** edge (`hasPart`, `FROM_SOURCE`, …) from meta-ontology.
+- [ ] Report lists pass/empty/error counts and per-task latency.
+- [ ] CI: PR may run a **tiny** suite (≤5 tasks, fixture snap); Merge/Nightly runs
+      full GEPA hub (or successor) suite.
+
+#### Anti-patterns specific to this pipeline
+
+1. **Banner-only honesty** — documenting process-local death without a working
+   `--snapshot` read path (fixed M334; do not regress).
+2. **Cross-process load-then-query** as “E2E”.
+3. **Using extraction F1 as sole KG readiness metric.**
+4. **Hardcoding edge type names in tasks** that disagree with
+   `data/ontology/edge_contracts.yaml`.
+5. **Building a second oracle** that reimplements ingest/extract to “expect”
+   graph contents (common-mode failure) — prefer independent gold tasks and
+   row-count/structure oracles.
+
 ---
 
 ## 9. Concurrency and Resilience Testing
@@ -937,6 +1097,10 @@ Budget: <30min.
 11. **Testing only happy path** — no retries, cancellation, partial commit.
 12. **Architecture boundaries only in documentation** — domain starts
     depending on Tokio, SQLx, HTTP types, config framework over time.
+13. **Disk load in process A + query in process B as “E2E”** — process-local
+    store dies on exit; Contour 6 requires same-process `--snapshot` (or real remote).
+14. **Extraction F1 as sole scientific KG readiness metric** — must pair with
+    semantic graph task suite (§8.1) on a durable `.sgsnap`.
 
 ---
 
@@ -959,6 +1123,9 @@ Budget: <30min.
 4. Replay and projection equivalence.
 5. Metamorphic tests for graph/vector retrieval.
 6. Mutation testing domain/application.
+7. **Semantic graph task suite (Contour 6 §8.1)** — pin `.sgsnap` +
+   `data/graph_tasks/*` + same-process runner (PASS/EMPTY/ERROR gate),
+   separate from extraction `eval_batch`.
 
 ### P2 — System reliability
 
@@ -968,6 +1135,8 @@ Budget: <30min.
 4. Fuzzing parsers, import, event formats.
 5. Miri/Kani for unsafe and critical algorithms.
 6. Release-level recovery and migration scenarios.
+7. Live remote GraphStore client + task suite against daemon (only when
+   `DA_GRAPH_MODE=remote` is real — not `RemoteNotConfigured`).
 
 ### Core principle
 
@@ -990,6 +1159,8 @@ Budget: <30min.
 - Mutation testing validates test suite quality
 - Deterministic infrastructure eliminates flaky tests at source
 - Domain-specific suites codify temporal, retrieval, and agent invariants
+- Semantic graph task pipeline (Samyama case-study DoD) proves durable graph
+  answers domain questions, not only extractor F1 or empty-store CLI smoke
 
 ### Negative
 
@@ -1014,4 +1185,10 @@ Budget: <30min.
 - MockGraphStore must pass the same contract suite as SamyamaGraphStore
 - All E2E tests use Fixture builder + DeterministicEmbedder, never real network
 - Governor `--test-matrix` gives a live overview of all 7 contours
+- Contour 6 disk→query: use `da query|graph-stats --snapshot <file.sgsnap>` in
+  **one** process; never `load-snapshot` then a second CLI process
+- Semantic readiness = extraction eval **and** graph task suite (§8.1), not either alone
+- Task Cypher must use ontology wire strings from `data/ontology/edge_contracts.yaml`
 - Reference research (2026-07-28): full 16-section analysis in project archive
+- Vendor pattern sources: Samyama `case_studies/DEFINITION_OF_DONE.md`,
+  `examples/test_kg_queries.rs`, `_lib/validate_queries.py`
