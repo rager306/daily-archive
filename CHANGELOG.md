@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M334 disk snapshot to query same-process chain
+
+**Process gap (user-reported):** `da load-snapshot` verified 2571 nodes then
+exited; next `da query` / `da graph-stats` opened a **new empty** store
+(process-local in-memory dies on exit). Disk→query chain was broken.
+
+- `open_graph_store_with_optional_snapshot` — import `.sgsnap` into **this** process
+- `da graph-stats --snapshot <file.sgsnap>`
+- `da query --snapshot <file.sgsnap> --kind count|by-arxiv|...`
+- Honest NON-PERSISTENT banners; D127 unchanged
+- E2E on `artifacts/gepa_hub_production/hub.sgsnap`:
+  - nodes **2571**, edges **2741**
+  - Paper count **24**
+  - by-arxiv `2507.19457` returns 1 record
+
+```bash
+./target/debug/da graph-stats --snapshot artifacts/gepa_hub_production/hub.sgsnap
+./target/debug/da query --kind count --snapshot artifacts/gepa_hub_production/hub.sgsnap
+./target/debug/da query --kind by-arxiv --id 2507.19457 --snapshot artifacts/gepa_hub_production/hub.sgsnap
+```
+
+
 ### Session 2026-08-05 — M333 D127 health honesty and source governor lock
 
 **Process gap:** `da health` did not surface D127 `import_eligible=false`

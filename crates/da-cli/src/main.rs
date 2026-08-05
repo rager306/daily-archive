@@ -20,6 +20,43 @@ fn open_graph_store() -> da_adapters::SamyamaGraphStore {
     }
 }
 
+/// Open store and optionally import a `.sgsnap` into **this process** (M334).
+///
+/// Closes the disk→query gap: `load-snapshot` alone cannot feed a later
+/// `query`/`graph-stats` process (in-memory dies on exit). Same-process
+/// `--snapshot` is the supported read path until Wave 3 server mode.
+///
+/// Always prints NON-PERSISTENT honesty. D127 unchanged.
+async fn open_graph_store_with_optional_snapshot(
+    snapshot: Option<&std::path::Path>,
+) -> da_adapters::SamyamaGraphStore {
+    use da_ports::graph_store::GraphStore;
+    let store = open_graph_store();
+    if let Some(path) = snapshot {
+        let data = match std::fs::read(path) {
+            Ok(d) => d,
+            Err(e) => {
+                eprintln!("❌ Cannot read snapshot {}: {e}", path.display());
+                std::process::exit(1);
+            }
+        };
+        println!(
+            "Snapshot preload: {} ({} bytes) into this process...",
+            path.display(),
+            data.len()
+        );
+        if let Err(e) = store.import_snapshot(&data).await {
+            eprintln!("❌ Snapshot import failed: {e}");
+            std::process::exit(1);
+        }
+        let nodes = store.node_count().await;
+        let edges = store.edge_count().await;
+        println!("  loaded: {nodes} nodes, {edges} edges (this process only)");
+        println!("  ⚠  NON-PERSISTENT — dies when this process exits (D127 locked)");
+    }
+    store
+}
+
 /// daily-archive v2 — scientific knowledge engine
 #[derive(Parser)]
 #[command(
@@ -82,7 +119,12 @@ enum Commands {
     },
 
     /// Show graph statistics (node/edge counts)
-    GraphStats,
+    GraphStats {
+        /// Optional `.sgsnap` to import into this process before counting (M334).
+        /// NON-PERSISTENT: store dies when the process exits.
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
+    },
 
     /// Query the knowledge graph (Cypher via da-graph builders)
     Query {
@@ -97,6 +139,11 @@ enum Commands {
         /// Max citation hops (for citation-hops)
         #[arg(long, default_value = "2")]
         hops: usize,
+
+        /// Optional `.sgsnap` to import into this process before query (M334).
+        /// NON-PERSISTENT: required for disk→query chain (load-snapshot alone does not persist).
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
     },
 
     /// Extract entities from an ingested paper (Phase 3 rule-based)
@@ -285,14 +332,19 @@ fn main() {
                 load_snapshot(&input).await;
             });
         }
-        Commands::GraphStats => {
+        Commands::GraphStats { snapshot } => {
             rt.block_on(async {
-                graph_stats().await;
+                graph_stats(snapshot.as_deref()).await;
             });
         }
-        Commands::Query { kind, id, hops } => {
+        Commands::Query {
+            kind,
+            id,
+            hops,
+            snapshot,
+        } => {
             rt.block_on(async {
-                query_graph(&kind, id.as_deref(), hops).await;
+                query_graph(&kind, id.as_deref(), hops, snapshot.as_deref()).await;
             });
         }
         Commands::Extract { id } => {
@@ -764,10 +816,7 @@ async fn load_snapshot(input: &str) {
                 nodes
             );
             eprintln!(
-                "⚠  NON-PERSISTENT: in-memory store dies when this process exits.\n\
-                   Durable write path today: `da batch-ingest --output <snapshot.sgsnap>`.\n\
-                   Cross-process live graph requires Wave 3 server mode (not yet shipped).\n\
-                   D127 import_eligible remains locked."
+                "⚠  NON-PERSISTENT: in-memory store dies when this process exits.\n                   To query this snapshot: `da query --snapshot {input} --kind count`.\n                   To count nodes: `da graph-stats --snapshot {input}`.\n                   Durable write path: `da batch-ingest --output <snapshot.sgsnap>`.\n                   D127 import_eligible remains locked."
             );
         }
         Err(e) => {
@@ -777,8 +826,8 @@ async fn load_snapshot(input: &str) {
     }
 }
 
-async fn graph_stats() {
-    let graph = open_graph_store();
+async fn graph_stats(snapshot: Option<&std::path::Path>) {
+    let graph = open_graph_store_with_optional_snapshot(snapshot).await;
     let nodes = graph.node_count().await;
     let edges = graph.edge_count().await;
     println!("daily-archive v2 — graph statistics");
@@ -786,14 +835,17 @@ async fn graph_stats() {
     println!("  Edges: {}", edges);
     if nodes == 0 {
         println!(
-            "  ⚠  Graph is empty (process-local in-memory store).\
-             \n     `da load-snapshot` only verifies a snapshot in this process — it does not persist.\
-             \n     Durable path: `da batch-ingest --output <snapshot.sgsnap>` (Wave 3 server not shipped)."
+            "  ⚠  Graph is empty (process-local in-memory store).\n     Use `da graph-stats --snapshot <file.sgsnap>` to load from disk in this process.\n     `da load-snapshot` alone does not feed later commands (store dies on exit).\n     Durable write path: `da batch-ingest --output <snapshot.sgsnap>`."
         );
     }
 }
 
-async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
+async fn query_graph(
+    kind: &str,
+    id: Option<&str>,
+    hops: usize,
+    snapshot: Option<&std::path::Path>,
+) {
     use da_application::{EntityQueries, PaperQueries};
 
     // Build the Cypher via da-graph query builders
@@ -846,9 +898,10 @@ async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
     println!("Query kind: {kind}");
     println!("Cypher: {cypher}");
 
-    // Execute via SamyamaGraphStore (WARM path — embedded Cypher)
+    // Execute via SamyamaGraphStore (WARM path — embedded Cypher).
+    // Optional --snapshot imports disk sgsnap into this process first (M334).
     use da_ports::graph_store::GraphStore;
-    let store = open_graph_store();
+    let store = open_graph_store_with_optional_snapshot(snapshot).await;
     match store.query_readonly("daily_archive", &cypher).await {
         Ok(result) => {
             println!("Columns: {:?}", result.columns);
@@ -858,6 +911,20 @@ async fn query_graph(kind: &str, id: Option<&str>, hops: usize) {
             }
             if result.records.len() > 10 {
                 println!("  ... ({} more)", result.records.len() - 10);
+            }
+            // Tip when store likely empty (no --snapshot): zero records OR count query = 0
+            let looks_empty = result.records.is_empty()
+                || (kind == "count"
+                    && result
+                        .records
+                        .first()
+                        .map(|r| format!("{r:?}"))
+                        .map(|s| s.contains("Number(0)"))
+                        .unwrap_or(false));
+            if looks_empty && snapshot.is_none() {
+                println!(
+                    "  ⚠  Empty graph in this process?\n     Disk→query same process: `da query --snapshot <file.sgsnap> --kind {kind}`.\n     `da load-snapshot` in a prior process does not persist (store dies on exit)."
+                );
             }
         }
         Err(e) => {
