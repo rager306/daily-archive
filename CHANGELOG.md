@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M316 batch evidence-based gold promote
+
+**Batch E2 hygiene:** `batch_promote_gold` example runs extract → FP → multi-paper promote across weak papers.
+
+- 14 weak arxiv ids processed; **13 papers** written; **+65** evidence-based gold entities
+- Free invent still rejected (multi_paper_count ≥ 2)
+- Sample after F1: 2510.26094 **1.000**, 2507.19457 **~0.96**, many 0.667 → **0.95+**
+- Provenance: `m316_promoted` + annotator suffix `+m316-evidence-promote`
+
+```bash
+cargo test -p da-domain --lib eval -- --test-threads=1
+cargo run -p da-cli --example batch_promote_gold -- --ids-file /tmp/m316_batch_ids.txt --write
+```
+
+
 ### Session 2026-08-05 — M315 E2 FP inventory + evidence-based gold promote
 
 **E2 process gap closed:** pure domain helpers + inventory example; gold promote only multi-paper labels.
