@@ -82,6 +82,21 @@ jobs:
             -p da-graph -p da-adapters -p da-cli \
             --all-targets --no-deps -- -D warnings
 
+      - name: Unit tests (per-crate, M339)
+        run: |
+          # Per-crate tests matching scripts/verify_rust_architecture.sh.
+          # CI has time budget for the full workspace, but per-crate keeps
+          # output readable and isolates failures.
+          cargo test -p kg-ontology --lib
+          cargo test -p kg-storage --lib
+          cargo test -p kg-embeddings --lib
+          cargo test -p kg-algorithms --lib
+          cargo test -p kg-pipeline --lib
+          cargo test -p da-domain --lib
+          cargo test -p da-application --tests
+          cargo test -p da-adapters --lib
+          cargo test -p da-cli --lib
+
       - name: Hexagonal dependency-direction check
         run: |
           # Inner layers must not depend on outer layers or infrastructure.
@@ -121,6 +136,13 @@ jobs:
             echo "  $kg: OK (no da-* deps)"
           done
           echo "Hexagonal dependency direction: PASS"
+
+      - name: Governor trajectory check (preflight, M339)
+        run: |
+          # Project trajectory enforcement (ADR invariants, artifact gates).
+          # Mirrors scripts/check_project_trajectory.py --phase preflight.
+          pip install pyyaml
+          PYTHONPATH=scripts python3 scripts/check_project_trajectory.py --phase preflight
 
       - name: Guardrail evidence
         if: success()

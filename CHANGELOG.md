@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M339 CI alignment: unit tests + governor trajectory
+
+**Close CI vs local-script process gap:**
+
+- CI workflow now runs `cargo test` per-crate (matching `scripts/verify_rust_architecture.sh`)
+- CI workflow now runs governor preflight (`scripts/check_project_trajectory.py --phase preflight`)
+- Divergence documented: CI does `cargo check --workspace` (rocksdb OK on CI time budget);
+  local verify script avoids workspace check (MEM468: 5-10 min rocksdb rebuild)
+
+```yaml
+- name: Unit tests (per-crate, M339)
+  run: |
+    cargo test -p kg-ontology --lib
+    # ... per-crate matching verify_rust_architecture.sh
+    cargo test -p da-cli --lib  # includes graph_tasks parser (M337)
+
+- name: Governor trajectory check (preflight, M339)
+  run: |
+    pip install pyyaml
+    PYTHONPATH=scripts python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M338 graph task suite expect bounds
 
 **Tighten ADR-051 §8.1 suite from min_rows=1 to exact count/value bounds:**
