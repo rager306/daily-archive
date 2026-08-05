@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M343 governor roundtrip presence + da-ports gap fix
+
+**ADR-051 P0 regression prevention + gap closure:**
+
+- Governor rule `serde_roundtrip_test_module_required` (medium): flags crates with Serialize+Deserialize types as a reminder to verify roundtrip test presence
+- Gap fix: `da-ports` had 3 pub Serialize types (`ParsedArticle`, `Section`, `CitationEntry`) without roundtrip tests — now covered (3 tests)
+- ADR-051 P0 final tally: **40 types, 53 tests, 6 crates**
+
+```bash
+python3 scripts/check_project_trajectory.py --phase preflight
+cargo test -p da-ports --lib
+```
+
+
 ### Session 2026-08-05 — M342 serde roundtrip: remaining crates (ADR-051 P0 complete)
 
 **Completes ADR-051 P0 for all project crates with Serialize+Deserialize types:**

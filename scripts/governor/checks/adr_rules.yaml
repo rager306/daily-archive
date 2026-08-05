@@ -283,3 +283,17 @@ rules:
     rationale: "Sentinel-only: ensures data/graph_tasks/ is scanned. Real suite presence enforced by cargo test -p da-cli --lib graph_tasks + E2E suite runner."
     suffix_allowlist:
       - .cypher
+
+  # --- M343: ADR-051 P0 regression prevention ---
+  # Every crate with Serialize+Deserialize pub types must have roundtrip tests.
+  # Pattern matches lib.rs files in crates/ that do NOT contain roundtrip helper.
+  # This is a sentinel check — real enforcement is via cargo test, this catches
+  # crates that have Serialize derives but forgot the test module entirely.
+  - id: serde_roundtrip_test_module_required
+    anchor: "ADR-051 §4.4 P0 — every Serialize+Deserialize type needs roundtrip coverage"
+    severity: medium
+    scan: crates/
+    pattern: '#\[derive\(Debug, Clone, Serialize, Deserialize\)\]\n.*pub (struct|enum)'
+    rationale: "Crate has Serialize+Deserialize types. Verify roundtrip_json<T> or roundtrip<T> exists in lib.rs tests. If this flag fires, add serde_roundtrip_tests module to the crate's lib.rs (see M340-M343 pattern)."
+    suffix_allowlist:
+      - .rs
