@@ -8,7 +8,7 @@ pub mod ingest;
 
 pub use ingest::IngestUseCase;
 pub mod batch_ingest;
-pub use batch_ingest::{BatchIngestResult, batch_ingest_pdfs};
+pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub mod healing;
@@ -102,6 +102,7 @@ mod serde_roundtrip_tests {
             snapshot_path: Some("/tmp/hub.sgsnap".into()),
             errors: vec![],
             import_eligible: false,
+            pdf_triage: BatchPdfTriageSummary::default(),
         });
     }
 
@@ -120,6 +121,17 @@ mod serde_roundtrip_tests {
             snapshot_path: None,
             errors: vec![("2401.99999".into(), "parse failed".into())],
             import_eligible: false,
+            pdf_triage: BatchPdfTriageSummary {
+                classified: 2,
+                with_ocr_pages: 1,
+                encoding_issues: 1,
+                type_text: 2,
+                type_scanned: 0,
+                type_image: 0,
+                type_mixed: 0,
+                type_unknown: 0,
+                papers_with_ocr: vec!["2507.19457".into()],
+            },
         });
     }
 

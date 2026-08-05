@@ -773,6 +773,27 @@ async fn batch_ingest(
             if let Some(ref path) = r.snapshot_path {
                 println!("   Snapshot: {}", path);
             }
+            // M352: aggregate pre-GROBID PDF triage (when classifier was attached)
+            if r.pdf_triage.any() {
+                let t = &r.pdf_triage;
+                println!(
+                    "   PDF triage: classified={} ocr_pages={} encoding_issues={} text={} scanned={} mixed={} image={} unknown={}",
+                    t.classified,
+                    t.with_ocr_pages,
+                    t.encoding_issues,
+                    t.type_text,
+                    t.type_scanned,
+                    t.type_mixed,
+                    t.type_image,
+                    t.type_unknown
+                );
+                if !t.papers_with_ocr.is_empty() {
+                    println!(
+                        "   OCR papers (sample): {}",
+                        t.papers_with_ocr.join(", ")
+                    );
+                }
+            }
             for (pid, err) in &r.errors {
                 println!("   FAIL {}: {}", pid, err);
             }

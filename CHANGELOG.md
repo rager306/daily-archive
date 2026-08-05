@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M352 batch PDF triage summary
+
+**Process gap closed:** single ingest returned `pdf_classification`, batch dropped it.
+
+- `BatchPdfTriageSummary` on `BatchIngestResult` (classified, with_ocr_pages,
+  encoding_issues, type_* counts, sample `papers_with_ocr` cap 32)
+- Aggregated from each successful `IngestResult.pdf_classification` in
+  `batch_ingest_pdfs`
+- CLI `batch-ingest` prints triage line when any paper was classified
+- Unit tests for aggregate helper; serde roundtrip; empty triage without classifier
+
+```bash
+cargo test -p da-application --lib batch
+cargo test -p da-application --test batch_ingest_test
+cargo check -p da-cli
+# with --features pdf-classifier: batch shows PDF triage: classified=… ocr_pages=…
+```
+
+
 ### Session 2026-08-05 — M351 hub PDF OCR pages 69/84 diagnosis
 
 **Investigation closed (debt from M349/M350):**

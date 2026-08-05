@@ -117,6 +117,9 @@ async fn test_batch_ingest_all_success() {
     assert_eq!(result.total_cites_resolved, 0);
     assert!(result.errors.is_empty());
     assert!(!result.import_eligible); // D127
+    // M352: no classifier attached → empty triage aggregate
+    assert_eq!(result.pdf_triage.classified, 0);
+    assert!(!result.pdf_triage.any());
     assert_eq!(store.node_count_total(), 6); // 3 Paper + 3 Section nodes
     assert_eq!(store.snapshot_call_count(), 0); // no snapshot (None)
     store.assert_graph_conforms("test_batch_ingest_all_success");
