@@ -62,6 +62,8 @@ impl SamyamaGraphStore {
     ///
     /// `Embedded` → process-local Samyama; `Remote` → typed not-configured error.
     pub fn open_for_mode(mode: crate::GraphMode) -> Result<Self, crate::GraphModeError> {
+        // M332: refuse mistaken RocksDB path env (persistence not wired for CLI).
+        crate::graph_mode::refuse_persistence_path_from_env()?;
         match mode {
             crate::GraphMode::Embedded => Ok(Self::from_env()),
             crate::GraphMode::Remote => Err(crate::GraphModeError::RemoteNotConfigured),
@@ -70,6 +72,7 @@ impl SamyamaGraphStore {
 
     /// Mode-aware open: `DA_GRAPH_MODE=embedded` (default) → process-local store;
     /// `remote` → [`crate::GraphModeError::RemoteNotConfigured`] (no fake client).
+    /// Non-empty `DA_GRAPH_DATA_PATH` → [`crate::GraphModeError::PersistenceNotConfigured`].
     pub fn try_from_env() -> Result<Self, crate::GraphModeError> {
         Self::open_for_mode(crate::GraphMode::from_env()?)
     }

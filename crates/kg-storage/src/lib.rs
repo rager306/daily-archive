@@ -19,7 +19,9 @@ pub mod traits;
 pub mod samyama_adapter;
 
 pub use error::{GraphResult, GraphStoreError};
-pub use graph_mode::{GraphMode, GraphModeError};
+pub use graph_mode::{
+    GraphMode, GraphModeError, refuse_persistence_path, refuse_persistence_path_from_env,
+};
 pub use mock::MockGraphStore;
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 

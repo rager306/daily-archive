@@ -65,6 +65,21 @@ pub fn fd_api_key_tip() -> &'static str {
     "  tip: da loads project .env at startup (M321); export FD_API_KEY if running without .env"
 }
 
+/// Always-honest persistence status for process-local Samyama (M332).
+pub fn persistence_status_line() -> String {
+    match std::env::var("DA_GRAPH_DATA_PATH")
+        .ok()
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        None => "✅ none (in-memory; durable path is batch-ingest --output .sgsnap)".into(),
+        Some(path) => {
+            format!("❌ DA_GRAPH_DATA_PATH={path:?} set but RocksDB not wired — unset for CLI open")
+        }
+    }
+}
+
 /// Operator tip for multi-process health path (M307–M310).
 pub fn wave3_tip() -> &'static str {
     "  tip: multi-process RESP health uses `da serve-graph` + `da graph-ping` (port 16379); full GraphMode::remote store is not configured"
@@ -91,6 +106,7 @@ pub fn format_graph_health_lines(
     detail: &str,
 ) -> Vec<String> {
     let mut lines = vec![format!("  DA_GRAPH_MODE:  {mode_text}")];
+    lines.push(format!("  Persistence:    {}", persistence_status_line()));
     if opened {
         let status = if healthy { "✅ healthy" } else { "❌ down" };
         lines.push(format!("  Samyama Graph:  {status} ({detail} nodes)"));
@@ -113,6 +129,9 @@ pub fn open_error_detail(err: &GraphModeError) -> String {
             "RemoteNotConfigured — full remote GraphStore not wired".into()
         }
         GraphModeError::InvalidMode { value } => format!("InvalidMode({value})"),
+        GraphModeError::PersistenceNotConfigured { path } => format!(
+            "PersistenceNotConfigured — DA_GRAPH_DATA_PATH={path:?} (RocksDB not wired; unset)"
+        ),
     }
 }
 
@@ -125,6 +144,7 @@ mod tests {
         let lines = format_graph_health_lines("embedded", true, true, "12");
         let joined = lines.join("\n");
         assert!(joined.contains("DA_GRAPH_MODE:  embedded"));
+        assert!(joined.contains("Persistence:"));
         assert!(joined.contains("✅ healthy (12 nodes)"));
         assert!(!joined.contains("serve-graph"));
     }
@@ -207,5 +227,30 @@ mod tests {
         let line = fail.display_line();
         assert!(line.contains("401"));
         assert!(!line.contains("Bearer sk"));
+    }
+    #[test]
+    fn persistence_not_configured_detail() {
+        let detail = open_error_detail(&GraphModeError::PersistenceNotConfigured {
+            path: "/tmp/x".into(),
+        });
+        assert!(detail.contains("PersistenceNotConfigured"), "{detail}");
+        assert!(
+            detail.contains("/tmp/x") || detail.contains("DA_GRAPH_DATA_PATH"),
+            "{detail}"
+        );
+        let lines = format_graph_health_lines("embedded", false, false, &detail);
+        let joined = lines.join("\n");
+        assert!(joined.contains("Persistence:"));
+        assert!(joined.contains("not open"));
+        assert!(!joined.contains("serve-graph"));
+    }
+
+    #[test]
+    fn persistence_status_line_is_honest() {
+        let line = persistence_status_line();
+        assert!(
+            line.contains("none") || line.contains("DA_GRAPH_DATA_PATH"),
+            "{line}"
+        );
     }
 }

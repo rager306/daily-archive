@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M332 explicit graph persistence policy honesty
+
+**Gap:** process-local Samyama is always in-memory, but a mistaken
+`DA_GRAPH_DATA_PATH` was silently ignored (no RocksDB open, no error).
+
+- `GraphModeError::PersistenceNotConfigured { path }`
+- `refuse_persistence_path` / `refuse_persistence_path_from_env` — non-empty path refused
+- `open_for_mode` / `try_from_env` call refuse before open
+- Health: `Persistence:` line (none / path set but not wired)
+- `.env.example` documents `DA_GRAPH_DATA_PATH` as unsupported for CLI open
+- Durability remains `batch-ingest --output .sgsnap` (no RocksDB enablement)
+
+```bash
+cargo test -p kg-storage --lib graph_mode
+cargo test -p da-cli --lib health_report
+```
+
+
 ### Session 2026-08-05 — M331 structural created_at + Utc::now governor ban
 
 **Debt:** structural edges (hasPart, FROM_SOURCE, foundIn, …) had no `created_at`;
