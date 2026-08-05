@@ -20,6 +20,26 @@ fn open_graph_store() -> da_adapters::SamyamaGraphStore {
     }
 }
 
+/// Optionally attach pre-GROBID PDF classifier (M348).
+///
+/// Enabled only when the CLI is built with `--features pdf-classifier`.
+/// Default builds stay free of `pdf-inspector` (Null path = no-op).
+fn maybe_attach_pdf_classifier(
+    use_case: da_application::IngestUseCase,
+) -> da_application::IngestUseCase {
+    #[cfg(feature = "pdf-classifier")]
+    {
+        use da_adapters::PdfInspectorClassifier;
+        use std::sync::Arc;
+        tracing::info!("PDF classifier enabled (pdf-inspector pre-GROBID triage)");
+        use_case.with_pdf_classifier(Arc::new(PdfInspectorClassifier::new()))
+    }
+    #[cfg(not(feature = "pdf-classifier"))]
+    {
+        use_case
+    }
+}
+
 /// Open store and optionally import a `.sgsnap` into **this process** (M334).
 ///
 /// Closes the disk→query gap: `load-snapshot` alone cannot feed a later
@@ -621,7 +641,7 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
     let graph_store = Box::new(open_graph_store());
     // DirectGraphStore is implemented by SamyamaGraphStore (ADR-041 HOT path)
 
-    let use_case = IngestUseCase::new(parser, embedder, graph_store);
+    let use_case = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
 
     match use_case.ingest_pdf(pdf_path, paper_id).await {
         Ok(result) => {
@@ -710,7 +730,7 @@ async fn batch_ingest(
     let embedder = Box::new(FdApiEmbedder::from_env());
     let graph_store = Box::new(open_graph_store());
 
-    let ingest = IngestUseCase::new(parser, embedder, graph_store);
+    let ingest = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
 
     let snapshot_path = output.map(PathBuf::from);
 

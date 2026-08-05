@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M348 CLI wire PdfInspectorClassifier (feature-gated)
+
+**Close M346/M347 composition-root gap:**
+
+- `da-cli` feature `pdf-classifier` enables `da-adapters/pdf-classifier`
+- Helper `maybe_attach_pdf_classifier()` injects `PdfInspectorClassifier` into
+  `IngestUseCase` for both `ingest` and `batch-ingest`
+- Default build: no `pdf-inspector` dep, behavior unchanged
+- Feature build: pre-GROBID classify logs via M347 path
+
+```bash
+# default (no classifier)
+cargo check -p da-cli
+
+# with pre-GROBID PDF triage
+cargo build -p da-cli --features pdf-classifier
+da ingest --pdf ...   # logs PDF classified (pre-GROBID) when feature on
+```
+
+
 ### Session 2026-08-05 — M347 wire PDF classifier into ingest use-case
 
 **Close the port-to-application gap from M346:**
