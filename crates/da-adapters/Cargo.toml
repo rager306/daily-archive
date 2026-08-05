@@ -25,3 +25,12 @@ sha2 = { workspace = true }
 # Samyama Graph SDK (embedded mode — zero network overhead)
 samyama = { path = "/root/vendor-source/samyama-graph" }
 samyama-sdk = { path = "/root/vendor-source/samyama-graph/crates/samyama-sdk" }
+
+# Optional: PDF classification via pdf-inspector (M346)
+# Enable with: cargo test -p da-adapters --features pdf-classifier
+pdf-inspector = { version = "0.1", optional = true }
+
+[features]
+default = []
+# PDF OCR triage — pure Rust PDF classification (~10ms)
+pdf-classifier = ["dep:pdf-inspector"]

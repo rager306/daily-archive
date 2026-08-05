@@ -21,6 +21,9 @@ pub use extractor::{ExtractedEntity, Extractor};
 pub use graph_store::{DirectGraphStore, GraphStore};
 pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};
 pub use openalex::{OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexTopic, OpenAlexWork};
+pub mod pdf_classification;
+pub use pdf_classification::{ClassificationError, ClassificationResult, NullClassifier, PdfClassificationPort};
+
 pub use parser::ParserPort;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.

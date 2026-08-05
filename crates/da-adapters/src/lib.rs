@@ -10,9 +10,15 @@ pub mod openalex_adapter;
 pub mod rule_extractor;
 pub mod samyama_graph;
 
+#[cfg(feature = "pdf-classifier")]
+pub mod pdf_classifier;
+
 pub use fd_embedder::FdApiEmbedder;
 pub use grobid_parser::GrobidParser;
 pub use html_parser::HtmlParser;
+
+#[cfg(feature = "pdf-classifier")]
+pub use pdf_classifier::PdfInspectorClassifier;
 pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;

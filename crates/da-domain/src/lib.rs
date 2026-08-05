@@ -51,6 +51,11 @@ pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
 };
+pub mod pdf_classification;
+pub use pdf_classification::{
+    PageOcrReasons, PdfClassification, PdfType, OCR_REASON_NO_TEXT, OCR_REASON_SCANNED,
+    OCR_REASON_SUSPECTED_GARBLED_TEXT, OCR_REASON_VECTOR_TEXT,
+};
 pub use relation::{CitationSchema, RELATION_TYPES, Relation, RelationType, bibliographic};
 pub use scheduler::{
     PendingTask, RetryPolicy, SchedulerTaskSchema, TaskPriority, TaskStatus, TaskType,

@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M346 PDF OCR triage via pdf-inspector pre-filter
+
+**New capability: pure-Rust PDF classification before GROBID (~10ms):**
+
+- `PdfClassification` domain type in da-domain (pdf_type, pages_needing_ocr,
+  ocr_reasons_by_page, confidence, has_encoding_issues)
+- `PdfClassificationPort` trait in da-ports + `NullClassifier` fallback
+- `PdfInspectorClassifier` adapter in da-adapters behind `pdf-classifier` feature
+- Optional `pdf-inspector = "0.1"` dep — no Docker, no sidecar
+- 4 OCR reason categories: scanned, suspected_garbled_text, no_text, vector_text
+- E2E on hub PDF (2507.19457): **Text, 96 pages, 0 OCR, confidence 1.00**
+- 4 helper methods: grobid_eligible, is_text_extractable, needs_full_ocr, ocr_reason_for_page
+
+```bash
+# Without feature (default — NullClassifier)
+cargo test -p da-domain --lib pdf_classification
+cargo test -p da-ports --lib pdf_classification
+
+# With pdf-inspector (full classification)
+cargo test -p da-adapters --features pdf-classifier --lib pdf_classifier
+```
+
+Architecture (hexagonal):
+```
+da-domain:  PdfClassification, PdfType, PageOcrReasons
+da-ports:   PdfClassificationPort trait + NullClassifier
+da-adapters: PdfInspectorClassifier (feature-gated, pdf-inspector)
+```
+
+
 ### Session 2026-08-05 — M345 Serialize derives for core ontology types
 
 **ADR-051 P0 extension — 5 types crossing persistence boundary:**
