@@ -261,14 +261,16 @@ impl EnrichUseCase {
                 };
                 // Wire Author → Institution (AFFILIATED_WITH) if we resolved the Author.
                 if let Some(author_id) = author_node {
-                    let _ = self
-                        .graph_store
-                        .create_edge(
-                            author_id,
-                            inst_node,
-                            da_domain::relation::bibliographic::AFFILIATED_WITH,
-                        )
-                        .await;
+                    // AFFILIATED_WITH is temporal fact — M329.
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let _ = crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        author_id,
+                        inst_node,
+                        da_domain::relation::bibliographic::AFFILIATED_WITH,
+                        &temporal,
+                    )
+                    .await;
                     affiliation_edges_written += 1;
                 }
             }

@@ -141,14 +141,16 @@ impl GraphHealingUseCase {
             .set_node_property_string(merge_id, "superseded_by", vid_keep.to_string())
             .await?;
 
-        // Create SUPERSEDES edge: merge → keep
-        self.graph_store
-            .create_edge(
-                merge_id,
-                keep_id,
-                da_domain::relation::bibliographic::SUPERSEDES,
-            )
-            .await?;
+        // Create SUPERSEDES edge: merge → keep — temporal fact (M329).
+        let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+        crate::temporal_stamp::create_edge_with_temporal(
+            self.graph_store.as_ref(),
+            merge_id,
+            keep_id,
+            da_domain::relation::bibliographic::SUPERSEDES,
+            &temporal,
+        )
+        .await?;
 
         // Redirect incoming edges: for each edge (source → merge_id),
         // create a parallel edge (source → keep_id) so queries find the kept node.
@@ -157,9 +159,22 @@ impl GraphHealingUseCase {
         for (source_id, edge_type) in &incoming {
             // Don't redirect SUPERSEDES edges
             if edge_type != da_domain::relation::bibliographic::SUPERSEDES {
-                self.graph_store
-                    .create_edge(*source_id, keep_id, edge_type)
+                // Fact edges must carry TemporalEdge fields (M329).
+                if crate::temporal_stamp::edge_type_is_temporal_fact(edge_type) {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        *source_id,
+                        keep_id,
+                        edge_type,
+                        &temporal,
+                    )
                     .await?;
+                } else {
+                    self.graph_store
+                        .create_edge(*source_id, keep_id, edge_type)
+                        .await?;
+                }
                 redirected += 1;
             }
         }
@@ -314,24 +329,15 @@ impl GraphHealingUseCase {
             }
         }
 
-        // Create the new edge.
-        let new_edge_id = self
-            .graph_store
-            .create_edge(source_id, target_id, edge_type)
-            .await?;
-
-        // Write temporal properties.
-        self.graph_store
-            .set_edge_property_string(new_edge_id, "valid_at", &new_edge.valid_at.to_rfc3339())
-            .await?;
-        self.graph_store
-            .set_edge_property_string(new_edge_id, "created_at", &new_edge.created_at.to_rfc3339())
-            .await?;
-        if let Some(invalid_at) = new_edge.invalid_at {
-            self.graph_store
-                .set_edge_property_string(new_edge_id, "invalid_at", &invalid_at.to_rfc3339())
-                .await?;
-        }
+        // Create the new edge and stamp temporal fields via shared helper (M329).
+        let new_edge_id = crate::temporal_stamp::create_edge_with_temporal(
+            self.graph_store.as_ref(),
+            source_id,
+            target_id,
+            edge_type,
+            &new_edge,
+        )
+        .await?;
 
         tracing::info!(
             new_edge_id,

@@ -97,6 +97,30 @@ async fn test_cluster_use_case_creates_member_of_cluster_edge() {
         result.member_edges_created >= 1,
         "expected MEMBER_OF_CLUSTER edges"
     );
+
+    // M329: MEMBER_OF_CLUSTER is fact — must carry valid_at + created_at.
+    use da_ports::graph_store::DirectGraphStore;
+    let clusters = store.get_nodes_by_label("ConceptCluster").await;
+    assert!(!clusters.is_empty());
+    let edges = store
+        .get_edges_between(entity_id, clusters[0], "MEMBER_OF_CLUSTER")
+        .await;
+    assert_eq!(edges.len(), 1);
+    let (eid, _) = edges[0];
+    assert!(
+        store
+            .get_edge_property_string(eid, "valid_at")
+            .await
+            .is_some(),
+        "MEMBER_OF_CLUSTER must have valid_at"
+    );
+    assert!(
+        store
+            .get_edge_property_string(eid, "created_at")
+            .await
+            .is_some(),
+        "MEMBER_OF_CLUSTER must have created_at"
+    );
 }
 
 #[tokio::test]

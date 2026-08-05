@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M329 residual fact edge stamps + write-path audit
+
+**Gap:** After M327–M328, bare `create_edge` remained for fact wires:
+MEMBER_OF_CLUSTER, AFFILIATED_WITH, extra MENTIONS, SUPERSEDES merge, merge redirects.
+
+- Stamp via `create_edge_with_temporal`: cluster, enrich, extraction (problem/metric MENTIONS), healing SUPERSEDES + fact redirects
+- `add_temporal_edge` uses shared stamp helper
+- **Hard gate:** `tests/temporal_write_path_audit_test.rs` — zero bare fact create_edge
+- Governor: `no_bare_fact_create_edge_same_line` (line-level; multi-line → cargo audit)
+
+```bash
+cargo test -p da-application --test temporal_write_path_audit_test
+cargo test -p da-application --tests
+python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M328 stamp TemporalEdge on extract fact edges
 
 **Write-path gap:** Extraction created MENTIONS / PARTICIPATES_IN / SUPPORTS

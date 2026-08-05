@@ -89,10 +89,16 @@ impl ClusterUseCase {
             // 4. Create MEMBER_OF_CLUSTER edges: Entity → ConceptCluster
             for (member_label, _member_type) in dc.members.iter().zip(dc.member_types.iter()) {
                 if let Some(&entity_node_id) = entity_node_ids.get(member_label) {
-                    let _ = self
-                        .graph_store
-                        .create_edge(entity_node_id, cluster_node, MEMBER_OF_CLUSTER)
-                        .await;
+                    // MEMBER_OF_CLUSTER is temporal fact (meta-ontology) — M329.
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let _ = crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        entity_node_id,
+                        cluster_node,
+                        MEMBER_OF_CLUSTER,
+                        &temporal,
+                    )
+                    .await;
                     member_edges_created += 1;
                 } else {
                     // Entity node not found in graph — skip this member

@@ -147,6 +147,28 @@ async fn test_enrich_links_author_to_institution_via_affiliated_with_edge() {
         "AFFILIATED_WITH edge not created; got {}",
         result.affiliation_edges_written
     );
+
+    // M329: AFFILIATED_WITH is fact — stamp temporal fields.
+    use da_ports::graph_store::DirectGraphStore;
+    let authors = store.get_nodes_by_label("Author").await;
+    let institutions = store.get_nodes_by_label("Institution").await;
+    assert!(!authors.is_empty() && !institutions.is_empty());
+    let mut stamped = false;
+    for a in &authors {
+        for i in &institutions {
+            let edges = store.get_edges_between(*a, *i, "AFFILIATED_WITH").await;
+            for (eid, _) in edges {
+                if store
+                    .get_edge_property_string(eid, "valid_at")
+                    .await
+                    .is_some()
+                {
+                    stamped = true;
+                }
+            }
+        }
+    }
+    assert!(stamped, "AFFILIATED_WITH must have valid_at");
 }
 
 #[tokio::test]

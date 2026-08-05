@@ -427,15 +427,16 @@ impl ExtractionUseCase {
                 self.graph_store
                     .set_node_property_int(prob_node, "schema_version", 1)
                     .await?;
-                // Paper MENTIONS ResearchProblem (paper describes problem)
-                let _ = self
-                    .graph_store
-                    .create_edge(
-                        paper_id,
-                        prob_node,
-                        da_domain::relation::bibliographic::MENTIONS,
-                    )
-                    .await;
+                // Paper MENTIONS ResearchProblem — temporal fact (M329).
+                let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                let _ = crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    paper_id,
+                    prob_node,
+                    da_domain::relation::bibliographic::MENTIONS,
+                    &temporal,
+                )
+                .await;
                 problems_created += 1;
             }
         }
@@ -504,15 +505,16 @@ impl ExtractionUseCase {
                     self.graph_store
                         .set_node_property_int(obs_node, "schema_version", 1)
                         .await?;
-                    // Paper MENTIONS MetricObservation (observed value in this paper)
-                    let _ = self
-                        .graph_store
-                        .create_edge(
-                            paper_node,
-                            obs_node,
-                            da_domain::relation::bibliographic::MENTIONS,
-                        )
-                        .await;
+                    // Paper MENTIONS MetricObservation — temporal fact (M329).
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(chrono::Utc::now());
+                    let _ = crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        paper_node,
+                        obs_node,
+                        da_domain::relation::bibliographic::MENTIONS,
+                        &temporal,
+                    )
+                    .await;
                     observations_created += 1;
                 }
             }
