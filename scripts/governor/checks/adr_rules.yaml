@@ -115,6 +115,19 @@ rules:
     pattern: 'NodeSchemaDef\s*\{\s*label:\s*"[A-Z]'
     rationale: "Node schemas should be data-driven (YAML). Direct NodeSchemaDef literals in Rust indicate hardcoding. M285-z09px0/S06/S07 will move these to YAML."
 
+  # --- M324/M325: inventory discovery must use meta-ontology, not string-literal label walks ---
+  # Flags get_nodes_by_label("Label") in da-cli binary sources. Use collect_graph_inventory
+  # / registered_node_labels_or_yaml instead. Examples under crates/da-cli/examples/ are
+  # out of this scan path (src only).
+  - id: no_hardcoded_inventory_label_walks
+    anchor: "ADR-050 + M324/M325 (external meta-ontology; inventory YAML-first)"
+    severity: medium
+    scan: crates/da-cli/src/
+    pattern: 'get_nodes_by_label\(\s*"[A-Za-z]+"'
+    rationale: "CLI inventory/discovery must not hardcode node labels as string literals. Walk via collect_graph_inventory / registered_node_labels_or_yaml from data/ontology."
+    suffix_allowlist:
+      - .rs
+
   # --- DSPy / LLM deploy lock (D136) ---
   - id: no_dspy_enabled_in_artifacts
     anchor: "D136 (DSPy not enabled until eval metrics + benchmark fixtures verified)"

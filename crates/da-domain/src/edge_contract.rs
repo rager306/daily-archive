@@ -157,6 +157,37 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
         .collect()
 }
 
+/// Serialize edge contracts as external meta-ontology YAML body (M325).
+///
+/// Uses [`edge_contracts_or_yaml`] so export prefers `data/ontology` when present,
+/// otherwise the compiled matrix. Shape matches `data/ontology/edge_contracts.yaml`.
+pub fn render_edge_contracts_yaml() -> Result<String, serde_yaml::Error> {
+    use serde::Serialize;
+    use std::collections::BTreeMap;
+
+    #[derive(Serialize)]
+    struct Row {
+        edge_constant: String,
+        source_label: String,
+        target_labels: Vec<String>,
+        rationale: String,
+    }
+
+    let rows: Vec<Row> = edge_contracts_or_yaml()
+        .into_iter()
+        .map(|c| Row {
+            edge_constant: c.edge_constant,
+            source_label: c.source_label,
+            target_labels: c.target_labels,
+            rationale: c.rationale,
+        })
+        .collect();
+
+    let mut root: BTreeMap<&str, Vec<Row>> = BTreeMap::new();
+    root.insert("edge_contracts", rows);
+    serde_yaml::to_string(&root)
+}
+
 /// Render the edge contracts matrix as a markdown table for documentation.
 /// Use in `da edge-contracts` CLI command to emit always-fresh content for
 /// GRAPH-SCHEMA.md.
@@ -215,6 +246,23 @@ mod tests {
 
     /// Every edge constant in the contract matrix must reference only
     /// registered node labels (source and every target).
+
+    #[test]
+    fn test_render_edge_contracts_yaml_has_has_part() {
+        let yaml = render_edge_contracts_yaml().expect("yaml");
+        assert!(yaml.contains("edge_contracts:"), "{yaml}");
+        assert!(yaml.contains("hasPart"), "{yaml}");
+        assert!(yaml.contains("CITES"), "{yaml}");
+        // parse back
+        let v: serde_yaml::Value = serde_yaml::from_str(&yaml).expect("parse");
+        let arr = v
+            .get("edge_contracts")
+            .expect("key")
+            .as_sequence()
+            .expect("seq");
+        assert!(arr.len() >= 10, "len={}", arr.len());
+    }
+
     #[test]
     fn test_all_contract_edges_reference_registered_labels() {
         let registered: HashSet<String> = crate::schema::all_node_schemas()

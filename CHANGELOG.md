@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M325 ontology-export edges + governor inventory rule
+
+**Process gap:** `da ontology-export` wrote only `node_schemas.yaml`.
+
+- Domain: `render_edge_contracts_yaml()` from `edge_contracts_or_yaml` (YAML-first)
+- CLI export writes **both** `node_schemas.yaml` and `edge_contracts.yaml` (13 wires)
+- Governor: `no_hardcoded_inventory_label_walks` on `crates/da-cli/src/`
+- Unit test for YAML shape; preflight trajectory on_track
+
+```bash
+cargo test -p da-domain --lib -- render_edge_contracts_yaml
+./target/debug/da ontology-export --output /tmp/ont
+python3 scripts/check_project_trajectory.py --phase preflight
+```
+
+
 ### Session 2026-08-05 — M324 external meta-ontology edge contracts
 
 **Requirement:** system supports external meta-ontology — not hardcode discovery.

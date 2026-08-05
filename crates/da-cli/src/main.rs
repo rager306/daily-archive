@@ -1552,10 +1552,12 @@ fn audit_fields() {
     }
 }
 
-/// Export all node schemas to YAML (ADR-050 Phase D).
+/// Export meta-ontology to YAML (ADR-050 Phase D / M325).
 ///
-/// Iterates `all_node_schemas()`, builds a serializable struct per
-/// schema, writes to `<output_dir>/node_schemas.yaml`.
+/// Writes:
+/// - `<output_dir>/node_schemas.yaml` from compiled `all_node_schemas()`
+/// - `<output_dir>/edge_contracts.yaml` from `render_edge_contracts_yaml()`
+///   (YAML-first contracts via `edge_contracts_or_yaml`)
 fn export_ontology_yaml(output_dir: &str) {
     use serde::Serialize;
     use std::collections::BTreeMap;
@@ -1596,6 +1598,7 @@ fn export_ontology_yaml(output_dir: &str) {
         })
         .collect();
 
+    let schema_count = schemas.len();
     let mut root: BTreeMap<&str, Vec<YamlNodeSchema>> = BTreeMap::new();
     root.insert("node_schemas", schemas);
 
@@ -1606,9 +1609,18 @@ fn export_ontology_yaml(output_dir: &str) {
     std::fs::write(&yaml_path, &yaml).expect("write failed");
 
     eprintln!(
-        "ontology export: {} schemas → {}",
-        root["node_schemas"].len(),
+        "ontology export: {schema_count} schemas → {}",
         yaml_path.display()
+    );
+
+    // M325: edge contracts are part of external meta-ontology, not nodes-only export.
+    let edges_yaml = da_domain::render_edge_contracts_yaml().expect("edge contracts YAML");
+    let edges_path = output_path.join("edge_contracts.yaml");
+    std::fs::write(&edges_path, edges_yaml.as_bytes()).expect("write edge_contracts failed");
+    let edge_n = edges_yaml.matches("edge_constant:").count();
+    eprintln!(
+        "ontology export: {edge_n} edge contracts → {}",
+        edges_path.display()
     );
 }
 

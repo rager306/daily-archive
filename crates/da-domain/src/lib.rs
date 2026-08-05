@@ -35,7 +35,7 @@ pub use article::{
 };
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
-    edge_contracts_or_yaml, render_markdown_table,
+    edge_contracts_or_yaml, render_edge_contracts_yaml, render_markdown_table,
 };
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use eval::{
