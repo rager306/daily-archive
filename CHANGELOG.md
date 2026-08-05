@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M341 serde roundtrip tests for da-domain (ADR-051 P0)
+
+**Completes ADR-051 P0 for da-domain — wire-format stability for all domain types:**
+
+- `roundtrip_json<T>()` helper using JSON-string comparison (no PartialEq required)
+- 22 systematic roundtrip tests covering all 20 pub Serialize+Deserialize types:
+  Section, Concept, Topic, Category, Author, Institution, Reference,
+  EntityType (21 variants), Entity, Paper, PaperStatus,
+  GoldEntity, PredictedEntity, ExtractionMetrics,
+  CorrectResult, MergeResult, SilenceResult,
+  SourceSpan, EvidenceAssertion, EvidenceVerification,
+  PendingTask, Relation
+- Added `EvidenceVerdict`, `EvidenceVerification` to pub re-exports
+- Total da-domain tests: **203 passed** (181 existing + 22 new)
+
+```bash
+cargo test -p da-domain --lib
+```
+
+
 ### Session 2026-08-05 — M340 serde roundtrip tests for kg-ontology (ADR-051 P0)
 
 **First ADR-051 P0 implementation — wire-format stability for kg-ontology:**
