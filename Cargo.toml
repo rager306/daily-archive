@@ -73,3 +73,11 @@ strip = true
 [profile.dev]
 opt-level = 0
 debug = 1
+
+# Disable incremental for all dependencies (path deps like samyama/ruvector
+# AND crates.io deps). Workspace members (our da-*, kg-* crates) keep
+# incremental=true for fast iteration. This allows sccache to cache dependency
+# compilation across cargo clean / workspace switches.
+# See: https://doc.rust-lang.org/cargo/reference/profiles.html#overrides
+[profile.dev.package."*"]
+incremental = false
