@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M350 IngestResult carries optional PDF classification
+
+**Close observability gap: triage was logged only, never returned**
+
+- `IngestResult.pdf_classification: Option<PdfClassification>` (M350)
+- Populated when optional classifier succeeds; `None` without classifier or on failure
+- CLI `da ingest` prints: type / pages / ocr_pages / encoding_issues / conf
+- Serde roundtrip covers None + Some (hub-like OCR [69,84])
+- `PdfClassification: PartialEq` for test asserts
+- 3 integration tests assert Some/None semantics
+
+```bash
+cargo test -p da-application --test pdf_classifier_test
+cargo test -p da-application --lib
+cargo check -p da-cli
+```
+
+
 ### Session 2026-08-05 — M349 PDF classifier consistency + heal_graph clippy
 
 **Debt fix: dual-source inconsistency + false hard-fail on soft encoding**

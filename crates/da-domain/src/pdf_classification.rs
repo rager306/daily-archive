@@ -51,7 +51,7 @@ pub struct PageOcrReasons {
 ///
 /// Produced by `PdfClassificationPort` implementations (pdf-inspector adapter).
 /// Consumed by the ingest use-case to decide routing before GROBID.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PdfClassification {
     /// Detected PDF type.
     pub pdf_type: PdfType,

@@ -62,6 +62,28 @@ mod serde_roundtrip_tests {
             vector_dimensions: 1024,
             graph_node_id: Some(123),
             import_eligible: false,
+            pdf_classification: None,
+        });
+        // M350: with classification attached
+        roundtrip_json(&IngestResult {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            body_chars: 50000,
+            section_count: 8,
+            citation_count: 42,
+            references_written: 42,
+            cites_resolved: 35,
+            vector_dimensions: 1024,
+            graph_node_id: Some(123),
+            import_eligible: false,
+            pdf_classification: Some(da_domain::PdfClassification {
+                pdf_type: da_domain::PdfType::Text,
+                page_count: 96,
+                pages_needing_ocr: vec![69, 84],
+                ocr_reasons_by_page: vec![],
+                confidence: 1.0,
+                has_encoding_issues: true,
+            }),
         });
     }
 

@@ -8,6 +8,7 @@
 use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
+use da_domain::PdfClassification;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParserPort;
@@ -39,6 +40,9 @@ pub struct IngestResult {
     pub vector_dimensions: usize,
     pub graph_node_id: Option<u64>,
     pub import_eligible: bool, // always false (D127)
+    /// Pre-GROBID PDF triage when classifier was attached and succeeded (M350).
+    /// `None` if no classifier, classify failed, or PDF unreadable for classify.
+    pub pdf_classification: Option<PdfClassification>,
 }
 
 impl IngestUseCase {
@@ -93,7 +97,8 @@ impl IngestUseCase {
             "Source detected"
         );
 
-        // M347: Pre-GROBID PDF classification (optional)
+        // M347/M350: Pre-GROBID PDF classification (optional); keep for IngestResult.
+        let mut pdf_classification: Option<PdfClassification> = None;
         if let Some(classifier) = &self.pdf_classifier {
             match std::fs::read(pdf_path) {
                 Ok(pdf_bytes) => {
@@ -116,6 +121,7 @@ impl IngestUseCase {
                                     "PDF not fully text-extractable; GROBID may produce partial results"
                                 );
                             }
+                            pdf_classification = Some(classification);
                         }
                         Err(e) => {
                             tracing::warn!(paper_id, error = %e, "PDF classification failed; continuing to GROBID");
@@ -520,6 +526,7 @@ impl IngestUseCase {
             vector_dimensions: vector.len(),
             graph_node_id: Some(node_id),
             import_eligible: false, // D127: always false
+            pdf_classification,
         })
     }
 

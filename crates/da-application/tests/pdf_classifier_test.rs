@@ -133,9 +133,15 @@ async fn ingest_calls_classifier_before_parser() {
         "parser should be called exactly once"
     );
 
-    // If ingest succeeded, verify result
+    // If ingest succeeded, classification must be on the machine-readable result (M350).
     if let Ok(result) = result {
         assert_eq!(result.paper_id, "2507.19457");
+        let c = result
+            .pdf_classification
+            .expect("classifier succeeded → pdf_classification must be Some");
+        assert_eq!(c.pdf_type, PdfType::Text);
+        assert_eq!(c.page_count, 10);
+        assert!((c.confidence - 0.95).abs() < f32::EPSILON);
     }
 }
 
@@ -157,8 +163,13 @@ async fn ingest_without_classifier_works() {
     std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
 
     // Should not panic — classifier is None, ingest proceeds normally
-    let _ = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
-    // No assertion on result — may fail on graph ops, but should not panic
+    let result = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
+    if let Ok(result) = result {
+        assert!(
+            result.pdf_classification.is_none(),
+            "without classifier, pdf_classification must be None"
+        );
+    }
 }
 
 #[tokio::test]
@@ -190,6 +201,11 @@ async fn ingest_classifier_failure_does_not_block_ingest() {
     std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
 
     // Should not fail — classifier error is logged, not propagated
-    let _ = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
-    // If we get here without panic, the test passes
+    let result = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
+    if let Ok(result) = result {
+        assert!(
+            result.pdf_classification.is_none(),
+            "failed classify must not populate pdf_classification"
+        );
+    }
 }

@@ -666,6 +666,17 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
                     "locked"
                 }
             );
+            // M350: machine-readable pre-GROBID triage when classifier ran
+            if let Some(ref c) = result.pdf_classification {
+                println!(
+                    "   PDF:      type={:?} pages={} ocr_pages={:?} encoding_issues={} conf={:.2}",
+                    c.pdf_type,
+                    c.page_count,
+                    c.pages_needing_ocr,
+                    c.has_encoding_issues,
+                    c.confidence
+                );
+            }
         }
         Err(e) => {
             eprintln!("❌ Ingest failed: {e:#}");
