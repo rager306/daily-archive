@@ -294,6 +294,7 @@ impl GrobidParser {
 
 #[async_trait]
 impl ParserPort for GrobidParser {
+    #[tracing::instrument(skip(self, pdf_path), fields(paper_id = %paper_id), name = "grobid_parse")]
     async fn parse_pdf(&self, pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
         tracing::info!(paper_id, pdf_path, "GROBID parsing");
 

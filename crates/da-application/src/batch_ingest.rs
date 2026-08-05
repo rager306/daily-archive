@@ -78,6 +78,11 @@ pub struct BatchIngestResult {
     pub pdf_triage: BatchPdfTriageSummary,
 }
 
+#[tracing::instrument(
+    skip(ingest, pdfs),
+    fields(batch_size = pdfs.len()),
+    name = "batch_ingest"
+)]
 pub async fn batch_ingest_pdfs(
     ingest: &super::ingest::IngestUseCase,
     pdfs: &[(String, String)], // (pdf_path, paper_id)

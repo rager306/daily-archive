@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M359 structured logging (ADR-052)
+
+**Dual-layer JSON file + stderr logging with span hierarchy:**
+
+- `crates/da-cli/src/logging.rs` — `init_logging() -> Option<WorkerGuard>`
+- Stderr: compact, ANSI colored, INFO+ (operator console)
+- File: JSON, no ANSI, DEBUG+, daily rolling (`logs/da.log.YYYY-MM-DD`)
+- `flatten_event(true)` — fields at top level for jq
+- `with_span_events(FmtSpan::CLOSE)` — automatic span timing
+- `with_current_span(true)` + `with_span_list(true)` — full hierarchy
+- WorkerGuard held in `main()` scope (#1 tracing footgun avoided)
+
+**Span instrumentation (hexagonal):**
+- da-application: `#[instrument]` on `ingest_pdf`, `batch_ingest_pdfs`, `extract_from_parsed`
+- da-adapters: `#[instrument]` on `GrobidParser::parse_pdf`
+- da-domain, da-ports, kg-*: zero tracing dependency (pure types/traits)
+
+**Env config (.env):**
+- `LOG_DIR=logs` (default)
+- `LOG_LEVEL=info` (RUST_LOG overrides)
+- `LOG_FORMAT=json` (or compact/pretty)
+
+**JSON log example (jq-queryable):**
+```json
+{"timestamp":"2026-08-05T15:58:23Z","level":"INFO","target":"da_application::ingest",
+ "span":{"name":"ingest_pdf","paper_id":"2507.19457"},"paper_id":"2507.19457",
+ "message":"Starting ingest (HOT path)"}
+```
+
+Span close with automatic timing:
+```json
+{"message":"close","time.busy":"85.9ms","time.idle":"10.7s","span":{"name":"grobid_parse"}}
+```
+
+```sh
+jq 'select(.paper_id == "2507.19457")' logs/da.log.YYYY-MM-DD
+jq 'select(.level == "ERROR")' logs/da.log.YYYY-MM-DD
+jq 'select(.span.name == "ingest_pdf")' logs/da.log.YYYY-MM-DD
+```
+
+
 ### Session 2026-08-05 — M358 fix extract MENTIONS edges gap after D127 unlock
 
 **Root cause found and fixed: snapshot property lookup bug**

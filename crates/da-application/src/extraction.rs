@@ -86,6 +86,11 @@ impl ExtractionUseCase {
     /// Extract entities from a parsed article and write Entity nodes to graph.
     /// ADR-038: entities are textually mentioned, grounded to source spans.
     /// Links each Entity to the Paper via MENTIONS edge (bibliographic).
+    #[tracing::instrument(
+        skip(self, parsed),
+        fields(paper_id = %parsed.paper_id),
+        name = "extract"
+    )]
     pub async fn extract_from_parsed(
         &self,
         parsed: &ParsedArticle,

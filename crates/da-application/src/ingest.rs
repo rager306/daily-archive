@@ -93,6 +93,11 @@ impl IngestUseCase {
     ///
     /// ADR-041: Uses direct GraphStore API (0.01ms per op) instead of Cypher MERGE.
     /// No parse/plan overhead. 100x faster than Cypher for batch writes.
+    #[tracing::instrument(
+        skip(self, pdf_path),
+        fields(paper_id = %paper_id),
+        name = "ingest_pdf"
+    )]
     pub async fn ingest_pdf(&self, pdf_path: &str, paper_id: &str) -> anyhow::Result<IngestResult> {
         tracing::info!(paper_id, pdf_path, "Starting ingest (HOT path)");
 

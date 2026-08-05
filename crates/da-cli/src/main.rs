@@ -1,6 +1,8 @@
+mod logging;
+
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use tracing_subscriber::EnvFilter;
+
 
 mod analyze;
 mod batch_ids;
@@ -338,12 +340,16 @@ fn main() {
 
     let cli = Cli::parse();
 
-    let filter = if cli.verbose {
-        EnvFilter::new("debug")
-    } else {
-        EnvFilter::new("info")
-    };
-    tracing_subscriber::fmt().with_env_filter(filter).init();
+    // M359: structured logging — stderr (compact INFO+) + rolling file (JSON DEBUG+)
+    // WorkerGuard must live in main scope — file logs silently stop if dropped early.
+    if cli.verbose {
+        // Override for verbose mode
+        if std::env::var("RUST_LOG").is_err() {
+            // SAFETY: single-threaded init before any worker threads spawn
+            unsafe { std::env::set_var("RUST_LOG", "debug") };
+        }
+    }
+    let _log_guard = logging::init_logging();
 
     // Single shared Tokio runtime for all async commands (Rust 2026 best practice:
     // avoid repeated Runtime creation; one runtime serves all commands).

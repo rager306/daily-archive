@@ -3,6 +3,7 @@
 pub mod batch_ids;
 pub mod graph_tasks;
 pub mod health_report;
+pub mod logging;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 #[cfg(test)]
