@@ -260,3 +260,85 @@ async fn test_ingest_citation_dedup_shared_reference() {
         store.node_count_total()
     );
 }
+
+#[tokio::test]
+async fn test_ingest_cites_edges_stamped_with_temporal_fields() {
+    // M327: CITES is a fact edge — must carry valid_at + created_at after ingest.
+    use da_ports::graph_store::DirectGraphStore;
+    use da_ports::parser::CitationEntry;
+    let citations = vec![CitationEntry {
+        raw_text: "Smith et al 2023".to_string(),
+        doi: None,
+        arxiv_id: Some("2301.00001".to_string()),
+        title: Some("Cited Paper A".to_string()),
+    }];
+    let (ingest, store) = make_ingest_with_citations(vec![], citations);
+    let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
+    let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
+    assert_eq!(result.ok, 1);
+    assert_eq!(result.total_cites_resolved, 1);
+
+    // Locate Paper and Citation nodes
+    let papers = store.get_nodes_by_label("Paper").await;
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(papers.len(), 1);
+    assert_eq!(citations.len(), 1);
+
+    let cites = store
+        .get_edges_between(papers[0], citations[0], "CITES")
+        .await;
+    assert_eq!(cites.len(), 1, "expected one CITES edge");
+    let (edge_id, _) = cites[0];
+
+    let valid_at = store.get_edge_property_string(edge_id, "valid_at").await;
+    let created_at = store.get_edge_property_string(edge_id, "created_at").await;
+    assert!(
+        valid_at.is_some(),
+        "CITES fact edge must have valid_at (M327)"
+    );
+    assert!(
+        created_at.is_some(),
+        "CITES fact edge must have created_at (M327)"
+    );
+    // Open fact: no invalid_at yet
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "invalid_at")
+            .await
+            .is_none()
+    );
+}
+
+#[tokio::test]
+async fn test_ingest_has_part_structural_no_valid_at() {
+    // Structural hasPart should get created_at only, not valid_at.
+    use da_ports::graph_store::DirectGraphStore;
+    use da_ports::parser::CitationEntry;
+    let citations = vec![CitationEntry {
+        raw_text: "No arxiv ref".to_string(),
+        doi: None,
+        arxiv_id: None,
+        title: None,
+    }];
+    let (ingest, store) = make_ingest_with_citations(vec![], citations);
+    let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
+    let result = batch_ingest_pdfs(&ingest, &pdfs, None).await.unwrap();
+    assert_eq!(result.ok, 1);
+
+    let papers = store.get_nodes_by_label("Paper").await;
+    let refs = store.get_nodes_by_label("Reference").await;
+    assert_eq!(papers.len(), 1);
+    assert!(!refs.is_empty());
+
+    let has_part = store.get_edges_between(papers[0], refs[0], "hasPart").await;
+    assert_eq!(has_part.len(), 1);
+    let (edge_id, _) = has_part[0];
+    // Structural: no valid_at (ingest does not stamp structural yet — only created_at if we choose to)
+    assert!(
+        store
+            .get_edge_property_string(edge_id, "valid_at")
+            .await
+            .is_none(),
+        "hasPart must not carry valid_at (structural)"
+    );
+}

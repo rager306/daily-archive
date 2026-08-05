@@ -25,3 +25,8 @@ pub mod schema_init;
 pub use schema_init::{CURRENT_SCHEMA_VERSION, SchemaInitializer};
 pub mod graph_inventory;
 pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};
+pub mod temporal_stamp;
+pub use temporal_stamp::{
+    create_edge_with_temporal, edge_type_is_temporal_fact, open_fact_edge_now,
+    stamp_edge_temporal_fields,
+};

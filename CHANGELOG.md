@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M327 stamp TemporalEdge on fact edges at ingest
+
+**Write-path gap:** M326 encoded `temporal_class` as DATA, but ingest created
+CITES edges without `valid_at` / `created_at`.
+
+- `temporal_stamp` helper: `edge_type_is_temporal_fact` (YAML-first),
+  `open_fact_edge_now`, `stamp_edge_temporal_fields`, `create_edge_with_temporal`
+- Fact edges: stamp `valid_at` + `created_at` (+ optional invalid/expired/reference)
+- Structural edges: `created_at` only when stamped; ingest hasPart stays without `valid_at`
+- Ingest CITES path uses `create_edge_with_temporal`
+- Tests: 3 unit + batch_ingest CITES temporal fields + hasPart structural; healing 13 green
+
+```bash
+cargo test -p da-application --lib temporal_stamp
+cargo test -p da-application --test batch_ingest_test
+cargo test -p da-application --test healing_test
+```
+
+
 ### Session 2026-08-05 — M326 temporal edge policy in meta-ontology
 
 **Design:** ADR-046 fact vs structural edges as external DATA, not docs-only.

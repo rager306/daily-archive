@@ -407,13 +407,18 @@ impl IngestUseCase {
                         new_node
                     }
                 };
-                self.graph_store
-                    .create_edge(
-                        node_id,
-                        cited_node,
-                        da_domain::relation::bibliographic::CITES,
-                    )
-                    .await?;
+                // CITES is a temporal fact edge (meta-ontology temporal_class: fact).
+                // Stamp open TemporalEdge at ingest time (M327 write-path).
+                let fact_now = chrono::Utc::now();
+                let temporal = crate::temporal_stamp::open_fact_edge_now(fact_now);
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    cited_node,
+                    da_domain::relation::bibliographic::CITES,
+                    &temporal,
+                )
+                .await?;
                 cites_resolved += 1;
             }
         }
