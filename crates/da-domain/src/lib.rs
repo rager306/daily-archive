@@ -34,7 +34,10 @@ pub use article::{
     InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
 };
 pub use entity::{Entity, EntitySchema, EntityType};
-pub use eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
+pub use eval::{
+    ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
+    promote_candidates,
+};
 pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, SourceSpan, SpanType};
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,

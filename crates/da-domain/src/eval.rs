@@ -198,6 +198,155 @@ impl ExtractionMetrics {
     }
 }
 
+// ---------------------------------------------------------------------------
+// E2 gold hygiene (M315): evidence-based promotion — no free invent
+// ---------------------------------------------------------------------------
+
+/// Key for case-insensitive (label, type) identity in gold inventories.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EntityKey {
+    pub label_lower: String,
+    pub type_lower: String,
+}
+
+impl EntityKey {
+    pub fn new(label: &str, entity_type: &str) -> Self {
+        Self {
+            label_lower: label.to_lowercase(),
+            type_lower: entity_type.to_lowercase(),
+        }
+    }
+}
+
+/// Labels that appear as gold in at least `min_papers` distinct papers.
+/// Used as the only allowed source for gold promotion (constrained select).
+#[derive(Debug, Clone, Default)]
+pub struct MultiPaperGoldIndex {
+    /// key → number of distinct papers where this (label,type) is gold
+    pub paper_counts: std::collections::HashMap<EntityKey, usize>,
+}
+
+impl MultiPaperGoldIndex {
+    /// Build from an iterator of (paper_id, gold entities).
+    pub fn from_papers<'a, I>(papers: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, &'a [GoldEntity])>,
+    {
+        use std::collections::{HashMap, HashSet};
+        let mut papers_by_key: HashMap<EntityKey, HashSet<String>> = HashMap::new();
+        for (paper_id, entities) in papers {
+            for e in entities {
+                let key = EntityKey::new(&e.label, &e.entity_type);
+                papers_by_key
+                    .entry(key)
+                    .or_default()
+                    .insert(paper_id.to_string());
+            }
+        }
+        let paper_counts = papers_by_key
+            .into_iter()
+            .map(|(k, set)| (k, set.len()))
+            .collect();
+        Self { paper_counts }
+    }
+
+    pub fn paper_count(&self, label: &str, entity_type: &str) -> usize {
+        self.paper_counts
+            .get(&EntityKey::new(label, entity_type))
+            .copied()
+            .unwrap_or(0)
+    }
+
+    pub fn is_multi_paper(&self, label: &str, entity_type: &str, min_papers: usize) -> bool {
+        self.paper_count(label, entity_type) >= min_papers
+    }
+}
+
+/// Fuzzy FP list: predicted entities not matched to any gold (same rules as evaluate_fuzzy).
+pub fn list_false_positives(
+    gold: &[GoldEntity],
+    predicted: &[PredictedEntity],
+) -> Vec<PredictedEntity> {
+    let m = ExtractionMetrics::evaluate_fuzzy(gold, predicted);
+    // Recompute unmatched preds with same greedy matching as evaluate_fuzzy.
+    let mut matched_pred = vec![false; predicted.len()];
+    let mut matched_gold = vec![false; gold.len()];
+    for (gi, g) in gold.iter().enumerate() {
+        let g_label = g.label.to_lowercase();
+        let g_type = g.entity_type.to_lowercase();
+        for (pi, p) in predicted.iter().enumerate() {
+            if matched_pred[pi] {
+                continue;
+            }
+            if p.label.to_lowercase() == g_label && p.entity_type.to_lowercase() == g_type {
+                matched_gold[gi] = true;
+                matched_pred[pi] = true;
+                break;
+            }
+        }
+        if matched_gold[gi] {
+            continue;
+        }
+        for (pi, p) in predicted.iter().enumerate() {
+            if matched_pred[pi] {
+                continue;
+            }
+            if p.entity_type.to_lowercase() != g_type {
+                continue;
+            }
+            let p_label = p.label.to_lowercase();
+            if g_label.contains(&p_label) || p_label.contains(&g_label) {
+                matched_gold[gi] = true;
+                matched_pred[pi] = true;
+                break;
+            }
+        }
+    }
+    let _ = m;
+    predicted
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !matched_pred[*i])
+        .map(|(_, p)| p.clone())
+        .collect()
+}
+
+/// Evidence-based gold promotion candidates from FP list.
+///
+/// A predicted FP becomes a promote candidate only if:
+/// 1. `(label, type)` is already gold in at least `min_papers` other papers
+/// 2. It is not already present in this paper's gold (case-insensitive)
+///
+/// Never invents free labels (D127 / constrained select).
+pub fn promote_candidates(
+    paper_gold: &[GoldEntity],
+    false_positives: &[PredictedEntity],
+    index: &MultiPaperGoldIndex,
+    min_papers: usize,
+) -> Vec<GoldEntity> {
+    let mut out = Vec::new();
+    let mut seen_local = std::collections::HashSet::new();
+    for g in paper_gold {
+        seen_local.insert(EntityKey::new(&g.label, &g.entity_type));
+    }
+    for fp in false_positives {
+        let key = EntityKey::new(&fp.label, &fp.entity_type);
+        if seen_local.contains(&key) {
+            continue;
+        }
+        if !index.is_multi_paper(&fp.label, &fp.entity_type, min_papers) {
+            continue;
+        }
+        seen_local.insert(key);
+        out.push(GoldEntity {
+            label: fp.label.clone(),
+            entity_type: fp.entity_type.clone(),
+            section: None,
+        });
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -435,5 +584,106 @@ mod tests {
         assert!(r.contains("P=0.750"));
         assert!(r.contains("R=0.600"));
         assert!(r.contains("F1=0.667"));
+    }
+
+    // --- M315 E2 evidence-based gold promote ---
+
+    #[test]
+    fn test_list_false_positives_fuzzy() {
+        let gold = vec![GoldEntity {
+            label: "GPT-4".into(),
+            entity_type: "Model".into(),
+            section: None,
+        }];
+        let predicted = vec![
+            PredictedEntity {
+                label: "gpt-4".into(),
+                entity_type: "Model".into(),
+            },
+            PredictedEntity {
+                label: "Qwen".into(),
+                entity_type: "Model".into(),
+            },
+        ];
+        let fps = list_false_positives(&gold, &predicted);
+        assert_eq!(fps.len(), 1);
+        assert_eq!(fps[0].label, "Qwen");
+    }
+
+    #[test]
+    fn test_promote_only_multi_paper_gold_labels() {
+        // Corpus: CoT is gold in 2 papers; AGIEval is never gold.
+        let p1 = vec![GoldEntity {
+            label: "CoT".into(),
+            entity_type: "Method".into(),
+            section: None,
+        }];
+        let p2 = vec![GoldEntity {
+            label: "CoT".into(),
+            entity_type: "Method".into(),
+            section: None,
+        }];
+        let index =
+            MultiPaperGoldIndex::from_papers([("p1", p1.as_slice()), ("p2", p2.as_slice())]);
+        assert!(index.is_multi_paper("CoT", "Method", 2));
+        assert!(!index.is_multi_paper("AGIEval", "Dataset", 2));
+
+        let paper_gold = vec![GoldEntity {
+            label: "prompt optimization".into(),
+            entity_type: "Task".into(),
+            section: None,
+        }];
+        let fps = vec![
+            PredictedEntity {
+                label: "CoT".into(),
+                entity_type: "Method".into(),
+            },
+            PredictedEntity {
+                label: "AGIEval".into(),
+                entity_type: "Dataset".into(),
+            },
+        ];
+        let promoted = promote_candidates(&paper_gold, &fps, &index, 2);
+        assert_eq!(promoted.len(), 1, "only multi-paper gold labels promote");
+        assert_eq!(promoted[0].label, "CoT");
+        assert_eq!(promoted[0].entity_type, "Method");
+    }
+
+    #[test]
+    fn test_promote_rejects_already_in_paper_gold() {
+        let p1 = vec![GoldEntity {
+            label: "CoT".into(),
+            entity_type: "Method".into(),
+            section: None,
+        }];
+        let p2 = vec![GoldEntity {
+            label: "CoT".into(),
+            entity_type: "Method".into(),
+            section: None,
+        }];
+        let index =
+            MultiPaperGoldIndex::from_papers([("p1", p1.as_slice()), ("p2", p2.as_slice())]);
+        let paper_gold = vec![GoldEntity {
+            label: "cot".into(), // case-insensitive already present
+            entity_type: "Method".into(),
+            section: None,
+        }];
+        let fps = vec![PredictedEntity {
+            label: "CoT".into(),
+            entity_type: "Method".into(),
+        }];
+        let promoted = promote_candidates(&paper_gold, &fps, &index, 2);
+        assert!(promoted.is_empty(), "must not duplicate existing gold");
+    }
+
+    #[test]
+    fn test_promote_never_free_invents() {
+        let index = MultiPaperGoldIndex::default();
+        let fps = vec![PredictedEntity {
+            label: "brand-new-widget".into(),
+            entity_type: "Method".into(),
+        }];
+        let promoted = promote_candidates(&[], &fps, &index, 2);
+        assert!(promoted.is_empty(), "free invent forbidden");
     }
 }

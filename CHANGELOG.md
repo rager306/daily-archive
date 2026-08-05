@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M315 E2 FP inventory + evidence-based gold promote
+
+**E2 process gap closed:** pure domain helpers + inventory example; gold promote only multi-paper labels.
+
+- `da_domain::{MultiPaperGoldIndex, list_false_positives, promote_candidates}`
+- Unit tests: free invent rejected; multi-paper only; no duplicate gold
+- Example: `cargo run -p da-cli --example inventory_fp -- 2603.21520`
+- Gold hygiene: `2603.21520` +8 evidence-based entities (CoT, GPT-4, MATH, …); **AGIEval rejected** (0 multi-paper)
+
+```bash
+cargo test -p da-domain --lib eval -- --test-threads=1
+cargo run -p da-cli --example inventory_fp -- 2603.21520
+```
+
+
 ### Session 2026-08-05 — M314 Task end-index parity + post-M313 eval
 
 **Span honesty (Task):** section + global Task passes use lowercased needle length
