@@ -18,7 +18,7 @@ use std::time::Instant;
 
 use clap::Parser;
 use da_cli::graph_tasks::{
-    GraphTask, TaskVerdict, classify_result_rows, json_cell_number, parse_tasks_cypher,
+    GraphTask, TaskVerdict, json_cell_number, parse_tasks_cypher,
     suite_failed,
 };
 use da_ports::graph_store::GraphStore;

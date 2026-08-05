@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M344 property tests for graph_tasks parser (ADR-051 P1)
+
+**First ADR-051 P1 implementation — proptest finds real bug:**
+
+- Added `proptest = "1"` dev-dependency to da-cli
+- 6 property tests: roundtrip, empty input, marker count, non-empty cypher, non-empty id, never-panic
+- **Bug found and fixed**: `slug_id("-")` → empty string → task with empty id
+- Fix: `slug_id_or_fallback()` returns `"task"` when slug is empty after trimming
+- Clippy `--fix` collapsed nested if-let chains (let_chains)
+- Total da-cli tests: **44 passed** (38 existing + 6 proptest)
+
+```bash
+cargo test -p da-cli --lib proptest
+```
+
+
 ### Session 2026-08-05 — M343 governor roundtrip presence + da-ports gap fix
 
 **ADR-051 P0 regression prevention + gap closure:**

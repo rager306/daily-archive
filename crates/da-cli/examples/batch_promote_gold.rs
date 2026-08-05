@@ -18,7 +18,7 @@ use da_domain::{
 };
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(serde::Deserialize, serde::Serialize)]
 struct GoldFile {

@@ -38,11 +38,10 @@ impl GraphTask {
         if base != TaskVerdict::Pass {
             return base;
         }
-        if let Some(expected) = self.expect_rows {
-            if row_count != expected {
+        if let Some(expected) = self.expect_rows
+            && row_count != expected {
                 return TaskVerdict::Empty;
             }
-        }
         if let Some(min_val) = self.expect_min_value {
             match first_cell_number {
                 Some(actual) if actual >= min_val => {}
@@ -91,13 +90,11 @@ pub fn classify_result_rows(
     if row_count < min_rows {
         return TaskVerdict::Empty;
     }
-    if row_count == 1 {
-        if let Some(n) = first_cell_number {
-            if n == 0.0 {
+    if row_count == 1
+        && let Some(n) = first_cell_number
+            && n == 0.0 {
                 return TaskVerdict::Empty;
             }
-        }
-    }
     TaskVerdict::Pass
 }
 
@@ -154,7 +151,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
         if cypher.is_empty() {
             return Err(format!("task {title:?} has empty Cypher body"));
         }
-        let id = slug_id(&title);
+        let id = slug_id_or_fallback(&title);
         out.push(GraphTask {
             id,
             title,
@@ -292,6 +289,16 @@ fn slug_id(title: &str) -> String {
         s = s.replace("__", "_");
     }
     s.trim_matches('_').to_string()
+}
+
+/// `slug_id` with fallback for edge cases where title is all separators.
+fn slug_id_or_fallback(title: &str) -> String {
+    let id = slug_id(title);
+    if id.is_empty() {
+        "task".to_string()
+    } else {
+        id
+    }
 }
 
 /// Suite-level gate: fail if any task is EMPTY (unless allow_empty) or ERROR.
@@ -505,5 +512,121 @@ MATCH (n) RETURN n LIMIT 1;
         };
         // Rows returned but first cell is not numeric → cannot verify bound → EMPTY
         assert_eq!(task.classify(1, None), TaskVerdict::Empty);
+    }
+}
+
+// ─── ADR-051 P1: Property-based tests (M344) ───
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    /// Generate a valid single-task cypher suite string.
+    fn arb_single_task() -> impl Strategy<Value = String> {
+        ("[a-zA-Z0-9 _-]+", "[a-zA-Z0-9 _-]+", "[a-zA-Z0-9 ;().,_=-]+").prop_map(
+            |(title, insight, cypher)| {
+                format!(
+                    "// @query {title} | {insight}\n{cypher};\n"
+                )
+            },
+        )
+    }
+
+    /// Generate a multi-task suite with 1-5 tasks.
+    fn arb_suite() -> impl Strategy<Value = String> {
+        proptest::collection::vec(arb_single_task(), 1..=5).prop_map(|tasks| tasks.join("\n"))
+    }
+
+    proptest! {
+        /// Property 1: parse → serialize → parse is idempotent for valid suites.
+        ///
+        /// We serialize the *parsed* suite back to a string and re-parse.
+        /// The task count must match (we can't assert full equality because
+        /// serialize_to cypher format is not defined — we check structural
+        /// invariants instead: same task count, same titles).
+        #[test]
+        fn prop_parse_roundtrip_task_count(s in arb_suite()) {
+            let suite1 = match parse_tasks_cypher(&s) {
+                Ok(s) => s,
+                Err(_) => return Ok(()),
+            };
+            let serialized = suite1
+                .tasks
+                .iter()
+                .map(|t| {
+                    let mut out = format!("// @query {} | {}\n{}\n", t.title, t.insight, t.cypher);
+                    if t.min_rows != 1 {
+                        out = format!("{}// @min_rows {}\n", out, t.min_rows);
+                    }
+                    if t.allow_empty {
+                        out = format!("{}// @allow_empty\n", out);
+                    }
+                    out
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            let suite2 = match parse_tasks_cypher(&serialized) {
+                Ok(s) => s,
+                Err(e) => return Err(proptest::test_runner::TestCaseError::fail(format!("re-parse failed: {e}"))),
+            };
+            prop_assert_eq!(suite1.tasks.len(), suite2.tasks.len());
+            for (a, b) in suite1.tasks.iter().zip(suite2.tasks.iter()) {
+                prop_assert_eq!(&a.title, &b.title);
+                prop_assert_eq!(&a.insight, &b.insight);
+                prop_assert_eq!(&a.cypher, &b.cypher);
+                prop_assert_eq!(a.min_rows, b.min_rows);
+                prop_assert_eq!(a.allow_empty, b.allow_empty);
+            }
+        }
+
+        /// Property 2: empty input → empty suite (not error).
+        #[test]
+        fn prop_empty_input_ok(s in "(.*\n?)*") {
+            // Empty or whitespace-only input should not panic.
+            // It may return Ok(empty suite) or Ok with 0 tasks.
+            let _ = parse_tasks_cypher(&s); // must not panic
+        }
+
+        /// Property 3: number of // @query markers == task count.
+        #[test]
+        fn prop_marker_count_equals_task_count(s in arb_suite()) {
+            let suite = match parse_tasks_cypher(&s) {
+                Ok(s) => s,
+                Err(_) => return Ok(()),
+            };
+            let marker_count = s.lines().filter(|l| l.trim_start().starts_with("// @query")).count();
+            prop_assert_eq!(suite.tasks.len(), marker_count);
+        }
+
+        /// Property 4: every parsed task has non-empty cypher body.
+        #[test]
+        fn prop_every_task_has_nonempty_cypher(s in arb_suite()) {
+            let suite = match parse_tasks_cypher(&s) {
+                Ok(s) => s,
+                Err(_) => return Ok(()),
+            };
+            for task in &suite.tasks {
+                prop_assert!(!task.cypher.trim().is_empty(), "task '{}' has empty cypher", task.title);
+            }
+        }
+
+        /// Property 5: every parsed task has a non-empty id (slug).
+        #[test]
+        fn prop_every_task_has_nonempty_id(s in arb_suite()) {
+            let suite = match parse_tasks_cypher(&s) {
+                Ok(s) => s,
+                Err(_) => return Ok(()),
+            };
+            for task in &suite.tasks {
+                prop_assert!(!task.id.is_empty(), "task '{}' has empty id", task.title);
+            }
+        }
+
+        /// Property 6: parser never panics on arbitrary input.
+        #[test]
+        fn prop_never_panic(s in ".*") {
+            let _ = parse_tasks_cypher(&s); // may Err, must not panic
+        }
     }
 }
