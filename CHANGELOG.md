@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M340 serde roundtrip tests for kg-ontology (ADR-051 P0)
+
+**First ADR-051 P0 implementation — wire-format stability for kg-ontology:**
+
+- `roundtrip<T>()` helper from ADR-051 §4.4 in `kg_ontology::lib.rs`
+- 16 systematic roundtrip tests covering all 8 pub Serialize+Deserialize types:
+  `HealingOperation` (7 variants), `HealingActor` (3 variants),
+  `ProvenanceEvent` (with/without changes), `RetryPolicy` (default/fast/custom),
+  `YamlFieldDef`, `YamlNodeSchema` (with/empty fields), `TemporalClass`,
+  `YamlEdgeContract` (structural/fact/empty targets)
+- Added `PartialEq` derives to `HealingActor`, `ProvenanceEvent`, `RetryPolicy`
+- Total kg-ontology tests: **76 passed** (60 existing + 16 new)
+
+```bash
+cargo test -p kg-ontology --lib
+```
+
+
 ### Session 2026-08-05 — M339 CI alignment: unit tests + governor trajectory
 
 **Close CI vs local-script process gap:**

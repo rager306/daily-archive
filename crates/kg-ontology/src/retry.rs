@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Default: 1 day initial delay, 3x backoff, 30-day cap, 10 retries.
 /// This matches the daily-archive paper-ingestion cadence but the
 /// struct is generic — any pipeline can customise the fields.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RetryPolicy {
     /// Initial delay in seconds before the first retry.
     pub initial_delay: i64,

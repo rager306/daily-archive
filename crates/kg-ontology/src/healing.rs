@@ -40,7 +40,7 @@ impl HealingOperation {
 }
 
 /// Who or what initiated the healing operation.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum HealingActor {
     Human(String),
@@ -63,7 +63,7 @@ impl HealingActor {
 /// Every healing action creates one of these for the audit trail.
 /// This is universal — any graph system benefits from tracking who
 /// changed what and why.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ProvenanceEvent {
     pub operation: HealingOperation,
     pub actor: HealingActor,
