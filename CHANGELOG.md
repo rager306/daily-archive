@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M358 fix extract MENTIONS edges gap after D127 unlock
+
+**Root cause found and fixed: snapshot property lookup bug**
+
+After D127 unlock (M357), first `da extract` on imported snapshot created
+24 Entity nodes but 0 MENTIONS/FOUND_IN edges because `find_node_by_string_property`
+only checked `node.properties` HashMap, not `node_columns` (where snapshot
+import writes scalar properties).
+
+Fix: `find_node_by_string_property` now uses `resolve_node_property` (which
+checks both HashMap and column store) — same pattern as `get_node_property_string`.
+
+Result on hub_imported.sgsnap:
+- entities=24 (unchanged)
+- **mentions_edges=24** (was 0)
+- **found_in_edges=24** (was 0)
+- evidence_bundles=4, claims=4, problems=1
+- participates_in_edges=17
+- **paper_linked=true** (was false)
+
+Full pipeline verified: ingest → extract → query on imported data.
+
+```bash
+da extract --id 2507.19457 --snapshot hub_imported.sgsnap --output-snapshot hub_extracted.sgsnap
+da graph-stats --snapshot hub_extracted.sgsnap  # 224 nodes, 260 edges
+```
+
+
 ### Session 2026-08-05 — M357 S02 HISTORIC: first production import
 
 **First `import_eligible=Eligible` graph in project history.**

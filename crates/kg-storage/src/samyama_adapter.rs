@@ -501,7 +501,9 @@ impl DirectGraphStore for SamyamaGraphStore {
         let store = self.store_read().await;
         let label = Label::new(label);
         for node in store.get_nodes_by_label(&label) {
-            if let Some(prop) = node.properties.get(key)
+            // M358: use resolve_node_property to also check node_columns
+            // (snapshot import writes to column store, not HashMap)
+            if let Some(prop) = Self::resolve_node_property(&store, node.id.0, key)
                 && prop.as_string() == Some(value)
             {
                 return Some(node.id.0);
