@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use tracing_subscriber::EnvFilter;
 
 mod analyze;
+mod batch_ids;
 mod graph_ping;
 mod health_report;
 mod serve_graph;
@@ -56,13 +57,21 @@ enum Commands {
 
     /// Batch ingest multiple PDFs in one process (HOT path + snapshot export)
     BatchIngest {
-        /// Comma-separated arxiv IDs to ingest
+        /// Comma-separated arxiv IDs to ingest (optional if --ids-file set)
         #[arg(long)]
-        ids: String,
+        ids: Option<String>,
+
+        /// Path to file with one arxiv id per line (optional if --ids set)
+        #[arg(long)]
+        ids_file: Option<PathBuf>,
 
         /// Output snapshot path (.sgsnap)
         #[arg(long)]
         output: Option<String>,
+
+        /// Write inventory JSON/MD under this directory (ontology-string honest counts)
+        #[arg(long)]
+        inventory_dir: Option<PathBuf>,
     },
 
     /// Load a snapshot file into the graph (restore durability)
@@ -255,9 +264,20 @@ fn main() {
                 ingest_pdf(&pdf, &id).await;
             });
         }
-        Commands::BatchIngest { ids, output } => {
+        Commands::BatchIngest {
+            ids,
+            ids_file,
+            output,
+            inventory_dir,
+        } => {
             rt.block_on(async {
-                batch_ingest(&ids, output.as_deref()).await;
+                batch_ingest(
+                    ids.as_deref(),
+                    ids_file.as_deref(),
+                    output.as_deref(),
+                    inventory_dir.as_deref(),
+                )
+                .await;
             });
         }
         Commands::LoadSnapshot { input } => {
@@ -519,12 +539,24 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str) {
     }
 }
 
-async fn batch_ingest(ids_str: &str, output: Option<&str>) {
+async fn batch_ingest(
+    ids: Option<&str>,
+    ids_file: Option<&std::path::Path>,
+    output: Option<&str>,
+    inventory_dir: Option<&std::path::Path>,
+) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::{IngestUseCase, batch_ingest_pdfs};
 
-    let ids: Vec<&str> = ids_str.split(',').map(|s| s.trim()).collect();
-    let pdfs: Vec<(String, String)> = ids
+    let id_list = match batch_ids::resolve_batch_ids(ids, ids_file) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("❌ {e}");
+            std::process::exit(1);
+        }
+    };
+
+    let pdfs: Vec<(String, String)> = id_list
         .iter()
         .filter_map(|pid| {
             let pdf = std::process::Command::new("find")
@@ -541,11 +573,21 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
         .collect();
 
     if pdfs.is_empty() {
-        eprintln!("No PDFs found for IDs: {}", ids_str);
+        eprintln!("No PDFs found for {} resolved id(s)", id_list.len());
         std::process::exit(1);
     }
+    if pdfs.len() < id_list.len() {
+        eprintln!(
+            "⚠  PDFs found {}/{} — missing catalog entries for some ids",
+            pdfs.len(),
+            id_list.len()
+        );
+    }
 
-    println!("Batch ingesting {} papers (HOT path)...", pdfs.len());
+    println!(
+        "Batch ingesting {} papers (HOT path, FdApiEmbedder)...",
+        pdfs.len()
+    );
 
     require_fd_api_key_for_ingest();
 
@@ -571,12 +613,123 @@ async fn batch_ingest(ids_str: &str, output: Option<&str>) {
                 "   Citations:  {} ({} resolved)",
                 r.total_citations, r.total_cites_resolved
             );
+            println!("   References written: {}", r.total_references_written);
             println!("   Nodes in graph: {}", ingest.graph_stats().await.0);
             if let Some(ref path) = r.snapshot_path {
                 println!("   Snapshot: {}", path);
             }
             for (pid, err) in &r.errors {
                 println!("   FAIL {}: {}", pid, err);
+            }
+
+            if let Some(dir) = inventory_dir {
+                // Ontology-driven inventory: labels from registered_node_labels(),
+                // edge wires from graph histogram (contract_edge_types for known set).
+                use da_application::{collect_graph_inventory, render_inventory_markdown};
+                use da_domain::relation::{bibliographic, structure};
+
+                let inv = collect_graph_inventory(ingest.graph_store.as_ref()).await;
+                let paper_node_count = inv.nodes("Paper");
+                let reference_node_count = inv.nodes("Reference");
+                let section_node_count = inv.nodes("Section");
+                let has_part = inv.edges(structure::HAS_PART);
+                let cites = inv.edges(bibliographic::CITES);
+                let from_source = inv.edges(structure::FROM_SOURCE);
+                let in_category = inv.edges(structure::IN_CATEGORY);
+                let mentions = inv.edges(bibliographic::MENTIONS);
+
+                println!(
+                    "Inventory: Paper={paper_node_count} Reference={reference_node_count} Section={section_node_count} (ingest sections={}) hasPart={has_part} CITES={cites} FROM_SOURCE={from_source} MENTIONS={mentions} total_nodes={}",
+                    r.total_sections, inv.total_nodes
+                );
+                if !inv.unknown_edge_types().is_empty() {
+                    eprintln!(
+                        "⚠  unknown edge types (not in edge_contracts): {:?}",
+                        inv.unknown_edge_types()
+                    );
+                }
+
+                let report = serde_json::json!({
+                    "embedder": "FdApiEmbedder",
+                    "model": "deepvk/USER-bge-m3",
+                    "dimensions": 1024,
+                    "import_eligible": false,
+                    "ids_requested": id_list.len(),
+                    "pdfs_found": pdfs.len(),
+                    "ingest": {
+                        "ok": r.ok,
+                        "fail": r.fail,
+                        "total": r.total,
+                        "duration_ms": r.duration_ms,
+                        "total_body_chars": r.total_body_chars,
+                        "total_sections": r.total_sections,
+                        "total_citations": r.total_citations,
+                        "total_cites_resolved": r.total_cites_resolved,
+                        "total_references_written": r.total_references_written,
+                        "snapshot_path": r.snapshot_path,
+                        "errors": r.errors,
+                    },
+                    "graph": inv,
+                    "highlights": {
+                        "paper_nodes": paper_node_count,
+                        "reference_nodes": reference_node_count,
+                        "section_nodes": section_node_count,
+                        "cites_edges": cites,
+                        "has_part_edges": has_part,
+                        "from_source_edges": from_source,
+                        "in_category_edges": in_category,
+                        "mentions_edges": mentions,
+                    },
+                    "notes": [
+                        "Production path: FdApiEmbedder via dotenv-loaded FD_API_KEY (M321).",
+                        "Node labels from da_domain::registered_node_labels() — not CLI hardcode.",
+                        "Edge histogram uses store wire strings; known set = edge_contracts().",
+                        "MENTIONS=0 expected without extract-to-graph step.",
+                        "D127 import_eligible=false.",
+                        "Process-local graph; durable artifact is snapshot when --output set."
+                    ]
+                });
+
+                if let Err(e) = std::fs::create_dir_all(dir) {
+                    eprintln!("⚠  inventory dir create failed: {e}");
+                } else {
+                    let json_path = dir.join("engine_production.json");
+                    match serde_json::to_string_pretty(&report) {
+                        Ok(s) => {
+                            if let Err(e) = std::fs::write(&json_path, s + "\n") {
+                                eprintln!("⚠  write {}: {e}", json_path.display());
+                            } else {
+                                println!("   Inventory JSON: {}", json_path.display());
+                            }
+                        }
+                        Err(e) => eprintln!("⚠  serialize inventory: {e}"),
+                    }
+                    let mut md = String::from("# GEPA hub production batch (FdApiEmbedder)\n\n");
+                    md.push_str(&format!(
+                        "## Ingest\n\n| Metric | Value |\n|--------|--------|\n| PDFs found | {} |\n| OK | {} |\n| Fail | {} |\n| Duration ms | {} |\n| Sections (ingest) | {} |\n| Citations | {} |\n| CITES resolved | {} |\n| References written | {} |\n| Snapshot | `{}` |\n\n",
+                        pdfs.len(),
+                        r.ok,
+                        r.fail,
+                        r.duration_ms,
+                        r.total_sections,
+                        r.total_citations,
+                        r.total_cites_resolved,
+                        r.total_references_written,
+                        r.snapshot_path.as_deref().unwrap_or("none"),
+                    ));
+                    md.push_str(&render_inventory_markdown(&inv));
+                    md.push_str("\n## Notes\n\n- Embedder: **FdApiEmbedder** (real TEI bge-m3, 1024d).\n- Labels/edges driven by domain ontology + edge_contracts (not hardcoded CLI lists).\n- `import_eligible=false` (D127).\n");
+                    let md_path = dir.join("REPORT.md");
+                    if let Err(e) = std::fs::write(&md_path, md) {
+                        eprintln!("⚠  write {}: {e}", md_path.display());
+                    } else {
+                        println!("   Inventory MD: {}", md_path.display());
+                    }
+                }
+            }
+
+            if r.fail > 0 {
+                std::process::exit(1);
             }
         }
         Err(e) => {

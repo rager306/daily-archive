@@ -59,6 +59,14 @@ pub fn schema_for_label(label: &str) -> Option<Box<dyn NodeSchemaDef>> {
     all_node_schemas().into_iter().find(|s| s.label() == label)
 }
 
+/// All registered node labels from the ontology schema registry.
+///
+/// Inventory / validators must use this (or YAML variant) — never a hand-maintained
+/// label list in CLI or research tools. When ontology gains a type, inventory follows.
+pub fn registered_node_labels() -> Vec<&'static str> {
+    all_node_schemas().into_iter().map(|s| s.label()).collect()
+}
+
 /// Find a schema by its label, preferring YAML-loaded data when available.
 ///
 /// ADR-050 Phase F: tries data/ontology/node_schemas.yaml first, falls
@@ -121,6 +129,19 @@ mod tests {
 
         let unknown = schema_for_label("Unknown");
         assert!(unknown.is_none());
+    }
+
+    #[test]
+    fn test_registered_node_labels_matches_all_schemas() {
+        let labels = registered_node_labels();
+        let schemas = all_node_schemas();
+        assert_eq!(labels.len(), schemas.len());
+        assert!(labels.contains(&"Paper"));
+        assert!(labels.contains(&"Section"));
+        assert!(labels.contains(&"Reference"));
+        for label in &labels {
+            assert!(schema_for_label(label).is_some(), "orphan label {label}");
+        }
     }
 
     #[test]

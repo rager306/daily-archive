@@ -101,6 +101,21 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
     ]
 }
 
+/// Unique edge wire strings from the contract matrix (ontology source of truth).
+///
+/// Prefer these over ad-hoc CLI string lists when summarizing known edge types.
+/// Full histograms may still include unknown types; this list is the contract set.
+pub fn contract_edge_types() -> Vec<&'static str> {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut out = Vec::new();
+    for c in edge_contracts() {
+        if seen.insert(c.edge_constant) {
+            out.push(c.edge_constant);
+        }
+    }
+    out
+}
+
 /// Render the edge contracts matrix as a markdown table for documentation.
 /// Use in `da edge-contracts` CLI command to emit always-fresh content for
 /// GRAPH-SCHEMA.md.
@@ -124,6 +139,18 @@ pub fn render_markdown_table() -> String {
 mod tests {
     use super::*;
     use std::collections::HashSet;
+
+    #[test]
+    fn test_contract_edge_types_includes_pipeline_wires() {
+        use crate::relation::{bibliographic, structure};
+        let types = contract_edge_types();
+        assert!(types.contains(&structure::HAS_PART));
+        assert!(types.contains(&bibliographic::CITES));
+        assert!(types.contains(&bibliographic::MENTIONS));
+        // Unique
+        let set: HashSet<_> = types.iter().copied().collect();
+        assert_eq!(set.len(), types.len());
+    }
 
     /// Every edge constant in the contract matrix must reference only
     /// registered node labels (source and every target).

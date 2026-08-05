@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M323 ontology-driven graph inventory
+
+**Debt:** CLI/research inventory hard-coded node labels (`Paper`, `Section`, …).
+Ontology change would desync reports.
+
+- Domain: `registered_node_labels()`, `contract_edge_types()` from schema + edge_contracts
+- Application: `collect_graph_inventory` / `render_inventory_markdown` (walks registry)
+- CLI batch `--inventory-dir` + gepa_hub_research use the use-case — no label lists in CLI
+- Unknown edge types (not in contracts) surface as drift warnings
+- Tests: domain labels/edges + application inventory unit tests
+
+```bash
+cargo test -p da-domain --lib registered_node_labels
+cargo test -p da-application --lib graph_inventory
+```
+
+
+### Session 2026-08-05 — M322 production GEPA batch + ids-file
+
+**Process gap:** `da batch-ingest` only accepted comma `--ids`; research used `--ids-file`.
+
+- Pure `batch_ids::resolve_batch_ids` (+ unit tests): `--ids` and/or `--ids-file`, dedupe
+- Optional `--inventory-dir` writes ontology-string honest inventory (M319/M320 lessons)
+- Production GEPA hub batch with **FdApiEmbedder** (real TEI 1024d): **24/24 ok**
+- Snapshot `artifacts/gepa_hub_production/hub.sgsnap` (723777 bytes)
+- Inventory: Section=965, hasPart=2297, CITES=419, MENTIONS=0 (expected)
+
+```bash
+cargo test -p da-cli --lib
+./target/debug/da batch-ingest --ids-file artifacts/gepa_hub_research/ingest_ids.txt \
+  --output artifacts/gepa_hub_production/hub.sgsnap \
+  --inventory-dir artifacts/gepa_hub_production
+```
+
+
 ### Session 2026-08-05 — M321 FD_API dotenv composition root
 
 **Bug:** `da batch-ingest` / `da ingest` returned FD_API **401** even with a valid

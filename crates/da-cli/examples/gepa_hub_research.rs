@@ -1,10 +1,10 @@
-//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318–M320).
+//! GEPA hub (2507.19457) bibliography research on process-local Samyama (M318–M323).
 //!
 //! - Parses hub + cited arXiv PDFs via GROBID
 //! - Ingests with **kg_embeddings::MockEmbedder** (no FD_API auth)
 //! - Reports citation/Reference/CITES/hasPart connectivity
-//! - Edge inventory uses **ontology string constants** (`hasPart`, not `HAS_PART`)
-//! - Graph `section_nodes` from `get_nodes_by_label` — never hub TEI section Vec (M320)
+//! - Inventory via `collect_graph_inventory` (registered_node_labels + edge histogram)
+//! - Graph `section_nodes` from ontology inventory — never hub TEI section Vec (M320/M323)
 //! - Exports snapshot + JSON/MD under artifacts/gepa_hub_research/
 //!
 //! D127: import_eligible stays false.
@@ -233,31 +233,22 @@ async fn main() -> anyhow::Result<()> {
         eprintln!("  fail {id}: {e}");
     }
 
-    // M320: capture graph label inventory *before* hub extract — hub TEI uses a
-    // different `sections` name so it cannot shadow Section node IDs (M319 false 85).
+    // Ontology-driven inventory (domain registered labels + edge histogram).
+    // Capture *before* hub extract so TEI locals cannot shadow counts (M320).
+    use da_application::collect_graph_inventory;
+    use da_domain::relation::{bibliographic, structure};
+
+    let inv = collect_graph_inventory(ingest.graph_store.as_ref()).await;
+    let paper_node_count = inv.nodes("Paper");
+    let reference_node_count = inv.nodes("Reference");
+    let section_node_count = inv.nodes("Section");
+    let category_node_count = inv.nodes("Category");
+    let citation_node_count = inv.nodes("Citation");
+    let entity_node_count = inv.nodes("Entity");
+    let source_node_count = inv.nodes("Source");
+    let total_node_count = inv.total_nodes;
+
     let papers = ingest.graph_store.get_nodes_by_label("Paper").await;
-    let references = ingest.graph_store.get_nodes_by_label("Reference").await;
-    let section_nodes = ingest.graph_store.get_nodes_by_label("Section").await;
-    let categories = ingest.graph_store.get_nodes_by_label("Category").await;
-    let citations = ingest.graph_store.get_nodes_by_label("Citation").await;
-    let entities = ingest.graph_store.get_nodes_by_label("Entity").await;
-    let sources = ingest.graph_store.get_nodes_by_label("Source").await;
-
-    let paper_node_count = papers.len();
-    let reference_node_count = references.len();
-    let section_node_count = section_nodes.len();
-    let category_node_count = categories.len();
-    let citation_node_count = citations.len();
-    let entity_node_count = entities.len();
-    let source_node_count = sources.len();
-    let total_node_count = paper_node_count
-        + reference_node_count
-        + section_node_count
-        + category_node_count
-        + citation_node_count
-        + entity_node_count
-        + source_node_count;
-
     let mut paper_ids = Vec::new();
     for nid in &papers {
         if let Some(aid) = ingest
@@ -270,33 +261,21 @@ async fn main() -> anyhow::Result<()> {
     }
     paper_ids.sort();
 
-    // M319: match ontology wire strings, not Rust constant *names*.
-    // structure::HAS_PART == "hasPart"; bibliographic::CITES == "CITES".
-    use da_domain::relation::{bibliographic, structure};
-    let mut edge_hist: HashMap<String, usize> = HashMap::new();
-    let mut all_nodes = papers.clone();
-    all_nodes.extend(references.iter().copied());
-    all_nodes.extend(section_nodes.iter().copied());
-    all_nodes.extend(categories.iter().copied());
-    all_nodes.extend(citations.iter().copied());
-    all_nodes.extend(entities.iter().copied());
-    all_nodes.extend(sources.iter().copied());
-    for nid in &all_nodes {
-        let edges = ingest.graph_store.get_outgoing_edges(*nid).await;
-        for (_target, rel_type) in edges {
-            *edge_hist.entry(rel_type).or_default() += 1;
-        }
-    }
-    let cites = *edge_hist.get(bibliographic::CITES).unwrap_or(&0);
-    let has_part = *edge_hist.get(structure::HAS_PART).unwrap_or(&0);
-    let from_source = *edge_hist.get(structure::FROM_SOURCE).unwrap_or(&0);
-    let in_category = *edge_hist.get(structure::IN_CATEGORY).unwrap_or(&0);
-    let mentions = *edge_hist.get(bibliographic::MENTIONS).unwrap_or(&0);
+    let edge_hist: HashMap<String, usize> = inv
+        .edge_type_histogram
+        .iter()
+        .map(|(k, v)| (k.clone(), *v))
+        .collect();
+    let cites = inv.edges(bibliographic::CITES);
+    let has_part = inv.edges(structure::HAS_PART);
+    let from_source = inv.edges(structure::FROM_SOURCE);
+    let in_category = inv.edges(structure::IN_CATEGORY);
+    let mentions = inv.edges(bibliographic::MENTIONS);
     println!(
         "Edge histogram (ontology strings): cites={cites} hasPart={has_part} FROM_SOURCE={from_source} inCategory={in_category} MENTIONS={mentions} full={edge_hist:?}"
     );
     println!(
-        "Node inventory: Paper={paper_node_count} Reference={reference_node_count} Section={section_node_count} (ingest total_sections={}) Category={category_node_count} Citation={citation_node_count} Source={source_node_count}",
+        "Node inventory: Paper={paper_node_count} Reference={reference_node_count} Section={section_node_count} (ingest total_sections={}) Category={category_node_count} Citation={citation_node_count} Source={source_node_count} (ontology labels total_nodes={total_node_count})",
         batch.total_sections,
     );
     // Reference: references_written counts every hasPart link; unique nodes dedupe by vid.
@@ -310,6 +289,12 @@ async fn main() -> anyhow::Result<()> {
         eprintln!(
             "WARN: get_nodes_by_label(Section) undercount: label_index={section_node_count} vs ingest.total_sections={} — investigate Samyama/adapter",
             batch.total_sections
+        );
+    }
+    if !inv.unknown_edge_types().is_empty() {
+        eprintln!(
+            "WARN: unknown edge types not in edge_contracts: {:?}",
+            inv.unknown_edge_types()
         );
     }
 
