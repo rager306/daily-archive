@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Session 2026-08-05 — M324 external meta-ontology edge contracts
+
+**Requirement:** system supports external meta-ontology — not hardcode discovery.
+
+- `data/ontology/edge_contracts.yaml` — edge endpoint matrix as DATA (wire strings)
+- `OntologyRegistry` loads nodes **and** edges from `data/ontology/`
+- Domain: `registered_node_labels_or_yaml`, `contract_edge_types_or_yaml`, `edge_contracts_or_yaml` (YAML first, Rust fallback)
+- Inventory: `collect_graph_inventory` uses YAML-first helpers
+- Tests: kg-ontology 59, domain or_yaml, application graph_inventory
+
+```bash
+cargo test -p kg-ontology --lib
+cargo test -p da-domain --lib -- or_yaml
+cargo test -p da-application --lib graph_inventory
+```
+
+When ontology changes: edit YAML under `data/ontology/` (and re-export nodes if needed). Inventory follows without CLI edits.
+
+
 ### Session 2026-08-05 — M323 ontology-driven graph inventory
 
 **Debt:** CLI/research inventory hard-coded node labels (`Paper`, `Section`, …).

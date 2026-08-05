@@ -1,12 +1,12 @@
-//! Ontology-driven graph inventory (M322/M323).
+//! Ontology-driven graph inventory (M322–M324).
 //!
-//! Node labels come from `da_domain::schema::registered_node_labels()`.
-//! Known edge wire strings come from `da_domain::edge_contract::contract_edge_types()`.
+//! Node labels: external meta-ontology first (`registered_node_labels_or_yaml`).
+//! Known edges: `contract_edge_types_or_yaml` from `data/ontology/edge_contracts.yaml`.
 //! CLI / research tools must not hardcode Paper/Section/hasPart lists.
 
 use std::collections::BTreeMap;
 
-use da_domain::{contract_edge_types, registered_node_labels};
+use da_domain::{contract_edge_types_or_yaml, registered_node_labels_or_yaml};
 use da_ports::graph_store::DirectGraphStore;
 use serde::{Deserialize, Serialize};
 
@@ -34,21 +34,21 @@ impl GraphInventory {
         *self.edge_type_histogram.get(edge_type).unwrap_or(&0)
     }
 
-    /// Edge types declared in the contract matrix but missing from the histogram (count 0).
-    pub fn missing_contract_edges(&self) -> Vec<&'static str> {
-        contract_edge_types()
+    /// Edge types declared in the (YAML-first) contract matrix but missing from histogram.
+    pub fn missing_contract_edges(&self) -> Vec<String> {
+        contract_edge_types_or_yaml()
             .into_iter()
-            .filter(|e| !self.edge_type_histogram.contains_key(*e))
+            .filter(|e| !self.edge_type_histogram.contains_key(e))
             .collect()
     }
 
     /// Edge types present in the graph but not in the contract matrix (drift signal).
     pub fn unknown_edge_types(&self) -> Vec<String> {
-        let known: std::collections::HashSet<&'static str> =
-            contract_edge_types().into_iter().collect();
+        let known: std::collections::HashSet<String> =
+            contract_edge_types_or_yaml().into_iter().collect();
         self.edge_type_histogram
             .keys()
-            .filter(|k| !known.contains(k.as_str()))
+            .filter(|k| !known.contains(*k))
             .cloned()
             .collect()
     }
@@ -59,14 +59,15 @@ impl GraphInventory {
 /// Labels are not hard-coded in the caller: when `all_node_schemas()` gains a
 /// type, inventory automatically queries it.
 pub async fn collect_graph_inventory(store: &dyn DirectGraphStore) -> GraphInventory {
-    let labels = registered_node_labels();
+    // External meta-ontology first (data/ontology/*.yaml); Rust fallback inside helpers.
+    let labels = registered_node_labels_or_yaml();
     let mut node_counts = BTreeMap::new();
     let mut all_node_ids: Vec<u64> = Vec::new();
     let mut seen_ids = std::collections::HashSet::new();
 
     for label in labels {
-        let ids = store.get_nodes_by_label(label).await;
-        node_counts.insert(label.to_string(), ids.len());
+        let ids = store.get_nodes_by_label(&label).await;
+        node_counts.insert(label, ids.len());
         for id in ids {
             if seen_ids.insert(id) {
                 all_node_ids.push(id);
@@ -150,7 +151,11 @@ mod tests {
         };
         let u = inv.unknown_edge_types();
         assert_eq!(u, vec!["NOT_IN_CONTRACT".to_string()]);
-        assert!(inv.missing_contract_edges().contains(&bibliographic::CITES));
+        assert!(
+            inv.missing_contract_edges()
+                .iter()
+                .any(|e| e == bibliographic::CITES)
+        );
     }
 
     #[test]
@@ -169,12 +174,12 @@ mod tests {
 
     #[test]
     fn registered_labels_drive_inventory_shape() {
-        // Structural pin: inventory labels == ontology registry.
-        let labels = registered_node_labels();
+        // External meta-ontology first (YAML), then compiled fallback.
+        let labels = registered_node_labels_or_yaml();
         assert!(labels.len() >= 10);
-        assert!(labels.contains(&"Paper"));
-        let edges = contract_edge_types();
-        assert!(edges.contains(&structure::HAS_PART));
-        assert!(edges.contains(&bibliographic::MENTIONS));
+        assert!(labels.iter().any(|l| l == "Paper"));
+        let edges = contract_edge_types_or_yaml();
+        assert!(edges.iter().any(|e| e == structure::HAS_PART));
+        assert!(edges.iter().any(|e| e == bibliographic::MENTIONS));
     }
 }

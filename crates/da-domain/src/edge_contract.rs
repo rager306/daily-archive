@@ -101,10 +101,9 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
     ]
 }
 
-/// Unique edge wire strings from the contract matrix (ontology source of truth).
+/// Unique edge wire strings from the **compiled** contract matrix.
 ///
-/// Prefer these over ad-hoc CLI string lists when summarizing known edge types.
-/// Full histograms may still include unknown types; this list is the contract set.
+/// Prefer [`contract_edge_types_or_yaml`] for inventory — external meta-ontology first.
 pub fn contract_edge_types() -> Vec<&'static str> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
@@ -114,6 +113,48 @@ pub fn contract_edge_types() -> Vec<&'static str> {
         }
     }
     out
+}
+
+/// Edge wire strings from external meta-ontology (`data/ontology/edge_contracts.yaml`)
+/// when present and non-empty; otherwise compiled [`contract_edge_types`].
+///
+/// ADR-050 / M324: edge contracts are DATA, not CLI/domain hardcode for discovery.
+pub fn contract_edge_types_or_yaml() -> Vec<String> {
+    match kg_ontology::registry::OntologyRegistry::load_project_meta_ontology() {
+        Ok(reg) => {
+            let types = reg.edge_types();
+            if types.is_empty() {
+                contract_edge_types()
+                    .into_iter()
+                    .map(str::to_string)
+                    .collect()
+            } else {
+                types
+            }
+        }
+        Err(_) => contract_edge_types()
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+    }
+}
+
+/// Load owned edge contracts from YAML meta-ontology, or map compiled contracts.
+pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> {
+    if let Ok(reg) = kg_ontology::registry::OntologyRegistry::load_project_meta_ontology()
+        && !reg.edge_contracts().is_empty()
+    {
+        return reg.edge_contracts().to_vec();
+    }
+    edge_contracts()
+        .into_iter()
+        .map(|c| kg_ontology::registry::YamlEdgeContract {
+            edge_constant: c.edge_constant.to_string(),
+            source_label: c.source_label.to_string(),
+            target_labels: c.target_labels.iter().map(|s| (*s).to_string()).collect(),
+            rationale: c.rationale.to_string(),
+        })
+        .collect()
 }
 
 /// Render the edge contracts matrix as a markdown table for documentation.
@@ -150,6 +191,26 @@ mod tests {
         // Unique
         let set: HashSet<_> = types.iter().copied().collect();
         assert_eq!(set.len(), types.len());
+    }
+
+    #[test]
+    fn test_contract_edge_types_or_yaml_includes_has_part() {
+        let types = contract_edge_types_or_yaml();
+        assert!(types.iter().any(|e| e == "hasPart"), "{types:?}");
+        assert!(types.iter().any(|e| e == "CITES"), "{types:?}");
+        // YAML and compiled sets should both be non-empty and share core wires
+        let compiled: std::collections::HashSet<_> = contract_edge_types().into_iter().collect();
+        for w in ["hasPart", "CITES", "MENTIONS"] {
+            assert!(types.iter().any(|e| e == w));
+            assert!(compiled.contains(w), "compiled missing {w}");
+        }
+    }
+
+    #[test]
+    fn test_edge_contracts_or_yaml_nonempty() {
+        let rows = edge_contracts_or_yaml();
+        assert!(!rows.is_empty());
+        assert!(rows.iter().any(|c| c.edge_constant == "hasPart"));
     }
 
     /// Every edge constant in the contract matrix must reference only

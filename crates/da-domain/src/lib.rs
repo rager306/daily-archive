@@ -33,7 +33,10 @@ pub use article::{
     Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
     InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
 };
-pub use edge_contract::{EdgeContract, contract_edge_types, edge_contracts, render_markdown_table};
+pub use edge_contract::{
+    EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
+    edge_contracts_or_yaml, render_markdown_table,
+};
 pub use entity::{Entity, EntitySchema, EntityType};
 pub use eval::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
@@ -54,7 +57,7 @@ pub use scheduler::{
 };
 pub use schema::{
     Field, FieldType, NodeSchemaDef, SchemaError, all_node_schemas, registered_node_labels,
-    schema_for_label,
+    registered_node_labels_or_yaml, schema_for_label,
 };
 pub use source::{
     SourceSchema, is_known_source_code, is_known_source_profile, is_known_source_type,

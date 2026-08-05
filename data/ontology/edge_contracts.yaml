@@ -1,0 +1,56 @@
+# External meta-ontology: edge endpoint contracts (ADR-050 / M324).
+# DATA not code — edit here when ontology changes; Rust is fallback only.
+# wire strings must match da_domain::relation::* constants / graph storage.
+edge_contracts:
+  - edge_constant: AFFILIATED_WITH
+    source_label: Author
+    target_labels: [Institution]
+    rationale: "Author is affiliated with an institution (OpenAlex authorship)."
+  - edge_constant: CITES
+    source_label: Paper
+    target_labels: [Citation]
+    rationale: "Paper cites a bibliographic citation (resolvable to a Paper)."
+  - edge_constant: authoredBy
+    source_label: Author
+    target_labels: [Paper]
+    rationale: "Author authored the Paper (OpenAlex authorship)."
+  - edge_constant: foundIn
+    source_label: Entity
+    target_labels: [Section]
+    rationale: "Entity was extracted from this Section of the Paper."
+  - edge_constant: FROM_SOURCE
+    source_label: Paper
+    target_labels: [Source]
+    rationale: "Paper originated from this Source (provenance)."
+  - edge_constant: hasPart
+    source_label: Paper
+    target_labels: [Section, Reference]
+    rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part)."
+  - edge_constant: hasTopic
+    source_label: Paper
+    target_labels: [Topic]
+    rationale: "Paper is classified under this Topic (OpenAlex topic assignment)."
+  - edge_constant: inCategory
+    source_label: Paper
+    target_labels: [Category]
+    rationale: "Paper is in this arXiv/OpenAlex Category."
+  - edge_constant: MEMBER_OF_CLUSTER
+    source_label: Entity
+    target_labels: [ConceptCluster]
+    rationale: "Entity is a member of this ConceptCluster."
+  - edge_constant: MENTIONS
+    source_label: Paper
+    target_labels: [Entity, ResearchProblem, MetricObservation]
+    rationale: "Paper mentions this Entity/ResearchProblem/MetricObservation (extracted from paper text)."
+  - edge_constant: PARTICIPATES_IN
+    source_label: Entity
+    target_labels: [EvidenceBundle]
+    rationale: "Entity participates in this EvidenceBundle (co-occurring entities)."
+  - edge_constant: SUPPORTS
+    source_label: EvidenceBundle
+    target_labels: [Claim]
+    rationale: "EvidenceBundle supports this Claim."
+  - edge_constant: SUPERSEDES
+    source_label: Entity
+    target_labels: [Entity]
+    rationale: "Source Entity supersedes target Entity (D135 merge scenario)."

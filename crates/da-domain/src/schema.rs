@@ -59,12 +59,27 @@ pub fn schema_for_label(label: &str) -> Option<Box<dyn NodeSchemaDef>> {
     all_node_schemas().into_iter().find(|s| s.label() == label)
 }
 
-/// All registered node labels from the ontology schema registry.
+/// All registered node labels from the **compiled** ontology schema registry.
 ///
-/// Inventory / validators must use this (or YAML variant) — never a hand-maintained
-/// label list in CLI or research tools. When ontology gains a type, inventory follows.
+/// Prefer [`registered_node_labels_or_yaml`] for inventory — external meta-ontology first.
 pub fn registered_node_labels() -> Vec<&'static str> {
     all_node_schemas().into_iter().map(|s| s.label()).collect()
+}
+
+/// Node labels from external meta-ontology (`data/ontology/node_schemas.yaml`) when
+/// present; otherwise compiled [`registered_node_labels`].
+///
+/// ADR-050 / M324: system must support external meta-ontology — not hardcode discovery.
+pub fn registered_node_labels_or_yaml() -> Vec<String> {
+    if let Ok(reg) = kg_ontology::registry::OntologyRegistry::load_project_meta_ontology()
+        && !reg.is_empty()
+    {
+        return reg.labels_owned();
+    }
+    registered_node_labels()
+        .into_iter()
+        .map(str::to_string)
+        .collect()
 }
 
 /// Find a schema by its label, preferring YAML-loaded data when available.
@@ -142,6 +157,14 @@ mod tests {
         for label in &labels {
             assert!(schema_for_label(label).is_some(), "orphan label {label}");
         }
+    }
+
+    #[test]
+    fn test_registered_node_labels_or_yaml_includes_paper() {
+        let labels = registered_node_labels_or_yaml();
+        assert!(labels.len() >= 10);
+        assert!(labels.iter().any(|l| l == "Paper"));
+        assert!(labels.iter().any(|l| l == "Section"));
     }
 
     #[test]
