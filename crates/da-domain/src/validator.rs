@@ -283,15 +283,19 @@ fn check_invariants(label: &str, props: &PropertySnapshot) -> Vec<SchemaViolatio
 /// node is still created, but the operator is alerted that the value is not
 /// in the expected vocabulary.
 ///
-/// Currently wired:
+/// Wired registries:
 /// - `Decision.category` → `is_known_decision_category`
 /// - `Decision.outcome` → `is_valid_decision_outcome(category, outcome)`
 /// - `Decision.decision_maker` → `is_valid_decision_maker`
-///
-/// Known follow-up (separate slice):
-/// - `FailureWith.stage` → `is_known_stage`
-/// - `FailureWith.failure_class` → `is_known_failure_class`
-/// - `EvidenceBundle.origin` → `is_known_origin`
+/// - `EvidenceBundle.bundle_type` → `is_known_bundle_type`
+/// - `EvidenceBundle.verification_status` → `is_known_verification_status`
+/// - `ConceptCluster.cluster_type` → `is_known_cluster_type`
+/// - `FailureEvent.stage` → `is_known_stage`
+/// - `FailureEvent.class` → `is_known_failure_class`
+/// - `Source.code` → `is_known_source_code`
+/// - `Source.source_type` → `is_known_source_type`
+/// - `ResearchEnvironment.completeness` → `is_known_completeness`
+/// - `ResearchEnvironment.evidence_origin` → `is_known_origin`
 fn check_semantic_vocabularies(label: &str, props: &PropertySnapshot) -> Vec<SchemaViolation> {
     let mut out = Vec::new();
     if label == "Decision" {
@@ -302,6 +306,15 @@ fn check_semantic_vocabularies(label: &str, props: &PropertySnapshot) -> Vec<Sch
     }
     if label == "ConceptCluster" {
         out.extend(check_concept_cluster_semantics(props));
+    }
+    if label == "FailureEvent" {
+        out.extend(check_failure_event_semantics(props));
+    }
+    if label == "Source" {
+        out.extend(check_source_semantics(props));
+    }
+    if label == "ResearchEnvironment" {
+        out.extend(check_research_environment_semantics(props));
     }
     out
 }
@@ -419,6 +432,121 @@ fn check_concept_cluster_semantics(props: &PropertySnapshot) -> Vec<SchemaViolat
             format!(
                 "ConceptCluster.cluster_type='{}' is not in node_vocabulary.yaml cluster_types",
                 ct
+            ),
+        ));
+    }
+
+    out
+}
+
+/// FailureEvent semantic checks (ADR-043 Research Process Plane).
+/// - `stage` must be in failure_taxonomy.yaml stages
+/// - `class` must be in failure_taxonomy.yaml failure_classes
+fn check_failure_event_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::process::{is_known_failure_class, is_known_stage};
+    let mut out = Vec::new();
+
+    if let Some(stage) = props.get("stage").and_then(|v| v.as_str())
+        && !stage.is_empty()
+        && !is_known_stage(stage)
+    {
+        out.push(SchemaViolation::warn(
+            "failure-event-stage-vocabulary",
+            "stage",
+            format!(
+                "FailureEvent.stage='{}' is not in failure_taxonomy.yaml stages",
+                stage
+            ),
+        ));
+    }
+
+    if let Some(class) = props.get("class").and_then(|v| v.as_str())
+        && !class.is_empty()
+        && !is_known_failure_class(class)
+    {
+        out.push(SchemaViolation::warn(
+            "failure-event-class-vocabulary",
+            "class",
+            format!(
+                "FailureEvent.class='{}' is not in failure_taxonomy.yaml failure_classes",
+                class
+            ),
+        ));
+    }
+
+    out
+}
+
+/// Source semantic checks.
+/// - `code` must be a known source code in source registry
+/// - `source_type` must be a known source type in source registry
+fn check_source_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::source::{is_known_source_code, is_known_source_type};
+    let mut out = Vec::new();
+
+    if let Some(code) = props.get("code").and_then(|v| v.as_str())
+        && !code.is_empty()
+        && !is_known_source_code(code)
+    {
+        out.push(SchemaViolation::warn(
+            "source-code-vocabulary",
+            "code",
+            format!(
+                "Source.code='{}' is not in source registry (is_known_source_code)",
+                code
+            ),
+        ));
+    }
+
+    if let Some(source_type) = props.get("source_type").and_then(|v| v.as_str())
+        && !source_type.is_empty()
+        && !is_known_source_type(source_type)
+    {
+        out.push(SchemaViolation::warn(
+            "source-type-vocabulary",
+            "source_type",
+            format!(
+                "Source.source_type='{}' is not in source registry (is_known_source_type)",
+                source_type
+            ),
+        ));
+    }
+
+    out
+}
+
+/// ResearchEnvironment semantic checks (ADR-043).
+/// - `completeness` must be known (full | env_lite | unknown)
+/// - `evidence_origin` validated against failure_taxonomy.yaml evidence_origins
+///   (cross-reused vocabulary: live_executed | observational | etc.)
+fn check_research_environment_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::process::{is_known_completeness, is_known_origin};
+    let mut out = Vec::new();
+
+    if let Some(completeness) = props.get("completeness").and_then(|v| v.as_str())
+        && !completeness.is_empty()
+        && !is_known_completeness(completeness)
+    {
+        out.push(SchemaViolation::warn(
+            "research-env-completeness-vocabulary",
+            "completeness",
+            format!(
+                "ResearchEnvironment.completeness='{}' is not in failure_taxonomy.yaml completeness_levels",
+                completeness
+            ),
+        ));
+    }
+
+    if let Some(origin) = props.get("evidence_origin").and_then(|v| v.as_str())
+        && !origin.is_empty()
+        && !is_known_origin(origin)
+    {
+        out.push(SchemaViolation::warn(
+            "research-env-evidence-origin-vocabulary",
+            "evidence_origin",
+            format!(
+                "ResearchEnvironment.evidence_origin='{}' is not in failure_taxonomy.yaml evidence_origins",
+                origin
             ),
         ));
     }
@@ -1334,6 +1462,276 @@ mod yaml_parity_tests {
                 .iter()
                 .any(|v| v.rule == "cluster-type-vocabulary"),
             "expected cluster-type-vocabulary warning for unknown cluster_type"
+        );
+    }
+
+    // ─── FailureEvent semantic validation tests ───
+
+    #[test]
+    fn test_failure_event_unknown_stage_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("fe-001"));
+        props.insert(
+            "stage".to_string(),
+            serde_json::json!("bogus_stage"),
+        );
+        props.insert(
+            "class".to_string(),
+            serde_json::json!("transient"),
+        );
+        props.insert(
+            "recoverable".to_string(),
+            serde_json::json!(true),
+        );
+        props.insert(
+            "error_signature".to_string(),
+            serde_json::json!("timeout"),
+        );
+        let violations = validate_node_properties("FailureEvent", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "failure-event-stage-vocabulary"),
+            "expected failure-event-stage-vocabulary warning for unknown stage"
+        );
+    }
+
+    #[test]
+    fn test_failure_event_unknown_class_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("fe-002"));
+        props.insert(
+            "stage".to_string(),
+            serde_json::json!("ingest"),
+        );
+        props.insert(
+            "class".to_string(),
+            serde_json::json!("bogus_class"),
+        );
+        props.insert(
+            "recoverable".to_string(),
+            serde_json::json!(false),
+        );
+        props.insert(
+            "error_signature".to_string(),
+            serde_json::json!("panic"),
+        );
+        let violations = validate_node_properties("FailureEvent", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "failure-event-class-vocabulary"),
+            "expected failure-event-class-vocabulary warning for unknown class"
+        );
+    }
+
+    #[test]
+    fn test_failure_event_valid_no_semantic_violations() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("fe-003"));
+        // Use real values from failure_taxonomy.yaml: stage='execution', class='specification'
+        props.insert(
+            "stage".to_string(),
+            serde_json::json!("execution"),
+        );
+        props.insert(
+            "class".to_string(),
+            serde_json::json!("specification"),
+        );
+        props.insert(
+            "recoverable".to_string(),
+            serde_json::json!(true),
+        );
+        props.insert(
+            "error_signature".to_string(),
+            serde_json::json!("timeout"),
+        );
+        let violations = validate_node_properties("FailureEvent", &props);
+        let semantic: Vec<_> = violations
+            .iter()
+            .filter(|v| v.rule.contains("failure-event-"))
+            .collect();
+        assert!(
+            semantic.is_empty(),
+            "expected no semantic violations for valid FailureEvent, got: {:?}",
+            semantic
+        );
+    }
+
+    // ─── Source semantic validation tests ───
+
+    #[test]
+    fn test_source_unknown_code_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("src-001"));
+        props.insert(
+            "code".to_string(),
+            serde_json::json!("bogus_source_code"),
+        );
+        props.insert(
+            "source_type".to_string(),
+            serde_json::json!("arxiv"),
+        );
+        props.insert(
+            "domain".to_string(),
+            serde_json::json!("cs.LG"),
+        );
+        let violations = validate_node_properties("Source", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "source-code-vocabulary"),
+            "expected source-code-vocabulary warning for unknown code"
+        );
+    }
+
+    #[test]
+    fn test_source_unknown_type_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("src-002"));
+        props.insert(
+            "code".to_string(),
+            serde_json::json!("arxiv"),
+        );
+        props.insert(
+            "source_type".to_string(),
+            serde_json::json!("bogus_type"),
+        );
+        props.insert(
+            "domain".to_string(),
+            serde_json::json!("cs.LG"),
+        );
+        let violations = validate_node_properties("Source", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "source-type-vocabulary"),
+            "expected source-type-vocabulary warning for unknown source_type"
+        );
+    }
+
+    // ─── ResearchEnvironment semantic validation tests ───
+
+    #[test]
+    fn test_research_env_unknown_completeness_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("env-001"));
+        props.insert(
+            "completeness".to_string(),
+            serde_json::json!("bogus_completeness"),
+        );
+        props.insert(
+            "research_problem_id".to_string(),
+            serde_json::json!("rp-1"),
+        );
+        props.insert(
+            "baseline_ref".to_string(),
+            serde_json::json!("baseline-1"),
+        );
+        props.insert(
+            "subject_system".to_string(),
+            serde_json::json!("sys-1"),
+        );
+        props.insert(
+            "subject_system_kind".to_string(),
+            serde_json::json!("dataset"),
+        );
+        props.insert(
+            "environment_template_id".to_string(),
+            serde_json::json!("tmpl-1"),
+        );
+        props.insert(
+            "evidence_origin".to_string(),
+            serde_json::json!("live_executed"),
+        );
+        let violations = validate_node_properties("ResearchEnvironment", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "research-env-completeness-vocabulary"),
+            "expected completeness-vocabulary warning"
+        );
+    }
+
+    #[test]
+    fn test_research_env_unknown_evidence_origin_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("env-002"));
+        props.insert(
+            "completeness".to_string(),
+            serde_json::json!("full"),
+        );
+        props.insert(
+            "research_problem_id".to_string(),
+            serde_json::json!("rp-1"),
+        );
+        props.insert(
+            "baseline_ref".to_string(),
+            serde_json::json!("baseline-1"),
+        );
+        props.insert(
+            "subject_system".to_string(),
+            serde_json::json!("sys-1"),
+        );
+        props.insert(
+            "subject_system_kind".to_string(),
+            serde_json::json!("dataset"),
+        );
+        props.insert(
+            "environment_template_id".to_string(),
+            serde_json::json!("tmpl-1"),
+        );
+        props.insert(
+            "evidence_origin".to_string(),
+            serde_json::json!("bogus_origin"),
+        );
+        let violations = validate_node_properties("ResearchEnvironment", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "research-env-evidence-origin-vocabulary"),
+            "expected evidence-origin-vocabulary warning"
+        );
+    }
+
+    #[test]
+    fn test_research_env_valid_no_semantic_violations() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("env-003"));
+        props.insert("completeness".to_string(), serde_json::json!("full"));
+        props.insert(
+            "research_problem_id".to_string(),
+            serde_json::json!("rp-1"),
+        );
+        props.insert(
+            "baseline_ref".to_string(),
+            serde_json::json!("baseline-1"),
+        );
+        props.insert(
+            "subject_system".to_string(),
+            serde_json::json!("sys-1"),
+        );
+        props.insert(
+            "subject_system_kind".to_string(),
+            serde_json::json!("dataset"),
+        );
+        props.insert(
+            "environment_template_id".to_string(),
+            serde_json::json!("tmpl-1"),
+        );
+        props.insert(
+            "evidence_origin".to_string(),
+            serde_json::json!("live_executed"),
+        );
+        let violations = validate_node_properties("ResearchEnvironment", &props);
+        let semantic: Vec<_> = violations
+            .iter()
+            .filter(|v| v.rule.contains("research-env-"))
+            .collect();
+        assert!(
+            semantic.is_empty(),
+            "expected no semantic violations for valid ResearchEnvironment, got: {:?}",
+            semantic
         );
     }
 }

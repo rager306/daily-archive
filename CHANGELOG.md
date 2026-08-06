@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late) — Validator semantic hooks: FailureEvent + Source + ResearchEnvironment
+
+**Complete the semantic-validator wiring for all remaining registries.**
+Previous slices wired Decision, EvidenceBundle, ConceptCluster. Three node
+types still had registry-exists-but-validator-not-calling gaps:
+
+1. `crates/da-domain/src/validator.rs`: extend `check_semantic_vocabularies`
+   with branches for `FailureEvent`, `Source`, `ResearchEnvironment`.
+2. New check functions:
+   - `check_failure_event_semantics` — `stage` → `is_known_stage`,
+     `class` → `is_known_failure_class` (ADR-043 process plane)
+   - `check_source_semantics` — `code` → `is_known_source_code`,
+     `source_type` → `is_known_source_type`
+   - `check_research_environment_semantics` — `completeness` →
+     `is_known_completeness`, `evidence_origin` → `is_known_origin`
+3. TDD: 8 new tests (259 → 267 da-domain tests pass):
+   - `test_failure_event_unknown_stage_warns`
+   - `test_failure_event_unknown_class_warns`
+   - `test_failure_event_valid_no_semantic_violations`
+   - `test_source_unknown_code_warns`
+   - `test_source_unknown_type_warns`
+   - `test_research_env_unknown_completeness_warns`
+   - `test_research_env_unknown_evidence_origin_warns`
+   - `test_research_env_valid_no_semantic_violations`
+4. Clippy clean; trajectory ON_TRACK.
+
+**Semantic validation coverage now complete:** all `is_known_*` functions in
+the domain layer are now referenced from the validator. Governor candidate:
+flag any new `is_known_*` function that lacks a validator `check_*_semantics`
+partner (MEM650 pattern).
+
 ### Session 2026-08-06 — ADR-048 Phase 1: DecisionRecorder use case (application layer)
 
 **Close the application-layer gap for ADR-048.** Previous sessions landed
