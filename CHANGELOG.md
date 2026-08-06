@@ -70,6 +70,12 @@ Four slices, TDD, governor on_track throughout.
 - Remaining thin horizon: MCP resources (bulk via `cat` — keep thin), MCP prompts, typed entity subtypes (split per label to stay thin), AbstractSummary — each real prod test, not DB-only.
 - `cargo test --workspace --lib --tests` all green (270/31/25/...); `cargo fmt` still has 25-file drift intentionally left uncommitted (logic over formatting).
 
+### Thin wave fix (this session) — da-mcp product bug
+
+- `get_sections` Cypher `ORDER BY s.order` → `ORDER BY s.path_id` (lexical tree order). `s.order` is not a stored property; correct order is `path_id` `1, 1.1, 1.2, 2`. TDD: 25 da-mcp remain green; governor on_track.
+- M362 S01 gates remain pending (DB says evaluating-gates) but code is done — close via `gsd_validate_milestone` + `gsd_save_gate_result` (Q3-Q8) before starting S02 typed entities. Flagged as debt, not fixed this thin wave.
+- M365/M366 marked `complete` in DB are green in code (Section drift, MCP search/entities/vector + hex decoupling). M366 S03 Resources/Prompts still deferred thin slice — `rmcp` prompt/resource handler research deferred to next wave (keep thin).
+
 ### Session 2026-08-07 (late+fix2) — Section mocks + Paper schema drift fix
 
 - `da-ports::Section` mocks in `da-application/tests` lacked new Layer A Option
