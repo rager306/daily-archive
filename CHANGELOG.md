@@ -2,6 +2,60 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 8) — M365+M366: debt closure plus MCP thin slices S01-S02
+
+**Wave 0 debt (ADR-053/050/034) + Wave 1 product thin slices (ADR-054).**
+Four slices, TDD, governor on_track throughout.
+
+**M365 S01 Section drift closure (P-LOGIC-05).**
+1. `crates/da-domain/src/article.rs`: `SectionSchema::optional_fields` gains
+   4 navigation fields `path_id` (String), `parent_section_id` (String),
+   `order_in_parent` (Integer), `section_id` (String) — matches
+   `da-ports::parser::Section` (M362 Layer A). New contract test
+   `test_section_schema_has_nav_fields` (270 da-domain pass).
+2. `data/ontology/node_schemas.yaml`: same 4 fields under `Section`
+   optional_fields (DATA as single source, ADR-050).
+3. `data/ontology/edge_contracts.yaml`: stale forward-declaration comment
+   replaced (next_sibling/first_child/parent_section implemented in M362).
+
+**M365 S02 guardrail + GSD hygiene.**
+1. `scripts/verify_rust_architecture.sh`: add `-p da-mcp` to both fmt and
+   clippy guardrails (product was invisible to CI).
+2. `scripts/governor/checks/dimensions.yaml`: fix hexagonal arrow
+   (adapter implements ports, not `da-application <- da-adapters`).
+3. `crates/da-mcp/src/lib.rs`: fix clippy `derivable_impls` (Default derive)
+   and `unused_imports` (rmcp::ServerHandler only in tests).
+4. GSD: `M361-7bqhw1` skipped (empty orphan), unblocks ROADMAP noise.
+
+**M366 S01 search_papers (ADR-054).**
+1. `crates/da-mcp/src/tools.rs`: `search_papers(query, limit)` — title CONTAINS
+   over Paper nodes via `query_readonly`, escaped literal, case-insensitive
+   Rust post-filter so MockGraphStore works. Validates empty query.
+2. `crates/da-mcp/src/lib.rs`: tool wiring.
+3. TDD: 3 tests `rejects_empty`, `empty_graph`, `case_insensitive_on_mock`
+   (18 da-mcp pass, ad-hoc verified).
+
+**M366 S02 get_entities + validate_node (ADR-054).**
+1. `crates/da-mcp/src/tools.rs`: `get_entities(arxiv_id, entity_type?, limit)`
+   over MENTIONS edges (read_only, escaped, type filter CONTAINS labels);
+   `validate_node(label)` as validator probe (unknown → schema-registry
+   critical, known → is_known=true). 4 tests `empty_arxiv_id`,
+   `empty_graph`, `unknown_label`, `section_is_known`.
+2. `crates/da-mcp/src/lib.rs`: 2 tool handlers wired (now 9 tools total:
+   get_schema, get_graph_stats, read_cypher, get_paper, get_sections,
+   get_references, search_papers, get_entities, validate_node).
+3. TDD: 22 da-mcp pass, governor on_track.
+
+**Remaining thin slices (S03-S04) stay planned for next session:**
+- S03: 8 Resources (graph://ontology/*, stats, adr-index, graph_tasks) +
+  6 Prompts (literature_review, critical_reading, etc.) via rmcp
+  ResourceHandler/PromptHandler
+- S04: vector_search (kg-embeddings feature embed-fdapi) + Streamable HTTP
+  + hex decoupling (da-mcp off da-cli, kg-embeddings feature-gate)
+
+**DB:** M365 S01+S02 complete, M366 S01+S02 complete; M365 ACTIVATING → seal
+next; M366 S03+S04 pending; M362-M364 unchanged (pending sketch hygiene deferred).
+
 ### Session 2026-08-07 (late 7) — MCP Wave 3: get_paper + get_sections + get_references
 
 **Fourth MCP slice (ADR-054 MCP-3).** Added three product-facing tools that
