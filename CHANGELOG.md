@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Wave 0 Product Honesty (D194) — FdApiEmbedder replaces MockEmbedder
+
+**MCP vector_search был врущиной:** использовал `MockEmbedder(8)` (8-dim
+mock) при живом FD_API сервисе (`deepvk/USER-bge-m3`, 1024d) и ключе в `.env`.
+
+**Fix (hexagonal injection):**
+1. `DailyArchiveMcpServer` — новое поле `embedder: Arc<dyn Embedder + Send + Sync>`.
+2. `new()` → `FdApiEmbedder::from_env()` (prod, 1024d).
+3. `test_server()` → `MockEmbedder(8)` (deterministic tests).
+4. `tools::vector_search(store, embedder, params)` — embedder внедрён через
+   порт, не захардкожен.
+5. TDD: `test_prod_server_uses_fdapi_dimensions` — RED→GREEN, утверждает 1024d.
+
+Проверено: FD_API live (`curl http://127.0.0.1:8000/v1/embeddings` → 1024d,
+model `deepvk/USER-bge-m3`). 26 da-mcp green, governor on_track.
+
 ### Session 2026-08-07 (late 8) — M365+M366: debt closure plus MCP thin slices S01-S02
 
 **Wave 0 debt (ADR-053/050/034) + Wave 1 product thin slices (ADR-054).**
