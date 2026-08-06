@@ -1,8 +1,8 @@
 //! MCP server for daily-archive knowledge base external access (ADR-054).
 //!
-//! Read-only MCP server over Samyama graph store. Exposes:
-//! - Tools: get_schema, get_graph_stats (Wave 1)
-//!   search_papers, get_paper, get_sections, read_cypher (Wave 2, next)
+//! Read-only MCP server over Samyama graph store (ADR-054). Exposes:
+//! - Tools: get_schema, get_graph_stats, read_cypher, get_paper, get_sections,
+//!   get_references, search_papers, get_entities, validate_node, vector_search
 //!
 //! D127-safe: no write tools, no import unlock, query_readonly enforced.
 
