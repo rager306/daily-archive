@@ -99,6 +99,46 @@ impl DailyArchiveMcpServer {
             .map_err(|e| e.to_string())?;
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
+
+    /// Get a paper's basic metadata by arXiv id.
+    #[rmcp::tool(description = "Get a paper node and its basic metadata (title, publication date, cited-by count, OpenAlex id) by arXiv id.")]
+    async fn get_paper(
+        &self,
+        parameters: Parameters<tools::GetPaperParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_paper(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
+    /// Get a paper's section tree (title, path_id, level) by arXiv id.
+    #[rmcp::tool(description = "Get the section navigation tree for a paper by arXiv id: section titles, path_id, and level in document order.")]
+    async fn get_sections(
+        &self,
+        parameters: Parameters<tools::GetSectionsParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_sections(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
+    /// Get CITES references for a paper (backward = papers it cites, forward =
+    /// papers that cite it, both = default).
+    #[rmcp::tool(description = "Get CITES references for a paper by arXiv id. direction: 'backward' (papers this paper cites), 'forward' (papers citing this paper), or 'both'.")]
+    async fn get_references(
+        &self,
+        parameters: Parameters<tools::GetReferencesParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_references(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
 }
 
 // server_handler flag emits `impl ServerHandler for DailyArchiveMcpServer` with

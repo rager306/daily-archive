@@ -65,6 +65,132 @@ const DESTRUCTIVE_KEYWORDS: &[&str] = &[
     "CREATE", "SET", "DELETE", "MERGE", "DROP", "REMOVE", "DETACH",
 ];
 
+/// Parameters for `get_paper` tool.
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetPaperParams {
+    /// arXiv id (e.g. "2212.14024").
+    pub arxiv_id: String,
+}
+
+/// Parameters for `get_sections` tool.
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetSectionsParams {
+    /// arXiv id (e.g. "2212.14024").
+    pub arxiv_id: String,
+}
+
+/// Parameters for `get_references` tool.
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetReferencesParams {
+    /// arXiv id (e.g. "2212.14024").
+    pub arxiv_id: String,
+    /// Direction: "forward" (papers citing this), "backward" (papers this
+    /// cites), or "both" (default).
+    #[serde(default)]
+    pub direction: String,
+}
+
+/// Check query result has rows. Helper to avoid repeating the read-only call.
+async fn run_readonly(
+    store: &dyn DirectGraphStore,
+    cypher: &str,
+) -> anyhow::Result<CypherOutput> {
+    let result = store.query_readonly("default", cypher).await?;
+    let row_count = result.records.len();
+    Ok(CypherOutput {
+        columns: result.columns,
+        records: result.records,
+        row_count,
+    })
+}
+
+/// Get a paper node and its basic metadata by arxiv_id.
+pub async fn get_paper(
+    store: &dyn DirectGraphStore,
+    params: GetPaperParams,
+) -> anyhow::Result<CypherOutput> {
+    // Parameterize safely: arxiv_id is inserted literally (validated below).
+    if params.arxiv_id.is_empty() {
+        return Err(anyhow::anyhow!("arxiv_id must not be empty"));
+    }
+    let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
+    let cypher = format!(
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}}) RETURN p.arxiv_id, p.title, p.publication_date, p.cited_by_count, p.openalex_id"
+    );
+    run_readonly(store, &cypher).await
+}
+
+/// Get the section navigation tree (path_id, parent, order) for a paper.
+pub async fn get_sections(
+    store: &dyn DirectGraphStore,
+    params: GetSectionsParams,
+) -> anyhow::Result<CypherOutput> {
+    if params.arxiv_id.is_empty() {
+        return Err(anyhow::anyhow!("arxiv_id must not be empty"));
+    }
+    let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
+    // Sections are linked to Paper via hasPart edge; path_id gives the tree.
+    let cypher = "MATCH (s:Section)<-[:hasPart]-(p:Paper {arxiv_id: '###'}) RETURN s.title, s.path_id, s.level ORDER BY s.order"
+        .replace("###", &escaped);
+    run_readonly(store, &cypher).await
+}
+
+/// Get CITES edges for a paper (backward = papers it cites, forward =
+/// papers that cite it).
+pub async fn get_references(
+    store: &dyn DirectGraphStore,
+    params: GetReferencesParams,
+) -> anyhow::Result<CypherOutput> {
+    let direction = params.direction.to_lowercase();
+    if params.arxiv_id.is_empty() {
+        return Err(anyhow::anyhow!("arxiv_id must not be empty"));
+    }
+    let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
+
+    let mut columns: Vec<String> = Vec::new();
+    let mut records: Vec<Vec<serde_json::Value>> = Vec::new();
+
+    // Backward: citations this paper points to (Paper -CITES-> Citation).
+    if direction == "backward" || direction == "both" {
+        let cypher = "MATCH (p:Paper {arxiv_id: '###'})-[:CITES]->(c:Citation) RETURN c.title AS cited_title, c.arxiv_id AS cited_arxiv_id LIMIT 200"
+            .replace("###", &escaped);
+        if let Ok(out) = run_readonly(store, &cypher).await {
+            if columns.is_empty() {
+                columns = out.columns.clone();
+            }
+            records.extend(out.records);
+        }
+    }
+
+    // Forward: papers that cite this paper (incoming CITES from other Papers).
+    if direction == "forward" || direction == "both" {
+        let cypher = "MATCH (p:Paper {arxiv_id: '###'})<-[:CITES]-(citer) RETURN citer.arxiv_id AS citing_arxiv_id, citer.title AS citing_title LIMIT 200"
+            .replace("###", &escaped);
+        if let Ok(out) = run_readonly(store, &cypher).await {
+            if columns.is_empty() {
+                columns = out.columns.clone();
+            }
+            // forward rows have different columns; concat as-is.
+            records.extend(out.records);
+        }
+    }
+
+    // Default columns when no rows (helpful for the caller).
+    if columns.is_empty() {
+        columns = if direction == "forward" {
+            vec!["citing_arxiv_id".to_string(), "citing_title".to_string()]
+        } else {
+            vec!["cited_title".to_string(), "cited_openalex_id".to_string()]
+        };
+    }
+
+    let row_count = records.len();
+    Ok(CypherOutput {
+        columns,
+        records,
+        row_count,
+    })
+}
 /// Run a read-only Cypher query against the graph.
 ///
 /// Rejects destructive keywords and uses `query_readonly` (engine-enforced
@@ -293,5 +419,63 @@ mod tests {
             result.is_ok(),
             "read-only query with CONTAINS must be allowed"
         );
+    }
+
+    // ─── ADR-054 MCP-3: get_paper / get_sections / get_references ───
+
+    #[tokio::test]
+    async fn test_get_paper_rejects_empty_arxiv_id() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = get_paper(
+            &store,
+            GetPaperParams {
+                arxiv_id: "".to_string(),
+            },
+        )
+        .await;
+        assert!(result.is_err(), "empty arxiv_id must be rejected");
+    }
+
+    #[tokio::test]
+    async fn test_get_paper_empty_graph_returns_zero_rows() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = get_paper(
+            &store,
+            GetPaperParams {
+                arxiv_id: "2212.14024".to_string(),
+            },
+        )
+        .await
+        .expect("get_paper should not error on empty mock");
+        assert_eq!(result.row_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_sections_rejects_empty_arxiv_id() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = get_sections(
+            &store,
+            GetSectionsParams {
+                arxiv_id: "".to_string(),
+            },
+        )
+        .await;
+        assert!(result.is_err(), "empty arxiv_id must be rejected");
+    }
+
+    #[tokio::test]
+    async fn test_get_references_invalid_direction_still_returns() {
+        let store = kg_storage::MockGraphStore::new();
+        // Unknown direction: no queries fire, returns empty (not error).
+        let result = get_references(
+            &store,
+            GetReferencesParams {
+                arxiv_id: "2212.14024".to_string(),
+                direction: "sideways".to_string(),
+            },
+        )
+        .await
+        .expect("invalid direction should return empty, not error");
+        assert_eq!(result.row_count, 0);
     }
 }

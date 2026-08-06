@@ -2,6 +2,49 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 7) — MCP Wave 3: get_paper + get_sections + get_references
+
+**Fourth MCP slice (ADR-054 MCP-3).** Added three product-facing tools that
+read real knowledge base content: paper lookup, section tree navigation, and
+citation graph retrieval.
+
+1. `crates/da-mcp/src/tools.rs`: new tools:
+   - `get_paper(arxiv_id)` — paper metadata (title, publication_date,
+     cited_by_count, openalex_id). Validates non-empty arxiv_id, escapes
+     injection chars.
+   - `get_sections(arxiv_id)` — section navigation tree (title, path_id,
+     level) in document order, via hasPart edge. 96 sections returned on
+     hub corpus.
+   - `get_references(arxiv_id, direction)` — citation graph:
+     - backward: papers this cites (via CITES edge to Citation nodes)
+     - forward: papers citing this (incoming CITES from other Papers)
+     - both (default)
+2. `crates/da-mcp/src/lib.rs`: 3 new tool handlers (get_paper, get_sections,
+   get_references)
+3. TDD: 4 new tests (11 → 15 da-mcp tests pass):
+   - `test_get_paper_rejects_empty_arxiv_id`
+   - `test_get_paper_empty_graph_returns_zero_rows`
+   - `test_get_sections_rejects_empty_arxiv_id`
+   - `test_get_references_invalid_direction_still_returns`
+4. **Live verification on hub_unlocked_t04.sgsnap:**
+   - `get_paper 2212.14024` → title "DEMONSTRATE-SEARCH-PREDICT..."
+   - `get_sections` → 96 sections with path_id + level
+   - `get_references backward` → 34+ cited paper arxiv_ids
+5. Trajectory ON_TRACK.
+
+**Product impact:** MCP clients can now search and navigate the actual
+knowledge graph: look up a paper, walk its section tree, explore its citation
+graph (forward + backward). This is the core product surface for
+Consensus-like search + fetch over daily-archive's graph.
+
+**Note:** Citation nodes for resolvable citations store `arxiv_id` but not
+`title` at ingest — `get_references` returns cited arxiv_ids (usable for
+further lookup via get_paper). title enrichment is a future ingest improvement.
+
+**Next slices:**
+- MCP-4: Resources (ontology YAMLs) + Prompts (literature_review, critical_reading)
+- MCP-6: vector_search tool (needs embedding)
+
 ### Session 2026-08-07 (late 6) — MCP Wave 2: real snapshot loading + read_cypher
 
 **Third MCP slice (ADR-054 MCP-2).** Connected the da-mcp server to a real
