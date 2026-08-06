@@ -337,6 +337,11 @@ impl IngestUseCase {
         // Each section gets a node with title, level, order, text.
         // Linked to Paper via hasPart edge (FaBiO frbr:part).
         let mut section_nodes = 0usize;
+        // Map: section_id (stable hash) -> graph node id. Used by ADR-053 Layer A
+        // T04 to wire next_sibling / first_child / parent_section edges after
+        // all Section nodes are created.
+        let mut section_id_map: std::collections::HashMap<String, u64> =
+            std::collections::HashMap::new();
         for (i, section) in parsed.sections.iter().enumerate() {
             let section_node = self.graph_store.create_node("Section").await?;
             self.graph_store
@@ -386,8 +391,28 @@ impl IngestUseCase {
             )
             .await?;
             section_nodes += 1;
+            // Record section_id -> graph_node_id mapping for ADR-053 Layer A
+            // navigation edge wiring (T04).
+            if let Some(sid) = &section.section_id {
+                section_id_map.insert(sid.clone(), section_node);
+            }
         }
         tracing::info!(paper_id, section_nodes, "Section nodes created");
+
+        // 4c. ADR-053 Layer A T04: document tree navigation edges.
+        // Build next_sibling / first_child / parent_section edges from the
+        // path_id tree computed by GrobidParser::extract_sections (T02).
+        // Only emitted when the parser produced nested structure (path_id is
+        // Some). Flat-section parsers skip this step (backward compat).
+        let nav_edges = build_section_navigation_edges(
+            &parsed.sections,
+            &section_id_map,
+            self.graph_store.as_ref(),
+        )
+        .await?;
+        if nav_edges > 0 {
+            tracing::info!(paper_id, nav_edges, "Section navigation edges created");
+        }
 
         // 5. HOT PATH: Add vector to index
         self.graph_store
@@ -640,6 +665,112 @@ fn extract_domain_from_path(pdf_path: &str) -> Option<String> {
     }
 }
 
+/// Build ADR-053 Layer A navigation edges (next_sibling, first_child,
+/// parent_section) between Section nodes from the path_id tree computed by
+/// GrobidParser::extract_sections (T02).
+///
+/// Returns the count of navigation edges created. Skips silently when no
+/// section has a populated `section_id` (legacy flat-section parsers).
+///
+/// All three edges are `temporal_class=structural` (created_at only per
+/// ADR-046). No bi-temporal stamping required for structural edges.
+async fn build_section_navigation_edges(
+    sections: &[da_ports::parser::Section],
+    section_id_map: &std::collections::HashMap<String, u64>,
+    graph_store: &dyn da_ports::graph_store::DirectGraphStore,
+) -> anyhow::Result<usize> {
+    use da_domain::relation::structure;
+
+    let mut edges_created = 0usize;
+
+    // Short-circuit: if no section has a section_id, this is a legacy
+    // flat-section parser output. Skip navigation edge creation entirely.
+    if section_id_map.is_empty() {
+        return Ok(0);
+    }
+
+    // Build next_sibling + parent_section edges per section.
+    // First-child edges: derived from parent_section_id + order_in_parent.
+    //
+    // Strategy: walk sections in document order. For each section with a
+    // path_id, compute its parent path_id (everything before the last '.') and
+    // find its next sibling (next section in the list with the same parent).
+    let path_to_node: std::collections::HashMap<&str, u64> = sections
+        .iter()
+        .filter_map(|s| {
+            s.path_id
+                .as_deref()
+                .and_then(|p| s.section_id.as_deref().map(|sid| (p, sid)))
+                .and_then(|(p, sid)| section_id_map.get(sid).map(|&n| (p, n)))
+        })
+        .collect();
+
+    for (i, section) in sections.iter().enumerate() {
+        let (Some(path_id), Some(section_id)) = (section.path_id.as_deref(), section.section_id.as_deref())
+        else { continue };
+        let Some(&this_node) = section_id_map.get(section_id) else { continue };
+
+        // parent_section edge: this → parent.
+        if let Some(parent_path) = parent_path_of(path_id)
+            && let Some(&parent_node) = path_to_node.get(parent_path)
+        {
+            graph_store
+                .create_edge(this_node, parent_node, structure::PARENT_SECTION)
+                .await?;
+            edges_created += 1;
+        }
+
+        // next_sibling edge: this → next section with the same parent.
+        let this_parent = parent_path_of(path_id).unwrap_or("");
+        if let Some(subsequent) = sections[i + 1..]
+            .iter()
+            .find(|s| s.path_id.is_some() && s.section_id.is_some())
+        {
+            let sub_path = subsequent.path_id.as_deref().unwrap();
+            let sub_sid = subsequent.section_id.as_deref().unwrap();
+            let sub_parent = parent_path_of(sub_path).unwrap_or("");
+            if sub_parent == this_parent
+                && let Some(&sibling_node) = section_id_map.get(sub_sid)
+            {
+                graph_store
+                    .create_edge(this_node, sibling_node, structure::NEXT_SIBLING)
+                    .await?;
+                edges_created += 1;
+            }
+        }
+
+        // first_child edge: this → first child (a section whose parent is this).
+        // Find the first subsequent section whose parent_path == this path_id.
+        if let Some(child) = sections[i + 1..]
+            .iter()
+            .find(|s| {
+                s.path_id
+                    .as_deref()
+                    .map(|cp| parent_path_of(cp) == Some(path_id))
+                    .unwrap_or(false)
+            })
+            && let Some(child_sid) = child.section_id.as_deref()
+            && let Some(&child_node) = section_id_map.get(child_sid)
+        {
+            graph_store
+                .create_edge(this_node, child_node, structure::FIRST_CHILD)
+                .await?;
+            edges_created += 1;
+        }
+    }
+
+    Ok(edges_created)
+}
+
+/// Return the parent path of a dotted path_id (everything before the last '.').
+/// Returns `None` for root sections (no parent).
+fn parent_path_of(path_id: &str) -> Option<&str> {
+    match path_id.rfind('.') {
+        Some(pos) => Some(&path_id[..pos]),
+        None => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -698,6 +829,135 @@ mod tests {
         let path = "/tmp/random/file.pdf";
         // Unknown source — should default but not crash
         assert_eq!(extract_source_from_path(path), None);
+    }
+
+    // ─── ADR-053 Layer A T04: build_section_navigation_edges tests ───
+
+    #[test]
+    fn test_parent_path_of_root_returns_none() {
+        assert_eq!(parent_path_of("1"), None);
+        assert_eq!(parent_path_of("2"), None);
+    }
+
+    #[test]
+    fn test_parent_path_of_nested_returns_parent() {
+        assert_eq!(parent_path_of("1.1"), Some("1"));
+        assert_eq!(parent_path_of("2.1.1"), Some("2.1"));
+        assert_eq!(parent_path_of("3.2.1.4"), Some("3.2.1"));
+    }
+
+    #[tokio::test]
+    async fn test_build_navigation_edges_empty_when_no_section_ids() {
+        use da_ports::parser::Section;
+        // Legacy flat-section parser output: no section_id populated.
+        let sections = vec![
+            Section {
+                title: "Intro".into(),
+                text: "text".into(),
+                level: 1,
+                ..Default::default()
+            },
+            Section {
+                title: "Methods".into(),
+                text: "text".into(),
+                level: 1,
+                ..Default::default()
+            },
+        ];
+        let section_id_map = std::collections::HashMap::new();
+        let store = kg_storage::MockGraphStore::new();
+        let edges = build_section_navigation_edges(&sections, &section_id_map, &store)
+            .await
+            .expect("navigation edges build");
+        assert_eq!(edges, 0, "no navigation edges when section_id_map is empty");
+    }
+
+    #[tokio::test]
+    async fn test_build_navigation_edges_nested_tree() {
+        use da_ports::parser::Section;
+        // Build a simple 3-level tree:
+        //   1 (root)
+        //   1.1 (child of 1)
+        //   1.2 (child of 1, sibling of 1.1)
+        //   2 (root)
+        //   2.1 (child of 2)
+        let sections = vec![
+            Section {
+                title: "Intro".into(),
+                text: "text".into(),
+                level: 1,
+                path_id: Some("1".into()),
+                section_id: Some("sec-1".into()),
+                parent_section_id: None,
+                order_in_parent: Some(0),
+                ..Default::default()
+            },
+            Section {
+                title: "Background".into(),
+                text: "text".into(),
+                level: 2,
+                path_id: Some("1.1".into()),
+                section_id: Some("sec-1.1".into()),
+                parent_section_id: Some("sec-1".into()),
+                order_in_parent: Some(0),
+                ..Default::default()
+            },
+            Section {
+                title: "Motivation".into(),
+                text: "text".into(),
+                level: 2,
+                path_id: Some("1.2".into()),
+                section_id: Some("sec-1.2".into()),
+                parent_section_id: Some("sec-1".into()),
+                order_in_parent: Some(1),
+                ..Default::default()
+            },
+            Section {
+                title: "Methods".into(),
+                text: "text".into(),
+                level: 1,
+                path_id: Some("2".into()),
+                section_id: Some("sec-2".into()),
+                parent_section_id: None,
+                order_in_parent: Some(0),
+                ..Default::default()
+            },
+            Section {
+                title: "Model".into(),
+                text: "text".into(),
+                level: 2,
+                path_id: Some("2.1".into()),
+                section_id: Some("sec-2.1".into()),
+                parent_section_id: Some("sec-2".into()),
+                order_in_parent: Some(0),
+                ..Default::default()
+            },
+        ];
+        let mut section_id_map = std::collections::HashMap::new();
+        // Mock node ids assigned by MockGraphStore start from 0.
+        for (i, sid) in ["sec-1", "sec-1.1", "sec-1.2", "sec-2", "sec-2.1"]
+            .iter()
+            .enumerate()
+        {
+            section_id_map.insert((*sid).to_string(), i as u64);
+        }
+        let store = kg_storage::MockGraphStore::new();
+        let edges = build_section_navigation_edges(&sections, &section_id_map, &store)
+            .await
+            .expect("navigation edges build");
+        // Expected edges:
+        //   1 -> first_child -> 1.1
+        //   1.1 -> parent_section -> 1
+        //   1.1 -> next_sibling -> 1.2
+        //   1.2 -> parent_section -> 1
+        //   2 -> first_child -> 2.1
+        //   2.1 -> parent_section -> 2
+        // Total = 6 edges
+        assert_eq!(
+            edges, 6,
+            "expected 6 navigation edges for 5-section tree, got {}",
+            edges
+        );
     }
 
     // Integration tests require live services (GROBID, fd_api, Samyama embedded)

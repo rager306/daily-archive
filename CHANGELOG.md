@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 5) — ADR-053 Layer A T04: ingest builds navigation edges
+
+**Fourth task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Wires
+the document tree computed by GrobidParser (T02) into actual graph edges
+via a new `build_section_navigation_edges` helper called from the ingest
+use case after Section node creation.
+
+1. `crates/da-application/src/ingest.rs`: record `section_id -> graph_node_id`
+   mapping during the Section node creation loop.
+2. New helper `build_section_navigation_edges(sections, section_id_map, store)`:
+   - builds `parent_section` edges (this → parent) from `parent_path_of(path_id)`
+   - builds `next_sibling` edges (this → next section with the same parent)
+   - builds `first_child` edges (this → first section whose parent is this)
+   - short-circuits to 0 edges when `section_id_map` is empty (legacy parsers)
+   - uses `Iterator::find` (clippy-approved vs `for` with immediate `break`)
+3. Helper `parent_path_of(path_id)` returns parent path (everything before
+   the last `.`), or `None` for root sections.
+4. TDD: 4 new tests (58 → 62 da-application tests pass):
+   - `test_parent_path_of_root_returns_none`
+   - `test_parent_path_of_nested_returns_parent`
+   - `test_build_navigation_edges_empty_when_no_section_ids` (backward compat)
+   - `test_build_navigation_edges_nested_tree` (5-section tree → 6 edges)
+5. Clippy clean (both `for loop never loops` error and `collapsible if` warning
+   fixed via `Iterator::find` and `if let ... && let ...` chain).
+6. Trajectory ON_TRACK.
+
+**Next task (same slice):**
+- T05: graph task suite `tree_navigation` template (3 Cypher queries)
+
 ### Session 2026-08-06 (late 4) — ADR-053 Layer A T03: navigation edge constants in relation.rs
 
 **Third task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Previous
