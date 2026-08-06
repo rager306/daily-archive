@@ -60,6 +60,16 @@ Four slices, TDD, governor on_track throughout.
   Pre-existing deuda desde M362 Section nav fields; no behavior change.
 - `da-mcp` crate doc sync (tool list ADR-054 surface).
 
+### Session 2026-08-07 (late+fix2) — Section mocks + Paper schema drift fix
+
+- `da-ports::Section` mocks in `da-application/tests` lacked new Layer A Option
+  fields → 2× E0063 on `cargo test --workspace`; fixed via `..Default::default()`.
+- `PaperSchema` + `node_schemas.yaml` lacked `openalex_id`/`openalex_pending`
+  written by `enrich.rs` → `audit-fields` failed; added both (TDD via audit).
+- `schema_check_test` counts bumped 16→17 (new distinct label after subgraph work).
+- `cargo test --workspace` + `schema_check_test` + governor all green; fmt drift
+  (~25 files) remains unstaged — intentional, not logic.
+
 **DB:** M365 S01+S02 complete, M366 S01+S02 complete; M365 ACTIVATING → seal
 next; M366 S03+S04 pending; M362-M364 unchanged (pending sketch hygiene deferred).
 
