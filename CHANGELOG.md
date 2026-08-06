@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 5) — MCP Wave 1.5: rmcp ServerHandler wired over stdio
+
+**Second MCP slice (ADR-054 MCP-1.5).** Connected the da-mcp crate to the
+rmcp v3.1.1 ServerHandler so tools are actually served over the MCP protocol.
+
+1. `crates/da-mcp/src/lib.rs`:
+   - `#[rmcp::tool_router(server_handler)]` on the impl block — auto-generates
+     `ServerHandler` with `get_info()` (tools capability) + `CallToolHandler`
+   - Tools use the exact rmcp v3 pattern: `#[rmcp::tool(description = ...)]`
+     + `Parameters<T>` destructuring + `Result<String, String>` return
+     (String implements IntoContents so it serializes as MCP text content)
+   - **Key fixes from rmcp v3 exploration:**
+     - `#[tool]` attribute must be fully-qualified `#[rmcp::tool]`
+     - No explicit `tool_router: ToolRouter<Self>` field needed —
+       `server_handler` flag emits the ServerHandler impl
+     - Tools with no parameters use `fn get_graph_stats(&self)` (no `Parameters<()>`
+       — the macro treats a unit-only arg as no-params and panics otherwise)
+2. `crates/da-mcp/src/main.rs`:
+   - Uses `serve_server_with_ct(server, stdio(), ct)` from rmcp service
+   - `tokio::signal::ctrl_c()` for clean shutdown
+3. `crates/da-mcp/Cargo.toml`: added `tokio-util`
+4. TDD: 7 da-mcp tests pass (4 tool + 3 server config)
+5. **Live MCP protocol verification (stdio):**
+   - `initialize` → `capabilities.tools` present ✅
+   - `tools/list` → both tools (get_schema, get_graph_stats) ✅
+   - `tools/call get_schema {"include_samples":true}` → 31 node labels,
+     21 edge types loaded **dynamically from `edge_contracts.yaml`** ✅
+   - `tools/call get_graph_stats` → node/edge counts ✅
+6. Trajectory ON_TRACK.
+
+**Schema is fully dynamic (user requirement):** `get_schema` tool returns the
+ontology from YAML (`node_schemas.yaml` labels + `edge_contracts.yaml` edge
+types) — no hardcoded schema. Adding a new edge to YAML immediately appears
+in the MCP schema response.
+
+**Next slices:**
+- MCP-2: read_cypher + search_papers + get_paper tools (needs real Samyama
+  graph store / snapshot loading, not MockGraphStore)
+- MCP-3: get_sections + get_references + get_entities tools
+
 ### Session 2026-08-07 (late 4) — MCP server Wave 1: da-mcp crate skeleton + get_schema + get_graph_stats
 
 **First implementation slice of ADR-054.** Built the `da-mcp` crate skeleton

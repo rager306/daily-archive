@@ -2,25 +2,27 @@
 //!
 //! Usage:
 //!   da-mcp --stdio --snapshot <file.sgsnap>
-//!   da-mcp --stdio  (uses empty graph — for tool discovery only)
+//!   da-mcp --stdio  (empty graph — tool discovery only)
 //!
-//! Wave 1 (MCP-1): skeleton + get_schema + get_graph_stats tools.
+//! Wave 1.5 (MCP-1.5): rmcp ServerHandler wired over stdio transport.
 
 use std::sync::Arc;
 
 use clap::Parser;
-use da_mcp::{tools as mcp_tools, DailyArchiveMcpServer};
+use da_mcp::DailyArchiveMcpServer;
 use kg_storage::{DirectGraphStore, MockGraphStore};
+use rmcp::transport::stdio;
+use rmcp::{RoleServer, service::serve_server_with_ct};
 
 /// MCP server for daily-archive knowledge base.
 #[derive(Parser, Debug)]
 #[command(name = "da-mcp", version, about)]
 struct Cli {
-    /// Use stdio transport (default, for Claude Desktop and IDE integration).
+    /// Use stdio transport (default for Claude Desktop / IDE integration).
     #[arg(long)]
     stdio: bool,
 
-    /// Snapshot file path (.sgsnap). Loads graph into in-process Samyama engine.
+    /// Snapshot file path (.sgsnap). Loads graph into in-process engine.
     #[arg(long)]
     snapshot: Option<String>,
 
@@ -33,53 +35,36 @@ struct Cli {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging (stderr only — stdout is for MCP protocol).
+    // stderr-only logging (stdout is reserved for MCP JSON-RPC protocol).
     let _guard = da_cli::logging::init_logging();
 
     tracing::info!(
         snapshot = ?cli.snapshot,
         stdio = cli.stdio,
-        "da-mcp server starting (ADR-054 Wave 1)"
+        "da-mcp server starting (ADR-054 Wave 1.5)"
     );
 
-    // For Wave 1 skeleton: use MockGraphStore (snapshot loading comes in MCP-1.5).
-    // Real snapshot loading requires kg-storage SamyamaGraphStore::import_snapshot.
-    let store: Box<dyn DirectGraphStore> = Box::new(MockGraphStore::new());
-    let server = DailyArchiveMcpServer::new(store);
-
-    // Wave 1: demonstrate tools work by calling them directly.
-    // Full MCP protocol wiring (rmcp ServerHandler) comes next.
-    let schema = mcp_tools::get_schema(server.graph_store.as_ref(), Default::default())
-        .await
-        .map_err(|e| anyhow::anyhow!("get_schema failed: {e}"))?;
-    tracing::info!(
-        node_labels = schema.node_labels.len(),
-        edge_types = schema.edge_types.len(),
-        "Schema loaded"
-    );
-
-    let stats = mcp_tools::get_graph_stats(server.graph_store.as_ref(), cli.snapshot.as_deref())
-        .await
-        .map_err(|e| anyhow::anyhow!("get_graph_stats failed: {e}"))?;
-    tracing::info!(
-        total_nodes = stats.total_nodes,
-        total_edges = stats.total_edges,
-        "Graph stats loaded"
-    );
+    let store: Arc<dyn DirectGraphStore> = Arc::new(MockGraphStore::new());
+    let server = if let Some(snap) = &cli.snapshot {
+        DailyArchiveMcpServer::with_snapshot(store, snap.clone())
+    } else {
+        DailyArchiveMcpServer::new(store)
+    };
 
     if cli.stdio {
-        tracing::info!("stdio transport requested — full MCP protocol wiring is the next slice");
-        // TODO: rmcp serve_server via stdio transport (MCP-1 next step)
-        println!(
-            "{}",
-            serde_json::json!({
-                "status": "da-mcp skeleton ready",
-                "node_labels": schema.node_labels.len(),
-                "edge_types": schema.edge_types.len(),
-                "total_nodes": stats.total_nodes,
-                "next": "MCP-1.5: rmcp ServerHandler wiring for stdio transport"
-            })
-        );
+        // rmcp v3: serve over stdio. The stdio transport is a (Stdin, Stdout)
+        // pair which implements IntoTransport for RoleServer.
+        let ct = tokio_util::sync::CancellationToken::new();
+        let running = serve_server_with_ct(server, stdio(), ct.clone())
+            .await
+            .map_err(|e| anyhow::anyhow!("MCP server init failed: {e}"))?;
+        tracing::info!("MCP server ready on stdio — waiting for requests");
+        // Block until cancellation (e.g. client closes).
+        tokio::signal::ctrl_c().await.ok();
+        tracing::info!("shutdown signal received");
+        let _ = running;
+    } else {
+        tracing::warn!("no transport selected (use --stdio)");
     }
 
     Ok(())
