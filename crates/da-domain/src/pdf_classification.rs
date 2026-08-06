@@ -84,8 +84,7 @@ impl PdfClassification {
 
     /// Returns true if the PDF needs OCR on all content pages.
     pub fn needs_full_ocr(&self) -> bool {
-        !self.pages_needing_ocr.is_empty()
-            && self.pages_needing_ocr.len() as u32 == self.page_count
+        !self.pages_needing_ocr.is_empty() && self.pages_needing_ocr.len() as u32 == self.page_count
     }
 
     /// Returns the OCR reason for a specific 1-indexed page, if any.

@@ -86,7 +86,10 @@ pub fn registered_edge_types_or_yaml() -> Vec<String> {
     {
         return reg.edge_types();
     }
-    registered_edge_types().into_iter().map(|s| s.to_string()).collect()
+    registered_edge_types()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect()
 }
 
 /// Node labels from external meta-ontology (`data/ontology/node_schemas.yaml`) when

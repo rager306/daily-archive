@@ -37,12 +37,15 @@ pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
     edge_contracts_or_yaml, render_edge_contracts_yaml, render_markdown_table,
 };
-pub use entity::{Entity, EntitySchema, EntityType, ENTITY_TYPES};
+pub use entity::{ENTITY_TYPES, Entity, EntitySchema, EntityType};
 pub use eval::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
     promote_candidates,
 };
-pub use evidence::{EpistemicStatus, EvidenceAssertion, EvidenceId, EvidenceVerdict, EvidenceVerification, SourceSpan, SpanType};
+pub use evidence::{
+    EpistemicStatus, EvidenceAssertion, EvidenceId, EvidenceVerdict, EvidenceVerification,
+    SourceSpan, SpanType,
+};
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
 };
@@ -59,8 +62,8 @@ pub use import_eligibility::ImportEligibility;
 
 pub mod pdf_classification;
 pub use pdf_classification::{
-    PageOcrReasons, PdfClassification, PdfType, OCR_REASON_NO_TEXT, OCR_REASON_SCANNED,
-    OCR_REASON_SUSPECTED_GARBLED_TEXT, OCR_REASON_VECTOR_TEXT,
+    OCR_REASON_NO_TEXT, OCR_REASON_SCANNED, OCR_REASON_SUSPECTED_GARBLED_TEXT,
+    OCR_REASON_VECTOR_TEXT, PageOcrReasons, PdfClassification, PdfType,
 };
 pub use relation::{CitationSchema, RELATION_TYPES, Relation, RelationType, bibliographic};
 pub use scheduler::{
@@ -182,13 +185,27 @@ mod serde_roundtrip_tests {
     #[test]
     fn roundtrip_entity_type_all_variants() {
         let variants = [
-            EntityType::Task, EntityType::Method, EntityType::Dataset,
-            EntityType::Model, EntityType::Metric, EntityType::Figure,
-            EntityType::Table, EntityType::Equation, EntityType::Concept,
-            EntityType::Implementation, EntityType::Theorem, EntityType::Definition,
-            EntityType::Problem, EntityType::Motivation, EntityType::Gap,
-            EntityType::Contribution, EntityType::Hypothesis, EntityType::Finding,
-            EntityType::Mechanism, EntityType::Limitation, EntityType::FutureWork,
+            EntityType::Task,
+            EntityType::Method,
+            EntityType::Dataset,
+            EntityType::Model,
+            EntityType::Metric,
+            EntityType::Figure,
+            EntityType::Table,
+            EntityType::Equation,
+            EntityType::Concept,
+            EntityType::Implementation,
+            EntityType::Theorem,
+            EntityType::Definition,
+            EntityType::Problem,
+            EntityType::Motivation,
+            EntityType::Gap,
+            EntityType::Contribution,
+            EntityType::Hypothesis,
+            EntityType::Finding,
+            EntityType::Mechanism,
+            EntityType::Limitation,
+            EntityType::FutureWork,
         ];
         for v in &variants {
             roundtrip_json(v);

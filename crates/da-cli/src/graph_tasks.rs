@@ -29,19 +29,16 @@ impl GraphTask {
     ///
     /// Bound failures downgrade to `Empty` — the task didn't prove what it
     /// asserted, so it is treated as a non-passing result in the suite gate.
-    pub fn classify(
-        &self,
-        row_count: usize,
-        first_cell_number: Option<f64>,
-    ) -> TaskVerdict {
+    pub fn classify(&self, row_count: usize, first_cell_number: Option<f64>) -> TaskVerdict {
         let base = classify_result_rows(row_count, first_cell_number, self.min_rows);
         if base != TaskVerdict::Pass {
             return base;
         }
         if let Some(expected) = self.expect_rows
-            && row_count != expected {
-                return TaskVerdict::Empty;
-            }
+            && row_count != expected
+        {
+            return TaskVerdict::Empty;
+        }
         if let Some(min_val) = self.expect_min_value {
             match first_cell_number {
                 Some(actual) if actual >= min_val => {}
@@ -92,9 +89,10 @@ pub fn classify_result_rows(
     }
     if row_count == 1
         && let Some(n) = first_cell_number
-            && n == 0.0 {
-                return TaskVerdict::Empty;
-            }
+        && n == 0.0
+    {
+        return TaskVerdict::Empty;
+    }
     TaskVerdict::Pass
 }
 
@@ -231,7 +229,10 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
                 .parse::<f64>()
                 .map_err(|_| format!("line {}: invalid @expect_min_value", lineno + 1))?;
             if !v.is_finite() {
-                return Err(format!("line {}: @expect_min_value must be finite", lineno + 1));
+                return Err(format!(
+                    "line {}: @expect_min_value must be finite",
+                    lineno + 1
+                ));
             }
             pending_expect_min_value = Some(v);
             continue;
@@ -524,13 +525,14 @@ mod proptest_tests {
 
     /// Generate a valid single-task cypher suite string.
     fn arb_single_task() -> impl Strategy<Value = String> {
-        ("[a-zA-Z0-9 _-]+", "[a-zA-Z0-9 _-]+", "[a-zA-Z0-9 ;().,_=-]+").prop_map(
-            |(title, insight, cypher)| {
-                format!(
-                    "// @query {title} | {insight}\n{cypher};\n"
-                )
-            },
+        (
+            "[a-zA-Z0-9 _-]+",
+            "[a-zA-Z0-9 _-]+",
+            "[a-zA-Z0-9 ;().,_=-]+",
         )
+            .prop_map(|(title, insight, cypher)| {
+                format!("// @query {title} | {insight}\n{cypher};\n")
+            })
     }
 
     /// Generate a multi-task suite with 1-5 tasks.

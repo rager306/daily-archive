@@ -327,11 +327,7 @@ impl EnrichUseCase {
                             .set_node_property_string(node, "openalex_id", ref_openalex_id.clone())
                             .await?;
                         self.graph_store
-                            .set_node_property_string(
-                                node,
-                                "vid",
-                                vid::paper_vid(ref_openalex_id),
-                            )
+                            .set_node_property_string(node, "vid", vid::paper_vid(ref_openalex_id))
                             .await?;
                         self.graph_store
                             .set_node_property_bool(node, "retrieval_eligible", false)

@@ -151,7 +151,7 @@ class TrajectoryService:
         return flags
 
     def _build_drift_flags(self, audit_report, dimensions) -> list[DriftFlag]:
-        flags = []
+        flags: list[DriftFlag] = []
         if audit_report.has_blocking:
             flags.append(
                 DriftFlag(

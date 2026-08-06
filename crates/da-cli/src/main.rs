@@ -3,7 +3,6 @@ mod logging;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-
 mod analyze;
 mod batch_ids;
 mod graph_ping;
@@ -369,7 +368,11 @@ fn main() {
             println!("ADR-037/038/039/040/041 — Samyama Graph + RuVector + RVF");
             println!("Phase: ingest + extraction + healing + schema + enrich");
         }
-        Commands::Ingest { pdf, id, enable_import } => {
+        Commands::Ingest {
+            pdf,
+            id,
+            enable_import,
+        } => {
             println!("Ingesting: {} → {}", pdf, id);
             if enable_import {
                 println!("⚠  D127 UNLOCKED: --enable-import set; nodes will be marked Eligible");
@@ -820,10 +823,7 @@ async fn batch_ingest(
                     t.type_unknown
                 );
                 if !t.papers_with_ocr.is_empty() {
-                    println!(
-                        "   OCR papers (sample): {}",
-                        t.papers_with_ocr.join(", ")
-                    );
+                    println!("   OCR papers (sample): {}", t.papers_with_ocr.join(", "));
                 }
             }
             for (pid, err) in &r.errors {
@@ -1357,7 +1357,10 @@ async fn enrich_from_openalex(
                 println!("   Authors: {}", result.authors_written);
                 println!("   Concepts: {} (deprecated)", result.concepts_written);
                 println!("   Cited by: {}", result.cited_by_count);
-                println!("   CITES edges: {} (from referenced_works)", result.cites_edges_written);
+                println!(
+                    "   CITES edges: {} (from referenced_works)",
+                    result.cites_edges_written
+                );
             }
             if let Some(out) = output_snapshot {
                 export_store_snapshot(use_case.graph_store.as_ref(), out).await;
@@ -1397,7 +1400,10 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
                 } else {
                     println!(
                         "  ✅ {}: {} topics, {} authors, {} cites",
-                        arxiv_id, result.topics_written, result.authors_written, result.cites_edges_written
+                        arxiv_id,
+                        result.topics_written,
+                        result.authors_written,
+                        result.cites_edges_written
                     );
                     total_topics += result.topics_written;
                     total_authors += result.authors_written;

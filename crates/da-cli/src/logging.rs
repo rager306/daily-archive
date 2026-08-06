@@ -48,17 +48,14 @@ pub fn init_logging() -> Option<WorkerGuard> {
     let log_dir = std::env::var("LOG_DIR").unwrap_or_else(|_| "logs".to_string());
 
     // Build filter: RUST_LOG > LOG_LEVEL > default info
-    let default_filter =
-        std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new(&default_filter));
+    let default_filter = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+    let filter =
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(&default_filter));
 
     // Create log directory
     let log_path = PathBuf::from(&log_dir);
     if let Err(e) = std::fs::create_dir_all(&log_path) {
-        eprintln!(
-            "⚠  Cannot create log dir {log_dir}: {e}; falling back to stderr-only"
-        );
+        eprintln!("⚠  Cannot create log dir {log_dir}: {e}; falling back to stderr-only");
         let _ = tracing_subscriber::fmt()
             .with_env_filter(filter)
             .with_target(true)
@@ -69,8 +66,7 @@ pub fn init_logging() -> Option<WorkerGuard> {
 
     // Rolling daily file appender: logs/da.log.YYYY-MM-DD
     let file_appender = tracing_appender::rolling::daily(&log_dir, "da.log");
-    let (file_writer, guard) =
-        tracing_appender::non_blocking::NonBlocking::new(file_appender);
+    let (file_writer, guard) = tracing_appender::non_blocking::NonBlocking::new(file_appender);
 
     // Build layered subscriber — direct composition without type erasure.
     // Per-layer filtering requires nightly features; use global filter instead.
@@ -104,9 +100,7 @@ pub fn init_logging() -> Option<WorkerGuard> {
         eprintln!("⚠  Logging init returned non-fatal: {e}");
     }
 
-    let abs_path = log_path
-        .canonicalize()
-        .unwrap_or_else(|_| log_path.clone());
+    let abs_path = log_path.canonicalize().unwrap_or_else(|_| log_path.clone());
     tracing::info!(
         log_dir = %abs_path.display(),
         "Logging initialized: stderr (compact) + rolling file (JSON)"

@@ -147,8 +147,8 @@ impl DecisionCategoriesRegistry {
     fn load() -> Self {
         let yaml_str = std::fs::read_to_string("data/ontology/decision_categories.yaml")
             .unwrap_or_else(|_| BUNDLED_DECISION_CATEGORIES_YAML.to_string());
-        let data: DecisionCategoriesYaml = serde_yaml::from_str(&yaml_str)
-            .expect("decision_categories.yaml must be valid YAML");
+        let data: DecisionCategoriesYaml =
+            serde_yaml::from_str(&yaml_str).expect("decision_categories.yaml must be valid YAML");
         let categories = data
             .categories
             .iter()
@@ -167,8 +167,8 @@ impl DecisionCategoriesRegistry {
             decision_maker_prefixes: data
                 .decision_makers
                 .iter()
-            .map(|m| m.prefix.clone())
-            .collect(),
+                .map(|m| m.prefix.clone())
+                .collect(),
         }
     }
 
@@ -1174,9 +1174,15 @@ mod tests {
     fn test_decision_outcome_valid_for_category() {
         // Category-specific outcomes.
         assert!(is_valid_decision_outcome("healing_action", "approved"));
-        assert!(is_valid_decision_outcome("conflict_resolution", "winner_decided"));
+        assert!(is_valid_decision_outcome(
+            "conflict_resolution",
+            "winner_decided"
+        ));
         assert!(is_valid_decision_outcome("hypothesis_tested", "confirmed"));
-        assert!(is_valid_decision_outcome("retraction_recorded", "retracted"));
+        assert!(is_valid_decision_outcome(
+            "retraction_recorded",
+            "retracted"
+        ));
         // Global outcomes apply to every category.
         assert!(is_valid_decision_outcome("promotion", "deferred"));
         assert!(is_valid_decision_outcome("schema_migration", "deferred"));
@@ -1185,7 +1191,10 @@ mod tests {
     #[test]
     fn test_decision_outcome_invalid() {
         // Unknown outcome for a known category.
-        assert!(!is_valid_decision_outcome("healing_action", "bogus_outcome"));
+        assert!(!is_valid_decision_outcome(
+            "healing_action",
+            "bogus_outcome"
+        ));
         // Outcome for unknown category.
         assert!(!is_valid_decision_outcome("bogus_category", "approved"));
         // Empty outcome.
@@ -1205,7 +1214,11 @@ mod tests {
     #[test]
     fn test_known_decision_categories_non_empty() {
         let cats = known_decision_categories();
-        assert!(cats.len() >= 8, "expected >= 8 Phase 1 categories, got {}", cats.len());
+        assert!(
+            cats.len() >= 8,
+            "expected >= 8 Phase 1 categories, got {}",
+            cats.len()
+        );
     }
 
     // ─── ADR-048 DecisionSchema field tests ───

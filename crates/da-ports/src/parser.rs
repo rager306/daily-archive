@@ -43,7 +43,6 @@ pub struct Section {
     // When present, enable document-tree navigation: path_id, parent_section_id,
     // order_in_parent, section_id. The first_child / next_sibling / parent_section
     // edges are created in the ingest use case (T04) from these fields.
-
     /// Structural path computed from TEI nested `<div n="N">` structure,
     /// e.g. "3.2.1". Stable across re-ingest of the same PDF.
     /// `None` for legacy parsers that produce flat section lists.

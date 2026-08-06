@@ -17,8 +17,8 @@
 //!   valid time (valid_at → invalid_at): when the fact was true in the world
 //!   transaction time (created_at → expired_at): when the system knew it
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Sentinel string value for open temporal bounds (invalid_at, expired_at).
 /// Matches Semantica's TemporalBound::OPEN convention; serializable in
@@ -374,15 +374,15 @@ mod proptest_tests {
             prop::option::of(arb_ts()),
             arb_ts(),
         )
-            .prop_map(|(valid_at, invalid_at, expired_at, reference_time, created_at)| {
-                TemporalEdge {
+            .prop_map(
+                |(valid_at, invalid_at, expired_at, reference_time, created_at)| TemporalEdge {
                     valid_at,
                     invalid_at,
                     expired_at,
                     reference_time,
                     created_at,
-                }
-            })
+                },
+            )
     }
 
     /// Consistent edges: valid_at <= invalid_at (if set), created_at <= expired_at (if set).

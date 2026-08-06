@@ -5,9 +5,9 @@
 //!
 //! Enable with feature `pdf-classifier`.
 
+use async_trait::async_trait;
 use da_domain::{PageOcrReasons, PdfClassification, PdfType};
 use da_ports::{ClassificationError, ClassificationResult, PdfClassificationPort};
-use async_trait::async_trait;
 
 /// pdf-inspector backed PDF classifier.
 ///
@@ -67,9 +67,7 @@ fn map_pdf_type(t: &pdf_inspector::PdfType) -> PdfType {
         pdf_inspector::PdfType::Mixed => PdfType::Mixed,
     }
 }
-fn map_ocr_reasons(
-    reasons: &[pdf_inspector::PageOcrReasons],
-) -> Vec<PageOcrReasons> {
+fn map_ocr_reasons(reasons: &[pdf_inspector::PageOcrReasons]) -> Vec<PageOcrReasons> {
     reasons
         .iter()
         .map(|r| PageOcrReasons {
@@ -93,9 +91,18 @@ mod tests {
 
     #[test]
     fn test_map_pdf_type() {
-        assert_eq!(map_pdf_type(&pdf_inspector::PdfType::TextBased), PdfType::Text);
-        assert_eq!(map_pdf_type(&pdf_inspector::PdfType::Scanned), PdfType::Scanned);
-        assert_eq!(map_pdf_type(&pdf_inspector::PdfType::ImageBased), PdfType::Image);
+        assert_eq!(
+            map_pdf_type(&pdf_inspector::PdfType::TextBased),
+            PdfType::Text
+        );
+        assert_eq!(
+            map_pdf_type(&pdf_inspector::PdfType::Scanned),
+            PdfType::Scanned
+        );
+        assert_eq!(
+            map_pdf_type(&pdf_inspector::PdfType::ImageBased),
+            PdfType::Image
+        );
         assert_eq!(map_pdf_type(&pdf_inspector::PdfType::Mixed), PdfType::Mixed);
     }
 

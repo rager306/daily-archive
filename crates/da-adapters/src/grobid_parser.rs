@@ -220,7 +220,7 @@ impl GrobidParser {
     /// - `section_id` = `sec-<path_id>` (stable hash for edge wiring)
     /// - `level` = path component count (1-based depth)
     fn extract_sections_recursive(body: &str) -> Vec<da_ports::parser::Section> {
-        use da_ports::parser::Section;
+        
         let mut out = Vec::new();
         Self::walk_divs(body, "", &mut 0u32, &mut out);
         out
@@ -388,7 +388,8 @@ impl GrobidParser {
             let head_close = div_content[content_start..].find("</head>");
             match head_close {
                 Some(e) => {
-                    let title = Self::strip_xml_tags(&div_content[content_start..content_start + e]);
+                    let title =
+                        Self::strip_xml_tags(&div_content[content_start..content_start + e]);
                     (title, content_start + e + "</head>".len())
                 }
                 None => (String::new(), 0),
@@ -848,7 +849,11 @@ mod tests {
             .iter()
             .filter_map(|s| s.path_id.as_deref())
             .collect();
-        assert!(path_ids.contains(&"1"), "missing root 1, got: {:?}", path_ids);
+        assert!(
+            path_ids.contains(&"1"),
+            "missing root 1, got: {:?}",
+            path_ids
+        );
         assert!(path_ids.contains(&"1.1"));
         assert!(path_ids.contains(&"1.2"));
         assert!(path_ids.contains(&"2"));
@@ -876,7 +881,10 @@ mod tests {
             .iter()
             .find(|s| s.path_id.as_deref() == Some("1"))
             .expect("section 1 present");
-        assert!(intro.parent_section_id.is_none(), "root section has no parent");
+        assert!(
+            intro.parent_section_id.is_none(),
+            "root section has no parent"
+        );
     }
 
     #[test]
@@ -928,7 +936,10 @@ mod tests {
             .find(|s| s.path_id.as_deref() == Some("2.1.1"))
             .expect("section 2.1.1 present");
         // level field is populated from existing logic — recursive walk must set it.
-        assert_eq!(encoder.level, 3, "level = path_id component count (1-based)");
+        assert_eq!(
+            encoder.level, 3,
+            "level = path_id component count (1-based)"
+        );
         // Root section has level 1.
         let root = sections
             .iter()

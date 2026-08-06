@@ -37,7 +37,7 @@
       "status": "crystallized",
       "evidence": [
         "ADR-034 hexagonal/onion overlay on Rust workspace",
-        "da-domain <- da-ports <- da-application <- da-adapters/da-cli",
+        "da-domain <- da-ports <- da-application (da-adapters implements ports, da-cli/da-mcp are composition roots)",
         "kg-* universal crate family (ADR-050, no da-* deps)",
         "scripts/verify_rust_architecture.sh guardrail"
       ]
@@ -86,6 +86,16 @@
         "Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]",
         "test_coverage_delta dimension added M287 post-session"
       ]
+    },
+    "resource_safety": {
+      "description": "Disk space and memory checks — prevent mid-process crashes (M360+)",
+      "status": "healthy",
+      "evidence": [
+        "Preflight disk/memory check before cargo builds and long-running pipelines",
+        "df -h / and free -m via psutil or /proc/meminfo",
+        "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)",
+        "Added after disk pollution incident from excessive cargo build calls"
+      ]
     }
   },
   "drift_flags": [],
@@ -98,7 +108,7 @@
     "No drift detected. Continue current milestone."
   ],
   "milestone_context": {
-    "latest_milestone_id": "358",
-    "latest_milestone_title": "ctmkiu-fix-extract-mentions-edges-gap-after-d12"
+    "latest_milestone_id": "366",
+    "latest_milestone_title": "s5g78y-mcp-product-wave-1-thin-slices-search-pa"
   }
 }

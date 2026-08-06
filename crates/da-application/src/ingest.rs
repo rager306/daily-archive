@@ -9,10 +9,10 @@ use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
 use da_domain::{ImportEligibility, PdfClassification};
+use da_ports::PdfClassificationPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParserPort;
-use da_ports::PdfClassificationPort;
 use serde::{Deserialize, Serialize};
 
 /// Ingest pipeline dependencies (injected ports).
@@ -78,7 +78,10 @@ impl IngestUseCase {
     }
 
     /// Set optional PDF classifier (M347). Enables pre-GROBID triage.
-    pub fn with_pdf_classifier(mut self, classifier: std::sync::Arc<dyn PdfClassificationPort>) -> Self {
+    pub fn with_pdf_classifier(
+        mut self,
+        classifier: std::sync::Arc<dyn PdfClassificationPort>,
+    ) -> Self {
         self.pdf_classifier = Some(classifier);
         self
     }
@@ -104,7 +107,10 @@ impl IngestUseCase {
         // D127 / M357: import eligibility computed from CLI flag (default Locked).
         let eligible = self.eligibility.is_eligible();
         if eligible {
-            tracing::warn!(paper_id, "D127 UNLOCKED: nodes marked eligible for import (--enable-import)");
+            tracing::warn!(
+                paper_id,
+                "D127 UNLOCKED: nodes marked eligible for import (--enable-import)"
+            );
         }
 
         // ADR-043: extract scientific_domain from catalog path if available
@@ -121,33 +127,31 @@ impl IngestUseCase {
         let mut pdf_classification: Option<PdfClassification> = None;
         if let Some(classifier) = &self.pdf_classifier {
             match std::fs::read(pdf_path) {
-                Ok(pdf_bytes) => {
-                    match classifier.classify(&pdf_bytes).await {
-                        Ok(classification) => {
-                            tracing::info!(
+                Ok(pdf_bytes) => match classifier.classify(&pdf_bytes).await {
+                    Ok(classification) => {
+                        tracing::info!(
+                            paper_id,
+                            pdf_type = ?classification.pdf_type,
+                            page_count = classification.page_count,
+                            pages_needing_ocr = classification.pages_needing_ocr.len(),
+                            has_encoding_issues = classification.has_encoding_issues,
+                            confidence = classification.confidence,
+                            "PDF classified (pre-GROBID)"
+                        );
+                        if !classification.is_text_extractable() {
+                            tracing::warn!(
                                 paper_id,
                                 pdf_type = ?classification.pdf_type,
-                                page_count = classification.page_count,
-                                pages_needing_ocr = classification.pages_needing_ocr.len(),
-                                has_encoding_issues = classification.has_encoding_issues,
-                                confidence = classification.confidence,
-                                "PDF classified (pre-GROBID)"
+                                pages_needing_ocr = ?classification.pages_needing_ocr,
+                                "PDF not fully text-extractable; GROBID may produce partial results"
                             );
-                            if !classification.is_text_extractable() {
-                                tracing::warn!(
-                                    paper_id,
-                                    pdf_type = ?classification.pdf_type,
-                                    pages_needing_ocr = ?classification.pages_needing_ocr,
-                                    "PDF not fully text-extractable; GROBID may produce partial results"
-                                );
-                            }
-                            pdf_classification = Some(classification);
                         }
-                        Err(e) => {
-                            tracing::warn!(paper_id, error = %e, "PDF classification failed; continuing to GROBID");
-                        }
+                        pdf_classification = Some(classification);
                     }
-                }
+                    Err(e) => {
+                        tracing::warn!(paper_id, error = %e, "PDF classification failed; continuing to GROBID");
+                    }
+                },
                 Err(e) => {
                     tracing::warn!(paper_id, error = %e, "Cannot read PDF for classification; continuing to GROBID");
                 }
@@ -728,9 +732,14 @@ async fn build_section_navigation_edges(
         .collect();
 
     for (i, section) in sections.iter().enumerate() {
-        let (Some(path_id), Some(section_id)) = (section.path_id.as_deref(), section.section_id.as_deref())
-        else { continue };
-        let Some(&this_node) = section_id_map.get(section_id) else { continue };
+        let (Some(path_id), Some(section_id)) =
+            (section.path_id.as_deref(), section.section_id.as_deref())
+        else {
+            continue;
+        };
+        let Some(&this_node) = section_id_map.get(section_id) else {
+            continue;
+        };
 
         // parent_section edge: this → parent.
         if let Some(parent_path) = parent_path_of(path_id)
@@ -763,15 +772,12 @@ async fn build_section_navigation_edges(
 
         // first_child edge: this → first child (a section whose parent is this).
         // Find the first subsequent section whose parent_path == this path_id.
-        if let Some(child) = sections[i + 1..]
-            .iter()
-            .find(|s| {
-                s.path_id
-                    .as_deref()
-                    .map(|cp| parent_path_of(cp) == Some(path_id))
-                    .unwrap_or(false)
-            })
-            && let Some(child_sid) = child.section_id.as_deref()
+        if let Some(child) = sections[i + 1..].iter().find(|s| {
+            s.path_id
+                .as_deref()
+                .map(|cp| parent_path_of(cp) == Some(path_id))
+                .unwrap_or(false)
+        }) && let Some(child_sid) = child.section_id.as_deref()
             && let Some(&child_node) = section_id_map.get(child_sid)
         {
             graph_store

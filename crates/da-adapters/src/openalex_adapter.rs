@@ -220,19 +220,16 @@ impl OpenAlexClient for OpenAlexHttpAdapter {
             return Err(OpenAlexError::Api(format!("HTTP {}", status)));
         }
 
-        let body: serde_json::Value = resp
-            .json()
-            .await
-            .map_err(|e| {
-                tracing::warn!(
-                    arxiv_id,
-                    api = "openalex",
-                    error = %e,
-                    elapsed_ms,
-                    "OpenAlex API JSON parse error"
-                );
-                OpenAlexError::Api(format!("JSON parse: {e}"))
-            })?;
+        let body: serde_json::Value = resp.json().await.map_err(|e| {
+            tracing::warn!(
+                arxiv_id,
+                api = "openalex",
+                error = %e,
+                elapsed_ms,
+                "OpenAlex API JSON parse error"
+            );
+            OpenAlexError::Api(format!("JSON parse: {e}"))
+        })?;
 
         let results = body
             .get("results")
@@ -248,30 +245,27 @@ impl OpenAlexClient for OpenAlexHttpAdapter {
             })?;
 
         let result_count = results.len();
-        let work_json = results
-            .first()
-            .ok_or_else(|| {
-                tracing::info!(
-                    arxiv_id,
-                    api = "openalex",
-                    elapsed_ms,
-                    result_count = 0,
-                    "OpenAlex API: no results (not found)"
-                );
-                OpenAlexError::NotFound(arxiv_id.to_string())
-            })?;
+        let work_json = results.first().ok_or_else(|| {
+            tracing::info!(
+                arxiv_id,
+                api = "openalex",
+                elapsed_ms,
+                result_count = 0,
+                "OpenAlex API: no results (not found)"
+            );
+            OpenAlexError::NotFound(arxiv_id.to_string())
+        })?;
 
-        let work: WorkResponse = serde_json::from_value(work_json.clone())
-            .map_err(|e| {
-                tracing::warn!(
-                    arxiv_id,
-                    api = "openalex",
-                    error = %e,
-                    elapsed_ms,
-                    "OpenAlex API: failed to deserialize WorkResponse"
-                );
-                OpenAlexError::Api(format!("deserialize work: {e}"))
-            })?;
+        let work: WorkResponse = serde_json::from_value(work_json.clone()).map_err(|e| {
+            tracing::warn!(
+                arxiv_id,
+                api = "openalex",
+                error = %e,
+                elapsed_ms,
+                "OpenAlex API: failed to deserialize WorkResponse"
+            );
+            OpenAlexError::Api(format!("deserialize work: {e}"))
+        })?;
 
         let parsed = parse_work(work);
         tracing::info!(
@@ -335,19 +329,16 @@ impl OpenAlexClient for OpenAlexHttpAdapter {
             return Err(OpenAlexError::Api(format!("HTTP {}", status)));
         }
 
-        let search: SearchResponse = resp
-            .json()
-            .await
-            .map_err(|e| {
-                tracing::warn!(
-                    api = "openalex",
-                    query = %query,
-                    error = %e,
-                    elapsed_ms,
-                    "OpenAlex API search JSON parse error"
-                );
-                OpenAlexError::Api(format!("JSON parse: {e}"))
-            })?;
+        let search: SearchResponse = resp.json().await.map_err(|e| {
+            tracing::warn!(
+                api = "openalex",
+                query = %query,
+                error = %e,
+                elapsed_ms,
+                "OpenAlex API search JSON parse error"
+            );
+            OpenAlexError::Api(format!("JSON parse: {e}"))
+        })?;
 
         let count = search.results.len();
         tracing::info!(

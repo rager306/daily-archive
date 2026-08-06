@@ -328,10 +328,7 @@ fn check_decision_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
     let mut out = Vec::new();
 
     // category must be a known Phase 1 category.
-    let category = props
-        .get("category")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let category = props.get("category").and_then(|v| v.as_str()).unwrap_or("");
     if !category.is_empty() && !is_known_decision_category(category) {
         out.push(SchemaViolation::warn(
             "decision-category-vocabulary",
@@ -1340,7 +1337,11 @@ mod yaml_parity_tests {
     #[test]
     fn test_decision_semantic_invalid_outcome_for_category_warns() {
         // "definitely_bogus_outcome" is not a known global or category-specific outcome.
-        let props = valid_decision_props("healing_action", "definitely_bogus_outcome", "system:pipeline");
+        let props = valid_decision_props(
+            "healing_action",
+            "definitely_bogus_outcome",
+            "system:pipeline",
+        );
         let violations = validate_node_properties("Decision", &props);
         assert!(
             violations
@@ -1355,9 +1356,7 @@ mod yaml_parity_tests {
         let props = valid_decision_props("healing_action", "approved", "anonymous");
         let violations = validate_node_properties("Decision", &props);
         assert!(
-            violations
-                .iter()
-                .any(|v| v.rule == "decision-maker-prefix"),
+            violations.iter().any(|v| v.rule == "decision-maker-prefix"),
             "expected decision-maker-prefix warning for unknown prefix"
         );
     }
@@ -1365,7 +1364,9 @@ mod yaml_parity_tests {
     #[test]
     fn test_decision_semantic_phase2_category_rejected() {
         // policy_applied is commented out (Phase 2). Phase 1 should warn.
-        assert!(!crate::process::is_known_decision_category("policy_applied"));
+        assert!(!crate::process::is_known_decision_category(
+            "policy_applied"
+        ));
         let props = valid_decision_props("policy_applied", "allowed", "system:policy-engine");
         let violations = validate_node_properties("Decision", &props);
         assert!(
@@ -1456,7 +1457,10 @@ mod yaml_parity_tests {
     fn test_concept_cluster_semantic_unknown_cluster_type_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("cluster-001"));
-        props.insert("cluster_type".to_string(), serde_json::json!("bogus_cluster"));
+        props.insert(
+            "cluster_type".to_string(),
+            serde_json::json!("bogus_cluster"),
+        );
         props.insert("import_eligible".to_string(), serde_json::json!(false));
         props.insert("retrieval_eligible".to_string(), serde_json::json!(true));
         props.insert("schema_version".to_string(), serde_json::json!(1));
@@ -1475,22 +1479,10 @@ mod yaml_parity_tests {
     fn test_failure_event_unknown_stage_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("fe-001"));
-        props.insert(
-            "stage".to_string(),
-            serde_json::json!("bogus_stage"),
-        );
-        props.insert(
-            "class".to_string(),
-            serde_json::json!("transient"),
-        );
-        props.insert(
-            "recoverable".to_string(),
-            serde_json::json!(true),
-        );
-        props.insert(
-            "error_signature".to_string(),
-            serde_json::json!("timeout"),
-        );
+        props.insert("stage".to_string(), serde_json::json!("bogus_stage"));
+        props.insert("class".to_string(), serde_json::json!("transient"));
+        props.insert("recoverable".to_string(), serde_json::json!(true));
+        props.insert("error_signature".to_string(), serde_json::json!("timeout"));
         let violations = validate_node_properties("FailureEvent", &props);
         assert!(
             violations
@@ -1504,22 +1496,10 @@ mod yaml_parity_tests {
     fn test_failure_event_unknown_class_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("fe-002"));
-        props.insert(
-            "stage".to_string(),
-            serde_json::json!("ingest"),
-        );
-        props.insert(
-            "class".to_string(),
-            serde_json::json!("bogus_class"),
-        );
-        props.insert(
-            "recoverable".to_string(),
-            serde_json::json!(false),
-        );
-        props.insert(
-            "error_signature".to_string(),
-            serde_json::json!("panic"),
-        );
+        props.insert("stage".to_string(), serde_json::json!("ingest"));
+        props.insert("class".to_string(), serde_json::json!("bogus_class"));
+        props.insert("recoverable".to_string(), serde_json::json!(false));
+        props.insert("error_signature".to_string(), serde_json::json!("panic"));
         let violations = validate_node_properties("FailureEvent", &props);
         assert!(
             violations
@@ -1534,22 +1514,10 @@ mod yaml_parity_tests {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("fe-003"));
         // Use real values from failure_taxonomy.yaml: stage='execution', class='specification'
-        props.insert(
-            "stage".to_string(),
-            serde_json::json!("execution"),
-        );
-        props.insert(
-            "class".to_string(),
-            serde_json::json!("specification"),
-        );
-        props.insert(
-            "recoverable".to_string(),
-            serde_json::json!(true),
-        );
-        props.insert(
-            "error_signature".to_string(),
-            serde_json::json!("timeout"),
-        );
+        props.insert("stage".to_string(), serde_json::json!("execution"));
+        props.insert("class".to_string(), serde_json::json!("specification"));
+        props.insert("recoverable".to_string(), serde_json::json!(true));
+        props.insert("error_signature".to_string(), serde_json::json!("timeout"));
         let violations = validate_node_properties("FailureEvent", &props);
         let semantic: Vec<_> = violations
             .iter()
@@ -1568,18 +1536,9 @@ mod yaml_parity_tests {
     fn test_source_unknown_code_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("src-001"));
-        props.insert(
-            "code".to_string(),
-            serde_json::json!("bogus_source_code"),
-        );
-        props.insert(
-            "source_type".to_string(),
-            serde_json::json!("arxiv"),
-        );
-        props.insert(
-            "domain".to_string(),
-            serde_json::json!("cs.LG"),
-        );
+        props.insert("code".to_string(), serde_json::json!("bogus_source_code"));
+        props.insert("source_type".to_string(), serde_json::json!("arxiv"));
+        props.insert("domain".to_string(), serde_json::json!("cs.LG"));
         let violations = validate_node_properties("Source", &props);
         assert!(
             violations
@@ -1593,18 +1552,9 @@ mod yaml_parity_tests {
     fn test_source_unknown_type_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("src-002"));
-        props.insert(
-            "code".to_string(),
-            serde_json::json!("arxiv"),
-        );
-        props.insert(
-            "source_type".to_string(),
-            serde_json::json!("bogus_type"),
-        );
-        props.insert(
-            "domain".to_string(),
-            serde_json::json!("cs.LG"),
-        );
+        props.insert("code".to_string(), serde_json::json!("arxiv"));
+        props.insert("source_type".to_string(), serde_json::json!("bogus_type"));
+        props.insert("domain".to_string(), serde_json::json!("cs.LG"));
         let violations = validate_node_properties("Source", &props);
         assert!(
             violations
@@ -1624,18 +1574,9 @@ mod yaml_parity_tests {
             "completeness".to_string(),
             serde_json::json!("bogus_completeness"),
         );
-        props.insert(
-            "research_problem_id".to_string(),
-            serde_json::json!("rp-1"),
-        );
-        props.insert(
-            "baseline_ref".to_string(),
-            serde_json::json!("baseline-1"),
-        );
-        props.insert(
-            "subject_system".to_string(),
-            serde_json::json!("sys-1"),
-        );
+        props.insert("research_problem_id".to_string(), serde_json::json!("rp-1"));
+        props.insert("baseline_ref".to_string(), serde_json::json!("baseline-1"));
+        props.insert("subject_system".to_string(), serde_json::json!("sys-1"));
         props.insert(
             "subject_system_kind".to_string(),
             serde_json::json!("dataset"),
@@ -1661,22 +1602,10 @@ mod yaml_parity_tests {
     fn test_research_env_unknown_evidence_origin_warns() {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("env-002"));
-        props.insert(
-            "completeness".to_string(),
-            serde_json::json!("full"),
-        );
-        props.insert(
-            "research_problem_id".to_string(),
-            serde_json::json!("rp-1"),
-        );
-        props.insert(
-            "baseline_ref".to_string(),
-            serde_json::json!("baseline-1"),
-        );
-        props.insert(
-            "subject_system".to_string(),
-            serde_json::json!("sys-1"),
-        );
+        props.insert("completeness".to_string(), serde_json::json!("full"));
+        props.insert("research_problem_id".to_string(), serde_json::json!("rp-1"));
+        props.insert("baseline_ref".to_string(), serde_json::json!("baseline-1"));
+        props.insert("subject_system".to_string(), serde_json::json!("sys-1"));
         props.insert(
             "subject_system_kind".to_string(),
             serde_json::json!("dataset"),
@@ -1703,18 +1632,9 @@ mod yaml_parity_tests {
         let mut props = PropertySnapshot::new();
         props.insert("vid".to_string(), serde_json::json!("env-003"));
         props.insert("completeness".to_string(), serde_json::json!("full"));
-        props.insert(
-            "research_problem_id".to_string(),
-            serde_json::json!("rp-1"),
-        );
-        props.insert(
-            "baseline_ref".to_string(),
-            serde_json::json!("baseline-1"),
-        );
-        props.insert(
-            "subject_system".to_string(),
-            serde_json::json!("sys-1"),
-        );
+        props.insert("research_problem_id".to_string(), serde_json::json!("rp-1"));
+        props.insert("baseline_ref".to_string(), serde_json::json!("baseline-1"));
+        props.insert("subject_system".to_string(), serde_json::json!("sys-1"));
         props.insert(
             "subject_system_kind".to_string(),
             serde_json::json!("dataset"),

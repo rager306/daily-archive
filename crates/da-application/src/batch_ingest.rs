@@ -211,13 +211,13 @@ mod tests {
     fn triage_ocr_sample_capped() {
         let mut s = BatchPdfTriageSummary::default();
         for i in 0..40 {
-            s.record(
-                &format!("p{i}"),
-                &sample(PdfType::Text, &[1], false),
-            );
+            s.record(&format!("p{i}"), &sample(PdfType::Text, &[1], false));
         }
         assert_eq!(s.with_ocr_pages, 40);
-        assert_eq!(s.papers_with_ocr.len(), BatchPdfTriageSummary::OCR_SAMPLE_CAP);
+        assert_eq!(
+            s.papers_with_ocr.len(),
+            BatchPdfTriageSummary::OCR_SAMPLE_CAP
+        );
     }
 
     #[test]

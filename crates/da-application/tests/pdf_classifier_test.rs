@@ -11,9 +11,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use async_trait::async_trait;
 use da_application::ingest::IngestUseCase;
 use da_domain::{PdfClassification, PdfType};
+use da_ports::PdfClassificationPort;
 use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
-use da_ports::PdfClassificationPort;
 
 mod common;
 use common::mock_graph_store::MockGraphStore;
@@ -27,7 +27,10 @@ struct MockClassifier {
 
 #[async_trait]
 impl PdfClassificationPort for MockClassifier {
-    async fn classify(&self, _pdf_bytes: &[u8]) -> da_ports::ClassificationResult<PdfClassification> {
+    async fn classify(
+        &self,
+        _pdf_bytes: &[u8],
+    ) -> da_ports::ClassificationResult<PdfClassification> {
         self.call_count.fetch_add(1, Ordering::SeqCst);
         Ok(self.result.clone())
     }
@@ -118,7 +121,9 @@ async fn ingest_calls_classifier_before_parser() {
     let tmp = tempfile::NamedTempFile::new().unwrap();
     std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
 
-    let result = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await;
 
     // ingest may fail on graph operations (in-memory store), but classifier
     // and parser should have been called.
@@ -163,7 +168,9 @@ async fn ingest_without_classifier_works() {
     std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
 
     // Should not panic — classifier is None, ingest proceeds normally
-    let result = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await;
     if let Ok(result) = result {
         assert!(
             result.pdf_classification.is_none(),
@@ -180,7 +187,10 @@ async fn ingest_classifier_failure_does_not_block_ingest() {
 
     #[async_trait]
     impl PdfClassificationPort for FailingClassifier {
-        async fn classify(&self, _pdf_bytes: &[u8]) -> da_ports::ClassificationResult<PdfClassification> {
+        async fn classify(
+            &self,
+            _pdf_bytes: &[u8],
+        ) -> da_ports::ClassificationResult<PdfClassification> {
             Err(ClassificationError::Failed("test failure".into()))
         }
     }
@@ -201,7 +211,9 @@ async fn ingest_classifier_failure_does_not_block_ingest() {
     std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
 
     // Should not fail — classifier error is logged, not propagated
-    let result = use_case.ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457").await;
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await;
     if let Ok(result) = result {
         assert!(
             result.pdf_classification.is_none(),

@@ -127,18 +127,15 @@ impl Embedder for FdApiEmbedder {
             )));
         }
 
-        let result: EmbedResponse = resp
-            .json()
-            .await
-            .map_err(|e| {
-                tracing::warn!(
-                    api = "fd_api",
-                    error = %e,
-                    elapsed_ms,
-                    "FD_API embed JSON parse error"
-                );
-                EmbedderError::EmbedFailed(e.to_string())
-            })?;
+        let result: EmbedResponse = resp.json().await.map_err(|e| {
+            tracing::warn!(
+                api = "fd_api",
+                error = %e,
+                elapsed_ms,
+                "FD_API embed JSON parse error"
+            );
+            EmbedderError::EmbedFailed(e.to_string())
+        })?;
 
         let dims = result.data.first().map(|d| d.embedding.len()).unwrap_or(0);
         tracing::debug!(
@@ -217,19 +214,16 @@ impl Embedder for FdApiEmbedder {
             )));
         }
 
-        let result: EmbedResponse = resp
-            .json()
-            .await
-            .map_err(|e| {
-                tracing::warn!(
-                    api = "fd_api",
-                    error = %e,
-                    elapsed_ms,
-                    batch_size,
-                    "FD_API embed_batch JSON parse error"
-                );
-                EmbedderError::EmbedFailed(e.to_string())
-            })?;
+        let result: EmbedResponse = resp.json().await.map_err(|e| {
+            tracing::warn!(
+                api = "fd_api",
+                error = %e,
+                elapsed_ms,
+                batch_size,
+                "FD_API embed_batch JSON parse error"
+            );
+            EmbedderError::EmbedFailed(e.to_string())
+        })?;
 
         tracing::info!(
             api = "fd_api",

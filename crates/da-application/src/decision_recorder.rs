@@ -146,7 +146,9 @@ impl DecisionRecorder {
 
         // Decision-maker prefix.
         if !is_valid_decision_maker(&req.decision_maker) {
-            return Err(DecisionRecordError::InvalidMaker(req.decision_maker.clone()));
+            return Err(DecisionRecordError::InvalidMaker(
+                req.decision_maker.clone(),
+            ));
         }
 
         Ok(warnings)
@@ -411,9 +413,11 @@ mod tests {
             .decision_maker("system:test")
             .build();
         let warnings = r.validate(&req).unwrap();
-        assert!(warnings
-            .iter()
-            .any(|w| w.contains("bogus_category") && w.contains("Phase 1")));
+        assert!(
+            warnings
+                .iter()
+                .any(|w| w.contains("bogus_category") && w.contains("Phase 1"))
+        );
     }
 
     #[test]
@@ -442,9 +446,11 @@ mod tests {
             .decision_maker("system:test")
             .build();
         let warnings = r.validate(&req).unwrap();
-        assert!(warnings
-            .iter()
-            .any(|w| w.contains("definitely_bogus_outcome")));
+        assert!(
+            warnings
+                .iter()
+                .any(|w| w.contains("definitely_bogus_outcome"))
+        );
     }
 
     #[test]
@@ -483,7 +489,11 @@ mod tests {
         let record = recorder.record(req).await.expect("record ok");
         // MockGraphStore assigns node ids starting from 0 (internally AtomicU64).
         assert_eq!(record.node_id, 0);
-        assert!(record.warnings.is_empty(), "no warnings: {:?}", record.warnings);
+        assert!(
+            record.warnings.is_empty(),
+            "no warnings: {:?}",
+            record.warnings
+        );
     }
 
     #[tokio::test]
@@ -536,6 +546,9 @@ mod tests {
             .policy_id("policy:retention-365d")
             .build();
         let record = recorder.record(req).await.expect("record ok");
-        assert_eq!(record.request.policy_id.as_deref(), Some("policy:retention-365d"));
+        assert_eq!(
+            record.request.policy_id.as_deref(),
+            Some("policy:retention-365d")
+        );
     }
 }

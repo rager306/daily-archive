@@ -63,10 +63,7 @@ async fn hub_pdf_ocr_pages_are_suspected_garbled_text() {
         // crude page markers if present; else log length only
         eprintln!("HUB_MARKDOWN_CHARS={}", md.len());
         // look for garbled signals on whole doc (soft encoding)
-        eprintln!(
-            "HUB_HAS_FFFD={}",
-            md.contains('\u{FFFD}')
-        );
+        eprintln!("HUB_HAS_FFFD={}", md.contains('\u{FFFD}'));
     }
 }
 
@@ -91,13 +88,7 @@ async fn hub_pdf_page_markdown_samples_for_garbled_pages() {
         let mid = md.len() / 2;
         let end = md.len().saturating_sub(400);
         eprintln!("HUB_MD_HEAD={}", sample(md, 200));
-        eprintln!(
-            "HUB_MD_MID={}",
-            sample(&md[mid..], 200)
-        );
-        eprintln!(
-            "HUB_MD_TAIL={}",
-            sample(&md[end..], 200)
-        );
+        eprintln!("HUB_MD_MID={}", sample(&md[mid..], 200));
+        eprintln!("HUB_MD_TAIL={}", sample(&md[end..], 200));
     }
 }
