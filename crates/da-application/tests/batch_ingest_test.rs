@@ -38,6 +38,7 @@ impl ParserPort for MockParser {
                 title: "Introduction".to_string(),
                 text: "intro text".to_string(),
                 level: 1,
+                ..Default::default()
             }],
             citations: self.citations.clone(),
             layout_json: None,

@@ -46,12 +46,19 @@ Four slices, TDD, governor on_track throughout.
    get_references, search_papers, get_entities, validate_node).
 3. TDD: 22 da-mcp pass, governor on_track.
 
-**Remaining thin slices (S03-S04) stay planned for next session:**
-- S03: 8 Resources (graph://ontology/*, stats, adr-index, graph_tasks) +
-  6 Prompts (literature_review, critical_reading, etc.) via rmcp
-  ResourceHandler/PromptHandler
-- S04: vector_search (kg-embeddings feature embed-fdapi) + Streamable HTTP
-  + hex decoupling (da-mcp off da-cli, kg-embeddings feature-gate)
+**M366 S03-S04 (this wave, shipped in `766c095a`):**
+- S04 `vector_search` — MockEmbedder(8) + GraphStore kNN, D127 read-only, 3 tests
+  (reject/empty/seeded not_error, Mock vector is stub). `RECOMMENDED_RATE_LIMIT_RPS=10`.
+- Hex decoupling: `da-mcp` off `da-cli/da-adapters`, `kg-storage[samyama]` +
+  `tracing-*` directly, local `logging.rs`; `SamyamaGraphStore::from_env` from
+  `kg-storage` (ADR-050 single source). 25 da-mcp.
+- S03 Resources(8)+Prompts(6) still thin-slice NEXT (rmcp prompt/resource handlers).
+
+**This fix (thin slice debt):**
+- `da-ports::Section` got `..Default::default()` in mock parsers for new optional
+  fields — fixes `cargo test --workspace` 2 failures (batch_ingest/extraction tests).
+  Pre-existing deuda desde M362 Section nav fields; no behavior change.
+- `da-mcp` crate doc sync (tool list ADR-054 surface).
 
 **DB:** M365 S01+S02 complete, M366 S01+S02 complete; M365 ACTIVATING → seal
 next; M366 S03+S04 pending; M362-M364 unchanged (pending sketch hygiene deferred).
