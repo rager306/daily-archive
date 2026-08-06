@@ -58,7 +58,17 @@ Four slices, TDD, governor on_track throughout.
 - `da-ports::Section` got `..Default::default()` in mock parsers for new optional
   fields — fixes `cargo test --workspace` 2 failures (batch_ingest/extraction tests).
   Pre-existing deuda desde M362 Section nav fields; no behavior change.
-- `da-mcp` crate doc sync (tool list ADR-054 surface).
+- `da-mcp` crate doc sync (tool list ADR-054 surface — now 10 tools).
+
+- Governor check: trajectory ON_TRACK flags=0 violations=0. No drift. MCP decoupling verified — `kg-*` crates have no `da-*` deps via fmt guard.
+
+## Session 2026-08-07 late-verify (product-on-track check)
+
+- Verified all new MCP thin slices pure reuse: `kg-embeddings::MockEmbedder` + `kg-storage::vector_search`, no duplication.
+- Verified hexagonal boundaries: `da-mcp` depends only on `kg-storage["samyama"]/kg-ontology/kg-embeddings`, logging is local (no `da-cli`/`da-adapters` import).
+- Verified `M362 S01` code: `da-ports::Section` has all 5 Layer-A fields (Optional), `GrobidParser::extract_sections` computes `path_id` from `head n="N.M"`, `relation.rs` has 3 edge constants, `ingest.rs` builds navigation edges, graph task file exists.
+- Remaining thin horizon: MCP resources (bulk via `cat` — keep thin), MCP prompts, typed entity subtypes (split per label to stay thin), AbstractSummary — each real prod test, not DB-only.
+- `cargo test --workspace --lib --tests` all green (270/31/25/...); `cargo fmt` still has 25-file drift intentionally left uncommitted (logic over formatting).
 
 ### Session 2026-08-07 (late+fix2) — Section mocks + Paper schema drift fix
 
