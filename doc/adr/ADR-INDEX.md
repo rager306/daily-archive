@@ -22,6 +22,7 @@ listed here — see `legacy/doc/adr/`.
 | [050](ADR-050-universal-graph-subsystem-kg-crate-family.md) | Universal Graph Subsystem — kg-* Crate Family | Accepted | 2026-07-24 |
 | [051](ADR-051-testing-strategy-overlapping-verification-contours.md) | Testing Strategy — Overlapping Verification Contours | Accepted | 2026-08-02 |
 | [052](ADR-052-structured-logging-tracing-dual-layer.md) | Structured Logging — Tracing Dual-Layer JSON+Stderr | Accepted | 2026-08-05 |
+| [053](ADR-053-article-preparation-multi-layer-document-model.md) | Article Preparation 2.0 — Multi-Layer Document Model for Agent Readiness | Proposed | 2026-08-05 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
