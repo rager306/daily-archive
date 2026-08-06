@@ -144,6 +144,10 @@ pub mod structure {
     /// Section → Section: parent section in the document hierarchy.
     /// Inverse of FIRST_CHILD traversal (points upward to the container).
     pub const PARENT_SECTION: &str = "parent_section";
+
+    /// Paper/Section → Summary: multi-granularity digest (ADR-053 Layer B).
+    /// Links a document node to its Summary node(s) for quick retrieval.
+    pub const HAS_SUMMARY: &str = "hasSummary";
 }
 
 /// Bibliographic edge types — structural metadata, NOT extracted semantic

@@ -242,6 +242,33 @@ impl NodeSchemaDef for MetricSchema {
     }
 }
 
+// ─── Layer B: Summary node (ADR-053, D194 Wave 1) ───
+/// Multi-granularity digest of a Paper or Section.
+/// Linked via hasSummary edge. Enables MCP get_summary without LLM calls.
+pub struct SummarySchema;
+
+impl NodeSchemaDef for SummarySchema {
+    fn label(&self) -> &'static str {
+        "Summary"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("text", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("granularity", FieldType::String),
+            ("char_count", FieldType::Integer),
+            ("source_label", FieldType::String),
+            ("source_id", FieldType::String),
+            ("method", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
+        ]
+    }
+}
+
 // ─── Author (FOAF: Person + PRO: author role) ───
 
 /// A paper author (disambiguated via OpenAlex/ORCID when available).
@@ -424,6 +451,28 @@ mod tests {
                 .required_fields()
                 .iter()
                 .any(|(n, _)| *n == "name")
+        );
+    }
+
+    #[test]
+    fn test_summary_schema_exists() {
+        // ADR-053 Layer B (D194 Wave 1): Summary must be a first-class node
+        // label so MCP get_summary can return multi-granularity digests.
+        let s = SummarySchema;
+        assert_eq!(s.label(), "Summary");
+        let required: Vec<&str> = s.required_fields().iter().map(|(n, _)| *n).collect();
+        assert!(
+            required.contains(&"text"),
+            "Summary must have 'text' required, got: {required:?}"
+        );
+        let optional: Vec<&str> = s.optional_fields().iter().map(|(n, _)| *n).collect();
+        assert!(
+            optional.contains(&"granularity"),
+            "Summary must have 'granularity' optional, got: {optional:?}"
+        );
+        assert!(
+            optional.contains(&"char_count"),
+            "Summary must have 'char_count' optional"
         );
     }
 
