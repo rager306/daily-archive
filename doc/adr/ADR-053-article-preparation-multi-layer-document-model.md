@@ -8,6 +8,7 @@
 - ADR-041 (embedded Cypher + HOT path)
 - ADR-042 (query-local evidence activation over reified EvidenceBundle)
 - ADR-043 (Research Process Plane — Execution-Grounded Scientific Memory)
+- ADR-048 (Decision Intelligence — Decision node records each extraction/merge/cross-paper claim; this ADR wires it into production)
 - ADR-045 (schema validator invariants)
 - ADR-046 (bi-temporal edge model — extended to nodes in this ADR; all new fact edges follow M327–M329 stamping)
 - ADR-047 (conflict detection — cross-paper edges are primary conflict source; new conflict_policy field in edge_contracts.yaml)
@@ -16,6 +17,7 @@
 - D127 (import gate — locked until explicit user yes)
 - D137 (6-Wave KB Roadmap; this ADR feeds Wave 2 retrieval + Wave 4 agent brain)
 - Reference: `/root/vendor-source/scientific-agent-skills` (BGPT structured extraction, paper-lookup, hypothesis-generation, experimental-design, literature-review)
+- Reference: `/root/vendor-source/semantica` (graph-native infrastructure for context and accountable AI; entity resolution, decision intelligence, PROV-O provenance, SHACL/SKOS ontology governance, bi-temporal fact, agent context bundles; see "Semantica alignment" section)
 - Prior Python-era concept: PageIndex (cold-archived `archive/package-rename-waves/wave-04/src/arxiv_archive/indexing/page_index.py`)
 
 ## Context
@@ -318,6 +320,179 @@ new edge contracts declare their conflict policy in
   snapshots.
 - Tracing spans (ADR-052) on `temporal_stamp` calls include the new edge
   types so audit log covers cross-paper claims.
+
+## Semantica alignment (methodology cross-check)
+
+Review against `/root/vendor-source/semantica` (graph-native infrastructure for
+context and accountable AI) surfaced **six capabilities** that the original
+six-layer model above does not address explicitly. This section declares how
+Article Preparation 2.0 relates to each — either covered (by which layer),
+extended (new work), or consciously out of scope (with rationale).
+
+### 1. Entity Resolution and Deduplication — NEW LAYER G
+
+The original six layers introduce typed entities (Layer C) and cross-paper
+edges (Layer F) but never answer: when two papers mention "LoRA" is that
+the same Method node? Semantica treats this as a first-class pipeline stage
+( semantica.deduplication + semantica.entity_resolution ): blocking by
+fingerprint, semantic similarity, governed merge with provenance-preserving
+links. Without it, typed entities fragment into per-paper duplicates and
+Layer F lineage becomes impossible (you cannot draw predecessor_of between
+"LoRA" in paper A and "LoRA" in paper B if they are two separate nodes).
+
+**Add Layer G — Entity Resolution and Merge:**
+
+| Object | Purpose |
+|--------|---------|
+| EntityEquivalence edge (fact, temporal) | Links two Entity nodes declared the same real-world object |
+| merge_decision Decision node (uses ADR-048) | Records the merge act: who/what/why/confidence/evidence |
+| Entity.canonical_vid field | Points to the surviving canonical entity after merge |
+| BlockingIndex operational artifact | Fingerprints (lowercased label + type + arxiv-key) for candidate generation |
+
+Merge protocol (mirrors Semantica EntityMerger):
+1. Blocking — cheap fingerprint index surfaces candidate pairs.
+2. Semantic match — embedding similarity + property overlap (no free invent;
+   confidence below threshold stays as candidate, never silent merge).
+3. Merge decision recorded as a Decision node (ADR-048 wiring).
+4. Surviving entity gains canonical_vid; merged entities get valid_to +
+   superseded_by (bi-temporal node pattern). Edges re-pointed; originals
+   retained for audit.
+
+**Principle:** duplicates are flagged, not silently overwritten (Semantica
+compliance principle; aligns with D127 spirit).
+
+Layer G is Wave 1 because Layer F cross-paper edges depend on resolved
+canonical entities.
+
+### 2. Decision Intelligence per extraction step — extends Layer B/C
+
+Semantica records every consequential decision as a first-class object with
+causal chain and precedent search ( semantica.context.decision ). daily-archive
+has ADR-048 (Decision node) and ADR-043 (Research Process Plane) but neither is
+wired into extraction. Article Preparation 2.0 changes this:
+
+| Decision type | Recorded when | Evidence |
+|---------------|---------------|----------|
+| classification | Entity promoted to Method / Dataset / etc. | source span + confidence |
+| summary_generation | Summary node created or superseded | source_hash + extractor version |
+| merge (Layer G) | Two entities resolved to one | blocking fingerprint + similarity score |
+| cross_paper_claim (Layer F) | predecessor_of / contradicts edge created | cited text span |
+| quality_signal (Layer E) | Signal value computed | computation_version + inputs |
+
+Each decision links to its evidence via Decision.evidence_bundle and to the
+resulting node/edge via decided_by edge. This gives ADR-048 a concrete
+production footprint (currently ADR-048 is schema-only) and answers Semantica's
+regulator question for every extraction step.
+
+### 3. Context Graph for agents — NEW LAYER H (agent context)
+
+Semantica's ContextGraph / AgentContext is the queryable, bounded view an
+agent operates on for a task. ADR-053 Layer D adds reading-path templates, but
+a reading path is only a route — the agent still needs a materialized,
+versioned, scope-bounded context bundle to reason over. This is the
+working-memory object that Wave 4 agent brain (D137) consumes.
+
+**Add Layer H — Agent Context Bundle:**
+
+| Object | Purpose |
+|--------|---------|
+| ContextBundle node (bi-temporal) | Frozen view of N nodes + M edges relevant to a task |
+| scope field | Cypher snippet that produced the bundle (reproducible) |
+| as_of field | Point-in-time reference (aligns with Semantica time-travel) |
+| task_kind field | critical_reading / reproducibility_check / compare_methods / ... |
+| compiled_at field | When the bundle was frozen |
+
+A bundle is read-only (agent cannot mutate graph through it), bounded
+(deterministic size budget), and reproducible (same scope + as_of re-derives
+the same view). This is the Semantica AgentContext pattern adapted to
+daily-archive's bi-temporal Samyama store.
+
+### 4. Provenance — W3C PROV-O export (extends Layer B evidence_from)
+
+EvidenceBundle and evidence_from capture internal provenance. Semantica
+exports W3C PROV-O (regulator-ready audit trail). daily-archive should be able
+to export any node/edge's full provenance chain as PROV-O Turtle/JSON-LD on
+demand. This is a Wave 3 export target, not a new node type: the data is
+already in Source, EvidenceBundle, Decision, and the bi-temporal fields;
+PROV-O is the standard serialization.
+
+| Output format | When |
+|---------------|------|
+| PROV-O Turtle | da export-provenance --id <vid> --format turtle |
+| PROV-O JSON-LD | da export-provenance --id <vid> --format jsonld |
+| CSV audit | batch export per Paper (regulator pack) |
+
+PROV-O mapping (illustrative):
+- Entity (PROV) ← any node (Paper, Section, Summary, Method, ...)
+- Activity ← extraction / ingest / merge / decision events
+- Agent ← Source / extractor version / human reviewer
+- wasGeneratedBy, wasDerivedFrom, wasAttributedTo, used ← existing FROM_SOURCE,
+  evidence_from, decided_by, hasSummary
+
+### 5. Ontology governance — SHACL + SKOS (strengthens ADR-050)
+
+Semantica ships SHACL constraints, OWL generation, and SKOS vocabulary
+management with a visual editor. ADR-050 keeps ontology as DATA in YAML but
+does not expose a constraints/vocabulary layer. Article Preparation 2.0 adds
+node types and edges that need declarative constraints beyond field types
+(e.g. Method must have at least one evaluated_on edge or ReproducibilitySummary
+code_available=true requires a code_url field).
+
+**Wave 2 governance extension:**
+
+| Capability | Source of truth | Used by |
+|------------|-----------------|---------|
+| SHACL-style constraints | data/ontology/constraints.yaml | Validator (da-domain) |
+| SKOS vocabularies | data/ontology/vocab/{domain}.skos.yaml | Typed Entity classification |
+| OWL export | da ontology-export --format owl | External reasoners |
+| Cross-ontology alignment | data/ontology/alignments/*.yaml | FaBiO/CiTO/OpenAlex crosswalk |
+
+Constraints are non-blocking warnings initially (governor does not fail
+trajectory); promoted to errors once fixtures stabilise (mirrors M343 pattern
+for serde roundtrip regression prevention).
+
+### 6. Deterministic reasoning — Rete / Datalog over the graph
+
+Semantica runs deterministic forward chaining and Datalog over the KG without
+an LLM. daily-archive has kg-algorithms (page_rank, WCC, SCC, BFS, Dijkstra,
+PPR) but no rule engine. This is the most ambitious Semantica-aligned
+capability and is declared out of scope for Article Preparation 2.0 with a
+clear hook:
+
+- The ContextBundle (Layer H) is the natural input to a future rule engine.
+- Typed entities (Layer C) + cross-paper edges (Layer F) give the rule engine
+  non-trivial facts to chain over.
+- A future ADR (Wave 5 of D137, post-agent-brain) will specify the rule engine
+  (Rete-style or Datalog-style) when the process plane (ADR-043) needs
+  forward-chaining for hypothesis to prediction to observation checks.
+
+Recording this as a conscious deferral keeps ADR-053 scoped and avoids
+boiling the ocean.
+
+### Cross-cutting principle: deterministic infrastructure layer
+
+Semantica's central thesis — no LLM required for graph construction,
+reasoning, or provenance — is already daily-archive's posture (D136 locks
+DSPy/LLM extraction). The six layers (A-F) and the two new layers (G entity
+resolution, H agent context) are all deterministic. LLM assistance may enter
+later for summary generation (Layer B) and entity classification (Layer C),
+always behind D136 governance and always recording a Decision node (item 2
+above) so the LLM's contribution is auditable, never silent.
+
+### Updated layer map (final)
+
+| Layer | Capability | Wave | Semantica alignment |
+|-------|-----------|------|---------------------|
+| A | Document Tree | 1 | hierarchical chunking (semantica.split) |
+| B | Summaries (bi-temporal nodes) | 1+2 | semantica.semantic_extract output objects |
+| C | Typed Entities | 1 | semantica.NamedEntityRecognizer target schema |
+| D | Reading Paths | 2 | semantica.ContextGraph route templates |
+| E | Quality Signals (bi-temporal nodes) | 2 | semantica.context.PolicyEngine inputs |
+| F | Cross-paper Patterns | 3 | semantica.kg.BiTemporalFact + conflicts |
+| **G** | **Entity Resolution and Merge** | **1 (blocks F)** | **semantica.deduplication + entity_resolution** |
+| **H** | **Agent Context Bundle** | **2 (Wave 4 input)** | **semantica.context.AgentContext** |
+| Governance | SHACL/SKOS/OWL/PROV-O export | 2+3 | semantica.ontology + semantica.provenance |
+| Out of scope | Deterministic reasoning engine | future ADR | semantica.reasoning (Rete/Datalog/SPARQL) |
 
 ## Consequences
 
