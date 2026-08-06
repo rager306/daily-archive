@@ -118,3 +118,18 @@ dimensions:
       - "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)"
       - "Added after disk pollution incident from excessive cargo build calls"
     artifact_ref: "scripts/governor/checks/resource_safety.py"
+
+  - id: mcp_surface_completeness
+    description: "MCP product surface: tools + resources + prompts (ADR-054, D194)"
+    status_logic:
+      full: "da-mcp has tools (>= 8) AND resources (>= 4) AND prompts (>= 2)"
+      partial: "da-mcp has tools but missing resources or prompts"
+      tools_only: "da-mcp has tools but no resources and no prompts"
+      not_started: "always (fallback)"
+    evidence:
+      - "crates/da-mcp/src/tools.rs has >= 8 pub async fn handlers"
+      - "crates/da-mcp/src/lib.rs has list_mcp_resources method"
+      - "crates/da-mcp/src/lib.rs has list_mcp_prompts method"
+      - "Governor checks product completeness, not just ADR invariants"
+      - "Added D194 Wave 1: catches product-readiness drift"
+    artifact_ref: "crates/da-mcp/src/lib.rs"

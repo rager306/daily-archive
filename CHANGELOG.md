@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Governor v4: mcp_surface_completeness dimension (D194)
+
+New governor dimension `mcp_surface_completeness` tracks MCP product
+readiness: `full` (tools + resources + prompts), `partial`, `tools_only`.
+Previously governor checked ADR invariants but was blind to product surface.
+
+### Wave 1 MCP-4 Prompts — 6 agent guidance templates (D194)
+
+6 reusable prompt templates for external MCP clients: literature_review,
+critical_reading, reproducibility_check, citation_lineage, compare_methods,
+generate_cypher. Each has typed arguments and renders tool-aware instructions.
+
 ### Wave 1 MCP-4 Resources — ontology YAML browsable (D194)
 
 External MCP clients can now discover the knowledge base schema without
