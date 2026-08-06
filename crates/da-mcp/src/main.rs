@@ -10,7 +10,10 @@ use std::sync::Arc;
 
 use clap::Parser;
 use da_mcp::DailyArchiveMcpServer;
-use kg_storage::{DirectGraphStore, GraphStore, MockGraphStore};
+use kg_storage::{DirectGraphStore, GraphStore, MockGraphStore, SamyamaGraphStore};
+
+mod logging;
+use logging::init_logging;
 use rmcp::service::serve_server_with_ct;
 use rmcp::transport::stdio;
 
@@ -36,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // stderr-only logging (stdout is reserved for MCP JSON-RPC protocol).
-    let _guard = da_cli::logging::init_logging();
+    let _guard = init_logging();
 
     tracing::info!(
         snapshot = ?cli.snapshot,
@@ -51,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
             tracing::error!(path = %snap_path, error = %e, "failed to read snapshot");
             anyhow::anyhow!("failed to read snapshot {snap_path}: {e}")
         })?;
-        let samyama = da_adapters::SamyamaGraphStore::from_env();
+        let samyama = SamyamaGraphStore::from_env();
         samyama.import_snapshot(&snap_bytes).await.map_err(|e| {
             tracing::error!(error = %e, "snapshot import failed");
             anyhow::anyhow!("snapshot import failed: {e}")

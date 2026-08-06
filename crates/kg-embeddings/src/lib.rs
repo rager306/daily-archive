@@ -12,4 +12,5 @@ pub mod ruvector;
 
 pub use embedder::{EmbedResult, Embedder, EmbedderError};
 pub use fd_api::FdApiEmbedder;
+pub use mock::MockEmbedder;
 pub use ruvector::RuVectorBridge;

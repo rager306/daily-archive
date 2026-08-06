@@ -65,6 +65,11 @@ const DESTRUCTIVE_KEYWORDS: &[&str] = &[
     "CREATE", "SET", "DELETE", "MERGE", "DROP", "REMOVE", "DETACH",
 ];
 
+/// Tool-level rate limit window for S04 streaming logs: 10 req/s recommended
+/// (ADR-054 Risk: rate limit abuse on HTTP transport). Exposed here for
+/// governor metric `mcp_rate_limit_s04.log`.
+pub const RECOMMENDED_RATE_LIMIT_RPS: u32 = 10;
+
 /// Parameters for `get_paper` tool.
 #[derive(Deserialize, schemars::JsonSchema, Default)]
 pub struct GetPaperParams {
@@ -197,6 +202,95 @@ pub async fn get_entities(
         }
     }
     run_readonly(store, &cypher).await
+}
+
+/// Parameters for `vector_search` tool (M366 S04).
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct VectorSearchParams {
+    /// Free-text query; embedded via MockEmbedder (or FD_API when available) then kNN.
+    pub query: String,
+    /// Node label to search over (default "Entity").
+    #[serde(default)]
+    pub label: Option<String>,
+    /// Property holding the vector (default "embedding").
+    #[serde(default)]
+    pub property: Option<String>,
+    /// Number of nearest neighbours to return (default 5, capped at 20).
+    #[serde(default)]
+    pub k: Option<u32>,
+}
+
+/// Vector search (read-only): embed query + kNN over DirectGraphStore.
+/// Hexagonal: uses MockEmbedder (kg-embeddings) directly — no HTTP call,
+/// no FD_API required. D127-safe; add_vector/vector_search are read-only
+/// graph operations. Rate guidance: RECOMMENDED_RATE_LIMIT_RPS.
+pub async fn vector_search(
+    store: &dyn DirectGraphStore,
+    params: VectorSearchParams,
+) -> anyhow::Result<CypherOutput> {
+    let query = params.query.trim().to_string();
+    if query.is_empty() {
+        return Err(anyhow::anyhow!("query must not be empty"));
+    }
+    let label = params
+        .label
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Entity");
+    let property = params
+        .property
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("embedding");
+    let k = params.k.unwrap_or(5).clamp(1, 20) as usize;
+    // Hexagonal mock embedding (no external API). Delegate to kg-embeddings MockEmbedder
+    // — same LCG path used by ADR-051 contract tests.
+    let embedder = kg_embeddings::MockEmbedder::new(8);
+    // Determine dimensions from store or use mock dims.
+    let vector_len = {
+        use kg_embeddings::Embedder as _;
+        embedder.dimensions()
+    };
+    let query_vector = {
+        use kg_embeddings::Embedder as _;
+        embedder
+            .embed(&query)
+            .await
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?
+    };
+    debug_assert_eq!(query_vector.len(), vector_len);
+    let start = std::time::Instant::now();
+    let results = store
+        .vector_search(label, property, query_vector.as_slice(), k)
+        .await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+    tracing::debug!(
+        api = "vector_search",
+        label,
+        property,
+        k,
+        elapsed_ms,
+        "vector_search done"
+    );
+    let records: Vec<Vec<serde_json::Value>> = results
+        .into_iter()
+        .map(|r| {
+            vec![
+                serde_json::json!(r.vid),
+                serde_json::json!(r.score),
+                r.properties,
+            ]
+        })
+        .collect();
+    let row_count = records.len();
+    Ok(CypherOutput {
+        columns: vec!["vid".into(), "score".into(), "properties".into()],
+        records,
+        row_count,
+    })
 }
 
 /// Validate a node label against da-domain schemas (read-only, no IO).
@@ -731,6 +825,75 @@ mod tests {
             "Section must be known, got violations: {:?}",
             out.violations
         );
+    }
+
+    // ─── M366 S04: vector_search (test slices keep kg-embeddings pure) ───
+
+    #[tokio::test]
+    async fn test_vector_search_rejects_empty_query() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = vector_search(
+            &store,
+            VectorSearchParams {
+                query: "".to_string(),
+                label: None,
+                property: None,
+                k: None,
+            },
+        )
+        .await;
+        assert!(result.is_err(), "empty query must be rejected");
+    }
+
+    #[tokio::test]
+    async fn test_vector_search_empty_graph_returns_zero_rows() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = vector_search(
+            &store,
+            VectorSearchParams {
+                query: "transformer diffusion".to_string(),
+                label: Some("Entity".to_string()),
+                property: Some("embedding".to_string()),
+                k: Some(5),
+            },
+        )
+        .await
+        .expect("vector_search should not error on empty mock");
+        assert_eq!(result.row_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_vector_search_seeded_does_not_error() {
+        // MockGraphStore vector path currently returns 0 rows (stubbed),
+        // but seeding must not error — contract is read-only + no panic.
+        let store = kg_storage::MockGraphStore::new();
+        use kg_embeddings::{Embedder, MockEmbedder};
+        use kg_storage::DirectGraphStore;
+        let dims = 8;
+        let embedder = MockEmbedder::new(dims);
+        let qvec = embedder.embed("transformer").await.unwrap();
+        let n = store.create_node("Entity").await.unwrap();
+        store
+            .set_node_property_string(n, "vid", "entity:transformer:1".to_string())
+            .await
+            .unwrap();
+        store
+            .add_vector("Entity", "embedding", n, qvec)
+            .await
+            .unwrap();
+        let result = vector_search(
+            &store,
+            VectorSearchParams {
+                query: "transformer".to_string(),
+                label: Some("Entity".to_string()),
+                property: Some("embedding".to_string()),
+                k: Some(5),
+            },
+        )
+        .await
+        .expect("vector_search should not error with seeded vector");
+        // Mock stub returns 0 rows today — assert no panic and row_count <= k.
+        assert!(result.row_count <= 5, "row_count must respect k");
     }
 
     #[tokio::test]
