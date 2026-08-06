@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late) — Enhanced external API logging (OpenAlex + GROBID + FD_API)
+
+**Observability improvement.** External API calls had minimal or no tracing:
+OpenAlex adapter had zero tracing statements; FD_API embedder had zero;
+GROBID parser logged only high-level success. This made debugging API failures
+and performance issues extremely difficult.
+
+1. `crates/da-adapters/src/openalex_adapter.rs`: comprehensive tracing for
+   `fetch_by_arxiv_id` and `search`:
+   - **Request:** `info` level with api, endpoint, filter/query, arxiv_id
+   - **Response success:** `info` level with elapsed_ms, result_count,
+     openalex_id, title, doi, cited_by_count, authors/topics/referenced_works counts
+   - **Network error:** `warn` level with error, elapsed_ms
+   - **HTTP non-success:** `warn` level with status, elapsed_ms
+   - **JSON parse error:** `warn` level with error, elapsed_ms
+   - **Not found:** `info` level (expected case, not error)
+2. `crates/kg-embeddings/src/fd_api.rs`: comprehensive tracing for `embed`
+   and `embed_batch`:
+   - **Request:** `debug`/`info` level with api, endpoint, model, text_len/batch_size
+   - **Response success:** `debug`/`info` level with elapsed_ms, dimensions,
+     embeddings_returned
+   - **Network/HTTP/JSON errors:** `warn` level with error, status, body preview
+3. `crates/da-adapters/src/grobid_parser.rs`: enhanced tracing for `parse_pdf`
+   and `process_fulltext`:
+   - **PDF read:** `debug` level with pdf_size, pdf_hash
+   - **GROBID HTTP request:** `info` level with elapsed_ms, pdf_size, tei_size
+   - **GROBID HTTP errors:** `warn` level with status/error, endpoint
+   - **Extraction result:** `info` level with title, body_chars, abstract_chars,
+     sections, sections_with_path_id, max_tree_depth, citations
+   - **Path_id warning:** `warn` when no sections have path_id (flat TEI)
+4. `crates/kg-embeddings/Cargo.toml`: added `tracing = { workspace = true }`
+   dependency (was missing — kg-embeddings had no tracing support at all)
+5. All 578 tests pass (9+64+62+269+8+44+91+31); clippy clean; trajectory ON_TRACK.
+
+**ADR-052 compliance:** all tracing uses structured fields (api, endpoint,
+elapsed_ms, status, etc.) for jq-queryable JSON logs. No string interpolation
+in messages — all context in structured fields.
+
 ### Session 2026-08-07 — Fix: OpenAlex referenced_works → CITES edges (data loss)
 
 **Bug fix (identified via skrills-tome deep dive).** OpenAlex `referenced_works`

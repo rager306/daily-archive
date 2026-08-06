@@ -75,6 +75,16 @@ impl Embedder for FdApiEmbedder {
             input: EmbedInput::Single(text.to_string()),
         };
 
+        let text_len = text.len();
+        tracing::debug!(
+            api = "fd_api",
+            endpoint = %self.endpoint,
+            model = %self.model,
+            text_len,
+            "FD_API embed request"
+        );
+        let request_start = std::time::Instant::now();
+
         let resp = self
             .client
             .post(&self.endpoint)
@@ -88,11 +98,30 @@ impl Embedder for FdApiEmbedder {
             .json(&req)
             .send()
             .await
-            .map_err(|e| EmbedderError::Unavailable(e.to_string()))?;
+            .map_err(|e| {
+                tracing::warn!(
+                    api = "fd_api",
+                    error = %e,
+                    text_len,
+                    elapsed_ms = request_start.elapsed().as_millis() as u64,
+                    "FD_API embed network error"
+                );
+                EmbedderError::Unavailable(e.to_string())
+            })?;
 
-        if !resp.status().is_success() {
-            let status = resp.status();
+        let status = resp.status();
+        let elapsed_ms = request_start.elapsed().as_millis() as u64;
+
+        if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
+            tracing::warn!(
+                api = "fd_api",
+                status = %status,
+                elapsed_ms,
+                text_len,
+                body = %body.chars().take(200).collect::<String>(),
+                "FD_API embed non-success HTTP status"
+            );
             return Err(EmbedderError::EmbedFailed(format!(
                 "fd_api returned {status}: {body}"
             )));
@@ -101,7 +130,24 @@ impl Embedder for FdApiEmbedder {
         let result: EmbedResponse = resp
             .json()
             .await
-            .map_err(|e| EmbedderError::EmbedFailed(e.to_string()))?;
+            .map_err(|e| {
+                tracing::warn!(
+                    api = "fd_api",
+                    error = %e,
+                    elapsed_ms,
+                    "FD_API embed JSON parse error"
+                );
+                EmbedderError::EmbedFailed(e.to_string())
+            })?;
+
+        let dims = result.data.first().map(|d| d.embedding.len()).unwrap_or(0);
+        tracing::debug!(
+            api = "fd_api",
+            elapsed_ms,
+            text_len,
+            dimensions = dims,
+            "FD_API embed response: parsed"
+        );
 
         result
             .data
@@ -117,6 +163,18 @@ impl Embedder for FdApiEmbedder {
             input: EmbedInput::Batch(texts.iter().map(|s| s.to_string()).collect()),
         };
 
+        let batch_size = texts.len();
+        let total_text_len: usize = texts.iter().map(|t| t.len()).sum();
+        tracing::info!(
+            api = "fd_api",
+            endpoint = %self.endpoint,
+            model = %self.model,
+            batch_size,
+            total_text_len,
+            "FD_API embed_batch request"
+        );
+        let request_start = std::time::Instant::now();
+
         let resp = self
             .client
             .post(&self.endpoint)
@@ -130,11 +188,30 @@ impl Embedder for FdApiEmbedder {
             .json(&req)
             .send()
             .await
-            .map_err(|e| EmbedderError::Unavailable(e.to_string()))?;
+            .map_err(|e| {
+                tracing::warn!(
+                    api = "fd_api",
+                    error = %e,
+                    batch_size,
+                    elapsed_ms = request_start.elapsed().as_millis() as u64,
+                    "FD_API embed_batch network error"
+                );
+                EmbedderError::Unavailable(e.to_string())
+            })?;
 
-        if !resp.status().is_success() {
-            let status = resp.status();
+        let status = resp.status();
+        let elapsed_ms = request_start.elapsed().as_millis() as u64;
+
+        if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
+            tracing::warn!(
+                api = "fd_api",
+                status = %status,
+                elapsed_ms,
+                batch_size,
+                body = %body.chars().take(200).collect::<String>(),
+                "FD_API embed_batch non-success HTTP status"
+            );
             return Err(EmbedderError::EmbedFailed(format!(
                 "fd_api returned {status}: {body}"
             )));
@@ -143,7 +220,25 @@ impl Embedder for FdApiEmbedder {
         let result: EmbedResponse = resp
             .json()
             .await
-            .map_err(|e| EmbedderError::EmbedFailed(e.to_string()))?;
+            .map_err(|e| {
+                tracing::warn!(
+                    api = "fd_api",
+                    error = %e,
+                    elapsed_ms,
+                    batch_size,
+                    "FD_API embed_batch JSON parse error"
+                );
+                EmbedderError::EmbedFailed(e.to_string())
+            })?;
+
+        tracing::info!(
+            api = "fd_api",
+            elapsed_ms,
+            batch_size,
+            embeddings_returned = result.data.len(),
+            dimensions = result.data.first().map(|d| d.embedding.len()).unwrap_or(0),
+            "FD_API embed_batch response: parsed"
+        );
 
         Ok(result.data.into_iter().map(|d| d.embedding).collect())
     }

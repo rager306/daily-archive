@@ -82,19 +82,42 @@ impl GrobidParser {
             .multipart(form)
             .send()
             .await
-            .map_err(|e| ParserError::Unavailable(e.to_string()))?;
+            .map_err(|e| {
+                tracing::warn!(
+                    api = "grobid",
+                    endpoint = %url,
+                    error = %e,
+                    "GROBID processFulltextDocument network error"
+                );
+                ParserError::Unavailable(e.to_string())
+            })?;
 
-        if !resp.status().is_success() {
-            return Err(ParserError::ParseFailed(format!(
-                "GROBID HTTP {}",
-                resp.status()
-            )));
+        let status = resp.status();
+        if !status.is_success() {
+            tracing::warn!(
+                api = "grobid",
+                endpoint = %url,
+                status = %status,
+                "GROBID processFulltextDocument non-success HTTP status"
+            );
+            return Err(ParserError::ParseFailed(format!("GROBID HTTP {status}")));
         }
 
-        let tei_xml = resp
-            .text()
-            .await
-            .map_err(|e| ParserError::ParseFailed(e.to_string()))?;
+        let tei_xml = resp.text().await.map_err(|e| {
+            tracing::warn!(
+                api = "grobid",
+                error = %e,
+                "GROBID processFulltextDocument: failed to read response body"
+            );
+            ParserError::ParseFailed(e.to_string())
+        })?;
+
+        tracing::debug!(
+            api = "grobid",
+            endpoint = %url,
+            tei_size = tei_xml.len(),
+            "GROBID processFulltextDocument: TEI XML received"
+        );
 
         Ok(tei_xml)
     }
@@ -625,30 +648,65 @@ impl ParserPort for GrobidParser {
     async fn parse_pdf(&self, pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
         tracing::info!(paper_id, pdf_path, "GROBID parsing");
 
-        // Read PDF bytes
         let pdf_bytes = tokio::fs::read(pdf_path)
             .await
             .map_err(|e| ParserError::ParseFailed(format!("read PDF: {e}")))?;
 
-        // Process via GROBID
-        let tei_xml = self.process_fulltext(&pdf_bytes).await?;
+        let pdf_size = pdf_bytes.len();
+        let pdf_hash = Self::pdf_hash(&pdf_bytes);
+        tracing::debug!(
+            paper_id,
+            pdf_size,
+            pdf_hash = %pdf_hash,
+            "PDF read, sending to GROBID"
+        );
 
-        // Extract structured content
+        let request_start = std::time::Instant::now();
+        let tei_xml = self.process_fulltext(&pdf_bytes).await?;
+        let grobid_elapsed_ms = request_start.elapsed().as_millis() as u64;
+        let tei_size = tei_xml.len();
+        tracing::info!(
+            paper_id,
+            api = "grobid",
+            elapsed_ms = grobid_elapsed_ms,
+            pdf_size,
+            tei_size,
+            "GROBID processFulltextDocument response received"
+        );
+
         let title = Self::extract_title(&tei_xml);
         let abstract_text = Self::extract_abstract(&tei_xml);
         let body_text = Self::extract_body(&tei_xml);
         let sections = Self::extract_sections(&tei_xml);
         let citations = Self::extract_citations(&tei_xml);
-        let hash = Self::pdf_hash(&pdf_bytes);
+
+        let sections_with_path_id = sections.iter().filter(|s| s.path_id.is_some()).count();
+        let max_depth = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .map(|p| p.split('.').count())
+            .max()
+            .unwrap_or(0);
 
         tracing::info!(
             paper_id,
             title = %title,
             body_chars = body_text.len(),
+            abstract_chars = abstract_text.len(),
             sections = sections.len(),
+            sections_with_path_id,
+            max_tree_depth = max_depth,
             citations = citations.len(),
-            "GROBID parsed"
+            pdf_hash = %pdf_hash,
+            "GROBID parsed: extraction complete"
         );
+
+        if sections_with_path_id == 0 && !sections.is_empty() {
+            tracing::warn!(
+                paper_id,
+                "GROBID TEI: no sections have path_id — flat structure without <head n=...> attributes"
+            );
+        }
 
         Ok(ParsedArticle {
             paper_id: paper_id.to_string(),
@@ -659,7 +717,7 @@ impl ParserPort for GrobidParser {
             citations,
             layout_json: None, // ODL provides this separately
             tei_xml: Some(tei_xml),
-            pdf_hash: hash,
+            pdf_hash: pdf_hash,
         })
     }
 }
