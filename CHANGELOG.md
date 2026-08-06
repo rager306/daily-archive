@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Wave 1 Layer B Summary nodes + hasSummary edge (D194)
+
+SummarySchema (vid+text required, granularity/char_count optional) +
+HAS_SUMMARY edge constant. Enables MCP get_summary tool (next slice).
+
+TDD: `test_summary_schema_exists` RED→GREEN, 272 da-domain green.
+
 ### Wave 1 Layer C typed labels — Method, Dataset, Metric (D194)
 
 3 new first-class node labels in Rust schema + YAML ontology. Previously
