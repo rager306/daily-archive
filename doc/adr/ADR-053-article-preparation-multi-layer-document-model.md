@@ -491,8 +491,156 @@ above) so the LLM's contribution is auditable, never silent.
 | F | Cross-paper Patterns | 3 | semantica.kg.BiTemporalFact + conflicts |
 | **G** | **Entity Resolution and Merge** | **1 (blocks F)** | **semantica.deduplication + entity_resolution** |
 | **H** | **Agent Context Bundle** | **2 (Wave 4 input)** | **semantica.context.AgentContext** |
+| **I** | **Figures, Tables, Datapoints** | **2** | **GROBID TEI figure/table/formula + semantica.semantic_extract output objects** |
+| **J** | **Terminology, Glossary, Jargon** | **2** | **semantica.ontology.SKOS + concept layer** |
 | Governance | SHACL/SKOS/OWL/PROV-O export | 2+3 | semantica.ontology + semantica.provenance |
 | Out of scope | Deterministic reasoning engine | future ADR | semantica.reasoning (Rete/Datalog/SPARQL) |
+| Out of scope (Wave 5+) | Product/Experience Layer | future **ADR-054** | personal corpus, alerts, synthesis UI, lab memory, writing integration (8 Tier-3 pains) |
+
+## Pain point coverage (top-20 academic pains, empirical basis)
+
+Cross-check against the aggregated top-20 researcher pains (Daniel 2022
+n=62 postgraduates; CBE—Life Sciences Education; Nature Ecology & Evolution;
+PLOS One; PRISMA-related surveys; 500+ researcher polls) calibrates which
+layers the ADR should prioritize and where it is silent. Pains split into
+three tiers:
+
+**Tier 1 — covered by ADR-053 (infrastructure):** methods understanding
+(#6 Layer B+C), cognitive load (#7 Layer B+D), big-picture structure
+(#9 Layer A+D), reproducibility (#16 Layer B+E), partial critical appraisal
+(#8 Layer B+E), partial citation tracking (#17 Layer F).
+
+**Tier 2 — infrastructure gaps addressed by this revision:**
+
+- #13 figures/tables/data interpretation → **Layer I** (new)
+- #5 jargon/terminology → **Layer J** (new)
+- #4 #17 citation context (supporting/contradicting) → **Layer F extension**
+- #11 scope/coverage/gap → **Layer E extension**
+
+**Tier 3 — product/experience layer; declared for future ADR-054** (not
+built on top of thin air; consumes ADR-053 foundation): personal library +
+semantic search (#3), continuous ingest + smart alerts + trend detection
+(#1 #10), multi-paper synthesis output artifacts (#4 #15), collaborative
+annotations + lab institutional memory (#14), critical appraisal workflow
++ RoB templates UI (#8), scope visualization + gap explorer UI (#11),
+writing-tool integration (#15). Access/paywalls (#19) declared out of scope.
+
+Cross-cutting principle: **ADR-053 ships the substrate; ADR-054 ships the
+experience.** ADR-054 does not start until ADR-053 Wave 1-3 close — UI
+without foundation re-creates the Python-era fragility.
+
+## Layer I — Figures, Tables, and Datapoints (Tier 2 — pain #13)
+
+Visual and quantitative artifacts become first-class extractable objects.
+GROBID TEI natively marks `<figure type="image">`, `<figure type="table">`,
+and `<formula>`; the daily-archive adapter currently discards them.
+
+| Node | Source | Key fields |
+|------|--------|-----------|
+| `Figure` | GROBID TEI `<figure type="image">` | `label` (Fig. 3), `caption`, `figure_type` (chart/diagram/photo/schematic), `ref_section_ids` |
+| `Table` | GROBID TEI `<figure type="table">` | `label` (Table 2), `caption`, `headers` (rule-extracted), `nrows`, `ncols` |
+| `Datapoint` | rule-based over Tables | `metric_name`, `value`, `unit`, `condition`, `baseline_delta`, `evidence_from` |
+| `Equation` | GROBID TEI `<formula>` | `latex`, `label` (Eq. 5), `context_section_id` |
+
+Edges: `Paper` `hasFigure` `Figure`; `Figure` `describes` `Method`/`Dataset`
+(Layer C typed); `Datapoint` `observes` existing `MetricObservation`;
+`Figure` `evidence_from` `Section`.
+
+All edges `temporal_class: structural` (created_at only). `Datapoint.observes`
+uses fact semantics where the datapoint reports a comparison (Layer F tie-in).
+
+Governor hook: `Figure`/`Table`/`Datapoint` added to `node_schemas.yaml`
+and to the registered labels walk. Extraction is rule-based first; LLM-assisted
+caption interpretation arrives later under D136.
+
+## Layer J — Terminology, Glossary, and Jargon (Tier 2 — pains #5 #12 #18)
+
+Terms and definitions become a navigable concept layer. Auto-built from the
+existing typed-entity population (Layer C) plus entity resolution (Layer G);
+grows as the corpus grows.
+
+| Object | Purpose |
+|--------|---------|
+| `Term` node | Canonical term (`LoRA`, `Transformer`, `Markov chain`), `domain`, `first_seen_paper`, `aliases` |
+| `GlossaryEntry` node | `definition`, `formality_level` (plain/technical/expert), `source_hash`, bi-temporal (supersedes on re-extract) |
+| `defined_in` edge | `Section` → `Term` (where the term is defined in this paper) |
+| `uses_term` edge | `Section` → `Term` (where the term is used) |
+| `prerequisite_of` edge | `Term` → `Term` (concept hierarchy; typed entities feed this graph) |
+| `translations` field on Term | Cross-domain mapping (e.g. “retrieval-augmented generation” CS ↔ “grounded generation” NLP); addresses pain #18 |
+
+Progressive disclosure: agent query `define(term, level)` returns the matching
+`GlossaryEntry`. Inline jargon explanation uses Layer H `ContextBundle`
+expansion to attach definitions on demand.
+
+Bi-temporal nodes: `GlossaryEntry` follows the same `valid_from` / `valid_to` /
+`superseded_by` protocol as `Summary` and `QualitySignal` (extends ADR-046 to
+nodes). `Term` nodes are structural (created_at only) — a canonical term does
+not expire; its definitions may.
+
+## Layer F extension — Citation Context (Tier 2 — pains #4 #17)
+
+The existing `CITES` edge gains a `citation_context` property drawn from the
+reference context window (the paragraph around the citation marker).
+
+| `citation_context` value | Semantics | Maps to |
+|--------------------------|----------|---------|
+| `supporting` | Citing paper relies on cited | existing CITES |
+| `contradicting` | Explicit disagreement | Layer F `contradicts` (fact edge) |
+| `extending` | Builds on top | Layer F `predecessor_of` candidate |
+| `replicating` | Replication study | Layer F `replicates` |
+| `discussing` | Mention without position | existing CITES |
+| `methodological_basis` | Uses the cited method | Layer C tie-in |
+| `dataset_origin` | Uses the cited dataset | Layer C tie-in |
+
+Rule-based extraction from citation context phrases ("as shown by", "in contrast
+to", "building on", "we replicate"). Confidence field; below threshold stays
+`discussing`. Decision node (Layer B/C decision intelligence extension) records
+the classification with evidence span.
+
+This is an **edge property**, not a new edge type. Existing `CITES` queries keep
+working; the property is filterable: `MATCH (p)-[c:CITES]->(q) WHERE
+.citation_context = 'contradicting' RETURN p, q`.
+
+## Layer E extension — Coverage and Gap (Tier 2 — pain #11)
+
+New signal types and a new node type detect research gaps and coverage.
+
+| Object | Computation |
+|--------|-----------|
+| `coverage_score` QualitySignal | per concept / method: count of canonical entities + density of `predecessor_of` lineage |
+| `trend_signal` QualitySignal | temporal slope: count of new `predecessor_of` edges over window |
+| `GapNode` node | asserts "combination (Method X) × (Dataset Y) has zero `evaluated_on` edges in canonical corpus"; carries `EvidenceBundle` (completeness audit) + Decision recording |
+
+GapNode lifecycle: created by gap-scan, **must be Decision-backed** (no free
+invent — someone/something asserts the gap with evidence). GapNode can be
+`superseded` (bi-temporal) when the gap is later filled; the fill event is
+itself recorded.
+
+## Product/Experience layer — ADR-054 (future, Tier 3)
+
+Eight Tier-3 pains are product/experience, not infrastructure. ADR-054 will
+specify them on top of ADR-053 foundation. Scoped here for traceability;
+built only after ADR-053 Waves 1-3 close.
+
+- Personal corpus + full-text semantic search + linked notes (pain #3)
+- Continuous ingest feeds + smart alerts + trend detection (pains #1 #10)
+- Multi-paper synthesis output artifacts: comparison tables, draft outlines,
+  contradiction summaries (pains #4 #15)
+- Collaborative annotations + lab institutional memory (pain #14)
+- Critical appraisal workflow templates: RoB checklist, claim-evidence audit
+  (pain #8)
+- Scope visualization + gap explorer UI (pain #11)
+- Writing-tool integration: export to Overleaf / Word / Obsidian / Pandoc
+  (pain #15)
+- Access/paywalls (pain #19): Unpaywall integration, OA prioritization —
+  declared **out of scope** for daily-archive as a KB engine
+
+ADR-054 design principles (locked here, detailed later):
+- consumes ADR-053 Layers A-J via read-only `ContextBundle` (Layer H)
+- never mutates the foundation graph directly
+- every agent/person action records a Decision node (ADR-048 wiring)
+- personal corpus is a filtered projection of the canonical KB, not a parallel
+  store (single source of truth, ADR-040)
 
 ## Consequences
 
