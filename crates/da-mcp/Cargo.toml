@@ -1,0 +1,30 @@
+[package]
+name = "da-mcp"
+description = "MCP server for daily-archive knowledge base external access (ADR-054)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kg-storage = { path = "../kg-storage" }
+kg-ontology = { path = "../kg-ontology" }
+da-domain = { path = "../da-domain" }
+da-ports = { path = "../da-ports" }
+da-cli = { path = "../da-cli" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+schemars = "1.0"
+rmcp = { version = "3.1", features = ["server", "transport-io"] }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+
+[lib]
+name = "da_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "da-mcp"
+path = "src/main.rs"

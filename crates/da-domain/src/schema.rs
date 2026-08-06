@@ -66,6 +66,29 @@ pub fn registered_node_labels() -> Vec<&'static str> {
     all_node_schemas().into_iter().map(|s| s.label()).collect()
 }
 
+/// All registered edge type constants from `relation.rs` modules.
+/// Used by MCP server `get_schema` tool and graph task suite.
+pub fn registered_edge_types() -> Vec<&'static str> {
+    use crate::relation::bibliographic;
+    // Base wire strings that are guaranteed present (used by HOT paths).
+    // Full edge catalog comes from YAML via `registered_edge_types_or_yaml`.
+    vec![bibliographic::CITES]
+}
+
+/// Edge type catalog from external meta-ontology (`data/ontology/edge_contracts.yaml`)
+/// when present; otherwise falls back to the compiled [`registered_edge_types`].
+///
+/// ADR-050 / M324: edge contracts are DATA — MCP server and inventory must not
+/// hardcode the full edge list.
+pub fn registered_edge_types_or_yaml() -> Vec<String> {
+    if let Ok(reg) = kg_ontology::registry::OntologyRegistry::load_project_meta_ontology()
+        && !reg.edge_contracts().is_empty()
+    {
+        return reg.edge_types();
+    }
+    registered_edge_types().into_iter().map(|s| s.to_string()).collect()
+}
+
 /// Node labels from external meta-ontology (`data/ontology/node_schemas.yaml`) when
 /// present; otherwise compiled [`registered_node_labels`].
 ///

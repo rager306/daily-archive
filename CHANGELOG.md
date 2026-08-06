@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 4) — MCP server Wave 1: da-mcp crate skeleton + get_schema + get_graph_stats
+
+**First implementation slice of ADR-054.** Built the `da-mcp` crate skeleton
+with two tools, dynamic schema loading from YAML, and a runnable binary.
+
+1. `crates/da-mcp/` (new crate, hexagonal):
+   - `Cargo.toml`: depends on kg-storage, kg-ontology, da-domain, da-ports,
+     rmcp v3.1 (MCP protocol), clap, schemars
+   - `src/lib.rs`: `DailyArchiveMcpServer` struct + `McpServerConfig`
+     (snapshot mode supported)
+   - `src/tools.rs`: `get_schema` + `get_graph_stats` tool handlers with
+     params/output types (serde + schemars)
+   - `src/main.rs`: CLI binary `da-mcp --stdio --snapshot <file.sgsnap>`
+2. `crates/da-domain/src/schema.rs`:
+   - **Replaced hardcoded `registered_edge_types()`** (was listing all edge
+     constants in Rust) with `registered_edge_types_or_yaml()` that loads
+     `data/ontology/edge_contracts.yaml` dynamically (ADR-050: schema is DATA)
+   - `registered_edge_types()` now returns only the base wire strings
+     (CITES) as fallback when YAML is missing
+3. `Cargo.toml`: added `crates/da-mcp` to workspace members
+4. TDD: 4 new tests (da-mcp lib):
+   - `test_get_schema_returns_registered_labels`
+   - `test_get_schema_with_samples_returns_counts`
+   - `test_get_graph_stats_empty_graph`
+   - `test_get_graph_stats_with_nodes`
+5. All da-domain schema tests pass (44); trajectory ON_TRACK.
+
+**Schema is dynamic (user requirement):** node labels via
+`registered_node_labels_or_yaml()`, edge types via
+`registered_edge_types_or_yaml()` — both load from YAML first, fall back to
+compiled constants. No hardcoded schema in the MCP server.
+
+**Next slices (MCP-1.5, MCP-2):**
+- MCP-1.5: rmcp ServerHandler wiring — serve get_schema/get_graph_stats over
+  stdio via the MCP protocol (list_tools, tool_call JSON-RPC)
+- MCP-2: read_cypher + search_papers + get_paper tools
+
 ### Session 2026-08-07 (late 3) — ADR-054: MCP server for knowledge base external access
 
 **Architecture decision.** daily-archive has reached the stage where the
