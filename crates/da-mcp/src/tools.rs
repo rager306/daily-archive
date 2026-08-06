@@ -42,6 +42,55 @@ pub struct GraphStatsOutput {
     pub snapshot_path: Option<String>,
 }
 
+/// Parameters for `read_cypher` tool.
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct ReadCypherParams {
+    /// Cypher query. Restricted to read-only syntax (no CREATE/SET/DELETE/MERGE).
+    pub query: String,
+}
+
+/// Output for `read_cypher` tool.
+#[derive(Serialize, schemars::JsonSchema, Debug)]
+pub struct CypherOutput {
+    pub columns: Vec<String>,
+    /// Each record is a row of cell values (one per column).
+    pub records: Vec<Vec<serde_json::Value>>,
+    pub row_count: usize,
+}
+
+/// Minimal set of destructive keywords rejected before query execution.
+/// This is a defense-in-depth check on top of `query_readonly` (which is
+/// enforced at the Samyama engine level) — D127 safety.
+const DESTRUCTIVE_KEYWORDS: &[&str] = &[
+    "CREATE", "SET", "DELETE", "MERGE", "DROP", "REMOVE", "DETACH",
+];
+
+/// Run a read-only Cypher query against the graph.
+///
+/// Rejects destructive keywords and uses `query_readonly` (engine-enforced
+/// read-only). D127-safe: never mutates the graph.
+pub async fn read_cypher(
+    store: &dyn DirectGraphStore,
+    params: ReadCypherParams,
+) -> anyhow::Result<CypherOutput> {
+    let upper = params.query.to_uppercase();
+    for kw in DESTRUCTIVE_KEYWORDS {
+        if upper.split_whitespace().any(|w| w == *kw) {
+            return Err(anyhow::anyhow!(
+                "destructive keyword '{kw}' not allowed in read_cypher (D127 read-only)"
+            ));
+        }
+    }
+
+    let result = store.query_readonly("default", &params.query).await?;
+    let row_count = result.records.len();
+    Ok(CypherOutput {
+        columns: result.columns,
+        records: result.records,
+        row_count,
+    })
+}
+
 // ═══════════════════════════════════════════════════════════════
 // Tool implementations
 // ═══════════════════════════════════════════════════════════════
@@ -170,5 +219,79 @@ mod tests {
             .map(|(_, c)| *c)
             .unwrap_or(0);
         assert_eq!(section_count, 1);
+    }
+
+    // ─── ADR-054 MCP-2: read_cypher safety + execution tests ───
+
+    #[tokio::test]
+    async fn test_read_cypher_rejects_query_without_records() {
+        let store = kg_storage::MockGraphStore::new();
+        // MockGraphStore returns empty (Vec::new()) for read query.
+        let result = read_cypher(
+            &store,
+            ReadCypherParams {
+                query: "MATCH (n:Paper) RETURN n".to_string(),
+            },
+        )
+        .await
+        .expect("read_cypher should not error on empty mock");
+        assert_eq!(result.row_count, 0);
+        assert!(result.columns.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_read_cypher_rejects_create() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = read_cypher(
+            &store,
+            ReadCypherParams {
+                query: "CREATE (n:Paper {vid:'x'})".to_string(),
+            },
+        )
+        .await;
+        assert!(
+            result.is_err(),
+            "CREATE must be rejected by read_cypher (D127 read-only)"
+        );
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("destructive keyword"),
+            "error should mention destructive keyword, got: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_read_cypher_rejects_delete_and_set() {
+        let store = kg_storage::MockGraphStore::new();
+        for destructive in ["DELETE (n)", "SET n.x = 1", "MERGE (n)", "DROP INDEX"] {
+            let result = read_cypher(
+                &store,
+                ReadCypherParams {
+                    query: destructive.to_string(),
+                },
+            )
+            .await;
+            assert!(
+                result.is_err(),
+                "'{destructive}' must be rejected by read_cypher"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_read_cypher_allows_read_only_contains_modifier_ok() {
+        let store = kg_storage::MockGraphStore::new();
+        // 'CONTAINS' is not destructive — should pass keyword check and run.
+        let result = read_cypher(
+            &store,
+            ReadCypherParams {
+                query: "MATCH (n:Paper) WHERE n.title CONTAINS 'transform' RETURN n".to_string(),
+            },
+        )
+        .await;
+        assert!(
+            result.is_ok(),
+            "read-only query with CONTAINS must be allowed"
+        );
     }
 }

@@ -86,6 +86,19 @@ impl DailyArchiveMcpServer {
         .map_err(|e| format!("get_graph_stats failed: {e}"))?;
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
+
+    /// Run a read-only Cypher query against the knowledge graph.
+    #[rmcp::tool(description = "Run a read-only Cypher query against the daily-archive knowledge graph. Rejects destructive keywords (CREATE/SET/DELETE/MERGE). D127-safe read-only. Use Samyama Cypher syntax; LIMIT results for large queries.")]
+    async fn read_cypher(
+        &self,
+        parameters: Parameters<tools::ReadCypherParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::read_cypher(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
 }
 
 // server_handler flag emits `impl ServerHandler for DailyArchiveMcpServer` with

@@ -1,18 +1,18 @@
 //! MCP server binary for daily-archive knowledge base (ADR-054).
 //!
 //! Usage:
-//!   da-mcp --stdio --snapshot <file.sgsnap>
-//!   da-mcp --stdio  (empty graph — tool discovery only)
+//!   da-mcp --stdio --snapshot <file.sgsnap>   (load real graph snapshot)
+//!   da-mcp --stdio                            (empty graph — tool discovery)
 //!
-//! Wave 1.5 (MCP-1.5): rmcp ServerHandler wired over stdio transport.
+//! Wave 2 (MCP-2): real Samyama graph store + snapshot loading.
 
 use std::sync::Arc;
 
 use clap::Parser;
 use da_mcp::DailyArchiveMcpServer;
-use kg_storage::{DirectGraphStore, MockGraphStore};
+use kg_storage::{DirectGraphStore, GraphStore, MockGraphStore};
+use rmcp::service::serve_server_with_ct;
 use rmcp::transport::stdio;
-use rmcp::{RoleServer, service::serve_server_with_ct};
 
 /// MCP server for daily-archive knowledge base.
 #[derive(Parser, Debug)]
@@ -41,10 +41,29 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!(
         snapshot = ?cli.snapshot,
         stdio = cli.stdio,
-        "da-mcp server starting (ADR-054 Wave 1.5)"
+        "da-mcp server starting (ADR-054 Wave 2)"
     );
 
-    let store: Arc<dyn DirectGraphStore> = Arc::new(MockGraphStore::new());
+    // Build the graph store: real Samyama store when a snapshot is provided,
+    // otherwise MockGraphStore (for tool discovery / tests).
+    let store: Arc<dyn DirectGraphStore> = if let Some(snap_path) = &cli.snapshot {
+        let snap_bytes = std::fs::read(snap_path).map_err(|e| {
+            tracing::error!(path = %snap_path, error = %e, "failed to read snapshot");
+            anyhow::anyhow!("failed to read snapshot {snap_path}: {e}")
+        })?;
+        let samyama = da_adapters::SamyamaGraphStore::from_env();
+        samyama.import_snapshot(&snap_bytes).await.map_err(|e| {
+            tracing::error!(error = %e, "snapshot import failed");
+            anyhow::anyhow!("snapshot import failed: {e}")
+        })?;
+        let nodes = samyama.node_count().await;
+        let edges = samyama.edge_count().await;
+        tracing::info!(nodes, edges, snapshot = %snap_path, "snapshot loaded");
+        Arc::new(samyama)
+    } else {
+        Arc::new(MockGraphStore::new())
+    };
+
     let server = if let Some(snap) = &cli.snapshot {
         DailyArchiveMcpServer::with_snapshot(store, snap.clone())
     } else {
@@ -52,17 +71,13 @@ async fn main() -> anyhow::Result<()> {
     };
 
     if cli.stdio {
-        // rmcp v3: serve over stdio. The stdio transport is a (Stdin, Stdout)
-        // pair which implements IntoTransport for RoleServer.
         let ct = tokio_util::sync::CancellationToken::new();
-        let running = serve_server_with_ct(server, stdio(), ct.clone())
+        let _running = serve_server_with_ct(server, stdio(), ct.clone())
             .await
             .map_err(|e| anyhow::anyhow!("MCP server init failed: {e}"))?;
         tracing::info!("MCP server ready on stdio — waiting for requests");
-        // Block until cancellation (e.g. client closes).
         tokio::signal::ctrl_c().await.ok();
         tracing::info!("shutdown signal received");
-        let _ = running;
     } else {
         tracing::warn!("no transport selected (use --stdio)");
     }

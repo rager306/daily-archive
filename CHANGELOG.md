@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 6) — MCP Wave 2: real snapshot loading + read_cypher
+
+**Third MCP slice (ADR-054 MCP-2).** Connected the da-mcp server to a real
+Samyama graph store loaded from a `.sgsnap` snapshot, and added the
+`read_cypher` read-only tool.
+
+1. `crates/da-mcp/src/main.rs`:
+   - Loads a real `SamyamaGraphStore` from `--snapshot <file.sgsnap>` via
+     `import_snapshot` (same pattern as graph_task_suite, ADR-051 §8.1)
+   - Falls back to `MockGraphStore` when no snapshot given
+   - Added `da-adapters` dependency for `SamyamaGraphStore`
+2. `crates/da-mcp/src/tools.rs`: new `read_cypher` tool:
+   - Rejects destructive keywords (CREATE/SET/DELETE/MERGE/DROP/REMOVE/DETACH)
+     before execution (defense-in-depth on top of `query_readonly`)
+   - Uses `query_readonly("default", cypher)` — engine-enforced read-only
+   - Returns columns + records + row_count
+3. `crates/da-mcp/src/lib.rs`: new `read_cypher` tool handler
+4. TDD: 4 new tests (7 → 11 da-mcp tests pass):
+   - `test_read_cypher_rejects_query_without_records`
+   - `test_read_cypher_rejects_create`
+   - `test_read_cypher_rejects_delete_and_set` (DELETE, SET, MERGE, DROP)
+   - `test_read_cypher_allows_read_only_contains_modifier_ok`
+5. **Live MCP verification with real snapshot (hub_unlocked_t04.sgsnap):**
+   - `get_graph_stats` → 2571 nodes, 3678 edges, per-label breakdown
+     (24 Paper, 965 Section, 1255 Reference, 325 Citation, 1 Category, 1 Source)
+   - `read_cypher "MATCH (p:Paper) RETURN count(p)"` → 24 ✅
+6. Trajectory ON_TRACK.
+
+**Product impact:** the MCP server now serves REAL knowledge base content to
+any MCP client (Claude Desktop, Cursor, VS Code) — not just schema discovery.
+Agents can query the actual graph: papers, sections, references, citations,
+citation counts, etc.
+
+**Next slices:**
+- MCP-3: get_sections + get_references + get_paper tools (product search/fetch)
+- MCP-4: Resources (ontology YAMLs) + Prompts (literature_review, critical_reading)
+
 ### Session 2026-08-07 (late 5) — MCP Wave 1.5: rmcp ServerHandler wired over stdio
 
 **Second MCP slice (ADR-054 MCP-1.5).** Connected the da-mcp crate to the
