@@ -91,8 +91,12 @@ Four slices, TDD, governor on_track throughout.
 - `cargo test --workspace` + `schema_check_test` + governor all green; fmt drift
   (~25 files) remains unstaged — intentional, not logic.
 
-**DB:** M365 S01+S02 complete, M366 S01+S02 complete; M365 ACTIVATING → seal
-next; M366 S03+S04 pending; M362-M364 unchanged (pending sketch hygiene deferred).
+**DB:** M365 S01+S02 complete, M366 S01+S02 complete; M365 ACTIVATING → seal next; M366 S03+S04 pending (S03 deferred thin Resources/Prompts); M362-M364 unchanged (pending sketch hygiene deferred, S01 `evaluating-gates` horizon debt).
+
+### Thin debt wave (fix clippy) — fmt + lint (product debt kept thin)
+
+*  6 files clippy hygiene so long-horizon stays thin: `grobid_parser` `pdf_hash` shorthand, `is_empty` `is_empty()` lint, `Section` fields explicit instead of `..Default::`, `graph_task_suite` format-arg + `gepa_hub_research` `mut md`. `cargo clippy -p da-ports/da-adapters --lib -D warnings` now clean; 25 da-mcp + 270 da-domain still green. Hex `kg-*` no `da-*` deps intact.
+*  Governor still `on_track` flags=0; M362 S01 `evaluating-gates` remains horizon debt (Q3-Q8) — not fixed this wave, correctly stayed `pending` rather than force-closed.
 
 ### Session 2026-08-07 (late 7) — MCP Wave 3: get_paper + get_sections + get_references
 
