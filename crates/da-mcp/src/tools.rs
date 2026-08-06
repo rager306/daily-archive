@@ -226,6 +226,7 @@ pub struct VectorSearchParams {
 /// graph operations. Rate guidance: RECOMMENDED_RATE_LIMIT_RPS.
 pub async fn vector_search(
     store: &dyn DirectGraphStore,
+    embedder: &dyn kg_embeddings::Embedder,
     params: VectorSearchParams,
 ) -> anyhow::Result<CypherOutput> {
     let query = params.query.trim().to_string();
@@ -245,21 +246,13 @@ pub async fn vector_search(
         .filter(|s| !s.is_empty())
         .unwrap_or("embedding");
     let k = params.k.unwrap_or(5).clamp(1, 20) as usize;
-    // Hexagonal mock embedding (no external API). Delegate to kg-embeddings MockEmbedder
-    // — same LCG path used by ADR-051 contract tests.
-    let embedder = kg_embeddings::MockEmbedder::new(8);
-    // Determine dimensions from store or use mock dims.
-    let vector_len = {
-        use kg_embeddings::Embedder as _;
-        embedder.dimensions()
-    };
-    let query_vector = {
-        use kg_embeddings::Embedder as _;
-        embedder
-            .embed(&query)
-            .await
-            .map_err(|e| anyhow::anyhow!(e.to_string()))?
-    };
+    // D194 Wave 0 Product Honesty: use injected embedder (FdApi 1024d in prod,
+    // Mock in tests). Previously hardcoded MockEmbedder(8) — product was lying.
+    let vector_len = embedder.dimensions();
+    let query_vector = embedder
+        .embed(&query)
+        .await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
     debug_assert_eq!(query_vector.len(), vector_len);
     let start = std::time::Instant::now();
     let results = store
@@ -833,8 +826,10 @@ mod tests {
     #[tokio::test]
     async fn test_vector_search_rejects_empty_query() {
         let store = kg_storage::MockGraphStore::new();
+        let embedder = kg_embeddings::MockEmbedder::new(8);
         let result = vector_search(
             &store,
+            &embedder,
             VectorSearchParams {
                 query: "".to_string(),
                 label: None,
@@ -849,8 +844,10 @@ mod tests {
     #[tokio::test]
     async fn test_vector_search_empty_graph_returns_zero_rows() {
         let store = kg_storage::MockGraphStore::new();
+        let embedder = kg_embeddings::MockEmbedder::new(8);
         let result = vector_search(
             &store,
+            &embedder,
             VectorSearchParams {
                 query: "transformer diffusion".to_string(),
                 label: Some("Entity".to_string()),
@@ -884,6 +881,7 @@ mod tests {
             .unwrap();
         let result = vector_search(
             &store,
+            &embedder,
             VectorSearchParams {
                 query: "transformer".to_string(),
                 label: Some("Entity".to_string()),

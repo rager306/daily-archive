@@ -25,14 +25,19 @@ pub struct McpServerConfig {
 pub struct DailyArchiveMcpServer {
     pub config: McpServerConfig,
     pub graph_store: Arc<dyn DirectGraphStore>,
+    pub embedder: Arc<dyn kg_embeddings::Embedder + Send + Sync>,
 }
 
 impl DailyArchiveMcpServer {
     /// Create a new server with the given graph store and default config.
+    /// Uses FdApiEmbedder (1024d) when FD_API_KEY is set, falls back to MockEmbedder.
     pub fn new(graph_store: Arc<dyn DirectGraphStore>) -> Self {
+        let embedder: Arc<dyn kg_embeddings::Embedder + Send + Sync> =
+            Arc::new(kg_embeddings::FdApiEmbedder::from_env());
         Self {
             config: McpServerConfig::default(),
             graph_store,
+            embedder,
         }
     }
 
@@ -41,11 +46,14 @@ impl DailyArchiveMcpServer {
         graph_store: Arc<dyn DirectGraphStore>,
         snapshot_path: impl Into<String>,
     ) -> Self {
+        let embedder: Arc<dyn kg_embeddings::Embedder + Send + Sync> =
+            Arc::new(kg_embeddings::FdApiEmbedder::from_env());
         Self {
             config: McpServerConfig {
                 snapshot_path: Some(snapshot_path.into()),
             },
             graph_store,
+            embedder,
         }
     }
 }
@@ -198,7 +206,7 @@ impl DailyArchiveMcpServer {
         parameters: Parameters<tools::VectorSearchParams>,
     ) -> Result<String, String> {
         let params = parameters.0;
-        let out = tools::vector_search(self.graph_store.as_ref(), params)
+        let out = tools::vector_search(self.graph_store.as_ref(), self.embedder.as_ref(), params)
             .await
             .map_err(|e| e.to_string())?;
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
@@ -214,7 +222,22 @@ mod tests {
     use rmcp::ServerHandler;
 
     fn test_server() -> DailyArchiveMcpServer {
-        DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()))
+        let mut s = DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()));
+        s.embedder = Arc::new(kg_embeddings::MockEmbedder::new(8));
+        s
+    }
+
+    #[test]
+    fn test_prod_server_uses_fdapi_dimensions() {
+        // Wave 0 Product Honesty (D194): prod server must use FdApi (1024d), not Mock (8d).
+        let server = DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()));
+        use kg_embeddings::Embedder as _;
+        assert_eq!(
+            server.embedder.dimensions(),
+            1024,
+            "prod server must use FdApiEmbedder (1024d), got {}d — product vector_search is lying",
+            server.embedder.dimensions()
+        );
     }
 
     #[test]
