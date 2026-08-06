@@ -239,3 +239,56 @@ async fn test_enrich_not_found_without_scheduler_still_works() {
 
     assert!(result.openalex_pending);
 }
+
+// ─── ADR-053 Layer F prerequisite: referenced_works → CITES edges ───
+// Bug fix: OpenAlex referenced_works was fetched but discarded (data loss).
+// enrich_from_work must create CITES edges from Paper to each referenced work.
+
+fn make_mock_work_with_references() -> OpenAlexWork {
+    let mut work = make_mock_work();
+    work.referenced_works = vec![
+        "https://openalex.org/W111".to_string(),
+        "https://openalex.org/W222".to_string(),
+        "https://openalex.org/W333".to_string(),
+    ];
+    work
+}
+
+#[tokio::test]
+async fn test_enrich_creates_cites_edges_from_referenced_works() {
+    let work = make_mock_work_with_references();
+    let openalex = Box::new(MockOpenAlex { work: Some(work) });
+    let store = make_store();
+    // enrich_from_work expects a Paper node to already exist (created by ingest).
+    // Create a stub Paper node with the arxiv_id so enrich can find it.
+    let paper_node = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
+        .await
+        .unwrap();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
+
+    let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+
+    // 3 referenced works → 3 CITES edges
+    assert_eq!(
+        result.cites_edges_written, 3,
+        "expected 3 CITES edges from referenced_works, got {}",
+        result.cites_edges_written
+    );
+}
+
+#[tokio::test]
+async fn test_enrich_empty_referenced_works_creates_zero_cites_edges() {
+    let work = make_mock_work(); // referenced_works = vec![]
+    let openalex = Box::new(MockOpenAlex { work: Some(work) });
+    let store = make_store();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
+
+    let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+
+    assert_eq!(
+        result.cites_edges_written, 0,
+        "empty referenced_works should create 0 CITES edges"
+    );
+}

@@ -25,6 +25,9 @@ pub struct EnrichResult {
     pub concepts_written: usize,
     pub institutions_written: usize,
     pub affiliation_edges_written: usize,
+    /// Number of CITES edges created from OpenAlex `referenced_works`.
+    /// Each referenced work becomes a stub Paper node + CITES edge (ADR-053 Layer F).
+    pub cites_edges_written: usize,
     pub doi: Option<String>,
     pub cited_by_count: u32,
     pub openalex_id: String,
@@ -298,12 +301,75 @@ impl EnrichUseCase {
         // Concepts (deprecated but kept for audit, retrieval_eligible=false)
         let concepts_written = work.concepts.len();
 
+        // ADR-053 Layer F prerequisite: create CITES edges from OpenAlex
+        // `referenced_works`. Previously this field was fetched but discarded
+        // (data loss — citation graph was incomplete). Each referenced work
+        // becomes a stub Paper node (openalex_id only) + CITES edge.
+        // Stub nodes are retrieval_eligible=false, import_eligible=false (D127).
+        let mut cites_edges_written = 0usize;
+        if let Some(paper_node) = self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
+            .await
+        {
+            for ref_openalex_id in &work.referenced_works {
+                // Idempotent: check if a stub Paper for this openalex_id exists.
+                let ref_node = match self
+                    .graph_store
+                    .find_node_by_string_property("Paper", "openalex_id", ref_openalex_id)
+                    .await
+                {
+                    Some(existing) => existing,
+                    None => {
+                        // Create stub Paper node for the referenced work.
+                        let node = self.graph_store.create_node("Paper").await?;
+                        self.graph_store
+                            .set_node_property_string(node, "openalex_id", ref_openalex_id.clone())
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(
+                                node,
+                                "vid",
+                                vid::paper_vid(ref_openalex_id),
+                            )
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "retrieval_eligible", false)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "import_eligible", false)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "schema_version", 1)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "valid_from", now)
+                            .await?;
+                        node
+                    }
+                };
+                // CITES edge: Paper → referenced Paper (structural, created_at only).
+                // Not a fact edge — citation relationship is stable metadata.
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                let _ = crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    paper_node,
+                    ref_node,
+                    da_domain::relation::bibliographic::CITES,
+                    &temporal,
+                )
+                .await;
+                cites_edges_written += 1;
+            }
+        }
+
         tracing::info!(
             arxiv_id,
             title = %work.title,
             topics_written,
             authors_written,
             concepts_written,
+            cites_edges_written,
             cited_by_count = work.cited_by_count,
             "OpenAlex enrichment complete"
         );
@@ -316,6 +382,7 @@ impl EnrichUseCase {
             concepts_written,
             institutions_written,
             affiliation_edges_written,
+            cites_edges_written,
             doi: work.doi,
             cited_by_count: work.cited_by_count,
             openalex_id: work.id,
@@ -377,6 +444,7 @@ impl EnrichUseCase {
             concepts_written: 0,
             institutions_written: 0,
             affiliation_edges_written: 0,
+            cites_edges_written: 0,
             doi: None,
             cited_by_count: 0,
             openalex_id: String::new(),

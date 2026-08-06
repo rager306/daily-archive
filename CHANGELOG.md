@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Session 2026-08-07 — Fix: OpenAlex referenced_works → CITES edges (data loss)
+
+**Bug fix (identified via skrills-tome deep dive).** OpenAlex `referenced_works`
+was fetched but **discarded** — no CITES edges created. This was a data-loss
+bug: the citation graph was incomplete because every paper's outgoing citation
+edges from OpenAlex were never stored.
+
+1. `crates/da-application/src/enrich.rs`:
+   - `EnrichResult` gains `cites_edges_written: usize` field
+   - `enrich_from_work` now iterates `work.referenced_works`:
+     - creates a stub `Paper` node (openalex_id, vid, retrieval_eligible=false,
+       import_eligible=false per D127) for each referenced work not yet in graph
+     - creates `CITES` edge Paper → referenced Paper (structural, created_at only)
+   - `create_pending_stub` sets `cites_edges_written: 0`
+2. TDD: 2 new tests in `crates/da-application/tests/enrich_test.rs`:
+   - `test_enrich_creates_cites_edges_from_referenced_works` (3 refs → 3 edges)
+   - `test_enrich_empty_referenced_works_creates_zero_cites_edges`
+3. All enrich integration tests pass (6 → 8); 569 total tests pass all crates.
+4. Clippy clean; trajectory ON_TRACK.
+
+**Impact:** this is the ADR-053 Layer F prerequisite data. Forward citation
+traversal (`MATCH (p:Paper)-[:CITES]->(cited)`) now works across the enriched
+corpus without GROBID reprocessing. Enables predecessor_of/superseded_by
+lineage edges (Layer F, M364) and citation lineage reading path.
+
 ### Session 2026-08-06 (late 7) — GROBID TEI extraction research + consolidation parameters
 
 **Research:** analyzed real GROBID 0.9.0 TEI output from paper 2507.19457
