@@ -297,6 +297,12 @@ fn check_semantic_vocabularies(label: &str, props: &PropertySnapshot) -> Vec<Sch
     if label == "Decision" {
         out.extend(check_decision_semantics(props));
     }
+    if label == "EvidenceBundle" {
+        out.extend(check_evidence_bundle_semantics(props));
+    }
+    if label == "ConceptCluster" {
+        out.extend(check_concept_cluster_semantics(props));
+    }
     out
 }
 
@@ -352,6 +358,67 @@ fn check_decision_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
             format!(
                 "Decision.decision_maker='{}' does not start with a known prefix (agent:|human:|system:)",
                 maker
+            ),
+        ));
+    }
+
+    out
+}
+
+/// EvidenceBundle semantic checks.
+/// - `bundle_type` must be in vocabulary.rs `is_known_bundle_type`
+/// - `verification_status` (optional) must be in vocabulary.rs `is_known_verification_status`
+fn check_evidence_bundle_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::vocabulary::{is_known_bundle_type, is_known_verification_status};
+    let mut out = Vec::new();
+
+    if let Some(bt) = props.get("bundle_type").and_then(|v| v.as_str())
+        && !bt.is_empty()
+        && !is_known_bundle_type(bt)
+    {
+        out.push(SchemaViolation::warn(
+            "evidence-bundle-type-vocabulary",
+            "bundle_type",
+            format!(
+                "EvidenceBundle.bundle_type='{}' is not in node_vocabulary.yaml bundle_types",
+                bt
+            ),
+        ));
+    }
+
+    if let Some(vs) = props.get("verification_status").and_then(|v| v.as_str())
+        && !vs.is_empty()
+        && !is_known_verification_status(vs)
+    {
+        out.push(SchemaViolation::warn(
+            "evidence-verification-status-vocabulary",
+            "verification_status",
+            format!(
+                "EvidenceBundle.verification_status='{}' is not in node_vocabulary.yaml verification_statuses",
+                vs
+            ),
+        ));
+    }
+
+    out
+}
+
+/// ConceptCluster semantic checks.
+/// - `cluster_type` must be in vocabulary.rs `is_known_cluster_type`
+fn check_concept_cluster_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::vocabulary::is_known_cluster_type;
+    let mut out = Vec::new();
+
+    if let Some(ct) = props.get("cluster_type").and_then(|v| v.as_str())
+        && !ct.is_empty()
+        && !is_known_cluster_type(ct)
+    {
+        out.push(SchemaViolation::warn(
+            "cluster-type-vocabulary",
+            "cluster_type",
+            format!(
+                "ConceptCluster.cluster_type='{}' is not in node_vocabulary.yaml cluster_types",
+                ct
             ),
         ));
     }
@@ -1174,6 +1241,99 @@ mod yaml_parity_tests {
                 .iter()
                 .any(|v| v.rule == "decision-category-vocabulary"),
             "Phase 2 category must warn in Phase 1"
+        );
+    }
+
+    // ─── EvidenceBundle semantic validation tests ───
+
+    fn valid_evidence_bundle_props(bundle_type: &str) -> PropertySnapshot {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("eb-001"));
+        props.insert("bundle_type".to_string(), serde_json::json!(bundle_type));
+        props.insert("import_eligible".to_string(), serde_json::json!(false));
+        props.insert("retrieval_eligible".to_string(), serde_json::json!(true));
+        props.insert("schema_version".to_string(), serde_json::json!(1));
+        props
+    }
+
+    #[test]
+    fn test_evidence_bundle_semantic_valid_bundle_type_no_violation() {
+        let props = valid_evidence_bundle_props("experiment_setup");
+        let violations = validate_node_properties("EvidenceBundle", &props);
+        let semantic: Vec<_> = violations
+            .iter()
+            .filter(|v| v.rule.contains("evidence-bundle-type"))
+            .collect();
+        assert!(
+            semantic.is_empty(),
+            "expected no bundle-type violation for valid type, got: {:?}",
+            semantic
+        );
+    }
+
+    #[test]
+    fn test_evidence_bundle_semantic_unknown_bundle_type_warns() {
+        let props = valid_evidence_bundle_props("bogus_bundle_type");
+        let violations = validate_node_properties("EvidenceBundle", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "evidence-bundle-type-vocabulary"),
+            "expected evidence-bundle-type-vocabulary warning for unknown bundle_type"
+        );
+    }
+
+    #[test]
+    fn test_evidence_bundle_semantic_unknown_verification_status_warns() {
+        let mut props = valid_evidence_bundle_props("experiment_setup");
+        props.insert(
+            "verification_status".to_string(),
+            serde_json::json!("bogus_status"),
+        );
+        let violations = validate_node_properties("EvidenceBundle", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "evidence-verification-status-vocabulary"),
+            "expected evidence-verification-status-vocabulary warning"
+        );
+    }
+
+    #[test]
+    fn test_evidence_bundle_semantic_valid_verification_status_no_violation() {
+        let mut props = valid_evidence_bundle_props("experiment_setup");
+        props.insert(
+            "verification_status".to_string(),
+            serde_json::json!("verified"),
+        );
+        let violations = validate_node_properties("EvidenceBundle", &props);
+        let semantic: Vec<_> = violations
+            .iter()
+            .filter(|v| v.rule.contains("evidence-verification"))
+            .collect();
+        assert!(
+            semantic.is_empty(),
+            "expected no verification-status violation, got: {:?}",
+            semantic
+        );
+    }
+
+    // ─── ConceptCluster semantic validation tests ───
+
+    #[test]
+    fn test_concept_cluster_semantic_unknown_cluster_type_warns() {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("cluster-001"));
+        props.insert("cluster_type".to_string(), serde_json::json!("bogus_cluster"));
+        props.insert("import_eligible".to_string(), serde_json::json!(false));
+        props.insert("retrieval_eligible".to_string(), serde_json::json!(true));
+        props.insert("schema_version".to_string(), serde_json::json!(1));
+        let violations = validate_node_properties("ConceptCluster", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "cluster-type-vocabulary"),
+            "expected cluster-type-vocabulary warning for unknown cluster_type"
         );
     }
 }

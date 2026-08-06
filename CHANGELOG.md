@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Session 2026-08-05 (late 3) — Validator semantic hooks for EvidenceBundle + ConceptCluster
+
+**Same registry-exists-but-not-wired gap, closed for vocabulary.rs.** The
+`vocabulary.rs` module has had `is_known_bundle_type`, `is_known_verification_status`,
+and `is_known_cluster_type` functions with full unit tests since M3xx, but
+the validator never called them. A `EvidenceBundle` with `bundle_type="bogus"`
+or a `ConceptCluster` with `cluster_type="bogus"` would pass validation silently.
+
+1. `crates/da-domain/src/validator.rs`: extend `check_semantic_vocabularies`
+   with branches for `EvidenceBundle` and `ConceptCluster`.
+2. `check_evidence_bundle_semantics(props)` warns on:
+   - `evidence-bundle-type-vocabulary` — `bundle_type` not in vocab
+   - `evidence-verification-status-vocabulary` — `verification_status` not in vocab
+3. `check_concept_cluster_semantics(props)` warns on:
+   - `cluster-type-vocabulary` — `cluster_type` not in vocab
+4. TDD: 5 new tests (254 → 259 da-domain tests pass):
+   - `test_evidence_bundle_semantic_valid_bundle_type_no_violation`
+   - `test_evidence_bundle_semantic_unknown_bundle_type_warns`
+   - `test_evidence_bundle_semantic_unknown_verification_status_warns`
+   - `test_evidence_bundle_semantic_valid_verification_status_no_violation`
+   - `test_concept_cluster_semantic_unknown_cluster_type_warns`
+5. Clippy clean; trajectory ON_TRACK.
+
+**Semantic validation coverage now:** Decision (category/outcome/maker),
+EvidenceBundle (bundle_type/verification_status), ConceptCluster (cluster_type).
+Still TODO (forward-looking): `FailureEvent.stage` / `failure_class` / `origin`
+when ADR-043 Research Process Plane lands Wave 4.
+
 ### Session 2026-08-05 (late 2) — Validator semantic hooks for ADR-048 Decision
 
 **Wire the domain registry into the validator.** The previous slice added
