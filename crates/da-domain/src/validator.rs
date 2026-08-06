@@ -106,6 +106,9 @@ pub fn validate_node_properties(label: &str, props: &PropertySnapshot) -> Vec<Sc
     // 4. Architectural invariants
     violations.extend(check_invariants(label, props));
 
+    // 5. Semantic controlled-vocabulary checks (ADR-048 Phase 1)
+    violations.extend(check_semantic_vocabularies(label, props));
+
     violations
 }
 
@@ -267,6 +270,90 @@ fn check_invariants(label: &str, props: &PropertySnapshot) -> Vec<SchemaViolatio
                 label, other
             ),
         )),
+    }
+
+    out
+}
+
+/// Semantic controlled-vocabulary checks (ADR-048 Phase 1).
+///
+/// These complement the structural checks (required/optional fields, types):
+/// they verify that values of enum-like string fields belong to the declared
+/// controlled vocabulary. A violation here is a Warning (not Critical) so the
+/// node is still created, but the operator is alerted that the value is not
+/// in the expected vocabulary.
+///
+/// Currently wired:
+/// - `Decision.category` → `is_known_decision_category`
+/// - `Decision.outcome` → `is_valid_decision_outcome(category, outcome)`
+/// - `Decision.decision_maker` → `is_valid_decision_maker`
+///
+/// Known follow-up (separate slice):
+/// - `FailureWith.stage` → `is_known_stage`
+/// - `FailureWith.failure_class` → `is_known_failure_class`
+/// - `EvidenceBundle.origin` → `is_known_origin`
+fn check_semantic_vocabularies(label: &str, props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    let mut out = Vec::new();
+    if label == "Decision" {
+        out.extend(check_decision_semantics(props));
+    }
+    out
+}
+
+/// Decision-specific semantic checks. Emits Warning-level violations for
+/// unknown category, outcome, or decision_maker prefix.
+fn check_decision_semantics(props: &PropertySnapshot) -> Vec<SchemaViolation> {
+    use crate::process::{
+        is_known_decision_category, is_valid_decision_maker, is_valid_decision_outcome,
+    };
+    let mut out = Vec::new();
+
+    // category must be a known Phase 1 category.
+    let category = props
+        .get("category")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if !category.is_empty() && !is_known_decision_category(category) {
+        out.push(SchemaViolation::warn(
+            "decision-category-vocabulary",
+            "category",
+            format!(
+                "Decision.category='{}' is not in decision_categories.yaml Phase 1 vocabulary",
+                category
+            ),
+        ));
+    }
+
+    // outcome must be valid for the declared category (if category is known).
+    if !category.is_empty()
+        && is_known_decision_category(category)
+        && let Some(outcome) = props.get("outcome").and_then(|v| v.as_str())
+        && !outcome.is_empty()
+        && !is_valid_decision_outcome(category, outcome)
+    {
+        out.push(SchemaViolation::warn(
+            "decision-outcome-vocabulary",
+            "outcome",
+            format!(
+                "Decision.outcome='{}' is not valid for category='{}' (decision_categories.yaml)",
+                outcome, category
+            ),
+        ));
+    }
+
+    // decision_maker must start with a known prefix.
+    if let Some(maker) = props.get("decision_maker").and_then(|v| v.as_str())
+        && !maker.is_empty()
+        && !is_valid_decision_maker(maker)
+    {
+        out.push(SchemaViolation::warn(
+            "decision-maker-prefix",
+            "decision_maker",
+            format!(
+                "Decision.decision_maker='{}' does not start with a known prefix (agent:|human:|system:)",
+                maker
+            ),
+        ));
     }
 
     out
@@ -991,6 +1078,102 @@ mod yaml_parity_tests {
             hardcoded.len() >= 28,
             "Expected >=28 hardcoded schemas, got {}",
             hardcoded.len()
+        );
+    }
+
+    // ─── ADR-048 Decision semantic validation tests ───
+
+    fn valid_decision_props(category: &str, outcome: &str, maker: &str) -> PropertySnapshot {
+        let mut props = PropertySnapshot::new();
+        props.insert("vid".to_string(), serde_json::json!("dec-001"));
+        props.insert("category".to_string(), serde_json::json!(category));
+        props.insert("scenario".to_string(), serde_json::json!("test"));
+        props.insert("reasoning".to_string(), serde_json::json!("because"));
+        props.insert("outcome".to_string(), serde_json::json!(outcome));
+        props.insert("confidence".to_string(), serde_json::json!(0.9));
+        props.insert("decision_maker".to_string(), serde_json::json!(maker));
+        props.insert(
+            "valid_from".to_string(),
+            serde_json::json!("2026-08-05T10:00:00Z"),
+        );
+        props.insert(
+            "recorded_at".to_string(),
+            serde_json::json!("2026-08-05T10:00:00Z"),
+        );
+        props.insert("import_eligible".to_string(), serde_json::json!(false));
+        props.insert("retrieval_eligible".to_string(), serde_json::json!(true));
+        props.insert("schema_version".to_string(), serde_json::json!(1));
+        props
+    }
+
+    #[test]
+    fn test_decision_semantic_valid_node_no_semantic_violations() {
+        let props = valid_decision_props("healing_action", "approved", "system:pipeline");
+        let violations = validate_node_properties("Decision", &props);
+        // No semantic vocabulary violations expected.
+        let semantic: Vec<_> = violations
+            .iter()
+            .filter(|v| {
+                v.rule.contains("decision-category")
+                    || v.rule.contains("decision-outcome")
+                    || v.rule.contains("decision-maker")
+            })
+            .collect();
+        assert!(
+            semantic.is_empty(),
+            "expected no semantic violations for valid Decision, got: {:?}",
+            semantic
+        );
+    }
+
+    #[test]
+    fn test_decision_semantic_unknown_category_warns() {
+        let props = valid_decision_props("bogus_category", "approved", "system:pipeline");
+        let violations = validate_node_properties("Decision", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "decision-category-vocabulary"),
+            "expected decision-category-vocabulary warning for unknown category"
+        );
+    }
+
+    #[test]
+    fn test_decision_semantic_invalid_outcome_for_category_warns() {
+        // "definitely_bogus_outcome" is not a known global or category-specific outcome.
+        let props = valid_decision_props("healing_action", "definitely_bogus_outcome", "system:pipeline");
+        let violations = validate_node_properties("Decision", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "decision-outcome-vocabulary"),
+            "expected decision-outcome-vocabulary warning for outcome not valid in category"
+        );
+    }
+
+    #[test]
+    fn test_decision_semantic_invalid_maker_prefix_warns() {
+        let props = valid_decision_props("healing_action", "approved", "anonymous");
+        let violations = validate_node_properties("Decision", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "decision-maker-prefix"),
+            "expected decision-maker-prefix warning for unknown prefix"
+        );
+    }
+
+    #[test]
+    fn test_decision_semantic_phase2_category_rejected() {
+        // policy_applied is commented out (Phase 2). Phase 1 should warn.
+        assert!(!crate::process::is_known_decision_category("policy_applied"));
+        let props = valid_decision_props("policy_applied", "allowed", "system:policy-engine");
+        let violations = validate_node_properties("Decision", &props);
+        assert!(
+            violations
+                .iter()
+                .any(|v| v.rule == "decision-category-vocabulary"),
+            "Phase 2 category must warn in Phase 1"
         );
     }
 }

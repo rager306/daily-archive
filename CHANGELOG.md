@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Session 2026-08-05 (late 2) — Validator semantic hooks for ADR-048 Decision
+
+**Wire the domain registry into the validator.** The previous slice added
+`is_known_decision_category` / `is_valid_decision_outcome` / `is_valid_decision_maker`
+to the domain, but the validator only checked structural field presence —
+not controlled-vocabulary values. A Decision node with `category="bogus"` and
+`outcome="whatever"` would pass validation silently.
+
+1. `crates/da-domain/src/validator.rs`: add step 5 in
+   `validate_node_properties()` — `check_semantic_vocabularies(label, props)`.
+2. New function `check_decision_semantics(props)` emits Warning-level
+   violations:
+   - `decision-category-vocabulary` — category not in Phase 1 vocab
+   - `decision-outcome-vocabulary` — outcome invalid for declared category
+   - `decision-maker-prefix` — `decision_maker` lacks `agent:`/`human:`/`system:` prefix
+3. Also wired into the YAML-driven `validate_node_properties_or_yaml()` variant
+   so data-driven mode stays consistent with hardcoded mode.
+4. TDD: 5 new tests in `validator::yaml_parity_tests`:
+   - `test_decision_semantic_valid_node_no_semantic_violations`
+   - `test_decision_semantic_unknown_category_warns`
+   - `test_decision_semantic_invalid_outcome_for_category_warns`
+   - `test_decision_semantic_invalid_maker_prefix_warns`
+   - `test_decision_semantic_phase2_category_rejected`
+5. All 254 da-domain tests pass (8 decision registry + 5 validator wiring);
+   clippy clean; trajectory ON_TRACK.
+
+**Known follow-up (next slice):** `FailureWith.stage` → `is_known_stage`,
+`FailureWith.failure_class` → `is_known_failure_class`, `EvidenceBundle.origin`
+→ `is_known_origin`. Same registry-exists-but-not-wired-into-validator gap.
+
 ### Session 2026-08-05 (late) — ADR-048 Phase 1 domain wiring: decision_categories registry + DecisionSchema tests
 
 **Close the domain-layer gap for ADR-048 Phase 1.** DecisionSchema existed
