@@ -2,7 +2,31 @@
 
 ## Unreleased
 
-### Session 2026-08-05 — M361 docs sync + instrument heal/enrich + gitignore
+### Session 2026-08-05 — ADR-048/053 data-driven ontology gap closure
+
+**Close the data-driven gap between Rust edge constants (73) and YAML edge
+contracts (13) for the ADR-048 Decision plane and ADR-053 Layer A navigation.**
+
+1. `data/ontology/edge_contracts.yaml`: add 5 ADR-048 causal edge contracts
+   (CAUSED, INFLUENCED, PRECEDENT_FOR, AUTHORITY_FOR, TRIGGERED_BY) — all
+   `temporal_class: fact` per ADR-046 (causal claims are retractable).
+2. `data/ontology/edge_contracts.yaml`: forward-declare 3 ADR-053 Layer A
+   navigation edges (next_sibling, first_child, parent_section) — Wave 1
+   implementation will land Rust constants in M362-d4qoaf.
+3. `data/ontology/decision_categories.yaml`: new data-driven vocabulary for
+   ADR-048 Decision categories (8 categories, controlled outcomes, decision
+   maker prefixes). Phase 1 scope; Phase 2 `policy_applied` commented.
+4. TDD: 3 new tests in `crates/da-domain/src/edge_contract.rs`:
+   - `test_adr_048_causal_edges_have_contracts` — all 5 causal edges present
+   - `test_adr_048_causal_edges_are_fact_temporal_class` — retractable
+   - `test_adr_053_navigation_edges_forward_declared_in_yaml` — Wave 1 ready
+5. All 241 da-domain tests pass; trajectory ON_TRACK.
+
+**Known remaining data-driven gap:** 60 of 73 Rust edge constants still lack
+   YAML contracts (process plane + future ADR-053 layers). Closure is a
+   separate debt slice — priority is ADR-048/053 critical path only here.
+
+### Session 2026-08-05 — build optimization + Python-era requirements cleanup
 
 **Close documentation drift after M357–M360:**
 

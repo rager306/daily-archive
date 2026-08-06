@@ -1,0 +1,118 @@
+# Decision categories — controlled vocabulary (ADR-048 Phase 1).
+#
+# DATA not code — logic stays in Rust (da-domain::process::DecisionSchema);
+# this file is the authoritative vocabulary list consumed by the validator
+# (category must be in this list) and the DecisionRecorder use case.
+#
+# Each category has:
+#   id           — stable identifier used in Decision.category field
+#   description  — short human-readable summary
+#   outcomes     — controlled vocabulary for Decision.outcome in this category
+#   examples     — illustrative scenarios for documentation
+#
+# Phase 1 scope: no policy_id materialisation; categories cover daily-archive
+# use cases (healing, conflict, promotion, schema, extraction, hypothesis,
+# retraction, deprecation). Phase 2 adds policy_applied when PolicyEngine lands.
+
+categories:
+  - id: healing_action
+    description: "Healing operation on the knowledge graph (ADR-044)."
+    outcomes: [approved, rejected, deferred]
+    examples:
+      - "Silence duplicate Entity (same vid, same value)"
+      - "Correct Property value (typo fix)"
+      - "Merge two Entity nodes into canonical survivor"
+
+  - id: conflict_resolution
+    description: "Resolution of a Conflict node (ADR-047) by picking a winning value or declaring reciprocal-ok."
+    outcomes: [winner_decided, reciprocal_ok, deferred_to_human]
+    examples:
+      - "Two papers disagree on author affiliation; pick the source with higher authority"
+      - "Reciprocal contradicts edges are ongoing disagreement, not error"
+
+  - id: promotion
+    description: "Change in import_eligible or retrieval_eligible gate state (D127 gate)."
+    outcomes: [promoted, demoted, gated]
+    examples:
+      - "import_eligible false->true after explicit user yes (D127 unlock)"
+      - "retrieval_eligible true->false after concept deprecation"
+
+  - id: schema_migration
+    description: "Apply an ADR-044 migration plan to the graph."
+    outcomes: [applied, rolled_back, skipped]
+    examples:
+      - "Add new required field to all Paper nodes"
+      - "Rename edge constant after ontology revision"
+
+  - id: extraction_override
+    description: "Human-in-the-loop correction of an LLM-extracted Entity or Relation."
+    outcomes: [corrected, reverted, confirmed_as_extracted]
+    examples:
+      - "Human fixes wrong Method classification"
+      - "Human confirms extraction after audit"
+
+  - id: hypothesis_tested
+    description: "ResultComparison outcome declaring a Hypothesis Confirmed/Refuted/Mixed (ADR-042/043)."
+    outcomes: [confirmed, refuted, mixed, inconclusive]
+    examples:
+      - "Statistical test confirms prediction"
+      - "Ablation refutes contribution claim"
+
+  - id: retraction_recorded
+    description: "Paper retraction event; supersede linked Claims."
+    outcomes: [retracted, retraction_disputed, reinstated]
+    examples:
+      - "Journal retracts paper; all derived Claims get superseded"
+
+  - id: deprecation
+    description: "Concept cluster or method deprecated; retrieval_eligible=false."
+    outcomes: [deprecated, reactivated, superseded]
+    examples:
+      - "ConceptCluster merged into broader cluster; old cluster deprecated"
+
+  # Phase 2 — uncomment when PolicyEngine (ADR-048 Phase 2) lands.
+  # - id: policy_applied
+  #   description: "PolicyEngine evaluated a rule and applied a policy."
+  #   outcomes: [allowed, denied, conditionally_allowed]
+  #   examples:
+  #     - "RetentionPolicy dropped stale Entity after 365 days"
+
+# Outcomes controlled vocabulary across all categories (for cross-category
+# queries and validator cross-check). Categories may extend this with their
+# own outcomes above.
+global_outcomes:
+  - approved
+  - rejected
+  - deferred
+  - deferred_to_human
+  - corrected
+  - reverted
+  - confirmed_as_extracted
+  - promoted
+  - demoted
+  - gated
+  - applied
+  - rolled_back
+  - skipped
+  - confirmed
+  - refuted
+  - mixed
+  - inconclusive
+  - retracted
+  - retraction_disputed
+  - reinstated
+  - deprecated
+  - reactivated
+  - superseded
+  - winner_decided
+  - reciprocal_ok
+
+# Decision makers controlled vocabulary (Phase 1: string prefix; Phase 2
+# materialises Agent/Person nodes referenced here).
+decision_makers:
+  - prefix: "agent:"
+    description: "Autonomous agent (future agent-brain, D137 Wave 4)."
+  - prefix: "human:"
+    description: "Identified human reviewer/operator (user id or initials)."
+  - prefix: "system:"
+    description: "Automated system component (healing pipeline, conflict resolver, governor, scheduler)."

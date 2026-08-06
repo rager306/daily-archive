@@ -410,4 +410,76 @@ mod tests {
             }
         }
     }
+
+    /// ADR-048 causal primitives must all have contracts. These are the
+    /// five Semantica-aligned causal edges scoped to scientific KG use. They
+    /// unblock ADR-053 Layer G (entity resolution merge recording) and the
+    /// ADR-053 Decision Intelligence extension.
+    #[test]
+    fn test_adr_048_causal_edges_have_contracts() {
+        let edges = edge_contracts_or_yaml();
+        let causal = [
+            crate::relation::decision::CAUSED,
+            crate::relation::decision::INFLUENCED,
+            crate::relation::decision::PRECEDENT_FOR,
+            crate::relation::decision::AUTHORITY_FOR,
+            crate::relation::decision::TRIGGERED_BY,
+        ];
+        for c in causal {
+            assert!(
+                edges.iter().any(|e| e.edge_constant == c),
+                "ADR-048 causal edge '{}' missing contract in edge_contracts_or_yaml() — add it to edge_contracts.yaml",
+                c
+            );
+        }
+    }
+
+    /// ADR-048 causal edges are fact edges (retractable) per ADR-046 —
+    /// wrong attribution / retracted reasoning can invalidate them.
+    #[test]
+    fn test_adr_048_causal_edges_are_fact_temporal_class() {
+        let edges = edge_contracts_or_yaml();
+        let causal = [
+            crate::relation::decision::CAUSED,
+            crate::relation::decision::INFLUENCED,
+            crate::relation::decision::PRECEDENT_FOR,
+            crate::relation::decision::AUTHORITY_FOR,
+            crate::relation::decision::TRIGGERED_BY,
+        ];
+        for c in causal {
+            let contract = edges
+                .iter()
+                .find(|e| e.edge_constant == c)
+                .unwrap_or_else(|| panic!("causal edge '{}' missing contract", c));
+            assert_eq!(
+                contract.temporal_class,
+                kg_ontology::registry::TemporalClass::Fact,
+                "ADR-048 causal edge '{}' must be temporal_class=fact (retractable)",
+                c
+            );
+        }
+    }
+
+    /// ADR-053 Layer A navigation edges must be declared as forward contracts
+    /// in edge_contracts.yaml. These are not yet implemented in Rust relation.rs
+    /// (Wave 1 work, M362) but the YAML forward-declares them so ontology is
+    /// the single source of truth.
+    #[test]
+    fn test_adr_053_navigation_edges_forward_declared_in_yaml() {
+        let yaml_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("data/ontology/edge_contracts.yaml");
+        let yaml = std::fs::read_to_string(&yaml_path)
+            .unwrap_or_else(|e| panic!("read {}: {}", yaml_path.display(), e));
+        for nav in ["next_sibling", "first_child", "parent_section"] {
+            assert!(
+                yaml.contains(&format!("edge_constant: {}", nav)),
+                "ADR-053 Layer A navigation edge '{}' must be forward-declared in edge_contracts.yaml",
+                nav
+            );
+        }
+    }
 }

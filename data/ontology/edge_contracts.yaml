@@ -72,3 +72,53 @@ edge_contracts:
     target_labels: [Entity]
     temporal_class: fact
     rationale: "Source Entity supersedes target Entity (D135 merge scenario)."
+  # ─── Decision plane (ADR-048 causal primitives) ───
+  # Five Semantica-aligned causal edges scoped to scientific KG use.
+  # All temporal_class=fact: causal claims can be revised (wrong attribution,
+  # later correction, retracted reasoning). Decision is the actor;
+  # Policy / Conflict / HealingAction / ExtractionOverride are triggers.
+  - edge_constant: CAUSED
+    source_label: Decision
+    target_labels: [Decision]
+    temporal_class: fact
+    rationale: "Decision A caused Decision B (strong causal link). Transitive: a causal chain."
+  - edge_constant: INFLUENCED
+    source_label: Decision
+    target_labels: [Decision]
+    temporal_class: fact
+    rationale: "Decision A was a factor in Decision B (weak causal link). Non-transitive."
+  - edge_constant: PRECEDENT_FOR
+    source_label: Decision
+    target_labels: [Decision]
+    temporal_class: fact
+    rationale: "Decision A is a precedent cited by Decision B (analogical reference)."
+  - edge_constant: AUTHORITY_FOR
+    source_label: Policy
+    target_labels: [Decision]
+    temporal_class: fact
+    rationale: "Policy authorized this Decision (Phase 2 materialises Policy nodes; Phase 1 uses policy_id opaque string)."
+  - edge_constant: TRIGGERED_BY
+    source_label: Decision
+    target_labels: [Conflict, HealingAction, ExtractionOverride]
+    temporal_class: fact
+    rationale: "Decision was triggered by this Conflict/HealingAction/ExtractionOverride event (ADR-044/047 tie-in)."
+  # ─── ADR-053 Article Preparation 2.0 edges (forward declarations) ───
+  # These edges are declared in ADR-053 Layers A, B, C, F, I, J but not yet
+  # implemented in Rust relation.rs (Wave 1-3 work). Contracts are forward-
+  # declared here so the YAML is the single source of truth for ontology planning;
+  # they will fail validator lookup until Rust constants land (M362-M364).
+  - edge_constant: next_sibling
+    source_label: Section
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Section navigation tree (ADR-053 Layer A): next sibling in same parent."
+  - edge_constant: first_child
+    source_label: Section
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Section navigation tree (ADR-053 Layer A): first child of this section."
+  - edge_constant: parent_section
+    source_label: Section
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Section navigation tree (ADR-053 Layer A): parent section in the document hierarchy."
