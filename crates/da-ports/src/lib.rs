@@ -54,6 +54,7 @@ mod serde_roundtrip_tests {
                 title: "Intro".into(),
                 text: "text".into(),
                 level: 1,
+                ..Default::default()
             }],
             citations: vec![],
             layout_json: Some(serde_json::json!({"pages": 10})),
@@ -68,7 +69,42 @@ mod serde_roundtrip_tests {
             title: "Methods".into(),
             text: "we propose".into(),
             level: 2,
+            ..Default::default()
         });
+    }
+
+    /// ADR-053 Layer A (M362-d4qoaf/S01 T01): verify that the new navigation
+    /// fields (path_id, parent_section_id, order_in_parent, section_id)
+    /// survive serde roundtrip — they must be present and stable for the
+    /// ingest use case (T04) to build first_child / next_sibling / parent_section
+    /// edges.
+    #[test]
+    fn roundtrip_section_with_navigation_fields() {
+        roundtrip_json(&Section {
+            title: "Setup".into(),
+            text: "experimental setup".into(),
+            level: 3,
+            path_id: Some("3.2.1".to_string()),
+            parent_section_id: Some("sec-3.2".to_string()),
+            order_in_parent: Some(0),
+            section_id: Some("sec-3.2.1".to_string()),
+            ..Default::default()
+        });
+    }
+
+    /// Backward compat: legacy parsers produce Section without navigation
+    /// fields. Serde default must tolerate missing fields on deserialize.
+    #[test]
+    fn roundtrip_section_legacy_omits_navigation_fields() {
+        let json = r#"{"title":"Intro","text":"body","level":1}"#;
+        let section: Section = serde_json::from_str(json).expect("legacy Section deserializes");
+        assert_eq!(section.title, "Intro");
+        assert_eq!(section.text, "body");
+        assert_eq!(section.level, 1);
+        assert!(section.path_id.is_none());
+        assert!(section.parent_section_id.is_none());
+        assert!(section.order_in_parent.is_none());
+        assert!(section.section_id.is_none());
     }
 
     #[test]

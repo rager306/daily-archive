@@ -28,11 +28,41 @@ pub struct ParsedArticle {
     pub pdf_hash: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Section {
+    /// Display title of the section (from TEI `<head>`).
     pub title: String,
+    /// Full text content of the section.
     pub text: String,
+    /// Depth level (0 = root, 1 = top-level, ...). Matches TEI nesting depth.
     pub level: u32,
+
+    // ─── ADR-053 Layer A navigation fields (M362-d4qoaf/S01 T01) ───
+    // All optional for backward compat with parsers that do not populate them.
+    // When present, enable document-tree navigation: path_id, parent_section_id,
+    // order_in_parent, section_id. The first_child / next_sibling / parent_section
+    // edges are created in the ingest use case (T04) from these fields.
+
+    /// Structural path computed from TEI nested `<div n="N">` structure,
+    /// e.g. "3.2.1". Stable across re-ingest of the same PDF.
+    /// `None` for legacy parsers that produce flat section lists.
+    #[serde(default)]
+    pub path_id: Option<String>,
+
+    /// `section_id` (not graph node id) of the parent section in the document
+    /// tree. `None` for root sections or legacy flat lists.
+    #[serde(default)]
+    pub parent_section_id: Option<String>,
+
+    /// 0-based sibling index within the parent. `None` for legacy flat lists.
+    #[serde(default)]
+    pub order_in_parent: Option<u32>,
+
+    /// Stable hash of `path_id + title` — used as the graph node identifier
+    /// and the parent_section_id reference target. `None` for legacy lists.
+    #[serde(default)]
+    pub section_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

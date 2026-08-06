@@ -84,6 +84,7 @@ impl HtmlParser {
                                 title: current_title.clone(),
                                 text,
                                 level: current_level,
+                                ..Default::default()
                             });
                         }
                     }
@@ -113,6 +114,7 @@ impl HtmlParser {
                 title: current_title,
                 text,
                 level: current_level,
+                ..Default::default()
             });
         }
 

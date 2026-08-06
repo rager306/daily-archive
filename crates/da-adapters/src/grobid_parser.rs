@@ -161,7 +161,7 @@ impl GrobidParser {
             let text_end = next_head.unwrap_or(body.len());
             let text = Self::strip_xml_tags(&body[after_head..text_end]);
             if !title.is_empty() || !text.is_empty() {
-                sections.push(Section { title, text, level });
+                sections.push(Section { title, text, level, ..Default::default() });
             }
             pos = text_end;
             if pos <= abs {

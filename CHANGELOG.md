@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 2) — ADR-053 Layer A T01: Section navigation fields
+
+**First task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Adds the
+four navigation fields to `da_ports::parser::Section` that enable document-tree
+navigation on top of GROBID TEI nested `<div>` structure.
+
+1. `crates/da-ports/src/parser.rs`: add four `Option` fields to `Section`:
+   - `path_id: Option<String>` — structural path like `"3.2.1"`
+   - `parent_section_id: Option<String>` — parent in the document tree
+   - `order_in_parent: Option<u32>` — 0-based sibling index
+   - `section_id: Option<String>` — stable hash, used as graph node identifier
+   All fields are `Option` + `#[serde(default)]` so legacy parsers producing
+   flat section lists keep working without modification.
+2. Added `#[derive(Default)]` to `Section` (required by `#[serde(default)]`).
+3. Updated three existing `Section { ... }` constructors in adapters to use
+   `..Default::default()` for the new fields:
+   - `crates/da-adapters/src/grobid_parser.rs` (1 site)
+   - `crates/da-adapters/src/html_parser.rs` (2 sites)
+4. Updated two existing serde-roundtrip test constructors in `da-ports/src/lib.rs`
+   to use `..Default::default()`.
+5. TDD: 2 new tests (6 → 8 da-ports tests pass):
+   - `roundtrip_section_with_navigation_fields` — populated path_id + parent
+     + order + section_id survive serde roundtrip
+   - `roundtrip_section_legacy_omits_navigation_fields` — JSON without the new
+     fields still deserializes (backward compat)
+6. Clippy clean; trajectory ON_TRACK.
+
+**Next tasks (same slice):**
+- T02: enhance `GrobidParser::extract_sections` to compute `path_id` from TEI
+  nested `<div n="N">` structure via recursive walk
+- T03: materialise `next_sibling` / `first_child` / `parent_section` edge
+  constants in `relation.rs` (currently forward-declared in YAML only)
+- T04: ingest use case builds navigation edges between Section nodes
+- T05: graph task suite `tree_navigation` template
+
 ### Session 2026-08-06 (late) — Validator semantic hooks: FailureEvent + Source + ResearchEnvironment
 
 **Complete the semantic-validator wiring for all remaining registries.**
