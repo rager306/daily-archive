@@ -383,7 +383,8 @@ async fn main() -> anyhow::Result<()> {
     std::fs::write(&json_path, serde_json::to_string_pretty(&report)? + "\n")?;
     println!("Wrote {}", json_path.display());
 
-    let md = format!(
+    #[allow(clippy::literal_string_with_formatting_args)]
+    let mut md = format!(
         r#"# GEPA hub research — 2507.19457
 
 ## Hub bibliography (GROBID TEI / citations.json)

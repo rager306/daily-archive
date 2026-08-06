@@ -281,7 +281,6 @@ impl GrobidParser {
                     parent_section_id: parent_section_id.clone(),
                     order_in_parent: Some(order_in_parent),
                     section_id: Some(section_id.clone()),
-                    ..Default::default()
                 });
             }
 
@@ -451,8 +450,9 @@ impl GrobidParser {
                     // <head n="N.M"> even in flat TEI (MEM654: GROBID output
                     // is structurally flat; section hierarchy is lexical).
                     path_id: Some(path_component.clone()),
+                    parent_section_id: None,
+                    order_in_parent: None,
                     section_id: Some(format!("sec-{}", path_component)),
-                    ..Default::default()
                 });
             }
             pos = text_end;
@@ -500,10 +500,7 @@ impl GrobidParser {
                 continue;
             };
             // parent_path = everything before the last '.'.
-            let parent_path = match path_id.rfind('.') {
-                Some(pos) => Some(&path_id[..pos]),
-                None => None,
-            };
+            let parent_path = path_id.rfind('.').map(|pos| &path_id[..pos]);
             // order_in_parent: increment per-parent counter.
             let counter_key = parent_path.unwrap_or("").to_string();
             let order = sibling_counters.entry(counter_key).or_insert(0);
@@ -522,6 +519,7 @@ impl GrobidParser {
     }
 
     /// Extract the `n` attribute value from a `<head n="1">` tag.
+    #[allow(dead_code)]
     fn extract_head_level(open_tag: &str) -> u32 {
         if let Some(n_pos) = open_tag.find("n=\"") {
             let after = &open_tag[n_pos + 3..];
@@ -717,7 +715,7 @@ impl ParserPort for GrobidParser {
             citations,
             layout_json: None, // ODL provides this separately
             tei_xml: Some(tei_xml),
-            pdf_hash: pdf_hash,
+            pdf_hash,
         })
     }
 }

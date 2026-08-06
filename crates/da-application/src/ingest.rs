@@ -883,13 +883,19 @@ mod tests {
                 title: "Intro".into(),
                 text: "text".into(),
                 level: 1,
-                ..Default::default()
+                path_id: None,
+                parent_section_id: None,
+                order_in_parent: None,
+                section_id: None,
             },
             Section {
                 title: "Methods".into(),
                 text: "text".into(),
                 level: 1,
-                ..Default::default()
+                path_id: None,
+                parent_section_id: None,
+                order_in_parent: None,
+                section_id: None,
             },
         ];
         let section_id_map = std::collections::HashMap::new();
@@ -918,7 +924,6 @@ mod tests {
                 section_id: Some("sec-1".into()),
                 parent_section_id: None,
                 order_in_parent: Some(0),
-                ..Default::default()
             },
             Section {
                 title: "Background".into(),
@@ -928,7 +933,6 @@ mod tests {
                 section_id: Some("sec-1.1".into()),
                 parent_section_id: Some("sec-1".into()),
                 order_in_parent: Some(0),
-                ..Default::default()
             },
             Section {
                 title: "Motivation".into(),
@@ -938,7 +942,6 @@ mod tests {
                 section_id: Some("sec-1.2".into()),
                 parent_section_id: Some("sec-1".into()),
                 order_in_parent: Some(1),
-                ..Default::default()
             },
             Section {
                 title: "Methods".into(),
@@ -948,7 +951,6 @@ mod tests {
                 section_id: Some("sec-2".into()),
                 parent_section_id: None,
                 order_in_parent: Some(0),
-                ..Default::default()
             },
             Section {
                 title: "Model".into(),
@@ -958,7 +960,6 @@ mod tests {
                 section_id: Some("sec-2.1".into()),
                 parent_section_id: Some("sec-2".into()),
                 order_in_parent: Some(0),
-                ..Default::default()
             },
         ];
         let mut section_id_map = std::collections::HashMap::new();

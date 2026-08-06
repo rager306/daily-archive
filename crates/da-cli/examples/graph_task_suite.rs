@@ -134,9 +134,10 @@ async fn main() -> ExitCode {
     let mut error = 0usize;
 
     println!();
+    #[allow(clippy::literal_string_with_formatting_args)]
     println!(
-        "{:<6} {:<28} {:>6} {:>8}  {}",
-        "VERDICT", "TITLE", "ROWS", "MS", "INSIGHT"
+        "{:<6} {:<28} {:>6} {:>8}  {INSIGHT}",
+        "VERDICT", "TITLE", "ROWS", "MS"
     );
     println!("{}", "-".repeat(90));
 

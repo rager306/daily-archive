@@ -90,7 +90,6 @@ mod serde_roundtrip_tests {
             parent_section_id: Some("sec-3.2".to_string()),
             order_in_parent: Some(0),
             section_id: Some("sec-3.2.1".to_string()),
-            ..Default::default()
         });
     }
 

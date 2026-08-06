@@ -358,10 +358,10 @@ async fn test_ingest_has_part_structural_no_valid_at() {
 #[tokio::test]
 async fn test_ingest_cites_valid_at_frozen_with_fixed_clock() {
     // M330: FixedClock freezes TemporalEdge.valid_at on CITES stamp.
-    use chrono::{DateTime, Utc};
+    use chrono::DateTime;
+    use da_ports::FixedClock;
     use da_ports::graph_store::DirectGraphStore;
     use da_ports::parser::CitationEntry;
-    use da_ports::{Clock, FixedClock};
     use std::sync::Arc;
 
     let frozen = DateTime::from_timestamp(1_700_000_000, 0).unwrap();
