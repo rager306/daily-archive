@@ -169,6 +169,79 @@ impl NodeSchemaDef for CategorySchema {
     }
 }
 
+// ─── Layer C: Typed entities (ADR-053, D194 Wave 1) ───
+/// A method, technique, or approach mentioned in a paper.
+/// First-class node label (not just Entity.type) so graph algorithms can
+/// operate on type-homogeneous subgraphs (PageRank on Method graph, etc.).
+pub struct MethodSchema;
+
+impl NodeSchemaDef for MethodSchema {
+    fn label(&self) -> &'static str {
+        "Method"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("name", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("description", FieldType::String),
+            ("paper_arxiv_id", FieldType::String),
+            ("section_path_id", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
+        ]
+    }
+}
+
+/// A dataset used or introduced in a paper.
+pub struct DatasetSchema;
+
+impl NodeSchemaDef for DatasetSchema {
+    fn label(&self) -> &'static str {
+        "Dataset"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("name", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("url", FieldType::String),
+            ("description", FieldType::String),
+            ("paper_arxiv_id", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
+        ]
+    }
+}
+
+/// A metric or evaluation measure used in a paper.
+pub struct MetricSchema;
+
+impl NodeSchemaDef for MetricSchema {
+    fn label(&self) -> &'static str {
+        "Metric"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("name", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("description", FieldType::String),
+            ("paper_arxiv_id", FieldType::String),
+            ("value", FieldType::String),
+            ("baseline_for", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
+        ]
+    }
+}
+
 // ─── Author (FOAF: Person + PRO: author role) ───
 
 /// A paper author (disambiguated via OpenAlex/ORCID when available).
@@ -321,6 +394,37 @@ mod tests {
         let s = ConceptSchema;
         assert_eq!(s.label(), "Concept");
         assert!(s.required_fields().iter().any(|(n, _)| *n == "level"));
+    }
+
+    #[test]
+    fn test_typed_entity_schemas_exist() {
+        // ADR-053 Layer C (D194 Wave 1): Method, Dataset, Metric must be
+        // first-class node labels, not just Entity.type values.
+        let method = MethodSchema;
+        assert_eq!(method.label(), "Method");
+        let dataset = DatasetSchema;
+        assert_eq!(dataset.label(), "Dataset");
+        let metric = MetricSchema;
+        assert_eq!(metric.label(), "Metric");
+        // Typed entities must have name required field
+        assert!(
+            MethodSchema
+                .required_fields()
+                .iter()
+                .any(|(n, _)| *n == "name")
+        );
+        assert!(
+            DatasetSchema
+                .required_fields()
+                .iter()
+                .any(|(n, _)| *n == "name")
+        );
+        assert!(
+            MetricSchema
+                .required_fields()
+                .iter()
+                .any(|(n, _)| *n == "name")
+        );
     }
 
     #[test]
