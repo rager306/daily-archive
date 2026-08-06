@@ -220,7 +220,6 @@ impl GrobidParser {
     /// - `section_id` = `sec-<path_id>` (stable hash for edge wiring)
     /// - `level` = path component count (1-based depth)
     fn extract_sections_recursive(body: &str) -> Vec<da_ports::parser::Section> {
-        
         let mut out = Vec::new();
         Self::walk_divs(body, "", &mut 0u32, &mut out);
         out
