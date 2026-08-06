@@ -40,6 +40,11 @@ impl NodeSchemaDef for SectionSchema {
             ("char_count", FieldType::Integer),
             // Phase 3 GNN readiness — section text embedding
             ("embedding", FieldType::Vector),
+            // ADR-053 Layer A navigation fields (M365 S01 drift closure)
+            ("path_id", FieldType::String),
+            ("parent_section_id", FieldType::String),
+            ("order_in_parent", FieldType::Integer),
+            ("section_id", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
             ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
@@ -290,6 +295,25 @@ mod tests {
             names.contains(&"embedding"),
             "SectionSchema must have 'embedding' field for GNN readiness, got: {names:?}"
         );
+    }
+
+    #[test]
+    fn test_section_schema_has_nav_fields() {
+        // ADR-053 Layer A (M365 S01): SectionSchema must expose nav fields.
+        let s = SectionSchema;
+        let optional = s.optional_fields();
+        let names: Vec<&str> = optional.iter().map(|(n, _)| *n).collect();
+        for f in [
+            "path_id",
+            "parent_section_id",
+            "order_in_parent",
+            "section_id",
+        ] {
+            assert!(
+                names.contains(&f),
+                "SectionSchema must have '{f}' field for ADR-053 Layer A, got: {names:?}"
+            );
+        }
     }
 
     #[test]

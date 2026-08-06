@@ -102,11 +102,12 @@ edge_contracts:
     target_labels: [Conflict, HealingAction, ExtractionOverride]
     temporal_class: fact
     rationale: "Decision was triggered by this Conflict/HealingAction/ExtractionOverride event (ADR-044/047 tie-in)."
-  # ─── ADR-053 Article Preparation 2.0 edges (forward declarations) ───
-  # These edges are declared in ADR-053 Layers A, B, C, F, I, J but not yet
-  # implemented in Rust relation.rs (Wave 1-3 work). Contracts are forward-
-  # declared here so the YAML is the single source of truth for ontology planning;
-  # they will fail validator lookup until Rust constants land (M362-M364).
+  # ─── ADR-053 Article Preparation 2.0 edges (M362 Wave 1 Layer A implemented) ───
+  # next_sibling / first_child / parent_section are implemented in
+  # crates/da-domain/src/relation.rs::structure (M362 S01 T03) as structural
+  # edges (temporal_class=structural). Remaining edges below are forward
+  # declarations for Waves 2-3 (Layers B/C/F/I/J) and use YAML as planning
+  # source until Rust constants land.
   - edge_constant: next_sibling
     source_label: Section
     target_labels: [Section]

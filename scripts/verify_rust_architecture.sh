@@ -12,7 +12,7 @@ KG_CRATES="kg-ontology kg-storage kg-embeddings kg-algorithms kg-pipeline"
 
 # Packages included in fmt/clippy/test guardrails.
 KG_FMT_PKGS="-p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline"
-DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-adapters -p da-cli"
+DA_FMT_PKGS="-p da-domain -p da-ports -p da-application -p da-adapters -p da-cli -p da-mcp"
 
 echo "=== cargo fmt --check (our crates only, kg-* + da-*) ==="
 cargo fmt $KG_FMT_PKGS $DA_FMT_PKGS -- --check
@@ -25,7 +25,7 @@ echo "=== cargo clippy (our crates incl kg-*, no-deps, deny warnings) ==="
 cargo clippy \
   $KG_FMT_PKGS \
   -p da-domain -p da-ports -p da-application \
-  -p da-adapters -p da-cli \
+  -p da-adapters -p da-cli -p da-mcp \
   --all-targets --no-deps -- -D warnings
 
 # Helper: grep inside [dependencies] only (prod deps). Use for hexagonal

@@ -9,25 +9,16 @@
 use std::sync::Arc;
 
 use kg_storage::DirectGraphStore;
-use rmcp::ServerHandler;
 use rmcp::handler::server::wrapper::Parameters;
 
 pub mod tools;
 
 /// Configuration for the MCP server.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct McpServerConfig {
     /// Snapshot file path (`.sgsnap`). When set, the server loads the graph
     /// into an in-process Samyama engine.
     pub snapshot_path: Option<String>,
-}
-
-impl Default for McpServerConfig {
-    fn default() -> Self {
-        Self {
-            snapshot_path: None,
-        }
-    }
 }
 
 /// The MCP server handler — read-only tools over the graph store.
@@ -63,7 +54,9 @@ impl DailyArchiveMcpServer {
 #[rmcp::tool_router(server_handler)]
 impl DailyArchiveMcpServer {
     /// Get the daily-archive knowledge graph schema.
-    #[rmcp::tool(description = "Get the daily-archive knowledge graph schema: node labels + edge types from YAML ontology (ADR-050). Optional: include node/edge counts.")]
+    #[rmcp::tool(
+        description = "Get the daily-archive knowledge graph schema: node labels + edge types from YAML ontology (ADR-050). Optional: include node/edge counts."
+    )]
     async fn get_schema(
         &self,
         parameters: Parameters<tools::GetSchemaParams>,
@@ -76,7 +69,9 @@ impl DailyArchiveMcpServer {
     }
 
     /// Get daily-archive knowledge graph statistics.
-    #[rmcp::tool(description = "Get daily-archive knowledge graph statistics: total node and edge counts, plus per-label node distribution. Snapshot path if snapshot mode.")]
+    #[rmcp::tool(
+        description = "Get daily-archive knowledge graph statistics: total node and edge counts, plus per-label node distribution. Snapshot path if snapshot mode."
+    )]
     async fn get_graph_stats(&self) -> Result<String, String> {
         let out = tools::get_graph_stats(
             self.graph_store.as_ref(),
@@ -88,7 +83,9 @@ impl DailyArchiveMcpServer {
     }
 
     /// Run a read-only Cypher query against the knowledge graph.
-    #[rmcp::tool(description = "Run a read-only Cypher query against the daily-archive knowledge graph. Rejects destructive keywords (CREATE/SET/DELETE/MERGE). D127-safe read-only. Use Samyama Cypher syntax; LIMIT results for large queries.")]
+    #[rmcp::tool(
+        description = "Run a read-only Cypher query against the daily-archive knowledge graph. Rejects destructive keywords (CREATE/SET/DELETE/MERGE). D127-safe read-only. Use Samyama Cypher syntax; LIMIT results for large queries."
+    )]
     async fn read_cypher(
         &self,
         parameters: Parameters<tools::ReadCypherParams>,
@@ -101,7 +98,9 @@ impl DailyArchiveMcpServer {
     }
 
     /// Get a paper's basic metadata by arXiv id.
-    #[rmcp::tool(description = "Get a paper node and its basic metadata (title, publication date, cited-by count, OpenAlex id) by arXiv id.")]
+    #[rmcp::tool(
+        description = "Get a paper node and its basic metadata (title, publication date, cited-by count, OpenAlex id) by arXiv id."
+    )]
     async fn get_paper(
         &self,
         parameters: Parameters<tools::GetPaperParams>,
@@ -114,7 +113,9 @@ impl DailyArchiveMcpServer {
     }
 
     /// Get a paper's section tree (title, path_id, level) by arXiv id.
-    #[rmcp::tool(description = "Get the section navigation tree for a paper by arXiv id: section titles, path_id, and level in document order.")]
+    #[rmcp::tool(
+        description = "Get the section navigation tree for a paper by arXiv id: section titles, path_id, and level in document order."
+    )]
     async fn get_sections(
         &self,
         parameters: Parameters<tools::GetSectionsParams>,
@@ -128,13 +129,60 @@ impl DailyArchiveMcpServer {
 
     /// Get CITES references for a paper (backward = papers it cites, forward =
     /// papers that cite it, both = default).
-    #[rmcp::tool(description = "Get CITES references for a paper by arXiv id. direction: 'backward' (papers this paper cites), 'forward' (papers citing this paper), or 'both'.")]
+    #[rmcp::tool(
+        description = "Get CITES references for a paper by arXiv id. direction: 'backward' (papers this paper cites), 'forward' (papers citing this paper), or 'both'."
+    )]
     async fn get_references(
         &self,
         parameters: Parameters<tools::GetReferencesParams>,
     ) -> Result<String, String> {
         let params = parameters.0;
         let out = tools::get_references(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
+    /// Search papers by title substring (case-insensitive, read-only).
+    #[rmcp::tool(
+        description = "Search papers by title substring (case-insensitive). Returns arxiv_id and title for matching Paper nodes. D127-safe read-only."
+    )]
+    async fn search_papers(
+        &self,
+        parameters: Parameters<tools::SearchPapersParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::search_papers(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
+    /// Get entities linked to a paper (read-only, MENTIONS edges).
+    #[rmcp::tool(
+        description = "Get entities linked to a paper via MENTIONS edges. Optional entity_type substring filter. D127-safe read-only."
+    )]
+    async fn get_entities(
+        &self,
+        parameters: Parameters<tools::GetEntitiesParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_entities(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
+    /// Validate a node label against ontology schemas.
+    #[rmcp::tool(
+        description = "Validate a node label against registered schemas (YAML ontology + Rust). Returns is_known and violations."
+    )]
+    async fn validate_node(
+        &self,
+        parameters: Parameters<tools::ValidateNodeParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::validate_node(self.graph_store.as_ref(), params)
             .await
             .map_err(|e| e.to_string())?;
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
@@ -147,6 +195,7 @@ impl DailyArchiveMcpServer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rmcp::ServerHandler;
 
     fn test_server() -> DailyArchiveMcpServer {
         DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()))
