@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 3) — ADR-053 Layer A T02: GrobidParser recursive TEI div walk
+
+**Second task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Replaces
+the linear `<head>` scan with a recursive TEI `<div>` walker that computes
+`path_id`, `parent_section_id`, `order_in_parent`, `section_id`, and `level`
+from the native GROBID TEI nesting structure.
+
+1. `crates/da-adapters/src/grobid_parser.rs`: new `extract_sections` flow:
+   - Detect nested div structure via `has_nested_divs` (checks whether any
+     direct child div contains its own `<div>` children)
+   - If nested: call `extract_sections_recursive` → `walk_divs` →
+     `find_child_divs` + `find_matching_close_div` + `extract_head_and_text`
+   - If flat: fall back to `extract_sections_flat` (legacy path, `path_id=None`)
+2. `DivSpan` helper struct for direct-child div spans with `n_attr`.
+3. Path component extraction: takes last segment of `n="1.2.3"` attribute,
+   falls back to 1-based sibling index when `n` is missing.
+4. `level` is now derived from path_id component count (e.g. `"2.1.1"` → 3),
+   consistent with the document tree depth.
+5. TDD: 6 new tests (58 → 64 da-adapters tests pass):
+   - `test_extract_sections_nested_div_path_id_populated` — all 8 path_ids
+   - `test_extract_sections_nested_div_parent_section_id` — parent links
+   - `test_extract_sections_nested_div_order_in_parent` — sibling indices
+   - `test_extract_sections_nested_div_section_id_stable` — `sec-<path_id>`
+   - `test_extract_sections_nested_div_depth_matches_level` — depth vs level
+   - `test_extract_sections_flat_legacy_tei_still_works` — backward compat
+6. All 3 existing real-TEI tests (GROBID output from hub corpus) still pass.
+7. Clippy clean; trajectory ON_TRACK.
+
+**Next tasks (same slice):**
+- T03: materialise `next_sibling` / `first_child` / `parent_section` edge
+  constants in `relation.rs` (currently forward-declared in YAML only)
+- T04: ingest use case builds navigation edges between Section nodes
+- T05: graph task suite `tree_navigation` template
+
 ### Session 2026-08-06 (late 2) — ADR-053 Layer A T01: Section navigation fields
 
 **First task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Adds the

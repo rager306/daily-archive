@@ -15,6 +15,15 @@ pub struct GrobidParser {
     client: reqwest::Client,
 }
 
+/// Internal span for a direct-child `<div>` during recursive TEI walk (T02).
+/// `content_start..content_end` is the inner content range (exclusive of the
+/// enclosing `<div ...>` and `</div>`). `n_attr` is the path component.
+struct DivSpan {
+    content_start: usize,
+    content_end: usize,
+    n_attr: Option<String>,
+}
+
 impl GrobidParser {
     pub fn new(url: Option<&str>) -> Self {
         Self {
@@ -118,7 +127,9 @@ impl GrobidParser {
     /// GROBID structures body as nested `<div><head n="1">Title</head><p>...</p></div>`.
     /// Level is derived from the `n` attribute on `<head>` (1, 2, 3...).
     fn extract_sections(tei: &str) -> Vec<da_ports::parser::Section> {
-        use da_ports::parser::Section;
+        // Try nested <div> walk first (GROBID-native TEI structure).
+        // Falls back to flat <head> scan for legacy parsers that do not emit
+        // nested divs (backward compat — path_id stays None in that path).
         let body = match tei.find("<body") {
             Some(start) => {
                 let after = &tei[start..];
@@ -136,32 +147,254 @@ impl GrobidParser {
             None => return Vec::new(),
         };
 
-        let mut sections = Vec::new();
+        // Detect nested div structure: <div> containing child <div>.
+        if Self::has_nested_divs(body) {
+            Self::extract_sections_recursive(body)
+        } else {
+            Self::extract_sections_flat(body)
+        }
+    }
+
+    /// Detect whether the TEI body contains nested `<div>` elements.
+    /// Heuristic: any `<div>` whose matching `</div>` contains another `<div>`
+    /// before it closes. Sibling divs at the same level do NOT count as nested.
+    fn has_nested_divs(body: &str) -> bool {
+        let child_divs = Self::find_child_divs(body);
+        for span in &child_divs {
+            let content = &body[span.content_start..span.content_end];
+            if content.contains("<div") {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Recursive TEI `<div>` walker (ADR-053 Layer A T02).
+    ///
+    /// For each `<div n="N">` with a `<head>` child, produces a `Section` with:
+    /// - `path_id` = parent path + "." + div n attribute (or auto-increment)
+    /// - `parent_section_id` = `sec-<parent_path>` (None for roots)
+    /// - `order_in_parent` = 0-based sibling index
+    /// - `section_id` = `sec-<path_id>` (stable hash for edge wiring)
+    /// - `level` = path component count (1-based depth)
+    fn extract_sections_recursive(body: &str) -> Vec<da_ports::parser::Section> {
+        use da_ports::parser::Section;
+        let mut out = Vec::new();
+        Self::walk_divs(body, "", &mut 0u32, &mut out);
+        out
+    }
+
+    /// Walk `<div>` children at the given nesting level.
+    ///
+    /// `parent_path` is the path_id of the parent div (empty for top-level).
+    /// Processes the direct children of `body` (not nested grandchildren —
+    /// those are handled by recursion on each child's content).
+    fn walk_divs(
+        body: &str,
+        parent_path: &str,
+        _sibling_counter: &mut u32,
+        out: &mut Vec<da_ports::parser::Section>,
+    ) {
+        let div_spans = Self::find_child_divs(body);
+        for (local_sibling, div_span) in div_spans.iter().enumerate() {
+            let div_content = &body[div_span.content_start..div_span.content_end];
+            // The path component is the LAST segment of the n attribute (e.g.
+            // "1.1" → "1". This is how GROBID encodes nested divs: n="1.1"
+            // means section 1, subsection 1.
+            let path_component = div_span
+                .n_attr
+                .as_deref()
+                .and_then(|n| n.split('.').next_back())
+                .unwrap_or("")
+                .to_string();
+            let path_component = if path_component.is_empty() {
+                (local_sibling as u32 + 1).to_string()
+            } else {
+                path_component
+            };
+            let path_id = if parent_path.is_empty() {
+                path_component.to_string()
+            } else {
+                format!("{}.{}", parent_path, path_component)
+            };
+            let section_id = format!("sec-{}", path_id);
+            let parent_section_id = if parent_path.is_empty() {
+                None
+            } else {
+                Some(format!("sec-{}", parent_path))
+            };
+            let order_in_parent = local_sibling as u32;
+
+            // Extract <head> title from this div's direct children (before any
+            // nested <div>). Fall back to empty title if missing.
+            let (title, text) = Self::extract_head_and_text(div_content);
+            let level = path_id.split('.').count() as u32;
+
+            if !title.is_empty() || !text.is_empty() {
+                use da_ports::parser::Section;
+                out.push(Section {
+                    title,
+                    text,
+                    level,
+                    path_id: Some(path_id.clone()),
+                    parent_section_id: parent_section_id.clone(),
+                    order_in_parent: Some(order_in_parent),
+                    section_id: Some(section_id.clone()),
+                    ..Default::default()
+                });
+            }
+
+            // Recurse into nested <div> children. Pass a fresh counter.
+            Self::walk_divs(div_content, &path_id, &mut 0u32, out);
+        }
+    }
+
+    /// Find direct child `<div>` elements at the top level of `body` (not nested
+    /// inside other divs). Returns spans with their `n` attribute and content
+    /// range (between open tag end and matching `</div>`).
+    ///
+    /// Uses a depth counter: only divs at depth 1 (i.e. direct children of the
+    /// fragment) are included. Deeper nesting is handled by recursion on each
+    /// span's content.
+    fn find_child_divs(body: &str) -> Vec<DivSpan> {
+        let mut spans = Vec::new();
         let mut pos = 0;
-        while let Some(head_start) = body[pos..].find("<head") {
-            let abs = pos + head_start;
-            // Find end of opening <head ...> tag
+        while let Some(tag_pos) = body[pos..].find("<div") {
+            let abs = pos + tag_pos;
+            // Skip closing tags.
+            if body[abs..].starts_with("</div") {
+                pos = abs + 1;
+                continue;
+            }
+            // Opening tag: find end of tag (the `>`).
             let tag_end = match body[abs..].find('>') {
                 Some(e) => abs + e,
                 None => break,
             };
-            // Extract level from n="..." attribute
+            let open_tag = &body[abs..=tag_end];
+            let n_attr = Self::extract_n_attr(open_tag);
+            let content_start = tag_end + 1;
+            let content_end = match Self::find_matching_close_div(body, content_start) {
+                Some(e) => e,
+                None => break,
+            };
+            spans.push(DivSpan {
+                content_start,
+                content_end,
+                n_attr,
+            });
+            // Continue scanning AFTER this div's close (siblings, not children).
+            pos = content_end + "</div>".len();
+        }
+        spans
+    }
+
+    /// Find the position of the `</div>` that closes the `<div>` opened at or
+    /// after `start`. Handles nesting by counting open/close div tags.
+    fn find_matching_close_div(body: &str, start: usize) -> Option<usize> {
+        let mut depth: i32 = 1;
+        let mut pos = start;
+        while depth > 0 {
+            let rest = &body[pos..];
+            let next_open = rest.find("<div").map(|i| (pos + i, false));
+            let next_close = rest.find("</div>").map(|i| (pos + i, true));
+            match (next_open, next_close) {
+                (Some((o, _)), Some((c, _))) if o < c => {
+                    // Opening <div ...> encountered.
+                    if !body[o..].starts_with("</div") {
+                        depth += 1;
+                    }
+                    pos = o + 1;
+                }
+                (_, Some((c, _))) => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(c);
+                    }
+                    pos = c + 1;
+                }
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    /// Extract the `n="..."` attribute value from a `<div n="1.2">` opening tag.
+    fn extract_n_attr(open_tag: &str) -> Option<String> {
+        if let Some(n_pos) = open_tag.find("n=\"") {
+            let after = &open_tag[n_pos + 3..];
+            if let Some(end) = after.find('"') {
+                let v = &after[..end];
+                if !v.is_empty() {
+                    return Some(v.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Extract `<head>` title and surrounding text from a div's direct content
+    /// (ignoring nested `<div>` children — those are handled by recursion).
+    fn extract_head_and_text(div_content: &str) -> (String, String) {
+        // Find the first <head>...</head> at this level.
+        let (title, after_head_pos) = if let Some(hs) = div_content.find("<head") {
+            let tag_end = div_content[hs..].find('>').map(|e| hs + e);
+            let content_start = match tag_end {
+                Some(e) => e + 1,
+                None => return (String::new(), String::new()),
+            };
+            let head_close = div_content[content_start..].find("</head>");
+            match head_close {
+                Some(e) => {
+                    let title = Self::strip_xml_tags(&div_content[content_start..content_start + e]);
+                    (title, content_start + e + "</head>".len())
+                }
+                None => (String::new(), 0),
+            }
+        } else {
+            (String::new(), 0)
+        };
+        // Text is everything after </head> up to the first nested <div> (if any).
+        let text_end = div_content[after_head_pos..]
+            .find("<div")
+            .map(|e| after_head_pos + e)
+            .unwrap_or(div_content.len());
+        let text = Self::strip_xml_tags(&div_content[after_head_pos..text_end]);
+        (title, text)
+    }
+
+    /// Legacy flat-structure TEI scanner — used when the body has no nested
+    /// `<div>` elements. Produces sections with `path_id = None` to preserve
+    /// backward compat with parsers that never populated navigation fields.
+    fn extract_sections_flat(body: &str) -> Vec<da_ports::parser::Section> {
+        use da_ports::parser::Section;
+        let mut sections = Vec::new();
+        let mut pos = 0;
+        while let Some(head_start) = body[pos..].find("<head") {
+            let abs = pos + head_start;
+            let tag_end = match body[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
             let open_tag = &body[abs..=tag_end];
             let level = Self::extract_head_level(open_tag);
-            // Find closing </head>
             let content_start = tag_end + 1;
             let head_close = match body[content_start..].find("</head>") {
                 Some(e) => content_start + e,
                 None => break,
             };
             let title = Self::strip_xml_tags(&body[content_start..head_close]);
-            // Section text: from after </head> to next <head> or end of body
             let after_head = head_close + "</head>".len();
             let next_head = body[after_head..].find("<head").map(|e| after_head + e);
             let text_end = next_head.unwrap_or(body.len());
             let text = Self::strip_xml_tags(&body[after_head..text_end]);
             if !title.is_empty() || !text.is_empty() {
-                sections.push(Section { title, text, level, ..Default::default() });
+                sections.push(Section {
+                    title,
+                    text,
+                    level,
+                    ..Default::default()
+                });
             }
             pos = text_end;
             if pos <= abs {
@@ -435,6 +668,138 @@ mod tests {
         assert_eq!(GrobidParser::extract_head_level(r#"<head n="3">"#), 3);
         assert_eq!(GrobidParser::extract_head_level("<head>"), 1);
         assert_eq!(GrobidParser::extract_head_level(r#"<head n="abc">"#), 1);
+    }
+
+    // ─── ADR-053 Layer A T02: recursive TEI div walk for path_id ───
+
+    /// Fixture: minimal TEI body with nested `<div>` elements matching GROBID
+    /// output structure. `<div n="N">` gives the section number; nesting gives
+    /// the tree. Text content is in `<p>` children of each div.
+    const NESTED_DIV_TEI: &str = r#"<body>
+      <div n="1"><head>Introduction</head><p>Intro text.</p>
+        <div n="1.1"><head>Background</head><p>Background text.</p></div>
+        <div n="1.2"><head>Motivation</head><p>Motivation text.</p></div>
+      </div>
+      <div n="2"><head>Methods</head><p>Methods overview.</p>
+        <div n="2.1"><head>Model</head><p>Model text.</p>
+          <div n="2.1.1"><head>Encoder</head><p>Encoder text.</p></div>
+        </div>
+        <div n="2.2"><head>Training</head><p>Training text.</p></div>
+      </div>
+      <div n="3"><head>Results</head><p>Results text.</p></div>
+    </body>"#;
+
+    #[test]
+    fn test_extract_sections_nested_div_path_id_populated() {
+        let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+        let path_ids: Vec<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        assert!(path_ids.contains(&"1"), "missing root 1, got: {:?}", path_ids);
+        assert!(path_ids.contains(&"1.1"));
+        assert!(path_ids.contains(&"1.2"));
+        assert!(path_ids.contains(&"2"));
+        assert!(path_ids.contains(&"2.1"));
+        assert!(path_ids.contains(&"2.1.1"));
+        assert!(path_ids.contains(&"2.2"));
+        assert!(path_ids.contains(&"3"));
+    }
+
+    #[test]
+    fn test_extract_sections_nested_div_parent_section_id() {
+        let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+        // Section 2.1.1 parent should be section 2.1
+        let encoder = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("2.1.1"))
+            .expect("section 2.1.1 present");
+        assert_eq!(
+            encoder.parent_section_id.as_deref(),
+            Some("sec-2.1"),
+            "parent_section_id must point at the parent div's section_id"
+        );
+        // Root sections have no parent.
+        let intro = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1 present");
+        assert!(intro.parent_section_id.is_none(), "root section has no parent");
+    }
+
+    #[test]
+    fn test_extract_sections_nested_div_order_in_parent() {
+        let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+        // Section 1.1 has order 0, section 1.2 has order 1 in parent 1.
+        let bg = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1.1"))
+            .expect("section 1.1 present");
+        assert_eq!(bg.order_in_parent, Some(0));
+        let motiv = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1.2"))
+            .expect("section 1.2 present");
+        assert_eq!(motiv.order_in_parent, Some(1));
+        // Training is the second child of Methods (after Model).
+        let training = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("2.2"))
+            .expect("section 2.2 present");
+        assert_eq!(training.order_in_parent, Some(1));
+    }
+
+    #[test]
+    fn test_extract_sections_nested_div_section_id_stable() {
+        let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+        // Every section must have a section_id of form "sec-<path_id>".
+        for s in &sections {
+            let sid = s
+                .section_id
+                .as_ref()
+                .expect("section_id populated for nested TEI");
+            let pid = s
+                .path_id
+                .as_ref()
+                .expect("path_id populated for nested TEI");
+            assert!(sid.starts_with("sec-"), "section_id should start with sec-");
+            assert!(sid.ends_with(pid), "section_id should end with path_id");
+        }
+    }
+
+    #[test]
+    fn test_extract_sections_nested_div_depth_matches_level() {
+        let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
+        // depth (0-based) for section 2.1.1 is 2; level (1-based) is 3.
+        let encoder = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("2.1.1"))
+            .expect("section 2.1.1 present");
+        // level field is populated from existing logic — recursive walk must set it.
+        assert_eq!(encoder.level, 3, "level = path_id component count (1-based)");
+        // Root section has level 1.
+        let root = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1 present");
+        assert_eq!(root.level, 1);
+    }
+
+    #[test]
+    fn test_extract_sections_flat_legacy_tei_still_works() {
+        // Legacy TEI with no nested divs — linear head scan. path_id stays None.
+        let tei = r#"<body>
+          <head n="1">Intro</head><p>Intro text.</p>
+          <head n="2">Methods</head><p>Methods text.</p>
+        </body>"#;
+        let sections = GrobidParser::extract_sections(tei);
+        assert_eq!(sections.len(), 2, "flat TEI yields 2 sections");
+        for s in &sections {
+            assert!(
+                s.path_id.is_none(),
+                "flat TEI should not populate path_id (backward compat)"
+            );
+        }
     }
 }
 
