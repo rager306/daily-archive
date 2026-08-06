@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Wave 1 MCP-4 Resources — ontology YAML browsable (D194)
+
+External MCP clients can now discover the knowledge base schema without
+writing Cypher queries. `list_mcp_resources()` returns 6 resource
+descriptors (node_schemas, edge_contracts, decision_categories,
+node_vocabulary, schema summary, graph stats). `read_mcp_resource(uri)`
+returns YAML content from `data/ontology/` files.
+
+TDD: `test_server_exposes_ontology_resources` RED→GREEN, 27 da-mcp green.
+
 ### Wave 0 Product Honesty (D194) — FdApiEmbedder replaces MockEmbedder
 
 **MCP vector_search был врущиной:** использовал `MockEmbedder(8)` (8-dim
