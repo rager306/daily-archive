@@ -610,6 +610,10 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
         crate::relation::structure::FROM_SOURCE,
         crate::relation::structure::FOUND_IN,
         crate::relation::structure::IN_CATEGORY,
+        // Document tree navigation (ADR-053 Layer A)
+        crate::relation::structure::NEXT_SIBLING,
+        crate::relation::structure::FIRST_CHILD,
+        crate::relation::structure::PARENT_SECTION,
         // Bibliographic (relation::bibliographic)
         crate::relation::bibliographic::CITES,
         crate::relation::bibliographic::CITED_BY,

@@ -98,6 +98,25 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             target_labels: &["Entity"],
             rationale: "Source Entity supersedes target Entity (D135 merge scenario).",
         },
+        // ─── ADR-053 Layer A document tree navigation edges (T03) ───
+        EdgeContract {
+            edge_constant: structure::NEXT_SIBLING,
+            source_label: "Section",
+            target_labels: &["Section"],
+            rationale: "Section navigation tree (ADR-053 Layer A): next sibling in same parent.",
+        },
+        EdgeContract {
+            edge_constant: structure::FIRST_CHILD,
+            source_label: "Section",
+            target_labels: &["Section"],
+            rationale: "Section navigation tree (ADR-053 Layer A): first child of this section.",
+        },
+        EdgeContract {
+            edge_constant: structure::PARENT_SECTION,
+            source_label: "Section",
+            target_labels: &["Section"],
+            rationale: "Section navigation tree (ADR-053 Layer A): parent section in the document hierarchy.",
+        },
     ]
 }
 
@@ -464,6 +483,11 @@ mod tests {
     /// in edge_contracts.yaml. These are not yet implemented in Rust relation.rs
     /// (Wave 1 work, M362) but the YAML forward-declares them so ontology is
     /// the single source of truth.
+    /// ADR-053 Layer A navigation edges must be declared as contracts in both
+    /// YAML (single source of truth for ontology planning) AND Rust relation.rs
+    /// (materialized constants for use in application/cli code). The contract
+    /// must be present in the hardcoded edge_contracts() list or the YAML-driven
+    /// edge_contracts_or_yaml() fallback.
     #[test]
     fn test_adr_053_navigation_edges_forward_declared_in_yaml() {
         let yaml_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -478,6 +502,63 @@ mod tests {
             assert!(
                 yaml.contains(&format!("edge_constant: {}", nav)),
                 "ADR-053 Layer A navigation edge '{}' must be forward-declared in edge_contracts.yaml",
+                nav
+            );
+        }
+    }
+
+    /// ADR-053 Layer A T03: navigation edges must be materialized as Rust
+    /// constants in `relation::structure` and present in `edge_contracts()`
+    /// hardcoded list. Verifies the Rust side of the data-driven contract gap
+    /// (YAML had forward declarations from earlier session; this test confirms
+    /// Rust constants and EdgeContract entries now match).
+    #[test]
+    fn test_adr_053_navigation_edges_materialized_in_rust() {
+        use crate::relation::structure;
+        // Constants exist in relation::structure module.
+        assert_eq!(structure::NEXT_SIBLING, "next_sibling");
+        assert_eq!(structure::FIRST_CHILD, "first_child");
+        assert_eq!(structure::PARENT_SECTION, "parent_section");
+
+        // Each constant has a matching EdgeContract entry in the hardcoded list.
+        let contracts = edge_contracts();
+        for nav in [
+            structure::NEXT_SIBLING,
+            structure::FIRST_CHILD,
+            structure::PARENT_SECTION,
+        ] {
+            assert!(
+                contracts.iter().any(|c| c.edge_constant == nav),
+                "navigation edge '{}' must have an EdgeContract entry in edge_contracts()",
+                nav
+            );
+        }
+    }
+
+    /// ADR-053 Layer A navigation edges are declared `temporal_class=structural`
+    /// in edge_contracts.yaml (created_at only per ADR-046). They are immutable
+    /// per PDF hash — no invalidation race like `fact` edges.
+    #[test]
+    fn test_adr_053_navigation_edges_are_structural_temporal_class() {
+        let yaml_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("data/ontology/edge_contracts.yaml");
+        let yaml = std::fs::read_to_string(&yaml_path)
+            .unwrap_or_else(|e| panic!("read {}: {}", yaml_path.display(), e));
+        // Find each navigation edge block and check temporal_class within it.
+        for nav in ["next_sibling", "first_child", "parent_section"] {
+            let edge_line = format!("edge_constant: {}", nav);
+            let pos = yaml
+                .find(&edge_line)
+                .unwrap_or_else(|| panic!("edge '{}' not in YAML", nav));
+            // Look in the 300 bytes after the edge_constant line for temporal_class.
+            let block = &yaml[pos..pos.saturating_add(300).min(yaml.len())];
+            assert!(
+                block.contains("temporal_class: structural"),
+                "navigation edge '{}' must have temporal_class=structural in edge_contracts.yaml",
                 nav
             );
         }

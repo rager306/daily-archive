@@ -126,6 +126,24 @@ pub mod structure {
 
     /// Work → Category (arXiv/OpenAlex category assignment).
     pub const IN_CATEGORY: &str = "inCategory";
+
+    // ─── ADR-053 Layer A document tree navigation edges (M362-d4qoaf/S01 T03) ───
+    // Structural Section-to-Section navigation edges, created_at only
+    // (temporal_class=structural per ADR-046). Built by the ingest use case
+    // (T04) from Section.path_id / parent_section_id / order_in_parent fields
+    // computed by GrobidParser::extract_sections (T02).
+
+    /// Section → Section: next sibling in the same parent.
+    /// Used for linear traversal of children under one parent.
+    pub const NEXT_SIBLING: &str = "next_sibling";
+
+    /// Section → Section: first child of this section.
+    /// Used for descending into the document tree.
+    pub const FIRST_CHILD: &str = "first_child";
+
+    /// Section → Section: parent section in the document hierarchy.
+    /// Inverse of FIRST_CHILD traversal (points upward to the container).
+    pub const PARENT_SECTION: &str = "parent_section";
 }
 
 /// Bibliographic edge types — structural metadata, NOT extracted semantic

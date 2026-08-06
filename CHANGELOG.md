@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 4) — ADR-053 Layer A T03: navigation edge constants in relation.rs
+
+**Third task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Previous
+session forward-declared the three navigation edges in edge_contracts.yaml;
+this task materializes them as Rust constants and registers them in the
+hardcoded EdgeContract list + validator.
+
+1. `crates/da-domain/src/relation.rs`: add three constants in `structure`:
+   - `NEXT_SIBLING = "next_sibling"`
+   - `FIRST_CHILD = "first_child"`
+   - `PARENT_SECTION = "parent_section"`
+2. `crates/da-domain/src/edge_contract.rs`: add three `EdgeContract` entries
+   (Section → Section, structural rationale matching YAML).
+3. `crates/da-domain/src/validator.rs`: register the three constants in the
+   `validate_edge_type` known-edges list (without this, validator rejects
+   them as unknown edge types on node creation).
+4. TDD: 2 new tests (267 → 269 da-domain tests pass):
+   - `test_adr_053_navigation_edges_materialized_in_rust` — constants exist
+     in `relation::structure`, EdgeContract entries present in hardcoded list
+   - `test_adr_053_navigation_edges_are_structural_temporal_class` — YAML
+     has `temporal_class: structural` for each navigation edge
+   (Existing `test_adr_053_navigation_edges_forward_declared_in_yaml` kept.)
+5. Clippy clean; trajectory ON_TRACK.
+
+**Next tasks (same slice):**
+- T04: ingest use case builds navigation edges between Section nodes
+- T05: graph task suite `tree_navigation` template
+
 ### Session 2026-08-06 (late 3) — ADR-053 Layer A T02: GrobidParser recursive TEI div walk
 
 **Second task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Replaces
