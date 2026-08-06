@@ -354,7 +354,8 @@ pub async fn get_sections(
     }
     let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
     // Sections are linked to Paper via hasPart edge; path_id gives the tree.
-    let cypher = "MATCH (s:Section)<-[:hasPart]-(p:Paper {arxiv_id: '###'}) RETURN s.title, s.path_id, s.level ORDER BY s.order"
+    // Ordering is lexical on the stable path_id (e.g. 1, 1.1, 1.2, 2).
+    let cypher = "MATCH (s:Section)<-[:hasPart]-(p:Paper {arxiv_id: '###'}) RETURN s.title, s.path_id, s.level ORDER BY s.path_id"
         .replace("###", &escaped);
     run_readonly(store, &cypher).await
 }
