@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 2) — CLI: show cites_edges in enrich + batch-enrich output
+
+**Product-facing fix.** `cites_edges_written` was added to `EnrichResult` in the
+previous commit but the CLI did not display it — users had no visibility into
+how many citation edges were created from OpenAlex `referenced_works`.
+
+1. `crates/da-cli/src/main.rs`:
+   - `enrich` command output now includes `CITES edges: N (from referenced_works)`
+   - `batch-enrich` per-paper line now includes `N cites` count
+   - `batch-enrich` summary line now includes total `N cites edges`
+2. All 44 da-cli tests pass; clippy clean; trajectory ON_TRACK.
+
 ### Session 2026-08-07 (late) — Enhanced external API logging (OpenAlex + GROBID + FD_API)
 
 **Observability improvement.** External API calls had minimal or no tracing:

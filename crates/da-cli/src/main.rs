@@ -1357,6 +1357,7 @@ async fn enrich_from_openalex(
                 println!("   Authors: {}", result.authors_written);
                 println!("   Concepts: {} (deprecated)", result.concepts_written);
                 println!("   Cited by: {}", result.cited_by_count);
+                println!("   CITES edges: {} (from referenced_works)", result.cites_edges_written);
             }
             if let Some(out) = output_snapshot {
                 export_store_snapshot(use_case.graph_store.as_ref(), out).await;
@@ -1385,6 +1386,7 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     let mut fail = 0;
     let mut total_topics = 0;
     let mut total_authors = 0;
+    let mut total_cites_edges = 0;
 
     for arxiv_id in &ids {
         match use_case.enrich_by_arxiv_id(arxiv_id).await {
@@ -1394,11 +1396,12 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
                     pending += 1;
                 } else {
                     println!(
-                        "  ✅ {}: {} topics, {} authors",
-                        arxiv_id, result.topics_written, result.authors_written
+                        "  ✅ {}: {} topics, {} authors, {} cites",
+                        arxiv_id, result.topics_written, result.authors_written, result.cites_edges_written
                     );
                     total_topics += result.topics_written;
                     total_authors += result.authors_written;
+                    total_cites_edges += result.cites_edges_written;
                     ok += 1;
                 }
             }
@@ -1410,13 +1413,14 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     }
 
     println!(
-        "\nBatch enrich complete: {}/{} enriched, {} pending, {} fail, {} topics, {} authors",
+        "\nBatch enrich complete: {}/{} enriched, {} pending, {} fail, {} topics, {} authors, {} cites edges",
         ok,
         ids.len(),
         pending,
         fail,
         total_topics,
-        total_authors
+        total_authors,
+        total_cites_edges
     );
 }
 
