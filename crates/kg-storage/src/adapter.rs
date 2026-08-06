@@ -32,7 +32,7 @@ use crate::traits::DirectGraphStore;
 /// # async fn run() {
 /// let mut store = MockGraphStore::new();
 /// let view = graph_view_from(&store, Some("Paper"), Some("CITES"), None).await.unwrap();
-/// let ranks = page_rank(&view, &PageRankConfig::default());
+/// let ranks = page_rank(&view, PageRankConfig::default());
 /// # }
 /// ```
 pub async fn graph_view_from<T>(
