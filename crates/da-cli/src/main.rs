@@ -893,7 +893,11 @@ async fn batch_ingest(
                         "Node labels from da_domain::registered_node_labels() — not CLI hardcode.",
                         "Edge histogram uses store wire strings; known set = edge_contracts().",
                         "MENTIONS=0 expected without extract-to-graph step.",
-                        "D127 import_eligible=false.",
+                        if enable_import {
+                            "D127 UNLOCK tested at runtime (--enable-import); durable snapshot stays locked."
+                        } else {
+                            "D127 import_eligible=false (locked)."
+                        },
                         "Process-local graph; durable artifact is snapshot when --output set."
                     ]
                 });
@@ -926,7 +930,7 @@ async fn batch_ingest(
                         r.snapshot_path.as_deref().unwrap_or("none"),
                     ));
                     md.push_str(&render_inventory_markdown(&inv));
-                    md.push_str("\n## Notes\n\n- Embedder: **FdApiEmbedder** (real TEI bge-m3, 1024d).\n- Labels/edges driven by domain ontology + edge_contracts (not hardcoded CLI lists).\n- `import_eligible=false` (D127).\n");
+                    md.push_str(&format!("\n## Notes\n\n- Embedder: **FdApiEmbedder** (real TEI bge-m3, 1024d).\n- Labels/edges driven by domain ontology + edge_contracts (not hardcoded CLI lists).\n- `import_eligible=false` (D127, durable).{}\n", if enable_import { " Runtime unlock tested (--enable-import); durable state stays locked." } else { "" }));
                     let md_path = dir.join("REPORT.md");
                     if let Err(e) = std::fs::write(&md_path, md) {
                         eprintln!("⚠  write {}: {e}", md_path.display());

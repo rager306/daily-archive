@@ -11,19 +11,14 @@
 use serde::{Deserialize, Serialize};
 
 /// D127 import gate state per invocation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum ImportEligibility {
     /// D127 locked: import_eligible=false on all nodes (default).
+    #[default]
     Locked,
     /// D127 unlocked: import_eligible=Eligible on nodes (requires --enable-import).
     Eligible,
-}
-
-impl Default for ImportEligibility {
-    fn default() -> Self {
-        Self::Locked
-    }
 }
 
 impl ImportEligibility {

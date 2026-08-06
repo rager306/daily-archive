@@ -44,10 +44,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 /// |-----|---------|---------|
 /// | `LOG_DIR` | `logs/` | Directory for rolling log files |
 /// | `LOG_LEVEL` | `info` | Filter level (RUST_LOG overrides if set) |
-/// | `LOG_FORMAT` | `json` | File format: `json`, `compact`, `pretty` |
 pub fn init_logging() -> Option<WorkerGuard> {
     let log_dir = std::env::var("LOG_DIR").unwrap_or_else(|_| "logs".to_string());
-    let log_format = std::env::var("LOG_FORMAT").unwrap_or_else(|_| "json".to_string());
 
     // Build filter: RUST_LOG > LOG_LEVEL > default info
     let default_filter =
@@ -111,7 +109,6 @@ pub fn init_logging() -> Option<WorkerGuard> {
         .unwrap_or_else(|_| log_path.clone());
     tracing::info!(
         log_dir = %abs_path.display(),
-        log_format = %log_format,
         "Logging initialized: stderr (compact) + rolling file (JSON)"
     );
     tracing::debug!(
@@ -120,53 +117,4 @@ pub fn init_logging() -> Option<WorkerGuard> {
     );
 
     Some(guard)
-}
-
-/// Build the file logging layer in the requested format.
-fn build_file_layer(
-    writer: tracing_appender::non_blocking::NonBlocking,
-    format: &str,
-) -> Box<dyn tracing_subscriber::Layer<tracing_subscriber::Registry> + Send + Sync> {
-    match format {
-        "json" => Box::new(
-            tracing_subscriber::fmt::layer()
-                .with_writer(writer)
-                .json()
-                .flatten_event(true)
-                .with_current_span(true)
-                .with_span_list(true)
-                .with_span_events(FmtSpan::CLOSE)
-                .with_target(true)
-                .with_thread_ids(false)
-                .with_thread_names(false)
-                .with_file(false)
-                .with_line_number(true)
-                .with_ansi(false),
-        ),
-        "compact" => Box::new(
-            tracing_subscriber::fmt::layer()
-                .with_writer(writer)
-                .compact()
-                .with_target(true)
-                .with_span_events(FmtSpan::CLOSE)
-                .with_ansi(false),
-        ),
-        "pretty" => Box::new(
-            tracing_subscriber::fmt::layer()
-                .with_writer(writer)
-                .pretty()
-                .with_target(true)
-                .with_span_events(FmtSpan::CLOSE)
-                .with_ansi(false),
-        ),
-        _ => Box::new(
-            tracing_subscriber::fmt::layer()
-                .with_writer(writer)
-                .json()
-                .flatten_event(true)
-                .with_current_span(true)
-                .with_span_events(FmtSpan::CLOSE)
-                .with_ansi(false),
-        ),
-    }
 }

@@ -1,0 +1,97 @@
+{
+  "suite_file": "data/graph_tasks/gepa_hub.tasks.cypher",
+  "snapshot": "artifacts/d127_unlock/hub_unlocked.sgsnap",
+  "import_eligible": false,
+  "nodes": 2571,
+  "edges": 2741,
+  "pass": 7,
+  "empty": 0,
+  "error": 0,
+  "failed": false,
+  "tasks": [
+    {
+      "id": "paper_count",
+      "title": "Paper count",
+      "insight": "Scale — GEPA hub batch has 24 retrieval-eligible papers",
+      "verdict": "PASS",
+      "rows": 1,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (n:Paper) WHERE n.retrieval_eligible = true RETURN count(n) AS papers;"
+    },
+    {
+      "id": "hub_paper_by_arxiv_id",
+      "title": "Hub paper by arxiv_id",
+      "insight": "Orient — GEPA hub 2507.19457 exists",
+      "verdict": "PASS",
+      "rows": 1,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (n:Paper {arxiv_id: \"2507.19457\"}) RETURN n.arxiv_id AS arxiv_id LIMIT 1;"
+    },
+    {
+      "id": "citation_fact_edges",
+      "title": "Citation fact edges",
+      "insight": "Fact edge CITES — bibliography resolution present",
+      "verdict": "PASS",
+      "rows": 24,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (p:Paper)-[:CITES]->(c) RETURN count(c) AS cites;"
+    },
+    {
+      "id": "structural_haspart",
+      "title": "Structural hasPart",
+      "insight": "Composition — sections/refs hang off papers",
+      "verdict": "PASS",
+      "rows": 24,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (p:Paper)-[:hasPart]->(x) RETURN count(x) AS parts;"
+    },
+    {
+      "id": "provenance_from_source",
+      "title": "Provenance FROM_SOURCE",
+      "insight": "Structural provenance — papers link to Source",
+      "verdict": "PASS",
+      "rows": 24,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (p:Paper)-[:FROM_SOURCE]->(s) RETURN count(s) AS sources;"
+    },
+    {
+      "id": "hub_cites_multi_hop_readiness",
+      "title": "Hub CITES multi-hop readiness",
+      "insight": "Graph-native — hub paper has outbound CITES",
+      "verdict": "PASS",
+      "rows": 1,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (p:Paper {arxiv_id: \"2507.19457\"})-[:CITES]->(c) RETURN count(c) AS hub_c…"
+    },
+    {
+      "id": "category_placement",
+      "title": "Category placement",
+      "insight": "Structural inCategory — at least one paper categorized",
+      "verdict": "PASS",
+      "rows": 1,
+      "min_rows": 1,
+      "allow_empty": false,
+      "duration_ms": 0,
+      "error": null,
+      "cypher_preview": "MATCH (p:Paper)-[:inCategory]->(cat) RETURN count(p) AS categorized;"
+    }
+  ]
+}
