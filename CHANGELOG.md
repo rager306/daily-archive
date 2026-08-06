@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### Session 2026-08-07 (late 3) — ADR-054: MCP server for knowledge base external access
+
+**Architecture decision.** daily-archive has reached the stage where the
+knowledge base needs to be accessible from external MCP-compatible clients
+(AI assistants, testing harnesses). ADR-054 designs the `da-mcp` crate.
+
+**Research:** analyzed three reference implementations:
+- **Consensus MCP** (https://docs.consensus.app/docs/mcp): `search` + `fetch`
+  tools over 200M papers. Streamable HTTP, OAuth. Filters: year_min/max,
+  study_types, sjr_max, human, sample_size_min. Proves search+fetch pattern.
+- **Neo4j MCP** (https://github.com/neo4j/mcp): `get-schema` + `read-cypher` +
+  `write-cypher` tools. stdio + HTTP. Namespacing for multi-DB. Schema sampling.
+  Proves graph DB pattern.
+- **mcp-knowledge-graph** (PyPI): 10 resources + 7 tools + 4 prompts. Full
+  MCP client pattern with resources/prompts/tools split. `validate_cypher` +
+  `resolve_entity` tools. Proves resources+prompts value.
+
+**ADR-054 design:**
+- 12 tools: search_papers, get_paper, get_sections, get_references,
+  get_entities, get_summary, read_cypher, vector_search, get_schema,
+  get_graph_stats, validate_node, get_reading_path
+- 8 resources: schema, ontology YAMLs (node/edge/decision/vocabulary),
+  dynamic stats, ADR index, graph task templates
+- 6 prompts: literature_review, critical_reading, reproducibility_check,
+  citation_lineage, compare_methods, generate_cypher
+- Transports: stdio (default, Claude Desktop) + Streamable HTTP (remote, testing)
+- Snapshot mode: `da-mcp --stdio --snapshot <file.sgsnap>` for process-local testing
+- Read-only by design: no write_cypher tool, D127-safe, query_readonly enforced
+- Hexagonal: crates/da-mcp depends on kg-storage+kg-ontology+da-domain+da-ports,
+  NOT da-application or da-adapters (no ingest/enrich/extract)
+- 3 implementation waves: MCP-1..3 core tools, MCP-4..6 resources+prompts+vector,
+  MCP-7..9 HTTP+reading paths+integration tests
+
+D193 recorded. ADR-054 Proposed. No code changes — design-only.
+
 ### Session 2026-08-07 (late 2) — CLI: show cites_edges in enrich + batch-enrich output
 
 **Product-facing fix.** `cites_edges_written` was added to `EnrichResult` in the
