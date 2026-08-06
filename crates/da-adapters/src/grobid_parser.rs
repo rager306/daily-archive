@@ -50,6 +50,19 @@ impl GrobidParser {
     }
 
     /// Process PDF via GROBID full-text endpoint → TEI XML.
+    ///
+    /// Sends consolidation + coordinate parameters for richer extraction:
+    /// - `consolidateCitations=1`: enrich references via Crossref/biblio-glutton
+    ///   (adds DOI, venue, publisher, normalized author names). Critical for
+    ///   ADR-053 Layer F cross-paper edges (predecessor_of, superseded_by).
+    /// - `consolidateHeader=1`: enrich paper header (title, authors, DOI, abstract)
+    ///   via Crossref. Improves author disambiguation (Layer G) and DOI coverage.
+    /// - `teiCoordinates=["figure","table","note"]`: add PDF coordinates for
+    ///   figures, tables, and footnotes. Enables Layer I figure image cropping
+    ///   and provenance tracking.
+    ///
+    /// These parameters are GROBID 0.9.0 REST API options (see GROBID docs).
+    /// They add ~2-5s per paper for Crossref lookups; acceptable for batch ingest.
     async fn process_fulltext(&self, pdf_bytes: &[u8]) -> ParseResult<String> {
         let url = format!("{}/api/processFulltextDocument", self.url);
         let part = reqwest::multipart::Part::bytes(pdf_bytes.to_vec())
@@ -57,7 +70,11 @@ impl GrobidParser {
             .mime_str("application/pdf")
             .map_err(|e| ParserError::ParseFailed(e.to_string()))?;
 
-        let form = reqwest::multipart::Form::new().part("input", part);
+        let form = reqwest::multipart::Form::new()
+            .part("input", part)
+            .text("consolidateCitations", "1")
+            .text("consolidateHeader", "1")
+            .text("teiCoordinates", "[\"figure\",\"table\",\"note\"]");
 
         let resp = self
             .client

@@ -535,23 +535,45 @@ Visual and quantitative artifacts become first-class extractable objects.
 GROBID TEI natively marks `<figure type="image">`, `<figure type="table">`,
 and `<formula>`; the daily-archive adapter currently discards them.
 
+**GROBID TEI extraction research (2026-08-06, paper 2507.19457):**
+- 25 `<figure>` elements per paper (22 images + 3 tables)
+- 288 `<cell>` elements in tables — many numeric (F1, accuracy, improvement deltas)
+- 20 `<formula>` elements with stable `xml:id` and `<label>(N)</label>`
+- 3 `<note place="foot">` footnotes per paper
+- 66 `<ptr target="...">` external URLs (github, huggingface, arxiv)
+- 165 `<ref type="...">` in-text references (123 bibr, 24 figure, 5 table, 2 foot, 1 url)
+- Stable `xml:id` attributes: `fig_N`, `tab_N`, `formula_N`, `foot_N`
+- In-text refs: `<ref type="figure" target="#fig_N">` links text to figure
+
 | Node | Source | Key fields |
 |------|--------|-----------|
-| `Figure` | GROBID TEI `<figure type="image">` | `label` (Fig. 3), `caption`, `figure_type` (chart/diagram/photo/schematic), `ref_section_ids` |
-| `Table` | GROBID TEI `<figure type="table">` | `label` (Table 2), `caption`, `headers` (rule-extracted), `nrows`, `ncols` |
-| `Datapoint` | rule-based over Tables | `metric_name`, `value`, `unit`, `condition`, `baseline_delta`, `evidence_from` |
-| `Equation` | GROBID TEI `<formula>` | `latex`, `label` (Eq. 5), `context_section_id` |
+| `Figure` | GROBID TEI `<figure type="image">` | `figure_id` (xml:id), `label` (Fig. 3), `caption` (figDesc), `figure_type` (chart/diagram/photo/schematic), `pdf_coords` (graphic coords), `ref_section_ids` (in-text refs) |
+| `Table` | GROBID TEI `<figure type="table">` | `table_id` (xml:id), `label` (Table 2), `caption` (figDesc), `headers` (first row cells), `nrows`, `ncols` |
+| `Datapoint` | rule-based over Table `<cell>` | `metric_name` (from header), `value` (numeric cell), `unit`, `condition` (from row label), `baseline_delta`, `evidence_from` (Table) |
+| `Equation` | GROBID TEI `<formula>` | `equation_id` (xml:id), `label` (Eq. 5), `latex` (content), `context_section_id` |
+| `Footnote` | GROBID TEI `<note place="foot">` | `footnote_id` (xml:id), `number` (n attr), `text`, `ref_section_ids` |
+| `ExternalResource` | GROBID TEI `<ptr target="...">` | `url`, `resource_type` (github/huggingface/arxiv/openreview/other), `ref_section_ids` |
 
-Edges: `Paper` `hasFigure` `Figure`; `Figure` `describes` `Method`/`Dataset`
-(Layer C typed); `Datapoint` `observes` existing `MetricObservation`;
-`Figure` `evidence_from` `Section`.
+Edges: `Paper` `hasFigure` `Figure`; `Paper` `hasTable` `Table`;
+`Table` `hasDatapoint` `Datapoint`; `Paper` `hasEquation` `Equation`;
+`Paper` `hasFootnote` `Footnote`; `Paper` `hasExternalResource` `ExternalResource`;
+`Figure` `describes` `Method`/`Dataset` (Layer C typed);
+`Datapoint` `observes` existing `MetricObservation`;
+`Figure`/`Table`/`Footnote` `evidence_from` `Section` (via in-text ref location).
+
+**Reproducibility extraction (Layer B tie-in):** `ExternalResource.resource_type`
+directly populates ReproducibilitySummary:
+- `github.com` URL → `code_available = true`, `code_url = <url>`
+- `huggingface.co` URL → `data_available = true`, `data_url = <url>`
+- `arxiv.org` URL → cross-reference to cited Paper (redundant with bibr but sometimes the only link)
 
 All edges `temporal_class: structural` (created_at only). `Datapoint.observes`
 uses fact semantics where the datapoint reports a comparison (Layer F tie-in).
 
-Governor hook: `Figure`/`Table`/`Datapoint` added to `node_schemas.yaml`
-and to the registered labels walk. Extraction is rule-based first; LLM-assisted
-caption interpretation arrives later under D136.
+Governor hook: `Figure`/`Table`/`Datapoint`/`Equation`/`Footnote`/
+`ExternalResource` added to `node_schemas.yaml` and to the registered labels
+walk. Extraction is rule-based first; LLM-assisted caption interpretation
+arrives later under D136.
 
 ## Layer J — Terminology, Glossary, and Jargon (Tier 2 — pains #5 #12 #18)
 

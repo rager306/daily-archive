@@ -2,6 +2,61 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 7) — GROBID TEI extraction research + consolidation parameters
+
+**Research:** analyzed real GROBID 0.9.0 TEI output from paper 2507.19457
+(379KB, 3247 lines) to identify extraction opportunities beyond current
+Section/Citation/Author extraction. Findings saved as RESEARCH artifact
+for M363-ma2kmw (Wave 2).
+
+**Key findings (per paper):**
+- 25 `<figure>` elements (22 images + 3 tables) with stable `xml:id`, `<label>`,
+  `<figDesc>` captions, `<graphic coords>` — ADR-053 Layer I
+- 288 `<cell>` elements in tables, many numeric (F1, accuracy, improvement deltas)
+  — raw material for ResultsSummary (Layer B) and Datapoint nodes (Layer I)
+- 20 `<formula>` elements with `xml:id` and `<label>(N)</label>` — Layer I
+- 3 `<note place="foot">` footnotes with `n` and `xml:id` — Layer B
+- 66 `<ptr target="...">` external URLs (github, huggingface, arxiv, openreview)
+  — directly populates ReproducibilitySummary `code_available`/`data_available`
+- 165 `<ref type="...">` in-text references (123 bibr, 24 figure, 5 table, 2 foot)
+  — provenance links from Section to Figure/Table/Footnote
+- Stable `xml:id` attributes: `fig_N`, `tab_N`, `formula_N`, `foot_N`
+
+**GROBID parameter improvements (recommendation evaluation):**
+
+Evaluated recommendation to use `consolidateCitations=1`, `consolidateHeader=1`,
+`teiCoordinates`, and DL models. Applied 3 of 4:
+
+1. `consolidateCitations=1` (HIGH ROI): enrich references via Crossref/biblio-glutton.
+   Adds DOI, venue, publisher, normalized author names. Critical for ADR-053
+   Layer F cross-paper edges (predecessor_of, superseded_by require precise
+   citation identification). +2-5s per paper.
+2. `consolidateHeader=1` (MEDIUM ROI): enrich paper header via Crossref.
+   Improves author disambiguation (Layer G) and DOI coverage.
+3. `teiCoordinates=["figure","table","note"]` (MEDIUM ROI): add PDF coordinates
+   for figures, tables, footnotes. Enables Layer I figure image cropping and
+   provenance tracking.
+
+**NOT applied (deferred):**
+- DL models (DeLFT/SciBERT-CRF): requires GPU, current CRF gives F1=0.869
+  (good enough for Wave 1-3). Defer to Wave 3+ when citation accuracy becomes
+  bottleneck. D136 governance does not apply (GROBID DL is not LLM extraction).
+- LLM after GROBID: already architecturally decided in ADR-053 (Layer B/C
+  rule-based first, LLM later under D136). Recommendation aligns with existing
+  architecture.
+
+**Implementation:**
+1. `crates/da-adapters/src/grobid_parser.rs`: `process_fulltext` now sends
+   `consolidateCitations=1`, `consolidateHeader=1`,
+   `teiCoordinates=["figure","table","note"]` as multipart form fields.
+   Previously sent only `input` (PDF bytes) — GROBID used all defaults.
+2. `.env.example`: documented GROBID REST API parameters.
+3. `AGENTS.md`: updated parser-sidecars section with parameter documentation.
+4. `doc/adr/ADR-053`: updated Layer I section with concrete GROBID TEI
+   extraction research findings (element counts, stable xml:id attributes,
+   in-text ref types, ExternalResource node for reproducibility).
+5. All 64 da-adapters tests pass; trajectory ON_TRACK.
+
 ### Session 2026-08-06 (late 6) — ADR-053 Layer A T05 + MEM654 fix: tree_navigation suite + flat TEI path_id
 
 **Fifth and final task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).**
