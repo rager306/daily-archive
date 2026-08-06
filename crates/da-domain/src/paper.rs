@@ -98,6 +98,8 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
             ("evidence_ready", crate::schema::FieldType::Boolean),
             ("import_eligible", crate::schema::FieldType::Boolean),
             ("retrieval_eligible", crate::schema::FieldType::Boolean),
+            ("openalex_id", crate::schema::FieldType::String),
+            ("openalex_pending", crate::schema::FieldType::Boolean),
             ("schema_version", crate::schema::FieldType::Integer),
         ]
     }

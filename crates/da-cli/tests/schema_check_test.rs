@@ -36,9 +36,9 @@ fn test_schema_check_counts_match() {
         .expect("failed to spawn `da schema-check`");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    // The pipeline currently materializes 16 node types.
+    // The pipeline currently materializes 17 node types.
     assert!(
-        stdout.contains("16 distinct node labels"),
+        stdout.contains("17 distinct node labels"),
         "expected 16 materialized labels, got:\n{stdout}"
     );
     // The registry contains 31 declared node types (29 v1 + Conflict + Decision).
