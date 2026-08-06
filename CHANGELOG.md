@@ -2,6 +2,48 @@
 
 ## Unreleased
 
+### Session 2026-08-06 (late 6) — ADR-053 Layer A T05 + MEM654 fix: tree_navigation suite + flat TEI path_id
+
+**Fifth and final task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).**
+Closes the slice: document tree navigation is now end-to-end on real GROBID
+output.
+
+**MEM654 fix (critical):** real GROBID TEI output is structurally flat
+(all `<div>` are siblings, max nesting depth = 1). The recursive div walker
+(T02) correctly falls back to flat extraction, but flat extraction was not
+populating `path_id`. Fixed: `extract_sections_flat` now extracts `path_id`
+from `<head n="N.M">` attribute (GROBID encodes section hierarchy lexically,
+not via XML nesting). Added `extract_head_n_string` and
+`populate_parent_and_order` helpers. `level` for single-integer `n` (e.g.
+`n="2"`) is the integer itself (backward compat with old `extract_head_level`).
+
+**T04 fix:** Section node creation now stores `path_id`, `section_id`,
+`parent_section_id`, `order_in_parent` as node properties (were computed but
+not persisted on the graph node — Cypher queries could not filter by path_id).
+
+**T05:** `data/graph_tasks/tree_navigation.tasks.cypher` with 3 queries:
+- First-child navigation (65 edges on hub corpus)
+- Next-sibling chain (693 edges)
+- Parent-section navigation (179 edges)
+Total: 937 navigation edges on 24-paper hub corpus. Suite 3/3 PASS.
+
+**Samyama Cypher note:** `count()` returns per-row counts, not aggregates.
+Use direct edge traversal `RETURN child` (one row per match) instead of
+`RETURN count(child) AS n` for the graph task suite.
+
+1. `crates/da-adapters/src/grobid_parser.rs`: MEM654 fix — flat TEI path_id
+   extraction from `<head n="N.M">` + `populate_parent_and_order` post-pass.
+2. `crates/da-application/src/ingest.rs`: T04 fix — store path_id,
+   section_id, parent_section_id, order_in_parent on Section nodes.
+3. `data/graph_tasks/tree_navigation.tasks.cypher`: T05 — 3 navigation queries.
+4. All 64 da-adapters tests pass; 19 da-application ingest tests pass.
+5. Graph task suite 3/3 PASS on `hub_unlocked_t04.sgsnap` (937 nav edges).
+6. Existing gepa_hub suite still 7/7 PASS (no regression).
+7. Clippy clean; trajectory ON_TRACK.
+
+**M362-d4qoaf/S01 complete:** all 5 tasks (T01-T05) done. Document tree
+navigation is end-to-end on real GROBID output.
+
 ### Session 2026-08-06 (late 5) — ADR-053 Layer A T04: ingest builds navigation edges
 
 **Fourth task of M362-d4qoaf/S01 (Wave 1 Article Preparation 2.0).** Wires

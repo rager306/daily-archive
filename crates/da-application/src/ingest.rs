@@ -357,6 +357,28 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_int(section_node, "level", section.level as i64)
                 .await?;
+            // ADR-053 Layer A: store path_id and section_id on the node so
+            // Cypher queries can filter by path_id (e.g. root sections).
+            if let Some(path_id) = &section.path_id {
+                self.graph_store
+                    .set_node_property_string(section_node, "path_id", path_id.clone())
+                    .await?;
+            }
+            if let Some(section_id) = &section.section_id {
+                self.graph_store
+                    .set_node_property_string(section_node, "section_id", section_id.clone())
+                    .await?;
+            }
+            if let Some(parent_sid) = &section.parent_section_id {
+                self.graph_store
+                    .set_node_property_string(section_node, "parent_section_id", parent_sid.clone())
+                    .await?;
+            }
+            if let Some(order) = section.order_in_parent {
+                self.graph_store
+                    .set_node_property_int(section_node, "order_in_parent", order as i64)
+                    .await?;
+            }
             self.graph_store
                 .set_node_property_int(section_node, "order", i as i64)
                 .await?;

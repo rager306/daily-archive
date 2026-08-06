@@ -148,6 +148,8 @@ impl GrobidParser {
         };
 
         // Detect nested div structure: <div> containing child <div>.
+        // Detect nested div structure via find_child_divs (reuses the same logic
+        // as the recursive walker — consistent results).
         if Self::has_nested_divs(body) {
             Self::extract_sections_recursive(body)
         } else {
@@ -377,7 +379,19 @@ impl GrobidParser {
                 None => break,
             };
             let open_tag = &body[abs..=tag_end];
-            let level = Self::extract_head_level(open_tag);
+            // Extract path_id from <head n="N.M">. GROBID encodes the section
+            // number lexically (e.g. n="3.1") regardless of XML nesting
+            // (which is flat in real GROBID output — see MEM654).
+            let path_component = Self::extract_head_n_string(open_tag);
+            // level = number of path components (1 for "1", 2 for "3.1").
+            // For backward compat with the old extract_head_level behavior,
+            // when n is a single integer, level = that integer (not 1).
+            // This matches the old test expectation: <head n="2"> -> level 2.
+            let level = if path_component.contains('.') {
+                path_component.split('.').count() as u32
+            } else {
+                path_component.parse::<u32>().unwrap_or(1)
+            };
             let content_start = tag_end + 1;
             let head_close = match body[content_start..].find("</head>") {
                 Some(e) => content_start + e,
@@ -393,15 +407,78 @@ impl GrobidParser {
                     title,
                     text,
                     level,
+                    // ADR-053 Layer A: populate path_id + section_id from
+                    // <head n="N.M"> even in flat TEI (MEM654: GROBID output
+                    // is structurally flat; section hierarchy is lexical).
+                    path_id: Some(path_component.clone()),
+                    section_id: Some(format!("sec-{}", path_component)),
                     ..Default::default()
                 });
             }
             pos = text_end;
-            if pos <= abs {
-                pos = abs + 1;
+            // Guard against infinite loop when text_end == abs (e.g. empty
+            // section text where the next <head> is adjacent). Advance past
+            // the current <head> tag.
+            if pos <= tag_end {
+                pos = tag_end + 1;
             }
         }
+
+        // Post-processing pass: compute parent_section_id and order_in_parent
+        // from path_id tree. Only runs when path_id is populated (skip for
+        // legacy parsers that leave path_id=None).
+        Self::populate_parent_and_order(&mut sections);
         sections
+    }
+
+    /// Extract the full `n` attribute value from `<head n="3.1">` as a string.
+    /// Returns "1" when n is missing or unparseable (default to level-1 root).
+    fn extract_head_n_string(open_tag: &str) -> String {
+        if let Some(n_pos) = open_tag.find("n=\"") {
+            let after = &open_tag[n_pos + 3..];
+            if let Some(end) = after.find('"') {
+                let v = &after[..end];
+                // Validate: non-empty and consists of digits and dots only.
+                if !v.is_empty() && v.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                    return v.to_string();
+                }
+            }
+        }
+        "1".to_string()
+    }
+
+    /// Populate `parent_section_id` and `order_in_parent` for each Section from
+    /// the path_id tree. Mutates `sections` in place. No-op when path_id is None.
+    fn populate_parent_and_order(sections: &mut [da_ports::parser::Section]) {
+        use std::collections::HashMap;
+        // Track sibling counters per parent path.
+        let mut sibling_counters: HashMap<String, u32> = HashMap::new();
+        for section in sections.iter_mut() {
+            let (Some(path_id), Some(section_id)) =
+                (section.path_id.as_deref(), section.section_id.as_deref())
+            else {
+                continue;
+            };
+            // parent_path = everything before the last '.'.
+            let parent_path = match path_id.rfind('.') {
+                Some(pos) => Some(&path_id[..pos]),
+                None => None,
+            };
+            // order_in_parent: increment per-parent counter.
+            let counter_key = parent_path.unwrap_or("").to_string();
+            let order = sibling_counters.entry(counter_key).or_insert(0);
+            section.order_in_parent = Some(*order);
+            *order += 1;
+            // parent_section_id: sec-<parent_path> when parent exists.
+            if let Some(pp) = parent_path {
+                section.parent_section_id = Some(format!("sec-{}", pp));
+            }
+            // section_id already populated — ensure it matches sec-<path_id>.
+            let expected = format!("sec-{}", path_id);
+            if section_id != expected {
+                section.section_id = Some(expected);
+            }
+        }
     }
 
     /// Extract the `n` attribute value from a `<head n="1">` tag.
@@ -787,19 +864,18 @@ mod tests {
 
     #[test]
     fn test_extract_sections_flat_legacy_tei_still_works() {
-        // Legacy TEI with no nested divs — linear head scan. path_id stays None.
+        // Legacy TEI with no nested divs — flat <head n="N"> scan.
+        // After MEM654 fix: path_id IS populated from <head n="N"> attribute
+        // (GROBID encodes section hierarchy lexically, not via XML nesting).
         let tei = r#"<body>
           <head n="1">Intro</head><p>Intro text.</p>
           <head n="2">Methods</head><p>Methods text.</p>
         </body>"#;
         let sections = GrobidParser::extract_sections(tei);
         assert_eq!(sections.len(), 2, "flat TEI yields 2 sections");
-        for s in &sections {
-            assert!(
-                s.path_id.is_none(),
-                "flat TEI should not populate path_id (backward compat)"
-            );
-        }
+        // path_id is now populated from n attribute (MEM654).
+        assert_eq!(sections[0].path_id.as_deref(), Some("1"));
+        assert_eq!(sections[1].path_id.as_deref(), Some("2"));
     }
 }
 
