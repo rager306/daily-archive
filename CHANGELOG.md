@@ -2,6 +2,42 @@
 
 ## Unreleased
 
+### Session 2026-08-06 — ADR-048 Phase 1: DecisionRecorder use case (application layer)
+
+**Close the application-layer gap for ADR-048.** Previous sessions landed
+DecisionSchema (domain), decision_categories.yaml (data), validator semantic
+checks, and causal edge contracts. But the application layer had no use case
+for recording a Decision node — every caller would have to reimplement node
+creation + field stamping + vocabulary validation.
+
+1. `crates/da-application/src/decision_recorder.rs`: new module with
+   `DecisionRecorder` use case.
+   - Builds Decision nodes matching `DecisionSchema` (vid, category, scenario,
+     reasoning, outcome, confidence, decision_maker, valid_from, recorded_at)
+   - Validates against `decision_categories.yaml` vocabulary (warns on unknown
+     category / invalid outcome; hard-fails on confidence out of range and
+     unknown decision_maker prefix)
+   - Stamps bi-temporal `valid_from` + `recorded_at` from the injected Clock
+     (ADR-051 / M330 — deterministic in tests)
+   - Always-false D127 gates + retrieval_eligible=true defaults
+   - Phase 2 hook: optional `policy_id` field on DecisionRequest
+   - `stamp_caused_edge` helper for ADR-048 CAUSED edge wiring
+   - `temporal_stamp_now` helper for manual causal edge stamping
+2. `DecisionRequestBuilder` for ergonomic construction.
+3. Exported from `da-application` lib.rs: `DecisionRecorder`, `DecisionRecord`,
+   `DecisionRequest`, `DecisionRequestBuilder`, `DecisionRecordError`.
+4. TDD: 15 new tests (43 → 58 da-application tests pass):
+   - 7 validation tests (confidence range, maker prefix, unknown category,
+     outcome mismatch, Phase 2 category, valid request, builder)
+   - 5 integration tests with `MockGraphStore` (write path)
+   - 1 temporal_stamp_now test
+   - 2 builder tests
+5. Clippy clean; trajectory ON_TRACK.
+
+**Unblocks:** ADR-053 Layer G entity-resolution merge recording; ADR-053
+Decision Intelligence extension for extraction / summary generation /
+cross-paper claims; ADR-048 Phase 2 policy_engine hook.
+
 ### Session 2026-08-05 (late 3) — Validator semantic hooks for EvidenceBundle + ConceptCluster
 
 **Same registry-exists-but-not-wired gap, closed for vocabulary.rs.** The

@@ -23,6 +23,11 @@ pub mod queries;
 pub use queries::{EntityQueries, PaperQueries, RelationQueries};
 pub mod schema_init;
 pub use schema_init::{CURRENT_SCHEMA_VERSION, SchemaInitializer};
+pub mod decision_recorder;
+pub use decision_recorder::{
+    DecisionRecorder, DecisionRecord, DecisionRequest, DecisionRequestBuilder,
+    DecisionRecordError,
+};
 pub mod graph_inventory;
 pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};
 pub mod temporal_stamp;
