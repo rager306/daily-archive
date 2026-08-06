@@ -26,6 +26,7 @@ use crate::traits::DirectGraphStore;
 ///
 /// # Example
 /// ```no_run
+/// use kg_storage::{DirectGraphStore, GraphStore};
 /// use kg_storage::adapter::graph_view_from;
 /// use kg_storage::mock::MockGraphStore;
 /// use samyama_graph_algorithms::{page_rank, PageRankConfig};
@@ -172,11 +173,12 @@ where
 ///
 /// # Example
 /// ```no_run
+/// use kg_storage::{DirectGraphStore, GraphStore};
 /// use kg_storage::adapter::subgraph_view_from;
 /// use kg_storage::mock::MockGraphStore;
 /// # async fn run() {
 /// let mut store = MockGraphStore::new();
-/// let a = store.create_node("Paper").await.unwrap();
+/// let a: u64 = store.create_node("Paper").await.unwrap();
 /// let view = subgraph_view_from(&store, &[a], 2, Some("Paper"), Some("CITES"), None)
 ///     .await
 ///     .unwrap();
