@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Wave 1 Layer C typed labels — Method, Dataset, Metric (D194)
+
+3 new first-class node labels in Rust schema + YAML ontology. Previously
+ADR-053 declared typed entities but code only had generic Entity. Now
+graph algorithms can operate on Method/Dataset/Metric subgraphs.
+
+TDD: `test_typed_entity_schemas_exist` RED→GREEN, 271 da-domain green.
+
 ### Governor v4: mcp_surface_completeness dimension (D194)
 
 New governor dimension `mcp_surface_completeness` tracks MCP product
