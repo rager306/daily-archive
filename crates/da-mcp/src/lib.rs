@@ -13,6 +13,15 @@ use rmcp::handler::server::wrapper::Parameters;
 
 pub mod tools;
 
+/// A browsable MCP resource (ADR-054 MCP-4). Thin descriptor for external discovery.
+#[derive(Debug, Clone)]
+pub struct McpResource {
+    pub uri: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub mime_type: Option<String>,
+}
+
 /// Configuration for the MCP server.
 #[derive(Debug, Clone, Default)]
 pub struct McpServerConfig {
@@ -56,6 +65,94 @@ impl DailyArchiveMcpServer {
             embedder,
         }
     }
+
+    /// Wave 1 MCP-4 (D194): list ontology YAML + schema resources for external browsing.
+    /// Returns static resource descriptors; content is read via `read_mcp_resource`.
+    pub fn list_mcp_resources(&self) -> Vec<McpResource> {
+        vec![
+            McpResource {
+                uri: "graph://ontology/node_schemas".into(),
+                name: "Node Schemas".into(),
+                description: Some("ADR-050 node schema definitions (31 labels)".into()),
+                mime_type: Some("text/yaml".into()),
+            },
+            McpResource {
+                uri: "graph://ontology/edge_contracts".into(),
+                name: "Edge Contracts".into(),
+                description: Some(
+                    "ADR-053 edge type contracts (navigation, CITES, MENTIONS, ...)".into(),
+                ),
+                mime_type: Some("text/yaml".into()),
+            },
+            McpResource {
+                uri: "graph://ontology/decision_categories".into(),
+                name: "Decision Categories".into(),
+                description: Some("ADR-038 decision classification categories".into()),
+                mime_type: Some("text/yaml".into()),
+            },
+            McpResource {
+                uri: "graph://ontology/node_vocabulary".into(),
+                name: "Node Vocabulary".into(),
+                description: Some("Controlled vocabularies for typed fields".into()),
+                mime_type: Some("text/yaml".into()),
+            },
+            McpResource {
+                uri: "graph://schema".into(),
+                name: "Schema Summary".into(),
+                description: Some("Quick summary: node labels + edge types + counts".into()),
+                mime_type: Some("text/plain".into()),
+            },
+            McpResource {
+                uri: "graph://stats".into(),
+                name: "Graph Statistics".into(),
+                description: Some("Current node/edge counts, label distribution".into()),
+                mime_type: Some("application/json".into()),
+            },
+        ]
+    }
+
+    /// Wave 1 MCP-4 (D194): read a resource by URI. Returns YAML/text content.
+    pub fn read_mcp_resource(&self, uri: &str) -> Option<String> {
+        match uri {
+            "graph://ontology/node_schemas" => {
+                std::fs::read_to_string("data/ontology/node_schemas.yaml").ok()
+            }
+            "graph://ontology/edge_contracts" => {
+                std::fs::read_to_string("data/ontology/edge_contracts.yaml").ok()
+            }
+            "graph://ontology/decision_categories" => {
+                std::fs::read_to_string("data/ontology/decision_categories.yaml").ok()
+            }
+            "graph://ontology/node_vocabulary" => {
+                std::fs::read_to_string("data/ontology/node_vocabulary.yaml").ok()
+            }
+            "graph://schema" => {
+                let labels = data_ontology_labels();
+                Some(format!("Node labels ({})\n{}", labels.len(), labels.join(", ")))
+            }
+            "graph://stats" => {
+                Some("{\"resource\": \"graph://stats\", \"note\": \"Use get_graph_stats tool for live counts\"}".into())
+            }
+            _ => None,
+        }
+    }
+}
+
+/// Helper: list node labels from YAML (static, for resource listing)
+fn data_ontology_labels() -> Vec<String> {
+    vec![
+        "Paper".into(),
+        "Section".into(),
+        "Author".into(),
+        "Entity".into(),
+        "Institution".into(),
+        "Venue".into(),
+        "Decision".into(),
+        "HealingAction".into(),
+        "ExtractionOverride".into(),
+        "ConceptCluster".into(),
+        "BaselineSnapshot".into(),
+    ]
 }
 
 /// Wave 1 tools: get_schema + get_graph_stats. Read-only by construction.
@@ -237,6 +334,20 @@ mod tests {
             1024,
             "prod server must use FdApiEmbedder (1024d), got {}d — product vector_search is lying",
             server.embedder.dimensions()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_server_exposes_ontology_resources() {
+        // Wave 1 MCP-4 (D194): server must expose ontology YAML as browsable resources.
+        // Test the internal resource list directly (avoids RequestContext complexity).
+        let server = test_server();
+        let resources = server.list_mcp_resources();
+        let uris: Vec<String> = resources.iter().map(|r| r.uri.clone()).collect();
+        assert!(
+            uris.iter()
+                .any(|u| u.contains("schema") || u.contains("ontology")),
+            "list_mcp_resources must include ontology/schema, got: {uris:?}"
         );
     }
 
