@@ -32,7 +32,12 @@ Four slices, TDD, governor on_track throughout.
    over Paper nodes via `query_readonly`, escaped literal, case-insensitive
    Rust post-filter so MockGraphStore works. Validates empty query.
 2. `crates/da-mcp/src/lib.rs`: tool wiring.
-3. TDD: 3 tests `rejects_empty`, `empty_graph`, `case_insensitive_on_mock`
+3. TDD: 3 tests `rejects_empty`, `empty_graph`, `case_insensitive_on_mock` (18 da-mcp at S01, 270 da-domain)
+
+**Session 2026-08-07 late-governor+fmt wave (this wave — hexagon + debt hygiene):**
+- `crates/kg-storage/src/adapter.rs`: fix 2 doc-test borrow/trait errors (`page_rank` takes value not `&ref`, `GraphStore` trait needed in scope for `create_node`) — were invisible before because `--doc` not in preflight CI until this wave. Now `cargo test --workspace --doc` green and Governor `closeout` phase is clean.
+- `cargo fmt` hygiene: 25-file drift restored after HEAD reset `ae01b346` so next thin wave (M366 S03 Resources/Prompts, MCP HTTP) starts from clean HEAD. Prior fmt debt left intentional before — now consolidated per product-first then debt-then-fmt thin horizon.
+- Governor assessment: `on_track` flags=0 throughout this session; verified hexagonal guardrail (kg-* no da-* deps, da-domain no infra, da-application not → da-adapters in prod deps) still holds. Thin debt `M362 S01` DB pending gates remains visible debt for long horizon but not blocking product 25-tool surface.
    (18 da-mcp pass, ad-hoc verified).
 
 **M366 S02 get_entities + validate_node (ADR-054).**
