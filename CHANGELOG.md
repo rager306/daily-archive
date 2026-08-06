@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Session 2026-08-05 (late) — ADR-048 Phase 1 domain wiring: decision_categories registry + DecisionSchema tests
+
+**Close the domain-layer gap for ADR-048 Phase 1.** DecisionSchema existed
+as a domain schema with correct fields, but had zero unit tests and no
+controlled-vocabulary registry for categories/outcomes/makers — even though
+`data/ontology/decision_categories.yaml` was landed earlier this session.
+
+1. `crates/da-domain/src/process.rs`: add `DecisionCategoriesRegistry` with
+   runtime YAML loading + bundled fallback (`include_str!`), mirroring the
+   existing `FailureTaxonomyRegistry` pattern. Functions exported:
+   - `is_known_decision_category(id)` — category is in the Phase 1 vocabulary
+   - `is_valid_decision_outcome(category, outcome)` — outcome is valid for
+     the given category (category-specific OR global)
+   - `is_valid_decision_maker(maker)` — string-prefix check for `agent:` /
+     `human:` / `system:` (Phase 2 materialises Policy/Agent nodes)
+   - `known_decision_categories()` — diagnostics + schema-list support
+2. TDD: 8 new tests in `process::tests`:
+   - `test_decision_categories_loaded` — all 8 Phase 1 categories present
+   - `test_decision_categories_unknown_rejected` — bogus + Phase 2 rejected
+   - `test_decision_outcome_valid_for_category` — category-specific + global
+   - `test_decision_outcome_invalid` — unknown outcome / category / empty
+   - `test_decision_maker_prefixes` — `agent:` / `human:` / `system:` valid
+   - `test_known_decision_categories_non_empty` — registry is populated
+   - `test_decision_schema_required_fields` — ADR-048 required fields present
+   - `test_decision_schema_optional_fields_include_policy_id` — Phase 2 hook
+3. All 249 da-domain tests pass; trajectory ON_TRACK.
+
+**Known follow-up (next slice):** validator rules for `Decision.category` and
+`Decision.outcome` against the new registry — currently validator only checks
+the cross-reference shape. Application-layer DecisionRecorder use case
+(ADR-053 Layer G prerequisite) is the Wave A task after validator wiring.
+
 ### Session 2026-08-05 — ADR-048/053 data-driven ontology gap closure
 
 **Close the data-driven gap between Rust edge constants (73) and YAML edge

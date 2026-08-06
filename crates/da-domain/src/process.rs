@@ -18,7 +18,7 @@
 //!   6. Environment completeness explicit (full | env_lite | unknown)
 
 use crate::schema::{FieldType, NodeSchemaDef};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 // ─── Failure taxonomy YAML loading ───
@@ -100,6 +100,117 @@ pub fn is_known_origin(code: &str) -> bool {
     FailureTaxonomyRegistry::instance()
         .evidence_origins
         .contains(code)
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Decision categories registry (ADR-048 Phase 1)
+// ═══════════════════════════════════════════════════════════════
+// Data-driven controlled vocabulary loaded from
+// `data/ontology/decision_categories.yaml`. Used by validator and the
+// future DecisionRecorder use case (ADR-053 Layer G/H prerequisite).
+
+const BUNDLED_DECISION_CATEGORIES_YAML: &str =
+    include_str!("../../../data/ontology/decision_categories.yaml");
+
+#[derive(serde::Deserialize, Debug)]
+struct DecisionCategoriesYaml {
+    categories: Vec<DecisionCategoryYaml>,
+    #[serde(default)]
+    global_outcomes: Vec<String>,
+    #[serde(default)]
+    decision_makers: Vec<DecisionMakerYaml>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct DecisionCategoryYaml {
+    id: String,
+    #[serde(default)]
+    outcomes: Vec<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct DecisionMakerYaml {
+    prefix: String,
+}
+
+/// Decision categories registry — loaded once at first use.
+pub struct DecisionCategoriesRegistry {
+    /// Map: category id → set of valid outcomes for that category.
+    pub categories: HashMap<String, HashSet<String>>,
+    /// Global outcomes valid across all categories.
+    pub global_outcomes: HashSet<String>,
+    /// Recognized decision-maker prefixes (e.g. "agent:", "human:", "system:").
+    pub decision_maker_prefixes: HashSet<String>,
+}
+
+impl DecisionCategoriesRegistry {
+    fn load() -> Self {
+        let yaml_str = std::fs::read_to_string("data/ontology/decision_categories.yaml")
+            .unwrap_or_else(|_| BUNDLED_DECISION_CATEGORIES_YAML.to_string());
+        let data: DecisionCategoriesYaml = serde_yaml::from_str(&yaml_str)
+            .expect("decision_categories.yaml must be valid YAML");
+        let categories = data
+            .categories
+            .iter()
+            .map(|c| {
+                let mut outcomes: HashSet<String> = c.outcomes.iter().cloned().collect();
+                // Each category inherits global outcomes too.
+                for g in &data.global_outcomes {
+                    outcomes.insert(g.clone());
+                }
+                (c.id.clone(), outcomes)
+            })
+            .collect();
+        Self {
+            categories,
+            global_outcomes: data.global_outcomes.iter().cloned().collect(),
+            decision_maker_prefixes: data
+                .decision_makers
+                .iter()
+            .map(|m| m.prefix.clone())
+            .collect(),
+        }
+    }
+
+    fn instance() -> &'static DecisionCategoriesRegistry {
+        static REGISTRY: OnceLock<DecisionCategoriesRegistry> = OnceLock::new();
+        REGISTRY.get_or_init(DecisionCategoriesRegistry::load)
+    }
+}
+
+/// Check if a decision category id is known (ADR-048 Phase 1).
+pub fn is_known_decision_category(id: &str) -> bool {
+    DecisionCategoriesRegistry::instance()
+        .categories
+        .contains_key(id)
+}
+
+/// Check if an outcome is valid for the given decision category.
+/// Returns `false` if the category itself is unknown.
+pub fn is_valid_decision_outcome(category: &str, outcome: &str) -> bool {
+    DecisionCategoriesRegistry::instance()
+        .categories
+        .get(category)
+        .is_some_and(|outcomes| outcomes.contains(outcome))
+}
+
+/// Check if a decision maker string starts with a known prefix
+/// (e.g. "agent:", "human:", "system:"). Phase 1 string-prefix check;
+/// Phase 2 materializes Agent/Person nodes.
+pub fn is_valid_decision_maker(maker: &str) -> bool {
+    DecisionCategoriesRegistry::instance()
+        .decision_maker_prefixes
+        .iter()
+        .any(|prefix| maker.starts_with(prefix))
+}
+
+/// List all known decision category ids (for diagnostics and schema-list).
+pub fn known_decision_categories() -> Vec<&'static str> {
+    DecisionCategoriesRegistry::instance()
+        .categories
+        .keys()
+        .map(|k| k.as_str())
+        .collect()
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1035,5 +1146,98 @@ mod tests {
         assert!(is_known_origin("live_executed"));
         assert!(is_known_origin("observational"));
         assert!(!is_known_origin("unknown_origin"));
+    }
+
+    // ─── ADR-048 Decision categories registry tests ───
+
+    #[test]
+    fn test_decision_categories_loaded() {
+        // All 8 Phase 1 categories must be loaded from YAML.
+        assert!(is_known_decision_category("healing_action"));
+        assert!(is_known_decision_category("conflict_resolution"));
+        assert!(is_known_decision_category("promotion"));
+        assert!(is_known_decision_category("schema_migration"));
+        assert!(is_known_decision_category("extraction_override"));
+        assert!(is_known_decision_category("hypothesis_tested"));
+        assert!(is_known_decision_category("retraction_recorded"));
+        assert!(is_known_decision_category("deprecation"));
+    }
+
+    #[test]
+    fn test_decision_categories_unknown_rejected() {
+        assert!(!is_known_decision_category("bogus_category"));
+        assert!(!is_known_decision_category(""));
+        assert!(!is_known_decision_category("policy_applied")); // Phase 2, commented out
+    }
+
+    #[test]
+    fn test_decision_outcome_valid_for_category() {
+        // Category-specific outcomes.
+        assert!(is_valid_decision_outcome("healing_action", "approved"));
+        assert!(is_valid_decision_outcome("conflict_resolution", "winner_decided"));
+        assert!(is_valid_decision_outcome("hypothesis_tested", "confirmed"));
+        assert!(is_valid_decision_outcome("retraction_recorded", "retracted"));
+        // Global outcomes apply to every category.
+        assert!(is_valid_decision_outcome("promotion", "deferred"));
+        assert!(is_valid_decision_outcome("schema_migration", "deferred"));
+    }
+
+    #[test]
+    fn test_decision_outcome_invalid() {
+        // Unknown outcome for a known category.
+        assert!(!is_valid_decision_outcome("healing_action", "bogus_outcome"));
+        // Outcome for unknown category.
+        assert!(!is_valid_decision_outcome("bogus_category", "approved"));
+        // Empty outcome.
+        assert!(!is_valid_decision_outcome("healing_action", ""));
+    }
+
+    #[test]
+    fn test_decision_maker_prefixes() {
+        assert!(is_valid_decision_maker("agent:sona-1"));
+        assert!(is_valid_decision_maker("human:reviewer@example"));
+        assert!(is_valid_decision_maker("system:healing-pipeline"));
+        // Unknown prefix rejected.
+        assert!(!is_valid_decision_maker("anonymous"));
+        assert!(!is_valid_decision_maker(""));
+    }
+
+    #[test]
+    fn test_known_decision_categories_non_empty() {
+        let cats = known_decision_categories();
+        assert!(cats.len() >= 8, "expected >= 8 Phase 1 categories, got {}", cats.len());
+    }
+
+    // ─── ADR-048 DecisionSchema field tests ───
+
+    #[test]
+    fn test_decision_schema_required_fields() {
+        use crate::schema::NodeSchemaDef;
+        let schema = crate::process::DecisionSchema;
+        assert_eq!(schema.label(), "Decision");
+        let required: std::collections::HashSet<&str> =
+            schema.required_fields().iter().map(|(f, _)| *f).collect();
+        // ADR-048 Phase 1 required fields.
+        assert!(required.contains("vid"));
+        assert!(required.contains("category"));
+        assert!(required.contains("scenario"));
+        assert!(required.contains("reasoning"));
+        assert!(required.contains("outcome"));
+        assert!(required.contains("confidence"));
+        assert!(required.contains("decision_maker"));
+        assert!(required.contains("valid_from"));
+        assert!(required.contains("recorded_at"));
+    }
+
+    #[test]
+    fn test_decision_schema_optional_fields_include_policy_id() {
+        use crate::schema::NodeSchemaDef;
+        let schema = crate::process::DecisionSchema;
+        let optional: std::collections::HashSet<&str> =
+            schema.optional_fields().iter().map(|(f, _)| *f).collect();
+        // Phase 2 materializes Policy nodes; Phase 1 keeps policy_id optional.
+        assert!(optional.contains("policy_id"));
+        assert!(optional.contains("valid_to"));
+        assert!(optional.contains("superseded_at"));
     }
 }
