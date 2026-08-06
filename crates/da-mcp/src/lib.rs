@@ -22,6 +22,22 @@ pub struct McpResource {
     pub mime_type: Option<String>,
 }
 
+/// A reusable MCP prompt template (ADR-054 MCP-4).
+#[derive(Debug, Clone)]
+pub struct McpPrompt {
+    pub name: String,
+    pub description: String,
+    pub arguments: Vec<McpPromptArgument>,
+}
+
+/// A named argument for an MCP prompt template.
+#[derive(Debug, Clone)]
+pub struct McpPromptArgument {
+    pub name: String,
+    pub description: String,
+    pub required: bool,
+}
+
 /// Configuration for the MCP server.
 #[derive(Debug, Clone, Default)]
 pub struct McpServerConfig {
@@ -132,6 +148,139 @@ impl DailyArchiveMcpServer {
             }
             "graph://stats" => {
                 Some("{\"resource\": \"graph://stats\", \"note\": \"Use get_graph_stats tool for live counts\"}".into())
+            }
+            _ => None,
+        }
+    }
+
+    /// Wave 1 MCP-4 (D194): list prompt templates for agent guidance.
+    /// Returns reusable templates that external clients fill with arguments.
+    pub fn list_mcp_prompts(&self) -> Vec<McpPrompt> {
+        vec![
+            McpPrompt {
+                name: "literature_review".into(),
+                description: "Find papers on a topic, summarize key contributions, and identify research gaps.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "topic".into(),
+                        description: "Research topic or question (e.g. 'graph neural networks for retrieval')".into(),
+                        required: true,
+                    },
+                ],
+            },
+            McpPrompt {
+                name: "critical_reading".into(),
+                description: "Deep-dive analysis of a specific paper: methodology, claims, evidence quality, limitations.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "arxiv_id".into(),
+                        description: "arXiv ID of the paper (e.g. '2507.19457')".into(),
+                        required: true,
+                    },
+                ],
+            },
+            McpPrompt {
+                name: "reproducibility_check".into(),
+                description: "Check if a paper's methods, datasets, and code are sufficiently documented for reproduction.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "arxiv_id".into(),
+                        description: "arXiv ID of the paper".into(),
+                        required: true,
+                    },
+                ],
+            },
+            McpPrompt {
+                name: "citation_lineage".into(),
+                description: "Trace citation ancestry and descendants of a paper through the CITES graph.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "arxiv_id".into(),
+                        description: "arXiv ID of the paper".into(),
+                        required: true,
+                    },
+                ],
+            },
+            McpPrompt {
+                name: "compare_methods".into(),
+                description: "Compare methods, datasets, and baselines across papers on a shared topic.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "topic".into(),
+                        description: "Topic to compare methods on".into(),
+                        required: true,
+                    },
+                ],
+            },
+            McpPrompt {
+                name: "generate_cypher".into(),
+                description: "Convert a natural-language question into a Cypher query for the knowledge graph.".into(),
+                arguments: vec![
+                    McpPromptArgument {
+                        name: "question".into(),
+                        description: "Natural-language question (e.g. 'Which papers cite transformer architecture?')".into(),
+                        required: true,
+                    },
+                ],
+            },
+        ]
+    }
+
+    /// Wave 1 MCP-4 (D194): get a filled prompt message for a named template.
+    /// Returns the rendered prompt text that the client sends to its LLM.
+    pub fn get_mcp_prompt(
+        &self,
+        name: &str,
+        args: &std::collections::HashMap<String, String>,
+    ) -> Option<String> {
+        match name {
+            "literature_review" => {
+                let topic = args.get("topic").map(|s| s.as_str()).unwrap_or("<topic>");
+                Some(format!(
+                    "You are a research assistant. Search the knowledge graph for papers about: {topic}. \\\n                    Use search_papers(\"{topic}\") and vector_search(\"{topic}\", k=10) to find relevant papers. \\\n                    Then use get_paper and get_sections to read key contributions. \\\n                    Summarize: 1) key findings, 2) methods used, 3) datasets, 4) research gaps. \\\n                    Cite each finding with the paper's arxiv_id."
+                ))
+            }
+            "critical_reading" => {
+                let id = args
+                    .get("arxiv_id")
+                    .map(|s| s.as_str())
+                    .unwrap_or("<arxiv_id>");
+                Some(format!(
+                    "You are a critical reader. Analyze paper {id} in depth. \\\n                    Use get_paper(\"{id}\") for metadata, get_sections(\"{id}\") for structure, \\\n                    get_references(\"{id}\", \"backward\") for citations. \\\n                    Evaluate: 1) claim clarity, 2) methodology rigor, 3) evidence quality, \\\n                    4) limitations, 5) reproducibility. Rate each 1-5 with justification."
+                ))
+            }
+            "reproducibility_check" => {
+                let id = args
+                    .get("arxiv_id")
+                    .map(|s| s.as_str())
+                    .unwrap_or("<arxiv_id>");
+                Some(format!(
+                    "You are a reproducibility auditor. Check paper {id} for: \\\n                    1) Are datasets named and accessible? 2) Are hyperparameters listed? \\\n                    3) Is code/data linked? 4) Are evaluation metrics clearly defined? \\\n                    5) Are baselines reproducible? Use get_entities(\"{id}\") to check typed entities."
+                ))
+            }
+            "citation_lineage" => {
+                let id = args
+                    .get("arxiv_id")
+                    .map(|s| s.as_str())
+                    .unwrap_or("<arxiv_id>");
+                Some(format!(
+                    "You are a citation analyst. Trace the citation graph for paper {id}. \\\n                    Use get_references(\"{id}\", \"backward\") for papers it cites, \\\n                    get_references(\"{id}\", \"forward\") for papers citing it. \\\n                    Identify: 1) foundational ancestors, 2) key descendants, 3) citation clusters."
+                ))
+            }
+            "compare_methods" => {
+                let topic = args.get("topic").map(|s| s.as_str()).unwrap_or("<topic>");
+                Some(format!(
+                    "You are a methods comparator. Find papers on: {topic}. \\\n                    Use search_papers(\"{topic}\") then get_entities for each to extract Method entities. \\\n                    Build a comparison table: method name | dataset | metric | baseline | result."
+                ))
+            }
+            "generate_cypher" => {
+                let q = args
+                    .get("question")
+                    .map(|s| s.as_str())
+                    .unwrap_or("<question>");
+                Some(format!(
+                    "You are a Cypher query generator. Convert this question to a read-only Cypher query: \\\n                    \"{q}\" \\\n                    Schema: Paper(arxiv_id, title, abstract), Section(path_id, title, text), Entity(vid, type). \\\n                    Edges: CITES, MENTIONS, hasPart, next_sibling, first_child, parent_section. \\\n                    Only MATCH/RETURN/WHERE/ORDER BY/LIMIT. No CREATE/SET/DELETE/MERGE."
+                ))
             }
             _ => None,
         }
@@ -348,6 +497,23 @@ mod tests {
             uris.iter()
                 .any(|u| u.contains("schema") || u.contains("ontology")),
             "list_mcp_resources must include ontology/schema, got: {uris:?}"
+        );
+    }
+
+    #[test]
+    fn test_server_exposes_mcp_prompts() {
+        // Wave 1 MCP-4 (D194): server must expose prompt templates for agent guidance.
+        let server = test_server();
+        let prompts = server.list_mcp_prompts();
+        assert!(
+            prompts.len() >= 2,
+            "must expose at least 2 prompts, got {}",
+            prompts.len()
+        );
+        let names: Vec<&str> = prompts.iter().map(|p| p.name.as_str()).collect();
+        assert!(
+            names.contains(&"literature_review"),
+            "must have literature_review, got: {names:?}"
         );
     }
 
