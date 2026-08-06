@@ -73,7 +73,7 @@ Four slices, TDD, governor on_track throughout.
 - Verified hexagonal boundaries: `da-mcp` depends only on `kg-storage["samyama"]/kg-ontology/kg-embeddings`, logging is local (no `da-cli`/`da-adapters` import).
 - Verified `M362 S01` code: `da-ports::Section` has all 5 Layer-A fields (Optional), `GrobidParser::extract_sections` computes `path_id` from `head n="N.M"`, `relation.rs` has 3 edge constants, `ingest.rs` builds navigation edges, graph task file exists.
 - Remaining thin horizon: MCP resources (bulk via `cat` — keep thin), MCP prompts, typed entity subtypes (split per label to stay thin), AbstractSummary — each real prod test, not DB-only.
-- `cargo test --workspace --lib --tests` all green (270/31/25/...); `cargo fmt` was re-checked `00` late-wave — 25-file drift now thin (one blank-line + CHANGELOG product delta) — next wave will batch fmt as thin hygiene.
+- `cargo test --workspace --lib --tests` all green (270/31/25/...); `cargo fmt -- --check` 0 (clean HEAD + thin).
 
 ### Thin wave fix (this session) — da-mcp product bug
 
