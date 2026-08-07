@@ -678,6 +678,71 @@ pub async fn get_method_lineage(
     })
 }
 
+/// Get recommended reading path (D194 Wave 3 Layer D).
+/// Returns papers in suggested reading order: prerequisites first (backward
+/// CITES traversal), then the paper itself, then key descendants.
+pub async fn get_reading_path(
+    store: &dyn DirectGraphStore,
+    params: GetReadingPathParams,
+) -> anyhow::Result<CypherOutput> {
+    if params.arxiv_id.trim().is_empty() {
+        return Err(anyhow::anyhow!("arxiv_id must not be empty"));
+    }
+    let escaped = params.arxiv_id.trim().replace(['\'', '"', '`'], "");
+    let limit = params.limit.unwrap_or(10).clamp(1, 30) as usize;
+    // Step 1: Find prerequisite papers (backward CITES, 1-2 hops).
+    let prereq_cypher = format!(
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:CITES*1..2]->(prereq) RETURN DISTINCT prereq.arxiv_id, prereq.title LIMIT {limit}"
+    );
+    let prereq_out = run_readonly(store, &prereq_cypher).await?;
+    // Step 2: Find key descendants (forward CITES, 1 hop).
+    let desc_cypher = format!(
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})<-[:CITES]-(desc) RETURN DISTINCT desc.arxiv_id, desc.title LIMIT {limit}"
+    );
+    let desc_out = run_readonly(store, &desc_cypher).await?;
+    // Combine: prerequisites + target + descendants (reading order).
+    let mut records = Vec::new();
+    let columns = vec![
+        "order".into(),
+        "arxiv_id".into(),
+        "title".into(),
+        "role".into(),
+    ];
+    let mut order = 1usize;
+    for row in &prereq_out.records {
+        records.push(vec![
+            serde_json::json!(order),
+            row.first().cloned().unwrap_or_default(),
+            row.get(1).cloned().unwrap_or_default(),
+            serde_json::json!("prerequisite"),
+        ]);
+        order += 1;
+    }
+    // The paper itself.
+    records.push(vec![
+        serde_json::json!(order),
+        serde_json::json!(&escaped),
+        serde_json::json!("(target paper)"),
+        serde_json::json!("target"),
+    ]);
+    order += 1;
+    for row in &desc_out.records {
+        records.push(vec![
+            serde_json::json!(order),
+            row.first().cloned().unwrap_or_default(),
+            row.get(1).cloned().unwrap_or_default(),
+            serde_json::json!("follow-up"),
+        ]);
+        order += 1;
+    }
+    let row_count = records.len();
+    Ok(CypherOutput {
+        columns,
+        records,
+        row_count,
+    })
+}
+
 /// Parameters for `get_method_lineage` tool (D194 Wave 2 S03).
 #[derive(Deserialize, schemars::JsonSchema, Default)]
 pub struct GetMethodLineageParams {
@@ -690,6 +755,16 @@ pub struct GetMethodLineageParams {
     /// Max depth to traverse (default 2, capped at 5).
     #[serde(default)]
     pub depth: Option<u32>,
+}
+
+/// Parameters for `get_reading_path` tool (D194 Wave 3 Layer D).
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetReadingPathParams {
+    /// arXiv ID to start from (find prerequisite papers via CITES backward).
+    pub arxiv_id: String,
+    /// Max papers in reading path (default 10, capped at 30).
+    #[serde(default)]
+    pub limit: Option<u32>,
 }
 
 /// Check query result has rows. Helper to avoid repeating the read-only call.

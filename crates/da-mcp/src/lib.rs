@@ -498,6 +498,22 @@ impl DailyArchiveMcpServer {
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
 
+    /// Get recommended reading path (D194 Wave 3 Layer D).
+    /// Returns prerequisites + target + follow-ups in reading order.
+    #[rmcp::tool(
+        description = "Get recommended reading path for a paper: prerequisites (backward CITES), target paper, follow-ups (forward CITES). D127-safe read-only."
+    )]
+    async fn get_reading_path(
+        &self,
+        parameters: Parameters<tools::GetReadingPathParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_reading_path(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
     /// Vector search over node embeddings (read-only, D127-safe).
     /// Embeds the query via the configured embedder and searches the vector index.
     #[rmcp::tool(
