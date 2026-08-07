@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### M370 S04 rollback fake Summary — honest deferral (D194)
+
+M369 S01 created Summary nodes by copying abstract_text — that was a fake.
+Rolled back: Summary creation removed from ingest. SummarySchema +
+hasSummary edge remain (schema ready for future real summarization).
+M370 complete: S01-S05 all done. Governor ON_TRACK flags=0.
+
 ### M370 S01-S03 re-baseline production snapshot (D194)
 
 Re-ingested hub paper 2507.19457 with current pipeline. New snapshot:
