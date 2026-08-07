@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Wave 1 get_summary MCP tool — Layer B product surface (D194)
+
+11th MCP tool: `get_summary(arxiv_id, granularity?)` queries
+Paper→hasSummary→Summary via read-only Cypher. Two-pass: exact
+granularity first, then any. Returns text + char_count + found flag.
+
+TDD: 2 tests RED→GREEN, 30 da-mcp green.
+
 ### Wave 1 Layer B Summary nodes + hasSummary edge (D194)
 
 SummarySchema (vid+text required, granularity/char_count optional) +
