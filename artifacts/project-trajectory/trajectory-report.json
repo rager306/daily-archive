@@ -1,7 +1,7 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
   "phase": "preflight",
-  "verdict": "on_track",
+  "verdict": "drift_risk",
   "dimensions": {
     "schema_readiness": {
       "description": "Typed knowledge schema (node labels, property types, edge contracts)",
@@ -96,19 +96,58 @@
         "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)",
         "Added after disk pollution incident from excessive cargo build calls"
       ]
+    },
+    "mcp_surface_completeness": {
+      "description": "MCP product surface: tools + resources + prompts (ADR-054, D194)",
+      "status": "not_started",
+      "evidence": [
+        "crates/da-mcp/src/tools.rs has >= 8 pub async fn handlers",
+        "crates/da-mcp/src/lib.rs has list_mcp_resources method",
+        "crates/da-mcp/src/lib.rs has list_mcp_prompts method",
+        "Governor checks product completeness, not just ADR invariants",
+        "Added D194 Wave 1: catches product-readiness drift"
+      ]
+    },
+    "ontology_layer_readiness": {
+      "description": "ADR-053 Layer A-J implementation status (D194 audit)",
+      "status": "not_started",
+      "evidence": [
+        "crates/da-domain/src/article.rs: path_id in SectionSchema",
+        "crates/da-domain/src/article.rs: SummarySchema struct",
+        "crates/da-domain/src/article.rs: MethodSchema/DatasetSchema/MetricSchema structs",
+        "data/ontology/node_schemas.yaml: Summary/Method/Dataset/Metric labels",
+        "data/ontology/edge_contracts.yaml: hasSummary edge",
+        "D194 audit: Layer A-C done, D-J pending"
+      ]
     }
   },
-  "drift_flags": [],
+  "drift_flags": [
+    {
+      "flag": "active_milestone_zero_tasks",
+      "severity": "medium",
+      "evidence": "1 active milestone(s) with 0 tasks: ['M371-pr59ty']"
+    }
+  ],
   "reverse_adr_audit_details": {
-    "status": "clear",
-    "violations": [],
-    "violations_count": 0
+    "status": "violations",
+    "violations": [
+      {
+        "rule_id": "no_hardcoded_inventory_label_walks",
+        "file": "/root/daily-archive/crates/da-cli/src/main.rs",
+        "line": 1173,
+        "anchor": "ADR-050 + M324/M325 (external meta-ontology; inventory YAML-first)",
+        "severity": "medium",
+        "rationale": "CLI inventory/discovery must not hardcode node labels as string literals. Walk via collect_graph_inventory / registered_node_labels_or_yaml from data/ontology.",
+        "matched_text": "let paper_ids = store.get_nodes_by_label(\"Paper\").await;"
+      }
+    ],
+    "violations_count": 1
   },
   "next_actions": [
     "No drift detected. Continue current milestone."
   ],
   "milestone_context": {
-    "latest_milestone_id": "366",
-    "latest_milestone_title": "s5g78y-mcp-product-wave-1-thin-slices-search-pa"
+    "latest_milestone_id": "371",
+    "latest_milestone_title": "pr59ty-pipeline-architecture-semantic-verificat"
   }
 }
