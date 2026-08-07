@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### M370 S01 graph_view_from — frozen edges + sparse IDs (D194)
+
+**ROOT CAUSE FOUND AND FIXED:** SamyamaGraphStore.get_outgoing_edges only
+read write buffer, but snapshot import uses create_edge_stub which
+populates FROZEN storage. After snapshot load, edges were invisible.
+
+Fix: merge frozen + write buffer in get_outgoing_edges/get_incoming_edges.
+Also: get_all_node_ids() for sparse IDs, WCC vendor fix (predecessors).
+
+**Verified on production snapshot (hub.sgsnap, 2571 nodes, 2741 edges):**
+- WCC: 1 component of 2571 (was 2571 isolated)
+- PageRank: top-10 with non-zero scores (was empty)
+- Graph task suite: 7/7 PASS
+
 ### MCP FROZEN + M370 Core Pipeline Fixes roadmap (D194)
 
 MCP заморожен. M370-6gaxxc (5 slices) чинит ядро графа:
