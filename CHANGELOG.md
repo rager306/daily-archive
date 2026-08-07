@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### M369 S01 Summary node creation in ingest pipeline (D194)
+
+FIXES STUB #1: `get_summary` was returning `found=false`. Now ingest creates
+Summary node from `Paper.abstract_text` + `hasSummary` edge. Schema updated:
++Summary/Method/Dataset/Metric in `all_node_schemas()`, +hasSummary/
+predecessor_of in `edge_contracts()` and validator. 316 green total.
+
 ### M369 Pipeline Wiring roadmap + STUB-AUDIT (D194)
 
 New milestone M369-i5hgz8: 5 slices to fix 4 critical stubs from audit.
