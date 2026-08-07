@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### search_papers full-text mode — title + abstract + topics (D194)
+
+`search_papers` now accepts `mode` parameter: `"title"` (default, backward
+compat) or `"full"` (title OR abstract_text OR topics). Significantly
+enriches search surface without hybrid index.
+
+TDD: 1 new test, 31 da-mcp green.
+
 ### get_entities typed filter — entity_type property (D194)
 
 `get_entities` now filters by BOTH `labels(e)` AND `e.entity_type`, so
