@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Governor v4: ontology_layer_readiness dimension (D194)
+
+New dimension tracks ADR-053 Layers A-J: `layers_a_to_c` when path_id +
+Summary + Method/Dataset/Metric schemas all exist, `partial` for Layer A
+only, `not_started` otherwise. Previously governor had no visibility into
+ontology layer implementation — now catches drift when layers are declared
+in ADR but missing from code.
+
+### Typed extraction investigation result
+
+Attempted to create typed node labels (Method/Dataset/Metric) during
+extraction instead of generic Entity. Reverted: mock conformance contract
+expects `create_node("Entity")`. Typed extraction requires mock contract
+refactor (separate slice). Current approach: `entity_type` property on
+Entity enables Cypher WHERE filtering by type — graph algorithms can still
+operate on typed subgraphs via `MATCH (e:Entity {entity_type: 'Method'})`.
+
 ### Wave 1 get_summary MCP tool — Layer B product surface (D194)
 
 11th MCP tool: `get_summary(arxiv_id, granularity?)` queries

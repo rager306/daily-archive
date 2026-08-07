@@ -133,3 +133,21 @@ dimensions:
       - "Governor checks product completeness, not just ADR invariants"
       - "Added D194 Wave 1: catches product-readiness drift"
     artifact_ref: "crates/da-mcp/src/lib.rs"
+
+  - id: ontology_layer_readiness
+    description: "ADR-053 Layer A-J implementation status (D194 audit)"
+    status_logic:
+      layer_a_done: "path_id + nav edges (next_sibling/first_child/parent_section)"
+      layer_b_done: "SummarySchema + hasSummary edge"
+      layer_c_done: "MethodSchema + DatasetSchema + MetricSchema"
+      layers_a_to_c: "layer_a_done AND layer_b_done AND layer_c_done"
+      partial: "layer_a_done only"
+      not_started: "always (fallback)"
+    evidence:
+      - "crates/da-domain/src/article.rs: path_id in SectionSchema"
+      - "crates/da-domain/src/article.rs: SummarySchema struct"
+      - "crates/da-domain/src/article.rs: MethodSchema/DatasetSchema/MetricSchema structs"
+      - "data/ontology/node_schemas.yaml: Summary/Method/Dataset/Metric labels"
+      - "data/ontology/edge_contracts.yaml: hasSummary edge"
+      - "D194 audit: Layer A-C done, D-J pending"
+    artifact_ref: "crates/da-domain/src/article.rs"
