@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### M369 closed via GSD + M371 S01-S02 planned (D194)
+
+M369 Pipeline Wiring closed: all 5 slices skipped (superseded by M370 core
+fix + M371 pipeline architecture). Gates closed via engine API.
+
+M371 S01 (Pipeline cache + acquire): 4 tasks planned — PipelineCachePort,
+PipelineOrchestrator, da pipeline CLI, TDD cache test.
+
+M371 S02 (Parse + Figure detect + Crop): 4 tasks planned — pdffigures2
+subprocess adapter, PyMuPDF crop, pipeline wiring, semantic test.
+
+Governor: ON_TRACK flags=0. One active milestone (M371).
+
 ### LLM summary generation via MiniMax (ADR-053 Layer B) — REAL
 
 First real LLM integration. `da summarize --id 2507.19457` generates
