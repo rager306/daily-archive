@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### M369 Pipeline Wiring roadmap + STUB-AUDIT (D194)
+
+New milestone M369-i5hgz8: 5 slices to fix 4 critical stubs from audit.
+Full audit at .gsd/phases/governor-v4-synthesis/STUB-AUDIT.md.
+S01 (Summary creation) planned with 3 TDD tasks.
+
+| Slice | Fixes | Stub # | Est |
+|-------|-------|--------|-----|
+| S01 | get_summary | #1 | 2h |
+| S02 | graph_rank typed labels | #3,4 | 2h |
+| S03 | predecessor_of extraction | #2 | 4h+ |
+| S04 | Mock kNN brute-force | #5 | 1h |
+| S05 | graph://stats live + hybrid cache | #6,7 | 1h |
+
 ### Wave 3 get_reading_path tool — Layer D agent navigation (D194)
 
 14th MCP tool: `get_reading_path(arxiv_id, limit?)`. Returns reading order:
