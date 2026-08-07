@@ -445,7 +445,7 @@ pub async fn get_paper(
     }
     let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
     let cypher = format!(
-        "MATCH (p:Paper {{arxiv_id: '{escaped}'}}) RETURN p.arxiv_id, p.title, p.publication_date, p.cited_by_count, p.openalex_id"
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}}) RETURN p.arxiv_id, p.title, p.abstract_text, p.publication_date, p.cited_by_count, p.openalex_id, p.topics, p.venue"
     );
     run_readonly(store, &cypher).await
 }
