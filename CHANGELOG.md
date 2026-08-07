@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### MCP FROZEN + M370 Core Pipeline Fixes roadmap (D194)
+
+MCP заморожен. M370-6gaxxc (5 slices) чинит ядро графа:
+- S01: graph_view_from adapter (PageRank/WCC видят рёбра)
+- S02: navigation edges на продакшене (0 → >0)
+- S03: extraction на hub.sgsnap (Entity=0 → >0)
+- S04: откат фейкового Summary M369 S01
+- S05: re-baseline + полный аудит
+
+Причина: продакшен-снапшот имеет 2571 nodes/2741 edges, но:
+- WCC показывает 2571 изолированных узлов (алгоритм не видит рёбра)
+- PageRank возвращает пусто
+- Entity=0, MENTIONS=0, nav edges=0
+- Summary M369 S01 = фальшивка (abstract_copy)
+
 ### M369 S01 Summary node creation in ingest pipeline (D194)
 
 FIXES STUB #1: `get_summary` was returning `found=false`. Now ingest creates
