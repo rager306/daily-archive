@@ -150,6 +150,15 @@ pub trait DirectGraphStore: GraphStore {
     }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64>;
 
+    /// Get ALL node IDs in the store (not just by label).
+    /// Used by graph_view_from when label=None to avoid sparse-ID assumption.
+    /// Default: iterate 0..node_count (dense IDs, correct for MockGraphStore).
+    /// SamyamaGraphStore overrides with all_nodes() for sparse IDs.
+    async fn get_all_node_ids(&self) -> Vec<u64> {
+        let count = self.node_count().await;
+        (0..count as u64).collect()
+    }
+
     /// Get all edges of a given type between two specific nodes.
     /// Used by temporal resolution (ADR-047) to find potentially-
     /// contradicting edges when a new temporal edge is written.

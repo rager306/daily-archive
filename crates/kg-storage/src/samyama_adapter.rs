@@ -515,10 +515,19 @@ impl DirectGraphStore for SamyamaGraphStore {
     async fn get_incoming_edges(&self, node_id: u64) -> Vec<(u64, String)> {
         let store = self.store_read().await;
         let nid = NodeId(node_id);
-        let neighbors = store.get_incoming_neighbor_slice(nid);
         let mut result = Vec::new();
+        // Write buffer edges.
+        let neighbors = store.get_incoming_neighbor_slice(nid);
         for (source_id, edge_id) in neighbors {
             if let Some(edge) = store.get_edge(*edge_id) {
+                result.push((source_id.0, edge.edge_type.as_str().to_string()));
+            }
+        }
+        // D194 M370 S01: also read FROZEN edges (from snapshot import).
+        let idx = node_id as usize;
+        let frozen = store.frozen_incoming_neighbors(idx);
+        for (source_id, edge_id) in frozen {
+            if let Some(edge) = store.get_edge(edge_id) {
                 result.push((source_id.0, edge.edge_type.as_str().to_string()));
             }
         }
@@ -528,10 +537,21 @@ impl DirectGraphStore for SamyamaGraphStore {
     async fn get_outgoing_edges(&self, node_id: u64) -> Vec<(u64, String)> {
         let store = self.store_read().await;
         let nid = NodeId(node_id);
-        let neighbors = store.get_outgoing_neighbor_slice(nid);
         let mut result = Vec::new();
+        // Write buffer edges (from create_edge during this session).
+        let neighbors = store.get_outgoing_neighbor_slice(nid);
         for (target_id, edge_id) in neighbors {
             if let Some(edge) = store.get_edge(*edge_id) {
+                result.push((target_id.0, edge.edge_type.as_str().to_string()));
+            }
+        }
+        // D194 M370 S01: also read FROZEN edges (from snapshot import via create_edge_stub).
+        // Without this, snapshot-loaded graphs return 0 edges — the root cause
+        // of WCC showing 2571 isolated nodes and PageRank returning empty.
+        let idx = node_id as usize;
+        let frozen = store.frozen_outgoing_neighbors(idx);
+        for (target_id, edge_id) in frozen {
+            if let Some(edge) = store.get_edge(edge_id) {
                 result.push((target_id.0, edge.edge_type.as_str().to_string()));
             }
         }
@@ -566,6 +586,11 @@ impl DirectGraphStore for SamyamaGraphStore {
             .iter()
             .map(|n| n.id.0)
             .collect()
+    }
+
+    async fn get_all_node_ids(&self) -> Vec<u64> {
+        let store = self.store_read().await;
+        store.all_nodes().iter().map(|n| n.id.0).collect()
     }
 
     async fn get_edges_between(

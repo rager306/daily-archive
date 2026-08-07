@@ -49,14 +49,10 @@ where
     let node_ids: Vec<AlgoNodeId> = match label {
         Some(l) => store.get_nodes_by_label(l).await,
         None => {
-            // No label filter: collect via node_count + iterate 0..count.
-            // NOTE: DirectGraphStore is ID-opaque; without a label filter we
-            // still need labels to find nodes. Walk ALL labels is not exposed
-            // via the trait, so we fall back to node_count and assume dense
-            // ids 0..count. This is correct for MockGraphStore and for
-            // SamyamaGraphStore (both use dense u64 ids).
-            let count = store.node_count().await;
-            (0..count as u64).collect()
+            // D194 M370 S01: use get_all_node_ids() instead of 0..node_count.
+            // Samyama node IDs are SPARSE (not dense 0..N), so 0..node_count
+            // includes non-existent IDs and misses real ones > node_count.
+            store.get_all_node_ids().await
         }
     };
     if node_ids.is_empty() {
@@ -199,9 +195,8 @@ where
     let allowed: HashSet<AlgoNodeId> = match label {
         Some(l) => store.get_nodes_by_label(l).await.into_iter().collect(),
         None => {
-            // Dense-id existence universe (Mock / Samyama).
-            let count = store.node_count().await as u64;
-            (0..count).collect()
+            // D194 M370 S01: use get_all_node_ids() for sparse IDs.
+            store.get_all_node_ids().await.into_iter().collect()
         }
     };
 
