@@ -466,6 +466,22 @@ impl DailyArchiveMcpServer {
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
 
+    /// Graph algorithm ranking (D194 Wave 2 S02).
+    /// Runs PageRank or WCC on a typed subgraph.
+    #[rmcp::tool(
+        description = "Run graph algorithms (pagerank, wcc) on typed subgraphs. Returns ranked nodes or component sizes. D127-safe read-only."
+    )]
+    async fn graph_rank(
+        &self,
+        parameters: Parameters<tools::GraphRankParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::graph_rank(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
     /// Vector search over node embeddings (read-only, D127-safe).
     /// Embeds the query via the configured embedder and searches the vector index.
     #[rmcp::tool(

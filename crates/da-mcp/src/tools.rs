@@ -509,6 +509,118 @@ async fn search_papers_hybrid(
     })
 }
 
+/// Parameters for `graph_rank` tool (D194 Wave 2 S02).
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GraphRankParams {
+    /// Node label to rank (e.g. "Method", "Paper", "Entity").
+    pub label: String,
+    /// Edge type for the graph (default "CITES").
+    #[serde(default)]
+    pub edge_type: Option<String>,
+    /// Algorithm: "pagerank" (default), "wcc" (connected components).
+    #[serde(default)]
+    pub algorithm: Option<String>,
+    /// Top-k results to return (default 10, capped at 50).
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
+/// Output for `graph_rank` tool.
+#[derive(Serialize, schemars::JsonSchema, Debug, Default)]
+pub struct GraphRankOutput {
+    pub algorithm: String,
+    pub label: String,
+    pub results: Vec<GraphRankEntry>,
+}
+
+#[derive(Serialize, schemars::JsonSchema, Debug)]
+pub struct GraphRankEntry {
+    pub node_id: u64,
+    pub score: f32,
+    pub label: String,
+}
+
+/// Graph algorithm ranking (D194 Wave 2 S02).
+/// Runs PageRank or WCC on a typed subgraph via kg-storage adapter.
+pub async fn graph_rank(
+    store: &dyn DirectGraphStore,
+    params: GraphRankParams,
+) -> anyhow::Result<GraphRankOutput> {
+    if params.label.trim().is_empty() {
+        return Err(anyhow::anyhow!("label must not be empty"));
+    }
+    let label = params.label.trim().to_string();
+    let edge_type = params
+        .edge_type
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("CITES");
+    let algorithm = params
+        .algorithm
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("pagerank");
+    let limit = params.limit.unwrap_or(10).clamp(1, 50) as usize;
+    let view = kg_storage::adapter::graph_view_from(store, Some(&label), Some(edge_type), None)
+        .await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    match algorithm {
+        "pagerank" => {
+            use samyama_graph_algorithms::{PageRankConfig, page_rank};
+            let ranks = page_rank(&view, PageRankConfig::default());
+            // ranks is HashMap<NodeId, f64> — sort by score descending.
+            let mut ranked: Vec<(u64, f64)> =
+                ranks.iter().map(|(node, score)| (*node, *score)).collect();
+            ranked.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            ranked.truncate(limit);
+            let results = ranked
+                .into_iter()
+                .map(|(node, score)| GraphRankEntry {
+                    node_id: node,
+                    score: score as f32,
+                    label: label.clone(),
+                })
+                .collect();
+            Ok(GraphRankOutput {
+                algorithm: "pagerank".into(),
+                label,
+                results,
+            })
+        }
+        "wcc" => {
+            use samyama_graph_algorithms::weakly_connected_components;
+            let components = weakly_connected_components(&view);
+            // WccResult has node_component: HashMap<NodeId, usize>
+            let mut comp_sizes: std::collections::HashMap<usize, u32> =
+                std::collections::HashMap::new();
+            for (_, &comp) in components.node_component.iter() {
+                *comp_sizes.entry(comp).or_insert(0) += 1;
+            }
+            let mut sizes: Vec<(usize, u32)> = comp_sizes.into_iter().collect();
+            sizes.sort_by(|a, b| b.1.cmp(&a.1));
+            sizes.truncate(limit);
+            let results = sizes
+                .into_iter()
+                .map(|(comp, size)| GraphRankEntry {
+                    node_id: comp as u64,
+                    score: size as f32,
+                    label: format!("component_{comp}"),
+                })
+                .collect();
+            Ok(GraphRankOutput {
+                algorithm: "wcc".into(),
+                label,
+                results,
+            })
+        }
+        other => Err(anyhow::anyhow!(
+            "unsupported algorithm: '{other}'. Use 'pagerank' or 'wcc'."
+        )),
+    }
+}
+
 /// Check query result has rows. Helper to avoid repeating the read-only call.
 async fn run_readonly(store: &dyn DirectGraphStore, cypher: &str) -> anyhow::Result<CypherOutput> {
     let result = store.query_readonly("default", cypher).await?;
