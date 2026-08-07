@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Wave 2 hybrid search — ruvector-hybrid RrfHybridIndex (D194)
+
+New `HybridSearchIndex` wrapper bridges vendor `ruvector-hybrid` (BM25 +
+dense cosine + Reciprocal Rank Fusion) with MCP Paper data. 3 TDD tests.
+
 ### GSD milestone hygiene — M362 + M365 + M366 + M367 closed (D194)
 
 Closed 84 pending gates across 4 milestones. Code was already delivered
