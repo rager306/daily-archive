@@ -14,6 +14,7 @@ use std::sync::Arc;
 use kg_storage::DirectGraphStore;
 use rmcp::handler::server::wrapper::Parameters;
 
+pub mod hybrid;
 pub mod tools;
 
 /// A browsable MCP resource (ADR-054 MCP-4). Thin descriptor for external discovery.
