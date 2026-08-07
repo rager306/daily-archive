@@ -58,7 +58,7 @@ impl AnthropicLlmClient {
             .unwrap_or_else(|_| "MiniMax-M2.7-highspeed".to_string());
         Self {
             client: reqwest::Client::builder()
-                .timeout(std::time::Duration::from_secs(60))
+                .timeout(std::time::Duration::from_secs(300))
                 .build()
                 .expect("reqwest client"),
             api_key,

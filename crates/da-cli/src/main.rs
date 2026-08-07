@@ -1195,13 +1195,17 @@ async fn summarize_paper(
     } else {
         println!("\u{2705} Summaries generated for {}", result.paper_id);
         if let Some(ref abs) = result.abstract_summary {
-            println!(
-                "   Abstract summary ({} chars): {}...",
-                abs.len(),
-                &abs[..abs.len().min(200)]
-            );
+            println!("   Abstract summary ({} chars):", abs.len());
+            println!("   {}", abs);
         }
-        println!("   Section summaries: {}", result.section_summaries.len());
+        println!("   Section summaries: {}", result.section_summaries_count);
+        println!("   Methods: {}", result.methods_count);
+        println!("   Datasets: {}", result.datasets_count);
+        println!("   Metrics: {}", result.metrics_count);
+        println!("   Tags: {}", result.tags.join(", "));
+        if let Some(score) = result.reproducibility_score {
+            println!("   Reproducibility: {}/5", score);
+        }
         println!("   Tokens used: {}", result.tokens_used);
     }
 
