@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### M370 S01-S03 re-baseline production snapshot (D194)
+
+Re-ingested hub paper 2507.19457 with current pipeline. New snapshot:
+- 225 nodes, 337 edges (was 2571 nodes, 2741 edges — old pipeline)
+- 85 sections with path_id, 76 nav edges (was 0)
+- 24 entities extracted (Method:5, Dataset:5, Metric:6, Model:6, Task:2)
+- 24 MENTIONS + 24 found_in edges (was 0)
+- 1024d FdApi embeddings
+
+Verified:
+- Tree navigation: 3/3 PASS (was 0/3 EMPTY)
+- WCC: 1 component of 225 (was 2571 isolated)
+- PageRank: top-5 non-zero (was empty)
+- Graph task suite: 6/7 PASS
+
+Root cause fixed: SamyamaGraphStore.get_outgoing_edges only read write
+buffer, not frozen storage. After snapshot import, edges were invisible.
+
 ### M370 S01 graph_view_from — frozen edges + sparse IDs (D194)
 
 **ROOT CAUSE FOUND AND FIXED:** SamyamaGraphStore.get_outgoing_edges only
