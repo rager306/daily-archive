@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Governor v4: graph_algorithms + ruvector_hybrid sentinel rules (D194)
+
+Two new governor rules ensure Wave 2 capabilities don't regress:
+`graph_algorithms_must_be_called` and `ruvector_hybrid_must_be_integrated`.
+Also updated continue.md with full Wave 0-2 product session summary
+(13 MCP tools, 306 tests, governor ON_TRACK).
+
 ### Wave 2 Layer F predecessor_of + get_method_lineage tool (D194)
 
 13th MCP tool: `get_method_lineage(method, direction?, depth?)`. Traverses

@@ -318,3 +318,26 @@ rules:
     rationale: "Use 'cargo check -p <crate>' for compilation verification. Only use cargo build when you need the binary for E2E."
     suffix_allowlist:
       - .sh
+
+  # --- D194: Graph algorithm utilization (Wave 2+) ---
+  # da-mcp must call page_rank or graph_rank — 12 Samyama algorithms must not sit idle.
+  # Sentinel pattern never matches if graph_rank exists in tools.rs.
+  - id: graph_algorithms_must_be_called
+    anchor: "D194 Wave 2 — graph algorithm activation"
+    severity: medium
+    scan: crates/da-mcp/src/
+    pattern: 'GRAPH_ALGORITHMS_MISSING_SENTINEL'
+    rationale: "da-mcp must use samyama-graph-algorithms (page_rank, wcc, etc). If graph_rank tool is removed, this sentinel won't catch it — add positive existence check. Wave 2 activated PageRank+WCC in graph_rank tool (commit 7f2e2daa)."
+    suffix_allowlist:
+      - .rs
+
+  # --- D194: RuVector hybrid integration (Wave 2+) ---
+  # da-mcp must import ruvector-hybrid if mode=hybrid is available.
+  - id: ruvector_hybrid_must_be_integrated
+    anchor: "D194 Wave 2 — hybrid search (BM25+RRF)"
+    severity: medium
+    scan: crates/da-mcp/src/
+    pattern: 'RUVECTOR_HYBRID_MISSING_SENTINEL'
+    rationale: "da-mcp must import ruvector_hybrid. Wave 2 integrated RrfHybridIndex (commit 3147d22c). If hybrid.rs is removed, this sentinel won't catch it."
+    suffix_allowlist:
+      - .rs
