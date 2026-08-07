@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Wave 2 graph_rank tool — PageRank + WCC activation (D194)
+
+12th MCP tool: `graph_rank(label, algorithm, edge_type?, limit?)`. Runs
+Samyama graph algorithms on typed subgraphs. First graph algorithm
+activation — 12 algorithms were idle (0 calls). Now PageRank and WCC
+are available to external clients.
+
 ### Wave 2 search_papers mode=hybrid — BM25+RRF fusion live (D194)
 
 `search_papers(query, mode="hybrid")` now performs BM25 + dense cosine
