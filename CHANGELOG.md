@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### GSD milestone hygiene — M362 + M365 + M366 + M367 closed (D194)
+
+Closed 84 pending gates across 4 milestones. Code was already delivered
+in previous slices (Layer A/B/C, MCP tools, governor dimensions) but
+GSD DB gates were never formally closed. Now all M36* milestones are
+complete (M363/M364 stay queued for future Wave 2/3).
+
 ### Governor: active_milestone_zero_tasks drift flag (D194)
 
 New check scans GSD DB for active milestones with 0 tasks. First run
