@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Wave 2 Layer F predecessor_of + get_method_lineage tool (D194)
+
+13th MCP tool: `get_method_lineage(method, direction?, depth?)`. Traverses
+Method→predecessor_of→Method edges for lineage queries. Layer F cross-paper
+patterns activated. Variable-length Cypher path `*1..depth`.
+
 ### Wave 2 graph_rank tool — PageRank + WCC activation (D194)
 
 12th MCP tool: `graph_rank(label, algorithm, edge_type?, limit?)`. Runs
