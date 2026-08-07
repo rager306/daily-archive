@@ -117,6 +117,20 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             target_labels: &["Section"],
             rationale: "Section navigation tree (ADR-053 Layer A): parent section in the document hierarchy.",
         },
+        // ─── ADR-053 Layer B: Summary edge (D194 M369 S01) ───
+        EdgeContract {
+            edge_constant: structure::HAS_SUMMARY,
+            source_label: "Paper",
+            target_labels: &["Summary"],
+            rationale: "Paper has a multi-granularity digest (ADR-053 Layer B).",
+        },
+        // ─── ADR-053 Layer F: Method lineage (D194 M368 S03) ───
+        EdgeContract {
+            edge_constant: structure::PREDECESSOR_OF,
+            source_label: "Method",
+            target_labels: &["Method"],
+            rationale: "Method lineage: A predecessor_of B means A builds on B.",
+        },
     ]
 }
 

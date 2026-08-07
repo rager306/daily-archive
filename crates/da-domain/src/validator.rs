@@ -611,6 +611,9 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
         crate::relation::structure::NEXT_SIBLING,
         crate::relation::structure::FIRST_CHILD,
         crate::relation::structure::PARENT_SECTION,
+        // Summary + lineage (ADR-053 Layer B+F, D194)
+        crate::relation::structure::HAS_SUMMARY,
+        crate::relation::structure::PREDECESSOR_OF,
         // Bibliographic (relation::bibliographic)
         crate::relation::bibliographic::CITES,
         crate::relation::bibliographic::CITED_BY,

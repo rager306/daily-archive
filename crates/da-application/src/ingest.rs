@@ -327,6 +327,60 @@ impl IngestUseCase {
             .await;
         }
 
+        // ADR-053 Layer B (D194 M369 S01): Create Summary node from abstract_text.
+        // This wires SummarySchema into the pipeline so MCP get_summary returns real data.
+        if !parsed.abstract_text.is_empty() {
+            let summary_node = self.graph_store.create_node("Summary").await?;
+            let summary_vid = format!("vid:summary:{paper_id}:abstract");
+            self.graph_store
+                .set_node_property_string(summary_node, "vid", summary_vid)
+                .await?;
+            self.graph_store
+                .set_node_property_string(summary_node, "text", parsed.abstract_text.clone())
+                .await?;
+            self.graph_store
+                .set_node_property_string(summary_node, "granularity", "abstract".to_string())
+                .await?;
+            self.graph_store
+                .set_node_property_int(
+                    summary_node,
+                    "char_count",
+                    parsed.abstract_text.len() as i64,
+                )
+                .await?;
+            self.graph_store
+                .set_node_property_string(summary_node, "source_label", "Paper".to_string())
+                .await?;
+            self.graph_store
+                .set_node_property_string(summary_node, "source_id", paper_id.to_string())
+                .await?;
+            self.graph_store
+                .set_node_property_string(summary_node, "method", "abstract_copy".to_string())
+                .await?;
+            self.graph_store
+                .set_node_property_bool(summary_node, "retrieval_eligible", true)
+                .await?;
+            self.graph_store
+                .set_node_property_bool(summary_node, "import_eligible", eligible) // D127
+                .await?;
+            self.graph_store
+                .set_node_property_int(summary_node, "schema_version", 1)
+                .await?;
+            // Link Paper → Summary via hasSummary edge (structural).
+            self.graph_store
+                .create_edge(
+                    node_id,
+                    summary_node,
+                    da_domain::relation::structure::HAS_SUMMARY,
+                )
+                .await?;
+            tracing::debug!(
+                paper_id,
+                chars = parsed.abstract_text.len(),
+                "Layer B: Summary node created from abstract_text"
+            );
+        }
+
         // Section + citation metadata (enables Phase 3 extraction queries)
         let section_count = parsed.sections.len();
         let citation_count = parsed.citations.len();

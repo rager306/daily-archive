@@ -26,6 +26,11 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::relation::CitationSchema),
         Box::new(crate::entity::EntitySchema),
         Box::new(crate::source::SourceSchema),
+        // ─── ADR-053 Layer B-C (D194) ───
+        Box::new(crate::article::SummarySchema),
+        Box::new(crate::article::MethodSchema),
+        Box::new(crate::article::DatasetSchema),
+        Box::new(crate::article::MetricSchema),
         // ─── Operational State (Layer 1) ───
         Box::new(crate::scheduler::SchedulerTaskSchema),
         // ─── Evidence & Community (Layer 6) ───
@@ -126,7 +131,7 @@ mod tests {
     #[test]
     fn test_all_node_schemas_has_twenty_nine_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 31);
+        assert_eq!(schemas.len(), 35); // was 31, +4: Summary+Method+Dataset+Metric (D194)
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         // Publication plane
         assert!(labels.contains(&"Paper"));

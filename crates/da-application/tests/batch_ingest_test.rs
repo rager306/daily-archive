@@ -121,7 +121,7 @@ async fn test_batch_ingest_all_success() {
     // M352: no classifier attached → empty triage aggregate
     assert_eq!(result.pdf_triage.classified, 0);
     assert!(!result.pdf_triage.any());
-    assert_eq!(store.node_count_total(), 6); // 3 Paper + 3 Section nodes
+    assert_eq!(store.node_count_total(), 9); // 3 Paper + 3 Section + 3 Summary nodes
     assert_eq!(store.snapshot_call_count(), 0); // no snapshot (None)
     store.assert_graph_conforms("test_batch_ingest_all_success");
 }
@@ -143,7 +143,7 @@ async fn test_batch_ingest_partial_failure() {
     assert_eq!(result.errors.len(), 1);
     assert_eq!(result.errors[0].0, "2401.00002");
     assert!(result.errors[0].1.contains("forced failure"));
-    assert_eq!(store.node_count_total(), 4); // 2 Paper + 2 Section (failed one didn't create)
+    assert_eq!(store.node_count_total(), 6); // 2 Paper + 2 Section + 2 Summary (failed one didn't create)
 }
 
 #[tokio::test]
@@ -230,9 +230,9 @@ async fn test_ingest_citations_create_cites_edges() {
     assert_eq!(result.total_citations, 3);
     assert_eq!(result.total_cites_resolved, 2); // only 2 have arxiv_id
     assert_eq!(result.total_sections, 1);
-    // 1 Paper + 1 Section + 2 Citation + 3 Reference = 7 total
-    // Reference nodes are created for ALL citations (full bibliography).
-    assert_eq!(store.node_count_total(), 7);
+    // 1 Paper + 1 Section + 1 Summary + 2 Citation + 3 Reference = 8 total
+    // Summary nodes created from abstract_text (D194 M369 S01).
+    assert_eq!(store.node_count_total(), 8);
 }
 
 #[tokio::test]
@@ -256,10 +256,10 @@ async fn test_ingest_citation_dedup_shared_reference() {
 
     assert_eq!(result.ok, 2);
     assert_eq!(result.total_cites_resolved, 2); // both papers cite it
-    // 2 Paper + 2 Section + 1 Citation (deduped) + 1 Reference (deduped) = 6 total
+    // 2 Paper + 2 Section + 2 Summary + 1 Citation (deduped) + 1 Reference (deduped) = 8 total
     assert_eq!(
         store.node_count_total(),
-        6,
+        8,
         "expected dedup: 2 Paper + 2 Section + 1 Citation + 1 Reference = 6 nodes, got {}",
         store.node_count_total()
     );
