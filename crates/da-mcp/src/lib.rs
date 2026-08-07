@@ -410,9 +410,13 @@ impl DailyArchiveMcpServer {
         parameters: Parameters<tools::SearchPapersParams>,
     ) -> Result<String, String> {
         let params = parameters.0;
-        let out = tools::search_papers(self.graph_store.as_ref(), params)
-            .await
-            .map_err(|e| e.to_string())?;
+        let out = tools::search_papers(
+            self.graph_store.as_ref(),
+            Some(self.embedder.as_ref()),
+            params,
+        )
+        .await
+        .map_err(|e| e.to_string())?;
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
 

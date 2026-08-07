@@ -104,7 +104,8 @@ pub struct SearchPapersParams {
     /// Maximum number of rows to return (default 10, capped at 50).
     #[serde(default)]
     pub limit: Option<u32>,
-    /// Search mode: "title" (title only, default), "full" (title + abstract + topics).
+    /// Search mode: "title" (title only, default), "full" (title + abstract + topics),
+    /// "hybrid" (BM25+dense RRF fusion via ruvector-hybrid).
     #[serde(default)]
     pub mode: Option<String>,
 }
@@ -163,6 +164,7 @@ pub struct ValidateNodeOutput {
 
 pub async fn search_papers(
     store: &dyn DirectGraphStore,
+    embedder: Option<&dyn kg_embeddings::Embedder>,
     params: SearchPapersParams,
 ) -> anyhow::Result<CypherOutput> {
     let query = params.query.trim().to_string();
@@ -177,6 +179,13 @@ pub async fn search_papers(
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .unwrap_or("title");
+    // D194 Wave 2: hybrid mode uses BM25+dense RRF fusion.
+    if mode == "hybrid" {
+        if let Some(emb) = embedder {
+            return search_papers_hybrid(store, emb, &query, limit).await;
+        }
+        // No embedder available — fallback to full mode.
+    }
     // D194 Wave 2: search across title + abstract + topics in "full" mode.
     // Samyama CONTAINS is case-sensitive; Rust post-filter handles CI.
     let cypher = if mode == "full" {
@@ -420,6 +429,83 @@ pub async fn get_summary(
         granularity: granularity.into(),
         text: String::new(),
         char_count: 0,
+    })
+}
+
+/// Hybrid search: BM25 + dense RRF fusion (D194 Wave 2).
+/// Queries all Paper nodes, builds in-memory RrfHybridIndex, searches.
+async fn search_papers_hybrid(
+    store: &dyn DirectGraphStore,
+    embedder: &dyn kg_embeddings::Embedder,
+    query: &str,
+    limit: usize,
+) -> anyhow::Result<CypherOutput> {
+    let fetch_cypher = "MATCH (p:Paper) RETURN p.arxiv_id, p.title LIMIT 500";
+    let papers_out = run_readonly(store, fetch_cypher).await?;
+    if papers_out.row_count == 0 {
+        return Ok(CypherOutput {
+            columns: vec!["arxiv_id".into(), "title".into(), "score".into()],
+            records: vec![],
+            row_count: 0,
+        });
+    }
+    let mut entries = Vec::new();
+    for row in &papers_out.records {
+        let arxiv_id = row
+            .first()
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let title = row
+            .get(1)
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if !arxiv_id.is_empty() {
+            entries.push(crate::hybrid::PaperEntry { arxiv_id, title });
+        }
+    }
+    if entries.is_empty() {
+        return Ok(CypherOutput {
+            columns: vec!["arxiv_id".into(), "title".into(), "score".into()],
+            records: vec![],
+            row_count: 0,
+        });
+    }
+    let mut embeddings = Vec::with_capacity(entries.len());
+    for e in &entries {
+        let vec = embedder
+            .embed(&e.title)
+            .await
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+        embeddings.push(vec);
+    }
+    let idx = crate::hybrid::HybridSearchIndex::build(entries.clone(), embeddings);
+    let query_vec = embedder
+        .embed(query)
+        .await
+        .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+    let query_tokens: Vec<&str> = query.split_whitespace().collect();
+    let results = idx.search(&query_tokens, &query_vec, limit);
+    let title_map: std::collections::HashMap<String, String> = entries
+        .iter()
+        .map(|e| (e.arxiv_id.clone(), e.title.clone()))
+        .collect();
+    let records: Vec<Vec<serde_json::Value>> = results
+        .iter()
+        .map(|(aid, score)| {
+            vec![
+                serde_json::json!(aid),
+                serde_json::json!(title_map.get(aid).map(|s| s.as_str()).unwrap_or("")),
+                serde_json::json!(score),
+            ]
+        })
+        .collect();
+    let row_count = records.len();
+    Ok(CypherOutput {
+        columns: vec!["arxiv_id".into(), "title".into(), "score".into()],
+        records,
+        row_count,
     })
 }
 
@@ -799,6 +885,7 @@ mod tests {
         let store = kg_storage::MockGraphStore::new();
         let result = search_papers(
             &store,
+            None,
             SearchPapersParams {
                 query: "".to_string(),
                 limit: None,
@@ -814,6 +901,7 @@ mod tests {
         let store = kg_storage::MockGraphStore::new();
         let result = search_papers(
             &store,
+            None,
             SearchPapersParams {
                 query: "transformer".to_string(),
                 limit: Some(5),
@@ -858,6 +946,7 @@ mod tests {
         // index), search_papers returns empty. We just assert no error.
         let result = search_papers(
             &store,
+            None,
             SearchPapersParams {
                 query: "attention".to_string(),
                 limit: Some(5),
@@ -1066,6 +1155,7 @@ mod tests {
         // Search by term only in abstract — title mode returns 0, full returns >=0
         let result_full = search_papers(
             &store,
+            None,
             SearchPapersParams {
                 query: "diffusion".to_string(),
                 limit: Some(5),
