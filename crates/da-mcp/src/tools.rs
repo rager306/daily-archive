@@ -621,6 +621,77 @@ pub async fn graph_rank(
     }
 }
 
+/// Get method lineage via predecessor_of edges (D194 Wave 2 S03).
+/// Returns ancestor/descendant methods in the Method influence graph.
+pub async fn get_method_lineage(
+    store: &dyn DirectGraphStore,
+    params: GetMethodLineageParams,
+) -> anyhow::Result<CypherOutput> {
+    if params.method.trim().is_empty() {
+        return Err(anyhow::anyhow!("method must not be empty"));
+    }
+    let escaped = params.method.trim().replace(['\'', '"', '`'], "");
+    let direction = params
+        .direction
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("both");
+    let depth = params.depth.unwrap_or(2).clamp(1, 5);
+    let mut records = Vec::new();
+    let mut columns = Vec::new();
+    if direction == "ancestors" || direction == "both" {
+        let cypher = format!(
+            "MATCH (m:Method {{name: '{escaped}'}})-[:predecessor_of*1..{depth}]->(ancestor) RETURN ancestor.name, ancestor.vid, ancestor.paper_arxiv_id LIMIT 50"
+        );
+        if let Ok(out) = run_readonly(store, &cypher).await {
+            if columns.is_empty() {
+                columns = vec![
+                    "ancestor_name".into(),
+                    "ancestor_vid".into(),
+                    "ancestor_arxiv_id".into(),
+                ];
+            }
+            records.extend(out.records);
+        }
+    }
+    if direction == "descendants" || direction == "both" {
+        let cypher = format!(
+            "MATCH (m:Method {{name: '{escaped}'}})<-[:predecessor_of*1..{depth}]-(descendant) RETURN descendant.name, descendant.vid, descendant.paper_arxiv_id LIMIT 50"
+        );
+        if let Ok(out) = run_readonly(store, &cypher).await {
+            if columns.is_empty() {
+                columns = vec![
+                    "descendant_name".into(),
+                    "descendant_vid".into(),
+                    "descendant_arxiv_id".into(),
+                ];
+            }
+            records.extend(out.records);
+        }
+    }
+    let row_count = records.len();
+    Ok(CypherOutput {
+        columns,
+        records,
+        row_count,
+    })
+}
+
+/// Parameters for `get_method_lineage` tool (D194 Wave 2 S03).
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetMethodLineageParams {
+    /// Method name or vid (e.g. "transformer" or "method:transformer:1").
+    pub method: String,
+    /// Direction: "ancestors" (methods this builds on), "descendants" (methods
+    /// that build on this), "both" (default).
+    #[serde(default)]
+    pub direction: Option<String>,
+    /// Max depth to traverse (default 2, capped at 5).
+    #[serde(default)]
+    pub depth: Option<u32>,
+}
+
 /// Check query result has rows. Helper to avoid repeating the read-only call.
 async fn run_readonly(store: &dyn DirectGraphStore, cypher: &str) -> anyhow::Result<CypherOutput> {
     let result = store.query_readonly("default", cypher).await?;

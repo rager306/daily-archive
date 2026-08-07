@@ -148,6 +148,11 @@ pub mod structure {
     /// Paper/Section → Summary: multi-granularity digest (ADR-053 Layer B).
     /// Links a document node to its Summary node(s) for quick retrieval.
     pub const HAS_SUMMARY: &str = "hasSummary";
+
+    /// Method → Method: lineage edge (ADR-053 Layer F).
+    /// Method A predecessor_of Method B means A builds on / extends / improves B.
+    /// Enables graph algorithms on the Method influence graph.
+    pub const PREDECESSOR_OF: &str = "predecessor_of";
 }
 
 /// Bibliographic edge types — structural metadata, NOT extracted semantic

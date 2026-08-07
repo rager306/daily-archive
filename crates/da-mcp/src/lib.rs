@@ -482,6 +482,22 @@ impl DailyArchiveMcpServer {
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
 
+    /// Get method lineage via predecessor_of edges (D194 Wave 2 S03).
+    /// Returns ancestor/descendant methods in the Method influence graph.
+    #[rmcp::tool(
+        description = "Trace method lineage: ancestors (methods this builds on), descendants (methods that build on this), or both. Uses predecessor_of edges. D127-safe read-only."
+    )]
+    async fn get_method_lineage(
+        &self,
+        parameters: Parameters<tools::GetMethodLineageParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_method_lineage(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
     /// Vector search over node embeddings (read-only, D127-safe).
     /// Embeds the query via the configured embedder and searches the vector index.
     #[rmcp::tool(
