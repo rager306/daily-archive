@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### get_entities typed filter — entity_type property (D194)
+
+`get_entities` now filters by BOTH `labels(e)` AND `e.entity_type`, so
+clients can query `entity_type="Method"` whether entities are stored as
+typed Method nodes (Layer C future) or Entity\{entity_type:"Method"\}.
+Also returns `entity_type` in result columns.
+
 ### Governor v4: ontology_layer_readiness dimension (D194)
 
 New dimension tracks ADR-053 Layers A-J: `layers_a_to_c` when path_id +
