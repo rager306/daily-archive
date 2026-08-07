@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### LLM summary generation via MiniMax (ADR-053 Layer B) — REAL
+
+First real LLM integration. `da summarize --id 2507.19457` generates
+real MiniMax-M2.7-highspeed summaries (not abstract_copy).
+
+- `AnthropicLlmClient` in da-adapters (implements LLMClient port)
+- `SummaryUseCase` in da-application (abstract + section summaries)
+- `da summarize` CLI command
+
+Verified on hub paper: 629-char abstract summary, 5 section summaries,
+400 tokens, 226 nodes/338 edges, WCC connected, tree nav 3/3 PASS.
+
 ### M370 S04 rollback fake Summary — honest deferral (D194)
 
 M369 S01 created Summary nodes by copying abstract_text — that was a fake.
