@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Governor: active_milestone_zero_tasks drift flag (D194)
+
+New check scans GSD DB for active milestones with 0 tasks. First run
+caught M363+M364 (empty skeletons) → moved to `queued`. Governor now
+ON_TRACK flags=0. First check that reads GSD DB for process drift.
+
 ### get_references citation context + intent (D194)
 
 Backward references now return `c.context` (citation context — sentence
