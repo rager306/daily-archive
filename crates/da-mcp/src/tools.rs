@@ -483,7 +483,7 @@ pub async fn get_references(
 
     // Backward: citations this paper points to (Paper -CITES-> Citation).
     if direction == "backward" || direction == "both" {
-        let cypher = "MATCH (p:Paper {arxiv_id: '###'})-[:CITES]->(c:Citation) RETURN c.title AS cited_title, c.arxiv_id AS cited_arxiv_id LIMIT 200"
+        let cypher = "MATCH (p:Paper {arxiv_id: '###'})-[:CITES]->(c:Citation) RETURN c.title AS cited_title, c.arxiv_id AS cited_arxiv_id, c.context AS cited_context, c.intent AS cited_intent LIMIT 200"
             .replace("###", &escaped);
         if let Ok(out) = run_readonly(store, &cypher).await {
             if columns.is_empty() {
