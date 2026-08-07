@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### get_references citation context + intent (D194)
+
+Backward references now return `c.context` (citation context — sentence
+where citation appears) and `c.intent` (citation intent). External agents
+understand WHY a paper cites another.
+
 ### get_paper rich metadata — abstract + topics + venue (D194)
 
 `get_paper` now returns 8 fields: added `abstract_text`, `topics`,
