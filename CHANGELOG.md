@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Wave 3 get_reading_path tool — Layer D agent navigation (D194)
+
+14th MCP tool: `get_reading_path(arxiv_id, limit?)`. Returns reading order:
+prerequisites (backward CITES) + target + follow-ups (forward CITES).
+Each row has order, role. Enables agent "read in order" workflows.
+
 ### Governor v4: graph_algorithms + ruvector_hybrid sentinel rules (D194)
 
 Two new governor rules ensure Wave 2 capabilities don't regress:
