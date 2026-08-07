@@ -200,6 +200,38 @@ class TrajectoryService:
                             evidence=f"{recent_commits} commits in last 7 days but no milestone closeout",
                         )
                     )
+        # D194: Check for active milestones with 0 tasks (empty skeletons).
+        # These are roadmap noise — milestones declared but never planned.
+        gsd_db = self.root / ".gsd" / "gsd.db"
+        if gsd_db.exists():
+            try:
+                import sqlite3 as _sql
+
+                con = _sql.connect(str(gsd_db))
+                try:
+                    cur = con.cursor()
+                    cur.execute(
+                        """SELECT m.id, m.title, COUNT(t.id) as task_count
+                        FROM milestones m
+                        LEFT JOIN tasks t ON t.milestone_id = m.id
+                        WHERE m.status = 'active'
+                        GROUP BY m.id, m.title
+                        HAVING task_count = 0"""
+                    )
+                    empty = cur.fetchall()
+                    if empty:
+                        ids = [r[0] for r in empty]
+                        flags.append(
+                            DriftFlag(
+                                flag="active_milestone_zero_tasks",
+                                severity="medium",
+                                evidence=f"{len(empty)} active milestone(s) with 0 tasks: {ids}",
+                            )
+                        )
+                finally:
+                    con.close()
+            except Exception:
+                pass  # keep governor green; DB read is best-effort
         return flags
 
     def _derive_verdict(
