@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### get_paper rich metadata — abstract + topics + venue (D194)
+
+`get_paper` now returns 8 fields: added `abstract_text`, `topics`,
+`venue` to the Cypher RETURN. External clients get full metadata in
+one call.
+
 ### search_papers full-text mode — title + abstract + topics (D194)
 
 `search_papers` now accepts `mode` parameter: `"title"` (default, backward
