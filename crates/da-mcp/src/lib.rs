@@ -2,7 +2,10 @@
 //!
 //! Read-only MCP server over Samyama graph store (ADR-054). Exposes:
 //! - Tools: get_schema, get_graph_stats, read_cypher, get_paper, get_sections,
-//!   get_references, search_papers, get_entities, validate_node, vector_search
+//!   get_references, search_papers, get_entities, validate_node, vector_search,
+//!   get_summary
+//! - Resources: 6 ontology YAML descriptors (list_mcp_resources)
+//! - Prompts: 6 agent guidance templates (list_mcp_prompts)
 //!
 //! D127-safe: no write tools, no import unlock, query_readonly enforced.
 

@@ -212,13 +212,16 @@ pub async fn get_entities(
     let limit = params.limit.unwrap_or(20).clamp(1, 50) as usize;
     // Base: entities mentioned by this paper.
     let mut cypher = format!(
-        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:MENTIONS]->(e) RETURN e.vid, labels(e), e LIMIT {limit}"
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:MENTIONS]->(e) RETURN e.vid, labels(e), e.entity_type, e LIMIT {limit}"
     );
     if let Some(ref et) = params.entity_type {
         if !et.trim().is_empty() {
             let filt = et.trim().replace(['\'', '"', '`'], "");
+            // D194 Wave 1: check both labels(e) AND e.entity_type property.
+            // Layer C typed labels (Method/Dataset/Metric) are graph labels,
+            // but legacy entities store type in entity_type property.
             cypher = format!(
-                "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:MENTIONS]->(e) WHERE any(l IN labels(e) WHERE l CONTAINS '{filt}') RETURN e.vid, labels(e), e LIMIT {limit}"
+                "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:MENTIONS]->(e) WHERE any(l IN labels(e) WHERE l CONTAINS '{filt}') OR e.entity_type CONTAINS '{filt}' RETURN e.vid, labels(e), e.entity_type, e LIMIT {limit}"
             );
         }
     }
