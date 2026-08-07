@@ -192,6 +192,21 @@ enum Commands {
         output_snapshot: Option<PathBuf>,
     },
 
+    /// Generate LLM-based summaries for a paper (ADR-053 Layer B)
+    Summarize {
+        /// Paper arxiv_id to summarize
+        #[arg(long)]
+        id: String,
+
+        /// Optional `.sgsnap` preload into this process before summarize.
+        #[arg(long)]
+        snapshot: Option<PathBuf>,
+
+        /// Optional path to re-export graph after summarize (Summary nodes written).
+        #[arg(long)]
+        output_snapshot: Option<PathBuf>,
+    },
+
     /// Initialize graph schema (indexes) before loading data
     SchemaInit {
         /// Vector dimensions for Paper.embedding index
@@ -426,6 +441,15 @@ fn main() {
         } => {
             rt.block_on(async {
                 extract_entities(&id, snapshot.as_deref(), output_snapshot.as_deref()).await;
+            });
+        }
+        Commands::Summarize {
+            id,
+            snapshot,
+            output_snapshot,
+        } => {
+            rt.block_on(async {
+                summarize_paper(&id, snapshot.as_deref(), output_snapshot.as_deref()).await;
             });
         }
         Commands::SchemaInit { dimensions } => {
@@ -1091,6 +1115,105 @@ async fn query_graph(
             eprintln!("❌ Query failed: {e}");
             std::process::exit(1);
         }
+    }
+}
+
+async fn summarize_paper(
+    paper_id: &str,
+    snapshot: Option<&std::path::Path>,
+    output_snapshot: Option<&std::path::Path>,
+) {
+    use da_adapters::GrobidParser;
+    use da_adapters::anthropic_llm::AnthropicLlmClient;
+    use da_application::SummaryUseCase;
+    use da_ports::graph_store::{DirectGraphStore, GraphStore};
+    use da_ports::parser::ParserPort;
+    use std::sync::Arc;
+
+    // Find PDF
+    let pdf = std::process::Command::new("find")
+        .args([
+            "data/article_catalog",
+            "-name",
+            &format!("{}.pdf", paper_id),
+        ])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let pdf_path = match pdf {
+        Some(p) => p,
+        None => {
+            eprintln!("\u{274c} PDF not found for {paper_id}");
+            std::process::exit(1);
+        }
+    };
+
+    // Parse via GROBID
+    let parser = GrobidParser::from_env();
+    if !parser.is_alive().await {
+        eprintln!("\u{274c} GROBID not alive");
+        std::process::exit(1);
+    }
+    let parsed = parser
+        .parse_pdf(&pdf_path, paper_id)
+        .await
+        .expect("GROBID parse failed");
+    println!(
+        "Parsed: {} sections, {} chars abstract",
+        parsed.sections.len(),
+        parsed.abstract_text.len()
+    );
+
+    // Open graph store + load snapshot
+    let store = open_graph_store_with_optional_snapshot(snapshot).await;
+
+    // Find Paper node
+    let paper_ids = store.get_nodes_by_label("Paper").await;
+    let paper_node_id = *paper_ids.first().expect("no Paper nodes in graph");
+    println!("Paper node: {}", paper_node_id);
+
+    // Create LLM client
+    let llm: Arc<dyn da_ports::LLMClient> = Arc::new(AnthropicLlmClient::from_env());
+    if !llm.can_make_request() {
+        eprintln!("\u{274c} ANTHROPIC_API_KEY not set");
+        std::process::exit(1);
+    }
+    println!("LLM ready: {}", llm.provider_id());
+
+    // Generate summaries
+    let store_arc: Arc<dyn DirectGraphStore> = Arc::new(store);
+    let use_case = SummaryUseCase::new(store_arc.clone(), llm);
+    let result = use_case
+        .generate_summaries(paper_id, paper_node_id, &parsed)
+        .await
+        .expect("summary generation failed");
+
+    if let Some(e) = &result.error {
+        eprintln!("\u{274c} Summary error: {e}");
+    } else {
+        println!("\u{2705} Summaries generated for {}", result.paper_id);
+        if let Some(ref abs) = result.abstract_summary {
+            println!(
+                "   Abstract summary ({} chars): {}...",
+                abs.len(),
+                &abs[..abs.len().min(200)]
+            );
+        }
+        println!("   Section summaries: {}", result.section_summaries.len());
+        println!("   Tokens used: {}", result.tokens_used);
+    }
+
+    // Export snapshot if requested
+    if let Some(out) = output_snapshot {
+        let data = store_arc.export_snapshot().await.expect("export failed");
+        std::fs::write(out, &data).expect("write failed");
+        println!(
+            "Snapshot exported: {} ({} bytes)",
+            out.display(),
+            data.len()
+        );
     }
 }
 

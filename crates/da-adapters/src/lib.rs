@@ -3,6 +3,7 @@
 //! ADR-037 §2: Adapters implement Ports using infrastructure.
 //! ADR-040 §1: Samyama Graph (Tier 1) + external services.
 
+pub mod anthropic_llm;
 pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;
