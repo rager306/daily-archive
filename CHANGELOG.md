@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Wave 2 search_papers mode=hybrid — BM25+RRF fusion live (D194)
+
+`search_papers(query, mode="hybrid")` now performs BM25 + dense cosine
++ Reciprocal Rank Fusion. First real RuVector integration into product.
+Returns arxiv_id + title + score. 34 da-mcp green.
+
 ### Wave 2 hybrid search — ruvector-hybrid RrfHybridIndex (D194)
 
 New `HybridSearchIndex` wrapper bridges vendor `ruvector-hybrid` (BM25 +
