@@ -128,6 +128,27 @@ pub struct ValidateNodeParams {
     pub label: String,
 }
 
+/// Parameters for `get_summary` tool (D194 Wave 1 Layer B).
+#[derive(Deserialize, schemars::JsonSchema, Default)]
+pub struct GetSummaryParams {
+    /// arXiv ID of the paper (e.g. "2507.19457").
+    pub arxiv_id: String,
+    /// Summary granularity: "abstract" (short), "section" (per-section),
+    /// "full" (comprehensive). Default: "abstract".
+    #[serde(default)]
+    pub granularity: Option<String>,
+}
+
+/// Output for `get_summary` tool.
+#[derive(Serialize, schemars::JsonSchema, Debug, Default)]
+pub struct SummaryOutput {
+    pub arxiv_id: String,
+    pub found: bool,
+    pub granularity: String,
+    pub text: String,
+    pub char_count: usize,
+}
+
 /// Output for `validate_node` tool.
 #[derive(Serialize, schemars::JsonSchema, Debug)]
 pub struct ValidateNodeOutput {
@@ -307,6 +328,79 @@ pub async fn validate_node(
         label,
         is_known,
         violations: vals,
+    })
+}
+
+/// Get a summary digest for a paper (D194 Wave 1 Layer B).
+/// Queries Paper→hasSummary→Summary nodes via read-only Cypher.
+/// Returns the first matching Summary by granularity.
+pub async fn get_summary(
+    store: &dyn DirectGraphStore,
+    params: GetSummaryParams,
+) -> anyhow::Result<SummaryOutput> {
+    if params.arxiv_id.trim().is_empty() {
+        return Err(anyhow::anyhow!("arxiv_id must not be empty"));
+    }
+    let escaped = params.arxiv_id.trim().replace(['\'', '"', '`'], "");
+    let granularity = params
+        .granularity
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("abstract");
+    // Paper→hasSummary→Summary: return text + granularity + char_count.
+    let cypher = format!(
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:hasSummary]->(s:Summary {{granularity: '{granularity}'}}) RETURN s.text, s.granularity, s.char_count LIMIT 1"
+    );
+    let out = run_readonly(store, &cypher).await?;
+    if out.row_count > 0 {
+        let row = out.records.first().unwrap();
+        let text = row
+            .first()
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let chars = text.len();
+        return Ok(SummaryOutput {
+            arxiv_id: params.arxiv_id,
+            found: true,
+            granularity: granularity.into(),
+            text,
+            char_count: chars,
+        });
+    }
+    // Fallback: try any granularity (find first Summary for this paper).
+    let cypher_any = format!(
+        "MATCH (p:Paper {{arxiv_id: '{escaped}'}})-[:hasSummary]->(s:Summary) RETURN s.text, s.granularity, s.char_count LIMIT 1"
+    );
+    let out_any = run_readonly(store, &cypher_any).await?;
+    if out_any.row_count > 0 {
+        let row = out_any.records.first().unwrap();
+        let text = row
+            .first()
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let gran = row
+            .get(1)
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let chars = text.len();
+        return Ok(SummaryOutput {
+            arxiv_id: params.arxiv_id,
+            found: true,
+            granularity: gran,
+            text,
+            char_count: chars,
+        });
+    }
+    Ok(SummaryOutput {
+        arxiv_id: params.arxiv_id,
+        found: false,
+        granularity: granularity.into(),
+        text: String::new(),
+        char_count: 0,
     })
 }
 
@@ -893,6 +987,36 @@ mod tests {
         .expect("vector_search should not error with seeded vector");
         // Mock stub returns 0 rows today — assert no panic and row_count <= k.
         assert!(result.row_count <= 5, "row_count must respect k");
+    }
+
+    #[tokio::test]
+    async fn test_get_summary_rejects_empty_arxiv_id() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = get_summary(
+            &store,
+            GetSummaryParams {
+                arxiv_id: "".to_string(),
+                granularity: None,
+            },
+        )
+        .await;
+        assert!(result.is_err(), "empty arxiv_id must be rejected");
+    }
+
+    #[tokio::test]
+    async fn test_get_summary_empty_graph_returns_not_found() {
+        let store = kg_storage::MockGraphStore::new();
+        let result = get_summary(
+            &store,
+            GetSummaryParams {
+                arxiv_id: "2507.19457".to_string(),
+                granularity: Some("abstract".to_string()),
+            },
+        )
+        .await
+        .expect("get_summary should not error on empty mock");
+        assert!(!result.found, "empty graph must return found=false");
+        assert_eq!(result.char_count, 0);
     }
 
     #[tokio::test]

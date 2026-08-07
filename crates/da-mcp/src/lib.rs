@@ -442,6 +442,22 @@ impl DailyArchiveMcpServer {
         serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
     }
 
+    /// Get a summary digest for a paper (Layer B, D194 Wave 1).
+    /// Returns multi-granularity text summary via Paper→hasSummary→Summary.
+    #[rmcp::tool(
+        description = "Get a summary digest for a paper by arXiv id. Returns text, granularity, and char_count. D127-safe read-only."
+    )]
+    async fn get_summary(
+        &self,
+        parameters: Parameters<tools::GetSummaryParams>,
+    ) -> Result<String, String> {
+        let params = parameters.0;
+        let out = tools::get_summary(self.graph_store.as_ref(), params)
+            .await
+            .map_err(|e| e.to_string())?;
+        serde_json::to_string(&out).map_err(|e| format!("serialize: {e}"))
+    }
+
     /// Vector search over node embeddings (read-only, D127-safe).
     /// Embeds the query via the configured embedder and searches the vector index.
     #[rmcp::tool(
