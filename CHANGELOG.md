@@ -1,5 +1,19 @@
 # Changelog
 
+### M371 S05 T06 gold corpus readiness and wave plan
+
+Corrected the closure baseline from one GEPA anchor to the existing reviewed gold
+corpus (D202/R084). Added a deterministic `gold_corpus` discovery library and CLI
+manifest that fail closed on fixture identity drift, resolve canonical PDF/HTML
+sources without shell `find`, fingerprint each source, inventory richer article,
+loader, figure and pipeline-cache layers, and assign stable bounded batches.
+`eval_batch` now consumes the same manifest instead of maintaining a second
+source-discovery path. Real manifest evidence `21f17a9a-...`: 200 unique fixtures,
+193 source-ready, 7 explicitly unavailable, 20 batches of 10; focused tests and
+clippy PASS. Gold remains evaluation evidence, not graph truth. Next wave runs a
+small source-ready canary twice to prove cache hits and zero replay graph writes
+before advancing across the corpus.
+
 ### M371 S05 T05 governor cacheable-stage purity ratchet
 
 Added narrow YAML reverse-ADR rules for every known cacheable stage module. A

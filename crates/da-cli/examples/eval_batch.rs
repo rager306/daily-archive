@@ -6,6 +6,7 @@
 //! Usage: cargo run -p da-cli --example eval_batch
 
 use da_adapters::{GrobidParser, HtmlParser, RuleBasedExtractor};
+use da_cli::gold_corpus::{CanonicalSourceKind, build_gold_corpus_manifest};
 use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
 use da_ports::extractor::Extractor;
 use da_ports::parser::ParserPort;
@@ -26,20 +27,24 @@ struct PaperResult {
 
 #[tokio::main]
 async fn main() {
-    // Find all gold-standard fixtures
-    let mut fixtures: Vec<String> = std::fs::read_dir("data/gold_standard")
-        .unwrap_or_else(|e| {
-            eprintln!("Cannot read gold_standard dir: {e}");
-            std::process::exit(1);
-        })
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_name().to_string_lossy().ends_with(".gold.json"))
-        .map(|e| e.path().to_string_lossy().to_string())
-        .collect();
-    fixtures.sort();
+    let manifest = build_gold_corpus_manifest(
+        std::path::Path::new("data/gold_standard"),
+        std::path::Path::new("data/article_catalog/article_catalog"),
+        10,
+    )
+    .unwrap_or_else(|error| {
+        eprintln!("Cannot build gold corpus manifest: {error}");
+        std::process::exit(1);
+    });
 
     println!("=== Batch Extraction Evaluation ===");
-    println!("Fixtures: {}\n", fixtures.len());
+    println!(
+        "Fixtures: {} | source-ready: {} | unavailable: {} | batches: {}\n",
+        manifest.fixture_count,
+        manifest.source_ready_count,
+        manifest.unavailable_count,
+        manifest.batch_count
+    );
 
     let mut results: Vec<PaperResult> = Vec::new();
     let mut total_gold = 0usize;
@@ -48,56 +53,44 @@ async fn main() {
     let mut total_fp = 0usize;
     let mut total_fn = 0usize;
 
-    for fixture_path in &fixtures {
-        let gold_json = std::fs::read_to_string(fixture_path).unwrap();
+    for record in &manifest.records {
+        let gold_json = std::fs::read_to_string(&record.fixture_path).unwrap();
         let gold: GoldFile = serde_json::from_str(&gold_json).unwrap();
         let paper_id = gold.paper_id.clone();
-
-        // Find PDF first, then HTML fallback (multi-source: ONTOLOGY-DESIGN Phase 2)
-        let pdf = std::process::Command::new("find")
-            .args(["data/article_catalog", "-name", &format!("{paper_id}.pdf")])
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty());
-
-        let html = std::process::Command::new("find")
-            .args(["data/article_catalog", "-name", "chapter.html"])
-            .output()
-            .ok()
-            .and_then(|o| String::from_utf8(o.stdout).ok())
-            .and_then(|s| {
-                s.trim()
-                    .lines()
-                    .find(|l| l.contains(&paper_id))
-                    .map(|l| l.trim().to_string())
-                    .filter(|s| !s.is_empty())
-            });
-
-        let parsed = if let Some(pdf_path) = pdf {
-            // Parse via GROBID (PDF path)
-            let parser = GrobidParser::from_env();
-            match parser.parse_pdf(&pdf_path, &paper_id).await {
-                Ok(p) => p,
-                Err(e) => {
-                    eprintln!("⚠ {paper_id}: GROBID failed: {e}");
-                    continue;
-                }
-            }
-        } else if let Some(html_path) = html {
-            // Parse via HtmlParser (HTML path — textbooks, lectures)
-            let parser = HtmlParser::new();
-            match parser.parse_html(&html_path, &paper_id).await {
-                Ok(p) => p,
-                Err(e) => {
-                    eprintln!("⚠ {paper_id}: HTML parse failed: {e}");
-                    continue;
-                }
-            }
-        } else {
-            eprintln!("⚠ {paper_id}: no PDF or HTML found, skipping");
+        let Some(source_path) = record.source.path.as_deref() else {
+            eprintln!(
+                "⚠ {paper_id}: {}, skipping",
+                record
+                    .source
+                    .unavailable_reason
+                    .as_deref()
+                    .unwrap_or("canonical source unavailable")
+            );
             continue;
+        };
+
+        let parsed = match record.source.kind {
+            CanonicalSourceKind::Pdf => {
+                let parser = GrobidParser::from_env();
+                match parser.parse_pdf(source_path, &paper_id).await {
+                    Ok(parsed) => parsed,
+                    Err(error) => {
+                        eprintln!("⚠ {paper_id}: GROBID failed: {error}");
+                        continue;
+                    }
+                }
+            }
+            CanonicalSourceKind::Html => {
+                let parser = HtmlParser::new();
+                match parser.parse_html(source_path, &paper_id).await {
+                    Ok(parsed) => parsed,
+                    Err(error) => {
+                        eprintln!("⚠ {paper_id}: HTML parse failed: {error}");
+                        continue;
+                    }
+                }
+            }
+            CanonicalSourceKind::Unavailable => unreachable!("unavailable source has no path"),
         };
 
         // Extract
