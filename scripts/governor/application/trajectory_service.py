@@ -43,6 +43,9 @@ class TrajectoryService:
         resource_flags = self._check_resource_safety()
         drift_flags.extend(resource_flags)
 
+        # M371: reject false-green GSD evidence created after the last commit.
+        drift_flags.extend(self._check_gsd_exec_evidence())
+
         verdict = self._derive_verdict(audit_report, drift_flags)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -149,6 +152,38 @@ class TrajectoryService:
             ))
 
         return flags
+
+    def _check_gsd_exec_evidence(self) -> list[DriftFlag]:
+        """Flag exit-0 evidence whose captured output explicitly reports failure."""
+        from datetime import datetime
+
+        from governor.adapters.gsd_exec_reader import GsdExecReader
+
+        since = None
+        if self.git_reader and self.git_reader.is_repo():
+            value = self.git_reader.get_git_info().latest_commit_date
+            try:
+                since = datetime.fromisoformat(value) if value else None
+            except ValueError:
+                since = None
+        try:
+            findings = GsdExecReader(self.root).false_successes_since(since)
+        except OSError:
+            return []
+        if not findings:
+            return []
+        ids = [finding.evidence_id for finding in findings]
+        markers = sorted({finding.marker for finding in findings})
+        return [
+            DriftFlag(
+                flag="gsd_exec_false_success_evidence",
+                severity="high",
+                evidence=(
+                    f"{len(findings)} exit-0 GSD exec run(s) contain explicit failure "
+                    f"markers after the latest commit: ids={ids}, markers={markers}"
+                ),
+            )
+        ]
 
     def _build_drift_flags(self, audit_report, dimensions) -> list[DriftFlag]:
         flags: list[DriftFlag] = []

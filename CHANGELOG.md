@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Governor: reject false-green GSD exec evidence (D196)
+
+Added a bounded read-only `.gsd/exec` audit after M371 evidence exposed a real
+failure mode: a multi-command shell returned exit 0 even though its inner
+`cargo test` printed `test result: FAILED` because fail-fast behavior was
+missing.
+
+- `GsdExecReader` scans at most 200 recent metadata files and 256KB of captured
+  output for explicit test/build failure markers.
+- Exit-0 evidence newer than the latest commit raises high drift flag
+  `gsd_exec_false_success_evidence`; the commit boundary avoids permanent noise
+  from reviewed historical incidents.
+- Corrupt/missing logs remain best-effort and cannot crash governor.
+- 5 focused tests cover detection, clean success, true failure, commit-boundary
+  acknowledgement, corrupt metadata, and TrajectoryService integration.
+
+Decision D196 records the policy. Governor remains ON_TRACK, flags=0,
+violations=0 for the current reviewed state.
+
 ### M371 S02 T01 governed pdffigures2 production adapter (pending GSD Attempt)
 
 Implemented real figure/table detection as a hexagonal, provenance-preserving
