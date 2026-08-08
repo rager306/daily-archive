@@ -1,5 +1,18 @@
 # Changelog
 
+### M371 S05 T06 shared graph materialization store
+
+Added `from_shared` constructors to `IngestUseCase` and `ExtractionUseCase` while
+preserving all legacy Box constructors. Verified parse, embedding, Entity,
+evidence, problem/observation and structural graph materialization can now run
+against one `Arc<dyn DirectGraphStore>` and one eventual snapshot lifecycle,
+instead of opening split stores. Evidence `b86ac595-...`: 12 ingest + 19
+extraction tests and application clippy PASS. This is the final composition
+prerequisite for the cache-to-graph wave.
+
+Gold batches 9 and 10 also passed cold/replay gates; **100/193** source-ready
+papers are now cache-verified with durable per-batch metrics.
+
 ### M371 S05 T06 FD API token-capability correction
 
 Corrected a cross-repository contract error after inspecting live `/docs`,

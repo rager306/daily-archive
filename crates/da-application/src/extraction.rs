@@ -12,7 +12,7 @@ use da_ports::parser::ParsedArticle;
 /// Extraction use case: given a parsed article, extract entities + write to graph.
 pub struct ExtractionUseCase {
     pub extractor: Box<dyn Extractor>,
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Optional embedder for entity label embeddings (Phase 3 GNN readiness).
     /// When Some, each unique entity label gets a bge-m3 embedding written
     /// to the Entity node's vector index.
@@ -39,6 +39,18 @@ pub struct ExtractionResult {
 
 impl ExtractionUseCase {
     pub fn new(extractor: Box<dyn Extractor>, graph_store: Box<dyn DirectGraphStore>) -> Self {
+        Self {
+            extractor,
+            graph_store: std::sync::Arc::from(graph_store),
+            embedder: None,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
+        }
+    }
+
+    pub fn from_shared(
+        extractor: Box<dyn Extractor>,
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+    ) -> Self {
         Self {
             extractor,
             graph_store,

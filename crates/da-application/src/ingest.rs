@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 pub struct IngestUseCase {
     pub parser: Box<dyn ParserPort>,
     pub embedder: Box<dyn Embedder>,
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
     /// Optional PDF classifier (M347). When present, classifies PDF
@@ -71,8 +71,23 @@ impl IngestUseCase {
         Self {
             parser,
             embedder,
-            graph_store,
+            graph_store: std::sync::Arc::from(graph_store),
             clock,
+            pdf_classifier: None,
+            eligibility: ImportEligibility::default(),
+        }
+    }
+
+    pub fn from_shared(
+        parser: Box<dyn ParserPort>,
+        embedder: Box<dyn Embedder>,
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+    ) -> Self {
+        Self {
+            parser,
+            embedder,
+            graph_store,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
             pdf_classifier: None,
             eligibility: ImportEligibility::default(),
         }
