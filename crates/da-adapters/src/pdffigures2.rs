@@ -112,7 +112,6 @@ impl PdfFigures2Adapter {
     ) -> FigureDetectionPortResult<(Vec<DetectedVisualArtifact>, PathBuf, String, String)> {
         let raw_metadata =
             fs::read(raw_metadata_path).map_err(|error| io(raw_metadata_path, error))?;
-        let metadata_sha256 = sha256(&raw_metadata);
         let figures: Vec<RawSavedFigure> =
             serde_json::from_slice(&raw_metadata).map_err(|error| {
                 FigureDetectionError::InvalidOutput {
@@ -126,6 +125,11 @@ impl PdfFigures2Adapter {
                 message: "detector returned zero captioned visual artifacts".into(),
             });
         }
+
+        // Hash semantic detector metadata with renderURL reduced to its stable
+        // basename. Absolute staging paths change every run and must not poison
+        // provenance or downstream cache keys.
+        let metadata_sha256 = canonical_detector_metadata_sha256(&figures)?;
 
         // Validate the complete detector batch before publishing any commit marker.
         let mut totals = HashMap::new();
@@ -315,7 +319,7 @@ struct CanonicalFigureManifest {
     artifacts: Vec<DetectedVisualArtifact>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct RawSavedFigure {
     render_dpi: u32,
@@ -345,7 +349,7 @@ impl RawSavedFigure {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct RawBox {
     x1: f64,
     y1: f64,
@@ -370,6 +374,30 @@ impl Drop for StagingCleanup {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
     }
+}
+
+fn canonical_detector_metadata_sha256(
+    figures: &[RawSavedFigure],
+) -> FigureDetectionPortResult<String> {
+    let mut canonical = figures.to_vec();
+    for figure in &mut canonical {
+        let filename = Path::new(&figure.render_url)
+            .file_name()
+            .and_then(OsStr::to_str)
+            .ok_or_else(|| {
+                invalid_output(
+                    Path::new(&figure.render_url),
+                    "renderURL filename is not UTF-8",
+                )
+            })?;
+        figure.render_url = filename.to_owned();
+    }
+    let bytes =
+        serde_json::to_vec(&canonical).map_err(|error| FigureDetectionError::InvalidOutput {
+            path: "pdffigures2 semantic metadata".into(),
+            message: error.to_string(),
+        })?;
+    Ok(sha256(&bytes))
 }
 
 fn kind_name(kind: VisualArtifactKind) -> &'static str {
@@ -479,6 +507,39 @@ mod tests {
             source_pdf_sha256: sha256(b"fake-pdf"),
             canonical_article_dir: root.join("article"),
         }
+    }
+
+    #[test]
+    fn semantic_metadata_hash_ignores_staging_directory() {
+        let make = |render_url: &str| RawSavedFigure {
+            render_dpi: 150,
+            name: "3".into(),
+            page: 4,
+            fig_type: "Figure".into(),
+            region_boundary: RawBox {
+                x1: 1.0,
+                y1: 2.0,
+                x2: 3.0,
+                y2: 4.0,
+            },
+            caption: "Figure 3: GEPA".into(),
+            image_text: vec!["GEPA".into()],
+            render_url: render_url.into(),
+            caption_boundary: RawBox {
+                x1: 1.0,
+                y1: 5.0,
+                x2: 3.0,
+                y2: 6.0,
+            },
+        };
+        let first =
+            canonical_detector_metadata_sha256(&[make("/tmp/stage-1/fig-paper-Figure3-1.png")])
+                .unwrap();
+        let second = canonical_detector_metadata_sha256(&[make(
+            "/catalog/.stage-99/fig-paper-Figure3-1.png",
+        )])
+        .unwrap();
+        assert_eq!(first, second);
     }
 
     #[test]

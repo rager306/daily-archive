@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### M371 S02 T03 real cache-aware parse, figure, context DAG
+
+Wired only implemented production stages through the hexagonal pipeline:
+
+- `GrobidParseStage` and `FigureDetectionStage` adapters wrap injected ports and
+  serialize typed artifacts with implementation/configuration/schema fingerprints.
+- Application `FigureContextStage` consumes named parse/figure dependencies and
+  emits validated `FigureSemanticContext` without importing adapters.
+- `pipeline_figures` composition root injects canonical PDF/catalog/JAR paths,
+  `FilePipelineCache`, `PipelineOrchestrator`, and `kg-pipeline` topology.
+
+Real canonical GEPA evidence:
+
+- First run: parse, figure detection, and context all executed in 100.9s.
+- Unchanged second run: all three cache hits in 484ms wall time; no GROBID/Java
+  executor invocation.
+- Context-schema-only change: parse/figures remained hits, context reran in 111ms
+  with deterministic semantic output.
+- A repeated run exposed nondeterministic detector metadata hashes caused only
+  by random staging `renderURL` paths. D198 canonicalizes those paths to stable
+  filenames before hashing, bumps the stage implementation fingerprint, and
+  proves subsequent manifest bytes are stable.
+
+Evidence: `f3853989-...`, `e22ab61d-...`, `a8af4043-...`, `c77042de-...`,
+`be226802-...`, and `60d72950-...`. Governor remains ON_TRACK with flags=0 and
+violations=0; D127 stays locked. T03 remains pending because no canonical GSD
+Attempt exists; no lifecycle bypass was used.
+
 ### M371 S02 T02 grounded figure semantic context and GROBID identity repair
 
 Replaced the obsolete duplicate PyMuPDF crop task with deterministic,

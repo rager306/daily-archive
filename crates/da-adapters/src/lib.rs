@@ -10,6 +10,7 @@ pub mod html_parser;
 pub mod openalex_adapter;
 pub mod pdffigures2;
 pub mod pipeline_cache;
+pub mod pipeline_stages;
 pub mod rule_extractor;
 pub mod samyama_graph;
 
@@ -25,5 +26,6 @@ pub use openalex_adapter::OpenAlexHttpAdapter;
 pub use pdf_classifier::PdfInspectorClassifier;
 pub use pdffigures2::PdfFigures2Adapter;
 pub use pipeline_cache::FilePipelineCache;
+pub use pipeline_stages::{FigureDetectionStage, GrobidParseStage};
 pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;

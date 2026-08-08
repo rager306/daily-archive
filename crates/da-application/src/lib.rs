@@ -18,6 +18,8 @@ pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub mod figure_context;
 pub use figure_context::{FigureContextAssembler, FigureContextBudget, FigureSectionLocator};
+pub mod figure_context_stage;
+pub use figure_context_stage::FigureContextStage;
 pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;
