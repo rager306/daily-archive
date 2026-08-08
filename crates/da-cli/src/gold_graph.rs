@@ -114,9 +114,11 @@ pub fn load_verified_artifacts(
         parsed.paper_id == paper.paper_id,
         "parsed paper identity mismatch"
     );
+    let cached_source_sha256 = cache_source_sha256(cache, &paper.paper_id, &parse_key)?;
     anyhow::ensure!(
-        parsed.pdf_hash == paper.source_sha256,
-        "parsed source hash mismatch"
+        cached_source_sha256 == paper.source_sha256,
+        "parse cache source hash mismatch for {}",
+        paper.paper_id
     );
     let entities = load_typed_payload(cache, &paper.paper_id, "extract", &extract, &extract_key)?;
     let embedding: Vec<f32> =
@@ -246,6 +248,29 @@ fn stage_identity(report: &PipelineRunReport, step: &str) -> Result<(String, Str
         | StageDisposition::CacheHit { output_sha256 } => Ok((output_sha256.clone(), key)),
         other => anyhow::bail!("stage '{step}' has no successful output: {other:?}"),
     }
+}
+
+fn cache_source_sha256(
+    cache: &dyn PipelineCache,
+    article_id: &str,
+    key_sha256: &str,
+) -> Result<String> {
+    let entries = cache
+        .manifest(article_id)?
+        .into_iter()
+        .filter(|entry| entry.key.stage_id == "parse" && entry.key_sha256 == key_sha256)
+        .collect::<Vec<_>>();
+    anyhow::ensure!(
+        entries.len() == 1,
+        "expected one parse cache source identity"
+    );
+    let source = &entries[0].key.source;
+    match source.selected_format {
+        da_ports::pipeline_cache::SourceFormat::Pdf => source.pdf_sha256.clone(),
+        da_ports::pipeline_cache::SourceFormat::Html => source.html_sha256.clone(),
+        da_ports::pipeline_cache::SourceFormat::MetadataOnly => None,
+    }
+    .context("selected parse source fingerprint missing")
 }
 
 fn load_typed_payload<T: serde::de::DeserializeOwned>(

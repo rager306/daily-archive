@@ -1,5 +1,27 @@
 # Changelog
 
+### M371 S05 T06 complete structural gold baseline
+
+Rebuilt all 20 bounded waves under the managed structural profile. Every profile
+change invalidated parse plus dependent extraction/embedding exactly once, and
+every unchanged replay was all-cache-hit. Aggregate extraction matches the
+reviewed baseline across **193 source-ready / 200 fixtures** (7 explicitly
+unavailable): gold 1399, predicted 1820, TP/FP/FN 1399/421/0, micro
+precision/recall/F1 0.769/1.000/0.869, macro F1 0.859. Batch 20 handled four
+HTML sources and six explicit unavailable fixtures; graph provenance now
+validates source hashes through the exact cache `SourceIdentity` for PDF or HTML
+instead of incorrectly assuming `ParsedArticle.pdf_hash` is the canonical HTML
+file hash.
+
+All 20 cache waves then materialized through one chained Samyama store/snapshot
+lineage and replayed with zero net writes per batch. Final checkpoint:
+**193 Paper, 83 canonical Entity, 1,820 MENTIONS, 8,655 Section, 10,637
+Reference; 23,054 nodes / 37,985 edges**, snapshot 6,801,680 bytes. Six runtime
+semantic tasks PASS and D127 exact unlock count is zero (`1e8e6ebf-...`). This
+is the richer-than-gold structural baseline; typed summaries, separate OpenAlex
+bibliographic enrichment, clustering, reviewed resolution and ontology finalize
+remain the ordered next product waves.
+
 ### M371 S05 T06 managed structural parsing profile
 
 Batch 17 then proved the deeper availability coupling: GROBID itself stayed
