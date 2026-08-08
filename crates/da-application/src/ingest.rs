@@ -5,6 +5,7 @@
 //! ADR-041 §2: HOT path — direct GraphStore API, no Cypher for batch writes.
 //! ADR-039: Lifecycle — starts as [proposed], needs canary-10 validation.
 
+use anyhow::Context;
 use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
@@ -18,8 +19,8 @@ use sha2::{Digest, Sha256};
 
 /// Ingest pipeline dependencies (injected ports).
 pub struct IngestUseCase {
-    pub parser: Box<dyn ParserPort>,
-    pub embedder: Box<dyn Embedder>,
+    pub parser: Option<Box<dyn ParserPort>>,
+    pub embedder: Option<Box<dyn Embedder>>,
     pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
@@ -69,8 +70,8 @@ impl IngestUseCase {
         clock: std::sync::Arc<dyn da_ports::Clock>,
     ) -> Self {
         Self {
-            parser,
-            embedder,
+            parser: Some(parser),
+            embedder: Some(embedder),
             graph_store: std::sync::Arc::from(graph_store),
             clock,
             pdf_classifier: None,
@@ -84,8 +85,21 @@ impl IngestUseCase {
         graph_store: std::sync::Arc<dyn DirectGraphStore>,
     ) -> Self {
         Self {
-            parser,
-            embedder,
+            parser: Some(parser),
+            embedder: Some(embedder),
+            graph_store,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
+            pdf_classifier: None,
+            eligibility: ImportEligibility::default(),
+        }
+    }
+
+    /// Construct the always-run graph materialization boundary without fake
+    /// parser/embedder implementations. `ingest_pdf` fails closed in this mode.
+    pub fn materializer_only(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
+        Self {
+            parser: None,
+            embedder: None,
             graph_store,
             clock: std::sync::Arc::new(da_ports::SystemClock),
             pdf_classifier: None,
@@ -175,7 +189,11 @@ impl IngestUseCase {
         }
 
         // 1. Parse via GROBID
-        let parsed = self.parser.parse_pdf(pdf_path, paper_id).await?;
+        let parser = self
+            .parser
+            .as_ref()
+            .context("ingest_pdf unavailable on materializer-only IngestUseCase")?;
+        let parsed = parser.parse_pdf(pdf_path, paper_id).await?;
         tracing::info!(
             paper_id,
             title = %parsed.title,
@@ -190,7 +208,11 @@ impl IngestUseCase {
         } else {
             &parsed.abstract_text
         };
-        let vector = self.embedder.embed(embed_text).await?;
+        let embedder = self
+            .embedder
+            .as_ref()
+            .context("ingest_pdf unavailable on materializer-only IngestUseCase")?;
+        let vector = embedder.embed(embed_text).await?;
         tracing::info!(paper_id, dimensions = vector.len(), "Embedded");
         self.materialize_parsed(
             &parsed,

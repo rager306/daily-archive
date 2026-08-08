@@ -11,7 +11,7 @@ use da_ports::parser::ParsedArticle;
 
 /// Extraction use case: given a parsed article, extract entities + write to graph.
 pub struct ExtractionUseCase {
-    pub extractor: Box<dyn Extractor>,
+    pub extractor: Option<Box<dyn Extractor>>,
     pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Optional embedder for entity label embeddings (Phase 3 GNN readiness).
     /// When Some, each unique entity label gets a bge-m3 embedding written
@@ -40,7 +40,7 @@ pub struct ExtractionResult {
 impl ExtractionUseCase {
     pub fn new(extractor: Box<dyn Extractor>, graph_store: Box<dyn DirectGraphStore>) -> Self {
         Self {
-            extractor,
+            extractor: Some(extractor),
             graph_store: std::sync::Arc::from(graph_store),
             embedder: None,
             clock: std::sync::Arc::new(da_ports::SystemClock),
@@ -52,7 +52,18 @@ impl ExtractionUseCase {
         graph_store: std::sync::Arc<dyn DirectGraphStore>,
     ) -> Self {
         Self {
-            extractor,
+            extractor: Some(extractor),
+            graph_store,
+            embedder: None,
+            clock: std::sync::Arc::new(da_ports::SystemClock),
+        }
+    }
+
+    /// Construct only the always-run graph materializer. Compute methods fail
+    /// closed instead of depending on a fake extractor implementation.
+    pub fn materializer_only(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
+        Self {
+            extractor: None,
             graph_store,
             embedder: None,
             clock: std::sync::Arc::new(da_ports::SystemClock),
@@ -115,10 +126,15 @@ impl ExtractionUseCase {
             .collect();
 
         // 2. Extract via Extractor port
-        let extracted = self.extractor.extract(&sections).await?;
+        let extractor = self.extractor.as_ref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "extract_from_parsed unavailable on materializer-only ExtractionUseCase"
+            )
+        })?;
+        let extracted = extractor.extract(&sections).await?;
         tracing::info!(
             paper_id = %parsed.paper_id,
-            extractor = self.extractor.name(),
+            extractor = extractor.name(),
             count = extracted.len(),
             "Entities extracted"
         );

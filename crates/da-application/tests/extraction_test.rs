@@ -8,6 +8,7 @@ use da_domain::entity::EntityType;
 use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::{ParsedArticle, Section};
+use std::sync::Arc;
 
 // ---------- Mock Extractor ----------
 
@@ -81,6 +82,33 @@ async fn make_store_with_paper(arxiv_id: &str) -> MockGraphStore {
         .await
         .unwrap();
     s
+}
+
+#[tokio::test]
+async fn materializer_only_extraction_has_no_fake_compute_port() {
+    let store = make_store_with_paper("2401.00001").await;
+    let use_case = ExtractionUseCase::materializer_only(Arc::new(store.clone()));
+    let error = use_case
+        .extract_from_parsed(&make_parsed())
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("materializer-only"));
+
+    let result = use_case
+        .materialize_extracted(
+            &make_parsed(),
+            vec![ExtractedEntity {
+                label: "CachedMethod".into(),
+                entity_type: EntityType::Method,
+                section_title: "Introduction".into(),
+                char_start: 0,
+                char_end: 12,
+                surface: "CachedMethod".into(),
+            }],
+        )
+        .await
+        .unwrap();
+    assert_eq!(result.entities_extracted, 1);
 }
 
 #[tokio::test]

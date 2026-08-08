@@ -100,6 +100,34 @@ fn make_ingest_with_citations(
 }
 
 #[tokio::test]
+async fn materializer_only_ingest_has_no_fake_compute_ports() {
+    let store = MockGraphStore::new();
+    let ingest = IngestUseCase::materializer_only(Arc::new(store.clone()));
+    let error = ingest
+        .ingest_pdf("missing.pdf", "2401.00001")
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("materializer-only"));
+
+    let parsed = ParsedArticle {
+        paper_id: "2401.00001".into(),
+        title: "Cached paper".into(),
+        abstract_text: String::new(),
+        body_text: String::new(),
+        sections: vec![],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-hash".into(),
+    };
+    ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
+}
+
+#[tokio::test]
 async fn cached_parsed_materialization_replay_is_idempotent() {
     let (ingest, store) = make_ingest(vec![]);
     let parsed = ParsedArticle {

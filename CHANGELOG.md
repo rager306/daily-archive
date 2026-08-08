@@ -1,5 +1,16 @@
 # Changelog
 
+### M371 S05 T06 materializer-only composition boundary
+
+Removed the need for fake Parser/Embedder/Extractor implementations in the
+cache-to-graph composition. `IngestUseCase::materializer_only` and
+`ExtractionUseCase::materializer_only` hold only one shared graph store;
+compute entry points fail closed with explicit diagnostics, while verified
+`ParsedArticle`/`ExtractedEntity` artifacts materialize normally. Legacy and
+shared compute constructors are unchanged. High-blast regression gate
+`95470478-...`: ingest, extraction, PDF-classifier and semantic-enrichment suites
+plus application all-target clippy PASS.
+
 ### M371 S05 T06 shared graph materialization store
 
 Added `from_shared` constructors to `IngestUseCase` and `ExtractionUseCase` while
