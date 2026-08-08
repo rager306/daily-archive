@@ -139,6 +139,57 @@ rules:
     suffix_allowlist:
       - .rs
 
+  # --- M371 S05: cacheable PipelineStageExecutor purity ratchet ---
+  # One data rule per known stage module keeps the scanner line-based and narrow.
+  # Materializers in cluster.rs/enrich.rs are intentionally outside this scope.
+  - id: cacheable_artifact_stage_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-application/src/artifact_stage.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "Cacheable PipelineStageExecutor must be pure; cache hits skip execute. Graph writes belong in an always-run idempotent materializer."
+    suffix_allowlist: [.rs]
+
+  - id: cacheable_cluster_stage_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-application/src/cluster_stage.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "ClusterDetectionStage is pure candidate computation. Graph materialization must stay outside the cacheable stage."
+    suffix_allowlist: [.rs]
+
+  - id: cacheable_document_context_stage_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-application/src/document_context_stage.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "DocumentContextStage is a pure artifact projection and must not hide graph mutations behind cache hits."
+    suffix_allowlist: [.rs]
+
+  - id: cacheable_figure_analysis_stage_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-application/src/figure_analysis_stage.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "Figure analysis is candidate evidence only; its cacheable stage must not write graph truth."
+    suffix_allowlist: [.rs]
+
+  - id: cacheable_figure_context_stage_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-application/src/figure_context_stage.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "Figure context projection is pure and cacheable; graph writes are forbidden in the stage."
+    suffix_allowlist: [.rs]
+
+  - id: cacheable_adapter_pipeline_stages_must_not_mutate_graph
+    anchor: "M371 S04/S05 cache side-effect boundary"
+    severity: high
+    scan: crates/da-adapters/src/pipeline_stages.rs
+    pattern: 'create_node|create_edge|set_node_property|materialize_|GraphStore|DirectGraphStore'
+    rationale: "Parser/detector cacheable adapters may perform external computation but must not mutate graph state."
+    suffix_allowlist: [.rs]
+
   # --- DSPy / LLM deploy lock (D136) ---
   # --- M329: fact edges must use temporal_stamp (pair with cargo audit test) ---
   # Line-level catch for same-line patterns; multi-line sites covered by

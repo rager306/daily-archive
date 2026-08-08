@@ -1,5 +1,16 @@
 # Changelog
 
+### M371 S05 T05 governor cacheable-stage purity ratchet
+
+Added narrow YAML reverse-ADR rules for every known cacheable stage module. A
+stage now receives a high violation if it imports GraphStore/DirectGraphStore or
+calls node/edge/property mutation or materialization APIs. Rules are deliberately
+file-scoped: pure parser/VLM/content artifact computation remains legal and
+always-run materializers in `cluster.rs`/`enrich.rs` are not false positives.
+Governor fixtures prove injected mutation is blocked, an adjacent materializer
+is legal, and all current stage modules are pure. Evidence `42ef2fc9-...`: 11
+governor tests PASS, active report violations=0 with expected stale STATE drift.
+
 ### M371 S05 T04 semantic task bound snapshot seal
 
 Extracted a reusable same-process semantic task runner with typed per-task and
