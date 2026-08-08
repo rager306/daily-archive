@@ -7,8 +7,9 @@ use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use da_adapters::{
-    FdApiEmbedder, FilePipelineCache, GrobidParseStage, GrobidParser, HtmlParseStage, HtmlParser,
-    ParsedArticleEmbeddingStage, RuleBasedExtractor, RuleExtractionStage,
+    FdApiEmbedder, FilePipelineCache, GrobidParseStage, GrobidParser, GrobidProfile,
+    HtmlParseStage, HtmlParser, ParsedArticleEmbeddingStage, RuleBasedExtractor,
+    RuleExtractionStage,
 };
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
@@ -199,9 +200,13 @@ async fn main() -> Result<()> {
                 "grobid_parse",
                 Arc::new(
                     GrobidParseStage::new(
-                        Arc::new(GrobidParser::from_env().with_timeout(
-                            std::time::Duration::from_secs(args.grobid_timeout_seconds),
-                        )),
+                        Arc::new(
+                            GrobidParser::from_env()
+                                .with_profile(GrobidProfile::structural())
+                                .with_timeout(std::time::Duration::from_secs(
+                                    args.grobid_timeout_seconds,
+                                )),
+                        ),
                         source_path,
                         retry_after,
                     )
@@ -209,7 +214,7 @@ async fn main() -> Result<()> {
                         stage_id: "grobid_parse".into(),
                         implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
                         configuration_fingerprint:
-                            "consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note"
+                            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note"
                                 .into(),
                         prompt_fingerprint: None,
                         model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
@@ -349,8 +354,14 @@ fn evaluate_cached_extraction(
     record: &da_cli::gold_corpus::GoldCorpusRecord,
     replay: &PipelineRunReport,
 ) -> Result<PaperMetrics> {
-    let extraction_payload_sha256 = stage_output_sha256(replay, "extract")?;
-    let extracted = load_verified_extraction(cache, &record.paper_id, &extraction_payload_sha256)?;
+    let (extraction_payload_sha256, extraction_key_sha256) =
+        stage_output_identity(replay, "extract")?;
+    let extracted = load_verified_extraction(
+        cache,
+        &record.paper_id,
+        &extraction_payload_sha256,
+        &extraction_key_sha256,
+    )?;
     let gold: GoldFixture = serde_json::from_slice(
         &std::fs::read(&record.fixture_path)
             .with_context(|| format!("read {}", record.fixture_path))?,
@@ -381,15 +392,19 @@ fn evaluate_cached_extraction(
     })
 }
 
-fn stage_output_sha256(report: &PipelineRunReport, step_name: &str) -> Result<String> {
+fn stage_output_identity(report: &PipelineRunReport, step_name: &str) -> Result<(String, String)> {
     let stage = report
         .stages
         .iter()
         .find(|stage| stage.step_name == step_name)
         .with_context(|| format!("missing stage '{step_name}' in pipeline report"))?;
+    let key_sha256 = stage
+        .cache_key_sha256
+        .clone()
+        .with_context(|| format!("stage '{step_name}' lacks exact cache key identity"))?;
     match &stage.disposition {
         StageDisposition::Executed { output_sha256 }
-        | StageDisposition::CacheHit { output_sha256 } => Ok(output_sha256.clone()),
+        | StageDisposition::CacheHit { output_sha256 } => Ok((output_sha256.clone(), key_sha256)),
         other => anyhow::bail!("stage '{step_name}' has no successful output: {other:?}"),
     }
 }
@@ -398,12 +413,14 @@ fn load_verified_extraction(
     cache: &dyn PipelineCache,
     article_id: &str,
     output_sha256: &str,
+    key_sha256: &str,
 ) -> Result<Vec<ExtractedEntity>> {
     let matches = cache
         .manifest(article_id)?
         .into_iter()
         .filter(|entry| {
             entry.key.stage_id == "extract"
+                && entry.key_sha256 == key_sha256
                 && matches!(
                     &entry.outcome,
                     StageOutcome::Success { payload_sha256, .. }
@@ -413,7 +430,7 @@ fn load_verified_extraction(
         .collect::<Vec<_>>();
     anyhow::ensure!(
         matches.len() == 1,
-        "expected one extraction cache entry for {article_id}/{output_sha256}, found {}",
+        "expected one extraction cache entry for {article_id}/{key_sha256}/{output_sha256}, found {}",
         matches.len()
     );
     let key = &matches[0].key;

@@ -9,11 +9,34 @@ use std::collections::HashSet;
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GrobidProfile {
+    pub consolidate_citations: bool,
+    pub consolidate_header: bool,
+}
+
+impl GrobidProfile {
+    pub const fn rich() -> Self {
+        Self {
+            consolidate_citations: true,
+            consolidate_header: true,
+        }
+    }
+
+    pub const fn structural() -> Self {
+        Self {
+            consolidate_citations: false,
+            consolidate_header: false,
+        }
+    }
+}
+
 /// GROBID HTTP adapter for PDF → scholarly structure (TEI XML).
 #[derive(Clone)]
 pub struct GrobidParser {
     url: String,
     client: reqwest::Client,
+    profile: GrobidProfile,
 }
 
 /// Internal span for a direct-child `<div>` during recursive TEI walk (T02).
@@ -33,6 +56,7 @@ impl GrobidParser {
                 .timeout(std::time::Duration::from_secs(120))
                 .build()
                 .expect("reqwest client"),
+            profile: GrobidProfile::rich(),
         }
     }
 
@@ -47,6 +71,15 @@ impl GrobidParser {
     /// interactive default while Crossref applies rate-limit backoff. The
     /// caller should record this operational policy in its run report. It does
     /// not alter successful TEI semantics and therefore is not a content-key input.
+    pub fn with_profile(mut self, profile: GrobidProfile) -> Self {
+        self.profile = profile;
+        self
+    }
+
+    pub fn profile(&self) -> GrobidProfile {
+        self.profile
+    }
+
     pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
         self.client = reqwest::Client::builder()
             .timeout(timeout)
@@ -87,8 +120,22 @@ impl GrobidParser {
 
         let form = reqwest::multipart::Form::new()
             .part("input", part)
-            .text("consolidateCitations", "1")
-            .text("consolidateHeader", "1")
+            .text(
+                "consolidateCitations",
+                if self.profile.consolidate_citations {
+                    "1"
+                } else {
+                    "0"
+                },
+            )
+            .text(
+                "consolidateHeader",
+                if self.profile.consolidate_header {
+                    "1"
+                } else {
+                    "0"
+                },
+            )
             .text("teiCoordinates", "[\"figure\",\"table\",\"note\"]");
 
         let resp = self
@@ -781,6 +828,14 @@ impl ParserPort for GrobidParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn structural_profile_disables_remote_consolidation() {
+        let parser = GrobidParser::new(None).with_profile(GrobidProfile::structural());
+        assert_eq!(parser.profile(), GrobidProfile::structural());
+        assert!(!parser.profile().consolidate_header);
+        assert!(!parser.profile().consolidate_citations);
+    }
 
     #[test]
     fn test_extract_title() {

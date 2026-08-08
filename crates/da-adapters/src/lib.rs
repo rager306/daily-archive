@@ -23,7 +23,7 @@ pub use anthropic_multimodal::{
     AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
 };
 pub use fd_embedder::FdApiEmbedder;
-pub use grobid_parser::GrobidParser;
+pub use grobid_parser::{GrobidParser, GrobidProfile};
 pub use html_parser::HtmlParser;
 
 pub use openalex_adapter::OpenAlexHttpAdapter;

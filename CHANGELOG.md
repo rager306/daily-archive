@@ -1,5 +1,23 @@
 # Changelog
 
+### M371 S05 T06 managed structural parsing profile
+
+Batch 17 then proved the deeper availability coupling: GROBID itself stayed
+healthy, but rich parsing repeatedly hit Crossref 429/backoff and one paper
+failed after the bounded request timeout. D204 separates local structural TEI
+from remote bibliographic enrichment. Added explicit `GrobidProfile`: `rich`
+preserves the legacy consolidated behavior; `structural` disables header and
+citation consolidation while keeping figure/table/note coordinates. The gold
+canary uses structural mode and binds profile/flags into the cache contract, so
+all dependent parse/extract/embed artifacts invalidate honestly. OpenAlex/
+Crossref enrichment remains a separate cached wave. Adapter tests and clippy
+pass (`8b38514d-...`); AGENTS operator guidance now documents both profiles.
+Batch 17 structural run executed all 30 dependent stages without Crossref
+failures, then replayed 30/30 cache hits. Exact-key evaluation also replaced the
+last output-hash-only cache lookup, which had become ambiguous across rich and
+structural profiles (`8d3c7961-...`): 10/10 papers evaluated, recall 1.0, micro
+F1 0.793.
+
 ### M371 S05 T06 retry timestamp correctness
 
 Batch 17 exposed a long-request failure path where `retry_after` was computed at
