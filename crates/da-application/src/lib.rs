@@ -63,7 +63,9 @@ pub mod decision_recorder;
 pub use decision_recorder::{
     DecisionRecord, DecisionRecordError, DecisionRecorder, DecisionRequest, DecisionRequestBuilder,
 };
+pub mod graph_finalize;
 pub mod graph_inventory;
+pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};
 pub mod temporal_stamp;
 pub use temporal_stamp::{

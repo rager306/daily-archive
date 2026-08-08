@@ -1,5 +1,25 @@
 # Changelog
 
+### M371 S05 T03 fail-closed ontology-driven graph finalize
+
+Added `finalize_policy.yaml`, typed domain reports, and `GraphFinalizeUseCase`.
+The gate walks every ontology-v2 registered label, validates node properties,
+counts D127 violations, rejects unknown edge wires and required-label gaps, and
+binds required stage outcomes to an actual `PipelineRunReport` fingerprint.
+Semantic graph task evidence is mandatory. A new additive `get_node_labels` read
+port is implemented by Mock and Samyama stores so `get_all_node_ids` can expose
+free-invent or unlabeled nodes; those now fail finalize. Production policy load
+uses workspace-aware project paths and refuses silent bundled fallback.
+`snapshot_eligible` becomes true only after schema, edges, registered labels,
+bound stages, semantic tasks, and D127 all pass; `import_eligible` remains false.
+Tests cover valid PASS, import unlock, empty graph, schema drift, unknown edge,
+missing/failed stages, missing semantic evidence and free-invent labels.
+Reviewer initially found four hollow false-PASS paths; all were closed before
+APPROVE. Evidence `424b5cfa-...` review-fix PASS, `fd4863b0-...` final full
+architecture PASS, `993f2f3c-...` governor violations=0 with only expected stale
+STATE projection drift. A governor regex false positive on diagnostic prose was
+removed without weakening the D127 source rule.
+
 ### M371 S05 T02 idempotent OpenAlex facts and progressive citation candidates
 
 OpenAlex enrichment now reports net graph effects instead of processed-input

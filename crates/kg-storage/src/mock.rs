@@ -527,6 +527,18 @@ impl DirectGraphStore for MockGraphStore {
             .map(|(id, _)| *id)
             .collect()
     }
+
+    async fn get_node_labels(&self, node_id: u64) -> Vec<String> {
+        self.inner
+            .nodes
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|(id, _)| *id == node_id)
+            .map(|(_, label)| label.clone())
+            .into_iter()
+            .collect()
+    }
 }
 
 #[cfg(test)]

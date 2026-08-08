@@ -593,6 +593,21 @@ impl DirectGraphStore for SamyamaGraphStore {
         store.all_nodes().iter().map(|n| n.id.0).collect()
     }
 
+    async fn get_node_labels(&self, node_id: u64) -> Vec<String> {
+        let store = self.store_read().await;
+        let mut labels = store
+            .get_node(NodeId(node_id))
+            .map(|node| {
+                node.labels
+                    .iter()
+                    .map(|label| label.as_str().to_string())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        labels.sort();
+        labels
+    }
+
     async fn get_edges_between(
         &self,
         source: u64,

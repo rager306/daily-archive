@@ -194,6 +194,14 @@ impl DirectGraphStore for MockGraphStore {
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64> {
         self.inner.get_nodes_by_label(label).await
     }
+
+    async fn get_all_node_ids(&self) -> Vec<u64> {
+        self.inner.get_all_node_ids().await
+    }
+
+    async fn get_node_labels(&self, node_id: u64) -> Vec<String> {
+        self.inner.get_node_labels(node_id).await
+    }
     async fn get_edges_between(
         &self,
         source: u64,

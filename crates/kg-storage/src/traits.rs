@@ -150,6 +150,12 @@ pub trait DirectGraphStore: GraphStore {
     }
     async fn get_nodes_by_label(&self, label: &str) -> Vec<u64>;
 
+    /// Resolve all labels attached to one node. Finalization uses this together
+    /// with get_all_node_ids to fail closed on free-invent labels.
+    async fn get_node_labels(&self, _node_id: u64) -> Vec<String> {
+        Vec::new()
+    }
+
     /// Get ALL node IDs in the store (not just by label).
     /// Used by graph_view_from when label=None to avoid sparse-ID assumption.
     /// Default: iterate 0..node_count (dense IDs, correct for MockGraphStore).
