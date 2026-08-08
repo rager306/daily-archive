@@ -73,12 +73,19 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
         EdgeContract {
             edge_constant: bibliographic::MENTIONS,
             source_label: "Paper",
-            // MENTIONS is polymorphic: a paper can mention an extracted
-            // Entity (NER result), a ResearchProblem (from abstract), or
-            // a MetricObservation (from results sections). All three are
-            // textual mentions extracted from the paper body.
-            target_labels: &["Entity", "ResearchProblem", "MetricObservation"],
-            rationale: "Paper mentions this Entity/ResearchProblem/MetricObservation (extracted from paper text).",
+            // MENTIONS is polymorphic: a paper can mention a generic extracted
+            // Entity, a first-class semantic Method/Dataset/Metric, a
+            // ResearchProblem, or a MetricObservation. Typed nodes come from
+            // the same grounded article context and retain import_eligible=false.
+            target_labels: &[
+                "Entity",
+                "Method",
+                "Dataset",
+                "Metric",
+                "ResearchProblem",
+                "MetricObservation",
+            ],
+            rationale: "Paper mentions this Entity or first-class typed semantic node, grounded by extraction or structured summary evidence.",
         },
         EdgeContract {
             edge_constant: hypergraph::PARTICIPATES_IN,

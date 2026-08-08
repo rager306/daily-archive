@@ -1,5 +1,21 @@
 # Changelog
 
+### M371 S04 T02 typed semantic enrichment
+
+`SummaryUseCase` no longer counts and discards structured `methods`, `datasets`,
+and `metrics`. It now idempotently materializes registered first-class `Method`,
+`Dataset`, and `Metric` nodes with deterministic VIDs, article provenance,
+retrieval eligibility, `import_eligible=false`, and temporal `MENTIONS` edges.
+The data-driven and Rust MENTIONS contracts now admit these ADR-053 Layer C
+labels. A deterministic GEPA/ARC-Challenge/Accuracy fixture proves graph
+properties, D127, schema conformance, semantic values, and second-run node/edge
+idempotency without another LLM call. The work also closed pre-existing authority
+holes by setting `import_eligible=false` on every Summary and QualitySignal
+branch. `audit-fields` now stops at Rust function boundaries instead of
+misattributing helper fields to the previous create site, and stale schema-count
+tests were updated to current 22 materialized and 36 registered labels. Evidence
+`65bdef84-...`: semantic, extraction, ontology, schema CLI and clippy PASS.
+
 ### M371 S04 T01 governor planning projection integrity
 
 Removed the governor's forbidden direct `sqlite3` read of engine-owned

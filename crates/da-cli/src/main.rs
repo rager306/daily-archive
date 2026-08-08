@@ -1869,14 +1869,29 @@ fn audit_fields() {
                     }
                 }
             }
-            // For each create_node, scan forward up to 80 lines for
-            // set_node_property_*(node_id, "field", ...) calls.
+            // For each create_node, scan within the current function only.
+            // A fixed line window can cross helper boundaries and attribute
+            // unrelated fields to the previous label (false schema drift).
             for (idx, (line_num, label)) in create_sites.iter().enumerate() {
-                let next_line = create_sites
+                let next_create = create_sites
                     .get(idx + 1)
                     .map(|(n, _)| *n)
-                    .unwrap_or(lines.len().min(line_num + 80));
-                let block: String = lines[*line_num..next_line].join("\n");
+                    .unwrap_or(lines.len());
+                let next_function = lines
+                    .iter()
+                    .enumerate()
+                    .skip(line_num + 1)
+                    .find_map(|(line_index, line)| {
+                        let trimmed = line.trim_start();
+                        let is_function = trimmed.starts_with("fn ")
+                            || trimmed.starts_with("async fn ")
+                            || trimmed.starts_with("pub fn ")
+                            || trimmed.starts_with("pub async fn ");
+                        is_function.then_some(line_index)
+                    })
+                    .unwrap_or(lines.len());
+                let block_end = next_create.min(next_function);
+                let block: String = lines[*line_num..block_end].join("\n");
                 let fields = pipeline_fields.entry(label.clone()).or_default();
                 // Simple line-by-line scan for set_node_property_* calls.
                 for bline in block.lines() {

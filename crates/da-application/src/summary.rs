@@ -9,12 +9,22 @@
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
 use da_ports::parser::ParsedArticle;
+use da_ports::{Clock, SystemClock};
 use serde::Deserialize;
 
 /// Summary generation use case (ADR-053 Layer B, full-context single-prompt).
 pub struct SummaryUseCase {
     graph_store: std::sync::Arc<dyn DirectGraphStore>,
     llm: std::sync::Arc<dyn LLMClient>,
+    clock: std::sync::Arc<dyn Clock>,
+}
+
+struct SemanticEntityWrite<'a> {
+    label: &'static str,
+    name: &'a str,
+    description: &'a str,
+    value: Option<&'a str>,
+    baseline: Option<&'a str>,
 }
 
 /// Structured LLM response — rich JSON from one prompt.
@@ -115,7 +125,16 @@ impl SummaryUseCase {
         graph_store: std::sync::Arc<dyn DirectGraphStore>,
         llm: std::sync::Arc<dyn LLMClient>,
     ) -> Self {
-        Self { graph_store, llm }
+        Self {
+            graph_store,
+            llm,
+            clock: std::sync::Arc::new(SystemClock),
+        }
+    }
+
+    pub fn with_clock(mut self, clock: std::sync::Arc<dyn Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     /// Generate full structured summary from ONE LLM call with full article context.
@@ -377,11 +396,58 @@ RULES:
                 .set_node_property_bool(node, "retrieval_eligible", true)
                 .await?;
             self.graph_store
+                .set_node_property_bool(node, "import_eligible", false)
+                .await?;
+            self.graph_store
                 .set_node_property_int(node, "schema_version", 1)
                 .await?;
         }
 
-        // 3. Quantitative results → QualitySignal node.
+        // 3. Typed semantic entities already present in the structured response.
+        for method in &s.methods {
+            self.upsert_semantic_entity(
+                paper_id,
+                paper_node_id,
+                SemanticEntityWrite {
+                    label: "Method",
+                    name: &method.name,
+                    description: &method.description,
+                    value: None,
+                    baseline: None,
+                },
+            )
+            .await?;
+        }
+        for dataset in &s.datasets {
+            self.upsert_semantic_entity(
+                paper_id,
+                paper_node_id,
+                SemanticEntityWrite {
+                    label: "Dataset",
+                    name: &dataset.name,
+                    description: &dataset.description,
+                    value: None,
+                    baseline: None,
+                },
+            )
+            .await?;
+        }
+        for metric in &s.metrics {
+            self.upsert_semantic_entity(
+                paper_id,
+                paper_node_id,
+                SemanticEntityWrite {
+                    label: "Metric",
+                    name: &metric.name,
+                    description: "",
+                    value: Some(&metric.value),
+                    baseline: Some(&metric.baseline),
+                },
+            )
+            .await?;
+        }
+
+        // 4. Quantitative results → QualitySignal node.
         if !s.quantitative_results.is_empty() {
             let node = self.graph_store.create_node("QualitySignal").await?;
             self.graph_store
@@ -403,11 +469,20 @@ RULES:
                 .set_node_property_string(node, "method", "llm_minimax_full".into())
                 .await?;
             self.graph_store
+                .set_node_property_bool(node, "import_eligible", false)
+                .await?;
+            self.graph_store
+                .set_node_property_bool(node, "retrieval_eligible", true)
+                .await?;
+            self.graph_store
+                .set_node_property_int(node, "schema_version", 1)
+                .await?;
+            self.graph_store
                 .create_edge(paper_node_id, node, HAS_SUMMARY)
                 .await?;
         }
 
-        // 4. Reproducibility → QualitySignal.
+        // 5. Reproducibility → QualitySignal.
         if s.reproducibility.score > 0 {
             let node = self.graph_store.create_node("QualitySignal").await?;
             self.graph_store
@@ -423,34 +498,159 @@ RULES:
                 .set_node_property_int(node, "score", s.reproducibility.score as i64)
                 .await?;
             self.graph_store
+                .set_node_property_bool(node, "import_eligible", false)
+                .await?;
+            self.graph_store
+                .set_node_property_bool(node, "retrieval_eligible", true)
+                .await?;
+            self.graph_store
+                .set_node_property_int(node, "schema_version", 1)
+                .await?;
+            self.graph_store
                 .create_edge(paper_node_id, node, HAS_SUMMARY)
                 .await?;
         }
 
-        // 5. Tags → store as Paper property for search.
+        // 6. Tags → store as Paper property for search.
         if !s.tags.is_empty() {
-            self.graph_store
-                .set_node_property_string(paper_node_id, "llm_tags", s.tags.join(", "))
-                .await?;
+            self.set_paper_tags(paper_node_id, &s.tags).await?;
         }
 
-        // 6. Limitations → Summary node (granularity=limitations).
+        // 7. Limitations → Summary node (granularity=limitations).
         if !s.limitations.is_empty() {
-            let node = self.graph_store.create_node("Summary").await?;
-            self.set_props_summary(
-                node,
-                paper_id,
-                &s.limitations,
-                "limitations",
-                "llm_minimax_full",
-            )
-            .await?;
-            self.graph_store
-                .create_edge(paper_node_id, node, HAS_SUMMARY)
+            self.write_limitations(paper_id, paper_node_id, &s.limitations)
                 .await?;
         }
 
         Ok(())
+    }
+
+    async fn write_limitations(
+        &self,
+        paper_id: &str,
+        paper_node_id: u64,
+        text: &str,
+    ) -> anyhow::Result<()> {
+        let node = self.graph_store.create_node("Summary").await?;
+        self.set_props_summary(node, paper_id, text, "limitations", "llm_minimax_full")
+            .await?;
+        self.graph_store
+            .create_edge(
+                paper_node_id,
+                node,
+                da_domain::relation::structure::HAS_SUMMARY,
+            )
+            .await?;
+        Ok(())
+    }
+
+    async fn set_paper_tags(&self, paper_node_id: u64, tags: &[String]) -> anyhow::Result<()> {
+        self.graph_store
+            .set_node_property_string(paper_node_id, "llm_tags", tags.join(", "))
+            .await?;
+        Ok(())
+    }
+
+    async fn upsert_semantic_entity(
+        &self,
+        paper_id: &str,
+        paper_node_id: u64,
+        entity: SemanticEntityWrite<'_>,
+    ) -> anyhow::Result<Option<u64>> {
+        let name = entity.name.trim();
+        if name.is_empty() {
+            tracing::warn!(
+                paper_id,
+                label = entity.label,
+                "Skipping unnamed semantic entity"
+            );
+            return Ok(None);
+        }
+        let entity_vid = da_domain::vid::entity_vid(entity.label, name);
+        let (node, created) = match self
+            .graph_store
+            .find_node_by_string_property(entity.label, "vid", &entity_vid)
+            .await
+        {
+            Some(existing) => (existing, false),
+            None => {
+                let node = match entity.label {
+                    "Method" => self.create_method_node().await?,
+                    "Dataset" => self.create_dataset_node().await?,
+                    "Metric" => self.create_metric_node().await?,
+                    other => anyhow::bail!("unsupported structured semantic label: {other}"),
+                };
+                self.graph_store
+                    .set_node_property_string(node, "vid", entity_vid)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "name", name.to_string())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "paper_arxiv_id", paper_id.to_string())
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(node, "import_eligible", false)
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(node, "schema_version", 1)
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(node, "valid_from", self.clock.now().timestamp())
+                    .await?;
+                if !entity.description.trim().is_empty() {
+                    self.graph_store
+                        .set_node_property_string(
+                            node,
+                            "description",
+                            entity.description.trim().to_string(),
+                        )
+                        .await?;
+                }
+                if let Some(value) = entity.value.filter(|value| !value.trim().is_empty()) {
+                    self.graph_store
+                        .set_node_property_string(node, "value", value.trim().to_string())
+                        .await?;
+                }
+                if let Some(baseline) = entity.baseline.filter(|value| !value.trim().is_empty()) {
+                    self.graph_store
+                        .set_node_property_string(node, "baseline_for", baseline.trim().to_string())
+                        .await?;
+                }
+                (node, true)
+            }
+        };
+        let existing = self
+            .graph_store
+            .get_edges_between(
+                paper_node_id,
+                node,
+                da_domain::relation::bibliographic::MENTIONS,
+            )
+            .await;
+        if existing.is_empty() {
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                paper_node_id,
+                node,
+                da_domain::relation::bibliographic::MENTIONS,
+                &temporal,
+            )
+            .await?;
+        }
+        tracing::info!(
+            paper_id,
+            label = entity.label,
+            name,
+            created,
+            linked = existing.is_empty(),
+            "Summary: typed semantic entity"
+        );
+        Ok(Some(node))
     }
 
     async fn set_props_summary(
@@ -490,9 +690,24 @@ RULES:
             .set_node_property_bool(node, "retrieval_eligible", true)
             .await?;
         self.graph_store
+            .set_node_property_bool(node, "import_eligible", false)
+            .await?;
+        self.graph_store
             .set_node_property_int(node, "schema_version", 1)
             .await?;
         Ok(())
+    }
+
+    async fn create_method_node(&self) -> anyhow::Result<u64> {
+        Ok(self.graph_store.create_node("Method").await?)
+    }
+
+    async fn create_dataset_node(&self) -> anyhow::Result<u64> {
+        Ok(self.graph_store.create_node("Dataset").await?)
+    }
+
+    async fn create_metric_node(&self) -> anyhow::Result<u64> {
+        Ok(self.graph_store.create_node("Metric").await?)
     }
 }
 
