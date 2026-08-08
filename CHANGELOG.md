@@ -1,5 +1,15 @@
 # Changelog
 
+### M371 S05 T06 retry timestamp correctness
+
+Batch 17 exposed a long-request failure path where `retry_after` was computed at
+request start; after a 300-second GROBID timeout, the timestamp was already older
+than `recorded_at`, so failure persistence itself raised a cache contract error
+and no wave report was written. `GrobidParseStage` now optionally computes retry
+time from failure observation plus delay, preserving its legacy fixed-timestamp
+constructor for deterministic callers. The canary uses the observed-failure
+policy; focused adapter tests/clippy pass (`02a7c979-...`).
+
 ### M371 S05 T06 document identity governor ratchet
 
 Added a narrow data-driven reverse-ADR rule forbidding global Section lookup by

@@ -185,7 +185,11 @@ async fn main() -> Result<()> {
             .sha256
             .as_deref()
             .context("canonical source fingerprint missing")?;
-        let retry_after = (Utc::now() + Duration::seconds(args.retry_delay_seconds)).to_rfc3339();
+        // The persisted retry time must remain future-dated even when the
+        // request consumes its full timeout budget.
+        let retry_after = (Utc::now()
+            + Duration::seconds(args.grobid_timeout_seconds as i64 + args.retry_delay_seconds))
+        .to_rfc3339();
         let (parse_stage_id, parse_stage, source_format): (
             &str,
             Arc<dyn da_ports::pipeline_stage::PipelineStageExecutor>,
@@ -211,7 +215,8 @@ async fn main() -> Result<()> {
                         model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
                         output_schema_fingerprint:
                             "ParsedArticle@serde-v3-unique-navigation".into(),
-                    }),
+                    })
+                    .with_retry_delay_seconds(args.retry_delay_seconds),
                 ),
                 SourceFormat::Pdf,
             ),

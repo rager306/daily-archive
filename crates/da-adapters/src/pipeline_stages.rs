@@ -17,6 +17,7 @@ pub struct GrobidParseStage {
     parser: Arc<dyn ParserPort>,
     pdf_path: PathBuf,
     retry_after: String,
+    retry_delay_seconds: Option<i64>,
     contract: StageContract,
 }
 
@@ -30,6 +31,7 @@ impl GrobidParseStage {
             parser,
             pdf_path: pdf_path.into(),
             retry_after: retry_after.into(),
+            retry_delay_seconds: None,
             contract: StageContract {
                 stage_id: "grobid_parse".into(),
                 implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
@@ -45,6 +47,11 @@ impl GrobidParseStage {
 
     pub fn with_contract(mut self, contract: StageContract) -> Self {
         self.contract = contract;
+        self
+    }
+
+    pub fn with_retry_delay_seconds(mut self, seconds: i64) -> Self {
+        self.retry_delay_seconds = Some(seconds);
         self
     }
 }
@@ -73,7 +80,12 @@ impl PipelineStageExecutor for GrobidParseStage {
             .map_err(|error| StageExecutionError::Retryable {
                 error_class: "parser_unavailable_or_failed".into(),
                 message: error.to_string(),
-                retry_after: self.retry_after.clone(),
+                retry_after: self.retry_delay_seconds.map_or_else(
+                    || self.retry_after.clone(),
+                    |seconds| {
+                        (chrono::Utc::now() + chrono::Duration::seconds(seconds)).to_rfc3339()
+                    },
+                ),
             })?;
         let payload =
             serde_json::to_vec(&parsed).map_err(|error| StageExecutionError::Terminal {
@@ -486,6 +498,15 @@ mod tests {
         }
     }
 
+    struct FailingParser;
+
+    #[async_trait]
+    impl ParserPort for FailingParser {
+        async fn parse_pdf(&self, _pdf_path: &str, _paper_id: &str) -> ParseResult<ParsedArticle> {
+            Err(da_ports::parser::ParserError::Unavailable("down".into()))
+        }
+    }
+
     struct FixedEmbedder;
 
     #[async_trait]
@@ -680,6 +701,26 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(error, StageExecutionError::Terminal { .. }));
+    }
+
+    #[tokio::test]
+    async fn grobid_retry_delay_is_computed_when_failure_is_observed() {
+        let parser = Arc::new(FailingParser);
+        let stage = GrobidParseStage::new(parser, "/catalog/paper.pdf", "2000-01-01T00:00:00Z")
+            .with_retry_delay_seconds(30);
+        let before = chrono::Utc::now();
+        let error = stage
+            .execute(StageExecutionRequest {
+                article_id: "paper".into(),
+                dependency_payloads: BTreeMap::new(),
+            })
+            .await
+            .unwrap_err();
+        let StageExecutionError::Retryable { retry_after, .. } = error else {
+            panic!("expected retryable failure")
+        };
+        let retry_after = chrono::DateTime::parse_from_rfc3339(&retry_after).unwrap();
+        assert!(retry_after > before);
     }
 
     #[tokio::test]
