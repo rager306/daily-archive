@@ -1,5 +1,13 @@
 # Changelog
 
+### M371 S05 T06 document identity governor ratchet
+
+Added a narrow data-driven reverse-ADR rule forbidding global Section lookup by
+title inside extraction. Repeated headings across/within papers must resolve by
+document-scoped section VID derived from paper and ordinal. Negative fixture and
+current-tree positive control pass (`e268c8cf-...`): 13 governor tests, active
+trajectory 0 violations; expected stale STATE/resource flags remain visible.
+
 ### M371 S05 T06 graph task exact-value assertions
 
 Added `@expect_value` to semantic graph tasks because the prior row classifier

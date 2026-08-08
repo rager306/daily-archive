@@ -190,6 +190,15 @@ rules:
     rationale: "Parser/detector cacheable adapters may perform external computation but must not mutate graph state."
     suffix_allowlist: [.rs]
 
+  # --- M371: document-scoped graph identity ratchet ---
+  - id: extraction_must_not_resolve_section_globally_by_title
+    anchor: "M371 S05 cache-to-graph document identity"
+    severity: high
+    scan: crates/da-application/src/extraction.rs
+    pattern: 'find_node_by_string_property\("Section",\s*"title"'
+    rationale: "Section titles repeat across and within papers. FOUND_IN must resolve the document-scoped Section VID from paper ID plus section ordinal."
+    suffix_allowlist: [.rs]
+
   # --- DSPy / LLM deploy lock (D136) ---
   # --- M329: fact edges must use temporal_stamp (pair with cargo audit test) ---
   # Line-level catch for same-line patterns; multi-line sites covered by

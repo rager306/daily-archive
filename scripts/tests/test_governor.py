@@ -137,6 +137,27 @@ def test_graph_writes_allowed_true_caught():
     assert graph_violations[0].severity == "high"
 
 
+def test_global_section_title_resolution_is_high_violation():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-application" / "src" / "extraction.rs",
+        'store.find_node_by_string_property("Section", "title", section).await;\n',
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    violations = [
+        violation
+        for result in report.results
+        if result.rule.id == "extraction_must_not_resolve_section_globally_by_title"
+        for violation in result.violations
+    ]
+    assert len(violations) == 1
+    assert violations[0].severity == "high"
+
+
 def test_cacheable_stage_graph_mutation_is_high_violation_but_materializer_is_legal():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
