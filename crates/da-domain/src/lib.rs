@@ -12,6 +12,7 @@ pub mod cluster;
 pub mod domain;
 pub mod edge_contract;
 pub mod entity;
+pub mod entity_resolution;
 pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;

@@ -11,11 +11,10 @@
 //!
 //! Phase 1 scope:
 //! - creates Decision node with required + bi-temporal fields
-//! - emits 5 causal edge wires when linking to other nodes (CAUSED, INFLUENCED,
-//!   PRECEDENT_FOR, AUTHORITY_FOR, TRIGGERED_BY) — but edge creation is the
-//!   caller's responsibility (DecisionRecorder only builds the node)
+//! - emits registered decision audit/causal wires when linking to other nodes;
+//!   orchestration remains the caller's responsibility
 //! - stamps `valid_from` + `recorded_at` from the injected Clock (ADR-051 / M330)
-//! - validates against semantic vocabulary; emits warnings via validator
+//! - rejects unknown categories/outcomes at the ontology write boundary
 //!
 //! Phase 2 scope (NOT here):
 //! - PolicyEngine integration (policy_applied category)
@@ -85,6 +84,9 @@ pub enum DecisionRecordError {
     /// Decision-maker string does not start with a known prefix.
     #[error("decision_maker '{0}' missing agent:/human:/system: prefix")]
     InvalidMaker(String),
+    /// An existing Decision VID carries different immutable semantics.
+    #[error("decision VID '{vid}' already exists with conflicting field '{field}'")]
+    ConflictingVid { vid: String, field: String },
     /// Store error during node creation or property set.
     #[error("graph store error: {0}")]
     Store(String),
@@ -95,17 +97,28 @@ pub enum DecisionRecordError {
 /// Records a first-class Decision node in the graph for every consequential
 /// system action. Node shape matches `da_domain::process::DecisionSchema`.
 pub struct DecisionRecorder {
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub graph_store: Arc<dyn DirectGraphStore>,
     pub clock: Arc<dyn da_ports::Clock>,
 }
 
 impl DecisionRecorder {
     pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
-        Self::with_clock(graph_store, Arc::new(da_ports::SystemClock))
+        Self::from_shared(Arc::from(graph_store))
+    }
+
+    pub fn from_shared(graph_store: Arc<dyn DirectGraphStore>) -> Self {
+        Self::from_shared_with_clock(graph_store, Arc::new(da_ports::SystemClock))
     }
 
     pub fn with_clock(
         graph_store: Box<dyn DirectGraphStore>,
+        clock: Arc<dyn da_ports::Clock>,
+    ) -> Self {
+        Self::from_shared_with_clock(Arc::from(graph_store), clock)
+    }
+
+    pub fn from_shared_with_clock(
+        graph_store: Arc<dyn DirectGraphStore>,
         clock: Arc<dyn da_ports::Clock>,
     ) -> Self {
         Self { graph_store, clock }
@@ -114,34 +127,23 @@ impl DecisionRecorder {
     /// Validate the request against the decision_categories.yaml vocabulary.
     /// Returns a list of warnings (non-blocking) or an error (blocking).
     fn validate(&self, req: &DecisionRequest) -> Result<Vec<String>, DecisionRecordError> {
-        let mut warnings = Vec::new();
+        let warnings = Vec::new();
 
         // Confidence must be in [0.0, 1.0].
         if !(0.0..=1.0).contains(&req.confidence) {
             return Err(DecisionRecordError::ConfidenceOutOfRange(req.confidence));
         }
 
-        // Category must be known. Unknown is a soft warning (not blocking):
-        // the node is still created but the operator is alerted. The validator
-        // will surface the same warning on the graph side.
+        // Ontology vocabulary is a hard write boundary. Extend the YAML first;
+        // never free-invent categories or outcomes in graph truth.
         if !is_known_decision_category(&req.category) {
-            warnings.push(format!(
-                "decision category '{}' not in decision_categories.yaml Phase 1 (allowed: healing_action, conflict_resolution, promotion, schema_migration, extraction_override, hypothesis_tested, retraction_recorded, deprecation)",
-                req.category
-            ));
+            return Err(DecisionRecordError::UnknownCategory(req.category.clone()));
         }
-
-        // Outcome must be valid for the declared category (only check when the
-        // category itself is known — otherwise everything is potentially valid).
-        if is_known_decision_category(&req.category)
-            && !is_valid_decision_outcome(&req.category, &req.outcome)
-        {
-            // Outcome mismatch is a soft warning for now (forward compat with
-            // new categories that have not yet landed in decision_categories.yaml).
-            warnings.push(format!(
-                "outcome '{}' not valid for category '{}' in decision_categories.yaml",
-                req.outcome, req.category
-            ));
+        if !is_valid_decision_outcome(&req.category, &req.outcome) {
+            return Err(DecisionRecordError::InvalidOutcome {
+                category: req.category.clone(),
+                outcome: req.outcome.clone(),
+            });
         }
 
         // Decision-maker prefix.
@@ -164,6 +166,33 @@ impl DecisionRecorder {
         req: DecisionRequest,
     ) -> Result<DecisionRecord, DecisionRecordError> {
         let warnings = self.validate(&req)?;
+        if let Some(existing) = self
+            .graph_store
+            .find_node_by_string_property("Decision", "vid", &req.vid)
+            .await
+        {
+            for (field, expected) in [
+                ("category", req.category.as_str()),
+                ("scenario", req.scenario.as_str()),
+                ("outcome", req.outcome.as_str()),
+            ] {
+                let actual = self
+                    .graph_store
+                    .get_node_property_string(existing, field)
+                    .await;
+                if actual.as_deref() != Some(expected) {
+                    return Err(DecisionRecordError::ConflictingVid {
+                        vid: req.vid.clone(),
+                        field: field.to_string(),
+                    });
+                }
+            }
+            return Ok(DecisionRecord {
+                node_id: existing,
+                request: req,
+                warnings,
+            });
+        }
         let now = self.clock.now();
 
         // Create the Decision node.
@@ -229,22 +258,15 @@ impl DecisionRecorder {
         from_decision_id: u64,
         to_decision_id: u64,
     ) -> Result<u64, DecisionRecordError> {
-        let now = self.clock.now();
-        let edge_id = self
-            .graph_store
-            .create_edge(from_decision_id, to_decision_id, "CAUSED")
-            .await
-            .map_err(|e| DecisionRecordError::Store(e.to_string()))?;
-        // Stamp fact edge (ADR-046): valid_at + created_at.
-        self.graph_store
-            .set_edge_property_float(edge_id, "valid_at", now.timestamp() as f64)
-            .await
-            .map_err(|e| DecisionRecordError::Store(e.to_string()))?;
-        self.graph_store
-            .set_edge_property_float(edge_id, "created_at", now.timestamp() as f64)
-            .await
-            .map_err(|e| DecisionRecordError::Store(e.to_string()))?;
-        Ok(edge_id)
+        crate::temporal_stamp::create_edge_with_temporal(
+            self.graph_store.as_ref(),
+            from_decision_id,
+            to_decision_id,
+            da_domain::relation::decision::CAUSED,
+            &self.temporal_stamp_now(),
+        )
+        .await
+        .map_err(|error| DecisionRecordError::Store(error.to_string()))
     }
 
     /// Build a TemporalEdge stamp at the recorder's current clock time.
@@ -405,19 +427,16 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_unknown_category_yields_warning_not_error() {
-        // Unknown category is a soft warning (forward compat with new categories).
+    fn test_validate_unknown_category_is_rejected() {
         let r = recorder();
         let req = DecisionRequestBuilder::new("dec-x", "bogus_category")
             .outcome("approved")
             .decision_maker("system:test")
             .build();
-        let warnings = r.validate(&req).unwrap();
-        assert!(
-            warnings
-                .iter()
-                .any(|w| w.contains("bogus_category") && w.contains("Phase 1"))
-        );
+        assert!(matches!(
+            r.validate(&req).unwrap_err(),
+            DecisionRecordError::UnknownCategory(category) if category == "bogus_category"
+        ));
     }
 
     #[test]
@@ -439,29 +458,29 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_outcome_mismatch_for_known_category_warns() {
+    fn test_validate_outcome_mismatch_is_rejected() {
         let r = recorder();
         let req = DecisionRequestBuilder::new("dec-x", "healing_action")
             .outcome("definitely_bogus_outcome")
             .decision_maker("system:test")
             .build();
-        let warnings = r.validate(&req).unwrap();
-        assert!(
-            warnings
-                .iter()
-                .any(|w| w.contains("definitely_bogus_outcome"))
-        );
+        assert!(matches!(
+            r.validate(&req).unwrap_err(),
+            DecisionRecordError::InvalidOutcome { .. }
+        ));
     }
 
     #[test]
-    fn test_validate_phase2_category_warns() {
+    fn test_validate_unknown_phase2_category_is_rejected() {
         let r = recorder();
         let req = DecisionRequestBuilder::new("dec-x", "policy_applied")
             .outcome("allowed")
             .decision_maker("system:policy-engine")
             .build();
-        let warnings = r.validate(&req).unwrap();
-        assert!(warnings.iter().any(|w| w.contains("policy_applied")));
+        assert!(matches!(
+            r.validate(&req).unwrap_err(),
+            DecisionRecordError::UnknownCategory(category) if category == "policy_applied"
+        ));
     }
 
     #[test]
@@ -524,16 +543,65 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_record_unknown_category_still_writes_with_warning() {
+    async fn test_record_unknown_category_fails_before_write() {
         let mock = kg_storage::MockGraphStore::new();
         let recorder = DecisionRecorder::new(Box::new(mock));
         let req = DecisionRequestBuilder::new("dec-103", "bogus_category")
             .outcome("approved")
             .decision_maker("system:test")
             .build();
-        let record = recorder.record(req).await.expect("record ok");
-        assert!(!record.warnings.is_empty(), "expected at least one warning");
-        assert!(record.warnings.iter().any(|w| w.contains("bogus_category")));
+        assert!(matches!(
+            recorder.record(req).await.unwrap_err(),
+            DecisionRecordError::UnknownCategory(_)
+        ));
+        assert_eq!(recorder.graph_store.node_count().await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_record_same_vid_is_idempotent_and_conflict_is_rejected() {
+        let mock = kg_storage::MockGraphStore::new();
+        let recorder = DecisionRecorder::new(Box::new(mock));
+        let request = DecisionRequestBuilder::new("dec-idempotent", "healing_action")
+            .scenario("entity-merge")
+            .reasoning("reviewed duplicate")
+            .outcome("approved")
+            .decision_maker("human:reviewer")
+            .build();
+        let first = recorder.record(request.clone()).await.unwrap();
+        let second = recorder.record(request).await.unwrap();
+        assert_eq!(first.node_id, second.node_id);
+        assert_eq!(recorder.graph_store.node_count().await, 1);
+
+        let conflict = DecisionRequestBuilder::new("dec-idempotent", "healing_action")
+            .scenario("different-scenario")
+            .outcome("approved")
+            .decision_maker("human:reviewer")
+            .build();
+        assert!(matches!(
+            recorder.record(conflict).await.unwrap_err(),
+            DecisionRecordError::ConflictingVid { .. }
+        ));
+    }
+
+    #[tokio::test]
+    async fn caused_edge_uses_temporal_string_contract() {
+        let mock = kg_storage::MockGraphStore::new();
+        let recorder = DecisionRecorder::new(Box::new(mock));
+        let left = recorder.graph_store.create_node("Decision").await.unwrap();
+        let right = recorder.graph_store.create_node("Decision").await.unwrap();
+        let edge = recorder.stamp_caused_edge(left, right).await.unwrap();
+        let valid_at = recorder
+            .graph_store
+            .get_edge_property_string(edge, "valid_at")
+            .await
+            .expect("valid_at");
+        let created_at = recorder
+            .graph_store
+            .get_edge_property_string(edge, "created_at")
+            .await
+            .expect("created_at");
+        assert!(chrono::DateTime::parse_from_rfc3339(&valid_at).is_ok());
+        assert!(chrono::DateTime::parse_from_rfc3339(&created_at).is_ok());
     }
 
     #[tokio::test]

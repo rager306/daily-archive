@@ -73,7 +73,7 @@ edge_contracts:
     temporal_class: fact
     rationale: "Source Entity supersedes target Entity (D135 merge scenario)."
   # ─── Decision plane (ADR-048 causal primitives) ───
-  # Five Semantica-aligned causal edges scoped to scientific KG use.
+  # Six decision audit and causal edges scoped to scientific KG use.
   # All temporal_class=fact: causal claims can be revised (wrong attribution,
   # later correction, retracted reasoning). Decision is the actor;
   # Policy / Conflict / HealingAction / ExtractionOverride are triggers.
@@ -82,6 +82,11 @@ edge_contracts:
     target_labels: [Decision]
     temporal_class: fact
     rationale: "Decision A caused Decision B (strong causal link). Transitive: a causal chain."
+  - edge_constant: AFFECTS
+    source_label: Decision
+    target_labels: [Entity]
+    temporal_class: fact
+    rationale: "Decision directly affected an Entity while preserving the reviewed audit trail (ADR-053 Layer G)."
   - edge_constant: INFLUENCED
     source_label: Decision
     target_labels: [Decision]

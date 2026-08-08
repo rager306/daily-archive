@@ -105,6 +105,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             target_labels: &["Entity"],
             rationale: "Source Entity supersedes target Entity (D135 merge scenario).",
         },
+        EdgeContract {
+            edge_constant: crate::relation::decision::AFFECTS,
+            source_label: "Decision",
+            target_labels: &["Entity"],
+            rationale: "Decision directly affected an Entity (ADR-053 Layer G).",
+        },
         // ─── ADR-053 Layer A document tree navigation edges (T03) ───
         EdgeContract {
             edge_constant: structure::NEXT_SIBLING,
@@ -203,6 +209,7 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
                 | bibliographic::MENTIONS
                 | bibliographic::AFFILIATED_WITH
                 | bibliographic::SUPERSEDES
+                | crate::relation::decision::AFFECTS
                 | hypergraph::SUPPORTS
                 | hypergraph::PARTICIPATES_IN
                 | hypergraph::MEMBER_OF_CLUSTER => TemporalClass::Fact,
@@ -453,7 +460,7 @@ mod tests {
     }
 
     /// ADR-048 causal primitives must all have contracts. These are the
-    /// five Semantica-aligned causal edges scoped to scientific KG use. They
+    /// six decision audit and causal edges scoped to scientific KG use. They
     /// unblock ADR-053 Layer G (entity resolution merge recording) and the
     /// ADR-053 Decision Intelligence extension.
     #[test]
@@ -461,6 +468,7 @@ mod tests {
         let edges = edge_contracts_or_yaml();
         let causal = [
             crate::relation::decision::CAUSED,
+            crate::relation::decision::AFFECTS,
             crate::relation::decision::INFLUENCED,
             crate::relation::decision::PRECEDENT_FOR,
             crate::relation::decision::AUTHORITY_FOR,
@@ -482,6 +490,7 @@ mod tests {
         let edges = edge_contracts_or_yaml();
         let causal = [
             crate::relation::decision::CAUSED,
+            crate::relation::decision::AFFECTS,
             crate::relation::decision::INFLUENCED,
             crate::relation::decision::PRECEDENT_FOR,
             crate::relation::decision::AUTHORITY_FOR,

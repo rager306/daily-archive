@@ -418,7 +418,7 @@ async fn test_add_temporal_edge_invalidates_contradicted_old_edge() {
 
     let store = MockGraphStore::new();
     let uc = GraphHealingUseCase {
-        graph_store: Box::new(store.clone()),
+        graph_store: std::sync::Arc::new(store.clone()),
         clock: std::sync::Arc::new(da_ports::SystemClock),
     };
 
@@ -490,7 +490,7 @@ async fn test_add_temporal_edge_retains_both_on_overlap() {
 
     let store = MockGraphStore::new();
     let uc = GraphHealingUseCase {
-        graph_store: Box::new(store.clone()),
+        graph_store: std::sync::Arc::new(store.clone()),
         clock: std::sync::Arc::new(da_ports::SystemClock),
     };
 

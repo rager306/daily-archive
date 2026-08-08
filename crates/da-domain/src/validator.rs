@@ -627,6 +627,7 @@ pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
         crate::relation::conflict::RESOLVED_BY,
         // Decision plane (relation::decision)
         crate::relation::decision::CAUSED,
+        crate::relation::decision::AFFECTS,
         crate::relation::decision::INFLUENCED,
         crate::relation::decision::PRECEDENT_FOR,
         crate::relation::decision::AUTHORITY_FOR,

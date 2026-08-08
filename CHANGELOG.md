@@ -1,5 +1,27 @@
 # Changelog
 
+### M371 S04 T04 ontology-driven reviewed entity resolution
+
+Added a universal Layer G resolver without hardcoded Method/Dataset/Metric
+policy. `data/ontology/entity_resolution.yaml` declares normalization steps,
+blocking keys, safety locks, bounded block size, and Decision semantics; the
+domain loads the project profile with a bundled fallback and rejects unsafe
+auto-merge/auto-promote or unknown Decision vocabulary. Candidate generation is
+pure, same-type, deterministic, and accepts arbitrary ontology wire types.
+Canonical mutation requires an explicit reviewed request: pair-local preflight,
+strict idempotent Decision, temporal `Decision -AFFECTS-> Entity` audit links,
+and replay-safe healing. DecisionRecorder and GraphHealingUseCase now share an
+`Arc<dyn DirectGraphStore>` while legacy Box constructors remain. Unknown
+Decision vocabulary is a hard write failure; duplicate Decision VIDs replay or
+reject conflicting immutable semantics. `CAUSED` and `AFFECTS` use RFC3339
+bi-temporal fact properties. Review-found recovery gaps were closed: canonical
+VID is written before retrieval silence, partial silence can replay, revised
+reason wording reuses the pair Decision, non-candidates/cross-types fail before
+Decision, and D127 remains false. D201 records the architecture choice; true
+transactional batch mutation remains explicit GraphStore-port debt. Evidence
+`47be3a0d-...` focused PASS, `08c1eba5-...` review-fix PASS,
+`9ea82931-...` full architecture PASS, independent review APPROVE.
+
 ### M371 S04 T04a canonical merge prerequisite
 
 Hardened the reusable `GraphHealingUseCase::merge` before composing entity

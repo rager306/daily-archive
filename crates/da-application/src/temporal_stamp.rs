@@ -26,6 +26,8 @@ pub fn edge_type_is_temporal_fact(edge_type: &str) -> bool {
                     | "MENTIONS"
                     | "SUPPORTS"
                     | "SUPERSEDES"
+                    | "CAUSED"
+                    | "AFFECTS"
                     | "AFFILIATED_WITH"
                     | "PARTICIPATES_IN"
                     | "MEMBER_OF_CLUSTER"

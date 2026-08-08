@@ -14,7 +14,11 @@ pub use pipeline::{
 };
 pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
+pub mod entity_resolution;
 pub mod extraction;
+pub use entity_resolution::{
+    EntityResolutionError, EntityResolutionUseCase, ReviewedMergeRequest, ReviewedMergeResult,
+};
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub mod figure_analysis;
 pub use figure_analysis::{

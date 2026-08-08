@@ -10,13 +10,17 @@ use da_ports::graph_store::DirectGraphStore;
 
 /// Graph healing use case: correct, merge, silence nodes in the graph.
 pub struct GraphHealingUseCase {
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 impl GraphHealingUseCase {
     pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
+        Self::from_shared(std::sync::Arc::from(graph_store))
+    }
+
+    pub fn from_shared(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
         Self {
             graph_store,
             clock: std::sync::Arc::new(da_ports::SystemClock),
@@ -145,6 +149,21 @@ impl GraphHealingUseCase {
             .find_node_by_string_property("Entity", "vid", vid_merge)
             .await
             .ok_or_else(|| anyhow::anyhow!("Entity {vid_merge} not found"))?;
+        let keep_type = self
+            .graph_store
+            .get_node_property_string(keep_id, "entity_type")
+            .await;
+        let merge_type = self
+            .graph_store
+            .get_node_property_string(merge_id, "entity_type")
+            .await;
+        if keep_type != merge_type {
+            anyhow::bail!(
+                "cannot merge Entity types {:?} and {:?}",
+                keep_type,
+                merge_type
+            );
+        }
 
         if vid_keep == vid_merge {
             anyhow::bail!("cannot merge Entity '{vid_keep}' into itself");
@@ -164,10 +183,10 @@ impl GraphHealingUseCase {
         // Preserve the source node for audit, but make the canonical reference
         // explicit and exclude the duplicate from retrieval.
         self.graph_store
-            .set_node_property_bool(merge_id, "retrieval_eligible", false)
+            .set_node_property_string(merge_id, "canonical_vid", vid_keep.to_string())
             .await?;
         self.graph_store
-            .set_node_property_string(merge_id, "canonical_vid", vid_keep.to_string())
+            .set_node_property_bool(merge_id, "retrieval_eligible", false)
             .await?;
 
         // Create one SUPERSEDES edge: merge → keep — temporal fact (M329).

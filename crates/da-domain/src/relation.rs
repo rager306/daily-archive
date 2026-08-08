@@ -251,6 +251,9 @@ pub mod decision {
     /// Policy authorizes a Decision (future, Phase 2).
     pub const AUTHORITY_FOR: &str = "AUTHORITY_FOR";
 
+    /// Decision directly affects an Entity while preserving an audit link.
+    pub const AFFECTS: &str = "AFFECTS";
+
     /// Decision was triggered by a Conflict, healing action, or
     /// extraction override.
     pub const TRIGGERED_BY: &str = "TRIGGERED_BY";
@@ -443,6 +446,7 @@ mod tests {
             conflict::RESOLVED_BY,
             // Decision plane edges
             decision::CAUSED,
+            decision::AFFECTS,
             decision::INFLUENCED,
             decision::PRECEDENT_FOR,
             decision::AUTHORITY_FOR,
