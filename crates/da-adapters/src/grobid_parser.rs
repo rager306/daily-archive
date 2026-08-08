@@ -5,6 +5,7 @@
 
 use async_trait::async_trait;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
+use std::collections::HashSet;
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
@@ -221,7 +222,8 @@ impl GrobidParser {
     /// - `level` = path component count (1-based depth)
     fn extract_sections_recursive(body: &str) -> Vec<da_ports::parser::Section> {
         let mut out = Vec::new();
-        Self::walk_divs(body, "", &mut 0u32, &mut out);
+        let mut used_paths = HashSet::new();
+        Self::walk_divs(body, "", &mut used_paths, &mut out);
         out
     }
 
@@ -233,7 +235,7 @@ impl GrobidParser {
     fn walk_divs(
         body: &str,
         parent_path: &str,
-        _sibling_counter: &mut u32,
+        used_paths: &mut HashSet<String>,
         out: &mut Vec<da_ports::parser::Section>,
     ) {
         let div_spans = Self::find_child_divs(body);
@@ -253,11 +255,20 @@ impl GrobidParser {
             } else {
                 path_component
             };
-            let path_id = if parent_path.is_empty() {
+            let base_path = if parent_path.is_empty() {
                 path_component.to_string()
             } else {
                 format!("{}.{}", parent_path, path_component)
             };
+            // Real GROBID TEI can repeat `n` among sibling divs. Preserve
+            // normal paths and deterministically suffix only collisions.
+            let mut path_id = base_path.clone();
+            let mut collision = 2u32;
+            while used_paths.contains(&path_id) {
+                path_id = format!("{base_path}~{collision}");
+                collision += 1;
+            }
+            used_paths.insert(path_id.clone());
             let section_id = format!("sec-{}", path_id);
             let parent_section_id = if parent_path.is_empty() {
                 None
@@ -284,8 +295,9 @@ impl GrobidParser {
                 });
             }
 
-            // Recurse into nested <div> children. Pass a fresh counter.
-            Self::walk_divs(div_content, &path_id, &mut 0u32, out);
+            // Recurse using the resolved parent path so duplicate roots cannot
+            // produce duplicate descendant identities.
+            Self::walk_divs(div_content, &path_id, used_paths, out);
         }
     }
 
@@ -464,9 +476,11 @@ impl GrobidParser {
             }
         }
 
+        // Real GROBID output can restart lexical `n` numbering for appendices
+        // or unnumbered blocks. Resolve those collisions before wiring parents.
+        Self::uniquify_flat_paths(&mut sections);
         // Post-processing pass: compute parent_section_id and order_in_parent
-        // from path_id tree. Only runs when path_id is populated (skip for
-        // legacy parsers that leave path_id=None).
+        // from the now-unique path_id tree.
         Self::populate_parent_and_order(&mut sections);
         sections
     }
@@ -485,6 +499,36 @@ impl GrobidParser {
             }
         }
         "1".to_string()
+    }
+
+    /// Make flat lexical paths unique while preserving the latest resolved
+    /// parent for descendants after a numbering restart.
+    fn uniquify_flat_paths(sections: &mut [da_ports::parser::Section]) {
+        use std::collections::HashMap;
+        let mut used = HashSet::new();
+        let mut latest_resolved: HashMap<String, String> = HashMap::new();
+        for section in sections.iter_mut() {
+            let Some(raw_path) = section.path_id.clone() else {
+                continue;
+            };
+            let candidate = match raw_path.rsplit_once('.') {
+                Some((raw_parent, component)) => latest_resolved
+                    .get(raw_parent)
+                    .map(|parent| format!("{parent}.{component}"))
+                    .unwrap_or_else(|| raw_path.clone()),
+                None => raw_path.clone(),
+            };
+            let mut resolved = candidate.clone();
+            let mut collision = 2u32;
+            while used.contains(&resolved) {
+                resolved = format!("{candidate}~{collision}");
+                collision += 1;
+            }
+            used.insert(resolved.clone());
+            latest_resolved.insert(raw_path, resolved.clone());
+            section.path_id = Some(resolved.clone());
+            section.section_id = Some(format!("sec-{resolved}"));
+        }
     }
 
     /// Populate `parent_section_id` and `order_in_parent` for each Section from
@@ -861,6 +905,26 @@ mod tests {
     }
 
     #[test]
+    fn test_duplicate_div_numbers_receive_deterministic_unique_paths() {
+        let tei = r#"<body>
+          <div n="1"><head>Introduction</head><p>Intro.</p></div>
+          <div n="1"><head>Appendix A</head><p>First appendix.</p>
+            <div n="1.1"><head>Details</head><p>Details.</p></div>
+          </div>
+          <div n="1"><head>Appendix B</head><p>Second appendix.</p></div>
+        </body>"#;
+        let sections = GrobidParser::extract_sections(tei);
+        let paths: Vec<_> = sections
+            .iter()
+            .map(|section| section.path_id.as_deref().unwrap())
+            .collect();
+        assert_eq!(paths, vec!["1", "1~2", "1~2.1", "1~3"]);
+        let unique: HashSet<_> = paths.iter().copied().collect();
+        assert_eq!(unique.len(), paths.len());
+        assert_eq!(sections[2].parent_section_id.as_deref(), Some("sec-1~2"));
+    }
+
+    #[test]
     fn test_extract_sections_nested_div_parent_section_id() {
         let sections = GrobidParser::extract_sections(NESTED_DIV_TEI);
         // Section 2.1.1 parent should be section 2.1
@@ -943,6 +1007,26 @@ mod tests {
             .find(|s| s.path_id.as_deref() == Some("1"))
             .expect("section 1 present");
         assert_eq!(root.level, 1);
+    }
+
+    #[test]
+    fn test_flat_numbering_restart_preserves_unique_tree_identity() {
+        let tei = r#"<body>
+          <head n="1">Introduction</head><p>Intro.</p>
+          <head n="2">Methods</head><p>Methods.</p>
+          <head n="1">Appendix</head><p>Appendix root.</p>
+          <head n="1.1">Appendix Detail</head><p>Detail.</p>
+          <head n="1.1">Appendix Detail Two</head><p>Detail two.</p>
+        </body>"#;
+        let sections = GrobidParser::extract_sections(tei);
+        let paths: Vec<_> = sections
+            .iter()
+            .map(|section| section.path_id.as_deref().unwrap())
+            .collect();
+        assert_eq!(paths, vec!["1", "2", "1~2", "1~2.1", "1~2.1~2"]);
+        let unique: HashSet<_> = paths.iter().copied().collect();
+        assert_eq!(unique.len(), sections.len());
+        assert_eq!(sections[3].parent_section_id.as_deref(), Some("sec-1~2"));
     }
 
     #[test]

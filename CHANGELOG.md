@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### M371 S02 T02 grounded figure semantic context and GROBID identity repair
+
+Replaced the obsolete duplicate PyMuPDF crop task with deterministic,
+provenance-preserving VLM context preparation:
+
+- Added `FigureSemanticContext` with detector/source/asset checksums, page/bbox,
+  caption, explicit containing section, bounded neighbors, in-text references,
+  sourced article summary, diagnostics, and Unicode-safe budgets.
+- The assembler requires an explicit `SectionId` or `PathId`; missing,
+  unknown, ambiguous, or provenance-free mappings fail visibly. It never picks
+  the first section or guesses from section order.
+- Real GEPA verification exposed duplicate GROBID `path_id=1` / `sec-1`
+  identities. Recursive and flat TEI numbering restarts now receive stable
+  collision-only `~N` suffixes, with descendants inheriting resolved parents.
+- `figure_context` example discovers reference candidates, validates global
+  section identity uniqueness, uses GROBID abstract provenance when catalog
+  metadata lacks an abstract, and atomically writes canonical context evidence.
+
+Real `Figure3.context.json` contains the GEPA caption, explicit section
+`3`/`sec-3`, a grounded Figure 3 reference, unique neighboring sections,
+source/bbox/checksum provenance, and 10,073 bounded context characters with
+visible truncation diagnostics. Evidence: `e1822e7f-...` (29 focused tests,
+fmt/clippy), `291577ea-...` (90.9s real GROBID semantic proof), and
+`fe408b99-...` (governor/onion/D127). Decision D197 records explicit section
+mapping until the normalized model gains page spans. T02 remains pending because
+no canonical GSD Attempt exists; no lifecycle bypass was used.
+
 ### Governor: reject false-green GSD exec evidence (D196)
 
 Added a bounded read-only `.gsd/exec` audit after M371 evidence exposed a real

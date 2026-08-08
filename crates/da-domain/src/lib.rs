@@ -16,6 +16,7 @@ pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;
 pub mod figure;
+pub mod figure_context;
 pub mod healing;
 pub mod hypergraph;
 pub mod paper;
@@ -49,6 +50,10 @@ pub use evidence::{
 };
 pub use figure::{
     BoundingBox72Dpi, DetectedVisualArtifact, VisualArtifactError, VisualArtifactKind,
+};
+pub use figure_context::{
+    ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,
+    FigureSectionRelation, FigureSemanticContext,
 };
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,

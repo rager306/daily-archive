@@ -16,6 +16,8 @@ pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
+pub mod figure_context;
+pub use figure_context::{FigureContextAssembler, FigureContextBudget, FigureSectionLocator};
 pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;
