@@ -90,6 +90,76 @@ impl PipelineStageExecutor for GrobidParseStage {
     }
 }
 
+pub struct HtmlParseStage {
+    parser: Arc<dyn ParserPort>,
+    html_path: PathBuf,
+    contract: StageContract,
+}
+
+impl HtmlParseStage {
+    pub fn new(parser: Arc<dyn ParserPort>, html_path: impl Into<PathBuf>) -> Self {
+        Self {
+            parser,
+            html_path: html_path.into(),
+            contract: StageContract {
+                stage_id: "html_parse".into(),
+                implementation_fingerprint: "HtmlParser@structured-sections-v1".into(),
+                configuration_fingerprint: "main-content=article-or-md-content;headings=h1,h2,h3"
+                    .into(),
+                prompt_fingerprint: None,
+                model_fingerprint: None,
+                output_schema_fingerprint: "ParsedArticle@serde-v3-unique-navigation".into(),
+            },
+        }
+    }
+
+    pub fn with_contract(mut self, contract: StageContract) -> Self {
+        self.contract = contract;
+        self
+    }
+}
+
+#[async_trait]
+impl PipelineStageExecutor for HtmlParseStage {
+    fn contract(&self) -> StageContract {
+        self.contract.clone()
+    }
+
+    async fn execute(
+        &self,
+        request: StageExecutionRequest,
+    ) -> Result<StageExecutionOutput, StageExecutionError> {
+        let html_path = self
+            .html_path
+            .to_str()
+            .ok_or_else(|| StageExecutionError::Terminal {
+                error_class: "invalid_html_path".into(),
+                message: format!("HTML path is not UTF-8: {}", self.html_path.display()),
+            })?;
+        let parsed = self
+            .parser
+            .parse_html(html_path, &request.article_id)
+            .await
+            .map_err(|error| StageExecutionError::Terminal {
+                error_class: "html_parser_failed".into(),
+                message: error.to_string(),
+            })?;
+        let payload =
+            serde_json::to_vec(&parsed).map_err(|error| StageExecutionError::Terminal {
+                error_class: "parsed_article_serialization".into(),
+                message: error.to_string(),
+            })?;
+        Ok(StageExecutionOutput {
+            metadata: BTreeMap::from([
+                ("sections".into(), parsed.sections.len().to_string()),
+                ("citations".into(), parsed.citations.len().to_string()),
+                ("html_hash".into(), parsed.pdf_hash.clone()),
+            ]),
+            payload,
+        })
+    }
+}
+
 /// Pure extraction adapter: cached ParsedArticle payload -> extracted entity payload.
 pub struct RuleExtractionStage {
     extractor: Arc<dyn Extractor>,
@@ -334,6 +404,37 @@ mod tests {
         assert_eq!(parsed.paper_id, "2507.19457");
         assert_eq!(output.metadata["pdf_hash"], "a".repeat(64));
         assert_eq!(parser.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn html_parse_stage_emits_same_parsed_article_contract() {
+        let root = std::env::temp_dir().join(format!(
+            "da-html-stage-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("chapter.html");
+        std::fs::write(
+            &path,
+            "<html><title>Graphs</title><article><h1>Methods</h1><p>GEPA</p></article></html>",
+        )
+        .unwrap();
+        let stage = HtmlParseStage::new(Arc::new(crate::HtmlParser::new()), &path);
+        let output = stage
+            .execute(StageExecutionRequest {
+                article_id: "gnn-ch-01".into(),
+                dependency_payloads: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        let parsed: ParsedArticle = serde_json::from_slice(&output.payload).unwrap();
+        assert_eq!(parsed.paper_id, "gnn-ch-01");
+        assert_eq!(parsed.title, "Graphs");
+        assert!(!parsed.sections.is_empty());
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]

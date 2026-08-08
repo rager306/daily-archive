@@ -1,4 +1,4 @@
-//! Run one bounded gold-corpus PDF batch twice to prove cache replay semantics.
+//! Run one bounded gold-corpus source batch twice to prove cache replay semantics.
 //!
 //! This canary is deliberately graph-free. Parser and extractor stages cannot
 //! mutate graph state; graph materialization is a later always-run audited step.
@@ -7,11 +7,16 @@ use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use da_adapters::{
-    FilePipelineCache, GrobidParseStage, GrobidParser, RuleBasedExtractor, RuleExtractionStage,
+    FilePipelineCache, GrobidParseStage, GrobidParser, HtmlParseStage, HtmlParser,
+    RuleBasedExtractor, RuleExtractionStage,
 };
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
-use da_ports::pipeline_cache::{SourceFormat, SourceIdentity};
+use da_domain::eval::{ExtractionMetrics, GoldEntity, PredictedEntity};
+use da_ports::extractor::ExtractedEntity;
+use da_ports::pipeline_cache::{
+    CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,
+};
 use kg_pipeline::PipelineBuilder;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -48,15 +53,46 @@ struct DispositionCounts {
 struct PaperCanaryReport {
     paper_id: String,
     source_sha256: String,
+    gold_entities: usize,
+    predicted_entities: usize,
+    true_positives: usize,
+    false_positives: usize,
+    false_negatives: usize,
+    precision: f64,
+    recall: f64,
+    f1: f64,
+    extraction_payload_sha256: String,
     first: PipelineRunReport,
     replay: PipelineRunReport,
+}
+
+#[derive(Debug, Serialize)]
+struct BatchMetrics {
+    gold_entities: usize,
+    predicted_entities: usize,
+    true_positives: usize,
+    false_positives: usize,
+    false_negatives: usize,
+    micro_precision: f64,
+    micro_recall: f64,
+    micro_f1: f64,
+    macro_f1: f64,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct GoldFixture {
+    paper_id: String,
+    entities: Vec<GoldEntity>,
 }
 
 #[derive(Debug, Serialize)]
 struct CanaryReport {
     manifest_version: String,
     batch: usize,
+    batch_manifest_records: usize,
     paper_count: usize,
+    skipped_unavailable: usize,
+    metrics: BatchMetrics,
     first: DispositionCounts,
     replay: DispositionCounts,
     replay_all_cache_hit: bool,
@@ -74,47 +110,77 @@ async fn main() -> Result<()> {
             .with_context(|| format!("read {}", args.manifest.display()))?,
     )
     .context("deserialize gold corpus manifest")?;
-    let records = manifest
+    let batch_records = manifest
         .records
         .iter()
         .filter(|record| record.batch == args.batch)
         .collect::<Vec<_>>();
-    anyhow::ensure!(!records.is_empty(), "batch {} has no records", args.batch);
     anyhow::ensure!(
-        records
-            .iter()
-            .all(|record| record.source.kind == CanonicalSourceKind::Pdf),
-        "canary currently supports PDF records only; split HTML records into their adapter wave"
+        !batch_records.is_empty(),
+        "batch {} has no records",
+        args.batch
+    );
+    let records = batch_records
+        .iter()
+        .copied()
+        .filter(|record| record.source.kind != CanonicalSourceKind::Unavailable)
+        .collect::<Vec<_>>();
+    let skipped_unavailable = batch_records.len() - records.len();
+    anyhow::ensure!(
+        !records.is_empty(),
+        "batch {} has no source-ready records",
+        args.batch
     );
 
     let extraction_configuration_fingerprint =
         file_fingerprint(Path::new("data/extraction_patterns.yaml"))?;
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
-    let pipeline = PipelineBuilder::new("gold-corpus-parse-extract-v1")
-        .step("parse", "grobid_parse", &[])
-        .step("extract", "rule_extract", &["parse"])
-        .build()
-        .map_err(|error| anyhow::anyhow!("build canary pipeline: {error}"))?;
     let mut papers = Vec::with_capacity(records.len());
 
     for record in records {
-        let source_path = record.source.path.as_deref().context("PDF path missing")?;
+        let source_path = record
+            .source
+            .path
+            .as_deref()
+            .context("canonical source path missing")?;
         let source_sha256 = record
             .source
             .sha256
             .as_deref()
-            .context("PDF source fingerprint missing")?;
+            .context("canonical source fingerprint missing")?;
         let retry_after = (Utc::now() + Duration::minutes(5)).to_rfc3339();
+        let (parse_stage_id, parse_stage, source_format): (
+            &str,
+            Arc<dyn da_ports::pipeline_stage::PipelineStageExecutor>,
+            SourceFormat,
+        ) = match record.source.kind {
+            CanonicalSourceKind::Pdf => (
+                "grobid_parse",
+                Arc::new(GrobidParseStage::new(
+                    Arc::new(GrobidParser::from_env()),
+                    source_path,
+                    retry_after,
+                )),
+                SourceFormat::Pdf,
+            ),
+            CanonicalSourceKind::Html => (
+                "html_parse",
+                Arc::new(HtmlParseStage::new(
+                    Arc::new(HtmlParser::new()),
+                    source_path,
+                )),
+                SourceFormat::Html,
+            ),
+            CanonicalSourceKind::Unavailable => unreachable!("unavailable records were filtered"),
+        };
+        let pipeline = PipelineBuilder::new("gold-corpus-parse-extract-v1")
+            .step("parse", parse_stage_id, &[])
+            .step("extract", "rule_extract", &["parse"])
+            .build()
+            .map_err(|error| anyhow::anyhow!("build canary pipeline: {error}"))?;
         let orchestrator =
             PipelineOrchestrator::new(cache.clone(), Arc::new(da_ports::SystemClock))
-                .with_executor(
-                    "grobid_parse",
-                    Arc::new(GrobidParseStage::new(
-                        Arc::new(GrobidParser::from_env()),
-                        source_path,
-                        retry_after,
-                    )),
-                )?
+                .with_executor(parse_stage_id, parse_stage)?
                 .with_executor(
                     "rule_extract",
                     Arc::new(RuleExtractionStage::new(
@@ -125,17 +191,52 @@ async fn main() -> Result<()> {
                 )?;
         let source = SourceIdentity {
             article_id: record.paper_id.clone(),
-            selected_format: SourceFormat::Pdf,
-            pdf_sha256: Some(source_sha256.into()),
-            html_sha256: None,
+            selected_format: source_format,
+            pdf_sha256: (record.source.kind == CanonicalSourceKind::Pdf)
+                .then(|| source_sha256.into()),
+            html_sha256: (record.source.kind == CanonicalSourceKind::Html)
+                .then(|| source_sha256.into()),
             acquisition_fingerprint: "canonical-article-catalog-v1".into(),
-            normalization_fingerprint: "grobid-tei-navigation-v3".into(),
+            normalization_fingerprint: match record.source.kind {
+                CanonicalSourceKind::Pdf => "grobid-tei-navigation-v3".into(),
+                CanonicalSourceKind::Html => "html-structured-sections-v1".into(),
+                CanonicalSourceKind::Unavailable => unreachable!(),
+            },
         };
         let first = orchestrator.run(&pipeline, source.clone()).await?;
         let replay = orchestrator.run(&pipeline, source).await?;
+        let extraction_payload_sha256 = stage_output_sha256(&replay, "extract")?;
+        let extracted =
+            load_verified_extraction(cache.as_ref(), &record.paper_id, &extraction_payload_sha256)?;
+        let gold: GoldFixture = serde_json::from_slice(
+            &std::fs::read(&record.fixture_path)
+                .with_context(|| format!("read {}", record.fixture_path))?,
+        )
+        .with_context(|| format!("parse {}", record.fixture_path))?;
+        anyhow::ensure!(
+            gold.paper_id == record.paper_id,
+            "gold identity changed after manifest"
+        );
+        let predicted = extracted
+            .iter()
+            .map(|entity| PredictedEntity {
+                label: entity.label.clone(),
+                entity_type: entity.entity_type.as_str().into(),
+            })
+            .collect::<Vec<_>>();
+        let metrics = ExtractionMetrics::evaluate_fuzzy(&gold.entities, &predicted);
         papers.push(PaperCanaryReport {
             paper_id: record.paper_id.clone(),
             source_sha256: source_sha256.into(),
+            gold_entities: metrics.gold_count,
+            predicted_entities: metrics.predicted_count,
+            true_positives: metrics.true_positives,
+            false_positives: metrics.false_positives,
+            false_negatives: metrics.false_negatives,
+            precision: metrics.precision,
+            recall: metrics.recall,
+            f1: metrics.f1,
+            extraction_payload_sha256,
             first,
             replay,
         });
@@ -143,6 +244,7 @@ async fn main() -> Result<()> {
 
     let first = count_dispositions(papers.iter().map(|paper| &paper.first));
     let replay = count_dispositions(papers.iter().map(|paper| &paper.replay));
+    let metrics = aggregate_metrics(&papers);
     let replay_all_cache_hit = papers.iter().all(|paper| {
         paper.replay.completed
             && paper
@@ -153,7 +255,7 @@ async fn main() -> Result<()> {
     });
     if args.require_cold_first {
         anyhow::ensure!(
-            first.executed == papers.len() * pipeline.steps.len()
+            first.executed == papers.len() * 2
                 && first.cache_hit == 0
                 && first.failed == 0
                 && first.retry_suppressed == 0,
@@ -168,7 +270,10 @@ async fn main() -> Result<()> {
     let report = CanaryReport {
         manifest_version: manifest.version,
         batch: args.batch,
+        batch_manifest_records: batch_records.len(),
         paper_count: papers.len(),
+        skipped_unavailable,
+        metrics,
         first,
         replay,
         replay_all_cache_hit,
@@ -180,6 +285,92 @@ async fn main() -> Result<()> {
     atomic_write(&args.report, &serde_json::to_vec_pretty(&report)?)?;
     println!("{}", serde_json::to_string_pretty(&report)?);
     Ok(())
+}
+
+fn stage_output_sha256(report: &PipelineRunReport, step_name: &str) -> Result<String> {
+    let stage = report
+        .stages
+        .iter()
+        .find(|stage| stage.step_name == step_name)
+        .with_context(|| format!("missing stage '{step_name}' in pipeline report"))?;
+    match &stage.disposition {
+        StageDisposition::Executed { output_sha256 }
+        | StageDisposition::CacheHit { output_sha256 } => Ok(output_sha256.clone()),
+        other => anyhow::bail!("stage '{step_name}' has no successful output: {other:?}"),
+    }
+}
+
+fn load_verified_extraction(
+    cache: &dyn PipelineCache,
+    article_id: &str,
+    output_sha256: &str,
+) -> Result<Vec<ExtractedEntity>> {
+    let matches = cache
+        .manifest(article_id)?
+        .into_iter()
+        .filter(|entry| {
+            entry.key.stage_id == "extract"
+                && matches!(
+                    &entry.outcome,
+                    StageOutcome::Success { payload_sha256, .. }
+                        if payload_sha256 == output_sha256
+                )
+        })
+        .collect::<Vec<_>>();
+    anyhow::ensure!(
+        matches.len() == 1,
+        "expected one extraction cache entry for {article_id}/{output_sha256}, found {}",
+        matches.len()
+    );
+    let key = &matches[0].key;
+    let CacheLookup::Hit(hit) = cache.lookup(key, &Utc::now().to_rfc3339())? else {
+        anyhow::bail!("verified extraction entry was not a cache hit for {article_id}");
+    };
+    serde_json::from_slice(&hit.payload)
+        .with_context(|| format!("deserialize cached extraction for {article_id}"))
+}
+
+fn aggregate_metrics(papers: &[PaperCanaryReport]) -> BatchMetrics {
+    let gold_entities = papers.iter().map(|paper| paper.gold_entities).sum();
+    let predicted_entities = papers.iter().map(|paper| paper.predicted_entities).sum();
+    let true_positives = papers.iter().map(|paper| paper.true_positives).sum();
+    let false_positives = papers.iter().map(|paper| paper.false_positives).sum();
+    let false_negatives = papers.iter().map(|paper| paper.false_negatives).sum();
+    let micro_precision = ratio(true_positives, true_positives + false_positives);
+    let micro_recall = ratio(true_positives, true_positives + false_negatives);
+    let micro_f1 = harmonic_mean(micro_precision, micro_recall);
+    let macro_f1 = if papers.is_empty() {
+        0.0
+    } else {
+        papers.iter().map(|paper| paper.f1).sum::<f64>() / papers.len() as f64
+    };
+    BatchMetrics {
+        gold_entities,
+        predicted_entities,
+        true_positives,
+        false_positives,
+        false_negatives,
+        micro_precision,
+        micro_recall,
+        micro_f1,
+        macro_f1,
+    }
+}
+
+fn ratio(numerator: usize, denominator: usize) -> f64 {
+    if denominator == 0 {
+        0.0
+    } else {
+        numerator as f64 / denominator as f64
+    }
+}
+
+fn harmonic_mean(left: f64, right: f64) -> f64 {
+    if left + right == 0.0 {
+        0.0
+    } else {
+        2.0 * left * right / (left + right)
+    }
 }
 
 fn count_dispositions<'a>(

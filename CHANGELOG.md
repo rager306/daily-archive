@@ -1,5 +1,17 @@
 # Changelog
 
+### M371 S05 T06 cache-linked metrics and mixed-source support
+
+Closed two corpus-process gaps before widening the waves. Added a cacheable
+`HtmlParseStage` using the existing `ParserPort::parse_html`, so the 189 PDF and
+4 HTML source-ready fixtures share the same downstream extraction contract; the
+7 unavailable fixtures remain explicit report rows. Canary reports now resolve
+the exact extraction cache entry by stage output checksum, revalidate it through
+`PipelineCache::lookup`, deserialize the typed payload, and compute per-paper and
+batch micro/macro gold metrics. Missing, ambiguous, corrupt, or stale cache data
+fails the wave. Batch 1 and 2 cache-linked metrics passed (`7e651590-...`), with
+full recall and measured precision/F1; no gold labels are copied into graph truth.
+
 ### M371 S05 T06 gold canary parse and extraction cache proof
 
 Added a pure cacheable `RuleExtractionStage` consuming serialized
