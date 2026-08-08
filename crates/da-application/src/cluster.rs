@@ -11,13 +11,15 @@
 //!   ConceptCluster = derived semantic community, NOT evidence unit.
 //!   MEMBER_OF_CLUSTER edge = community membership, NOT evidence participation.
 
-use da_domain::cluster::{self, EntityPapers};
+use da_domain::cluster::{self, EntityClusterKey, EntityPapers};
 use da_domain::relation::hypergraph::MEMBER_OF_CLUSTER;
 use da_ports::graph_store::DirectGraphStore;
+use sha2::{Digest, Sha256};
 
 /// Result of cluster materialization.
 pub struct ClusterResult {
     pub clusters_created: usize,
+    pub clusters_reused: usize,
     pub member_edges_created: usize,
     pub clusters_skipped: usize,
 }
@@ -29,12 +31,16 @@ pub struct ClusterResult {
 /// across multiple papers. The caller provides EntityPapers mapping
 /// (entity label → entity type + set of paper IDs where it appears).
 pub struct ClusterUseCase {
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
 
 impl ClusterUseCase {
     pub fn new(graph_store: Box<dyn DirectGraphStore>) -> Self {
+        Self::from_shared(std::sync::Arc::from(graph_store))
+    }
+
+    pub fn from_shared(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
         Self {
             graph_store,
             clock: std::sync::Arc::new(da_ports::SystemClock),
@@ -68,17 +74,33 @@ impl ClusterUseCase {
         let entity_node_ids = self.build_entity_node_lookup().await;
 
         let mut clusters_created = 0usize;
+        let mut clusters_reused = 0usize;
         let mut member_edges_created = 0usize;
+        let mut members_skipped = 0usize;
 
         // 3. Materialize each DetectedCluster
         for dc in &detected {
-            let cluster_node = self.graph_store.create_node("ConceptCluster").await?;
+            let vid = cluster_vid(dc);
+            let cluster_node = match self
+                .graph_store
+                .find_node_by_string_property("ConceptCluster", "vid", &vid)
+                .await
+            {
+                Some(node) => {
+                    clusters_reused += 1;
+                    node
+                }
+                None => {
+                    let node = self.graph_store.create_node("ConceptCluster").await?;
+                    self.graph_store
+                        .set_node_property_string(node, "vid", vid)
+                        .await?;
+                    clusters_created += 1;
+                    node
+                }
+            };
 
             // Set required properties
-            let vid = format!("vid:hyper:{}", slugify(&dc.label));
-            self.graph_store
-                .set_node_property_string(cluster_node, "vid", vid)
-                .await?;
             self.graph_store
                 .set_node_property_string(cluster_node, "label", dc.label.clone())
                 .await?;
@@ -96,42 +118,44 @@ impl ClusterUseCase {
                 .await?;
 
             // 4. Create MEMBER_OF_CLUSTER edges: Entity → ConceptCluster
-            for (member_label, _member_type) in dc.members.iter().zip(dc.member_types.iter()) {
-                if let Some(&entity_node_id) = entity_node_ids.get(member_label) {
-                    // MEMBER_OF_CLUSTER is temporal fact (meta-ontology) — M329.
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    let _ = crate::temporal_stamp::create_edge_with_temporal(
-                        self.graph_store.as_ref(),
-                        entity_node_id,
-                        cluster_node,
-                        MEMBER_OF_CLUSTER,
-                        &temporal,
-                    )
-                    .await;
-                    member_edges_created += 1;
+            for member in &dc.members {
+                if let Some(&entity_node_id) = entity_node_ids.get(member) {
+                    if self
+                        .graph_store
+                        .get_edges_between(entity_node_id, cluster_node, MEMBER_OF_CLUSTER)
+                        .await
+                        .is_empty()
+                    {
+                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                        crate::temporal_stamp::create_edge_with_temporal(
+                            self.graph_store.as_ref(),
+                            entity_node_id,
+                            cluster_node,
+                            MEMBER_OF_CLUSTER,
+                            &temporal,
+                        )
+                        .await?;
+                        member_edges_created += 1;
+                    }
                 } else {
-                    // Entity node not found in graph — skip this member
-                    tracing::debug!(entity = %member_label, "Entity node not found, skipping cluster membership");
+                    members_skipped += 1;
+                    tracing::warn!(entity_type = %member.entity_type, entity = %member.label, "Entity node not found, skipping cluster membership");
                 }
             }
-
-            clusters_created += 1;
         }
 
-        let clusters_skipped = detected
-            .iter()
-            .map(|d| d.members.len())
-            .sum::<usize>()
-            .saturating_sub(member_edges_created);
+        let clusters_skipped = members_skipped;
 
         tracing::info!(
             clusters_created,
+            clusters_reused,
             member_edges_created,
             "Cluster materialization complete"
         );
 
         Ok(ClusterResult {
             clusters_created,
+            clusters_reused,
             member_edges_created,
             clusters_skipped,
         })
@@ -140,17 +164,21 @@ impl ClusterUseCase {
     /// Build entity label → node_id lookup by querying all Entity nodes.
     ///
     /// Uses get_nodes_by_label + get_node_property_string (hexagonal: no Cypher).
-    async fn build_entity_node_lookup(&self) -> std::collections::HashMap<String, u64> {
+    async fn build_entity_node_lookup(&self) -> std::collections::HashMap<EntityClusterKey, u64> {
         let entity_node_ids = self.graph_store.get_nodes_by_label("Entity").await;
         let mut lookup = std::collections::HashMap::with_capacity(entity_node_ids.len());
 
         for node_id in entity_node_ids {
-            if let Some(label) = self
+            let label = self
                 .graph_store
                 .get_node_property_string(node_id, "label")
-                .await
-            {
-                lookup.insert(label, node_id);
+                .await;
+            let entity_type = self
+                .graph_store
+                .get_node_property_string(node_id, "entity_type")
+                .await;
+            if let (Some(label), Some(entity_type)) = (label, entity_type) {
+                lookup.insert(EntityClusterKey { entity_type, label }, node_id);
             }
         }
 
@@ -159,13 +187,14 @@ impl ClusterUseCase {
     }
 }
 
-/// Convert a label to a filesystem/VID-safe slug.
-fn slugify(label: &str) -> String {
-    label
-        .to_lowercase()
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect::<String>()
-        .trim_matches('_')
-        .to_string()
+fn cluster_vid(cluster: &da_domain::cluster::DetectedCluster) -> String {
+    let mut members = cluster
+        .members
+        .iter()
+        .map(|member| format!("{}:{}", member.entity_type, member.label))
+        .collect::<Vec<_>>();
+    members.sort();
+    let digest =
+        Sha256::digest(format!("{}|{}", cluster.cluster_type, members.join("|")).as_bytes());
+    format!("vid:hyper:{}", hex::encode(digest))
 }

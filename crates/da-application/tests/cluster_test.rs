@@ -4,10 +4,16 @@ mod common;
 
 use common::mock_graph_store::MockGraphStore;
 use da_application::cluster::ClusterUseCase;
-use da_domain::cluster::EntityPapers;
-use da_domain::entity::EntityType;
+use da_domain::cluster::{EntityClusterKey, EntityPapers};
 use da_ports::graph_store::DirectGraphStore;
 use std::collections::{HashMap, HashSet};
+
+fn key(entity_type: &str, label: &str) -> EntityClusterKey {
+    EntityClusterKey {
+        entity_type: entity_type.into(),
+        label: label.into(),
+    }
+}
 
 #[tokio::test]
 async fn test_cluster_use_case_creates_concept_cluster_node() {
@@ -42,7 +48,7 @@ async fn test_cluster_use_case_creates_concept_cluster_node() {
 
     let mut entity_papers: EntityPapers = HashMap::new();
     let papers: HashSet<String> = (0..6).map(|i| format!("2401.0000{i}")).collect();
-    entity_papers.insert("GPT-4".to_string(), (EntityType::Model, papers));
+    entity_papers.insert(key("Model", "GPT-4"), papers);
 
     let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
@@ -52,7 +58,58 @@ async fn test_cluster_use_case_creates_concept_cluster_node() {
         result.member_edges_created >= 1,
         "expected ≥1 MEMBER_OF_CLUSTER edge"
     );
+    let replay = use_case.materialize_clusters(&entity_papers).await.unwrap();
+    assert_eq!(replay.clusters_created, 0);
+    assert_eq!(replay.clusters_reused, 1);
+    assert_eq!(replay.member_edges_created, 0);
+    assert_eq!(replay.clusters_skipped, 0);
+    assert_eq!(store.get_nodes_by_label("ConceptCluster").await.len(), 1);
     store.assert_graph_conforms("test_cluster_use_case_creates_concept_cluster_node");
+}
+
+#[tokio::test]
+async fn same_label_different_types_keep_distinct_memberships() {
+    let store = MockGraphStore::new();
+    for (entity_type, vid) in [("Method", "vid:method:x"), ("Dataset", "vid:dataset:x")] {
+        let node = store.create_node("Entity").await.unwrap();
+        for (key, value) in [
+            ("vid", vid),
+            ("label", "SharedName"),
+            ("entity_type", entity_type),
+        ] {
+            store
+                .set_node_property_string(node, key, value.into())
+                .await
+                .unwrap();
+        }
+        store
+            .set_node_property_bool(node, "retrieval_eligible", true)
+            .await
+            .unwrap();
+        store
+            .set_node_property_bool(node, "import_eligible", false)
+            .await
+            .unwrap();
+        store
+            .set_node_property_int(node, "schema_version", 1)
+            .await
+            .unwrap();
+    }
+    let papers: HashSet<String> = (0..6).map(|index| format!("p{index}")).collect();
+    let mut entity_papers = EntityPapers::new();
+    entity_papers.insert(key("Method", "SharedName"), papers.clone());
+    entity_papers.insert(key("Dataset", "SharedName"), papers);
+
+    let result = ClusterUseCase::new(Box::new(store.clone()))
+        .materialize_clusters(&entity_papers)
+        .await
+        .unwrap();
+
+    assert_eq!(result.clusters_created, 3);
+    assert_eq!(result.member_edges_created, 4);
+    assert_eq!(result.clusters_skipped, 0);
+    assert_eq!(store.get_nodes_by_label("ConceptCluster").await.len(), 3);
+    store.assert_graph_conforms("same_label_different_types_keep_distinct_memberships");
 }
 
 #[tokio::test]
@@ -87,7 +144,7 @@ async fn test_cluster_use_case_creates_member_of_cluster_edge() {
 
     let mut entity_papers: EntityPapers = HashMap::new();
     let papers: HashSet<String> = (0..7).map(|i| format!("2402.0000{i}")).collect();
-    entity_papers.insert("PPO".to_string(), (EntityType::Method, papers));
+    entity_papers.insert(key("Method", "PPO"), papers);
 
     let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
@@ -135,7 +192,7 @@ async fn test_cluster_use_case_no_clusters_for_low_mention_entities() {
 
     let mut entity_papers: EntityPapers = HashMap::new();
     let papers: HashSet<String> = (0..2).map(|i| format!("2403.0000{i}")).collect();
-    entity_papers.insert("RareModel".to_string(), (EntityType::Model, papers));
+    entity_papers.insert(key("Model", "RareModel"), papers);
 
     let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();
@@ -154,10 +211,14 @@ async fn test_cluster_use_case_creates_concept_cluster_with_correct_label() {
         .set_node_property_string(entity_id, "label", "GraphSAGE".to_string())
         .await
         .unwrap();
+    store
+        .set_node_property_string(entity_id, "entity_type", "Method".to_string())
+        .await
+        .unwrap();
 
     let mut entity_papers: EntityPapers = HashMap::new();
     let papers: HashSet<String> = (0..5).map(|i| format!("2404.0000{i}")).collect();
-    entity_papers.insert("GraphSAGE".to_string(), (EntityType::Method, papers));
+    entity_papers.insert(key("Method", "GraphSAGE"), papers);
 
     let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();

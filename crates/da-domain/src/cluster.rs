@@ -8,7 +8,6 @@
 //! Source-grounded evidence requires EvidenceBundle (future P1 work).
 //! Do NOT run evidence PPR over MEMBER_OF_CLUSTER edges.
 
-use crate::entity::EntityType;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
@@ -26,6 +25,8 @@ struct ClusterParamsYaml {
 struct ClusterDetectionParams {
     min_cooccurrence: usize,
     min_single_mentions: usize,
+    default_cluster_type: String,
+    type_cluster_types: HashMap<String, String>,
 }
 
 const BUNDLED_PARAMS_YAML: &str = include_str!("../../../data/algorithm_params.yaml");
@@ -33,6 +34,8 @@ const BUNDLED_PARAMS_YAML: &str = include_str!("../../../data/algorithm_params.y
 struct ClusterConfig {
     min_cooccurrence: usize,
     min_single_mentions: usize,
+    default_cluster_type: String,
+    type_cluster_types: HashMap<String, String>,
 }
 
 impl ClusterConfig {
@@ -44,6 +47,8 @@ impl ClusterConfig {
         Self {
             min_cooccurrence: data.cluster_detection.min_cooccurrence,
             min_single_mentions: data.cluster_detection.min_single_mentions,
+            default_cluster_type: data.cluster_detection.default_cluster_type,
+            type_cluster_types: data.cluster_detection.type_cluster_types,
         }
     }
 
@@ -68,13 +73,18 @@ pub fn min_single_mentions() -> usize {
 pub struct DetectedCluster {
     pub label: String,
     pub cluster_type: String,
-    pub members: Vec<String>,
-    pub member_types: Vec<String>,
+    pub members: Vec<EntityClusterKey>,
     pub co_occurrence_count: usize,
 }
 
-/// Input for cluster detection: entity label → (entity type, set of paper IDs).
-pub type EntityPapers = HashMap<String, (EntityType, HashSet<String>)>;
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EntityClusterKey {
+    pub entity_type: String,
+    pub label: String,
+}
+
+/// Input for cluster detection keyed by ontology type plus label.
+pub type EntityPapers = HashMap<EntityClusterKey, HashSet<String>>;
 
 /// Detect concept clusters from entity co-occurrence patterns.
 ///
@@ -84,62 +94,67 @@ pub fn detect_clusters(entity_papers: &EntityPapers) -> Vec<DetectedCluster> {
     let mut clusters = Vec::new();
 
     // 1. Single-entity clusters (high-mention entities)
-    for (label, (etype, papers)) in entity_papers {
+    for (entity, papers) in entity_papers {
         if papers.len() >= min_single_mentions() {
-            let cluster_type = cluster_type_for_entity(etype);
             clusters.push(DetectedCluster {
-                label: format!("{label} mentions"),
-                cluster_type: cluster_type.to_string(),
-                members: vec![label.clone()],
-                member_types: vec![format!("{etype:?}")],
+                label: format!("{} mentions", entity.label),
+                cluster_type: cluster_type_for_entity(&entity.entity_type),
+                members: vec![entity.clone()],
                 co_occurrence_count: papers.len(),
             });
         }
     }
 
     // 2. Co-occurrence clusters (pairs that appear together in ≥N papers)
-    let entity_labels: Vec<String> = entity_papers.keys().cloned().collect();
-    for i in 0..entity_labels.len() {
-        for j in (i + 1)..entity_labels.len() {
-            let label_a = &entity_labels[i];
-            let label_b = &entity_labels[j];
+    let mut entity_keys: Vec<EntityClusterKey> = entity_papers.keys().cloned().collect();
+    entity_keys.sort();
+    for i in 0..entity_keys.len() {
+        for j in (i + 1)..entity_keys.len() {
+            let entity_a = &entity_keys[i];
+            let entity_b = &entity_keys[j];
 
-            let Some((etype_a, papers_a)) = entity_papers.get(label_a) else {
+            let Some(papers_a) = entity_papers.get(entity_a) else {
                 continue;
             };
-            let Some((etype_b, papers_b)) = entity_papers.get(label_b) else {
+            let Some(papers_b) = entity_papers.get(entity_b) else {
                 continue;
             };
 
             let shared = papers_a.intersection(papers_b).count();
 
             if shared >= min_cooccurrence() {
-                let cluster_type = if etype_a != etype_b {
-                    "concept_cluster"
+                let cluster_type = if entity_a.entity_type != entity_b.entity_type {
+                    ClusterConfig::instance().default_cluster_type.clone()
                 } else {
-                    cluster_type_for_entity(etype_a)
+                    cluster_type_for_entity(&entity_a.entity_type)
                 };
                 clusters.push(DetectedCluster {
-                    label: format!("{label_a} + {label_b}"),
-                    cluster_type: cluster_type.to_string(),
-                    members: vec![label_a.clone(), label_b.clone()],
-                    member_types: vec![format!("{etype_a:?}"), format!("{etype_b:?}")],
+                    label: format!("{} + {}", entity_a.label, entity_b.label),
+                    cluster_type,
+                    members: vec![entity_a.clone(), entity_b.clone()],
                     co_occurrence_count: shared,
                 });
             }
         }
     }
 
+    clusters.sort_by(|left, right| {
+        left.cluster_type
+            .cmp(&right.cluster_type)
+            .then_with(|| left.label.cmp(&right.label))
+            .then_with(|| left.members.cmp(&right.members))
+    });
     clusters
 }
 
 /// Map entity type to default cluster type.
-fn cluster_type_for_entity(etype: &EntityType) -> &'static str {
-    match etype {
-        EntityType::Method => "method_family",
-        EntityType::Dataset => "benchmark_suite",
-        _ => "concept_cluster",
-    }
+fn cluster_type_for_entity(entity_type: &str) -> String {
+    let config = ClusterConfig::instance();
+    config
+        .type_cluster_types
+        .get(entity_type)
+        .cloned()
+        .unwrap_or_else(|| config.default_cluster_type.clone())
 }
 
 #[cfg(test)]
@@ -159,86 +174,58 @@ mod tests {
         ids.iter().map(|s| s.to_string()).collect()
     }
 
+    fn key(entity_type: &str, label: &str) -> EntityClusterKey {
+        EntityClusterKey {
+            entity_type: entity_type.into(),
+            label: label.into(),
+        }
+    }
+
     #[test]
     fn test_detect_single_entity_clusters() {
         let mut entity_papers = EntityPapers::new();
-        // GPT-4 mentioned in 6 papers → standalone cluster
         entity_papers.insert(
-            "GPT-4".to_string(),
-            (
-                EntityType::Model,
-                make_papers(&["p1", "p2", "p3", "p4", "p5", "p6"]),
-            ),
+            key("Model", "GPT-4"),
+            make_papers(&["p1", "p2", "p3", "p4", "p5", "p6"]),
         );
-        // BERT mentioned in 2 papers → no cluster
-        entity_papers.insert(
-            "BERT".to_string(),
-            (EntityType::Model, make_papers(&["p1", "p2"])),
-        );
+        entity_papers.insert(key("Model", "BERT"), make_papers(&["p1", "p2"]));
 
         let clusters = detect_clusters(&entity_papers);
-        assert_eq!(
-            clusters.len(),
-            1,
-            "only GPT-4 should get a cluster, got: {clusters:?}"
-        );
-        assert_eq!(clusters[0].members, vec!["GPT-4"]);
+        assert_eq!(clusters.len(), 1);
+        assert_eq!(clusters[0].members, vec![key("Model", "GPT-4")]);
         assert_eq!(clusters[0].co_occurrence_count, 6);
     }
 
     #[test]
     fn test_detect_co_occurrence_clusters() {
         let mut entity_papers = EntityPapers::new();
-        // PPO and GRPO co-occur in 4 papers → method_family cluster
+        entity_papers.insert(key("Method", "PPO"), make_papers(&["p1", "p2", "p3", "p4"]));
         entity_papers.insert(
-            "PPO".to_string(),
-            (EntityType::Method, make_papers(&["p1", "p2", "p3", "p4"])),
-        );
-        entity_papers.insert(
-            "GRPO".to_string(),
-            (EntityType::Method, make_papers(&["p1", "p2", "p3", "p4"])),
+            key("Method", "GRPO"),
+            make_papers(&["p1", "p2", "p3", "p4"]),
         );
 
         let clusters = detect_clusters(&entity_papers);
-        // PPO has 4 mentions (< 5, so no single-entity cluster)
-        // GRPO has 4 mentions (< 5, so no single-entity cluster)
-        // But PPO + GRPO co-occur in 4 papers (≥ 3) → co-occurrence cluster
-        let co_occurrence = clusters.iter().find(|c| c.members.len() == 2);
-        assert!(
-            co_occurrence.is_some(),
-            "expected a co-occurrence cluster, got: {clusters:?}"
-        );
-        let cluster = co_occurrence.unwrap();
-        assert!(cluster.members.contains(&"PPO".to_string()));
-        assert!(cluster.members.contains(&"GRPO".to_string()));
+        let cluster = clusters
+            .iter()
+            .find(|cluster| cluster.members.len() == 2)
+            .unwrap();
+        assert!(cluster.members.contains(&key("Method", "PPO")));
+        assert!(cluster.members.contains(&key("Method", "GRPO")));
         assert_eq!(cluster.cluster_type, "method_family");
     }
 
     #[test]
     fn test_no_clusters_for_rare_entities() {
         let mut entity_papers = EntityPapers::new();
-        entity_papers.insert(
-            "RareMethod".to_string(),
-            (EntityType::Method, make_papers(&["p1"])),
-        );
-
-        let clusters = detect_clusters(&entity_papers);
-        assert!(clusters.is_empty(), "rare entity should not get a cluster");
+        entity_papers.insert(key("Method", "RareMethod"), make_papers(&["p1"]));
+        assert!(detect_clusters(&entity_papers).is_empty());
     }
 
     #[test]
-    fn test_cluster_type_mapping() {
-        assert_eq!(
-            cluster_type_for_entity(&EntityType::Method),
-            "method_family"
-        );
-        assert_eq!(
-            cluster_type_for_entity(&EntityType::Dataset),
-            "benchmark_suite"
-        );
-        assert_eq!(
-            cluster_type_for_entity(&EntityType::Model),
-            "concept_cluster"
-        );
+    fn test_cluster_type_mapping_is_data_driven_for_arbitrary_types() {
+        assert_eq!(cluster_type_for_entity("Method"), "method_family");
+        assert_eq!(cluster_type_for_entity("Dataset"), "benchmark_suite");
+        assert_eq!(cluster_type_for_entity("Theorem"), "concept_cluster");
     }
 }

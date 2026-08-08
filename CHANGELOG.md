@@ -1,5 +1,20 @@
 # Changelog
 
+### M371 S04 T05a data-driven cluster foundation
+
+Removed hardcoded `EntityType::Method/Dataset` cluster policy before stage
+composition. `data/algorithm_params.yaml` now maps arbitrary ontology wire types
+to cluster types with a declared default. `EntityPapers` is keyed by
+`EntityClusterKey { entity_type, label }`, preventing same-label cross-type
+collisions. Detection order and typed members are deterministic. Materialization
+uses full SHA-256 typed-member identities, reuses ConceptCluster nodes and
+memberships on replay, propagates store failures, preserves D127, and reports
+created/reused/skipped counts honestly. TDD covers arbitrary-type fallback,
+replay idempotency, temporal membership and same-label Method/Dataset isolation.
+Evidence `41f1a799-...` foundation PASS, `de126919-...` hardened PASS,
+`478bf7d0-...` full architecture PASS, independent review APPROVE. Pipeline
+stage wrapping remains the next thin T05b unit.
+
 ### M371 S04 T04 ontology-driven reviewed entity resolution
 
 Added a universal Layer G resolver without hardcoded Method/Dataset/Metric
