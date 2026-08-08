@@ -38,7 +38,11 @@ pub use healing::GraphHealingUseCase;
 pub mod enrich;
 pub use enrich::{EnrichResult, EnrichUseCase};
 pub mod scheduler;
+pub mod scheduler_runner;
 pub use scheduler::GraphScheduler;
+pub use scheduler_runner::{
+    SchedulerRunReport, SchedulerRunner, SchedulerTaskDisposition, SchedulerTaskOutcome,
+};
 pub mod cluster;
 pub mod cluster_stage;
 pub mod document_context_stage;

@@ -497,7 +497,10 @@ fn main() {
         }
         Commands::SchedulerRun { queue_dir } => {
             rt.block_on(async {
-                run_scheduler(&queue_dir).await;
+                if let Err(error) = run_scheduler(&queue_dir).await {
+                    eprintln!("Scheduler run failed: {error:#}");
+                    std::process::exit(1);
+                }
             });
         }
         Commands::SchemaCheck => {
@@ -1563,116 +1566,75 @@ async fn batch_enrich_from_openalex(ids_str: &str) {
     );
 }
 
-async fn run_scheduler(_queue_dir: &str) {
-    // D135: scheduler state must survive restart.
-    // Load snapshot → process due tasks → save snapshot.
+async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
     use da_adapters::OpenAlexHttpAdapter;
-    use da_application::{EnrichUseCase, GraphScheduler};
+    use da_application::SchedulerRunner;
     use da_ports::graph_store::GraphStore;
     use std::path::PathBuf;
+    use std::sync::Arc;
 
-    let snapshot_path = PathBuf::from("data/samyama/scheduler-state.sgsnap");
+    let snapshot_path = PathBuf::from(queue_dir).join("scheduler-state.sgsnap");
+    let shared_store = Arc::new(open_graph_store());
 
-    // Single shared store for both scheduler and enrich
-    let shared_store = open_graph_store();
-
-    // Restore state from snapshot
     if snapshot_path.exists() {
-        match std::fs::read(&snapshot_path) {
-            Ok(data) => {
-                if let Err(e) = GraphStore::import_snapshot(&shared_store, &data).await {
-                    eprintln!("Warning: snapshot restore failed: {e} — starting fresh");
-                } else {
-                    println!("Scheduler: restored state from {}", snapshot_path.display());
-                }
-            }
-            Err(e) => eprintln!("Warning: cannot read snapshot: {e}"),
-        }
+        let data = std::fs::read(&snapshot_path).map_err(|error| {
+            anyhow::anyhow!(
+                "read scheduler snapshot {}: {error}",
+                snapshot_path.display()
+            )
+        })?;
+        GraphStore::import_snapshot(shared_store.as_ref(), &data)
+            .await
+            .map_err(|error| {
+                anyhow::anyhow!(
+                    "restore scheduler snapshot {}: {error}",
+                    snapshot_path.display()
+                )
+            })?;
+        println!("Scheduler: restored state from {}", snapshot_path.display());
     }
 
-    // Load due tasks from the restored graph via GraphScheduler associate fn
-    let due_tasks =
-        GraphScheduler::load_due_tasks_from(&shared_store, chrono::Utc::now().timestamp()).await;
+    let graph_store: Arc<dyn da_ports::graph_store::DirectGraphStore> = shared_store.clone();
+    let openalex: Arc<dyn da_ports::openalex::OpenAlexClient> =
+        Arc::new(OpenAlexHttpAdapter::new());
+    let report = SchedulerRunner::new(graph_store, openalex)
+        .run_due()
+        .await?;
 
-    if due_tasks.is_empty() {
-        println!("Scheduler: no due tasks in graph");
-        return;
-    }
-
-    println!("Scheduler: {} tasks due now", due_tasks.len());
-
-    if due_tasks.is_empty() {
-        println!("Scheduler: no due tasks");
-    } else {
-        println!("Scheduler: {} tasks due now", due_tasks.len());
-    }
-
-    // Process due tasks using shared_store for both enrich and scheduler updates
-    let now = chrono::Utc::now().timestamp();
-    let policy = da_domain::scheduler::RetryPolicy::default();
-    let mut completed = 0;
-    let mut still_pending = 0;
-    let failed = 0; // tracked inside GraphScheduler::record_retry_on
-    let mut details = Vec::new();
-
-    for (node_id, arxiv_id) in &due_tasks {
-        // Enrich using shared store
-        let openalex = Box::new(OpenAlexHttpAdapter::new());
-        // Clone shared_store for enrich (Samyama in-memory is per-instance)
-        // In Phase 3+ (server mode), both will share the same persistent store
-        let enrich_store = Box::new(open_graph_store());
-        let use_case = EnrichUseCase::new(openalex, enrich_store);
-
-        match use_case.enrich_by_arxiv_id(arxiv_id).await {
-            Ok(r) => {
-                if r.openalex_pending {
-                    GraphScheduler::record_retry_on(&shared_store, &policy, *node_id, now)
-                        .await
-                        .ok();
-                    still_pending += 1;
-                    details.push((
-                        arxiv_id.clone(),
-                        "pending".to_string(),
-                        "not in OpenAlex".to_string(),
-                    ));
-                } else {
-                    GraphScheduler::complete_task_on(&shared_store, *node_id, now)
-                        .await
-                        .ok();
-                    completed += 1;
-                    details.push((
-                        arxiv_id.clone(),
-                        "completed".to_string(),
-                        format!("{} topics, {} authors", r.topics_written, r.authors_written),
-                    ));
-                }
-            }
-            Err(e) => {
-                still_pending += 1;
-                details.push((arxiv_id.clone(), "error".to_string(), format!("{e:#}")));
-            }
-        }
-    }
-
-    // Save state to snapshot for restart recovery
     if let Some(parent) = snapshot_path.parent() {
-        std::fs::create_dir_all(parent).ok();
+        std::fs::create_dir_all(parent).map_err(|error| {
+            anyhow::anyhow!(
+                "create scheduler snapshot directory {}: {error}",
+                parent.display()
+            )
+        })?;
     }
-    match GraphStore::export_snapshot(&shared_store).await {
-        Ok(data) => {
-            std::fs::write(&snapshot_path, &data).ok();
-            println!("Scheduler: state saved to {}", snapshot_path.display());
-        }
-        Err(e) => eprintln!("Warning: snapshot save failed: {e}"),
-    }
+    let snapshot = GraphStore::export_snapshot(shared_store.as_ref())
+        .await
+        .map_err(|error| anyhow::anyhow!("export scheduler snapshot: {error}"))?;
+    let temporary = snapshot_path.with_extension("sgsnap.tmp");
+    std::fs::write(&temporary, snapshot).map_err(|error| {
+        anyhow::anyhow!("write scheduler snapshot {}: {error}", temporary.display())
+    })?;
+    std::fs::rename(&temporary, &snapshot_path).map_err(|error| {
+        anyhow::anyhow!(
+            "commit scheduler snapshot {}: {error}",
+            snapshot_path.display()
+        )
+    })?;
 
-    println!("\nScheduler run complete:");
-    println!("  Completed: {completed}");
-    println!("  Still pending: {still_pending}");
-    println!("  Failed (max retries): {failed}");
-    for (id, status, msg) in &details {
-        println!("    {id} [{status}]: {msg}");
+    println!(
+        "Scheduler run complete: due={}, completed={}, pending={}, failed={}",
+        report.due, report.completed, report.pending, report.failed
+    );
+    for outcome in report.outcomes {
+        println!(
+            "  {} [{:?}]: {}",
+            outcome.arxiv_id, outcome.disposition, outcome.message
+        );
     }
+    println!("Scheduler: state saved to {}", snapshot_path.display());
+    Ok(())
 }
 
 /// Audit pipeline source files for create_node("Label") call sites and

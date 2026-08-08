@@ -1,5 +1,26 @@
 # Changelog
 
+### M371 S05 T01 honest shared-store OpenAlex scheduler
+
+Eliminated scheduler false completion across disconnected in-memory stores.
+`SchedulerRunner`, `EnrichUseCase`, lifecycle updates, and CLI snapshot
+restore/export now share one `Arc<dyn DirectGraphStore>`. A successful OpenAlex
+response must find its Paper and persist `openalex_id`, DOI, citation count, and
+`openalex_pending=false`; otherwise the task advances retry and cannot complete.
+The runner verifies write-back identity before completion. Scheduler tasks now
+use a stable SHA-256 VID over task type plus arXiv ID and reopen one lifecycle
+node instead of duplicating completed/failed tasks. NotFound, adapter errors,
+missing Paper, max retries, success and reopen are covered. Snapshot restore,
+export, temporary write, and rename failures are terminal; CLI returns non-zero.
+Paper schema/YAML now declare `cited_by_count`; D127 remains false. R084 records
+progressive related-article mixing: bounded grounded candidates, canonical
+catalog ingestion, semantic/finalize PASS per wave, never bulk auto-import.
+Evidence `c19a988b-...` CLI snapshot create/restore PASS,
+`c2e4f293-...` focused remainder PASS, `47c247a7-...` final architecture PASS;
+independent review APPROVE after closing missing-Paper and duplicate-task
+blockers. Failed `b7a95bbd-...` remains visible as the expected fixture contract
+update after fail-closed Paper enforcement.
+
 ### M371 S04 T05b cache-correct semantic DAG composition
 
 Added an explicit-dependency document context projection and cluster pipeline

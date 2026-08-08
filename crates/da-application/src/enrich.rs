@@ -9,8 +9,8 @@ use da_ports::openalex::OpenAlexClient;
 
 /// Enrichment use case: fetch OpenAlex metadata → write graph nodes.
 pub struct EnrichUseCase {
-    pub openalex: Box<dyn OpenAlexClient>,
-    pub graph_store: Box<dyn DirectGraphStore>,
+    pub openalex: std::sync::Arc<dyn OpenAlexClient>,
+    pub graph_store: std::sync::Arc<dyn DirectGraphStore>,
     /// Injected wall clock (ADR-051 / M330). Default: SystemClock.
     pub clock: std::sync::Arc<dyn da_ports::Clock>,
 }
@@ -37,6 +37,16 @@ pub struct EnrichResult {
 
 impl EnrichUseCase {
     pub fn new(openalex: Box<dyn OpenAlexClient>, graph_store: Box<dyn DirectGraphStore>) -> Self {
+        Self::from_shared(
+            std::sync::Arc::from(openalex),
+            std::sync::Arc::from(graph_store),
+        )
+    }
+
+    pub fn from_shared(
+        openalex: std::sync::Arc<dyn OpenAlexClient>,
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+    ) -> Self {
         Self {
             openalex,
             graph_store,
@@ -77,6 +87,31 @@ impl EnrichUseCase {
         work: da_ports::openalex::OpenAlexWork,
     ) -> anyhow::Result<EnrichResult> {
         let now = self.clock.now().timestamp();
+        let paper = self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
+            .await
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Paper {arxiv_id} missing; refuse enrichment completion without identity write-back"
+                )
+            })?;
+        self.graph_store
+            .set_node_property_string(paper, "openalex_id", work.id.clone())
+            .await?;
+        if let Some(doi) = &work.doi {
+            self.graph_store
+                .set_node_property_string(paper, "doi", doi.clone())
+                .await?;
+        }
+        self.graph_store
+            .set_node_property_int(paper, "cited_by_count", work.cited_by_count as i64)
+            .await?;
+        // Commit marker is deliberately last. Scheduler completion additionally
+        // verifies this marker and the OpenAlex identity.
+        self.graph_store
+            .set_node_property_bool(paper, "openalex_pending", false)
+            .await?;
         let mut topics_written = 0;
         let mut authors_written = 0;
 
@@ -402,35 +437,11 @@ impl EnrichUseCase {
             tracing::info!(arxiv_id, paper_id, "Paper marked openalex_pending=true");
         }
 
-        // Auto-register SchedulerTask node in graph (ADR-040: Samyama sole store)
+        // Auto-register through the same idempotent scheduler contract used by
+        // scheduler-run. Existing pending tasks are reused.
         let policy = da_domain::scheduler::RetryPolicy::default();
-        let task = da_domain::scheduler::PendingTask::new_openalex_enrich(arxiv_id, &policy, now);
-        let task_node = self.graph_store.create_node("SchedulerTask").await?;
-        self.graph_store
-            .set_node_property_string(task_node, "arxiv_id", arxiv_id.to_string())
+        crate::GraphScheduler::add_pending_to(self.graph_store.as_ref(), &policy, arxiv_id, now)
             .await?;
-        self.graph_store
-            .set_node_property_string(task_node, "task_type", task.task_type.as_str().to_string())
-            .await?;
-        self.graph_store
-            .set_node_property_string(task_node, "status", "pending".to_string())
-            .await?;
-        self.graph_store
-            .set_node_property_int(task_node, "retry_count", task.retry_count as i64)
-            .await?;
-        self.graph_store
-            .set_node_property_int(task_node, "next_retry", task.next_retry)
-            .await?;
-        self.graph_store
-            .set_node_property_bool(task_node, "retrieval_eligible", false)
-            .await?;
-        self.graph_store
-            .set_node_property_bool(task_node, "import_eligible", false) // D127
-            .await?;
-        self.graph_store
-            .set_node_property_int(task_node, "schema_version", 1)
-            .await?;
-        tracing::info!(arxiv_id, task_node, "SchedulerTask created in graph");
 
         Ok(EnrichResult {
             arxiv_id: arxiv_id.to_string(),

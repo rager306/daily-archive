@@ -106,11 +106,47 @@ fn make_store() -> MockGraphStore {
     MockGraphStore::new()
 }
 
+async fn add_paper(store: &MockGraphStore, arxiv_id: &str) -> u64 {
+    let node = store.create_node("Paper").await.unwrap();
+    for (key, value) in [
+        ("vid", da_domain::vid::paper_vid(arxiv_id)),
+        ("arxiv_id", arxiv_id.to_string()),
+        ("title", "Fixture Paper".to_string()),
+    ] {
+        store
+            .set_node_property_string(node, key, value)
+            .await
+            .unwrap();
+    }
+    store
+        .set_node_property_int(node, "valid_from", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(node, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(node, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(node, "openalex_pending", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(node, "schema_version", 1)
+        .await
+        .unwrap();
+    node
+}
+
 #[tokio::test]
 async fn test_enrich_writes_topics_and_authors() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
+    let paper = add_paper(&store, "2401.00001").await;
     let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
@@ -128,6 +164,13 @@ async fn test_enrich_writes_topics_and_authors() {
     );
     assert_eq!(result.cited_by_count, 5);
     assert!(result.doi.is_some());
+    assert_eq!(
+        store
+            .get_node_property_string(paper, "openalex_id")
+            .await
+            .as_deref(),
+        Some("https://openalex.org/W123")
+    );
     store.assert_graph_conforms("test_enrich_writes_topics_and_authors");
 }
 
@@ -138,6 +181,7 @@ async fn test_enrich_links_author_to_institution_via_affiliated_with_edge() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
+    add_paper(&store, "2401.00001").await;
     let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
@@ -172,6 +216,20 @@ async fn test_enrich_links_author_to_institution_via_affiliated_with_edge() {
 }
 
 #[tokio::test]
+async fn test_enrich_success_without_paper_fails_closed() {
+    let work = make_mock_work();
+    let openalex = Box::new(MockOpenAlex { work: Some(work) });
+    let store = make_store();
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
+
+    let error = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap_err();
+
+    assert!(error.to_string().contains("refuse enrichment completion"));
+    assert!(store.get_nodes_by_label("Topic").await.is_empty());
+    assert!(store.get_nodes_by_label("Author").await.is_empty());
+}
+
+#[tokio::test]
 async fn test_enrich_not_found_creates_pending_stub() {
     // When OpenAlex has no data, enrich should NOT fail — it should create
     // a pending stub with openalex_pending=true (lazy load pattern).
@@ -192,6 +250,7 @@ async fn test_enrich_creates_topic_nodes() {
     let work = make_mock_work();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
+    add_paper(&store, "2401.00001").await;
     let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
@@ -209,6 +268,7 @@ async fn test_enrich_dedup_same_topic() {
         work: Some(work.clone()),
     });
     let store = make_store();
+    add_paper(&store, "2401.00001").await;
 
     // Pre-create one topic node
     let pre_node = DirectGraphStore::create_node(&store, "Topic")
@@ -283,6 +343,7 @@ async fn test_enrich_empty_referenced_works_creates_zero_cites_edges() {
     let work = make_mock_work(); // referenced_works = vec![]
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
+    add_paper(&store, "2401.00001").await;
     let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();

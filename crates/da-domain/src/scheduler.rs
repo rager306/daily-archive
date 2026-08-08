@@ -36,6 +36,12 @@ pub enum TaskType {
     GraphWrite,
 }
 
+pub fn scheduler_task_vid(task_type: &TaskType, arxiv_id: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(format!("{}|{}", task_type.as_str(), arxiv_id.trim()).as_bytes());
+    format!("vid:scheduler-task:{}", hex::encode(digest))
+}
+
 impl TaskType {
     /// Canonical string representation for graph node property `task_type`.
     /// MUST match `#[serde(rename_all = "snake_case")]` serialization.

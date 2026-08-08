@@ -100,6 +100,7 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
             ("retrieval_eligible", crate::schema::FieldType::Boolean),
             ("openalex_id", crate::schema::FieldType::String),
             ("openalex_pending", crate::schema::FieldType::Boolean),
+            ("cited_by_count", crate::schema::FieldType::Integer),
             ("schema_version", crate::schema::FieldType::Integer),
         ]
     }

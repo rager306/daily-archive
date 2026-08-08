@@ -73,26 +73,30 @@ impl GraphScheduler {
         arxiv_id: &str,
         now: i64,
     ) -> anyhow::Result<()> {
-        // Skip if already pending
-        if let Some(existing) = store
-            .find_node_by_string_property("SchedulerTask", "arxiv_id", arxiv_id)
+        let task = PendingTask::new_openalex_enrich(arxiv_id, policy, now);
+        let task_vid = da_domain::scheduler::scheduler_task_vid(&task.task_type, arxiv_id);
+        // Scheduler lifecycle is one node per (task_type, arxiv_id). Re-scheduling
+        // reopens that node instead of creating ambiguous duplicates.
+        let node = match store
+            .find_node_by_string_property("SchedulerTask", "vid", &task_vid)
             .await
         {
-            let status = store
-                .get_node_property_string(existing, "status")
-                .await
-                .unwrap_or_default();
-            if status == "pending" {
-                tracing::info!(arxiv_id, "Task already pending — skipping");
-                return Ok(());
+            Some(existing) => {
+                if store
+                    .get_node_property_string(existing, "status")
+                    .await
+                    .as_deref()
+                    == Some("pending")
+                {
+                    return Ok(());
+                }
+                existing
             }
-        }
-
-        let task = PendingTask::new_openalex_enrich(arxiv_id, policy, now);
-        let node = store.create_node("SchedulerTask").await?;
+            None => store.create_node("SchedulerTask").await?,
+        };
 
         store
-            .set_node_property_string(node, "vid", format!("vid:task:{}", arxiv_id))
+            .set_node_property_string(node, "vid", task_vid)
             .await?;
         store
             .set_node_property_string(node, "arxiv_id", arxiv_id.to_string())
@@ -122,7 +126,7 @@ impl GraphScheduler {
             .set_node_property_int(node, "schema_version", 1)
             .await?;
 
-        tracing::info!(arxiv_id, node_id = node, "SchedulerTask created in graph");
+        tracing::info!(arxiv_id, node_id = node, "SchedulerTask opened in graph");
         Ok(())
     }
 

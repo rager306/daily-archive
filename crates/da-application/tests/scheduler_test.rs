@@ -60,6 +60,43 @@ async fn test_add_pending_idempotent() {
 }
 
 #[tokio::test]
+async fn test_add_pending_reopens_terminal_task_without_duplicate() {
+    let store = fresh_store();
+    let policy = RetryPolicy::default();
+    GraphScheduler::add_pending_to(&store, &policy, "2507.19457", 100)
+        .await
+        .unwrap();
+    let task = store.get_nodes_by_label("SchedulerTask").await[0];
+    GraphScheduler::complete_task_on(&store, task, 200)
+        .await
+        .unwrap();
+
+    GraphScheduler::add_pending_to(&store, &policy, "2507.19457", 300)
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_nodes_by_label("SchedulerTask").await.len(), 1);
+    assert_eq!(
+        store
+            .get_node_property_string(task, "status")
+            .await
+            .as_deref(),
+        Some("pending")
+    );
+    assert_eq!(
+        store.get_node_property_int(task, "retry_count").await,
+        Some(0)
+    );
+    assert_eq!(
+        store.get_node_property_string(task, "vid").await,
+        Some(da_domain::scheduler::scheduler_task_vid(
+            &da_domain::scheduler::TaskType::OpenAlexEnrich,
+            "2507.19457",
+        ))
+    );
+}
+
+#[tokio::test]
 async fn test_load_due_tasks_filters_by_next_retry() {
     let store = fresh_store();
     let policy = RetryPolicy::default();
