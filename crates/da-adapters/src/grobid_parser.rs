@@ -41,6 +41,20 @@ impl GrobidParser {
         Self::new(Some(&url))
     }
 
+    /// Override the bounded HTTP request timeout for batch profiles.
+    ///
+    /// Full citation/header consolidation can legitimately exceed the 120s
+    /// interactive default while Crossref applies rate-limit backoff. The
+    /// caller should record this operational policy in its run report. It does
+    /// not alter successful TEI semantics and therefore is not a content-key input.
+    pub fn with_timeout(mut self, timeout: std::time::Duration) -> Self {
+        self.client = reqwest::Client::builder()
+            .timeout(timeout)
+            .build()
+            .expect("reqwest client");
+        self
+    }
+
     /// Check if GROBID is alive.
     pub async fn is_alive(&self) -> bool {
         let url = format!("{}/api/isalive", self.url);

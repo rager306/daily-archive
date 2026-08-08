@@ -1,5 +1,27 @@
 # Changelog
 
+### M371 S05 T06 resumable wave failures and GROBID backoff policy
+
+Made bounded-wave reports durable on partial failure instead of aborting before
+evidence: each paper now records terminal metrics or an explicit failure, batch
+metrics separate evaluated/failed counts, and `wave_passed` remains false until
+an unchanged replay is fully cached. Batch 3 exposed two real retryable GROBID
+failures after 8/10 successes. Container diagnostics ruled out crash/OOM and
+showed Crossref consolidation 429 backoff exceeding the old hardcoded 120s HTTP
+timeout. Added configurable bounded GROBID request timeout (wave default 300s)
+and retry suppression delay (30s), recorded in reports but intentionally excluded
+from semantic cache keys so successful TEI payloads remain hits. Evidence:
+partial and resumed reports under `artifacts/gold_corpus/canary_batch_03.json`;
+policy tests `dc443423-...`. After increasing only the operational timeout while
+preserving semantic cache keys, batch 3 resumed from prior successes and passed:
+10/10 evaluated, 20/20 replay hits, micro F1 0.827.
+
+Recorded R085/D203 for a daily-archive-owned managed scholarly parsing platform:
+provider-neutral staged backends, content-addressed artifacts, admission control,
+backpressure/circuit breakers, deterministic provenance merge, gold benchmarks,
+and gradual native replacement. GROBID remains a replaceable backend rather than
+being rewritten in one risky monolith.
+
 ### M371 S05 T06 cache-linked metrics and mixed-source support
 
 Closed two corpus-process gaps before widening the waves. Added a cacheable

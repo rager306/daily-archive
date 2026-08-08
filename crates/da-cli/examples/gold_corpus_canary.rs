@@ -17,6 +17,7 @@ use da_ports::extractor::ExtractedEntity;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageOutcome,
 };
+use da_ports::pipeline_stage::StageContract;
 use kg_pipeline::PipelineBuilder;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -39,6 +40,12 @@ struct Args {
     /// Require the first pass to execute every stage (use with a fresh cache root).
     #[arg(long)]
     require_cold_first: bool,
+    /// Bounded GROBID request timeout; consolidation may back off on Crossref 429.
+    #[arg(long, default_value_t = 300)]
+    grobid_timeout_seconds: u64,
+    /// Retry suppression window persisted by the pipeline cache.
+    #[arg(long, default_value_t = 30)]
+    retry_delay_seconds: i64,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -50,9 +57,7 @@ struct DispositionCounts {
 }
 
 #[derive(Debug, Serialize)]
-struct PaperCanaryReport {
-    paper_id: String,
-    source_sha256: String,
+struct PaperMetrics {
     gold_entities: usize,
     predicted_entities: usize,
     true_positives: usize,
@@ -62,12 +67,22 @@ struct PaperCanaryReport {
     recall: f64,
     f1: f64,
     extraction_payload_sha256: String,
+}
+
+#[derive(Debug, Serialize)]
+struct PaperCanaryReport {
+    paper_id: String,
+    source_sha256: String,
+    metrics: Option<PaperMetrics>,
+    failure: Option<String>,
     first: PipelineRunReport,
     replay: PipelineRunReport,
 }
 
 #[derive(Debug, Serialize)]
 struct BatchMetrics {
+    evaluated_papers: usize,
+    failed_papers: usize,
     gold_entities: usize,
     predicted_entities: usize,
     true_positives: usize,
@@ -88,7 +103,11 @@ struct GoldFixture {
 #[derive(Debug, Serialize)]
 struct CanaryReport {
     manifest_version: String,
+    manifest_sha256: String,
+    cache_root: String,
     batch: usize,
+    grobid_timeout_seconds: u64,
+    retry_delay_seconds: i64,
     batch_manifest_records: usize,
     paper_count: usize,
     skipped_unavailable: usize,
@@ -96,6 +115,8 @@ struct CanaryReport {
     first: DispositionCounts,
     replay: DispositionCounts,
     replay_all_cache_hit: bool,
+    cold_first_satisfied: Option<bool>,
+    wave_passed: bool,
     graph_net_writes: usize,
     graph_boundary: &'static str,
     import_eligible: bool,
@@ -105,11 +126,11 @@ struct CanaryReport {
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Args::parse();
-    let manifest: GoldCorpusManifest = serde_json::from_slice(
-        &std::fs::read(&args.manifest)
-            .with_context(|| format!("read {}", args.manifest.display()))?,
-    )
-    .context("deserialize gold corpus manifest")?;
+    let manifest_bytes = std::fs::read(&args.manifest)
+        .with_context(|| format!("read {}", args.manifest.display()))?;
+    let manifest_sha256 = hex::encode(Sha256::digest(&manifest_bytes));
+    let manifest: GoldCorpusManifest =
+        serde_json::from_slice(&manifest_bytes).context("deserialize gold corpus manifest")?;
     let batch_records = manifest
         .records
         .iter()
@@ -131,6 +152,11 @@ async fn main() -> Result<()> {
         "batch {} has no source-ready records",
         args.batch
     );
+    anyhow::ensure!(
+        args.grobid_timeout_seconds > 0,
+        "GROBID timeout must be positive"
+    );
+    anyhow::ensure!(args.retry_delay_seconds > 0, "retry delay must be positive");
 
     let extraction_configuration_fingerprint =
         file_fingerprint(Path::new("data/extraction_patterns.yaml"))?;
@@ -148,7 +174,7 @@ async fn main() -> Result<()> {
             .sha256
             .as_deref()
             .context("canonical source fingerprint missing")?;
-        let retry_after = (Utc::now() + Duration::minutes(5)).to_rfc3339();
+        let retry_after = (Utc::now() + Duration::seconds(args.retry_delay_seconds)).to_rfc3339();
         let (parse_stage_id, parse_stage, source_format): (
             &str,
             Arc<dyn da_ports::pipeline_stage::PipelineStageExecutor>,
@@ -156,11 +182,26 @@ async fn main() -> Result<()> {
         ) = match record.source.kind {
             CanonicalSourceKind::Pdf => (
                 "grobid_parse",
-                Arc::new(GrobidParseStage::new(
-                    Arc::new(GrobidParser::from_env()),
-                    source_path,
-                    retry_after,
-                )),
+                Arc::new(
+                    GrobidParseStage::new(
+                        Arc::new(GrobidParser::from_env().with_timeout(
+                            std::time::Duration::from_secs(args.grobid_timeout_seconds),
+                        )),
+                        source_path,
+                        retry_after,
+                    )
+                    .with_contract(StageContract {
+                        stage_id: "grobid_parse".into(),
+                        implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
+                        configuration_fingerprint:
+                            "consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note"
+                                .into(),
+                        prompt_fingerprint: None,
+                        model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
+                        output_schema_fingerprint:
+                            "ParsedArticle@serde-v3-unique-navigation".into(),
+                    }),
+                ),
                 SourceFormat::Pdf,
             ),
             CanonicalSourceKind::Html => (
@@ -205,38 +246,16 @@ async fn main() -> Result<()> {
         };
         let first = orchestrator.run(&pipeline, source.clone()).await?;
         let replay = orchestrator.run(&pipeline, source).await?;
-        let extraction_payload_sha256 = stage_output_sha256(&replay, "extract")?;
-        let extracted =
-            load_verified_extraction(cache.as_ref(), &record.paper_id, &extraction_payload_sha256)?;
-        let gold: GoldFixture = serde_json::from_slice(
-            &std::fs::read(&record.fixture_path)
-                .with_context(|| format!("read {}", record.fixture_path))?,
-        )
-        .with_context(|| format!("parse {}", record.fixture_path))?;
-        anyhow::ensure!(
-            gold.paper_id == record.paper_id,
-            "gold identity changed after manifest"
-        );
-        let predicted = extracted
-            .iter()
-            .map(|entity| PredictedEntity {
-                label: entity.label.clone(),
-                entity_type: entity.entity_type.as_str().into(),
-            })
-            .collect::<Vec<_>>();
-        let metrics = ExtractionMetrics::evaluate_fuzzy(&gold.entities, &predicted);
+        let evaluated = evaluate_cached_extraction(cache.as_ref(), record, &replay);
+        let (metrics, failure) = match evaluated {
+            Ok(metrics) => (Some(metrics), None),
+            Err(error) => (None, Some(format!("{error:#}"))),
+        };
         papers.push(PaperCanaryReport {
             paper_id: record.paper_id.clone(),
             source_sha256: source_sha256.into(),
-            gold_entities: metrics.gold_count,
-            predicted_entities: metrics.predicted_count,
-            true_positives: metrics.true_positives,
-            false_positives: metrics.false_positives,
-            false_negatives: metrics.false_negatives,
-            precision: metrics.precision,
-            recall: metrics.recall,
-            f1: metrics.f1,
-            extraction_payload_sha256,
+            metrics,
+            failure,
             first,
             replay,
         });
@@ -253,23 +272,21 @@ async fn main() -> Result<()> {
                 .iter()
                 .all(|stage| matches!(stage.disposition, StageDisposition::CacheHit { .. }))
     });
-    if args.require_cold_first {
-        anyhow::ensure!(
-            first.executed == papers.len() * 2
-                && first.cache_hit == 0
-                && first.failed == 0
-                && first.retry_suppressed == 0,
-            "cold first pass was not fully executed: {}",
-            serde_json::to_string(&first)?
-        );
-    }
-    anyhow::ensure!(
-        replay_all_cache_hit,
-        "unchanged replay was not fully cached"
+    let cold_first_satisfied = args.require_cold_first.then_some(
+        first.executed == papers.len() * 2
+            && first.cache_hit == 0
+            && first.failed == 0
+            && first.retry_suppressed == 0,
     );
+    let wave_passed =
+        replay_all_cache_hit && cold_first_satisfied.unwrap_or(true) && metrics.failed_papers == 0;
     let report = CanaryReport {
         manifest_version: manifest.version,
+        manifest_sha256,
+        cache_root: args.cache_root.to_string_lossy().to_string(),
         batch: args.batch,
+        grobid_timeout_seconds: args.grobid_timeout_seconds,
+        retry_delay_seconds: args.retry_delay_seconds,
         batch_manifest_records: batch_records.len(),
         paper_count: papers.len(),
         skipped_unavailable,
@@ -277,6 +294,8 @@ async fn main() -> Result<()> {
         first,
         replay,
         replay_all_cache_hit,
+        cold_first_satisfied,
+        wave_passed,
         graph_net_writes: 0,
         graph_boundary: "no GraphStore is injected into cacheable parse/extract stages",
         import_eligible: false,
@@ -284,7 +303,50 @@ async fn main() -> Result<()> {
     };
     atomic_write(&args.report, &serde_json::to_vec_pretty(&report)?)?;
     println!("{}", serde_json::to_string_pretty(&report)?);
+    anyhow::ensure!(
+        wave_passed,
+        "wave {} did not pass; see {}",
+        args.batch,
+        args.report.display()
+    );
     Ok(())
+}
+
+fn evaluate_cached_extraction(
+    cache: &dyn PipelineCache,
+    record: &da_cli::gold_corpus::GoldCorpusRecord,
+    replay: &PipelineRunReport,
+) -> Result<PaperMetrics> {
+    let extraction_payload_sha256 = stage_output_sha256(replay, "extract")?;
+    let extracted = load_verified_extraction(cache, &record.paper_id, &extraction_payload_sha256)?;
+    let gold: GoldFixture = serde_json::from_slice(
+        &std::fs::read(&record.fixture_path)
+            .with_context(|| format!("read {}", record.fixture_path))?,
+    )
+    .with_context(|| format!("parse {}", record.fixture_path))?;
+    anyhow::ensure!(
+        gold.paper_id == record.paper_id,
+        "gold identity changed after manifest"
+    );
+    let predicted = extracted
+        .iter()
+        .map(|entity| PredictedEntity {
+            label: entity.label.clone(),
+            entity_type: entity.entity_type.as_str().into(),
+        })
+        .collect::<Vec<_>>();
+    let metrics = ExtractionMetrics::evaluate_fuzzy(&gold.entities, &predicted);
+    Ok(PaperMetrics {
+        gold_entities: metrics.gold_count,
+        predicted_entities: metrics.predicted_count,
+        true_positives: metrics.true_positives,
+        false_positives: metrics.false_positives,
+        false_negatives: metrics.false_negatives,
+        precision: metrics.precision,
+        recall: metrics.recall,
+        f1: metrics.f1,
+        extraction_payload_sha256,
+    })
 }
 
 fn stage_output_sha256(report: &PipelineRunReport, step_name: &str) -> Result<String> {
@@ -331,20 +393,40 @@ fn load_verified_extraction(
 }
 
 fn aggregate_metrics(papers: &[PaperCanaryReport]) -> BatchMetrics {
-    let gold_entities = papers.iter().map(|paper| paper.gold_entities).sum();
-    let predicted_entities = papers.iter().map(|paper| paper.predicted_entities).sum();
-    let true_positives = papers.iter().map(|paper| paper.true_positives).sum();
-    let false_positives = papers.iter().map(|paper| paper.false_positives).sum();
-    let false_negatives = papers.iter().map(|paper| paper.false_negatives).sum();
+    let successful = papers
+        .iter()
+        .filter_map(|paper| paper.metrics.as_ref())
+        .collect::<Vec<_>>();
+    let evaluated_papers = successful.len();
+    let failed_papers = papers.len() - evaluated_papers;
+    let gold_entities = successful.iter().map(|metrics| metrics.gold_entities).sum();
+    let predicted_entities = successful
+        .iter()
+        .map(|metrics| metrics.predicted_entities)
+        .sum();
+    let true_positives = successful
+        .iter()
+        .map(|metrics| metrics.true_positives)
+        .sum();
+    let false_positives = successful
+        .iter()
+        .map(|metrics| metrics.false_positives)
+        .sum();
+    let false_negatives = successful
+        .iter()
+        .map(|metrics| metrics.false_negatives)
+        .sum();
     let micro_precision = ratio(true_positives, true_positives + false_positives);
     let micro_recall = ratio(true_positives, true_positives + false_negatives);
     let micro_f1 = harmonic_mean(micro_precision, micro_recall);
-    let macro_f1 = if papers.is_empty() {
+    let macro_f1 = if successful.is_empty() {
         0.0
     } else {
-        papers.iter().map(|paper| paper.f1).sum::<f64>() / papers.len() as f64
+        successful.iter().map(|metrics| metrics.f1).sum::<f64>() / successful.len() as f64
     };
     BatchMetrics {
+        evaluated_papers,
+        failed_papers,
         gold_entities,
         predicted_entities,
         true_positives,
