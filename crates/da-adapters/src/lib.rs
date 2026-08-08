@@ -8,6 +8,7 @@ pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;
 pub mod openalex_adapter;
+pub mod pipeline_cache;
 pub mod rule_extractor;
 pub mod samyama_graph;
 
@@ -21,5 +22,6 @@ pub use html_parser::HtmlParser;
 pub use openalex_adapter::OpenAlexHttpAdapter;
 #[cfg(feature = "pdf-classifier")]
 pub use pdf_classifier::PdfInspectorClassifier;
+pub use pipeline_cache::FilePipelineCache;
 pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;

@@ -28,8 +28,6 @@ struct AnthropicResponse {
     content: Vec<AnthropicContentBlock>,
     #[serde(default)]
     usage: AnthropicUsage,
-    #[serde(default)]
-    stop_reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

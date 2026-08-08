@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### M371 S01 T01 content-addressed pipeline cache (delivery pending GSD Attempt)
+
+Implemented the hexagonal pipeline-cache boundary and filesystem adapter:
+
+- `PipelineCache` port records explicit PDF/HTML source identity plus stage,
+  dependency-output, implementation, configuration, prompt, model, and output
+  schema fingerprints.
+- `FilePipelineCache` atomically persists payloads and manifest commit markers,
+  verifies SHA-256 and size on reads, rejects unsafe paths, and exposes corrupt
+  artifacts as errors rather than cache hits.
+- Retryable failures are distinct from successful artifacts and expire to cache
+  misses using validated RFC3339 timestamps.
+- 12 focused contract tests cover selective invalidation, source changes,
+  PDF/HTML identity, corruption, negative-cache expiry, timestamps, and path
+  traversal.
+- Removed the unused `AnthropicResponse.stop_reason` field that blocked
+  crate-level clippy.
+
+Verification: `gsd_exec bb0fa66a-d6b7-4e36-bc8f-9952128dc8f3` PASS for
+fmt, focused tests, and clippy on `da-ports` and `da-adapters`. Governor active
+verdict is ON_TRACK with flags=0. GitNexus reports LOW change risk and no
+impacted production process. GSD T01 remains pending because the free-form
+session has no running Attempt; no lifecycle bypass was used.
+
 ### M369 closed via GSD + M371 S01-S02 planned (D194)
 
 M369 Pipeline Wiring closed: all 5 slices skipped (superseded by M370 core

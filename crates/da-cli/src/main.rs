@@ -1126,7 +1126,7 @@ async fn summarize_paper(
     use da_adapters::GrobidParser;
     use da_adapters::anthropic_llm::AnthropicLlmClient;
     use da_application::SummaryUseCase;
-    use da_ports::graph_store::{DirectGraphStore, GraphStore};
+    use da_ports::graph_store::DirectGraphStore;
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
 
