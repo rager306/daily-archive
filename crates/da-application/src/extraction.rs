@@ -5,7 +5,7 @@
 
 use da_domain::entity::EntityType;
 use da_domain::vid;
-use da_ports::extractor::Extractor;
+use da_ports::extractor::{ExtractedEntity, Extractor};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParsedArticle;
 
@@ -110,7 +110,18 @@ impl ExtractionUseCase {
             count = extracted.len(),
             "Entities extracted"
         );
+        self.materialize_extracted(parsed, extracted).await
+    }
 
+    /// Materialize already-computed extraction artifacts without invoking the
+    /// extractor again. This is the always-run side-effect boundary used after
+    /// a verified cache hit; callers must not place this method inside a
+    /// cacheable `PipelineStageExecutor`.
+    pub async fn materialize_extracted(
+        &self,
+        parsed: &ParsedArticle,
+        extracted: Vec<ExtractedEntity>,
+    ) -> anyhow::Result<ExtractionResult> {
         // 3. Find the Paper node by arxiv_id (to link entities via MENTIONS)
         let paper_node_id = self
             .graph_store
@@ -186,22 +197,30 @@ impl ExtractionUseCase {
             };
             // Link Entity to Paper via MENTIONS edge (if Paper node exists)
             if let Some(paper_id) = paper_node_id {
-                // MENTIONS is temporal fact (meta-ontology temporal_class: fact) — M328.
-                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                let edge_id = crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    paper_id,
-                    node_id,
-                    da_domain::relation::bibliographic::MENTIONS,
-                    &temporal,
-                )
-                .await?;
-                // Set edge weight = extraction confidence (Phase 3 GNN readiness)
-                // Rule-based extractor has uniform confidence 1.0
-                self.graph_store
-                    .set_edge_property_float(edge_id, "weight", 1.0)
+                let edge_type = da_domain::relation::bibliographic::MENTIONS;
+                if self
+                    .graph_store
+                    .get_edges_between(paper_id, node_id, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    // MENTIONS is temporal fact (meta-ontology temporal_class: fact) — M328.
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    let edge_id = crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        paper_id,
+                        node_id,
+                        edge_type,
+                        &temporal,
+                    )
                     .await?;
-                mentions_edges += 1;
+                    // Set edge weight = extraction confidence (Phase 3 GNN readiness)
+                    // Rule-based extractor has uniform confidence 1.0
+                    self.graph_store
+                        .set_edge_property_float(edge_id, "weight", 1.0)
+                        .await?;
+                    mentions_edges += 1;
+                }
             }
 
             // Link Entity to Section via FOUND_IN edge (evidence grounding).
@@ -214,17 +233,25 @@ impl ExtractionUseCase {
                     .find_node_by_string_property("Section", "title", &ext.section_title)
                     .await
                 {
-                    // Structural foundIn — created_at only (M331).
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    let _ = crate::temporal_stamp::create_edge_with_temporal(
-                        self.graph_store.as_ref(),
-                        node_id,
-                        section_node,
-                        da_domain::relation::structure::FOUND_IN,
-                        &temporal,
-                    )
-                    .await;
-                    found_in_edges += 1;
+                    let edge_type = da_domain::relation::structure::FOUND_IN;
+                    if self
+                        .graph_store
+                        .get_edges_between(node_id, section_node, edge_type)
+                        .await
+                        .is_empty()
+                    {
+                        // Structural foundIn — created_at only (M331).
+                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                        crate::temporal_stamp::create_edge_with_temporal(
+                            self.graph_store.as_ref(),
+                            node_id,
+                            section_node,
+                            edge_type,
+                            &temporal,
+                        )
+                        .await?;
+                        found_in_edges += 1;
+                    }
                 }
             }
             node_ids.push(node_id);
@@ -293,103 +320,144 @@ impl ExtractionUseCase {
                     .map(|(_, label)| *label)
                     .collect::<Vec<_>>()
                     .join(", ");
-                let bundle_vid = format!("vid:bundle:{}:{}", parsed.paper_id, section_title.len());
-                let bundle_node = self.graph_store.create_node("EvidenceBundle").await?;
-                self.graph_store
-                    .set_node_property_string(bundle_node, "vid", bundle_vid)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(
-                        bundle_node,
-                        "bundle_type",
-                        "experiment_setup".to_string(),
-                    )
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(
-                        bundle_node,
-                        "normalized_text",
-                        format!("Entities in {section_title}: {bundle_text}"),
-                    )
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(bundle_node, "document_id", parsed.paper_id.clone())
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(bundle_node, "retrieval_eligible", true)
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(bundle_node, "import_eligible", false) // D127
-                    .await?;
-                self.graph_store
-                    .set_node_property_int(bundle_node, "schema_version", 1)
-                    .await?;
-                // Create PARTICIPATES_IN edges: Entity → EvidenceBundle
+                let member_vids = members
+                    .iter()
+                    .map(|(index, _)| {
+                        let entity = &extracted[*index];
+                        da_domain::vid::entity_vid(entity.entity_type.as_str(), &entity.label)
+                    })
+                    .collect::<Vec<_>>();
+                let bundle_vid = da_domain::vid::evidence_bundle_vid(
+                    &parsed.paper_id,
+                    section_title,
+                    &member_vids,
+                );
+                let bundle_node = match self
+                    .graph_store
+                    .find_node_by_string_property("EvidenceBundle", "vid", &bundle_vid)
+                    .await
+                {
+                    Some(node) => node,
+                    None => {
+                        let node = self.graph_store.create_node("EvidenceBundle").await?;
+                        self.graph_store
+                            .set_node_property_string(node, "vid", bundle_vid.clone())
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(
+                                node,
+                                "bundle_type",
+                                "experiment_setup".to_string(),
+                            )
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(
+                                node,
+                                "normalized_text",
+                                format!("Entities in {section_title}: {bundle_text}"),
+                            )
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(node, "document_id", parsed.paper_id.clone())
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "retrieval_eligible", true)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "import_eligible", false) // D127
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "schema_version", 1)
+                            .await?;
+                        evidence_bundles_created += 1;
+                        node
+                    }
+                };
+                // Create PARTICIPATES_IN edges: Entity → EvidenceBundle.
                 for (idx, _) in members {
                     if let Some(&entity_node) = node_ids.get(*idx) {
-                        // PARTICIPATES_IN is temporal fact — M328.
-                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                        let _ = crate::temporal_stamp::create_edge_with_temporal(
-                            self.graph_store.as_ref(),
-                            entity_node,
-                            bundle_node,
-                            da_domain::relation::hypergraph::PARTICIPATES_IN,
-                            &temporal,
-                        )
-                        .await;
-                        participates_in_edges += 1;
+                        let edge_type = da_domain::relation::hypergraph::PARTICIPATES_IN;
+                        if self
+                            .graph_store
+                            .get_edges_between(entity_node, bundle_node, edge_type)
+                            .await
+                            .is_empty()
+                        {
+                            let temporal =
+                                crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                            crate::temporal_stamp::create_edge_with_temporal(
+                                self.graph_store.as_ref(),
+                                entity_node,
+                                bundle_node,
+                                edge_type,
+                                &temporal,
+                            )
+                            .await?;
+                            participates_in_edges += 1;
+                        }
                     }
                 }
-                evidence_bundles_created += 1;
 
                 // Create Claim from EvidenceBundle (structural claim).
-                // Claim: "Paper uses {entities} in {section}" — generated from
-                // evidence bundle, not LLM-extracted. claim_type=structural.
                 let claim_text = format!(
                     "Paper {} uses {} in {}",
                     parsed.paper_id, bundle_text, section_title
                 );
-                let claim_node = self.graph_store.create_node("Claim").await?;
-                self.graph_store
-                    .set_node_property_string(
+                let claim_vid = da_domain::vid::evidence_claim_vid(&bundle_vid);
+                let claim_node = match self
+                    .graph_store
+                    .find_node_by_string_property("Claim", "vid", &claim_vid)
+                    .await
+                {
+                    Some(node) => node,
+                    None => {
+                        let node = self.graph_store.create_node("Claim").await?;
+                        self.graph_store
+                            .set_node_property_string(node, "vid", claim_vid)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(node, "text", claim_text)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(node, "claim_type", "structural".to_string())
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(
+                                node,
+                                "scope",
+                                format!("section:{}", section_title),
+                            )
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "retrieval_eligible", true)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "import_eligible", false) // D127
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "schema_version", 1)
+                            .await?;
+                        claims_created += 1;
+                        node
+                    }
+                };
+                let edge_type = da_domain::relation::hypergraph::SUPPORTS;
+                if self
+                    .graph_store
+                    .get_edges_between(bundle_node, claim_node, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        bundle_node,
                         claim_node,
-                        "vid",
-                        format!("vid:claim:{}:{}", parsed.paper_id, section_title.len()),
+                        edge_type,
+                        &temporal,
                     )
                     .await?;
-                self.graph_store
-                    .set_node_property_string(claim_node, "text", claim_text)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(claim_node, "claim_type", "structural".to_string())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(
-                        claim_node,
-                        "scope",
-                        format!("section:{}", section_title),
-                    )
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(claim_node, "retrieval_eligible", true)
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(claim_node, "import_eligible", false) // D127
-                    .await?;
-                self.graph_store
-                    .set_node_property_int(claim_node, "schema_version", 1)
-                    .await?;
-                // EvidenceBundle SUPPORTS Claim — temporal fact (M328).
-                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                let _ = crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    bundle_node,
-                    claim_node,
-                    da_domain::relation::hypergraph::SUPPORTS,
-                    &temporal,
-                )
-                .await;
-                claims_created += 1;
+                }
             }
         }
 
@@ -418,40 +486,58 @@ impl ExtractionUseCase {
                 } else {
                     parsed.title.clone()
                 };
-                let prob_node = self.graph_store.create_node("ResearchProblem").await?;
-                self.graph_store
-                    .set_node_property_string(
+                let problem_vid = format!("vid:problem:{}:{}", parsed.paper_id, problem_type);
+                let prob_node = match self
+                    .graph_store
+                    .find_node_by_string_property("ResearchProblem", "vid", &problem_vid)
+                    .await
+                {
+                    Some(node) => node,
+                    None => {
+                        let node = self.graph_store.create_node("ResearchProblem").await?;
+                        self.graph_store
+                            .set_node_property_string(node, "vid", problem_vid)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(node, "text", prob_text)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_string(
+                                node,
+                                "problem_type",
+                                problem_type.to_string(),
+                            )
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "retrieval_eligible", true)
+                            .await?;
+                        self.graph_store
+                            .set_node_property_bool(node, "import_eligible", false) // D127
+                            .await?;
+                        self.graph_store
+                            .set_node_property_int(node, "schema_version", 1)
+                            .await?;
+                        problems_created += 1;
+                        node
+                    }
+                };
+                let edge_type = da_domain::relation::bibliographic::MENTIONS;
+                if self
+                    .graph_store
+                    .get_edges_between(paper_id, prob_node, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        paper_id,
                         prob_node,
-                        "vid",
-                        format!("vid:problem:{}:{}", parsed.paper_id, problem_type),
+                        edge_type,
+                        &temporal,
                     )
                     .await?;
-                self.graph_store
-                    .set_node_property_string(prob_node, "text", prob_text)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(prob_node, "problem_type", problem_type.to_string())
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(prob_node, "retrieval_eligible", true)
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(prob_node, "import_eligible", false) // D127
-                    .await?;
-                self.graph_store
-                    .set_node_property_int(prob_node, "schema_version", 1)
-                    .await?;
-                // Paper MENTIONS ResearchProblem — temporal fact (M329).
-                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                let _ = crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    paper_id,
-                    prob_node,
-                    da_domain::relation::bibliographic::MENTIONS,
-                    &temporal,
-                )
-                .await;
-                problems_created += 1;
+                }
             }
         }
 
@@ -484,52 +570,68 @@ impl ExtractionUseCase {
                 let section_text = ext.surface.clone();
                 if let Some(value) = extract_metric_value(&section_text, &metric_lower) {
                     let obs_vid = format!("vid:obs:{}:{}", parsed.paper_id, metric_lower);
-                    let obs_node = self.graph_store.create_node("MetricObservation").await?;
-                    self.graph_store
-                        .set_node_property_string(obs_node, "vid", obs_vid)
-                        .await?;
-                    self.graph_store
-                        .set_node_property_string(
+                    let obs_node = match self
+                        .graph_store
+                        .find_node_by_string_property("MetricObservation", "vid", &obs_vid)
+                        .await
+                    {
+                        Some(node) => node,
+                        None => {
+                            let node = self.graph_store.create_node("MetricObservation").await?;
+                            self.graph_store
+                                .set_node_property_string(node, "vid", obs_vid)
+                                .await?;
+                            self.graph_store
+                                .set_node_property_string(
+                                    node,
+                                    "metric_definition_id",
+                                    metric_lower.clone(),
+                                )
+                                .await?;
+                            self.graph_store
+                                .set_node_property_float(node, "value", value)
+                                .await?;
+                            let pseudo_run_id = format!("run:paper:{}", parsed.paper_id);
+                            self.graph_store
+                                .set_node_property_string(node, "run_id", pseudo_run_id)
+                                .await?;
+                            self.graph_store
+                                .set_node_property_string(
+                                    node,
+                                    "document_id",
+                                    parsed.paper_id.clone(),
+                                )
+                                .await?;
+                            self.graph_store
+                                .set_node_property_bool(node, "retrieval_eligible", true)
+                                .await?;
+                            self.graph_store
+                                .set_node_property_bool(node, "import_eligible", false) // D127
+                                .await?;
+                            self.graph_store
+                                .set_node_property_int(node, "schema_version", 1)
+                                .await?;
+                            observations_created += 1;
+                            node
+                        }
+                    };
+                    let edge_type = da_domain::relation::bibliographic::MENTIONS;
+                    if self
+                        .graph_store
+                        .get_edges_between(paper_node, obs_node, edge_type)
+                        .await
+                        .is_empty()
+                    {
+                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                        crate::temporal_stamp::create_edge_with_temporal(
+                            self.graph_store.as_ref(),
+                            paper_node,
                             obs_node,
-                            "metric_definition_id",
-                            metric_lower.clone(),
+                            edge_type,
+                            &temporal,
                         )
                         .await?;
-                    self.graph_store
-                        .set_node_property_float(obs_node, "value", value)
-                        .await?;
-                    // run_id: reference to the ExperimentRun that produced this observation.
-                    // Until ExperimentRun nodes are materialized (ADR-043 Wave 2),
-                    // we use a document-scoped pseudo-run so the required field is non-null.
-                    // This makes the provenance explicit: observation came from this paper,
-                    // not a formal experiment run we executed ourselves.
-                    let pseudo_run_id = format!("run:paper:{}", parsed.paper_id);
-                    self.graph_store
-                        .set_node_property_string(obs_node, "run_id", pseudo_run_id)
-                        .await?;
-                    self.graph_store
-                        .set_node_property_string(obs_node, "document_id", parsed.paper_id.clone())
-                        .await?;
-                    self.graph_store
-                        .set_node_property_bool(obs_node, "retrieval_eligible", true)
-                        .await?;
-                    self.graph_store
-                        .set_node_property_bool(obs_node, "import_eligible", false) // D127
-                        .await?;
-                    self.graph_store
-                        .set_node_property_int(obs_node, "schema_version", 1)
-                        .await?;
-                    // Paper MENTIONS MetricObservation — temporal fact (M329).
-                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    let _ = crate::temporal_stamp::create_edge_with_temporal(
-                        self.graph_store.as_ref(),
-                        paper_node,
-                        obs_node,
-                        da_domain::relation::bibliographic::MENTIONS,
-                        &temporal,
-                    )
-                    .await;
-                    observations_created += 1;
+                    }
                 }
             }
         }

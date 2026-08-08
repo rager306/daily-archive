@@ -1,5 +1,21 @@
 # Changelog
 
+### M371 S05 T06 cached extraction graph materialization boundary
+
+Split extraction computation from graph side effects with additive
+`materialize_extracted(parsed, entities)`; the legacy `extract_from_parsed`
+remains a compatibility wrapper. TDD exposed and fixed replay duplication across
+all current families: MENTIONS, FOUND_IN, EvidenceBundle, Claim,
+PARTICIPATES_IN, SUPPORTS, ResearchProblem and MetricObservation. EvidenceBundle
+identity no longer collides on equal-length section titles: it is SHA-256-bound
+to paper, normalized section and sorted member Entity VIDs; Claim identity binds
+to the bundle. Replay counters now report zero net creations. RED evidence:
+`159ccd8c-...`, `74d76a11-...`, `370e8966-...`; green gates:
+`e42667a0-...`, `8f5dfa4b-...`, `43f904a5-...` (19 extraction tests PASS).
+
+Gold batch 4 also passed cold 20/20 execute and replay 20/20 hits: 10 papers,
+66 gold entities, recall 1.0, micro F1 0.857, zero failures/retries/graph writes.
+
 ### M371 S05 T06 resumable wave failures and GROBID backoff policy
 
 Made bounded-wave reports durable on partial failure instead of aborting before

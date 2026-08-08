@@ -32,6 +32,25 @@ pub fn reference_vid(raw_text: &str) -> Vid {
     sha256_vid("reference", &canonical)
 }
 
+/// Compute a replay-safe EvidenceBundle VID from document, section and members.
+/// Member VIDs are sorted so extractor output ordering cannot change identity.
+pub fn evidence_bundle_vid(paper_id: &str, section_title: &str, member_vids: &[Vid]) -> Vid {
+    let mut members = member_vids.to_vec();
+    members.sort();
+    let canonical = format!(
+        "{}\n{}\n{}",
+        paper_id.trim().to_lowercase(),
+        section_title.trim().to_lowercase(),
+        members.join("\n")
+    );
+    sha256_vid("evidence_bundle", &canonical)
+}
+
+/// Compute a Claim VID from the EvidenceBundle that grounds it.
+pub fn evidence_claim_vid(bundle_vid: &str) -> Vid {
+    sha256_vid("claim", bundle_vid)
+}
+
 /// Compute an Institution VID from (display_name, openalex_id).
 pub fn institution_vid(display_name: &str, openalex_id: &str) -> Vid {
     let canonical_name = display_name.trim().to_lowercase();
@@ -74,6 +93,32 @@ mod tests {
         let vid1 = reference_vid("Smith et al. (2023). Deep Learning.");
         let vid2 = reference_vid("Smith et al. (2023). Deep Learning.");
         assert_eq!(vid1, vid2, "same raw_text must produce same VID");
+    }
+
+    #[test]
+    fn evidence_bundle_identity_is_order_independent_and_section_safe() {
+        let a = vec!["entity-a".into(), "entity-b".into()];
+        let b = vec!["entity-b".into(), "entity-a".into()];
+        assert_eq!(
+            evidence_bundle_vid("p1", "Methods", &a),
+            evidence_bundle_vid("p1", "Methods", &b)
+        );
+        assert_ne!(
+            evidence_bundle_vid("p1", "Methods", &a),
+            evidence_bundle_vid("p1", "Results", &a)
+        );
+    }
+
+    #[test]
+    fn evidence_claim_identity_is_bound_to_bundle() {
+        assert_eq!(
+            evidence_claim_vid("bundle-a"),
+            evidence_claim_vid("bundle-a")
+        );
+        assert_ne!(
+            evidence_claim_vid("bundle-a"),
+            evidence_claim_vid("bundle-b")
+        );
     }
 
     #[test]

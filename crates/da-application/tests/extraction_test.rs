@@ -84,6 +84,170 @@ async fn make_store_with_paper(arxiv_id: &str) -> MockGraphStore {
 }
 
 #[tokio::test]
+async fn materialize_extracted_uses_cached_entities_without_invoking_extractor() {
+    struct PanicExtractor;
+    #[async_trait]
+    impl Extractor for PanicExtractor {
+        async fn extract(
+            &self,
+            _sections: &[(String, String)],
+        ) -> ExtractResult<Vec<ExtractedEntity>> {
+            panic!("cached materialization must not invoke extractor")
+        }
+        fn name(&self) -> &str {
+            "panic"
+        }
+    }
+
+    let store = make_store_with_paper("2401.00001").await;
+    let use_case = ExtractionUseCase::new(Box::new(PanicExtractor), Box::new(store.clone()));
+    let result = use_case
+        .materialize_extracted(
+            &make_parsed(),
+            vec![ExtractedEntity {
+                label: "CachedMethod".into(),
+                entity_type: EntityType::Method,
+                section_title: "Introduction".into(),
+                char_start: 0,
+                char_end: 12,
+                surface: "CachedMethod".into(),
+            }],
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(result.entities_extracted, 1);
+    assert_eq!(store.get_nodes_by_label("Entity").await.len(), 1);
+}
+
+#[tokio::test]
+async fn cached_entity_materialization_replay_does_not_duplicate_mentions() {
+    let store = make_store_with_paper("2401.00001").await;
+    let use_case = ExtractionUseCase::new(
+        Box::new(MockExtractor { entities: vec![] }),
+        Box::new(store.clone()),
+    );
+    let entity = ExtractedEntity {
+        label: "ReplaySafeMethod".into(),
+        entity_type: EntityType::Method,
+        section_title: String::new(),
+        char_start: 0,
+        char_end: 16,
+        surface: "ReplaySafeMethod".into(),
+    };
+
+    let first = use_case
+        .materialize_extracted(&make_parsed(), vec![entity.clone()])
+        .await
+        .unwrap();
+    let second = use_case
+        .materialize_extracted(&make_parsed(), vec![entity])
+        .await
+        .unwrap();
+    let paper = store
+        .find_node_by_string_property("Paper", "arxiv_id", "2401.00001")
+        .await
+        .unwrap();
+    let entity_node = store
+        .find_node_by_string_property(
+            "Entity",
+            "vid",
+            &da_domain::vid::entity_vid("Method", "ReplaySafeMethod"),
+        )
+        .await
+        .unwrap();
+    let mentions = store
+        .get_edges_between(
+            paper,
+            entity_node,
+            da_domain::relation::bibliographic::MENTIONS,
+        )
+        .await;
+
+    assert_eq!(first.mentions_edges, 1);
+    assert_eq!(second.mentions_edges, 0);
+    assert_eq!(mentions.len(), 1);
+    assert_eq!(store.get_nodes_by_label("Entity").await.len(), 1);
+}
+
+#[tokio::test]
+async fn cached_evidence_materialization_replay_is_idempotent() {
+    let store = make_store_with_paper("2401.00001").await;
+    let use_case = ExtractionUseCase::new(
+        Box::new(MockExtractor { entities: vec![] }),
+        Box::new(store.clone()),
+    );
+    let entities = ["MethodA", "DatasetB"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, label)| ExtractedEntity {
+            label: label.into(),
+            entity_type: if index == 0 {
+                EntityType::Method
+            } else {
+                EntityType::Dataset
+            },
+            section_title: "Introduction".into(),
+            char_start: index * 10,
+            char_end: index * 10 + label.len(),
+            surface: label.into(),
+        })
+        .collect::<Vec<_>>();
+
+    let first = use_case
+        .materialize_extracted(&make_parsed(), entities.clone())
+        .await
+        .unwrap();
+    let second = use_case
+        .materialize_extracted(&make_parsed(), entities)
+        .await
+        .unwrap();
+
+    assert_eq!(first.evidence_bundles_created, 1);
+    assert_eq!(first.claims_created, 1);
+    assert_eq!(second.evidence_bundles_created, 0);
+    assert_eq!(second.claims_created, 0);
+    assert_eq!(second.participates_in_edges, 0);
+    assert_eq!(store.get_nodes_by_label("EvidenceBundle").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("Claim").await.len(), 1);
+}
+
+#[tokio::test]
+async fn cached_problem_and_observation_replay_is_idempotent() {
+    let store = make_store_with_paper("2401.00001").await;
+    let use_case = ExtractionUseCase::new(
+        Box::new(MockExtractor { entities: vec![] }),
+        Box::new(store.clone()),
+    );
+    let mut parsed = make_parsed();
+    parsed.abstract_text = "We propose a more reliable method.".into();
+    let metric = ExtractedEntity {
+        label: "F1".into(),
+        entity_type: EntityType::Metric,
+        section_title: "Results".into(),
+        char_start: 0,
+        char_end: 9,
+        surface: "F1 = 0.87".into(),
+    };
+
+    let first = use_case
+        .materialize_extracted(&parsed, vec![metric.clone()])
+        .await
+        .unwrap();
+    let second = use_case
+        .materialize_extracted(&parsed, vec![metric])
+        .await
+        .unwrap();
+
+    assert_eq!(first.problems_created, 1);
+    assert_eq!(first.observations_created, 1);
+    assert_eq!(second.problems_created, 0);
+    assert_eq!(second.observations_created, 0);
+    assert_eq!(store.get_nodes_by_label("ResearchProblem").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("MetricObservation").await.len(), 1);
+}
+
+#[tokio::test]
 async fn test_extraction_writes_entity_nodes() {
     let entities = vec![
         ExtractedEntity {
