@@ -21,6 +21,7 @@ from governor.adapters import (
     FilesystemADRRepository,
     FilesystemArtifactReader,
     FilesystemCodeScanner,
+    FilesystemGsdPlanningReader,
     FilesystemMilestoneReader,
     GitReader,
     YAMLRuleRepository,
@@ -85,6 +86,7 @@ def main() -> int:
     rule_repo = YAMLRuleRepository(checks_dir)
     adr_repo = FilesystemADRRepository(project_root)
     milestone_reader = FilesystemMilestoneReader(project_root)
+    gsd_planning_reader = FilesystemGsdPlanningReader(project_root)
     artifact_reader = FilesystemArtifactReader(project_root)
     git_reader = GitReader(project_root)
 
@@ -116,6 +118,7 @@ def main() -> int:
         rule_repo=rule_repo,
         adr_repo=adr_repo,
         milestone_reader=milestone_reader,
+        gsd_planning_reader=gsd_planning_reader,
         git_reader=git_reader,
     )
 

@@ -1,5 +1,22 @@
 # Changelog
 
+### M371 S04 T01 governor planning projection integrity
+
+Removed the governor's forbidden direct `sqlite3` read of engine-owned
+`.gsd/gsd.db`. A new hexagonal `GsdPlanningReader` port and filesystem adapter
+read only GSD-rendered ROADMAP, STATE, and PLAN projections. The adapter keeps
+bare and suffixed milestone identities separate, supports exact and slugged
+phase directories, counts per-slice task identities, and reports unavailable,
+degraded, or divergent projections instead of silently preserving a false
+green. The signal is explicitly named `zero_projected_plan_tasks`: it measures
+projection health, not engine task truth. TDD covers missing/malformed input,
+duplicate IDs, bare-shadowed suffixes, exact suffix paths, STATE/ROADMAP drift,
+and the repository projection. Evidence `df59caf8-...`: 24 tests PASS, direct DB
+access zero. Governor now honestly reports `DRIFT_RISK` because stale STATE says
+M363 active while ROADMAP, QUEUE, and `gsd_milestone_status` say M371 active;
+STATE was not hand-edited. Product S04 is replanned next: typed semantic
+entities, section summary links, auditable resolution, context and clustering.
+
 ## Unreleased
 
 ### M371 S03 T03 subscription-backed multi-model Figure3 analysis

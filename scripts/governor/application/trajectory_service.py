@@ -11,6 +11,7 @@ from governor.domain.trajectory import (
     TrajectoryVerdict,
 )
 from governor.ports.adr_repository import ADRRepository
+from governor.ports.gsd_planning_reader import GsdPlanningReader
 from governor.ports.milestone_reader import MilestoneReader
 from governor.ports.rule_repository import RuleRepository
 
@@ -25,6 +26,7 @@ class TrajectoryService:
         rule_repo: RuleRepository,
         adr_repo: ADRRepository,
         milestone_reader: MilestoneReader,
+        gsd_planning_reader: GsdPlanningReader,
         git_reader: "GitReader | None" = None,
     ):
         self.root = project_root
@@ -32,6 +34,7 @@ class TrajectoryService:
         self.rule_repo = rule_repo
         self.adr_repo = adr_repo
         self.milestone_reader = milestone_reader
+        self.gsd_planning_reader = gsd_planning_reader
         self.git_reader = git_reader
 
     def build_report(self, phase: str = "preflight") -> TrajectoryReport:
@@ -235,38 +238,52 @@ class TrajectoryService:
                             evidence=f"{recent_commits} commits in last 7 days but no milestone closeout",
                         )
                     )
-        # D194: Check for active milestones with 0 tasks (empty skeletons).
-        # These are roadmap noise — milestones declared but never planned.
-        gsd_db = self.root / ".gsd" / "gsd.db"
-        if gsd_db.exists():
-            try:
-                import sqlite3 as _sql
+        flags.extend(self._check_gsd_planning_projection())
+        return flags
 
-                con = _sql.connect(str(gsd_db))
-                try:
-                    cur = con.cursor()
-                    cur.execute(
-                        """SELECT m.id, m.title, COUNT(t.id) as task_count
-                        FROM milestones m
-                        LEFT JOIN tasks t ON t.milestone_id = m.id
-                        WHERE m.status = 'active'
-                        GROUP BY m.id, m.title
-                        HAVING task_count = 0"""
-                    )
-                    empty = cur.fetchall()
-                    if empty:
-                        ids = [r[0] for r in empty]
-                        flags.append(
-                            DriftFlag(
-                                flag="active_milestone_zero_tasks",
-                                severity="medium",
-                                evidence=f"{len(empty)} active milestone(s) with 0 tasks: {ids}",
-                            )
-                        )
-                finally:
-                    con.close()
-            except Exception:
-                pass  # keep governor green; DB read is best-effort
+    def _check_gsd_planning_projection(self) -> list[DriftFlag]:
+        """Detect empty active milestones through engine-rendered projections."""
+        try:
+            projection = self.gsd_planning_reader.read()
+        except OSError as error:
+            return [
+                DriftFlag(
+                    flag="gsd_planning_projection_unavailable",
+                    severity="high",
+                    evidence=f"planning projection read failed: {error}",
+                )
+            ]
+        if not projection.available:
+            details = "; ".join(projection.diagnostics) or "no diagnostic"
+            return [
+                DriftFlag(
+                    flag="gsd_planning_projection_unavailable",
+                    severity="high",
+                    evidence=details,
+                )
+            ]
+        flags: list[DriftFlag] = []
+        if projection.diagnostics:
+            flags.append(
+                DriftFlag(
+                    flag="gsd_planning_projection_degraded",
+                    severity="medium",
+                    evidence="; ".join(projection.diagnostics),
+                )
+            )
+        empty = projection.active_empty_milestone_ids
+        if empty:
+            flags.append(
+                DriftFlag(
+                    flag="active_milestone_zero_projected_plan_tasks",
+                    severity="medium",
+                    evidence=(
+                        f"{len(empty)} active milestone(s) with 0 tasks in readable "
+                        f"PLAN projections: {list(empty)}; this is projection health, "
+                        "not engine database truth"
+                    ),
+                )
+            )
         return flags
 
     def _derive_verdict(
