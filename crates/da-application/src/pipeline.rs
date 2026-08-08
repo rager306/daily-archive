@@ -15,7 +15,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum StageDisposition {
     Executed {
         output_sha256: String,
@@ -33,14 +33,14 @@ pub enum StageDisposition {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct StageRunRecord {
     pub step_name: String,
     pub stage_id: String,
     pub disposition: StageDisposition,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PipelineRunReport {
     pub pipeline_id: String,
     pub article_id: String,

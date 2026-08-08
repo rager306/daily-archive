@@ -4,6 +4,7 @@
 //! file define showcase tasks. Pure parse — no I/O beyond the caller.
 
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 /// One showcase (or scale) task from a suite file.
 ///
@@ -62,6 +63,34 @@ pub enum TaskVerdict {
     Pass,
     Empty,
     Error,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphTaskResult {
+    pub id: String,
+    pub title: String,
+    pub insight: String,
+    pub verdict: TaskVerdict,
+    pub rows: usize,
+    pub min_rows: usize,
+    pub allow_empty: bool,
+    pub duration_ms: u128,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphTaskSuiteReport {
+    pub pass: usize,
+    pub empty: usize,
+    pub error: usize,
+    pub failed: bool,
+    pub tasks: Vec<GraphTaskResult>,
+}
+
+impl GraphTaskSuiteReport {
+    pub fn passed(&self) -> bool {
+        !self.failed
+    }
 }
 
 impl TaskVerdict {
@@ -302,6 +331,74 @@ fn slug_id_or_fallback(title: &str) -> String {
     }
 }
 
+pub async fn run_graph_task_suite(
+    store: &da_adapters::SamyamaGraphStore,
+    graph: &str,
+    suite: &GraphTaskSuite,
+) -> GraphTaskSuiteReport {
+    use da_ports::graph_store::GraphStore;
+    let mut tasks = Vec::with_capacity(suite.tasks.len());
+    for task in &suite.tasks {
+        let started = Instant::now();
+        let result = match store.query_readonly(graph, &task.cypher).await {
+            Ok(result) => {
+                let rows = result.records.len();
+                let first_number = result
+                    .records
+                    .first()
+                    .and_then(|row| row.first())
+                    .and_then(json_cell_number);
+                GraphTaskResult {
+                    id: task.id.clone(),
+                    title: task.title.clone(),
+                    insight: task.insight.clone(),
+                    verdict: task.classify(rows, first_number),
+                    rows,
+                    min_rows: task.min_rows,
+                    allow_empty: task.allow_empty,
+                    duration_ms: started.elapsed().as_millis(),
+                    error: None,
+                }
+            }
+            Err(error) => GraphTaskResult {
+                id: task.id.clone(),
+                title: task.title.clone(),
+                insight: task.insight.clone(),
+                verdict: TaskVerdict::Error,
+                rows: 0,
+                min_rows: task.min_rows,
+                allow_empty: task.allow_empty,
+                duration_ms: started.elapsed().as_millis(),
+                error: Some(error.to_string()),
+            },
+        };
+        tasks.push(result);
+    }
+    let pass = tasks
+        .iter()
+        .filter(|task| task.verdict == TaskVerdict::Pass)
+        .count();
+    let empty = tasks
+        .iter()
+        .filter(|task| task.verdict == TaskVerdict::Empty)
+        .count();
+    let error = tasks
+        .iter()
+        .filter(|task| task.verdict == TaskVerdict::Error)
+        .count();
+    let gate: Vec<_> = tasks
+        .iter()
+        .map(|task| (task.verdict, task.allow_empty))
+        .collect();
+    GraphTaskSuiteReport {
+        pass,
+        empty,
+        error,
+        failed: suite_failed(&gate),
+        tasks,
+    }
+}
+
 /// Suite-level gate: fail if any task is EMPTY (unless allow_empty) or ERROR.
 pub fn suite_failed(results: &[(TaskVerdict, bool)]) -> bool {
     results.iter().any(|(v, allow_empty)| match v {
@@ -380,6 +477,18 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
     }
 
     #[test]
+    fn suite_report_passed_respects_allow_empty_gate() {
+        let report = GraphTaskSuiteReport {
+            pass: 0,
+            empty: 1,
+            error: 0,
+            failed: false,
+            tasks: vec![],
+        };
+        assert!(report.passed());
+    }
+
+    #[test]
     fn suite_failed_logic() {
         assert!(!suite_failed(&[(TaskVerdict::Pass, false)]));
         assert!(suite_failed(&[(TaskVerdict::Empty, false)]));
@@ -392,6 +501,42 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
         assert_eq!(json_cell_number(&serde_json::json!(24)), Some(24.0));
         assert_eq!(json_cell_number(&serde_json::json!("3.5")), Some(3.5));
         assert_eq!(json_cell_number(&serde_json::json!("x")), None);
+    }
+
+    #[tokio::test]
+    async fn reusable_runner_reports_pass_and_empty() {
+        use da_ports::graph_store::DirectGraphStore;
+        let store = da_adapters::SamyamaGraphStore::from_env();
+        store.create_node("Paper").await.unwrap();
+        let suite = GraphTaskSuite {
+            tasks: vec![
+                GraphTask {
+                    id: "paper".into(),
+                    title: "Paper".into(),
+                    insight: "".into(),
+                    cypher: "MATCH (n:Paper) RETURN n LIMIT 1".into(),
+                    min_rows: 1,
+                    allow_empty: false,
+                    expect_rows: None,
+                    expect_min_value: None,
+                },
+                GraphTask {
+                    id: "missing".into(),
+                    title: "Missing".into(),
+                    insight: "".into(),
+                    cypher: "MATCH (n:Missing) RETURN n LIMIT 1".into(),
+                    min_rows: 1,
+                    allow_empty: false,
+                    expect_rows: None,
+                    expect_min_value: None,
+                },
+            ],
+        };
+        let report = run_graph_task_suite(&store, "daily_archive", &suite).await;
+        assert_eq!(report.pass, 1);
+        assert_eq!(report.empty, 1);
+        assert!(report.failed);
+        assert!(!report.passed());
     }
 
     // --- M338: expect bounds ---

@@ -36,3 +36,15 @@ MATCH (p:Paper {arxiv_id: "2507.19457"})-[:CITES]->(c) RETURN count(c) AS hub_ci
 // @query Category placement | Structural inCategory — at least one paper categorized
 // @expect_min_value 1
 MATCH (p:Paper)-[:inCategory]->(cat) RETURN count(p) AS categorized;
+
+// @query Section summaries | ADR-053 Layer B — path-linked summaries are graph-reachable
+// @expect_min_value 1
+MATCH (s:Section)-[:hasSummary]->(summary:Summary) RETURN count(summary) AS section_summaries;
+
+// @query Reviewed canonical resolution | ADR-053 Layer G — Decision audit reaches affected Entity
+// @expect_min_value 1
+MATCH (d:Decision)-[:AFFECTS]->(e:Entity) WHERE e.canonical_vid IS NOT NULL RETURN count(e) AS resolved_entities;
+
+// @query Concept cluster memberships | Semantic convergence — typed entities join ConceptCluster
+// @expect_min_value 1
+MATCH (e:Entity)-[:MEMBER_OF_CLUSTER]->(c:ConceptCluster) RETURN count(e) AS clustered_entities;

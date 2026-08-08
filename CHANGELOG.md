@@ -1,5 +1,23 @@
 # Changelog
 
+### M371 S05 T04 semantic task bound snapshot seal
+
+Extracted a reusable same-process semantic task runner with typed per-task and
+suite reports. `pipeline_finalize` imports one Samyama snapshot, executes the
+required Cypher suite, binds the real suite verdict and serialized
+`PipelineRunReport` to `GraphFinalizeUseCase`, and atomically exports a
+SHA-256-addressed snapshot only when both gates PASS. Failed/EMPTY required tasks
+produce a report and non-zero exit with no output snapshot; no debug bypass is
+present. GEPA tasks now require Section-hasSummary, reviewed
+Decision-AFFECTS-Entity canonical resolution, and Entity-MEMBER_OF_CLUSTER
+semantics using ontology wire strings. Pipeline run types gained serde for
+durable evidence. The current legacy hub snapshot was deliberately rejected:
+`1ed7c624-...` reports four missing S04 semantic tasks and proves sealed snapshot
+absence, so positive hub regeneration remains T06 rather than a false-green.
+Runner/finalize tests and example clippy PASS in `f3dfadd6-...`; full architecture
+`ba3be9c5-...`; governor violations=0 `00ed71d1-...`. Reviewer-found
+`allow_empty` semantics were aligned with the existing suite gate before commit.
+
 ### M371 S05 T03 fail-closed ontology-driven graph finalize
 
 Added `finalize_policy.yaml`, typed domain reports, and `GraphFinalizeUseCase`.
