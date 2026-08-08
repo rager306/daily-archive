@@ -124,22 +124,26 @@ class TrajectoryService:
         disk = result.get("disk", {})
         if disk.get("status") in ("warning", "critical"):
             flags.append(DriftFlag(
-                flag_id="resource_disk_pressure",
+                flag="resource_disk_pressure",
+                severity="medium" if disk["status"] == "warning" else "high",
                 dimension="resource_safety",
-                status="warning" if disk["status"] == "warning" else "critical",
-                message=disk["message"],
-                recommendation="Run 'cargo clean' or remove stale artifacts before heavy builds.",
+                evidence=(
+                    f"{disk['message']} Recommendation: run 'cargo clean' or remove "
+                    "stale artifacts before heavy builds."
+                ),
             ))
 
         # Memory check
         mem = result.get("memory", {})
         if mem.get("status") in ("warning", "critical"):
             flags.append(DriftFlag(
-                flag_id="resource_memory_pressure",
+                flag="resource_memory_pressure",
+                severity="medium" if mem["status"] == "warning" else "high",
                 dimension="resource_safety",
-                status="warning" if mem["status"] == "warning" else "critical",
-                message=mem["message"],
-                recommendation="Close other processes. Avoid cargo test --workspace (rocksdb memory heavy).",
+                evidence=(
+                    f"{mem['message']} Recommendation: close other processes and avoid "
+                    "cargo test --workspace (RocksDB memory heavy)."
+                ),
             ))
 
         # target/ size check
@@ -147,11 +151,10 @@ class TrajectoryService:
         if target.get("status") in ("warning", "critical"):
             recs = "; ".join(target.get("recommendations", ["Run 'cargo clean'"]))
             flags.append(DriftFlag(
-                flag_id="resource_target_bloat",
+                flag="resource_target_bloat",
+                severity="medium" if target["status"] == "warning" else "high",
                 dimension="resource_safety",
-                status="warning" if target["status"] == "warning" else "critical",
-                message=target["message"],
-                recommendation=recs,
+                evidence=f"{target['message']} Recommendation: {recs}",
             ))
 
         return flags

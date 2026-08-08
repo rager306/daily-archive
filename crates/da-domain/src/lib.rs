@@ -11,7 +11,6 @@ pub mod article;
 pub mod cluster;
 pub mod domain;
 pub mod edge_contract;
-pub mod embedding;
 pub mod entity;
 pub mod entity_resolution;
 pub mod eval;

@@ -172,9 +172,6 @@ async fn main() -> Result<()> {
     let extraction_configuration_fingerprint =
         file_fingerprint(Path::new("data/extraction_patterns.yaml"))?;
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
-    let embedding_input_policy = da_domain::embedding::EmbeddingInputPolicy::load()
-        .map_err(anyhow::Error::msg)
-        .context("load embedding input policy")?;
     let mut papers = Vec::with_capacity(records.len());
 
     for record in records {
@@ -256,7 +253,6 @@ async fn main() -> Result<()> {
                     Arc::new(embedder),
                     "parse",
                     (Utc::now() + Duration::seconds(args.retry_delay_seconds)).to_rfc3339(),
-                    embedding_input_policy.clone(),
                 )),
             )?;
         }

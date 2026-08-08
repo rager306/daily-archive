@@ -20,6 +20,7 @@ from governor.adapters import (
     YAMLRuleRepository,
 )
 from governor.application import AuditService
+from governor.application.trajectory_service import TrajectoryService
 from governor.domain import CheckSeverity, CheckStatus
 
 
@@ -178,6 +179,34 @@ def test_current_cacheable_stage_modules_are_graph_pure():
         for violation in result.violations
     ]
     assert stage_violations == []
+
+
+def test_resource_safety_flags_use_canonical_drift_flag_contract(monkeypatch):
+    from governor.checks import resource_safety
+
+    monkeypatch.setattr(
+        resource_safety,
+        "preflight_check",
+        lambda _root: {
+            "disk": {"status": "critical", "message": "disk low"},
+            "memory": {"status": "warning", "message": "memory high"},
+            "target_dir": {
+                "status": "warning",
+                "message": "target large",
+                "recommendations": ["clean selected packages"],
+            },
+        },
+    )
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    flags = service._check_resource_safety()
+    assert [(flag.flag, flag.severity) for flag in flags] == [
+        ("resource_disk_pressure", "high"),
+        ("resource_memory_pressure", "medium"),
+        ("resource_target_bloat", "medium"),
+    ]
+    assert all(flag.dimension == "resource_safety" for flag in flags)
+    assert all(flag.evidence for flag in flags)
 
 
 def test_yaml_rules_load_successfully():

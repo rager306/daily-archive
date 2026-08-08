@@ -1,21 +1,43 @@
 # Changelog
 
-### M371 S05 T06 data-driven Paper embedding projection
+### M371 S05 T06 FD API token-capability correction
+
+Corrected a cross-repository contract error after inspecting live `/docs`,
+`/openapi.json`, authenticated `/info`, the mounted `/root/fd` source, and model
+configuration. `deepvk/USER-bge-m3` supports 8192 tokenizer tokens
+(`model_max_length=8192`, `max_position_embeddings=8194`, SentenceTransformer
+`max_seq_length=8192`); it has no model-level character limit. FD API middleware
+had a stale `2048 chars ≈ 512 tokens` heuristic and `/info` advertised 512.
+Removed per-input char guessing, delegated exact token admission to the TEI/model
+backend, and updated `/info` plus `docs/fd-v2.md` to 8192. Rebuilt the local API;
+`/info` now returns 8192 and a 2049-character Russian input returns 200/1024d
+(previously 413). Removed the temporary `FD_MAX_INPUT_CHARS` and Rust character
+truncation policy. Paper embedding remains explicit title+abstract, never body,
+with backend/model identity in the cache key and no silent truncation. FD API
+commit: `bf7b1bc`; all Go tests PASS, while `go vet ./...` still reports one
+pre-existing `time.Since` defer warning in `cache/tiered.go`.
+
+The session also activated a previously latent governor crash: resource safety
+constructed `DriftFlag` with obsolete fields whenever target size crossed its
+threshold. Mapped disk/memory/target diagnostics to the canonical
+`flag/severity/evidence/dimension` contract and added a threshold-triggering
+regression test. Evidence `07d1cfec-...`: 12 tests PASS, active governor runs to
+`DRIFT_RISK` with 0 violations instead of crashing.
+
+### M371 S05 T06 cacheable Paper embedding stage
 
 Migrated the useful Python-era embedding lessons without reviving Python runtime:
 provider/model/batch/retry/circuit settings already existed in `.env`; legacy had
 no hidden truncation and kept structure-aware chunk embeddings separate from KG
-truth. Added explicit `FD_MAX_INPUT_CHARS` capability (documented in
-`.env.example`, local value 2048), a validated `EmbeddingInputPolicy` in
-`algorithm_params.yaml`, and UTF-8-safe title+abstract projection diagnostics.
-Body text is excluded from Paper vectors and remains for future source-span chunk
-stages. Added a pure cacheable `ParsedArticleEmbeddingStage`; backend/model and
-effective projection policy are in the cache contract, 413 is terminal while
-backend unavailability is retryable. Batch 1 selective-invalidation proof:
-parse/extract 20 hits, only 10 new embeddings executed, unchanged replay 30/30
-hits (`2f090b88-...`). The canary now loads dotenv and fails early when its local
-embedding credential is absent; existing `.env` and running `fd_api` token match
-was verified without exposing either value.
+truth. Added a pure cacheable `ParsedArticleEmbeddingStage`; Paper input is the
+existing title+abstract contract, while body text remains for future source-span
+chunk stages. Backend/model identity and Paper-field projection are in the cache
+contract; backend unavailability is retryable and rejected requests are terminal.
+Batch 1 selective-invalidation proof: parse/extract 20 hits, only 10 new
+embeddings executed, unchanged replay 30/30 hits (`2f090b88-...`). The canary
+loads dotenv and fails early when its local embedding credential is absent;
+existing `.env` and running `fd_api` token match was verified without exposing
+either value.
 
 Gold batch 8 passed as well; 80/193 source-ready papers are cache-verified.
 

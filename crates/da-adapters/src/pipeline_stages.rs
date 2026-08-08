@@ -95,7 +95,6 @@ pub struct ParsedArticleEmbeddingStage {
     embedder: Arc<dyn Embedder>,
     parsed_dependency: String,
     retry_after: String,
-    input_policy: da_domain::embedding::EmbeddingInputPolicy,
     contract: StageContract,
 }
 
@@ -104,20 +103,19 @@ impl ParsedArticleEmbeddingStage {
         embedder: Arc<dyn Embedder>,
         parsed_dependency: impl Into<String>,
         retry_after: impl Into<String>,
-        input_policy: da_domain::embedding::EmbeddingInputPolicy,
     ) -> Self {
         let dimensions = embedder.dimensions();
         let model_fingerprint = embedder.model_id().to_string();
-        let policy_fingerprint = input_policy.fingerprint();
         Self {
             embedder,
             parsed_dependency: parsed_dependency.into(),
             retry_after: retry_after.into(),
-            input_policy,
             contract: StageContract {
                 stage_id: "paper_embed".into(),
                 implementation_fingerprint: "ParsedArticleEmbeddingStage@title-abstract-v1".into(),
-                configuration_fingerprint: format!("dimensions={dimensions};{policy_fingerprint}"),
+                configuration_fingerprint: format!(
+                    "dimensions={dimensions};paper_fields=title,abstract;token_limit=backend_model_capability"
+                ),
                 prompt_fingerprint: None,
                 model_fingerprint: Some(model_fingerprint),
                 output_schema_fingerprint: "Vec<f32>@serde-v1".into(),
@@ -165,12 +163,11 @@ impl PipelineStageExecutor for ParsedArticleEmbeddingStage {
                 ),
             });
         }
-        let projection = self
-            .input_policy
-            .project_paper(&parsed.title, &parsed.abstract_text);
+        let text = format!("{}\n{}", parsed.title, parsed.abstract_text);
+        let input_chars = text.chars().count();
         let vector = self
             .embedder
-            .embed(&projection.text)
+            .embed(&text)
             .await
             .map_err(|error| match error {
                 EmbedderError::Unavailable(message) => StageExecutionError::Retryable {
@@ -201,9 +198,8 @@ impl PipelineStageExecutor for ParsedArticleEmbeddingStage {
         Ok(StageExecutionOutput {
             metadata: BTreeMap::from([
                 ("dimensions".into(), vector.len().to_string()),
-                ("source_chars".into(), projection.source_chars.to_string()),
-                ("input_chars".into(), projection.emitted_chars.to_string()),
-                ("truncated".into(), projection.truncated.to_string()),
+                ("input_chars".into(), input_chars.to_string()),
+                ("truncated".into(), false.to_string()),
             ]),
             payload,
         })
@@ -559,11 +555,6 @@ mod tests {
             Arc::new(FixedEmbedder),
             "parse",
             "2026-08-08T17:00:00Z",
-            da_domain::embedding::EmbeddingInputPolicy {
-                max_input_chars: 2048,
-                separator: "\n".into(),
-                paper_fields: vec!["title".into(), "abstract".into()],
-            },
         );
         let parsed = ParsedArticle {
             paper_id: "2507.19457".into(),
@@ -593,7 +584,7 @@ mod tests {
             stage
                 .contract()
                 .configuration_fingerprint
-                .contains("max_input_chars=2048")
+                .contains("token_limit=backend_model_capability")
         );
     }
 
