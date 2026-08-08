@@ -4,9 +4,11 @@
 //! ADR-037 §4: Data flows (ingest, extraction, agent, ETL scheduler).
 //! ADR-040 §11.3: Migration framework.
 
+pub mod artifact_stage;
 pub mod ingest;
 pub mod pipeline;
 
+pub use artifact_stage::ArtifactPayloadStage;
 pub use ingest::IngestUseCase;
 pub use pipeline::{
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
@@ -38,8 +40,14 @@ pub use enrich::{EnrichResult, EnrichUseCase};
 pub mod scheduler;
 pub use scheduler::GraphScheduler;
 pub mod cluster;
+pub mod cluster_stage;
+pub mod document_context_stage;
 pub mod summary;
 pub use cluster::{ClusterResult, ClusterUseCase};
+pub use cluster_stage::{ClusterDetectionStage, EntityPapersArtifact, EntityPapersEntry};
+pub use document_context_stage::{
+    DocumentContextProjection, DocumentContextSection, DocumentContextStage, SectionSummaryInput,
+};
 pub use summary::{SummaryResult, SummaryUseCase};
 pub mod queries;
 pub use queries::{

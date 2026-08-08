@@ -8,19 +8,21 @@
 //! Source-grounded evidence requires EvidenceBundle (future P1 work).
 //! Do NOT run evidence PPR over MEMBER_OF_CLUSTER edges.
 
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
 // ─── Algorithm parameters (loaded from YAML) ───
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 struct ClusterParamsYaml {
     version: String,
     cluster_detection: ClusterDetectionParams,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[allow(dead_code)]
 struct ClusterDetectionParams {
     min_cooccurrence: usize,
@@ -32,6 +34,7 @@ struct ClusterDetectionParams {
 const BUNDLED_PARAMS_YAML: &str = include_str!("../../../data/algorithm_params.yaml");
 
 struct ClusterConfig {
+    source_fingerprint: String,
     min_cooccurrence: usize,
     min_single_mentions: usize,
     default_cluster_type: String,
@@ -45,6 +48,10 @@ impl ClusterConfig {
         let data: ClusterParamsYaml =
             serde_yaml::from_str(&yaml_str).expect("algorithm_params.yaml must be valid YAML");
         Self {
+            source_fingerprint: format!(
+                "sha256:{}",
+                hex::encode(Sha256::digest(yaml_str.as_bytes()))
+            ),
             min_cooccurrence: data.cluster_detection.min_cooccurrence,
             min_single_mentions: data.cluster_detection.min_single_mentions,
             default_cluster_type: data.cluster_detection.default_cluster_type,
@@ -68,8 +75,12 @@ pub fn min_single_mentions() -> usize {
     ClusterConfig::instance().min_single_mentions
 }
 
+pub fn cluster_configuration_fingerprint() -> String {
+    ClusterConfig::instance().source_fingerprint.clone()
+}
+
 /// A detected concept cluster from co-occurrence analysis.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DetectedCluster {
     pub label: String,
     pub cluster_type: String,
@@ -77,10 +88,17 @@ pub struct DetectedCluster {
     pub co_occurrence_count: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct EntityClusterKey {
     pub entity_type: String,
     pub label: String,
+}
+
+pub fn normalize_entity_key(entity_type: &str, label: &str) -> EntityClusterKey {
+    EntityClusterKey {
+        entity_type: entity_type.trim().to_string(),
+        label: label.split_whitespace().collect::<Vec<_>>().join(" "),
+    }
 }
 
 /// Input for cluster detection keyed by ontology type plus label.

@@ -218,7 +218,7 @@ async fn test_cluster_use_case_creates_concept_cluster_with_correct_label() {
 
     let mut entity_papers: EntityPapers = HashMap::new();
     let papers: HashSet<String> = (0..5).map(|i| format!("2404.0000{i}")).collect();
-    entity_papers.insert(key("Method", "GraphSAGE"), papers);
+    entity_papers.insert(key(" Method ", "  GraphSAGE  "), papers);
 
     let use_case = ClusterUseCase::new(Box::new(store.clone()));
     let result = use_case.materialize_clusters(&entity_papers).await.unwrap();

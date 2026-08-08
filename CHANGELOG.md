@@ -1,5 +1,25 @@
 # Changelog
 
+### M371 S04 T05b cache-correct semantic DAG composition
+
+Added an explicit-dependency document context projection and cluster pipeline
+fragment. `DocumentContextStage` joins parsed Sections and summaries by unique
+`path_id`, emits previous/next navigation, and fails terminally on duplicate or
+orphan paths. A generic content-addressed `ArtifactPayloadStage` supplies
+canonical artifacts. Cluster detection is pure and cacheable; its key includes
+the SHA-256 fingerprint of the exact `OnceLock` configuration snapshot and its
+payload is deterministic typed clusters. Graph materialization is deliberately
+always-run outside `PipelineStageExecutor`, so a cache hit can never skip graph
+writes. A single normalized `(entity_type,label)` helper is shared by stage,
+public direct API, graph lookup, and same-process example. The example runs a
+five-step `PipelineOrchestrator` twice, proves all-pure-stage cache hits, then
+applies clusters to real Samyama in the same process. Dirty-key runtime evidence
+`28716abb-...`: cache hits true, 3 clusters, 4 temporal memberships, authority
+false, import false. Focused `4a35799d-...` and final architecture
+`1ff55c58-...` PASS; final review APPROVE after fixing fingerprint/cache and
+normalization blockers. Failed `c8d34e6a` predecessor documents the corrected
+step-name versus executor-ID cache lookup.
+
 ### M371 S04 T05a data-driven cluster foundation
 
 Removed hardcoded `EntityType::Method/Dataset` cluster policy before stage

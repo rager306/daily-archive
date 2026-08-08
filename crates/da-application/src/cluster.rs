@@ -62,15 +62,29 @@ impl ClusterUseCase {
         &self,
         entity_papers: &EntityPapers,
     ) -> anyhow::Result<ClusterResult> {
-        // 1. Detect clusters using domain logic (pure function)
-        let detected = cluster::detect_clusters(entity_papers);
+        // Normalize at the public boundary so direct callers and staged callers
+        // share the same typed cluster identity contract.
+        let mut normalized = EntityPapers::new();
+        for (key, papers) in entity_papers {
+            normalized
+                .entry(cluster::normalize_entity_key(&key.entity_type, &key.label))
+                .or_default()
+                .extend(papers.iter().cloned());
+        }
+        let detected = cluster::detect_clusters(&normalized);
         tracing::info!(
             total_entities = entity_papers.len(),
             clusters_detected = detected.len(),
             "Cluster detection complete"
         );
+        self.materialize_detected_clusters(&detected).await
+    }
 
-        // 2. Build entity label → node_id lookup from graph
+    pub async fn materialize_detected_clusters(
+        &self,
+        detected: &[da_domain::cluster::DetectedCluster],
+    ) -> anyhow::Result<ClusterResult> {
+        // Build entity key → node_id lookup from graph.
         let entity_node_ids = self.build_entity_node_lookup().await;
 
         let mut clusters_created = 0usize;
@@ -79,7 +93,7 @@ impl ClusterUseCase {
         let mut members_skipped = 0usize;
 
         // 3. Materialize each DetectedCluster
-        for dc in &detected {
+        for dc in detected {
             let vid = cluster_vid(dc);
             let cluster_node = match self
                 .graph_store
@@ -178,7 +192,10 @@ impl ClusterUseCase {
                 .get_node_property_string(node_id, "entity_type")
                 .await;
             if let (Some(label), Some(entity_type)) = (label, entity_type) {
-                lookup.insert(EntityClusterKey { entity_type, label }, node_id);
+                lookup.insert(
+                    da_domain::cluster::normalize_entity_key(&entity_type, &label),
+                    node_id,
+                );
             }
         }
 
