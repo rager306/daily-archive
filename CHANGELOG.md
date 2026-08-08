@@ -18,7 +18,11 @@ applies clusters to real Samyama in the same process. Dirty-key runtime evidence
 false, import false. Focused `4a35799d-...` and final architecture
 `1ff55c58-...` PASS; final review APPROVE after fixing fingerprint/cache and
 normalization blockers. Failed `c8d34e6a` predecessor documents the corrected
-step-name versus executor-ID cache lookup.
+step-name versus executor-ID cache lookup. S04 runtime UAT PASS: semantic
+contracts `e087a35d-...`, ontology/D127/governor `973b2385-...`, and cache
+side-effect boundary `90518fbf-...`. Failed `afbf03e3-...` remains visible as a
+bad shell status-filter assertion, not product evidence. Lifecycle remains
+Attempt-blocked despite technical PASS.
 
 ### M371 S04 T05a data-driven cluster foundation
 
