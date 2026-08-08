@@ -131,6 +131,38 @@ async fn cached_parsed_materialization_replay_is_idempotent() {
     assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
     assert_eq!(store.get_nodes_by_label("Section").await.len(), 1);
     assert_eq!(store.node_count_total(), 2);
+    assert_eq!(store.vector_add_call_count(), 1);
+}
+
+#[tokio::test]
+async fn changed_embedding_fails_closed_until_storage_upsert_is_available() {
+    let (ingest, store) = make_ingest(vec![]);
+    let parsed = ParsedArticle {
+        paper_id: "2401.00001".into(),
+        title: "Cached paper".into(),
+        abstract_text: String::new(),
+        body_text: String::new(),
+        sections: vec![],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-hash".into(),
+    };
+    ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    let error = ingest
+        .materialize_parsed(&parsed, vec![0.2; 1024], None, None, None)
+        .await
+        .unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("replacement is not supported safely")
+    );
+    assert_eq!(store.vector_add_call_count(), 1);
 }
 
 #[tokio::test]

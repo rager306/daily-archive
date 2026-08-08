@@ -12,6 +12,8 @@
 #![allow(dead_code)]
 
 use std::collections::HashSet;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use da_ports::graph_store::{
     DirectGraphStore, GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric,
@@ -24,12 +26,14 @@ use da_ports::graph_store::{
 #[derive(Debug, Clone)]
 pub struct MockGraphStore {
     inner: kg_storage::MockGraphStore,
+    vector_add_calls: Arc<AtomicUsize>,
 }
 
 impl MockGraphStore {
     pub fn new() -> Self {
         Self {
             inner: kg_storage::MockGraphStore::new(),
+            vector_add_calls: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -44,6 +48,9 @@ impl MockGraphStore {
     }
     pub fn import_call_count(&self) -> usize {
         self.inner.import_call_count()
+    }
+    pub fn vector_add_call_count(&self) -> usize {
+        self.vector_add_calls.load(Ordering::SeqCst)
     }
 }
 
@@ -121,6 +128,7 @@ impl DirectGraphStore for MockGraphStore {
         node_id: u64,
         vector: Vec<f32>,
     ) -> Result<(), GraphStoreError> {
+        self.vector_add_calls.fetch_add(1, Ordering::SeqCst);
         self.inner
             .add_vector(label, property, node_id, vector)
             .await

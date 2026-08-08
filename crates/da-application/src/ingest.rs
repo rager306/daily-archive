@@ -14,6 +14,7 @@ use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParserPort;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 /// Ingest pipeline dependencies (injected ports).
 pub struct IngestUseCase {
@@ -515,10 +516,29 @@ impl IngestUseCase {
             tracing::info!(paper_id, nav_edges, "Section navigation edges created");
         }
 
-        // 5. HOT PATH: Add vector to index
-        self.graph_store
-            .add_vector("Paper", "embedding", node_id, vector.clone())
-            .await?;
+        // 5. HOT PATH: add the vector exactly once for this content.
+        // Samyama's current HNSW `add` appends duplicate node IDs, so exact
+        // replay must be suppressed and changed embeddings fail closed until
+        // the storage adapter provides a real upsert contract.
+        let embedding_sha256 = embedding_fingerprint(&vector);
+        match self
+            .graph_store
+            .get_node_property_string(node_id, "embedding_sha256")
+            .await
+        {
+            Some(existing) if existing == embedding_sha256 => {}
+            Some(existing) => anyhow::bail!(
+                "embedding replacement is not supported safely for paper {paper_id}: existing={existing}, requested={embedding_sha256}"
+            ),
+            None => {
+                self.graph_store
+                    .add_vector("Paper", "embedding", node_id, vector.clone())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node_id, "embedding_sha256", embedding_sha256)
+                    .await?;
+            }
+        }
 
         // 6. Create CITES edges for citations with resolvable arxiv_ids
         // (enables citation graph traversal — ADR-038 S_kn tri-source)
@@ -701,6 +721,15 @@ impl IngestUseCase {
             self.graph_store.edge_count().await,
         )
     }
+}
+
+fn embedding_fingerprint(vector: &[f32]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update((vector.len() as u64).to_le_bytes());
+    for value in vector {
+        hasher.update(value.to_bits().to_le_bytes());
+    }
+    hex::encode(hasher.finalize())
 }
 
 /// Extract source code from catalog path.

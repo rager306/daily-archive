@@ -1,5 +1,21 @@
 # Changelog
 
+### M371 S05 T06 vector replay safety
+
+Closed the final exact-replay gap in parsed materialization. Paper embeddings now
+carry a SHA-256 fingerprint: identical verified artifacts skip `add_vector`, while
+a changed embedding fails closed until an explicit storage upsert/rebuild is
+available. The shared application mock counts vector writes; 13 ingest tests
+prove one exact replay produces one vector add and changed content cannot append
+a stale duplicate (`d6be5bd1-...`). Samyama itself also appended duplicate node
+IDs to HNSW/stored vectors; vendor commit `78b79a6` makes identical add a no-op
+and changed add return `VectorConflict`. Four focused vendor index tests PASS
+(`e9d94c89-...`); full vendor clippy remains blocked by 11 pre-existing warnings
+outside `vector/index.rs`.
+
+Gold batches 6 and 7 also passed 20 cold executions + 20 replay hits each; 70/193
+source-ready papers are now cache-verified with durable per-batch metrics.
+
 ### M371 S05 T06 cached parsed graph materialization boundary
 
 Split parser/embedder computation from ingest graph side effects with additive
