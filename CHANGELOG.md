@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### M371 S03 T01 provider-neutral multimodal LLM routing (D199)
+
+Replaced the MiniMax-specific VLM design with a provider-neutral multimodal
+model gateway that supports direct providers and local routing proxies:
+
+- `MultimodalLlmPort` records image media/bytes/SHA-256, structured schema,
+  route/protocol/model identity, fallback semantics, usage, and typed failures.
+- `AnthropicMultimodalClient` supports direct MiniMax (`X-Api-Key`) and 9router
+  (`Authorization: Bearer` or no auth) without changing application code.
+- Endpoint roots with or without `/v1` normalize to exactly one
+  `/v1/messages`; native base64 image+text blocks and forced tools are used.
+- Fixture HTTP tests verify request/auth shapes, thinking+tool response handling,
+  retry-after, secret redaction, and rejection of text-only structured output.
+- Existing text-only `LLMClient` remains backward compatible; OpenAI-compatible
+  protocol is represented in the port and can receive a separate adapter later.
+
+Local `http://127.0.0.1:20128/api/health` is healthy, but
+`/v1/models/image-to-text` currently returns zero models; 9router vision is not
+falsely treated as ready. Evidence: `cc3fb68b-...` (7 tests + fmt/clippy) and
+`dc97532d-...` (health/discovery/governor). Search query used:
+`9router chat Anthropic endpoint multimodal models`. T01 remains pending because
+no canonical GSD Attempt exists; no lifecycle bypass was used.
+
 ### M371 S02 T04 semantic/architecture closeout gate (Attempt-blocked)
 
 Closed the technical S02 gate without weakening existing invariants:

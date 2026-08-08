@@ -11,6 +11,7 @@ pub mod extractor;
 pub mod figure_detection;
 pub mod graph_store;
 pub mod llm_client;
+pub mod multimodal_llm;
 pub mod openalex;
 pub mod parser;
 pub mod pipeline_cache;
@@ -27,6 +28,10 @@ pub use figure_detection::{
 };
 pub use graph_store::{DirectGraphStore, GraphStore};
 pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};
+pub use multimodal_llm::{
+    ImageMediaType, ModelRouteDescriptor, ModelWireProtocol, MultimodalImage, MultimodalLlmError,
+    MultimodalLlmPort, MultimodalLlmRequest, MultimodalLlmResponse, MultimodalLlmResult,
+};
 pub use openalex::{OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexTopic, OpenAlexWork};
 pub mod pdf_classification;
 pub use pdf_classification::{

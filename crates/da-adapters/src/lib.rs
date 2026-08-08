@@ -4,6 +4,7 @@
 //! ADR-040 §1: Samyama Graph (Tier 1) + external services.
 
 pub mod anthropic_llm;
+pub mod anthropic_multimodal;
 pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;
@@ -17,6 +18,10 @@ pub mod samyama_graph;
 #[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
 
+pub use anthropic_llm::AnthropicLlmClient;
+pub use anthropic_multimodal::{
+    AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
+};
 pub use fd_embedder::FdApiEmbedder;
 pub use grobid_parser::GrobidParser;
 pub use html_parser::HtmlParser;
