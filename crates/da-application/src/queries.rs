@@ -3,6 +3,32 @@
 //! ADR-041 WARM path: these queries are executed via EmbeddedClient
 //! (Cypher with cost-based planner + late materialization).
 
+use da_domain::paper::PaperSchema;
+use da_domain::schema::NodeSchemaDef;
+use da_ports::graph_store::DirectGraphStore;
+use thiserror::Error;
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum PaperLookupError {
+    #[error("paper with arxiv_id '{arxiv_id}' was not found in the graph")]
+    NotFound { arxiv_id: String },
+}
+
+/// Resolve exactly one requested Paper through the storage property-index port.
+/// This avoids inventory walks and, critically, never selects an unrelated
+/// first Paper node in a multi-paper graph.
+pub async fn find_paper_node_id(
+    store: &dyn DirectGraphStore,
+    arxiv_id: &str,
+) -> Result<u64, PaperLookupError> {
+    store
+        .find_node_by_string_property(PaperSchema.label(), "arxiv_id", arxiv_id)
+        .await
+        .ok_or_else(|| PaperLookupError::NotFound {
+            arxiv_id: arxiv_id.to_owned(),
+        })
+}
+
 /// Query builders for Paper nodes.
 pub struct PaperQueries;
 
@@ -106,6 +132,40 @@ impl RelationQueries {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kg_storage::mock::MockGraphStore;
+
+    #[tokio::test]
+    async fn exact_paper_lookup_selects_requested_node_in_multi_paper_graph() {
+        let store = MockGraphStore::new();
+        let first = store.create_node(PaperSchema.label()).await.unwrap();
+        store
+            .set_node_property_string(first, "arxiv_id", "1111.11111".into())
+            .await
+            .unwrap();
+        let requested = store.create_node(PaperSchema.label()).await.unwrap();
+        store
+            .set_node_property_string(requested, "arxiv_id", "2507.19457".into())
+            .await
+            .unwrap();
+
+        assert_eq!(
+            find_paper_node_id(&store, "2507.19457").await.unwrap(),
+            requested
+        );
+        assert_ne!(first, requested);
+    }
+
+    #[tokio::test]
+    async fn exact_paper_lookup_reports_missing_id() {
+        let store = MockGraphStore::new();
+        let error = find_paper_node_id(&store, "missing").await.unwrap_err();
+        assert_eq!(
+            error,
+            PaperLookupError::NotFound {
+                arxiv_id: "missing".into()
+            }
+        );
+    }
 
     #[test]
     fn test_find_by_vid() {

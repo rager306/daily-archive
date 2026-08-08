@@ -135,8 +135,8 @@ async fn main() -> ExitCode {
 
     println!();
     println!(
-        "{:<6} {:<28} {:>6} {:>8}  {}",
-        "VERDICT", "TITLE", "ROWS", "MS", "INSIGHT"
+        "{:<6} {:<28} {:>6} {:>8}  INSIGHT",
+        "VERDICT", "TITLE", "ROWS", "MS"
     );
     println!("{}", "-".repeat(90));
 

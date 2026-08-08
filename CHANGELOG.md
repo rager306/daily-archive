@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### M371 S01 T03 debt wave: exact Paper lookup (partial, pending GSD Attempt)
+
+Fixed a semantic multi-paper corruption risk in `da summarize`: the command
+previously ignored its requested `paper_id` when selecting a graph node and
+attached output to the first `Paper` node. It now resolves the exact
+`arxiv_id` through the `DirectGraphStore` property-lookup contract and fails
+explicitly when absent.
+
+- Added `find_paper_node_id` at the application query boundary using the
+  canonical `PaperSchema` label.
+- Added multi-paper and missing-paper tests.
+- Removed three existing all-target clippy failures in CLI examples.
+- Governor finding `no_hardcoded_inventory_label_walks` is resolved at root
+  cause: active verdict ON_TRACK, flags=0, violations=0.
+- No `da pipeline` command was exposed yet because production stage executors
+  do not exist until S02/S03; publishing a no-op command would be a stub.
+
+Verification: `gsd_exec 1dbc1bd3-e171-4267-969b-9fea58e31c92` PASS (13
+query tests, 44 CLI tests, fmt, all-target clippy, governor) and semantic check
+`38ed8a5f-f92e-4d58-abf4-64c8c3e62f3d` PASS. T03 remains pending and partial;
+no lifecycle bypass was used.
+
 ### M371 S01 T02 cache-aware application DAG runner (delivery pending GSD Attempt)
 
 Added a thin, hexagonal orchestration core without advertising unimplemented

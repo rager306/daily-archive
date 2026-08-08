@@ -27,7 +27,9 @@ pub mod summary;
 pub use cluster::{ClusterResult, ClusterUseCase};
 pub use summary::{SummaryResult, SummaryUseCase};
 pub mod queries;
-pub use queries::{EntityQueries, PaperQueries, RelationQueries};
+pub use queries::{
+    EntityQueries, PaperLookupError, PaperQueries, RelationQueries, find_paper_node_id,
+};
 pub mod schema_init;
 pub use schema_init::{CURRENT_SCHEMA_VERSION, SchemaInitializer};
 pub mod decision_recorder;

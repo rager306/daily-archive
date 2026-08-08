@@ -383,8 +383,10 @@ async fn main() -> anyhow::Result<()> {
     std::fs::write(&json_path, serde_json::to_string_pretty(&report)? + "\n")?;
     println!("Wrote {}", json_path.display());
 
+    let edge_histogram = format!("{:?}", report.graph.edge_type_histogram);
+    let entity_types = format!("{:?}", report.hub_extract.by_type);
     #[allow(clippy::literal_string_with_formatting_args)]
-    let mut md = format!(
+    let md = format!(
         r#"# GEPA hub research — 2507.19457
 
 ## Hub bibliography (GROBID TEI / citations.json)
@@ -482,9 +484,9 @@ cargo run -p da-cli --example gepa_hub_research
         fs = report.graph.from_source_edges,
         ic = report.graph.in_category_edges,
         me = report.graph.mentions_edges,
-        hist = format!("{:?}", report.graph.edge_type_histogram),
+        hist = edge_histogram,
         he = report.hub_extract.entities,
-        bt = format!("{:?}", report.hub_extract.by_type),
+        bt = entity_types,
         ls = report.hub_extract.labels_sample.join(", "),
         plist = report
             .graph

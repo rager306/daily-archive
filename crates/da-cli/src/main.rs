@@ -1169,10 +1169,16 @@ async fn summarize_paper(
     // Open graph store + load snapshot
     let store = open_graph_store_with_optional_snapshot(snapshot).await;
 
-    // Find Paper node
-    let paper_ids = store.get_nodes_by_label("Paper").await;
-    let paper_node_id = *paper_ids.first().expect("no Paper nodes in graph");
-    println!("Paper node: {}", paper_node_id);
+    // Resolve the exact requested Paper. Never select the first node from a
+    // multi-paper graph: that would attach summaries to the wrong article.
+    let paper_node_id = match da_application::find_paper_node_id(&store, paper_id).await {
+        Ok(node_id) => node_id,
+        Err(error) => {
+            eprintln!("❌ {error}");
+            std::process::exit(1);
+        }
+    };
+    println!("Paper node: {paper_node_id}");
 
     // Create LLM client
     let llm: Arc<dyn da_ports::LLMClient> = Arc::new(AnthropicLlmClient::from_env());
