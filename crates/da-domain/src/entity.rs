@@ -142,6 +142,8 @@ impl crate::schema::NodeSchemaDef for EntitySchema {
             // Healing fields (set by GraphHealingUseCase on silence/correct/merge)
             ("deprecated_reason", crate::schema::FieldType::String),
             ("last_healed_at", crate::schema::FieldType::DateTime),
+            // Canonical-resolution audit: points to the retained Entity VID.
+            ("canonical_vid", crate::schema::FieldType::String),
             // Phase 3: GNN readiness — entity label embedding (bge-m3 1024d)
             ("embedding", crate::schema::FieldType::Vector),
             ("domain_tags", crate::schema::FieldType::String),

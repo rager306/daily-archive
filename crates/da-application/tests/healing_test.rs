@@ -101,7 +101,69 @@ async fn test_merge_creates_supersedes_edge() {
     // total edges: 1 (original MENTIONS) + 1 (SUPERSEDES) + 1 (redirected MENTIONS) = 3
     assert_eq!(result.edges_redirected, 1);
     let edges = use_case.graph_store.edge_count().await;
-    assert!(edges >= 3);
+    assert_eq!(edges, 3);
+    assert_eq!(
+        use_case
+            .graph_store
+            .get_node_property_string(merge_id, "canonical_vid")
+            .await
+            .as_deref(),
+        Some("vid:entity:Method:Transformer")
+    );
+
+    let repeated = use_case
+        .merge(
+            "vid:entity:Method:Transformer",
+            "vid:entity:Method:Transformers",
+            "same reviewed resolution replayed",
+            HealingActor::Human("alice".to_string()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(repeated.edges_redirected, 0);
+    assert_eq!(use_case.graph_store.edge_count().await, 3);
+}
+
+#[tokio::test]
+async fn test_merge_rejects_self_and_conflicting_canonical_target() {
+    let store = make_store();
+    make_entity(&store, "vid:entity:Method:A", "A").await;
+    make_entity(&store, "vid:entity:Method:B", "B").await;
+    make_entity(&store, "vid:entity:Method:C", "C").await;
+    let use_case = GraphHealingUseCase::new(Box::new(store.clone()));
+
+    assert!(
+        use_case
+            .merge(
+                "vid:entity:Method:A",
+                "vid:entity:Method:A",
+                "invalid self merge",
+                HealingActor::System("entity-resolution-test".into()),
+            )
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("into itself")
+    );
+    use_case
+        .merge(
+            "vid:entity:Method:A",
+            "vid:entity:Method:B",
+            "first reviewed resolution",
+            HealingActor::System("entity-resolution-test".into()),
+        )
+        .await
+        .unwrap();
+    let error = use_case
+        .merge(
+            "vid:entity:Method:C",
+            "vid:entity:Method:B",
+            "conflicting resolution",
+            HealingActor::System("entity-resolution-test".into()),
+        )
+        .await
+        .unwrap_err();
+    assert!(error.to_string().contains("different canonical VID"));
 }
 
 #[tokio::test]

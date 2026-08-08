@@ -1,5 +1,17 @@
 # Changelog
 
+### M371 S04 T04a canonical merge prerequisite
+
+Hardened the reusable `GraphHealingUseCase::merge` before composing entity
+resolution. Merged Entity nodes now retain an explicit schema-declared
+`canonical_vid`, remain present for audit, become retrieval-ineligible, and get
+one temporal SUPERSEDES edge. Incoming edges redirect only when the canonical
+edge is absent, making reviewed replay idempotent. Self-merge and conflicting
+second canonical targets fail before mutation. Evidence `a72ec2aa-...`: healing,
+Entity schema, temporal write audit and clippy PASS. The next T04 unit is still
+Decision-first orchestration plus deterministic candidate blocking; no automatic
+promotion was introduced.
+
 ### M371 S04 T03 section summary graph closure
 
 Section-level structured summaries are no longer orphan nodes. The summary write

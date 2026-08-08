@@ -146,24 +146,51 @@ impl GraphHealingUseCase {
             .await
             .ok_or_else(|| anyhow::anyhow!("Entity {vid_merge} not found"))?;
 
-        // Silence the merged node
+        if vid_keep == vid_merge {
+            anyhow::bail!("cannot merge Entity '{vid_keep}' into itself");
+        }
+        let existing_canonical = self
+            .graph_store
+            .get_node_property_string(merge_id, "canonical_vid")
+            .await;
+        if let Some(canonical) = &existing_canonical
+            && canonical != vid_keep
+        {
+            anyhow::bail!(
+                "Entity {vid_merge} is already resolved to a different canonical VID {canonical}"
+            );
+        }
+
+        // Preserve the source node for audit, but make the canonical reference
+        // explicit and exclude the duplicate from retrieval.
         self.graph_store
             .set_node_property_bool(merge_id, "retrieval_eligible", false)
             .await?;
         self.graph_store
-            .set_node_property_string(merge_id, "superseded_by", vid_keep.to_string())
+            .set_node_property_string(merge_id, "canonical_vid", vid_keep.to_string())
             .await?;
 
-        // Create SUPERSEDES edge: merge → keep — temporal fact (M329).
-        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-        crate::temporal_stamp::create_edge_with_temporal(
-            self.graph_store.as_ref(),
-            merge_id,
-            keep_id,
-            da_domain::relation::bibliographic::SUPERSEDES,
-            &temporal,
-        )
-        .await?;
+        // Create one SUPERSEDES edge: merge → keep — temporal fact (M329).
+        if self
+            .graph_store
+            .get_edges_between(
+                merge_id,
+                keep_id,
+                da_domain::relation::bibliographic::SUPERSEDES,
+            )
+            .await
+            .is_empty()
+        {
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                merge_id,
+                keep_id,
+                da_domain::relation::bibliographic::SUPERSEDES,
+                &temporal,
+            )
+            .await?;
+        }
 
         // Redirect incoming edges: for each edge (source → merge_id),
         // create a parallel edge (source → keep_id) so queries find the kept node.
@@ -171,7 +198,13 @@ impl GraphHealingUseCase {
         let mut redirected = 0;
         for (source_id, edge_type) in &incoming {
             // Don't redirect SUPERSEDES edges
-            if edge_type != da_domain::relation::bibliographic::SUPERSEDES {
+            if edge_type != da_domain::relation::bibliographic::SUPERSEDES
+                && self
+                    .graph_store
+                    .get_edges_between(*source_id, keep_id, edge_type)
+                    .await
+                    .is_empty()
+            {
                 // Fact edges must carry TemporalEdge fields (M329).
                 if crate::temporal_stamp::edge_type_is_temporal_fact(edge_type) {
                     let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
