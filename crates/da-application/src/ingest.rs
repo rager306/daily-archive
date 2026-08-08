@@ -38,6 +38,9 @@ pub struct IngestResult {
     pub title: String,
     pub body_chars: usize,
     pub section_count: usize,
+    /// Net-new Section nodes written during this call.
+    #[serde(default)]
+    pub sections_written: usize,
     pub citation_count: usize,
     pub references_written: usize, // all citations as Reference nodes
     pub cites_resolved: usize,     // citations with a resolvable arxiv_id
@@ -736,6 +739,7 @@ impl IngestUseCase {
             title: paper.title.clone(),
             body_chars: parsed.body_text.len(),
             section_count,
+            sections_written: section_nodes,
             citation_count,
             references_written,
             cites_resolved,

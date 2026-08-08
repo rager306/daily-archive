@@ -101,6 +101,7 @@ async fn materializer_only_extraction_has_no_fake_compute_port() {
                 label: "CachedMethod".into(),
                 entity_type: EntityType::Method,
                 section_title: "Introduction".into(),
+                section_ordinal: None,
                 char_start: 0,
                 char_end: 12,
                 surface: "CachedMethod".into(),
@@ -136,6 +137,7 @@ async fn materialize_extracted_uses_cached_entities_without_invoking_extractor()
                 label: "CachedMethod".into(),
                 entity_type: EntityType::Method,
                 section_title: "Introduction".into(),
+                section_ordinal: None,
                 char_start: 0,
                 char_end: 12,
                 surface: "CachedMethod".into(),
@@ -159,6 +161,7 @@ async fn cached_entity_materialization_replay_does_not_duplicate_mentions() {
         label: "ReplaySafeMethod".into(),
         entity_type: EntityType::Method,
         section_title: String::new(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 16,
         surface: "ReplaySafeMethod".into(),
@@ -216,6 +219,7 @@ async fn cached_evidence_materialization_replay_is_idempotent() {
                 EntityType::Dataset
             },
             section_title: "Introduction".into(),
+            section_ordinal: None,
             char_start: index * 10,
             char_end: index * 10 + label.len(),
             surface: label.into(),
@@ -253,6 +257,7 @@ async fn cached_problem_and_observation_replay_is_idempotent() {
         label: "F1".into(),
         entity_type: EntityType::Metric,
         section_title: "Results".into(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 9,
         surface: "F1 = 0.87".into(),
@@ -282,6 +287,7 @@ async fn test_extraction_writes_entity_nodes() {
             label: "TestMethod".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 10,
             surface: "TestMethod".to_string(),
@@ -290,6 +296,7 @@ async fn test_extraction_writes_entity_nodes() {
             label: "WMT".to_string(),
             entity_type: EntityType::Dataset,
             section_title: "Datasets".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 3,
             surface: "WMT".to_string(),
@@ -321,6 +328,7 @@ async fn test_extraction_dedup_same_entity() {
             label: "TestMethod".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 10,
             surface: "TestMethod".to_string(),
@@ -329,6 +337,7 @@ async fn test_extraction_dedup_same_entity() {
             label: "TestMethod".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 20,
             char_end: 30,
             surface: "TestMethod".to_string(),
@@ -374,6 +383,7 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
             label: "TestMethod".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 10,
             surface: "TestMethod".to_string(),
@@ -382,6 +392,7 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
             label: "WMT".to_string(),
             entity_type: EntityType::Dataset,
             section_title: "Datasets".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 3,
             surface: "WMT".to_string(),
@@ -446,6 +457,7 @@ async fn test_extraction_links_entities_to_sections_via_found_in() {
         label: "TestMethod".to_string(),
         entity_type: EntityType::Method,
         section_title: "Methods".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 10,
         surface: "TestMethod".to_string(),
@@ -483,7 +495,7 @@ async fn test_extraction_links_entities_to_sections_via_found_in() {
         .unwrap();
     let section_node = store.create_node("Section").await.unwrap();
     store
-        .set_node_property_string(section_node, "vid", "vid:section:methods".to_string())
+        .set_node_property_string(section_node, "vid", "vid:section:2401.00001:0".to_string())
         .await
         .unwrap();
     store
@@ -519,7 +531,8 @@ async fn test_extraction_links_entities_to_sections_via_found_in() {
         Box::new(MockExtractor { entities }),
         Box::new(store.clone()),
     );
-    let parsed = make_parsed();
+    let mut parsed = make_parsed();
+    parsed.sections[0].title = "Methods".into();
     let result = use_case.extract_from_parsed(&parsed).await.unwrap();
 
     assert_eq!(result.found_in_edges, 1, "expected 1 FOUND_IN edge");
@@ -534,6 +547,7 @@ async fn test_extraction_no_mentions_when_paper_absent() {
         label: "TestMethod".to_string(),
         entity_type: EntityType::Method,
         section_title: "Method".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 10,
         surface: "TestMethod".to_string(),
@@ -615,6 +629,7 @@ async fn test_extraction_creates_metric_observation_for_metric_with_value() {
         label: "accuracy".to_string(),
         entity_type: EntityType::Metric,
         section_title: "Results".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 14,
         surface: "accuracy 0.95".to_string(),
@@ -643,6 +658,7 @@ async fn test_extraction_metric_observation_skipped_without_value() {
         label: "accuracy".to_string(),
         entity_type: EntityType::Metric,
         section_title: "Results".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 7,
         surface: "accuracy reported".to_string(),
@@ -667,6 +683,7 @@ async fn test_extraction_creates_evidence_bundle_for_co_occurring_entities() {
             label: "BERT".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 4,
             surface: "BERT".to_string(),
@@ -675,6 +692,7 @@ async fn test_extraction_creates_evidence_bundle_for_co_occurring_entities() {
             label: "GLUE".to_string(),
             entity_type: EntityType::Dataset,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 10,
             char_end: 14,
             surface: "GLUE".to_string(),
@@ -707,6 +725,7 @@ async fn test_extraction_produces_schema_valid_nodes() {
             label: "BERT".to_string(),
             entity_type: EntityType::Method,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 0,
             char_end: 4,
             surface: "BERT".to_string(),
@@ -715,6 +734,7 @@ async fn test_extraction_produces_schema_valid_nodes() {
             label: "GLUE".to_string(),
             entity_type: EntityType::Dataset,
             section_title: "Method".to_string(),
+            section_ordinal: None,
             char_start: 10,
             char_end: 14,
             surface: "GLUE".to_string(),
@@ -760,6 +780,7 @@ async fn test_extraction_mentions_stamped_with_temporal_fields() {
         label: "GEPA".to_string(),
         entity_type: EntityType::Method,
         section_title: "Method".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 4,
         surface: "GEPA".to_string(),
@@ -825,6 +846,7 @@ async fn test_extraction_found_in_structural_no_valid_at() {
         label: "BERT".to_string(),
         entity_type: EntityType::Model,
         section_title: "Method".to_string(),
+        section_ordinal: None,
         char_start: 0,
         char_end: 4,
         surface: "BERT".to_string(),
@@ -841,12 +863,18 @@ async fn test_extraction_found_in_structural_no_valid_at() {
         .set_node_property_string(section, "title", "Method".to_string())
         .await
         .unwrap();
+    store
+        .set_node_property_string(section, "vid", "vid:section:2401.00001:0".to_string())
+        .await
+        .unwrap();
 
     let use_case = ExtractionUseCase::new(
         Box::new(MockExtractor { entities }),
         Box::new(store.clone()),
     );
-    let result = use_case.extract_from_parsed(&make_parsed()).await.unwrap();
+    let mut parsed = make_parsed();
+    parsed.sections[0].title = "Method".into();
+    let result = use_case.extract_from_parsed(&parsed).await.unwrap();
     assert_eq!(result.found_in_edges, 1);
 
     let entities = store.get_nodes_by_label("Entity").await;

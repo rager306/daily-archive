@@ -20,6 +20,10 @@ pub struct ExtractedEntity {
     pub label: String,
     pub entity_type: da_domain::entity::EntityType,
     pub section_title: String,
+    /// Zero-based ordinal in the ParsedArticle section array. This disambiguates
+    /// repeated titles such as multiple Results/Appendix sections.
+    #[serde(default)]
+    pub section_ordinal: Option<usize>,
     pub char_start: usize,
     pub char_end: usize,
     pub surface: String,
@@ -50,6 +54,7 @@ mod tests {
             label: "GEPA".into(),
             entity_type: da_domain::entity::EntityType::Method,
             section_title: "Methods".into(),
+            section_ordinal: Some(0),
             char_start: 12,
             char_end: 16,
             surface: "GEPA".into(),

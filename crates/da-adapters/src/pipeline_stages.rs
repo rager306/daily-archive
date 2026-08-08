@@ -299,7 +299,7 @@ impl RuleExtractionStage {
                 configuration_fingerprint: configuration_fingerprint.into(),
                 prompt_fingerprint: None,
                 model_fingerprint: Some(extractor_name),
-                output_schema_fingerprint: "Vec<ExtractedEntity>@serde-v1".into(),
+                output_schema_fingerprint: "Vec<ExtractedEntity>@serde-v2-section-ordinal".into(),
             },
         }
     }

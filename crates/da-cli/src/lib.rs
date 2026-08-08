@@ -2,6 +2,7 @@
 
 pub mod batch_ids;
 pub mod gold_corpus;
+pub mod gold_graph;
 pub mod graph_tasks;
 pub mod health_report;
 pub mod logging;

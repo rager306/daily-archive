@@ -432,7 +432,7 @@ impl Extractor for RuleBasedExtractor {
     async fn extract(&self, sections: &[(String, String)]) -> ExtractResult<Vec<ExtractedEntity>> {
         let mut entities = Vec::new();
 
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             if let Some(entity_type) = Self::classify_section(title) {
                 let candidates = self.extract_candidates(text, &entity_type);
                 for (char_start, char_end, label) in candidates {
@@ -440,6 +440,7 @@ impl Extractor for RuleBasedExtractor {
                         label,
                         entity_type: entity_type.clone(),
                         section_title: title.clone(),
+                        section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
                         surface: text[char_start.min(text.len())..char_end.min(text.len())]
@@ -467,7 +468,7 @@ impl Extractor for RuleBasedExtractor {
                 )
             })
             .collect();
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let acronyms = self.extract_method_acronyms_global(&scan_text);
             for (char_start, char_end, label) in acronyms {
@@ -478,6 +479,7 @@ impl Extractor for RuleBasedExtractor {
                         label,
                         entity_type: EntityType::Method,
                         section_title: title.clone(),
+                        section_ordinal: Some(section_ordinal),
                         char_start,
                         char_end,
                         surface: scan_text
@@ -492,7 +494,7 @@ impl Extractor for RuleBasedExtractor {
         // method phrases (self-evolving memory, chain-of-thought reasoning).
         // These are compound method names that cannot be captured by the
         // all-caps acronym pass — they appear as lowercase/titlecase phrases.
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
             for (p_lower, phrase_canonical) in self
@@ -515,6 +517,7 @@ impl Extractor for RuleBasedExtractor {
                                 label: phrase_canonical.to_string(),
                                 entity_type: EntityType::Method,
                                 section_title: title.clone(),
+                                section_ordinal: Some(section_ordinal),
                                 char_start: abs,
                                 char_end: end,
                                 surface: phrase_canonical.to_string(),
@@ -528,7 +531,7 @@ impl Extractor for RuleBasedExtractor {
 
         // Global Dataset pass: scan ALL sections for known dataset names.
         // Datasets are mentioned throughout the paper, not just in Dataset sections.
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
             for ds in &self.config.datasets {
@@ -545,6 +548,7 @@ impl Extractor for RuleBasedExtractor {
                                 label: ds.to_string(),
                                 entity_type: EntityType::Dataset,
                                 section_title: title.clone(),
+                                section_ordinal: Some(section_ordinal),
                                 char_start: abs,
                                 char_end: abs + ds.len(),
                                 surface: ds.to_string(),
@@ -560,7 +564,7 @@ impl Extractor for RuleBasedExtractor {
         // Models are mentioned in Related Work, Experiments, etc.
         // Uses canonical names (not greedy extraction) to avoid duplicate
         // variants like GPT-4.1, GPT-4.1-Mini, GPT-4.1-Mini.
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
             for canonical in &self.config.models {
@@ -574,6 +578,7 @@ impl Extractor for RuleBasedExtractor {
                             label: canonical.to_string(),
                             entity_type: EntityType::Model,
                             section_title: title.clone(),
+                            section_ordinal: Some(section_ordinal),
                             char_start: pos,
                             char_end: pos + canonical.len(),
                             surface: canonical.to_string(),
@@ -586,7 +591,7 @@ impl Extractor for RuleBasedExtractor {
         // Global Metric pass: scan ALL sections for known metric names.
         // Metrics (accuracy, F1, etc.) appear in various sections, not just
         // Evaluation/Results.
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
             for metric in &self.config.metrics {
@@ -601,6 +606,7 @@ impl Extractor for RuleBasedExtractor {
                             label: metric.to_string(),
                             entity_type: EntityType::Metric,
                             section_title: title.clone(),
+                            section_ordinal: Some(section_ordinal),
                             char_start: abs,
                             char_end: abs + metric.len(),
                             surface: metric.to_string(),
@@ -615,7 +621,7 @@ impl Extractor for RuleBasedExtractor {
         // Tasks are mentioned throughout the paper, not just in Task sections.
         let task_phrases = &self.config.tasks.phrases;
         let task_acronyms = &self.config.tasks.acronyms;
-        for (title, text) in sections {
+        for (section_ordinal, (title, text)) in sections.iter().enumerate() {
             let scan_text = format!("{} {}", title, text);
             let lower = scan_text.to_lowercase();
             for phrase in task_phrases {
@@ -633,6 +639,7 @@ impl Extractor for RuleBasedExtractor {
                                 label: phrase.to_string(),
                                 entity_type: EntityType::Task,
                                 section_title: title.clone(),
+                                section_ordinal: Some(section_ordinal),
                                 char_start: abs,
                                 char_end: end,
                                 surface: phrase.to_string(),
@@ -656,6 +663,7 @@ impl Extractor for RuleBasedExtractor {
                                 label: acr.to_string(),
                                 entity_type: EntityType::Task,
                                 section_title: title.clone(),
+                                section_ordinal: Some(section_ordinal),
                                 char_start: abs,
                                 char_end: end,
                                 surface: acr.to_string(),

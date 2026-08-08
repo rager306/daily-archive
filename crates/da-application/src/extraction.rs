@@ -3,6 +3,7 @@
 //! ADR-038 Module B: extract textually mentioned entities from paper sections.
 //! Phase 3 Slice 2: wires Extractor port to IngestUseCase graph writes.
 
+use anyhow::Context;
 use da_domain::entity::EntityType;
 use da_domain::vid;
 use da_ports::extractor::{ExtractedEntity, Extractor};
@@ -26,6 +27,7 @@ pub struct ExtractionUseCase {
 pub struct ExtractionResult {
     pub paper_id: String,
     pub entities_extracted: usize,
+    pub entities_created: usize,
     pub entity_types: Vec<String>,
     pub graph_node_ids: Vec<u64>,
     pub mentions_edges: usize,
@@ -159,9 +161,17 @@ impl ExtractionUseCase {
         // 4. Write Entity nodes to graph (HOT path) + MENTIONS edges
         let now = self.clock.now().timestamp();
         let mut node_ids = Vec::new();
+        let mut entities_created = 0usize;
         let mut entity_types = Vec::new();
         let mut mentions_edges = 0usize;
         let mut found_in_edges = 0usize;
+        let mut section_ordinals = std::collections::BTreeMap::<&str, Vec<usize>>::new();
+        for (ordinal, section) in parsed.sections.iter().enumerate() {
+            section_ordinals
+                .entry(section.title.as_str())
+                .or_default()
+                .push(ordinal);
+        }
         for ext in &extracted {
             let entity_vid = vid::entity_vid(ext.entity_type.as_str(), &ext.label);
             // Idempotent: check if entity already exists
@@ -173,6 +183,7 @@ impl ExtractionUseCase {
                 Some(existing) => existing,
                 None => {
                     let new_node = self.graph_store.create_node("Entity").await?;
+                    entities_created += 1;
                     self.graph_store
                         .set_node_property_string(new_node, "vid", entity_vid.clone())
                         .await?;
@@ -255,31 +266,67 @@ impl ExtractionUseCase {
             // Enables: retrieval by section, PPR adjacency through Section nodes,
             // and evidence chain construction from Entity → Section → Work.
             if !ext.section_title.is_empty() {
-                // Find Section node by title (hexagonal: no Cypher in application).
-                if let Some(section_node) = self
-                    .graph_store
-                    .find_node_by_string_property("Section", "title", &ext.section_title)
-                    .await
-                {
-                    let edge_type = da_domain::relation::structure::FOUND_IN;
-                    if self
-                        .graph_store
-                        .get_edges_between(node_id, section_node, edge_type)
-                        .await
-                        .is_empty()
-                    {
-                        // Structural foundIn — created_at only (M331).
-                        let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                        crate::temporal_stamp::create_edge_with_temporal(
-                            self.graph_store.as_ref(),
-                            node_id,
-                            section_node,
-                            edge_type,
-                            &temporal,
-                        )
-                        .await?;
-                        found_in_edges += 1;
+                let ordinal = match ext.section_ordinal {
+                    Some(ordinal) => {
+                        let section = parsed.sections.get(ordinal).with_context(|| {
+                            format!(
+                                "entity section ordinal {ordinal} is outside parsed paper {}",
+                                parsed.paper_id
+                            )
+                        })?;
+                        anyhow::ensure!(
+                            section.title == ext.section_title,
+                            "entity section identity mismatch in paper {}: ordinal {} is '{}', artifact says '{}'",
+                            parsed.paper_id,
+                            ordinal,
+                            section.title,
+                            ext.section_title
+                        );
+                        ordinal
                     }
+                    None => {
+                        let Some(ordinals) = section_ordinals.get(ext.section_title.as_str())
+                        else {
+                            node_ids.push(node_id);
+                            entity_types.push(ext.entity_type.as_str().to_string());
+                            continue;
+                        };
+                        anyhow::ensure!(
+                            ordinals.len() == 1,
+                            "legacy extracted entity section '{}' is ambiguous in parsed paper {}; regenerate extraction artifact with section ordinal",
+                            ext.section_title,
+                            parsed.paper_id
+                        );
+                        ordinals[0]
+                    }
+                };
+                let section_vid = format!("vid:section:{}:{}", parsed.paper_id, ordinal);
+                let Some(section_node) = self
+                    .graph_store
+                    .find_node_by_string_property("Section", "vid", &section_vid)
+                    .await
+                else {
+                    node_ids.push(node_id);
+                    entity_types.push(ext.entity_type.as_str().to_string());
+                    continue;
+                };
+                let edge_type = da_domain::relation::structure::FOUND_IN;
+                if self
+                    .graph_store
+                    .get_edges_between(node_id, section_node, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        node_id,
+                        section_node,
+                        edge_type,
+                        &temporal,
+                    )
+                    .await?;
+                    found_in_edges += 1;
                 }
             }
             node_ids.push(node_id);
@@ -681,6 +728,7 @@ impl ExtractionUseCase {
         Ok(ExtractionResult {
             paper_id: parsed.paper_id.clone(),
             entities_extracted: extracted.len(),
+            entities_created,
             entity_types,
             graph_node_ids: node_ids,
             mentions_edges,

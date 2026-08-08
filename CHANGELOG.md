@@ -1,5 +1,29 @@
 # Changelog
 
+### M371 S05 T06 verified cache-to-graph wave
+
+Added typed `gold_graph` cache replay and the `gold_graph_wave` composition root.
+Pipeline reports now persist exact `cache_key_sha256` alongside output hashes, so
+durable replay cannot become ambiguous when historical stage contracts produced
+identical bytes. Cache loading requires one exact key+payload match, ParsedArticle
+identity/source hash, finite non-empty embedding, and successful parse/extract/
+embed stages before any graph write. Batch materialization and replay share one
+Samyama store; replay requires zero net Section/Reference/Citation/Entity/
+evidence/problem/observation writes and unchanged graph stats before atomic
+snapshot export.
+
+Runtime exposed and fixed a second document-identity bug: FOUND_IN previously
+resolved Section globally by title, so repeated Results titles and cross-paper
+headings caused wrong edges/replay drift. `ExtractedEntity` serde v2 now carries
+`section_ordinal`; all RuleBasedExtractor passes enumerate source sections,
+legacy artifacts fail closed when a title is ambiguous, and FOUND_IN resolves
+`vid:section:{paper}:{ordinal}`. This HIGH-blast change passed ports/adapters/
+application tests and all-target clippy (`5c2d004c-...`). Selective cache
+invalidation regenerated only batch-1 extraction (10 execute, parse/embed 20
+hits; `eecba18e-...`). Real graph proof `624daf18-...`: 10 papers materialized
+from cache into **711 nodes / 1011 edges**, unchanged replay, snapshot 229,018
+bytes, checksum bound, `import_eligible=false`.
+
 ### M371 S05 T06 materializer-only composition boundary
 
 Removed the need for fake Parser/Embedder/Extractor implementations in the

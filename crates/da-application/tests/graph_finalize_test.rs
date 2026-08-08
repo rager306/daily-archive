@@ -18,6 +18,7 @@ fn pipeline(pass: bool) -> PipelineRunReport {
         .map(|stage| StageRunRecord {
             step_name: stage.into(),
             stage_id: stage.into(),
+            cache_key_sha256: None,
             disposition: if pass {
                 StageDisposition::Executed {
                     output_sha256: format!("sha256:{stage}"),

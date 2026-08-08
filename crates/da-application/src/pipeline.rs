@@ -37,6 +37,10 @@ pub enum StageDisposition {
 pub struct StageRunRecord {
     pub step_name: String,
     pub stage_id: String,
+    /// Exact cache contract identity. Required for durable payload replay when
+    /// multiple historical contracts produced identical output bytes.
+    #[serde(default)]
+    pub cache_key_sha256: Option<String>,
     pub disposition: StageDisposition,
 }
 
@@ -164,11 +168,13 @@ impl PipelineOrchestrator {
                         event = "pipeline_stage_cache_hit"
                     );
                     let output_sha256 = payload_sha256(&hit.payload);
+                    let cache_key_sha256 = hit.manifest.key_sha256.clone();
                     outputs.insert(step.name.clone(), hit.payload);
                     output_hashes.insert(step.name.clone(), output_sha256.clone());
                     records.push(StageRunRecord {
                         step_name: step.name.clone(),
                         stage_id: step.stage.clone(),
+                        cache_key_sha256: Some(cache_key_sha256),
                         disposition: StageDisposition::CacheHit { output_sha256 },
                     });
                 }
@@ -188,6 +194,7 @@ impl PipelineOrchestrator {
                     records.push(StageRunRecord {
                         step_name: step.name.clone(),
                         stage_id: step.stage.clone(),
+                        cache_key_sha256: Some(manifest.key_sha256),
                         disposition: StageDisposition::RetrySuppressed { retry_after },
                     });
                     return Ok(PipelineRunReport {
@@ -212,7 +219,7 @@ impl PipelineOrchestrator {
                     match executor.execute(request).await {
                         Ok(output) => {
                             let output_sha256 = payload_sha256(&output.payload);
-                            self.cache.store_success(
+                            let manifest = self.cache.store_success(
                                 &key,
                                 &output.payload,
                                 output.metadata,
@@ -231,6 +238,7 @@ impl PipelineOrchestrator {
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
                                 stage_id: step.stage.clone(),
+                                cache_key_sha256: Some(manifest.key_sha256),
                                 disposition: StageDisposition::Executed { output_sha256 },
                             });
                         }
@@ -248,7 +256,7 @@ impl PipelineOrchestrator {
                                 retry_after = %retry_after,
                                 event = "pipeline_stage_retryable_failure"
                             );
-                            self.cache.store_retryable_failure(
+                            let manifest = self.cache.store_retryable_failure(
                                 &key,
                                 &error_class,
                                 &message,
@@ -258,6 +266,7 @@ impl PipelineOrchestrator {
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
                                 stage_id: step.stage.clone(),
+                                cache_key_sha256: Some(manifest.key_sha256),
                                 disposition: StageDisposition::Failed {
                                     error_class,
                                     message,
@@ -286,6 +295,7 @@ impl PipelineOrchestrator {
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
                                 stage_id: step.stage.clone(),
+                                cache_key_sha256: None,
                                 disposition: StageDisposition::Failed {
                                     error_class,
                                     message,
