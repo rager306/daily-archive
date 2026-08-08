@@ -176,6 +176,30 @@ impl IngestUseCase {
         };
         let vector = self.embedder.embed(embed_text).await?;
         tracing::info!(paper_id, dimensions = vector.len(), "Embedded");
+        self.materialize_parsed(
+            &parsed,
+            vector,
+            primary_domain,
+            source_code,
+            pdf_classification,
+        )
+        .await
+    }
+
+    /// Materialize already-computed parse and embedding artifacts without
+    /// invoking parser, classifier, or embedder again. This is an always-run
+    /// side-effect boundary; callers must provide artifacts validated through
+    /// their content-addressed pipeline cache.
+    pub async fn materialize_parsed(
+        &self,
+        parsed: &da_ports::parser::ParsedArticle,
+        vector: Vec<f32>,
+        primary_domain: Option<String>,
+        source_code: Option<String>,
+        pdf_classification: Option<PdfClassification>,
+    ) -> anyhow::Result<IngestResult> {
+        let paper_id = parsed.paper_id.as_str();
+        let eligible = self.eligibility.is_eligible();
 
         // 3. Create domain Paper (compute VID)
         let paper = Paper::new(paper_id, &parsed.title);
@@ -191,9 +215,19 @@ impl IngestUseCase {
         paper_props.insert("valid_from".to_string(), serde_json::json!(now));
         paper_schema.validate(&paper_props)?;
 
-        // 4. HOT PATH: Direct GraphStore API — create Paper node
-        let node_id = self.graph_store.create_node("Paper").await?;
-        tracing::debug!(paper_id, node_id, "Node created");
+        // 4. HOT PATH: Direct GraphStore API — replay-safe Paper identity.
+        let node_id = match self
+            .graph_store
+            .find_node_by_string_property("Paper", "vid", &vid_str)
+            .await
+        {
+            Some(node) => node,
+            None => {
+                let node = self.graph_store.create_node("Paper").await?;
+                tracing::debug!(paper_id, node_id = node, "Node created");
+                node
+            }
+        };
 
         // Set properties directly (no Cypher!)
         self.graph_store
@@ -262,17 +296,23 @@ impl IngestUseCase {
                     sn
                 }
             };
-            // Link Paper → Source via FROM_SOURCE edge
-            // Structural FROM_SOURCE — created_at only (M331).
-            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-            let _ = crate::temporal_stamp::create_edge_with_temporal(
-                self.graph_store.as_ref(),
-                node_id,
-                source_node,
-                da_domain::relation::structure::FROM_SOURCE,
-                &temporal,
-            )
-            .await;
+            let edge_type = da_domain::relation::structure::FROM_SOURCE;
+            if self
+                .graph_store
+                .get_edges_between(node_id, source_node, edge_type)
+                .await
+                .is_empty()
+            {
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    source_node,
+                    edge_type,
+                    &temporal,
+                )
+                .await?;
+            }
             tracing::debug!(paper_id, source_code = %code, "Source node linked");
         }
 
@@ -293,38 +333,54 @@ impl IngestUseCase {
                 .await?;
             tracing::debug!(paper_id, domain = %domain, "Set primary_scientific_domain");
 
-            // Create Category node + link Paper → Category (IN_CATEGORY edge)
-            let cat_node = self.graph_store.create_node("Category").await?;
-            self.graph_store
-                .set_node_property_string(cat_node, "vid", format!("vid:cat:{domain}"))
+            // Create Category node + link Paper → Category (IN_CATEGORY edge).
+            let category_vid = format!("vid:cat:{domain}");
+            let cat_node = match self
+                .graph_store
+                .find_node_by_string_property("Category", "vid", &category_vid)
+                .await
+            {
+                Some(node) => node,
+                None => {
+                    let node = self.graph_store.create_node("Category").await?;
+                    self.graph_store
+                        .set_node_property_string(node, "vid", category_vid)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_string(node, "code", domain.clone())
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(node, "is_primary", true)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(node, "retrieval_eligible", true)
+                        .await?;
+                    self.graph_store
+                        .set_node_property_bool(node, "import_eligible", eligible) // D127
+                        .await?;
+                    self.graph_store
+                        .set_node_property_int(node, "schema_version", 1)
+                        .await?;
+                    node
+                }
+            };
+            let edge_type = da_domain::relation::structure::IN_CATEGORY;
+            if self
+                .graph_store
+                .get_edges_between(node_id, cat_node, edge_type)
+                .await
+                .is_empty()
+            {
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    cat_node,
+                    edge_type,
+                    &temporal,
+                )
                 .await?;
-            self.graph_store
-                .set_node_property_string(cat_node, "code", domain.clone())
-                .await?;
-            // is_primary: arXiv papers have exactly one primary category
-            // (the first in metadata's categories list). This node IS primary.
-            self.graph_store
-                .set_node_property_bool(cat_node, "is_primary", true)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(cat_node, "retrieval_eligible", true)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(cat_node, "import_eligible", eligible) // D127
-                .await?;
-            self.graph_store
-                .set_node_property_int(cat_node, "schema_version", 1)
-                .await?;
-            // Structural inCategory — created_at only (M331).
-            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-            let _ = crate::temporal_stamp::create_edge_with_temporal(
-                self.graph_store.as_ref(),
-                node_id,
-                cat_node,
-                da_domain::relation::structure::IN_CATEGORY,
-                &temporal,
-            )
-            .await;
+            }
         }
 
         // ADR-053 Layer B: Summary node creation is DEFERRED.
@@ -352,13 +408,21 @@ impl IngestUseCase {
         let mut section_id_map: std::collections::HashMap<String, u64> =
             std::collections::HashMap::new();
         for (i, section) in parsed.sections.iter().enumerate() {
-            let section_node = self.graph_store.create_node("Section").await?;
+            let section_vid = format!("vid:section:{}:{}", paper_id, i);
+            let section_node = match self
+                .graph_store
+                .find_node_by_string_property("Section", "vid", &section_vid)
+                .await
+            {
+                Some(node) => node,
+                None => {
+                    let node = self.graph_store.create_node("Section").await?;
+                    section_nodes += 1;
+                    node
+                }
+            };
             self.graph_store
-                .set_node_property_string(
-                    section_node,
-                    "vid",
-                    format!("vid:section:{}:{}", paper_id, i),
-                )
+                .set_node_property_string(section_node, "vid", section_vid)
                 .await?;
             self.graph_store
                 .set_node_property_string(section_node, "title", section.title.clone())
@@ -411,17 +475,23 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_int(section_node, "char_count", section.text.len() as i64)
                 .await?;
-            // Structural hasPart (Section) — created_at only (M331).
-            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-            crate::temporal_stamp::create_edge_with_temporal(
-                self.graph_store.as_ref(),
-                node_id,
-                section_node,
-                da_domain::relation::structure::HAS_PART,
-                &temporal,
-            )
-            .await?;
-            section_nodes += 1;
+            let edge_type = da_domain::relation::structure::HAS_PART;
+            if self
+                .graph_store
+                .get_edges_between(node_id, section_node, edge_type)
+                .await
+                .is_empty()
+            {
+                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                crate::temporal_stamp::create_edge_with_temporal(
+                    self.graph_store.as_ref(),
+                    node_id,
+                    section_node,
+                    edge_type,
+                    &temporal,
+                )
+                .await?;
+            }
             // Record section_id -> graph_node_id mapping for ADR-053 Layer A
             // navigation edge wiring (T04).
             if let Some(sid) = &section.section_id {
@@ -463,12 +533,12 @@ impl IngestUseCase {
             // Dedup: if a Reference with the same vid exists, reuse it.
             {
                 let ref_vid = da_domain::vid::reference_vid(&citation.raw_text);
-                let ref_node = match self
+                let (ref_node, ref_created) = match self
                     .graph_store
                     .find_node_by_string_property("Reference", "vid", &ref_vid)
                     .await
                 {
-                    Some(id) => id, // reuse existing Reference (idempotent)
+                    Some(id) => (id, false), // reuse existing Reference (idempotent)
                     None => {
                         let new_id = self.graph_store.create_node("Reference").await?;
                         self.graph_store
@@ -487,7 +557,7 @@ impl IngestUseCase {
                                 .set_node_property_string(new_id, "title", title.clone())
                                 .await?;
                         }
-                        new_id
+                        (new_id, true)
                     }
                 };
                 if let Some(ref doi) = citation.doi {
@@ -507,18 +577,26 @@ impl IngestUseCase {
                 self.graph_store
                     .set_node_property_int(ref_node, "schema_version", 1)
                     .await?;
-                // Link Paper → Reference via hasPart edge (FaBiO)
-                // Structural hasPart (Reference) — created_at only (M331).
-                let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                let _ = crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    node_id,
-                    ref_node,
-                    da_domain::relation::structure::HAS_PART,
-                    &temporal,
-                )
-                .await;
-                references_written += 1;
+                let edge_type = da_domain::relation::structure::HAS_PART;
+                if self
+                    .graph_store
+                    .get_edges_between(node_id, ref_node, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        node_id,
+                        ref_node,
+                        edge_type,
+                        &temporal,
+                    )
+                    .await?;
+                }
+                if ref_created {
+                    references_written += 1;
+                }
             }
 
             if let Some(ref arxiv_id) = citation.arxiv_id {
@@ -564,19 +642,24 @@ impl IngestUseCase {
                         new_node
                     }
                 };
-                // CITES is a temporal fact edge (meta-ontology temporal_class: fact).
-                // Stamp open TemporalEdge at ingest time (M327 write-path).
-                let fact_now = self.clock.now();
-                let temporal = crate::temporal_stamp::open_fact_edge_now(fact_now);
-                crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    node_id,
-                    cited_node,
-                    da_domain::relation::bibliographic::CITES,
-                    &temporal,
-                )
-                .await?;
-                cites_resolved += 1;
+                let edge_type = da_domain::relation::bibliographic::CITES;
+                if self
+                    .graph_store
+                    .get_edges_between(node_id, cited_node, edge_type)
+                    .await
+                    .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        node_id,
+                        cited_node,
+                        edge_type,
+                        &temporal,
+                    )
+                    .await?;
+                    cites_resolved += 1;
+                }
             }
         }
 
@@ -749,6 +832,10 @@ async fn build_section_navigation_edges(
         // parent_section edge: this → parent.
         if let Some(parent_path) = parent_path_of(path_id)
             && let Some(&parent_node) = path_to_node.get(parent_path)
+            && graph_store
+                .get_edges_between(this_node, parent_node, structure::PARENT_SECTION)
+                .await
+                .is_empty()
         {
             graph_store
                 .create_edge(this_node, parent_node, structure::PARENT_SECTION)
@@ -767,6 +854,10 @@ async fn build_section_navigation_edges(
             let sub_parent = parent_path_of(sub_path).unwrap_or("");
             if sub_parent == this_parent
                 && let Some(&sibling_node) = section_id_map.get(sub_sid)
+                && graph_store
+                    .get_edges_between(this_node, sibling_node, structure::NEXT_SIBLING)
+                    .await
+                    .is_empty()
             {
                 graph_store
                     .create_edge(this_node, sibling_node, structure::NEXT_SIBLING)
@@ -784,6 +875,10 @@ async fn build_section_navigation_edges(
                 .unwrap_or(false)
         }) && let Some(child_sid) = child.section_id.as_deref()
             && let Some(&child_node) = section_id_map.get(child_sid)
+            && graph_store
+                .get_edges_between(this_node, child_node, structure::FIRST_CHILD)
+                .await
+                .is_empty()
         {
             graph_store
                 .create_edge(this_node, child_node, structure::FIRST_CHILD)
@@ -992,6 +1087,10 @@ mod tests {
             "expected 6 navigation edges for 5-section tree, got {}",
             edges
         );
+        let replay = build_section_navigation_edges(&sections, &section_id_map, &store)
+            .await
+            .expect("navigation replay");
+        assert_eq!(replay, 0, "navigation replay must create zero net edges");
     }
 
     // Integration tests require live services (GROBID, fd_api, Samyama embedded)

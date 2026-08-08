@@ -1,5 +1,18 @@
 # Changelog
 
+### M371 S05 T06 cached parsed graph materialization boundary
+
+Split parser/embedder computation from ingest graph side effects with additive
+`materialize_parsed`. TDD then made current parsed-artifact node/edge families
+replay-safe: Paper, Source, Category, Section, hasPart, FROM_SOURCE, IN_CATEGORY,
+parent_section, next_sibling, first_child, Reference, Citation and CITES. Existing
+`ingest_pdf` remains a compatibility wrapper. Replays resolve stable VID/code
+identities and create zero duplicate structural/temporal edges. RED evidence:
+`9276a3a7-...` and the catalog provenance replay failure; green evidence:
+`ae041275-...`, `9ad4da4d-...`, `1d36d061-...` (12 integration tests plus
+navigation unit suite PASS). Vector replacement semantics remain an explicit
+next contract before corpus graph materialization.
+
 ### M371 S05 T06 cached extraction graph materialization boundary
 
 Split extraction computation from graph side effects with additive

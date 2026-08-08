@@ -11,6 +11,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use async_trait::async_trait;
 use da_application::{batch_ingest_pdfs, ingest::IngestUseCase};
 use da_ports::embedder::{EmbedResult, Embedder};
+use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
 
 // ---------- Mock Parser ----------
@@ -96,6 +97,74 @@ fn make_ingest_with_citations(
         Box::new(store.clone()),
     );
     (ingest, store)
+}
+
+#[tokio::test]
+async fn cached_parsed_materialization_replay_is_idempotent() {
+    let (ingest, store) = make_ingest(vec![]);
+    let parsed = ParsedArticle {
+        paper_id: "2401.00001".into(),
+        title: "Cached paper".into(),
+        abstract_text: "Cached abstract".into(),
+        body_text: "Body".into(),
+        sections: vec![da_ports::parser::Section {
+            title: "Introduction".into(),
+            text: "Intro".into(),
+            level: 1,
+            ..Default::default()
+        }],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-hash".into(),
+    };
+
+    ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+
+    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("Section").await.len(), 1);
+    assert_eq!(store.node_count_total(), 2);
+}
+
+#[tokio::test]
+async fn cached_catalog_provenance_replay_is_idempotent() {
+    let (ingest, store) = make_ingest(vec![]);
+    let parsed = ParsedArticle {
+        paper_id: "2401.00001".into(),
+        title: "Cached paper".into(),
+        abstract_text: String::new(),
+        body_text: String::new(),
+        sections: vec![],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-hash".into(),
+    };
+
+    for _ in 0..2 {
+        ingest
+            .materialize_parsed(
+                &parsed,
+                vec![0.1; 1024],
+                Some("cs-cl".into()),
+                Some("arxiv".into()),
+                None,
+            )
+            .await
+            .unwrap();
+    }
+
+    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("Source").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("Category").await.len(), 1);
+    assert_eq!(store.node_count_total(), 3);
 }
 
 #[tokio::test]
