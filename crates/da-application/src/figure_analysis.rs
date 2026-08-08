@@ -150,10 +150,11 @@ impl FigureAnalysisUseCase {
             context.artifact_id,
             &sha256(
                 format!(
-                    "{}|{}|{}|{}|{}",
+                    "{}|{}|{}|{}|{}|{}",
                     context.asset_sha256,
                     context_sha256,
                     route.route_id,
+                    route.model,
                     response.resolved_model,
                     Self::output_schema_sha256()
                 )
@@ -410,6 +411,31 @@ mod tests {
         assert_eq!(analysis.provenance.route_id, "test-route");
         assert_eq!(analysis.provenance.resolved_model, "resolved-vision");
         assert!(!analysis.authoritative && !analysis.import_eligible);
+    }
+
+    #[tokio::test]
+    async fn requested_model_aliases_get_distinct_candidate_ids() {
+        let first = FigureAnalysisUseCase::new(Arc::new(FakeModel {
+            output: output("mutates prompts"),
+            route: route(),
+        }))
+        .analyze(image(), &context())
+        .await
+        .unwrap();
+        let mut aliased_route = route();
+        aliased_route.model = "another-requested-alias".into();
+        let second = FigureAnalysisUseCase::new(Arc::new(FakeModel {
+            output: output("mutates prompts"),
+            route: aliased_route,
+        }))
+        .analyze(image(), &context())
+        .await
+        .unwrap();
+        assert_eq!(
+            first.provenance.resolved_model,
+            second.provenance.resolved_model
+        );
+        assert_ne!(first.candidate_id, second.candidate_id);
     }
 
     #[tokio::test]

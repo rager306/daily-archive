@@ -258,8 +258,11 @@ fn direct_route(args: &Args) -> Result<AnthropicMultimodalRoute> {
 }
 
 fn semantic_acceptance(analysis: &FigureAnalysis, context: &FigureSemanticContext) -> Result<()> {
+    let flowchart_semantics = analysis.visual_type == VisualAnalysisType::Flowchart
+        || (analysis.visual_type == VisualAnalysisType::Diagram
+            && analysis.description.to_lowercase().contains("flowchart"));
     if analysis.artifact_id != context.artifact_id
-        || analysis.visual_type != VisualAnalysisType::Flowchart
+        || !flowchart_semantics
         || !contains_any(&analysis.description, &["gepa", "optimization", "flow"])
         || analysis.components.len() < 2
         || analysis.citations.is_empty()

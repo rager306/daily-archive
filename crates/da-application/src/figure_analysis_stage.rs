@@ -106,7 +106,8 @@ impl FigureAnalysisStage {
             retry_after: retry_after.into(),
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
-                implementation_fingerprint: "FigureAnalysisUseCase@grounded-v1".into(),
+                implementation_fingerprint: "FigureAnalysisUseCase@grounded-v2-requested-model-id"
+                    .into(),
                 configuration_fingerprint: String::new(),
                 prompt_fingerprint: Some(FigureAnalysisUseCase::prompt_sha256()),
                 model_fingerprint: Some(format!(

@@ -12,6 +12,8 @@ and experimentally evaluated three requested 9router models under strict gates:
 - `meta/muse-spark-1.2-contributor`: schema-valid visual analysis, rejected for
   a non-verbatim citation. `OpenAiResponses` is now represented for a future
   native Meta Responses adapter.
+- `agnes-ai/agnes-2.5-flash`: produced a strong 17-component GEPA flowchart
+  diagram, but later retry failed exact citation grounding; not promoted.
 - `minimax/MiniMax-M2.7-highspeed`: accepted in 40.0s as a flowchart with 9
   components and 4 exact citations. 9router explicitly resolved it to
   `mimo-v2.5-free`; requested and resolved identities are both retained.
@@ -20,10 +22,13 @@ Unchanged repeat was `cache_hit,cache_hit` in 368ms with no remote request.
 Schema-only invalidation preserved context hit and reran analysis; strict
 relationship validation initially rejected two outputs, guidance was corrected,
 and v4 passed in 40.7s. Canonical `Figure3.analysis.json` is checksum-bound,
-`authoritative=false`, and `import_eligible=false`. Evidence includes
+`authoritative=false`, and `import_eligible=false`. D200 allows bounded `*free`
+experiments with Retry-After discipline and quality grouping by resolved model.
+A requested-model collision in candidate IDs was fixed and the accepted artifact
+was deterministically migrated without another remote call. Evidence includes
 `c58a058a-...`, `a7925eaf-...`, `4f62367a-...`, `6262a5d1-...`, `831c729c-...`,
-`081afff1-...`, and `a26afa00-...`. All failed model experiments remain FAIL
-history, not acceptance evidence. T03 remains Attempt-blocked without bypass.
+`96168c7a-...`, `7aa11ca4-...`, and `9eae783a-...`. All failed model experiments
+remain FAIL history, not acceptance evidence. T03 remains Attempt-blocked.
 
 ### M371 S03 T02 grounded FigureAnalysis candidate and cached stage
 
