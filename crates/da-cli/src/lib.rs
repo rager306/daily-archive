@@ -35,6 +35,7 @@ mod serde_roundtrip_tests {
             allow_empty: false,
             expect_rows: None,
             expect_min_value: None,
+            expect_value: None,
         });
     }
 
@@ -49,6 +50,7 @@ mod serde_roundtrip_tests {
             allow_empty: false,
             expect_rows: Some(1),
             expect_min_value: Some(24.0),
+            expect_value: None,
         });
     }
 
@@ -65,6 +67,7 @@ mod serde_roundtrip_tests {
                     allow_empty: false,
                     expect_rows: None,
                     expect_min_value: None,
+                    expect_value: None,
                 },
                 GraphTask {
                     id: "t2".into(),
@@ -75,6 +78,7 @@ mod serde_roundtrip_tests {
                     allow_empty: true,
                     expect_rows: Some(1),
                     expect_min_value: None,
+                    expect_value: None,
                 },
             ],
         });

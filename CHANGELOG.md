@@ -1,5 +1,15 @@
 # Changelog
 
+### M371 S05 T06 graph task exact-value assertions
+
+Added `@expect_value` to semantic graph tasks because the prior row classifier
+always treated a single numeric zero as EMPTY. This made it impossible to prove
+critical absence invariants such as D127 `import_eligible=true` count exactly
+zero. Parser/classifier/report serde and property fixtures now cover exact finite
+values (`d972086c-...`). The 120-paper batch-12 checkpoint passes four runtime
+tasks (`36fdb5d1-...`): Paper=120, Entity=69 canonical nodes, MENTIONS=1096,
+and import unlocks exactly 0.
+
 ### M371 S05 T06 verified cache-to-graph wave
 
 Added typed `gold_graph` cache replay and the `gold_graph_wave` composition root.
