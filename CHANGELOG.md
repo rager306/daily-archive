@@ -12,7 +12,12 @@ rows. The shared graph conformance mock was corrected to match any legal
 `(edge, source, target)` row instead of collapsing overloads to the last hash-map
 entry. Negative and repeated-run fixtures prove fail-before-write and node/edge
 idempotency. Evidence `74ee45de-...`: 4 semantic tests plus domain contracts,
-schema CLI and application clippy PASS.
+schema CLI and application clippy PASS. Full wave architecture evidence is
+`91910216-...`; governor projection evidence is `77687a26-...`. T04 recon found
+the next blocking debt before canonical resolution: `GraphHealingUseCase::merge`
+does not call the promised `DecisionRecorder`, writes an undeclared
+`superseded_by` field, and can duplicate redirected edges. That debt remains
+explicitly pending rather than shipping a partial resolver.
 
 ### M371 S04 T02 typed semantic enrichment
 

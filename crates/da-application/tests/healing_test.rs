@@ -195,20 +195,12 @@ async fn test_edge_contract_validator_catches_wrong_source_label() {
     let violations = store.validate_edge_contracts();
     assert_eq!(
         violations.len(),
-        2,
-        "expected 2 contract violations (source + target), got {:?}",
+        1,
+        "expected one consolidated endpoint violation, got {:?}",
         violations
     );
-    assert!(
-        violations
-            .iter()
-            .any(|v| v.reason.contains("source must be 'Paper'"))
-    );
-    assert!(
-        violations
-            .iter()
-            .any(|v| v.reason.contains("target must be one of"))
-    );
+    assert!(violations[0].reason.contains("Paper ->"));
+    assert!(violations[0].reason.contains("Entity -> ConceptCluster"));
 }
 
 #[tokio::test]
