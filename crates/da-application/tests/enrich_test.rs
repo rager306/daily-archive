@@ -154,6 +154,8 @@ async fn test_enrich_writes_topics_and_authors() {
     assert_eq!(result.title, "Test Paper Title");
     assert_eq!(result.topics_written, 2); // primary + 1 from topics array
     assert_eq!(result.authors_written, 2);
+    assert_eq!(result.concepts_written, 0);
+    assert_eq!(result.concepts_candidates, 1);
     assert_eq!(
         result.institutions_written, 1,
         "expected 1 Institution (MIT)"
@@ -289,6 +291,34 @@ async fn test_enrich_dedup_same_topic() {
 }
 
 #[tokio::test]
+async fn test_enrich_replay_has_zero_net_graph_writes() {
+    let work = make_mock_work();
+    let openalex = Box::new(MockOpenAlex { work: Some(work) });
+    let store = make_store();
+    add_paper(&store, "2401.00001").await;
+    let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
+
+    let first = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+    let edge_count = store.edge_count().await;
+    let second = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+
+    assert_eq!(first.topics_written, 2);
+    assert_eq!(first.authors_written, 2);
+    assert_eq!(first.topic_edges_written, 2);
+    assert_eq!(first.author_edges_written, 2);
+    assert_eq!(second.topics_written, 0);
+    assert_eq!(second.topics_reused, 2);
+    assert_eq!(second.topic_edges_written, 0);
+    assert_eq!(second.authors_written, 0);
+    assert_eq!(second.authors_reused, 2);
+    assert_eq!(second.author_edges_written, 0);
+    assert_eq!(second.institutions_written, 0);
+    assert_eq!(second.institutions_reused, 1);
+    assert_eq!(second.affiliation_edges_written, 0);
+    assert_eq!(store.edge_count().await, edge_count);
+}
+
+#[tokio::test]
 async fn test_enrich_not_found_without_scheduler_still_works() {
     // Without scheduler attached, enrich should still create pending stub
     let openalex = Box::new(MockOpenAlex { work: None });
@@ -319,13 +349,7 @@ async fn test_enrich_creates_cites_edges_from_referenced_works() {
     let work = make_mock_work_with_references();
     let openalex = Box::new(MockOpenAlex { work: Some(work) });
     let store = make_store();
-    // enrich_from_work expects a Paper node to already exist (created by ingest).
-    // Create a stub Paper node with the arxiv_id so enrich can find it.
-    let paper_node = store.create_node("Paper").await.unwrap();
-    store
-        .set_node_property_string(paper_node, "arxiv_id", "2401.00001".to_string())
-        .await
-        .unwrap();
+    add_paper(&store, "2401.00001").await;
     let use_case = EnrichUseCase::new(openalex, Box::new(store.clone()));
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
@@ -336,6 +360,9 @@ async fn test_enrich_creates_cites_edges_from_referenced_works() {
         "expected 3 CITES edges from referenced_works, got {}",
         result.cites_edges_written
     );
+    let replay = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+    assert_eq!(replay.cites_edges_written, 0);
+    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 4);
 }
 
 #[tokio::test]

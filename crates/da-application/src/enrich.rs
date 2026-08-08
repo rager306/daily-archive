@@ -21,9 +21,15 @@ pub struct EnrichResult {
     pub arxiv_id: String,
     pub title: String,
     pub topics_written: usize,
+    pub topics_reused: usize,
+    pub topic_edges_written: usize,
     pub authors_written: usize,
+    pub authors_reused: usize,
+    pub author_edges_written: usize,
     pub concepts_written: usize,
+    pub concepts_candidates: usize,
     pub institutions_written: usize,
+    pub institutions_reused: usize,
     pub affiliation_edges_written: usize,
     /// Number of CITES edges created from OpenAlex `referenced_works`.
     /// Each referenced work becomes a stub Paper node + CITES edge (ADR-053 Layer F).
@@ -113,7 +119,11 @@ impl EnrichUseCase {
             .set_node_property_bool(paper, "openalex_pending", false)
             .await?;
         let mut topics_written = 0;
+        let mut topics_reused = 0;
+        let mut topic_edges_written = 0;
         let mut authors_written = 0;
+        let mut authors_reused = 0;
+        let mut author_edges_written = 0;
 
         // Write Topic nodes from primary_topic + topics array
         let all_topics: Vec<_> = work
@@ -129,7 +139,10 @@ impl EnrichUseCase {
                 .find_node_by_string_property("Topic", "vid", &topic_vid)
                 .await
             {
-                Some(existing) => existing,
+                Some(existing) => {
+                    topics_reused += 1;
+                    existing
+                }
                 None => {
                     let node = self.graph_store.create_node("Topic").await?;
                     self.graph_store
@@ -168,6 +181,7 @@ impl EnrichUseCase {
                     self.graph_store
                         .set_node_property_int(node, "valid_from", now)
                         .await?;
+                    topics_written += 1;
                     node
                 }
             };
@@ -180,16 +194,23 @@ impl EnrichUseCase {
             {
                 // Structural hasTopic — created_at only (M331).
                 let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    work_id,
-                    node_id,
-                    da_domain::relation::structure::HAS_TOPIC,
-                    &temporal,
-                )
-                .await?;
+                if self
+                    .graph_store
+                    .get_edges_between(work_id, node_id, da_domain::relation::structure::HAS_TOPIC)
+                    .await
+                    .is_empty()
+                {
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        work_id,
+                        node_id,
+                        da_domain::relation::structure::HAS_TOPIC,
+                        &temporal,
+                    )
+                    .await?;
+                    topic_edges_written += 1;
+                }
             }
-            topics_written += 1;
         }
 
         // Write Author nodes
@@ -200,7 +221,10 @@ impl EnrichUseCase {
                 .find_node_by_string_property("Author", "vid", &author_vid)
                 .await
             {
-                Some(existing) => existing,
+                Some(existing) => {
+                    authors_reused += 1;
+                    existing
+                }
                 None => {
                     let node = self.graph_store.create_node("Author").await?;
                     self.graph_store
@@ -229,6 +253,7 @@ impl EnrichUseCase {
                     self.graph_store
                         .set_node_property_int(node, "valid_from", now)
                         .await?;
+                    authors_written += 1;
                     node
                 }
             };
@@ -241,22 +266,34 @@ impl EnrichUseCase {
             {
                 // Structural authoredBy — created_at only (M331).
                 let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    node_id,
-                    paper_id,
-                    da_domain::relation::structure::AUTHORED_BY,
-                    &temporal,
-                )
-                .await?;
+                if self
+                    .graph_store
+                    .get_edges_between(
+                        node_id,
+                        paper_id,
+                        da_domain::relation::structure::AUTHORED_BY,
+                    )
+                    .await
+                    .is_empty()
+                {
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        node_id,
+                        paper_id,
+                        da_domain::relation::structure::AUTHORED_BY,
+                        &temporal,
+                    )
+                    .await?;
+                    author_edges_written += 1;
+                }
             }
-            authors_written += 1;
         }
 
         // Institutions — materialized from per-authorship rows so the
         // Author → Institution edge (AFFILIATED_WITH) is preserved.
         // The earlier flat-`work.institutions` path dropped this association.
         let mut institutions_written = 0usize;
+        let mut institutions_reused = 0usize;
         let mut affiliation_edges_written = 0usize;
         for authorship in &work.authorships {
             // Find the Author node for this authorship (created above).
@@ -273,7 +310,10 @@ impl EnrichUseCase {
                     .find_node_by_string_property("Institution", "openalex_id", &institution.id)
                     .await
                 {
-                    Some(existing) => existing,
+                    Some(existing) => {
+                        institutions_reused += 1;
+                        existing
+                    }
                     None => {
                         let node = self.graph_store.create_node("Institution").await?;
                         // Institution VID derived from display_name + openalex_id
@@ -320,21 +360,34 @@ impl EnrichUseCase {
                 if let Some(author_id) = author_node {
                     // AFFILIATED_WITH is temporal fact — M329.
                     let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    let _ = crate::temporal_stamp::create_edge_with_temporal(
-                        self.graph_store.as_ref(),
-                        author_id,
-                        inst_node,
-                        da_domain::relation::bibliographic::AFFILIATED_WITH,
-                        &temporal,
-                    )
-                    .await;
-                    affiliation_edges_written += 1;
+                    if self
+                        .graph_store
+                        .get_edges_between(
+                            author_id,
+                            inst_node,
+                            da_domain::relation::bibliographic::AFFILIATED_WITH,
+                        )
+                        .await
+                        .is_empty()
+                    {
+                        crate::temporal_stamp::create_edge_with_temporal(
+                            self.graph_store.as_ref(),
+                            author_id,
+                            inst_node,
+                            da_domain::relation::bibliographic::AFFILIATED_WITH,
+                            &temporal,
+                        )
+                        .await?;
+                        affiliation_edges_written += 1;
+                    }
                 }
             }
         }
 
-        // Concepts (deprecated but kept for audit, retrieval_eligible=false)
-        let concepts_written = work.concepts.len();
+        // Deprecated OpenAlex concepts remain candidate metadata only. They
+        // are not materialized and cannot be counted as successful writes.
+        let concepts_written = 0;
+        let concepts_candidates = work.concepts.len();
 
         // ADR-053 Layer F prerequisite: create CITES edges from OpenAlex
         // `referenced_works`. Previously this field was fetched but discarded
@@ -382,15 +435,26 @@ impl EnrichUseCase {
                 // CITES edge: Paper → referenced Paper (structural, created_at only).
                 // Not a fact edge — citation relationship is stable metadata.
                 let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                let _ = crate::temporal_stamp::create_edge_with_temporal(
-                    self.graph_store.as_ref(),
-                    paper_node,
-                    ref_node,
-                    da_domain::relation::bibliographic::CITES,
-                    &temporal,
-                )
-                .await;
-                cites_edges_written += 1;
+                if self
+                    .graph_store
+                    .get_edges_between(
+                        paper_node,
+                        ref_node,
+                        da_domain::relation::bibliographic::CITES,
+                    )
+                    .await
+                    .is_empty()
+                {
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        paper_node,
+                        ref_node,
+                        da_domain::relation::bibliographic::CITES,
+                        &temporal,
+                    )
+                    .await?;
+                    cites_edges_written += 1;
+                }
             }
         }
 
@@ -398,8 +462,16 @@ impl EnrichUseCase {
             arxiv_id,
             title = %work.title,
             topics_written,
+            topics_reused,
+            topic_edges_written,
             authors_written,
+            authors_reused,
+            author_edges_written,
             concepts_written,
+            concepts_candidates,
+            institutions_written,
+            institutions_reused,
+            affiliation_edges_written,
             cites_edges_written,
             cited_by_count = work.cited_by_count,
             "OpenAlex enrichment complete"
@@ -409,9 +481,15 @@ impl EnrichUseCase {
             arxiv_id: arxiv_id.to_string(),
             title: work.title,
             topics_written,
+            topics_reused,
+            topic_edges_written,
             authors_written,
+            authors_reused,
+            author_edges_written,
             concepts_written,
+            concepts_candidates,
             institutions_written,
+            institutions_reused,
             affiliation_edges_written,
             cites_edges_written,
             doi: work.doi,
@@ -447,9 +525,15 @@ impl EnrichUseCase {
             arxiv_id: arxiv_id.to_string(),
             title: "(pending OpenAlex)".to_string(),
             topics_written: 0,
+            topics_reused: 0,
+            topic_edges_written: 0,
             authors_written: 0,
+            authors_reused: 0,
+            author_edges_written: 0,
             concepts_written: 0,
+            concepts_candidates: 0,
             institutions_written: 0,
+            institutions_reused: 0,
             affiliation_edges_written: 0,
             cites_edges_written: 0,
             doi: None,

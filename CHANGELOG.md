@@ -1,5 +1,22 @@
 # Changelog
 
+### M371 S05 T02 idempotent OpenAlex facts and progressive citation candidates
+
+OpenAlex enrichment now reports net graph effects instead of processed-input
+counts: created/reused Topic, Author, and Institution nodes plus newly-created
+HAS_TOPIC, authoredBy, AFFILIATED_WITH, and CITES edges. Every enrichment fact
+edge is deduplicated and store errors propagate; repeated enrichment creates no
+nodes or edges. Deprecated OpenAlex concepts are explicitly counted as
+candidates and zero writes. Referenced works remain non-importable Paper
+candidates keyed by OpenAlex identity, supporting R084 bounded follow-up waves
+without bulk truth promotion. Replay tests prove zero net writes, citation stub
+reuse, temporal facts, D127, and schema conformance. The reviewer request to add
+`invalid_at=OPEN` was rejected after contract verification: `TemporalEdge`
+represents OPEN as `invalid_at=None`, and existing ADR tests require the property
+to be absent until invalidation; changing `open_fact_edge_now` would have
+CRITICAL 74-symbol blast radius. Evidence `bca17217-...` initial idempotency PASS,
+`e5b8b2c9-...` final focused PASS, and `7b791a76-...` full architecture PASS.
+
 ### M371 S05 T01 honest shared-store OpenAlex scheduler
 
 Eliminated scheduler false completion across disconnected in-memory stores.
