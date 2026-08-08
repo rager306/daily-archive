@@ -32,7 +32,8 @@ pub use pdf_classifier::PdfInspectorClassifier;
 pub use pdffigures2::PdfFigures2Adapter;
 pub use pipeline_cache::FilePipelineCache;
 pub use pipeline_stages::{
-    FigureDetectionStage, GrobidParseStage, HtmlParseStage, RuleExtractionStage,
+    FigureDetectionStage, GrobidParseStage, HtmlParseStage, ParsedArticleEmbeddingStage,
+    RuleExtractionStage,
 };
 pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;

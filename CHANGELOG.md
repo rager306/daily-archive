@@ -1,5 +1,24 @@
 # Changelog
 
+### M371 S05 T06 data-driven Paper embedding projection
+
+Migrated the useful Python-era embedding lessons without reviving Python runtime:
+provider/model/batch/retry/circuit settings already existed in `.env`; legacy had
+no hidden truncation and kept structure-aware chunk embeddings separate from KG
+truth. Added explicit `FD_MAX_INPUT_CHARS` capability (documented in
+`.env.example`, local value 2048), a validated `EmbeddingInputPolicy` in
+`algorithm_params.yaml`, and UTF-8-safe title+abstract projection diagnostics.
+Body text is excluded from Paper vectors and remains for future source-span chunk
+stages. Added a pure cacheable `ParsedArticleEmbeddingStage`; backend/model and
+effective projection policy are in the cache contract, 413 is terminal while
+backend unavailability is retryable. Batch 1 selective-invalidation proof:
+parse/extract 20 hits, only 10 new embeddings executed, unchanged replay 30/30
+hits (`2f090b88-...`). The canary now loads dotenv and fails early when its local
+embedding credential is absent; existing `.env` and running `fd_api` token match
+was verified without exposing either value.
+
+Gold batch 8 passed as well; 80/193 source-ready papers are cache-verified.
+
 ### M371 S05 T06 vector replay safety
 
 Closed the final exact-replay gap in parsed materialization. Paper embeddings now

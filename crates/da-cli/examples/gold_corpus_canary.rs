@@ -7,8 +7,8 @@ use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use clap::Parser;
 use da_adapters::{
-    FilePipelineCache, GrobidParseStage, GrobidParser, HtmlParseStage, HtmlParser,
-    RuleBasedExtractor, RuleExtractionStage,
+    FdApiEmbedder, FilePipelineCache, GrobidParseStage, GrobidParser, HtmlParseStage, HtmlParser,
+    ParsedArticleEmbeddingStage, RuleBasedExtractor, RuleExtractionStage,
 };
 use da_application::{PipelineOrchestrator, PipelineRunReport, StageDisposition};
 use da_cli::gold_corpus::{CanonicalSourceKind, GoldCorpusManifest};
@@ -46,6 +46,9 @@ struct Args {
     /// Retry suppression window persisted by the pipeline cache.
     #[arg(long, default_value_t = 30)]
     retry_delay_seconds: i64,
+    /// Add the cacheable paper embedding stage after parse.
+    #[arg(long)]
+    include_embedding: bool,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -108,6 +111,7 @@ struct CanaryReport {
     batch: usize,
     grobid_timeout_seconds: u64,
     retry_delay_seconds: i64,
+    embedding_enabled: bool,
     batch_manifest_records: usize,
     paper_count: usize,
     skipped_unavailable: usize,
@@ -125,6 +129,7 @@ struct CanaryReport {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    dotenvy::dotenv().ok();
     let args = Args::parse();
     let manifest_bytes = std::fs::read(&args.manifest)
         .with_context(|| format!("read {}", args.manifest.display()))?;
@@ -157,10 +162,19 @@ async fn main() -> Result<()> {
         "GROBID timeout must be positive"
     );
     anyhow::ensure!(args.retry_delay_seconds > 0, "retry delay must be positive");
+    if args.include_embedding {
+        anyhow::ensure!(
+            std::env::var("FD_API_KEY").is_ok_and(|value| !value.trim().is_empty()),
+            "FD_API_KEY is missing after dotenv load"
+        );
+    }
 
     let extraction_configuration_fingerprint =
         file_fingerprint(Path::new("data/extraction_patterns.yaml"))?;
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
+    let embedding_input_policy = da_domain::embedding::EmbeddingInputPolicy::load()
+        .map_err(anyhow::Error::msg)
+        .context("load embedding input policy")?;
     let mut papers = Vec::with_capacity(records.len());
 
     for record in records {
@@ -214,12 +228,16 @@ async fn main() -> Result<()> {
             ),
             CanonicalSourceKind::Unavailable => unreachable!("unavailable records were filtered"),
         };
-        let pipeline = PipelineBuilder::new("gold-corpus-parse-extract-v1")
+        let mut pipeline_builder = PipelineBuilder::new("gold-corpus-parse-extract-v1")
             .step("parse", parse_stage_id, &[])
-            .step("extract", "rule_extract", &["parse"])
+            .step("extract", "rule_extract", &["parse"]);
+        if args.include_embedding {
+            pipeline_builder = pipeline_builder.step("embed", "paper_embed", &["parse"]);
+        }
+        let pipeline = pipeline_builder
             .build()
             .map_err(|error| anyhow::anyhow!("build canary pipeline: {error}"))?;
-        let orchestrator =
+        let mut orchestrator =
             PipelineOrchestrator::new(cache.clone(), Arc::new(da_ports::SystemClock))
                 .with_executor(parse_stage_id, parse_stage)?
                 .with_executor(
@@ -230,6 +248,18 @@ async fn main() -> Result<()> {
                         extraction_configuration_fingerprint.clone(),
                     )),
                 )?;
+        if args.include_embedding {
+            let embedder = FdApiEmbedder::from_env();
+            orchestrator = orchestrator.with_executor(
+                "paper_embed",
+                Arc::new(ParsedArticleEmbeddingStage::new(
+                    Arc::new(embedder),
+                    "parse",
+                    (Utc::now() + Duration::seconds(args.retry_delay_seconds)).to_rfc3339(),
+                    embedding_input_policy.clone(),
+                )),
+            )?;
+        }
         let source = SourceIdentity {
             article_id: record.paper_id.clone(),
             selected_format: source_format,
@@ -273,7 +303,7 @@ async fn main() -> Result<()> {
                 .all(|stage| matches!(stage.disposition, StageDisposition::CacheHit { .. }))
     });
     let cold_first_satisfied = args.require_cold_first.then_some(
-        first.executed == papers.len() * 2
+        first.executed == papers.len() * if args.include_embedding { 3 } else { 2 }
             && first.cache_hit == 0
             && first.failed == 0
             && first.retry_suppressed == 0,
@@ -287,6 +317,7 @@ async fn main() -> Result<()> {
         batch: args.batch,
         grobid_timeout_seconds: args.grobid_timeout_seconds,
         retry_delay_seconds: args.retry_delay_seconds,
+        embedding_enabled: args.include_embedding,
         batch_manifest_records: batch_records.len(),
         paper_count: papers.len(),
         skipped_unavailable,

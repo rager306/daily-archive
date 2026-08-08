@@ -36,6 +36,10 @@ impl FdApiEmbedder {
         }
     }
 
+    pub fn model_id(&self) -> &str {
+        &self.model
+    }
+
     pub fn from_env() -> Self {
         let endpoint = std::env::var("FD_EMBEDDINGS_ENDPOINT")
             .unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());

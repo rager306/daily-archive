@@ -1,6 +1,7 @@
 //! Production pipeline-stage adapters for parsing and figure detection (M371 S02).
 
 use async_trait::async_trait;
+use da_ports::embedder::{Embedder, EmbedderError};
 use da_ports::extractor::Extractor;
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::parser::{ParsedArticle, ParserPort};
@@ -84,6 +85,125 @@ impl PipelineStageExecutor for GrobidParseStage {
                 ("sections".into(), parsed.sections.len().to_string()),
                 ("citations".into(), parsed.citations.len().to_string()),
                 ("pdf_hash".into(), parsed.pdf_hash.clone()),
+            ]),
+            payload,
+        })
+    }
+}
+
+pub struct ParsedArticleEmbeddingStage {
+    embedder: Arc<dyn Embedder>,
+    parsed_dependency: String,
+    retry_after: String,
+    input_policy: da_domain::embedding::EmbeddingInputPolicy,
+    contract: StageContract,
+}
+
+impl ParsedArticleEmbeddingStage {
+    pub fn new(
+        embedder: Arc<dyn Embedder>,
+        parsed_dependency: impl Into<String>,
+        retry_after: impl Into<String>,
+        input_policy: da_domain::embedding::EmbeddingInputPolicy,
+    ) -> Self {
+        let dimensions = embedder.dimensions();
+        let model_fingerprint = embedder.model_id().to_string();
+        let policy_fingerprint = input_policy.fingerprint();
+        Self {
+            embedder,
+            parsed_dependency: parsed_dependency.into(),
+            retry_after: retry_after.into(),
+            input_policy,
+            contract: StageContract {
+                stage_id: "paper_embed".into(),
+                implementation_fingerprint: "ParsedArticleEmbeddingStage@title-abstract-v1".into(),
+                configuration_fingerprint: format!("dimensions={dimensions};{policy_fingerprint}"),
+                prompt_fingerprint: None,
+                model_fingerprint: Some(model_fingerprint),
+                output_schema_fingerprint: "Vec<f32>@serde-v1".into(),
+            },
+        }
+    }
+
+    pub fn with_contract(mut self, contract: StageContract) -> Self {
+        self.contract = contract;
+        self
+    }
+}
+
+#[async_trait]
+impl PipelineStageExecutor for ParsedArticleEmbeddingStage {
+    fn contract(&self) -> StageContract {
+        self.contract.clone()
+    }
+
+    async fn execute(
+        &self,
+        request: StageExecutionRequest,
+    ) -> Result<StageExecutionOutput, StageExecutionError> {
+        let payload = request
+            .dependency_payloads
+            .get(&self.parsed_dependency)
+            .ok_or_else(|| StageExecutionError::Terminal {
+                error_class: "missing_parsed_dependency".into(),
+                message: format!(
+                    "dependency '{}' is required for embedding",
+                    self.parsed_dependency
+                ),
+            })?;
+        let parsed: ParsedArticle =
+            serde_json::from_slice(payload).map_err(|error| StageExecutionError::Terminal {
+                error_class: "parsed_article_deserialization".into(),
+                message: error.to_string(),
+            })?;
+        if parsed.paper_id != request.article_id {
+            return Err(StageExecutionError::Terminal {
+                error_class: "article_identity_mismatch".into(),
+                message: format!(
+                    "parsed article '{}' does not match requested '{}'",
+                    parsed.paper_id, request.article_id
+                ),
+            });
+        }
+        let projection = self
+            .input_policy
+            .project_paper(&parsed.title, &parsed.abstract_text);
+        let vector = self
+            .embedder
+            .embed(&projection.text)
+            .await
+            .map_err(|error| match error {
+                EmbedderError::Unavailable(message) => StageExecutionError::Retryable {
+                    error_class: "embedding_backend_unavailable".into(),
+                    message,
+                    retry_after: self.retry_after.clone(),
+                },
+                EmbedderError::EmbedFailed(message) => StageExecutionError::Terminal {
+                    error_class: "embedding_request_rejected".into(),
+                    message,
+                },
+            })?;
+        if vector.len() != self.embedder.dimensions() {
+            return Err(StageExecutionError::Terminal {
+                error_class: "embedding_dimension_mismatch".into(),
+                message: format!(
+                    "embedder returned {} dimensions, expected {}",
+                    vector.len(),
+                    self.embedder.dimensions()
+                ),
+            });
+        }
+        let payload =
+            serde_json::to_vec(&vector).map_err(|error| StageExecutionError::Terminal {
+                error_class: "embedding_serialization".into(),
+                message: error.to_string(),
+            })?;
+        Ok(StageExecutionOutput {
+            metadata: BTreeMap::from([
+                ("dimensions".into(), vector.len().to_string()),
+                ("source_chars".into(), projection.source_chars.to_string()),
+                ("input_chars".into(), projection.emitted_chars.to_string()),
+                ("truncated".into(), projection.truncated.to_string()),
             ]),
             payload,
         })
@@ -370,6 +490,33 @@ mod tests {
         }
     }
 
+    struct FixedEmbedder;
+
+    #[async_trait]
+    impl Embedder for FixedEmbedder {
+        async fn embed(&self, text: &str) -> da_ports::embedder::EmbedResult<Vec<f32>> {
+            assert!(text.contains("GEPA"));
+            assert!(text.contains("Optimization"));
+            assert!(!text.contains("BODY_MUST_NOT_ENTER_PAPER_EMBEDDING"));
+            Ok(vec![0.25; 4])
+        }
+
+        async fn embed_batch(
+            &self,
+            texts: &[&str],
+        ) -> da_ports::embedder::EmbedResult<Vec<Vec<f32>>> {
+            Ok(texts.iter().map(|_| vec![0.25; 4]).collect())
+        }
+
+        fn dimensions(&self) -> usize {
+            4
+        }
+
+        fn model_id(&self) -> &str {
+            "fixture/fixed-4d"
+        }
+    }
+
     struct FailingDetector;
 
     #[async_trait]
@@ -404,6 +551,50 @@ mod tests {
         assert_eq!(parsed.paper_id, "2507.19457");
         assert_eq!(output.metadata["pdf_hash"], "a".repeat(64));
         assert_eq!(parser.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn parsed_article_embedding_stage_is_typed_and_graph_pure() {
+        let stage = ParsedArticleEmbeddingStage::new(
+            Arc::new(FixedEmbedder),
+            "parse",
+            "2026-08-08T17:00:00Z",
+            da_domain::embedding::EmbeddingInputPolicy {
+                max_input_chars: 2048,
+                separator: "\n".into(),
+                paper_fields: vec!["title".into(), "abstract".into()],
+            },
+        );
+        let parsed = ParsedArticle {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            abstract_text: "Optimization".into(),
+            body_text: "BODY_MUST_NOT_ENTER_PAPER_EMBEDDING".into(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let output = stage
+            .execute(StageExecutionRequest {
+                article_id: "2507.19457".into(),
+                dependency_payloads: BTreeMap::from([(
+                    "parse".into(),
+                    serde_json::to_vec(&parsed).unwrap(),
+                )]),
+            })
+            .await
+            .unwrap();
+        let vector: Vec<f32> = serde_json::from_slice(&output.payload).unwrap();
+        assert_eq!(vector, vec![0.25; 4]);
+        assert_eq!(output.metadata["dimensions"], "4");
+        assert!(
+            stage
+                .contract()
+                .configuration_fingerprint
+                .contains("max_input_chars=2048")
+        );
     }
 
     #[tokio::test]
