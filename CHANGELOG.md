@@ -1,5 +1,20 @@
 # Changelog
 
+### M371 S05 T06 gold canary parse and extraction cache proof
+
+Added a pure cacheable `RuleExtractionStage` consuming serialized
+`ParsedArticle` dependencies and emitting a versioned `Vec<ExtractedEntity>`
+payload. `ExtractedEntity` now has a tested serde roundtrip; no fields or wire
+names changed. Batch 1 (10 gold PDFs) ran through `parse -> extract`: cold run
+20/20 executed, immediate replay 20/20 cache hits, and a new process against the
+same disk cache also hit 20/20, with zero failures, retries, graph writes, or D127
+unlock. The standalone semantic task example now delegates to the reusable task
+runner instead of duplicating verdict logic, preserving observed/expected
+values. It proves the current legacy hub snapshot has observed Paper count 1 vs
+required 24, so it cannot seed corpus closure. Evidence: runtime reports under
+`artifacts/gold_corpus/`, focused gate `2e51ee88-...`, shared-runner diagnostic
+`70f8176e-...`.
+
 ### M371 S05 T06 gold corpus readiness and wave plan
 
 Corrected the closure baseline from one GEPA anchor to the existing reviewed gold

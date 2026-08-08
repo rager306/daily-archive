@@ -12,16 +12,12 @@
 //!
 //! D127: import_eligible stays false. Process-local store only (same-process import).
 
-use std::path::{Path, PathBuf};
-use std::process::ExitCode;
-use std::time::Instant;
-
 use clap::Parser;
-use da_cli::graph_tasks::{
-    GraphTask, TaskVerdict, json_cell_number, parse_tasks_cypher, suite_failed,
-};
+use da_cli::graph_tasks::{GraphTaskResult, TaskVerdict, parse_tasks_cypher, run_graph_task_suite};
 use da_ports::graph_store::GraphStore;
 use serde::Serialize;
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -47,20 +43,6 @@ struct Args {
 }
 
 #[derive(Debug, Serialize)]
-struct TaskResultRow {
-    id: String,
-    title: String,
-    insight: String,
-    verdict: TaskVerdict,
-    rows: usize,
-    min_rows: usize,
-    allow_empty: bool,
-    duration_ms: u128,
-    error: Option<String>,
-    cypher_preview: String,
-}
-
-#[derive(Debug, Serialize)]
 struct SuiteReport {
     suite_file: String,
     snapshot: String,
@@ -71,7 +53,7 @@ struct SuiteReport {
     empty: usize,
     error: usize,
     failed: bool,
-    tasks: Vec<TaskResultRow>,
+    tasks: Vec<GraphTaskResult>,
 }
 
 #[tokio::main]
@@ -128,10 +110,7 @@ async fn main() -> ExitCode {
         return ExitCode::from(2);
     }
 
-    let mut rows: Vec<TaskResultRow> = Vec::new();
-    let mut pass = 0usize;
-    let mut empty = 0usize;
-    let mut error = 0usize;
+    let executed = run_graph_task_suite(&store, &args.graph, &suite).await;
 
     println!();
     println!(
@@ -140,13 +119,7 @@ async fn main() -> ExitCode {
     );
     println!("{}", "-".repeat(90));
 
-    for task in &suite.tasks {
-        let row = run_task(&store, &args.graph, task).await;
-        match row.verdict {
-            TaskVerdict::Pass => pass += 1,
-            TaskVerdict::Empty => empty += 1,
-            TaskVerdict::Error => error += 1,
-        }
+    for row in &executed.tasks {
         println!(
             "{:<6} {:<28} {:>6} {:>8}  {}",
             row.verdict.as_str(),
@@ -158,27 +131,32 @@ async fn main() -> ExitCode {
         if let Some(ref err) = row.error {
             println!("         error: {err}");
         }
-        rows.push(row);
+        if row.verdict == TaskVerdict::Empty {
+            println!(
+                "         observed={:?} expected_rows={:?} expected_min={:?}",
+                row.observed_first_cell_number, row.expected_rows, row.expected_min_value
+            );
+        }
     }
 
-    let gate_inputs: Vec<(TaskVerdict, bool)> =
-        rows.iter().map(|r| (r.verdict, r.allow_empty)).collect();
-    let failed = suite_failed(&gate_inputs);
-
     println!("{}", "-".repeat(90));
-    println!("PASS={pass} EMPTY={empty} ERROR={error}  suite_failed={failed}");
+    println!(
+        "PASS={} EMPTY={} ERROR={}  suite_failed={}",
+        executed.pass, executed.empty, executed.error, executed.failed
+    );
 
+    let failed = executed.failed;
     let report = SuiteReport {
         suite_file: args.tasks.display().to_string(),
         snapshot: args.snapshot.display().to_string(),
         import_eligible: false,
         nodes,
         edges,
-        pass,
-        empty,
-        error,
-        failed,
-        tasks: rows,
+        pass: executed.pass,
+        empty: executed.empty,
+        error: executed.error,
+        failed: executed.failed,
+        tasks: executed.tasks,
     };
 
     if let Some(ref path) = args.report {
@@ -195,50 +173,6 @@ async fn main() -> ExitCode {
     } else {
         println!("✅ suite PASSED");
         ExitCode::SUCCESS
-    }
-}
-
-async fn run_task(
-    store: &da_adapters::SamyamaGraphStore,
-    graph: &str,
-    task: &GraphTask,
-) -> TaskResultRow {
-    let t0 = Instant::now();
-    let preview = truncate(&task.cypher.replace('\n', " "), 80);
-    match store.query_readonly(graph, &task.cypher).await {
-        Ok(result) => {
-            let rows = result.records.len();
-            let first_num = result
-                .records
-                .first()
-                .and_then(|r| r.first())
-                .and_then(json_cell_number);
-            let verdict = task.classify(rows, first_num);
-            TaskResultRow {
-                id: task.id.clone(),
-                title: task.title.clone(),
-                insight: task.insight.clone(),
-                verdict,
-                rows,
-                min_rows: task.min_rows,
-                allow_empty: task.allow_empty,
-                duration_ms: t0.elapsed().as_millis(),
-                error: None,
-                cypher_preview: preview,
-            }
-        }
-        Err(e) => TaskResultRow {
-            id: task.id.clone(),
-            title: task.title.clone(),
-            insight: task.insight.clone(),
-            verdict: TaskVerdict::Error,
-            rows: 0,
-            min_rows: task.min_rows,
-            allow_empty: task.allow_empty,
-            duration_ms: t0.elapsed().as_millis(),
-            error: Some(e.to_string()),
-            cypher_preview: preview,
-        },
     }
 }
 

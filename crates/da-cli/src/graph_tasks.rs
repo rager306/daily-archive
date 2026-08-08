@@ -74,6 +74,12 @@ pub struct GraphTaskResult {
     pub rows: usize,
     pub min_rows: usize,
     pub allow_empty: bool,
+    #[serde(default)]
+    pub expected_rows: Option<usize>,
+    #[serde(default)]
+    pub expected_min_value: Option<f64>,
+    #[serde(default)]
+    pub observed_first_cell_number: Option<f64>,
     pub duration_ms: u128,
     pub error: Option<String>,
 }
@@ -356,6 +362,9 @@ pub async fn run_graph_task_suite(
                     rows,
                     min_rows: task.min_rows,
                     allow_empty: task.allow_empty,
+                    expected_rows: task.expect_rows,
+                    expected_min_value: task.expect_min_value,
+                    observed_first_cell_number: first_number,
                     duration_ms: started.elapsed().as_millis(),
                     error: None,
                 }
@@ -368,6 +377,9 @@ pub async fn run_graph_task_suite(
                 rows: 0,
                 min_rows: task.min_rows,
                 allow_empty: task.allow_empty,
+                expected_rows: task.expect_rows,
+                expected_min_value: task.expect_min_value,
+                observed_first_cell_number: None,
                 duration_ms: started.elapsed().as_millis(),
                 error: Some(error.to_string()),
             },
@@ -530,11 +542,29 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
                     expect_rows: None,
                     expect_min_value: None,
                 },
+                GraphTask {
+                    id: "paper_count".into(),
+                    title: "Paper count".into(),
+                    insight: "".into(),
+                    cypher: "MATCH (n:Paper) RETURN count(n)".into(),
+                    min_rows: 1,
+                    allow_empty: false,
+                    expect_rows: Some(1),
+                    expect_min_value: Some(2.0),
+                },
             ],
         };
         let report = run_graph_task_suite(&store, "daily_archive", &suite).await;
         assert_eq!(report.pass, 1);
-        assert_eq!(report.empty, 1);
+        assert_eq!(report.empty, 2);
+        let count = report
+            .tasks
+            .iter()
+            .find(|task| task.id == "paper_count")
+            .unwrap();
+        assert_eq!(count.expected_rows, Some(1));
+        assert_eq!(count.expected_min_value, Some(2.0));
+        assert_eq!(count.observed_first_cell_number, Some(1.0));
         assert!(report.failed);
         assert!(!report.passed());
     }

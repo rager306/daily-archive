@@ -15,7 +15,7 @@ pub enum ExtractorError {
 pub type ExtractResult<T> = Result<T, ExtractorError>;
 
 /// An extracted entity with its source location.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ExtractedEntity {
     pub label: String,
     pub entity_type: da_domain::entity::EntityType,
@@ -38,4 +38,24 @@ pub trait Extractor: Send + Sync {
 
     /// Extractor name (e.g. "rule-based", "gliner2").
     fn name(&self) -> &str;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extracted_entity_roundtrips_for_pipeline_cache_payloads() {
+        let entity = ExtractedEntity {
+            label: "GEPA".into(),
+            entity_type: da_domain::entity::EntityType::Method,
+            section_title: "Methods".into(),
+            char_start: 12,
+            char_end: 16,
+            surface: "GEPA".into(),
+        };
+        let bytes = serde_json::to_vec(&entity).unwrap();
+        let decoded: ExtractedEntity = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(decoded, entity);
+    }
 }

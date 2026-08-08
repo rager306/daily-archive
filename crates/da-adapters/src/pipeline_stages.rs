@@ -1,8 +1,9 @@
 //! Production pipeline-stage adapters for parsing and figure detection (M371 S02).
 
 use async_trait::async_trait;
+use da_ports::extractor::Extractor;
 use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
-use da_ports::parser::ParserPort;
+use da_ports::parser::{ParsedArticle, ParserPort};
 use da_ports::pipeline_stage::{
     PipelineStageExecutor, StageContract, StageExecutionError, StageExecutionOutput,
     StageExecutionRequest,
@@ -83,6 +84,100 @@ impl PipelineStageExecutor for GrobidParseStage {
                 ("sections".into(), parsed.sections.len().to_string()),
                 ("citations".into(), parsed.citations.len().to_string()),
                 ("pdf_hash".into(), parsed.pdf_hash.clone()),
+            ]),
+            payload,
+        })
+    }
+}
+
+/// Pure extraction adapter: cached ParsedArticle payload -> extracted entity payload.
+pub struct RuleExtractionStage {
+    extractor: Arc<dyn Extractor>,
+    parsed_dependency: String,
+    contract: StageContract,
+}
+
+impl RuleExtractionStage {
+    pub fn new(
+        extractor: Arc<dyn Extractor>,
+        parsed_dependency: impl Into<String>,
+        configuration_fingerprint: impl Into<String>,
+    ) -> Self {
+        let extractor_name = extractor.name().to_string();
+        Self {
+            extractor,
+            parsed_dependency: parsed_dependency.into(),
+            contract: StageContract {
+                stage_id: "rule_extract".into(),
+                implementation_fingerprint: "RuleExtractionStage@parsed-sections-v1".into(),
+                configuration_fingerprint: configuration_fingerprint.into(),
+                prompt_fingerprint: None,
+                model_fingerprint: Some(extractor_name),
+                output_schema_fingerprint: "Vec<ExtractedEntity>@serde-v1".into(),
+            },
+        }
+    }
+
+    pub fn with_contract(mut self, contract: StageContract) -> Self {
+        self.contract = contract;
+        self
+    }
+}
+
+#[async_trait]
+impl PipelineStageExecutor for RuleExtractionStage {
+    fn contract(&self) -> StageContract {
+        self.contract.clone()
+    }
+
+    async fn execute(
+        &self,
+        request: StageExecutionRequest,
+    ) -> Result<StageExecutionOutput, StageExecutionError> {
+        let payload = request
+            .dependency_payloads
+            .get(&self.parsed_dependency)
+            .ok_or_else(|| StageExecutionError::Terminal {
+                error_class: "missing_parsed_dependency".into(),
+                message: format!(
+                    "dependency '{}' is required for extraction",
+                    self.parsed_dependency
+                ),
+            })?;
+        let parsed: ParsedArticle =
+            serde_json::from_slice(payload).map_err(|error| StageExecutionError::Terminal {
+                error_class: "parsed_article_deserialization".into(),
+                message: error.to_string(),
+            })?;
+        if parsed.paper_id != request.article_id {
+            return Err(StageExecutionError::Terminal {
+                error_class: "article_identity_mismatch".into(),
+                message: format!(
+                    "parsed article '{}' does not match requested '{}'",
+                    parsed.paper_id, request.article_id
+                ),
+            });
+        }
+        let sections = parsed
+            .sections
+            .iter()
+            .map(|section| (section.title.clone(), section.text.clone()))
+            .collect::<Vec<_>>();
+        let entities = self.extractor.extract(&sections).await.map_err(|error| {
+            StageExecutionError::Terminal {
+                error_class: "entity_extraction_failed".into(),
+                message: error.to_string(),
+            }
+        })?;
+        let payload =
+            serde_json::to_vec(&entities).map_err(|error| StageExecutionError::Terminal {
+                error_class: "extracted_entity_serialization".into(),
+                message: error.to_string(),
+            })?;
+        Ok(StageExecutionOutput {
+            metadata: BTreeMap::from([
+                ("entities".into(), entities.len().to_string()),
+                ("sections".into(), sections.len().to_string()),
             ]),
             payload,
         })
@@ -239,6 +334,69 @@ mod tests {
         assert_eq!(parsed.paper_id, "2507.19457");
         assert_eq!(output.metadata["pdf_hash"], "a".repeat(64));
         assert_eq!(parser.calls.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn rule_extraction_stage_consumes_parsed_dependency_and_is_graph_pure() {
+        let stage = RuleExtractionStage::new(
+            Arc::new(crate::RuleBasedExtractor::new()),
+            "parse",
+            "sha256:fixture-config",
+        );
+        let parsed = ParsedArticle {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: vec![da_ports::parser::Section {
+                title: "Methods".into(),
+                text: "We compare GEPA and GRPO.".into(),
+                level: 1,
+                path_id: None,
+                parent_section_id: None,
+                order_in_parent: None,
+                section_id: None,
+            }],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let output = stage
+            .execute(StageExecutionRequest {
+                article_id: "2507.19457".into(),
+                dependency_payloads: BTreeMap::from([(
+                    "parse".into(),
+                    serde_json::to_vec(&parsed).unwrap(),
+                )]),
+            })
+            .await
+            .unwrap();
+        let entities: Vec<da_ports::extractor::ExtractedEntity> =
+            serde_json::from_slice(&output.payload).unwrap();
+        assert!(entities.iter().any(|entity| entity.label == "GEPA"));
+        assert_eq!(output.metadata["sections"], "1");
+        assert_eq!(
+            stage.contract().configuration_fingerprint,
+            "sha256:fixture-config"
+        );
+    }
+
+    #[tokio::test]
+    async fn rule_extraction_stage_rejects_missing_dependency() {
+        let stage = RuleExtractionStage::new(
+            Arc::new(crate::RuleBasedExtractor::new()),
+            "parse",
+            "sha256:fixture-config",
+        );
+        let error = stage
+            .execute(StageExecutionRequest {
+                article_id: "2507.19457".into(),
+                dependency_payloads: BTreeMap::new(),
+            })
+            .await
+            .unwrap_err();
+        assert!(matches!(error, StageExecutionError::Terminal { .. }));
     }
 
     #[tokio::test]
