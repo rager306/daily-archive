@@ -332,9 +332,18 @@ impl MockGraphStore {
         let nodes = self.inner.nodes_snapshot();
         let id_to_label: std::collections::HashMap<u64, String> = nodes.iter().cloned().collect();
 
-        // Group contracts by edge_type for lookup
-        let by_constant: std::collections::HashMap<&str, &da_domain::edge_contract::EdgeContract> =
-            contracts.iter().map(|c| (c.edge_constant, c)).collect();
+        // Group contracts by edge type. One wire can have several legal source
+        // labels (for example Paper/Section → hasSummary → Summary).
+        let mut by_constant: std::collections::HashMap<
+            &str,
+            Vec<&da_domain::edge_contract::EdgeContract>,
+        > = std::collections::HashMap::new();
+        for contract in &contracts {
+            by_constant
+                .entry(contract.edge_constant)
+                .or_default()
+                .push(contract);
+        }
 
         let mut violations = Vec::new();
         for (_edge_id, src_id, tgt_id, edge_type) in self.inner.edges_snapshot() {
@@ -353,26 +362,24 @@ impl MockGraphStore {
                     target_label: tgt_label.clone(),
                     reason: format!("edge type '{}' is not in edge_contracts()", edge_type),
                 }),
-                Some(c) => {
-                    if c.source_label != src_label.as_str() {
+                Some(candidates) => {
+                    if !candidates
+                        .iter()
+                        .any(|contract| contract.matches(&src_label, &tgt_label))
+                    {
+                        let allowed: Vec<String> = candidates
+                            .iter()
+                            .map(|contract| {
+                                format!("{} -> {:?}", contract.source_label, contract.target_labels)
+                            })
+                            .collect();
                         violations.push(EdgeContractViolation {
                             edge_type: edge_type.clone(),
                             source_label: src_label.clone(),
                             target_label: tgt_label.clone(),
                             reason: format!(
-                                "edge '{}' source must be '{}', got '{}'",
-                                edge_type, c.source_label, src_label
-                            ),
-                        });
-                    }
-                    if !c.target_labels.contains(&tgt_label.as_str()) {
-                        violations.push(EdgeContractViolation {
-                            edge_type: edge_type.clone(),
-                            source_label: src_label.clone(),
-                            target_label: tgt_label.clone(),
-                            reason: format!(
-                                "edge '{}' target must be one of {:?}, got '{}'",
-                                edge_type, c.target_labels, tgt_label
+                                "edge '{}' endpoints must match one of {:?}, got '{} -> {}'",
+                                edge_type, allowed, src_label, tgt_label
                             ),
                         });
                     }

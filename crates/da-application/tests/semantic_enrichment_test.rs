@@ -14,7 +14,9 @@ use da_ports::parser::ParsedArticle;
 mod common;
 use common::mock_graph_store::MockGraphStore;
 
-struct FixedSummaryLlm;
+struct FixedSummaryLlm {
+    section_path: &'static str,
+}
 
 #[async_trait]
 impl LLMClient for FixedSummaryLlm {
@@ -26,6 +28,11 @@ impl LLMClient for FixedSummaryLlm {
         Ok(ChatResponse {
             text: serde_json::json!({
                 "abstract_summary": "GEPA optimizes textual components using reflection.",
+                "section_summaries": [{
+                    "path_id": self.section_path,
+                    "title": "Introduction",
+                    "summary": "Introduces reflective prompt evolution."
+                }],
                 "methods": [{
                     "name": "GEPA",
                     "description": "Reflective prompt evolution",
@@ -98,6 +105,39 @@ async fn store_with_paper(arxiv_id: &str) -> (MockGraphStore, u64) {
         .set_node_property_int(paper, "schema_version", 1)
         .await
         .unwrap();
+    let section = store.create_node("Section").await.unwrap();
+    let paper_vid = vid::paper_vid(arxiv_id);
+    for (key, value) in [
+        ("vid", "vid:section:2507.19457:1"),
+        ("title", "Introduction"),
+        ("work_vid", paper_vid.as_str()),
+        ("path_id", "1"),
+    ] {
+        store
+            .set_node_property_string(section, key, value.into())
+            .await
+            .unwrap();
+    }
+    store
+        .set_node_property_int(section, "level", 1)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(section, "order", 0)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(section, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(section, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(section, "schema_version", 1)
+        .await
+        .unwrap();
     (store, paper)
 }
 
@@ -118,7 +158,10 @@ fn parsed(arxiv_id: &str) -> ParsedArticle {
 #[tokio::test]
 async fn structured_summary_materializes_typed_nodes_with_d127_lock() {
     let (store, paper) = store_with_paper("2507.19457").await;
-    let use_case = SummaryUseCase::new(Arc::new(store.clone()), Arc::new(FixedSummaryLlm));
+    let use_case = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedSummaryLlm { section_path: "1" }),
+    );
 
     let result = use_case
         .generate_summaries("2507.19457", paper, &parsed("2507.19457"))
@@ -195,9 +238,68 @@ async fn structured_summary_materializes_typed_nodes_with_d127_lock() {
 }
 
 #[tokio::test]
+async fn section_summary_is_linked_to_its_section() {
+    let (store, paper) = store_with_paper("2507.19457").await;
+    let section = store
+        .find_node_by_string_property("Section", "path_id", "1")
+        .await
+        .unwrap();
+    let use_case = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedSummaryLlm { section_path: "1" }),
+    );
+
+    use_case
+        .generate_summaries("2507.19457", paper, &parsed("2507.19457"))
+        .await
+        .unwrap();
+
+    let summary = store
+        .find_node_by_string_property("Summary", "source_id", "1")
+        .await
+        .expect("section summary");
+    assert_eq!(
+        store
+            .get_edges_between(
+                section,
+                summary,
+                da_domain::relation::structure::HAS_SUMMARY
+            )
+            .await
+            .len(),
+        1
+    );
+    store.assert_graph_conforms("section_summary_is_linked_to_its_section");
+}
+
+#[tokio::test]
+async fn unresolved_section_path_fails_before_any_summary_write() {
+    let (store, paper) = store_with_paper("2507.19457").await;
+    let before = store.node_count_total();
+    let use_case = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedSummaryLlm {
+            section_path: "not-in-article",
+        }),
+    );
+
+    let error = use_case
+        .generate_summaries("2507.19457", paper, &parsed("2507.19457"))
+        .await
+        .unwrap_err();
+
+    assert!(error.to_string().contains("does not resolve"), "{error:#}");
+    assert_eq!(store.node_count_total(), before, "partial summary write");
+    assert!(store.get_nodes_by_label("Summary").await.is_empty());
+}
+
+#[tokio::test]
 async fn repeated_summary_is_idempotent_for_typed_nodes_and_edges() {
     let (store, paper) = store_with_paper("2507.19457").await;
-    let use_case = SummaryUseCase::new(Arc::new(store.clone()), Arc::new(FixedSummaryLlm));
+    let use_case = SummaryUseCase::new(
+        Arc::new(store.clone()),
+        Arc::new(FixedSummaryLlm { section_path: "1" }),
+    );
 
     use_case
         .generate_summaries("2507.19457", paper, &parsed("2507.19457"))
@@ -211,6 +313,33 @@ async fn repeated_summary_is_idempotent_for_typed_nodes_and_edges() {
     assert_eq!(store.get_nodes_by_label("Method").await.len(), 1);
     assert_eq!(store.get_nodes_by_label("Dataset").await.len(), 1);
     assert_eq!(store.get_nodes_by_label("Metric").await.len(), 1);
+    let mut section_summaries = Vec::new();
+    for node in store.get_nodes_by_label("Summary").await {
+        if store
+            .get_node_property_string(node, "source_id")
+            .await
+            .as_deref()
+            == Some("1")
+        {
+            section_summaries.push(node);
+        }
+    }
+    assert_eq!(section_summaries.len(), 1);
+    let section = store
+        .find_node_by_string_property("Section", "path_id", "1")
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_edges_between(
+                section,
+                section_summaries[0],
+                da_domain::relation::structure::HAS_SUMMARY,
+            )
+            .await
+            .len(),
+        1
+    );
     for label in ["Method", "Dataset", "Metric"] {
         let node = store.get_nodes_by_label(label).await[0];
         assert_eq!(

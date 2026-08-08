@@ -1,5 +1,19 @@
 # Changelog
 
+### M371 S04 T03 section summary graph closure
+
+Section-level structured summaries are no longer orphan nodes. The summary write
+path preflights every LLM `path_id` against a Section with both the same article
+`work_vid` and path identity, fails before any mutation on a stale/fabricated
+path, idempotently upserts the Summary, and creates exactly one structural
+`Section -hasSummary-> Summary` edge. The compiled and YAML edge matrices now
+model `hasSummary` as an overloaded wire with separate Paper and Section source
+rows. The shared graph conformance mock was corrected to match any legal
+`(edge, source, target)` row instead of collapsing overloads to the last hash-map
+entry. Negative and repeated-run fixtures prove fail-before-write and node/edge
+idempotency. Evidence `74ee45de-...`: 4 semantic tests plus domain contracts,
+schema CLI and application clippy PASS.
+
 ### M371 S04 T02 typed semantic enrichment
 
 `SummaryUseCase` no longer counts and discards structured `methods`, `datasets`,

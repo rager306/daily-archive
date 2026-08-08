@@ -349,6 +349,22 @@ RULES:
     ) -> anyhow::Result<()> {
         use da_domain::relation::structure::HAS_SUMMARY;
 
+        // Fail before any graph mutation if an LLM section identity is stale or
+        // fabricated. This prevents partial summary writes and orphan digests.
+        for section_summary in &s.section_summaries {
+            if self
+                .resolve_section_node(paper_id, &section_summary.path_id)
+                .await
+                .is_none()
+            {
+                anyhow::bail!(
+                    "section summary path_id '{}' does not resolve for paper '{}'",
+                    section_summary.path_id,
+                    paper_id
+                );
+            }
+        }
+
         // 1. Abstract summary → Summary node.
         if !s.abstract_summary.is_empty() {
             let node = self.graph_store.create_node("Summary").await?;
@@ -370,36 +386,9 @@ RULES:
             );
         }
 
-        // 2. Section summaries → Summary nodes.
-        for ss in &s.section_summaries {
-            let node = self.graph_store.create_node("Summary").await?;
-            let vid = format!("vid:summary:{}:section:{}", paper_id, ss.path_id);
-            self.graph_store
-                .set_node_property_string(node, "vid", vid)
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "text", ss.summary.clone())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "granularity", "section".into())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "source_label", "Section".into())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "source_id", ss.path_id.clone())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "method", "llm_minimax_full".into())
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "retrieval_eligible", true)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "import_eligible", false)
-                .await?;
-            self.graph_store
-                .set_node_property_int(node, "schema_version", 1)
+        // 2. Section summaries → Summary nodes linked to exact path identities.
+        for section_summary in &s.section_summaries {
+            self.write_section_summary(paper_id, section_summary)
                 .await?;
         }
 
@@ -523,6 +512,100 @@ RULES:
         }
 
         Ok(())
+    }
+
+    async fn write_section_summary(
+        &self,
+        paper_id: &str,
+        summary: &SectionSummaryLLM,
+    ) -> anyhow::Result<u64> {
+        let section = self
+            .resolve_section_node(paper_id, &summary.path_id)
+            .await
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "section summary path_id '{}' does not resolve for paper '{}'",
+                    summary.path_id,
+                    paper_id
+                )
+            })?;
+        let summary_vid = format!("vid:summary:{paper_id}:section:{}", summary.path_id);
+        let node = match self
+            .graph_store
+            .find_node_by_string_property("Summary", "vid", &summary_vid)
+            .await
+        {
+            Some(existing) => existing,
+            None => {
+                let node = self.graph_store.create_node("Summary").await?;
+                self.graph_store
+                    .set_node_property_string(node, "vid", summary_vid)
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "text", summary.summary.clone())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "granularity", "section".into())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "source_label", "Section".into())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "source_id", summary.path_id.clone())
+                    .await?;
+                self.graph_store
+                    .set_node_property_string(node, "method", "llm_minimax_full".into())
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(node, "char_count", summary.summary.len() as i64)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(node, "retrieval_eligible", true)
+                    .await?;
+                self.graph_store
+                    .set_node_property_bool(node, "import_eligible", false)
+                    .await?;
+                self.graph_store
+                    .set_node_property_int(node, "schema_version", 1)
+                    .await?;
+                node
+            }
+        };
+        if self
+            .graph_store
+            .get_edges_between(section, node, da_domain::relation::structure::HAS_SUMMARY)
+            .await
+            .is_empty()
+        {
+            self.graph_store
+                .create_edge(section, node, da_domain::relation::structure::HAS_SUMMARY)
+                .await?;
+        }
+        tracing::info!(
+            paper_id,
+            path_id = summary.path_id,
+            summary_node_id = node,
+            "Summary: linked section digest"
+        );
+        Ok(node)
+    }
+
+    async fn resolve_section_node(&self, paper_id: &str, path_id: &str) -> Option<u64> {
+        let work_vid = da_domain::vid::paper_vid(paper_id);
+        for node in self.graph_store.get_nodes_by_label("Section").await {
+            let node_path = self
+                .graph_store
+                .get_node_property_string(node, "path_id")
+                .await;
+            let node_work = self
+                .graph_store
+                .get_node_property_string(node, "work_vid")
+                .await;
+            if node_path.as_deref() == Some(path_id) && node_work.as_deref() == Some(&work_vid) {
+                return Some(node);
+            }
+        }
+        None
     }
 
     async fn write_limitations(

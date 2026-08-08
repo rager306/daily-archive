@@ -129,7 +129,13 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             edge_constant: structure::HAS_SUMMARY,
             source_label: "Paper",
             target_labels: &["Summary"],
-            rationale: "Paper has a multi-granularity digest (ADR-053 Layer B).",
+            rationale: "Paper has an abstract or paper-level digest (ADR-053 Layer B).",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_SUMMARY,
+            source_label: "Section",
+            target_labels: &["Summary"],
+            rationale: "Section has a path-identity-linked section digest (ADR-053 Layer B).",
         },
         // ─── ADR-053 Layer F: Method lineage (D194 M368 S03) ───
         EdgeContract {
@@ -366,20 +372,15 @@ mod tests {
         }
     }
 
-    /// No duplicate edge constants with contradictory endpoint contracts.
-    /// Two rows with the same edge_constant must agree on source and the
-    /// full set of target_labels.
+    /// No duplicate edge+source rows with contradictory target contracts.
+    /// One edge wire may be overloaded across source labels (e.g. Paper and
+    /// Section both have Summary nodes), but a given source has one target set.
     #[test]
     fn test_no_contradictory_edge_contracts() {
         let contracts = edge_contracts();
         for (i, a) in contracts.iter().enumerate() {
             for b in contracts.iter().skip(i + 1) {
-                if a.edge_constant == b.edge_constant {
-                    assert_eq!(
-                        a.source_label, b.source_label,
-                        "edge '{}' has contradictory source labels:\n  {:?}\n  {:?}",
-                        a.edge_constant, a, b
-                    );
+                if a.edge_constant == b.edge_constant && a.source_label == b.source_label {
                     let a_targets: HashSet<&&str> = a.target_labels.iter().collect();
                     let b_targets: HashSet<&&str> = b.target_labels.iter().collect();
                     assert_eq!(
