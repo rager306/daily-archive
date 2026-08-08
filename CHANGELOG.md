@@ -8,7 +8,12 @@ critical absence invariants such as D127 `import_eligible=true` count exactly
 zero. Parser/classifier/report serde and property fixtures now cover exact finite
 values (`d972086c-...`). The 120-paper batch-12 checkpoint passes four runtime
 tasks (`36fdb5d1-...`): Paper=120, Entity=69 canonical nodes, MENTIONS=1096,
-and import unlocks exactly 0.
+and import unlocks exactly 0. Chained graph waves 2-12 then restored the prior
+checksum-bound snapshot, materialized the next 10 papers, replayed with zero net
+writes, and exported the next checkpoint. The batch-12 graph contains **13,678
+nodes / 22,214 edges** for 120 papers; the final durable snapshot is 4,777,398
+bytes. Intermediate snapshots are reproducible from exact cache/report keys and
+were not retained; per-wave reports preserve input/output checksums.
 
 ### M371 S05 T06 verified cache-to-graph wave
 
