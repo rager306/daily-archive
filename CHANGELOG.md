@@ -10,8 +10,8 @@ instead of opening split stores. Evidence `b86ac595-...`: 12 ingest + 19
 extraction tests and application clippy PASS. This is the final composition
 prerequisite for the cache-to-graph wave.
 
-Gold batches 9 and 10 also passed cold/replay gates; **100/193** source-ready
-papers are now cache-verified with durable per-batch metrics.
+Gold batches 9, 10 and 11 also passed cold/replay gates; **110/193**
+source-ready papers are now cache-verified with durable per-batch metrics.
 
 ### M371 S05 T06 FD API token-capability correction
 
