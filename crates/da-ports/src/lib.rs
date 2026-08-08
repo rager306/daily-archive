@@ -13,6 +13,7 @@ pub mod llm_client;
 pub mod openalex;
 pub mod parser;
 pub mod pipeline_cache;
+pub mod pipeline_stage;
 
 pub use algorithms::GraphAlgorithms;
 pub use clock::{Clock, FixedClock, SystemClock};

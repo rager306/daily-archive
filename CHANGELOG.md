@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### M371 S01 T02 cache-aware application DAG runner (delivery pending GSD Attempt)
+
+Added a thin, hexagonal orchestration core without advertising unimplemented
+production stages:
+
+- `PipelineStageExecutor` port carries implementation, configuration, prompt,
+  model, and output-schema fingerprints plus typed retryable/terminal failures.
+- `PipelineOrchestrator` reuses `kg-pipeline::PipelineBuilder` topology, derives
+  cache keys from explicit source identity and dependency output hashes, and
+  injects all stage implementations through ports.
+- Verified cache hits do not invoke stage executors. Prompt-only changes rerun
+  summary without parse; source changes rerun source-dependent descendants.
+- Missing executors and contract mismatches fail explicitly instead of falling
+  back to stubs. Retryable failures are persisted and suppress premature retry.
+- Structured tracing reports cache hit/miss, execution, retry suppression, and
+  failures without logging article payloads.
+
+Verification: `gsd_exec 09da8420-c714-4fa7-91cc-c1f552d630ff` PASS (2 port
+contract tests, 7 application tests, fmt, clippy); onion/governor evidence
+`dafbfcae-38ad-465c-b4ba-dab6c933835d` PASS. Decision D195 records the split
+between universal topology and application orchestration. T02 remains pending
+because no canonical GSD Attempt exists; no lifecycle bypass was used.
+
 ### M371 S01 T01 content-addressed pipeline cache (delivery pending GSD Attempt)
 
 Implemented the hexagonal pipeline-cache boundary and filesystem adapter:

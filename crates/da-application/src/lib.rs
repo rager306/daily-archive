@@ -5,8 +5,13 @@
 //! ADR-040 §11.3: Migration framework.
 
 pub mod ingest;
+pub mod pipeline;
 
 pub use ingest::IngestUseCase;
+pub use pipeline::{
+    PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
+    StageRunRecord,
+};
 pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod extraction;
