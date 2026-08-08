@@ -8,6 +8,7 @@ pub mod clock;
 pub mod embedder;
 pub mod evidence_store;
 pub mod extractor;
+pub mod figure_detection;
 pub mod graph_store;
 pub mod llm_client;
 pub mod openalex;
@@ -20,6 +21,10 @@ pub use clock::{Clock, FixedClock, SystemClock};
 pub use embedder::Embedder;
 pub use evidence_store::EvidenceStore;
 pub use extractor::{ExtractedEntity, Extractor};
+pub use figure_detection::{
+    FigureDetectionError, FigureDetectionPort, FigureDetectionPortResult, FigureDetectionRequest,
+    FigureDetectionResult,
+};
 pub use graph_store::{DirectGraphStore, GraphStore};
 pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};
 pub use openalex::{OpenAlexAuthor, OpenAlexClient, OpenAlexConcept, OpenAlexTopic, OpenAlexWork};

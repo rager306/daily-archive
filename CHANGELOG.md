@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### M371 S02 T01 governed pdffigures2 production adapter (pending GSD Attempt)
+
+Implemented real figure/table detection as a hexagonal, provenance-preserving
+pipeline boundary:
+
+- Domain contract records Figure/Table kind, zero-based page index, 72-DPI
+  top-left bounding boxes, caption region/text, rendered asset path and SHA-256,
+  source PDF SHA-256, detector fingerprint, and detector metadata SHA-256.
+- `FigureDetectionPort` keeps subprocess/filesystem concerns outside domain and
+  application layers.
+- `PdfFigures2Adapter` runs the assembly JAR with timeout and kill-on-drop,
+  bounded diagnostics, explicit non-zero/timeout failures, complete-batch
+  validation, content-addressed PNG names, and manifest-last publication.
+- Canonical manifests contain no temporary `renderURL` values. Detector crops
+  are reused, avoiding a duplicate PyMuPDF crop stage.
+- `detect_figures` example provides an honest composition root and preserves
+  `import_eligible=false`.
+
+Real GEPA verification retained 25 visual artifacts (22 figures, 3 tables) in
+`data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/`; Figure
+3 has a grounded GEPA caption, valid geometry, and checksum-verified PNG.
+Evidence: `f457dce2-9baa-4bc5-8a4e-0bf248872183` (12 contract/integration tests
++ clippy), `7f9407d9-cbfb-4649-a862-7b87a75c4602` (canonical publication), and
+`62680988-8608-40ee-9a01-0871f2c654ec` (governor/onion/D127). A prior evidence
+run `a4c88df3-...` is explicitly invalid: its shell omitted fail-fast behavior
+and returned exit 0 after an inner test failure. T01 remains pending because no
+canonical GSD Attempt exists; no lifecycle bypass was used.
+
 ### M371 S01 T03 debt wave: exact Paper lookup (partial, pending GSD Attempt)
 
 Fixed a semantic multi-paper corruption risk in `da summarize`: the command

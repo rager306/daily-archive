@@ -15,6 +15,7 @@ pub mod entity;
 pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;
+pub mod figure;
 pub mod healing;
 pub mod hypergraph;
 pub mod paper;
@@ -45,6 +46,9 @@ pub use eval::{
 pub use evidence::{
     EpistemicStatus, EvidenceAssertion, EvidenceId, EvidenceVerdict, EvidenceVerification,
     SourceSpan, SpanType,
+};
+pub use figure::{
+    BoundingBox72Dpi, DetectedVisualArtifact, VisualArtifactError, VisualArtifactKind,
 };
 pub use healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
