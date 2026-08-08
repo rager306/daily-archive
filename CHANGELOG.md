@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### M371 S02 T04 semantic/architecture closeout gate (Attempt-blocked)
+
+Closed the technical S02 gate without weakening existing invariants:
+
+- Canonical audit verifies 25 GEPA visual artifacts, unique IDs, all asset
+  checksums, grounded Figure 3 context, sourced abstract, bounded/visible
+  truncation, six versioned cache manifests, and every payload checksum.
+- Detected stale `Figure3.context.json` provenance after D198 and regenerated it
+  atomically from the verified current cache payload.
+- Full architecture gate exposed and removed a dead `da-mcp` test import.
+- Registered the real `QualitySignal` nodes emitted by `SummaryUseCase` in both
+  compiled and YAML ontology schemas instead of weakening schema audit.
+
+Final evidence: `e8777717-...` full architecture PASS (30.2s) and
+`32954673-...` semantic/cache/governor closeout PASS. Failed evidence remains
+recorded: `6e548fff-...` caught stale context provenance, `683466c2-...` caught
+the dead import, and `27116cde-...` caught missing `QualitySignal` schema.
+T04/S02 remain lifecycle-pending because canonical Attempts are absent; no
+skip, raw DB mutation, or fake completion was used.
+
 ### M371 S02 T03 real cache-aware parse, figure, context DAG
 
 Wired only implemented production stages through the hexagonal pipeline:

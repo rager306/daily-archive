@@ -269,6 +269,33 @@ impl NodeSchemaDef for SummarySchema {
     }
 }
 
+/// Structured quality evidence generated for a paper summary.
+/// Quantitative results and reproducibility assessments remain typed signals,
+/// rather than being hidden inside an unregistered ad-hoc node label.
+pub struct QualitySignalSchema;
+
+impl NodeSchemaDef for QualitySignalSchema {
+    fn label(&self) -> &'static str {
+        "QualitySignal"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![("vid", FieldType::String), ("text", FieldType::String)]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, FieldType)> {
+        vec![
+            ("signal_type", FieldType::String),
+            ("score", FieldType::Integer),
+            ("source_label", FieldType::String),
+            ("source_id", FieldType::String),
+            ("method", FieldType::String),
+            ("retrieval_eligible", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+            ("valid_from", FieldType::DateTime),
+        ]
+    }
+}
+
 // ─── Author (FOAF: Person + PRO: author role) ───
 
 /// A paper author (disambiguated via OpenAlex/ORCID when available).

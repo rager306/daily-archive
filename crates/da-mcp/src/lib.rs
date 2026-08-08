@@ -549,7 +549,6 @@ mod tests {
     fn test_prod_server_uses_fdapi_dimensions() {
         // Wave 0 Product Honesty (D194): prod server must use FdApi (1024d), not Mock (8d).
         let server = DailyArchiveMcpServer::new(Arc::new(kg_storage::MockGraphStore::new()));
-        use kg_embeddings::Embedder as _;
         assert_eq!(
             server.embedder.dimensions(),
             1024,
