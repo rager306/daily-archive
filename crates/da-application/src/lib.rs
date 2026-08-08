@@ -16,6 +16,13 @@ pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod extraction;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
+pub mod figure_analysis;
+pub use figure_analysis::{
+    FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
+    FigureAnalysisUseCaseError,
+};
+pub mod figure_analysis_stage;
+pub use figure_analysis_stage::FigureAnalysisStage;
 pub mod figure_context;
 pub use figure_context::{FigureContextAssembler, FigureContextBudget, FigureSectionLocator};
 pub mod figure_context_stage;

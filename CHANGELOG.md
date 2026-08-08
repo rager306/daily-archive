@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### M371 S03 T02 grounded FigureAnalysis candidate and cached stage
+
+Added the typed, non-authoritative visual-analysis layer over the provider-neutral
+multimodal port:
+
+- `FigureAnalysis` validates visual type, unique components, relationship
+  endpoints, findings, exact section/path citations, confidence, and complete
+  image/context/route/model/prompt/schema/usage provenance.
+- `FigureAnalysisUseCase` requires image/context checksum agreement, capable
+  route metadata, forced structured output, and exact quote grounding against
+  `FigureSemanticContext`.
+- `FigureAnalysisStage` fingerprints image SHA, route/protocol/model/fallback,
+  prompt, and schema; transient route failures are retryable while semantic
+  contract failures are terminal.
+- Candidates are always `authoritative=false` and `import_eligible=false`; no
+  graph promotion surface was added.
+
+Evidence: `c864ec05-...` (8 focused tests + fmt/clippy) and `d27e0ebb-...`
+(governor/onion/authority lock). T02 remains pending because no canonical GSD
+Attempt exists; no lifecycle bypass was used.
+
 ### M371 S03 T01 provider-neutral multimodal LLM routing (D199)
 
 Replaced the MiniMax-specific VLM design with a provider-neutral multimodal
