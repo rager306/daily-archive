@@ -72,7 +72,7 @@ impl FigureAnalysisUseCase {
                         "properties": {
                             "section_id": {"type": "string"},
                             "path_id": {"type": "string"},
-                            "quote": {"type": "string"}
+                            "quote": {"type": "string", "maxLength": 160}
                         },
                         "required": ["section_id", "path_id", "quote"]
                     },
@@ -80,7 +80,12 @@ impl FigureAnalysisUseCase {
                 },
                 "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0}
             },
-            "required": ["visual_type", "description", "components", "relationships", "findings", "citations", "confidence"]
+            "required": ["visual_type", "description", "components", "relationships", "findings", "citations", "confidence"],
+            "x-output-guidance": {
+                "visual_type": "Return exactly one enum string, never an array.",
+                "citations": "Return at least one object with a verbatim quote copied from supplied context, max 160 characters.",
+                "relationships": "source_component and target_component must exactly copy a declared components[].name string. Omit a relationship if either endpoint is uncertain."
+            }
         })
     }
 
@@ -114,7 +119,7 @@ impl FigureAnalysisUseCase {
         let context_bytes = serde_json::to_vec(context)?;
         let context_sha256 = sha256(&context_bytes);
         let user_context = format!(
-            "Analyze the attached scientific visual using only the grounded context below. Cite exact quotes with existing section_id and path_id.\n\n{}",
+            "Analyze the attached scientific visual using only the grounded context below. Every citation quote MUST be a verbatim substring copied from the supplied section or reference excerpt, at most 160 characters, with its existing section_id and path_id. Never reconstruct or extend a quote from prior knowledge.\n\n{}",
             serde_json::to_string_pretty(context)?
         );
         let response = self
@@ -129,7 +134,15 @@ impl FigureAnalysisUseCase {
                 temperature: 0.0,
             })
             .await?;
-        let draft: FigureAnalysisDraft = serde_json::from_value(response.structured_output)?;
+        let structured_output = response.structured_output;
+        let draft: FigureAnalysisDraft = serde_json::from_value(structured_output.clone())
+            .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
+                message: error.to_string(),
+                top_level_keys: structured_output
+                    .as_object()
+                    .map(|object| object.keys().cloned().collect())
+                    .unwrap_or_default(),
+            })?;
         validate_citations(&draft.citations, context)?;
         let route = response.route;
         let candidate_id = format!(
@@ -178,7 +191,7 @@ impl FigureAnalysisUseCase {
     }
 
     fn system_prompt() -> &'static str {
-        "You analyze scientific figures as non-authoritative candidate evidence. Describe only visible structure and claims supported by the supplied context. Do not invent components. Every analysis must cite exact context quotes using existing section_id and path_id."
+        "You analyze scientific figures as non-authoritative candidate evidence. Describe only visible structure and claims supported by the supplied context. Do not invent components. Every analysis must cite short verbatim substrings from the supplied context using existing section_id and path_id. Relationship source_component and target_component values must exactly copy declared component names; omit uncertain relationships."
     }
 }
 
@@ -244,6 +257,7 @@ fn protocol_name(protocol: ModelWireProtocol) -> &'static str {
     match protocol {
         ModelWireProtocol::AnthropicMessages => "anthropic_messages",
         ModelWireProtocol::OpenAiChatCompletions => "openai_chat_completions",
+        ModelWireProtocol::OpenAiResponses => "openai_responses",
     }
 }
 
@@ -261,6 +275,11 @@ pub enum FigureAnalysisUseCaseError {
     Model(#[from] MultimodalLlmError),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    #[error("invalid structured figure analysis: {message}; top-level keys={top_level_keys:?}")]
+    StructuredOutput {
+        message: String,
+        top_level_keys: Vec<String>,
+    },
     #[error("image/context checksum mismatch: image {image}, context {context}")]
     ImageContextMismatch { image: String, context: String },
     #[error("model route capability mismatch: {0}")]

@@ -149,6 +149,7 @@ impl MultimodalLlmPort for AnthropicMultimodalClient {
             "model": self.route.model,
             "max_tokens": request.max_tokens,
             "temperature": request.temperature,
+            "stream": false,
             "system": request.system_prompt,
             "messages": [{
                 "role": "user",
@@ -216,9 +217,7 @@ impl MultimodalLlmPort for AnthropicMultimodalClient {
                 diagnostic: bounded_diagnostic(&bytes),
             });
         }
-        let decoded: AnthropicResponse = serde_json::from_slice(&bytes).map_err(|error| {
-            MultimodalLlmError::InvalidResponse(format!("response JSON: {error}"))
-        })?;
+        let decoded = decode_anthropic_response(&bytes)?;
         let structured_output = decoded
             .content
             .iter()
@@ -273,6 +272,30 @@ struct AnthropicContentBlock {
 struct AnthropicUsage {
     input_tokens: Option<u32>,
     output_tokens: Option<u32>,
+}
+
+fn decode_anthropic_response(bytes: &[u8]) -> MultimodalLlmResult<AnthropicResponse> {
+    let stream = serde_json::Deserializer::from_slice(bytes).into_iter::<AnthropicResponse>();
+    let mut decoded = Vec::new();
+    for item in stream {
+        decoded.push(item.map_err(|error| {
+            MultimodalLlmError::InvalidResponse(format!("response JSON sequence: {error}"))
+        })?);
+    }
+    decoded
+        .into_iter()
+        .rev()
+        .find(|response| {
+            response
+                .content
+                .iter()
+                .any(|block| block.block_type == "tool_use" && block.input.is_some())
+        })
+        .ok_or_else(|| {
+            MultimodalLlmError::InvalidResponse(
+                "response sequence contained no tool_use input".into(),
+            )
+        })
 }
 
 fn endpoint_fingerprint(url: &str) -> String {
@@ -464,6 +487,24 @@ mod tests {
             MultimodalLlmError::RateLimited { ref retry } if retry.contains('7')
         ));
         assert!(!error.to_string().contains("never-log-this"));
+    }
+
+    #[tokio::test]
+    async fn concatenated_router_responses_select_last_tool_use_document() {
+        let body = concat!(
+            "{\"model\":\"router\",\"content\":[{\"type\":\"text\",\"text\":\"routing\"}],\"usage\":{}}",
+            "{\"model\":\"MiniMax-M3\",\"content\":[{\"type\":\"tool_use\",\"input\":{\"visual_type\":\"flowchart\"}}],\"usage\":{}}"
+        );
+        let (root, _) = fixture_server(200, body, "").await;
+        let client = AnthropicMultimodalClient::new(AnthropicMultimodalRoute::nine_router(
+            root,
+            None,
+            "minimax/MiniMax-M3",
+        ))
+        .unwrap();
+        let response = client.complete_structured(request()).await.unwrap();
+        assert_eq!(response.resolved_model, "MiniMax-M3");
+        assert_eq!(response.structured_output["visual_type"], "flowchart");
     }
 
     #[tokio::test]

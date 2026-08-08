@@ -13,8 +13,76 @@ use da_ports::pipeline_stage::{
     PipelineStageExecutor, StageContract, StageExecutionError, StageExecutionOutput,
     StageExecutionRequest,
 };
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::sync::Arc;
+
+/// Source stage that publishes a validated canonical FigureSemanticContext into
+/// the DAG. Its schema and payload hash fence all downstream analysis stages.
+pub struct FigureContextArtifactStage {
+    context: FigureSemanticContext,
+    contract: StageContract,
+}
+
+impl FigureContextArtifactStage {
+    pub fn new(context: FigureSemanticContext) -> Result<Self, StageExecutionError> {
+        context
+            .validate()
+            .map_err(|error| StageExecutionError::Terminal {
+                error_class: "invalid_canonical_figure_context".into(),
+                message: error.to_string(),
+            })?;
+        let bytes =
+            serde_json::to_vec(&context).map_err(|error| StageExecutionError::Terminal {
+                error_class: "figure_context_serialization".into(),
+                message: error.to_string(),
+            })?;
+        Ok(Self {
+            context,
+            contract: StageContract {
+                stage_id: "figure_context_artifact".into(),
+                implementation_fingerprint: "FigureContextArtifactStage@v1".into(),
+                configuration_fingerprint: format!(
+                    "context_sha256={}",
+                    hex::encode(Sha256::digest(&bytes))
+                ),
+                prompt_fingerprint: None,
+                model_fingerprint: None,
+                output_schema_fingerprint: "FigureSemanticContext@serde-v2-summary-provenance"
+                    .into(),
+            },
+        })
+    }
+}
+
+#[async_trait]
+impl PipelineStageExecutor for FigureContextArtifactStage {
+    fn contract(&self) -> StageContract {
+        self.contract.clone()
+    }
+
+    async fn execute(
+        &self,
+        _request: StageExecutionRequest,
+    ) -> Result<StageExecutionOutput, StageExecutionError> {
+        let payload =
+            serde_json::to_vec(&self.context).map_err(|error| StageExecutionError::Terminal {
+                error_class: "figure_context_serialization".into(),
+                message: error.to_string(),
+            })?;
+        Ok(StageExecutionOutput {
+            metadata: BTreeMap::from([
+                ("artifact_id".into(), self.context.artifact_id.clone()),
+                (
+                    "section_path".into(),
+                    self.context.containing_section.path_id.clone(),
+                ),
+                ("authoritative".into(), "false".into()),
+            ]),
+            payload,
+        })
+    }
+}
 
 pub struct FigureAnalysisStage {
     model: Arc<dyn MultimodalLlmPort>,
@@ -149,6 +217,7 @@ fn protocol_name(protocol: ModelWireProtocol) -> &'static str {
     match protocol {
         ModelWireProtocol::AnthropicMessages => "anthropic_messages",
         ModelWireProtocol::OpenAiChatCompletions => "openai_chat_completions",
+        ModelWireProtocol::OpenAiResponses => "openai_responses",
     }
 }
 
@@ -268,6 +337,27 @@ mod tests {
                 serde_json::to_vec(&context()).unwrap(),
             )]),
         }
+    }
+
+    #[tokio::test]
+    async fn canonical_context_source_stage_is_content_addressed() {
+        let stage = FigureContextArtifactStage::new(context()).unwrap();
+        let output = stage
+            .execute(StageExecutionRequest {
+                article_id: "2507.19457".into(),
+                dependency_payloads: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(output.metadata["artifact_id"], "Figure3");
+        assert!(
+            stage
+                .contract()
+                .configuration_fingerprint
+                .contains("context_sha256=")
+        );
+        let decoded: FigureSemanticContext = serde_json::from_slice(&output.payload).unwrap();
+        assert_eq!(decoded, context());
     }
 
     #[tokio::test]

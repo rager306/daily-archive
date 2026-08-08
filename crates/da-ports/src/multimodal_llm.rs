@@ -15,6 +15,7 @@ pub const MAX_MULTIMODAL_IMAGE_BYTES: usize = 20 * 1024 * 1024;
 pub enum ModelWireProtocol {
     AnthropicMessages,
     OpenAiChatCompletions,
+    OpenAiResponses,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
