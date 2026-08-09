@@ -55,6 +55,15 @@ impl TemporalClass {
     }
 }
 
+/// Runtime readiness of a data-driven edge contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContractStatus {
+    #[default]
+    Active,
+    Planned,
+}
+
 /// One edge endpoint contract loaded from YAML (owned strings — runtime meta-ontology).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct YamlEdgeContract {
@@ -67,6 +76,10 @@ pub struct YamlEdgeContract {
     pub temporal_class: TemporalClass,
     #[serde(default)]
     pub rationale: String,
+    /// Planned contracts remain visible for roadmap/ADR checks but cannot be
+    /// treated as active graph capability until endpoint schemas materialize.
+    #[serde(default)]
+    pub implementation_status: ContractStatus,
 }
 
 impl YamlEdgeContract {
@@ -114,6 +127,12 @@ pub enum RegistryError {
     },
     #[error("no node_schemas.yaml found in {dir}")]
     NotFound { dir: String },
+    #[error("edge contract {edge} references unregistered {role} label {label}")]
+    UnregisteredEdgeLabel {
+        edge: String,
+        role: &'static str,
+        label: String,
+    },
 }
 
 impl OntologyRegistry {
@@ -133,6 +152,7 @@ impl OntologyRegistry {
         if edges_path.exists() {
             let edges = Self::load_edge_contracts_from_file(&edges_path)?;
             reg.edge_contracts = edges;
+            reg.validate_edge_labels()?;
         }
         Ok(reg)
     }
@@ -215,6 +235,31 @@ impl OntologyRegistry {
         Err(last.unwrap_or(RegistryError::NotFound {
             dir: "data/ontology".into(),
         }))
+    }
+
+    fn validate_edge_labels(&self) -> Result<(), RegistryError> {
+        for contract in &self.edge_contracts {
+            if contract.implementation_status == ContractStatus::Planned {
+                continue;
+            }
+            if !self.schemas.contains_key(&contract.source_label) {
+                return Err(RegistryError::UnregisteredEdgeLabel {
+                    edge: contract.edge_constant.clone(),
+                    role: "source",
+                    label: contract.source_label.clone(),
+                });
+            }
+            for label in &contract.target_labels {
+                if !self.schemas.contains_key(label) {
+                    return Err(RegistryError::UnregisteredEdgeLabel {
+                        edge: contract.edge_constant.clone(),
+                        role: "target",
+                        label: label.clone(),
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 
     /// Lookup a node schema by label (e.g. "Paper", "Author").
@@ -403,6 +448,58 @@ edge_contracts:
         );
         assert!(types.iter().any(|e| e == "CITES"));
         assert!(types.iter().any(|e| e == "MENTIONS"));
+    }
+
+    #[test]
+    fn test_load_from_dir_rejects_edge_endpoint_without_node_schema() {
+        let dir = std::env::temp_dir().join(format!(
+            "kg-ontology-missing-edge-label-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("node_schemas.yaml"),
+            "node_schemas:\n  - label: Paper\n    required_fields: []\n    optional_fields: []\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("edge_contracts.yaml"),
+            "edge_contracts:\n  - edge_constant: BAD\n    source_label: Paper\n    target_labels: [Missing]\n",
+        )
+        .unwrap();
+        let error = OntologyRegistry::load_from_dir(&dir).unwrap_err();
+        assert!(matches!(
+            error,
+            RegistryError::UnregisteredEdgeLabel { role: "target", label, .. }
+                if label == "Missing"
+        ));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn test_load_from_dir_allows_explicitly_planned_unregistered_endpoint() {
+        let dir = std::env::temp_dir().join(format!(
+            "kg-ontology-planned-edge-label-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("node_schemas.yaml"),
+            "node_schemas:\n  - label: Paper\n    required_fields: []\n    optional_fields: []\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("edge_contracts.yaml"),
+            "edge_contracts:\n  - edge_constant: FUTURE\n    source_label: Paper\n    target_labels: [Missing]\n    implementation_status: planned\n",
+        )
+        .unwrap();
+        let registry = OntologyRegistry::load_from_dir(&dir).unwrap();
+        assert_eq!(registry.edge_contracts().len(), 1);
+        assert_eq!(
+            registry.edge_contracts()[0].implementation_status,
+            ContractStatus::Planned
+        );
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

@@ -134,17 +134,17 @@ impl DailyArchiveMcpServer {
     /// Wave 1 MCP-4 (D194): read a resource by URI. Returns YAML/text content.
     pub fn read_mcp_resource(&self, uri: &str) -> Option<String> {
         match uri {
-            "graph://ontology/node_schemas" => {
-                std::fs::read_to_string("data/ontology/node_schemas.yaml").ok()
-            }
-            "graph://ontology/edge_contracts" => {
-                std::fs::read_to_string("data/ontology/edge_contracts.yaml").ok()
-            }
-            "graph://ontology/decision_categories" => {
-                std::fs::read_to_string("data/ontology/decision_categories.yaml").ok()
-            }
+            "graph://ontology/node_schemas" => Some(
+                include_str!("../../../data/ontology/node_schemas.yaml").to_string(),
+            ),
+            "graph://ontology/edge_contracts" => Some(
+                include_str!("../../../data/ontology/edge_contracts.yaml").to_string(),
+            ),
+            "graph://ontology/decision_categories" => Some(
+                include_str!("../../../data/ontology/decision_categories.yaml").to_string(),
+            ),
             "graph://ontology/node_vocabulary" => {
-                std::fs::read_to_string("data/ontology/node_vocabulary.yaml").ok()
+                Some(include_str!("../../../data/node_vocabulary.yaml").to_string())
             }
             "graph://schema" => {
                 let labels = data_ontology_labels();
@@ -291,21 +291,16 @@ impl DailyArchiveMcpServer {
     }
 }
 
-/// Helper: list node labels from YAML (static, for resource listing)
+/// List node labels from the embedded authoritative ontology registry.
 fn data_ontology_labels() -> Vec<String> {
-    vec![
-        "Paper".into(),
-        "Section".into(),
-        "Author".into(),
-        "Entity".into(),
-        "Institution".into(),
-        "Venue".into(),
-        "Decision".into(),
-        "HealingAction".into(),
-        "ExtractionOverride".into(),
-        "ConceptCluster".into(),
-        "BaselineSnapshot".into(),
-    ]
+    let registry = kg_ontology::OntologyRegistry::load_from_str(
+        include_str!("../../../data/ontology/node_schemas.yaml"),
+        "embedded:data/ontology/node_schemas.yaml",
+    )
+    .expect("embedded node_schemas.yaml must pass ontology registry validation");
+    let mut labels = registry.labels_owned();
+    labels.sort();
+    labels
 }
 
 /// Wave 1 tools: get_schema + get_graph_stats. Read-only by construction.
@@ -569,6 +564,29 @@ mod tests {
                 .any(|u| u.contains("schema") || u.contains("ontology")),
             "list_mcp_resources must include ontology/schema, got: {uris:?}"
         );
+    }
+
+    #[test]
+    fn test_ontology_resources_are_embedded_and_cwd_independent() {
+        let server = test_server();
+        for uri in [
+            "graph://ontology/node_schemas",
+            "graph://ontology/edge_contracts",
+            "graph://ontology/decision_categories",
+            "graph://ontology/node_vocabulary",
+        ] {
+            assert!(server.read_mcp_resource(uri).is_some(), "missing {uri}");
+        }
+    }
+
+    #[test]
+    fn test_schema_resource_uses_all_authoritative_ontology_labels() {
+        let labels = data_ontology_labels();
+        assert_eq!(labels.len(), 36);
+        assert!(labels.contains(&"Paper".to_string()));
+        assert!(labels.contains(&"Conflict".to_string()));
+        assert!(!labels.contains(&"HealingAction".to_string()));
+        assert!(!labels.contains(&"ExtractionOverride".to_string()));
     }
 
     #[test]

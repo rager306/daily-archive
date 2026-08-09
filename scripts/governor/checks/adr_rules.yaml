@@ -199,6 +199,15 @@ rules:
     rationale: "Section titles repeat across and within papers. FOUND_IN must resolve the document-scoped Section VID from paper ID plus section ordinal."
     suffix_allowlist: [.rs]
 
+  # --- ADR-052 semantic logging: never persist raw provider payloads ---
+  - id: semantic_logs_must_not_include_raw_llm_payload
+    anchor: "ADR-052 structured logging + secret/payload minimization"
+    severity: high
+    scan: crates/da-application/src/
+    pattern: 'tracing::(?:trace|debug|info|warn|error)!.*(?:raw|payload|response_text)\s*='
+    rationale: "Operational logs must carry semantic identity, state transitions, hashes and sizes — never raw LLM/provider payload text."
+    suffix_allowlist: [.rs]
+
   # --- DSPy / LLM deploy lock (D136) ---
   # --- M329: fact edges must use temporal_stamp (pair with cargo audit test) ---
   # Line-level catch for same-line patterns; multi-line sites covered by

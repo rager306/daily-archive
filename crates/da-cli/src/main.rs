@@ -1,5 +1,3 @@
-mod logging;
-
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -363,7 +361,7 @@ fn main() {
             unsafe { std::env::set_var("RUST_LOG", "debug") };
         }
     }
-    let _log_guard = logging::init_logging();
+    let _log_guard = da_cli::logging::init_logging();
 
     // Single shared Tokio runtime for all async commands (Rust 2026 best practice:
     // avoid repeated Runtime creation; one runtime serves all commands).

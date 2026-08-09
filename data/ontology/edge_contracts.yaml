@@ -76,7 +76,8 @@ edge_contracts:
   # Six decision audit and causal edges scoped to scientific KG use.
   # All temporal_class=fact: causal claims can be revised (wrong attribution,
   # later correction, retracted reasoning). Decision is the actor;
-  # Policy / Conflict / HealingAction / ExtractionOverride are triggers.
+  # Conflict is active. Policy/HealingAction/ExtractionOverride are planned
+  # ADR endpoints and MUST NOT be presented as active runtime capability.
   - edge_constant: CAUSED
     source_label: Decision
     target_labels: [Decision]
@@ -97,16 +98,23 @@ edge_contracts:
     target_labels: [Decision]
     temporal_class: fact
     rationale: "Decision A is a precedent cited by Decision B (analogical reference)."
+  - edge_constant: TRIGGERED_BY
+    source_label: Decision
+    target_labels: [Conflict]
+    temporal_class: fact
+    rationale: "Decision was triggered by this registered Conflict event (ADR-044/047 tie-in)."
+  - edge_constant: TRIGGERED_BY
+    source_label: Decision
+    target_labels: [HealingAction, ExtractionOverride]
+    temporal_class: fact
+    implementation_status: planned
+    rationale: "Planned ADR-044/047 trigger endpoints; inactive until schemas and materializers ship."
   - edge_constant: AUTHORITY_FOR
     source_label: Policy
     target_labels: [Decision]
     temporal_class: fact
-    rationale: "Policy authorized this Decision (Phase 2 materialises Policy nodes; Phase 1 uses policy_id opaque string)."
-  - edge_constant: TRIGGERED_BY
-    source_label: Decision
-    target_labels: [Conflict, HealingAction, ExtractionOverride]
-    temporal_class: fact
-    rationale: "Decision was triggered by this Conflict/HealingAction/ExtractionOverride event (ADR-044/047 tie-in)."
+    implementation_status: planned
+    rationale: "Planned Phase 2 Policy authority edge; Phase 1 keeps policy_id as an opaque string."
   # ─── ADR-053 Article Preparation 2.0 edges (M362 Wave 1 Layer A implemented) ───
   # next_sibling / first_child / parent_section are implemented in
   # crates/da-domain/src/relation.rs::structure (M362 S01 T03) as structural

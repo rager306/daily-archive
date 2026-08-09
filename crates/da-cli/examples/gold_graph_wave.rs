@@ -50,7 +50,7 @@ struct GraphWaveReport {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv().ok();
+    let _log_guard = da_cli::logging::init_pipeline_logging("gold_graph_wave");
     let args = Args::parse();
     kg_storage::refuse_persistence_path_from_env()?;
     let wave = load_wave_report(&args.wave_report)?;

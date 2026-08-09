@@ -230,6 +230,123 @@ def test_resource_safety_flags_use_canonical_drift_flag_contract(monkeypatch):
     assert all(flag.evidence for flag in flags)
 
 
+def _write_logging_contract(root: Path) -> None:
+    for crate in ["da-domain", "da-ports", "kg-ontology", "kg-pipeline"]:
+        _write(root / f"crates/{crate}/Cargo.toml", "[dependencies]\nserde = '1'\n")
+    for example in [
+        "gold_corpus_canary.rs", "gold_corpus_manifest.rs", "gold_graph_wave.rs",
+        "graph_task_suite.rs", "eval_batch.rs", "pipeline_figures.rs",
+        "pipeline_finalize.rs", "pipeline_semantic.rs",
+    ]:
+        _write(
+            root / f"crates/da-cli/examples/{example}",
+            "fn main() { let _log_guard = da_cli::logging::init_pipeline_logging(\"root\"); }",
+        )
+    _write(
+        root / "crates/da-application/src/pipeline.rs",
+        'tracing::info!(event="stage", article_id="a", pipeline_id="p", step="s", stage="x");',
+    )
+    _write(
+        root / "crates/da-application/src/ingest.rs",
+        'tracing::info!(event = "parsed_article_materialized", paper_id="a", sections_written=1, references_written=1, cites_edges_written=1);',
+    )
+    _write(
+        root / "crates/da-application/src/extraction.rs",
+        'tracing::info!(event = "extracted_entities_materialized", paper_id="a", entities_created=1, mentions_edges_written=1, found_in_edges_written=1);',
+    )
+
+
+def test_logging_architecture_accepts_semantic_onion_aligned_contract():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_logging_contract(service.root)
+    assert service._check_logging_architecture() == []
+
+
+def test_logging_architecture_flags_boundary_root_and_semantic_gaps():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_logging_contract(service.root)
+    _write(service.root / "crates/da-domain/Cargo.toml", "[dependencies]\ntracing = '0.1'\n")
+    _write(service.root / "crates/da-cli/examples/gold_graph_wave.rs", "fn main() {}")
+    _write(service.root / "crates/da-application/src/pipeline.rs", 'tracing::info!("done");')
+    flags = service._check_logging_architecture()
+    assert [(flag.flag, flag.severity) for flag in flags] == [
+        ("logging_transport_crosses_onion_boundary", "high"),
+        ("pipeline_composition_root_without_file_logging", "high"),
+        ("pipeline_stage_logs_lack_semantic_fields", "high"),
+    ]
+
+
+def test_gold_completeness_flags_unavailable_and_silent_denominator_loss():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(
+        service.root / "artifacts/gold_corpus/gold_corpus_manifest.json",
+        json.dumps({
+            "fixture_count": 200,
+            "source_ready_count": 193,
+            "unavailable_count": 7,
+        }),
+    )
+    _write(
+        service.root / "artifacts/gold_corpus/eval_aggregate_all_sources.json",
+        json.dumps({
+            "fixture_count": 200,
+            "evaluated_count": 192,
+            "unavailable_count": 7,
+            "parse_or_extract_failed_count": 0,
+            "gold_entities_all_fixtures": 1439,
+            "gold_entities_evaluated": 1390,
+        }),
+    )
+    flags = service._check_gold_completeness()
+    assert [(flag.flag, flag.severity) for flag in flags] == [
+        ("gold_unavailable_source_debt", "high"),
+        ("gold_eval_denominator_incomplete", "high"),
+        ("gold_eval_excludes_fixture_entities", "high"),
+    ]
+
+
+def test_gold_completeness_accepts_complete_artifacts_and_ignores_absence():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    assert service._check_gold_completeness() == []
+    _write(
+        service.root / "artifacts/gold_corpus/gold_corpus_manifest.json",
+        json.dumps({
+            "fixture_count": 200,
+            "source_ready_count": 200,
+            "unavailable_count": 0,
+        }),
+    )
+    _write(
+        service.root / "artifacts/gold_corpus/eval_aggregate_all_sources.json",
+        json.dumps({
+            "fixture_count": 200,
+            "evaluated_count": 200,
+            "unavailable_count": 0,
+            "parse_or_extract_failed_count": 0,
+            "gold_entities_all_fixtures": 1439,
+            "gold_entities_evaluated": 1439,
+        }),
+    )
+    assert service._check_gold_completeness() == []
+
+
+def test_gold_completeness_flags_malformed_artifact_instead_of_crashing():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(
+        service.root / "artifacts/gold_corpus/gold_corpus_manifest.json",
+        "{not-json",
+    )
+    flags = service._check_gold_completeness()
+    assert len(flags) == 1
+    assert flags[0].flag == "gold_completeness_artifact_invalid"
+    assert flags[0].severity == "high"
+
+
 def test_yaml_rules_load_successfully():
     """YAML rule files should load without error."""
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"

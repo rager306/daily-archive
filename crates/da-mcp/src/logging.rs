@@ -45,6 +45,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 /// | `LOG_DIR` | `logs/` | Directory for rolling log files |
 /// | `LOG_LEVEL` | `info` | Filter level (RUST_LOG overrides if set) |
 pub fn init_logging() -> Option<WorkerGuard> {
+    // Composition root owns configuration loading; exported env still wins.
+    let _ = dotenvy::dotenv();
     let log_dir = std::env::var("LOG_DIR").unwrap_or_else(|_| "logs".to_string());
 
     // Build filter: RUST_LOG > LOG_LEVEL > default info

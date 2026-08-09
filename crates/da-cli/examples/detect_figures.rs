@@ -26,6 +26,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("detect_figures");
     let args = Args::parse();
     let pdf = std::fs::read(&args.pdf)
         .with_context(|| format!("read canonical PDF {}", args.pdf.display()))?;

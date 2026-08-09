@@ -20,9 +20,9 @@ OUR_CRATES = [
     "da-domain",
     "da-ports",
     "da-application",
-    "da-graph",
     "da-adapters",
     "da-cli",
+    "da-mcp",
 ]
 
 

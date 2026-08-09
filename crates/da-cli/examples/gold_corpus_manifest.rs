@@ -21,6 +21,7 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("gold_corpus_manifest");
     let args = Args::parse();
     let manifest = build_gold_corpus_manifest(&args.fixtures, &args.catalog, args.batch_size)
         .map_err(anyhow::Error::msg)

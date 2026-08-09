@@ -227,6 +227,7 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
                 target_labels: c.target_labels.iter().map(|s| (*s).to_string()).collect(),
                 temporal_class,
                 rationale: c.rationale.to_string(),
+                implementation_status: kg_ontology::ContractStatus::Active,
             }
         })
         .collect()

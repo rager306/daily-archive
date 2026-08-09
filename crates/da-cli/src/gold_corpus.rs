@@ -107,7 +107,7 @@ pub fn build_gold_corpus_manifest(
             return Err(format!("duplicate gold paper_id '{}'", fixture.paper_id));
         }
 
-        let source_path = resolve_source(&fixture.paper_id, &catalog_files);
+        let source_path = resolve_source(&fixture.paper_id, &catalog_files)?;
         let source = match source_path {
             Some((kind, path)) => CanonicalSource {
                 kind,
@@ -180,31 +180,67 @@ pub fn write_manifest(path: &Path, manifest: &GoldCorpusManifest) -> Result<(), 
 fn resolve_source(
     paper_id: &str,
     catalog_files: &[PathBuf],
-) -> Option<(CanonicalSourceKind, PathBuf)> {
-    let pdf_name = format!("{paper_id}.pdf");
+) -> Result<Option<(CanonicalSourceKind, PathBuf)>, String> {
+    let exact_pdf_name = format!("{paper_id}.pdf");
     if let Some(path) = catalog_files
         .iter()
-        .find(|path| path.file_name().and_then(|name| name.to_str()) == Some(&pdf_name))
+        .find(|path| path.file_name().and_then(|name| name.to_str()) == Some(&exact_pdf_name))
     {
-        return Some((CanonicalSourceKind::Pdf, path.clone()));
+        return Ok(Some((CanonicalSourceKind::Pdf, path.clone())));
     }
-    catalog_files
+
+    let versioned_pdfs = catalog_files
         .iter()
-        .find(|path| {
-            path.file_name().and_then(|name| name.to_str()) == Some("chapter.html")
+        .filter(|path| {
+            let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
+                return false;
+            };
+            path.extension().and_then(|extension| extension.to_str()) == Some("pdf")
+                && versioned_identity_matches(stem, paper_id)
                 && path_components_match_paper(path, paper_id)
         })
+        .collect::<Vec<_>>();
+    match versioned_pdfs.as_slice() {
+        [path] => return Ok(Some((CanonicalSourceKind::Pdf, (*path).clone()))),
+        [] => {}
+        paths => {
+            return Err(format!(
+                "ambiguous PDF sources for '{paper_id}': {}",
+                paths
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+    }
+
+    Ok(catalog_files
+        .iter()
+        .find(|path| {
+            matches!(
+                path.file_name().and_then(|name| name.to_str()),
+                Some("chapter.html" | "article.html")
+            ) && path_components_match_paper(path, paper_id)
+        })
         .cloned()
-        .map(|path| (CanonicalSourceKind::Html, path))
+        .map(|path| (CanonicalSourceKind::Html, path)))
+}
+
+fn versioned_identity_matches(value: &str, paper_id: &str) -> bool {
+    value.strip_prefix(paper_id).is_some_and(|suffix| {
+        suffix.starts_with('v')
+            && suffix.len() > 1
+            && suffix[1..]
+                .chars()
+                .all(|character| character.is_ascii_digit())
+    })
 }
 
 fn path_components_match_paper(path: &Path, paper_id: &str) -> bool {
     path.components().any(|component| {
         let value = component.as_os_str().to_string_lossy();
-        value == paper_id
-            || value.strip_prefix(paper_id).is_some_and(|suffix| {
-                suffix.starts_with('v') && suffix[1..].chars().all(|c| c.is_ascii_digit())
-            })
+        value == paper_id || versioned_identity_matches(&value, paper_id)
     })
 }
 
@@ -404,6 +440,47 @@ mod tests {
             first.records[2].source.kind,
             CanonicalSourceKind::Unavailable
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn versioned_pdf_and_article_html_are_valid_canonical_sources() {
+        let root = temp_root("versioned-sources");
+        let fixtures = root.join("gold");
+        let catalog = root.join("catalog");
+        std::fs::create_dir_all(&fixtures).unwrap();
+        fixture(&fixtures.join("2605.26525.gold.json"), "2605.26525", 1);
+        fixture(&fixtures.join("2606.11190.gold.json"), "2606.11190", 1);
+
+        let pdf_root = catalog.join("arxiv/cs-cv/2605.26525v1/source");
+        std::fs::create_dir_all(&pdf_root).unwrap();
+        std::fs::write(pdf_root.join("2605.26525v1.pdf"), b"pdf").unwrap();
+        let html_root = catalog.join("arxiv/cs-lg/2606.11190v2");
+        std::fs::create_dir_all(&html_root).unwrap();
+        std::fs::write(html_root.join("article.html"), b"html").unwrap();
+
+        let manifest = build_gold_corpus_manifest(&fixtures, &catalog, 10).unwrap();
+        assert_eq!(manifest.source_ready_count, 2);
+        assert_eq!(manifest.unavailable_count, 0);
+        assert_eq!(manifest.records[0].source.kind, CanonicalSourceKind::Pdf);
+        assert_eq!(manifest.records[1].source.kind, CanonicalSourceKind::Html);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn conflicting_versioned_pdfs_fail_closed() {
+        let root = temp_root("conflicting-versions");
+        let fixtures = root.join("gold");
+        let catalog = root.join("catalog");
+        std::fs::create_dir_all(&fixtures).unwrap();
+        fixture(&fixtures.join("2605.26525.gold.json"), "2605.26525", 1);
+        for (version, bytes) in [("v1", b"one"), ("v2", b"two")] {
+            let source = catalog.join(format!("arxiv/cs-cv/2605.26525{version}/source"));
+            std::fs::create_dir_all(&source).unwrap();
+            std::fs::write(source.join(format!("2605.26525{version}.pdf")), bytes).unwrap();
+        }
+        let error = build_gold_corpus_manifest(&fixtures, &catalog, 10).unwrap_err();
+        assert!(error.contains("ambiguous PDF sources"), "{error}");
         std::fs::remove_dir_all(root).unwrap();
     }
 

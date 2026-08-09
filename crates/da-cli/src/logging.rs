@@ -112,3 +112,40 @@ pub fn init_logging() -> Option<WorkerGuard> {
 
     Some(guard)
 }
+
+/// Initialize a pipeline composition root from project `.env` and retainable guard.
+///
+/// The composition root owns dotenv and subscriber setup; domain/application code
+/// only emits structured events and remains infrastructure-agnostic.
+pub fn init_pipeline_logging(composition_root: &'static str) -> Option<WorkerGuard> {
+    let _ = dotenvy::dotenv();
+    let guard = init_logging();
+    tracing::info!(
+        composition_root,
+        event = "pipeline_composition_started",
+        "Pipeline composition root started"
+    );
+    guard
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    #[test]
+    fn active_pipeline_examples_initialize_structured_file_logging() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples");
+        for entry in std::fs::read_dir(root).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|extension| extension.to_str()) != Some("rs") {
+                continue;
+            }
+            let source = std::fs::read_to_string(&path).unwrap();
+            assert!(
+                source.contains("init_pipeline_logging"),
+                "{} bypasses .env-backed rolling JSON logging",
+                path.display()
+            );
+        }
+    }
+}

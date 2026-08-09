@@ -724,14 +724,17 @@ impl IngestUseCase {
         }
 
         tracing::info!(
+            event = "parsed_article_materialized",
             paper_id,
             node_id,
             vid = %vid_str,
             vector_dim = vector.len(),
-            section_count,
+            sections_written = section_nodes,
+            references_written,
             citation_count,
-            cites_resolved,
-            "Graph written (HOT path — direct API, no Cypher)"
+            cites_edges_written = cites_resolved,
+            import_eligible = eligible,
+            "Parsed article materialized through direct graph API"
         );
 
         Ok(IngestResult {

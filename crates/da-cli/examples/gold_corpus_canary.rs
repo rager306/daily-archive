@@ -130,7 +130,7 @@ struct CanaryReport {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenvy::dotenv().ok();
+    let _log_guard = da_cli::logging::init_pipeline_logging("gold_corpus_canary");
     let args = Args::parse();
     let manifest_bytes = std::fs::read(&args.manifest)
         .with_context(|| format!("read {}", args.manifest.display()))?;

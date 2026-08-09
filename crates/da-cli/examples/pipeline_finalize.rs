@@ -39,6 +39,7 @@ struct SealReport {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("pipeline_finalize");
     let args = Args::parse();
     kg_storage::refuse_persistence_path_from_env()?;
     let snapshot = std::fs::read(&args.input_snapshot)

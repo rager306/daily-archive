@@ -106,6 +106,7 @@ fn parse_args() -> (Vec<String>, usize, bool) {
 
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("batch_promote_gold");
     let (ids, min_papers, write) = parse_args();
     println!(
         "batch_promote_gold: {} papers, min_papers={min_papers}, write={write}",

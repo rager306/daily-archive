@@ -58,6 +58,7 @@ struct SuiteReport {
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    let _log_guard = da_cli::logging::init_pipeline_logging("graph_task_suite");
     let args = Args::parse();
 
     // D127 honesty

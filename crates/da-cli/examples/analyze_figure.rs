@@ -62,6 +62,7 @@ struct ModelEntry {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("analyze_figure");
     let args = Args::parse();
     let context_bytes = std::fs::read(&args.context)
         .with_context(|| format!("read context {}", args.context.display()))?;

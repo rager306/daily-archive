@@ -712,17 +712,19 @@ impl ExtractionUseCase {
         }
 
         tracing::info!(
+            event = "extracted_entities_materialized",
             paper_id = %parsed.paper_id,
-            entities = extracted.len(),
-            mentions_edges,
-            found_in_edges,
+            entities_observed = extracted.len(),
+            entities_created,
+            mentions_edges_written = mentions_edges,
+            found_in_edges_written = found_in_edges,
             evidence_bundles_created,
             claims_created,
             problems_created,
-            participates_in_edges,
+            participates_in_edges_written = participates_in_edges,
             embeddings_written,
             paper_linked = paper_node_id.is_some(),
-            "Extraction complete"
+            "Extracted entities materialized with graph write deltas"
         );
 
         Ok(ExtractionResult {

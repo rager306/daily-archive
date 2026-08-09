@@ -21,6 +21,7 @@ struct GoldFile {
 
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("eval_extract");
     let paper_id = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "2507.19457".to_string());

@@ -44,6 +44,7 @@ struct ArticleMetadata {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("figure_context");
     let args = Args::parse();
     let manifest: FigureManifest = serde_json::from_slice(
         &std::fs::read(&args.manifest)

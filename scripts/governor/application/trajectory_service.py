@@ -1,5 +1,6 @@
 """Application service: trajectory — builds the full trajectory report."""
 
+import json
 import re
 from pathlib import Path
 
@@ -48,6 +49,12 @@ class TrajectoryService:
 
         # M371: reject false-green GSD evidence created after the last commit.
         drift_flags.extend(self._check_gsd_exec_evidence())
+
+        # Gold evaluation must account for every fixture and every gold entity.
+        drift_flags.extend(self._check_gold_completeness())
+
+        # Observability is an onion-aware semantic contract, not a log-call count.
+        drift_flags.extend(self._check_logging_architecture())
 
         verdict = self._derive_verdict(audit_report, drift_flags)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -157,6 +164,186 @@ class TrajectoryService:
                 evidence=f"{target['message']} Recommendation: {recs}",
             ))
 
+        return flags
+
+    def _check_logging_architecture(self) -> list[DriftFlag]:
+        """Require valuable pipeline logs without leaking transport into core layers."""
+        crates = self.root / "crates"
+        if not crates.exists():
+            return []
+
+        flags: list[DriftFlag] = []
+        pure_crates = [
+            "da-domain", "da-ports", "kg-ontology", "kg-pipeline", "kg-algorithms"
+        ]
+        boundary_violations = []
+        for crate in pure_crates:
+            cargo = crates / crate / "Cargo.toml"
+            if cargo.exists() and re.search(
+                r"(?m)^\s*(?:tracing|tracing-subscriber|tracing-appender)\s*=",
+                cargo.read_text(errors="replace"),
+            ):
+                boundary_violations.append(str(cargo.relative_to(self.root)))
+        if boundary_violations:
+            flags.append(
+                DriftFlag(
+                    flag="logging_transport_crosses_onion_boundary",
+                    severity="high",
+                    evidence="subscriber/tracing dependency in pure layer: "
+                    + ", ".join(boundary_violations),
+                    dimension="architecture",
+                )
+            )
+
+        examples_dir = crates / "da-cli" / "examples"
+        missing_roots = []
+        for path in sorted(examples_dir.glob("*.rs")):
+            if "init_pipeline_logging" not in path.read_text(errors="replace"):
+                missing_roots.append(path.name)
+        if missing_roots:
+            flags.append(
+                DriftFlag(
+                    flag="pipeline_composition_root_without_file_logging",
+                    severity="high",
+                    evidence="missing .env-backed rolling JSON init: " + ", ".join(missing_roots),
+                    dimension="observability",
+                )
+            )
+
+        pipeline = crates / "da-application" / "src" / "pipeline.rs"
+        if pipeline.exists():
+            text = pipeline.read_text(errors="replace")
+            required = ["event", "article_id", "pipeline_id", "step", "stage"]
+            missing = [field for field in required if field not in text]
+            if missing:
+                flags.append(
+                    DriftFlag(
+                        flag="pipeline_stage_logs_lack_semantic_fields",
+                        severity="high",
+                        evidence="pipeline lifecycle logs miss fields: " + ", ".join(missing),
+                        dimension="observability",
+                    )
+                )
+
+        materializers = {
+            "ingest.rs": [
+                'event = "parsed_article_materialized"', "paper_id",
+                "sections_written", "references_written", "cites_edges_written",
+            ],
+            "extraction.rs": [
+                'event = "extracted_entities_materialized"', "paper_id",
+                "entities_created", "mentions_edges_written", "found_in_edges_written",
+            ],
+        }
+        missing_materializer_fields = []
+        for filename, required in materializers.items():
+            path = crates / "da-application" / "src" / filename
+            if not path.exists():
+                continue
+            text = path.read_text(errors="replace")
+            absent = [field for field in required if field not in text]
+            if absent:
+                missing_materializer_fields.append(f"{filename}: {','.join(absent)}")
+        if missing_materializer_fields:
+            flags.append(
+                DriftFlag(
+                    flag="graph_materializer_logs_lack_write_deltas",
+                    severity="high",
+                    evidence="; ".join(missing_materializer_fields),
+                    dimension="observability",
+                )
+            )
+        return flags
+
+    def _check_gold_completeness(self) -> list[DriftFlag]:
+        """Validate source and evaluation denominators from product artifacts."""
+        base = self.root / "artifacts" / "gold_corpus"
+        manifest_path = base / "gold_corpus_manifest.json"
+        aggregate_path = base / "eval_aggregate_all_sources.json"
+        if not manifest_path.exists() and not aggregate_path.exists():
+            return []
+
+        try:
+            manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+            aggregate = json.loads(aggregate_path.read_text()) if aggregate_path.exists() else None
+        except (OSError, json.JSONDecodeError) as error:
+            return [
+                DriftFlag(
+                    flag="gold_completeness_artifact_invalid",
+                    severity="high",
+                    evidence=f"cannot read gold completeness artifact: {error}",
+                    dimension="extraction_coverage",
+                )
+            ]
+
+        flags: list[DriftFlag] = []
+        if manifest is not None:
+            fixture_count = int(manifest.get("fixture_count", -1))
+            ready_count = int(manifest.get("source_ready_count", -1))
+            unavailable_count = int(manifest.get("unavailable_count", -1))
+            if (
+                fixture_count < 0
+                or ready_count < 0
+                or unavailable_count < 0
+                or ready_count + unavailable_count != fixture_count
+            ):
+                flags.append(
+                    DriftFlag(
+                        flag="gold_manifest_counts_inconsistent",
+                        severity="high",
+                        evidence=(
+                            f"fixture={fixture_count}, source_ready={ready_count}, "
+                            f"unavailable={unavailable_count}"
+                        ),
+                        dimension="extraction_coverage",
+                    )
+                )
+            elif unavailable_count > 0:
+                flags.append(
+                    DriftFlag(
+                        flag="gold_unavailable_source_debt",
+                        severity="high",
+                        evidence=(
+                            f"{unavailable_count}/{fixture_count} gold fixtures lack a "
+                            "canonical PDF or HTML source"
+                        ),
+                        dimension="extraction_coverage",
+                    )
+                )
+
+        if aggregate is not None:
+            fixture_count = int(aggregate.get("fixture_count", -1))
+            evaluated = int(aggregate.get("evaluated_count", -1))
+            unavailable = int(aggregate.get("unavailable_count", -1))
+            failed = int(aggregate.get("parse_or_extract_failed_count", -1))
+            if min(fixture_count, evaluated, unavailable, failed) < 0 or (
+                evaluated + unavailable + failed != fixture_count
+            ):
+                flags.append(
+                    DriftFlag(
+                        flag="gold_eval_denominator_incomplete",
+                        severity="high",
+                        evidence=(
+                            f"evaluated={evaluated} + unavailable={unavailable} + "
+                            f"failed={failed} != fixture={fixture_count}"
+                        ),
+                        dimension="extraction_coverage",
+                    )
+                )
+            all_gold = int(aggregate.get("gold_entities_all_fixtures", -1))
+            evaluated_gold = int(aggregate.get("gold_entities_evaluated", -1))
+            if all_gold < 0 or evaluated_gold < 0 or evaluated_gold != all_gold:
+                flags.append(
+                    DriftFlag(
+                        flag="gold_eval_excludes_fixture_entities",
+                        severity="high",
+                        evidence=(
+                            f"evaluated gold entities={evaluated_gold}, "
+                            f"all fixture gold entities={all_gold}"
+                        ),
+                        dimension="extraction_coverage",
+                    )
+                )
         return flags
 
     def _check_gsd_exec_evidence(self) -> list[DriftFlag]:

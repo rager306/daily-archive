@@ -11,6 +11,7 @@ use da_ports::llm_client::{ChatMessage, ChatOptions, LLMClient};
 use da_ports::parser::ParsedArticle;
 use da_ports::{Clock, SystemClock};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 /// Summary generation use case (ADR-053 Layer B, full-context single-prompt).
 pub struct SummaryUseCase {
@@ -228,8 +229,15 @@ impl SummaryUseCase {
         let structured: StructuredSummary = match serde_json::from_str(cleaned) {
             Ok(s) => s,
             Err(e) => {
-                tracing::error!(paper_id, error = %e, "LLM JSON parse failed");
-                tracing::debug!(paper_id, raw = %cleaned[..cleaned.len().min(2000)], "Raw LLM response");
+                let response_sha256 = hex::encode(Sha256::digest(cleaned.as_bytes()));
+                tracing::error!(
+                    event = "summary_response_invalid_json",
+                    paper_id,
+                    error = %e,
+                    response_chars = cleaned.chars().count(),
+                    response_sha256,
+                    "LLM summary response failed JSON validation"
+                );
                 return Ok(SummaryResult {
                     paper_id: paper_id.to_string(),
                     abstract_summary: None,

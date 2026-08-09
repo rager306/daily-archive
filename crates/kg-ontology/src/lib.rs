@@ -41,7 +41,7 @@ pub use validator::{PropertySnapshot, Severity, Violation, format_violations};
 // schema_inner removed (M289-u4fzx5/S02): schema is now file-based.
 
 pub mod registry;
-pub use registry::{OntologyRegistry, TemporalClass, YamlEdgeContract};
+pub use registry::{ContractStatus, OntologyRegistry, TemporalClass, YamlEdgeContract};
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 ///
@@ -200,6 +200,8 @@ mod serde_roundtrip_tests {
     fn roundtrip_temporal_class() {
         roundtrip(&TemporalClass::Structural);
         roundtrip(&TemporalClass::Fact);
+        roundtrip(&ContractStatus::Active);
+        roundtrip(&ContractStatus::Planned);
     }
 
     // --- YamlEdgeContract ---
@@ -212,6 +214,7 @@ mod serde_roundtrip_tests {
             target_labels: vec!["Section".into(), "Reference".into()],
             temporal_class: TemporalClass::Structural,
             rationale: "structural composition".into(),
+            implementation_status: ContractStatus::Active,
         };
         roundtrip(&contract);
     }
@@ -224,6 +227,7 @@ mod serde_roundtrip_tests {
             target_labels: vec!["Citation".into()],
             temporal_class: TemporalClass::Fact,
             rationale: "bibliography fact".into(),
+            implementation_status: ContractStatus::Active,
         };
         roundtrip(&contract);
     }
@@ -236,6 +240,7 @@ mod serde_roundtrip_tests {
             target_labels: vec![],
             temporal_class: TemporalClass::Structural,
             rationale: String::new(),
+            implementation_status: ContractStatus::Active,
         };
         roundtrip(&contract);
     }

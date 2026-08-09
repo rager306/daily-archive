@@ -12,6 +12,7 @@ use da_ports::parser::ParserPort;
 
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("eval_html");
     let html_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| {

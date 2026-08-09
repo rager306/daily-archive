@@ -1,5 +1,45 @@
 # Changelog
 
+### M371 S05 T06 close seven-source debt and complete the gold denominator
+
+Recovered the seven fixtures previously labelled unavailable and proved the
+classification was primarily a resolver/catalog-layout bug: each already had a
+versioned local PDF (`{id}v1.pdf`) that exact-name discovery ignored. The shared
+source recovery operator now validates canonical/versionless arXiv identities,
+requires explicit network authorization, reuses local versioned PDFs by full
+SHA-256, atomically materializes canonical PDFs, downloads and validates a
+separate canonical HTML representation, normalizes filesystem categories, and
+writes a caller-selected checksum-bound report. Eleven tests cover traversal,
+invalid payloads, idempotency, network lock, local recovery, HTML, and category
+normalization. All seven now have both PDF and HTML in the canonical catalog.
+
+Gold discovery now accepts unique versioned PDFs and `article.html`, while
+conflicting versions fail closed. The manifest is **200/200 source-ready,
+0 unavailable**. Batches 19 and 20 executed the seven new parse/extract/embed
+chains, replayed 60/60 cache hits, and materialized onto the prior checkpoint
+with zero-write replay. The complete graph contains **200 Paper, 23,929 nodes,
+39,387 edges**; six semantic tasks PASS and D127 unlock count remains exactly
+zero. Full-denominator extraction covers all **1,439 gold entities**:
+1,439 TP / 439 FP / 0 FN, precision 0.766, recall 1.000, micro F1 0.868,
+macro F1 0.857.
+
+Governor now reads the product manifest and aggregate evaluation artifact. It
+raises high drift for unavailable source debt, inconsistent manifest counts,
+silent fixture denominator loss, excluded gold entities, or malformed evidence.
+It also enforces onion-aware semantic logging: pure domain/ports/kg crates cannot
+own tracing transport, every active CLI example must initialize `.env`-backed
+rolling JSON, stage events must carry article/pipeline/step identity, and graph
+materializers must emit node/edge write deltas. Raw LLM responses were replaced
+with response length and SHA-256 diagnostics. Eighteen governor tests and a real
+temporary `LOG_DIR` JSON/flush proof PASS.
+
+Reference audit closed three runtime drifts: `Section.embedding_sha256` is now in
+both Rust and YAML schema registries; MCP ontology resources are embedded and
+cwd-independent instead of using manual labels/stale paths; edge contracts now
+distinguish `active` from `planned`, so missing endpoints fail closed unless the
+YAML explicitly marks an ADR forward declaration as planned. This ratchets
+process completeness without hardcoding paper IDs, labels, or F1 policy.
+
 ### M371 S05 T06 complete structural gold baseline
 
 Rebuilt all 20 bounded waves under the managed structural profile. Every profile

@@ -32,6 +32,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("pipeline_semantic");
     let args = Args::parse();
     let parsed_bytes = std::fs::read(&args.parsed_article)
         .with_context(|| format!("read {}", args.parsed_article.display()))?;

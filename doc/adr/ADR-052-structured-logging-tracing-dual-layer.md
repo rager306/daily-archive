@@ -88,7 +88,7 @@ dual-layer architecture for all `da` CLI commands.
 │  ┌──────────────────┐  ┌─────────────────────────────────┐  │
 │  │  stderr layer    │  │  file layer                     │  │
 │  │  compact, ANSI   │  │  JSON, no ANSI                   │  │
-│  │  INFO+ filter    │  │  DEBUG+ filter                   │  │
+│  │  shared filter   │  │  shared filter                   │  │
 │  │  human-readable  │  │  flatten_event(true)             │  │
 │  │                  │  │  with_span_events(CLOSE)         │  │
 │  │  → terminal      │  │  → logs/da.log.YYYY-MM-DD        │  │
@@ -104,12 +104,24 @@ dual-layer architecture for all `da` CLI commands.
 | Var | Default | Purpose |
 |-----|---------|---------|
 | `LOG_DIR` | `logs/` | Directory for rolling log files |
-| `LOG_LEVEL` | `info` | Filter level (RUST_LOG overrides if set) |
-| `LOG_FORMAT` | `json` | File format: `json`, `compact`, `pretty` |
+| `LOG_LEVEL` | `info` | Shared stderr/file filter (`RUST_LOG` overrides if set) |
+
+The file format is intentionally fixed to JSON for machine-readable evidence;
+`LOG_FORMAT` is not a supported runtime option.
 
 ### Span Instrumentation Contract
 
-Pipeline functions **must** use `#[tracing::instrument]`:
+Pipeline functions **must** use `#[tracing::instrument]` or structured lifecycle
+events. Every active CLI example composition root calls
+`init_pipeline_logging`, which loads `.env`, installs stderr + rolling JSON and
+holds its `WorkerGuard` until process exit.
+
+Lifecycle events carry identity and state, not prose alone:
+
+- cache stages: `event`, `article_id`, `pipeline_id`, `step`, `stage`, disposition/checksum;
+- graph materializers: `event`, `paper_id`, node/edge/vector write deltas and D127 state;
+- failures: stable error class, retry time, payload size/hash — never raw provider text or secrets.
+
 
 ```rust
 #[tracing::instrument(skip(self, pdf_bytes), fields(paper_id = %paper_id))]
@@ -182,8 +194,8 @@ jq 'select(.event == "span_close")' logs/da.log.2026-08-05
   deleted without stopping the process.
 - **Agent-readable**: JSON logs are parseable by jq, Python, or future
   LLM agents for automated diagnostics.
-- **Per-layer filter**: operator console stays clean (INFO+) while file
-  captures full trace (DEBUG+) for debugging.
+- **Single filter contract**: `RUST_LOG` or `LOG_LEVEL` applies predictably to
+  both surfaces; INFO semantic lifecycle events remain available at defaults.
 
 ### Negative
 

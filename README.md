@@ -40,13 +40,15 @@ crates/
   da-ports/         # traits: GraphStore, DirectGraphStore, ParserPort,
                     #   Embedder, Extractor, OpenAlexClient, LLMClient,
                     #   GraphAlgorithms (PPR, neighbors)
-  da-application/   # use cases: Ingest, BatchIngest, Extraction (with embedder),
-                    #   Enrich, Healing, Scheduler
-  da-graph/         # Cypher query builders + schema DDL (26 indexes)
-  da-adapters/      # GROBID parser, HtmlParser, FdApiEmbedder,
-                    #   SamyamaGraphStore, RuleBasedExtractor, OpenAlexHttpAdapter
-  da-cli/           # binary `da` + examples (eval_batch, eval_extract,
-                    #   eval_html, suggest_whitelist)
+  da-application/   # use cases: Ingest, Extraction, Enrich, Healing, Scheduler
+  da-adapters/      # GROBID/HTML, FD API, Samyama, extraction/OpenAlex adapters
+  da-cli/           # binary `da` + cache/materialization/evaluation operators
+  da-mcp/           # read-only MCP knowledge-base access
+  kg-ontology/      # universal YAML-driven ontology registry and temporal types
+  kg-storage/       # universal graph storage ports + Samyama adapter
+  kg-embeddings/    # universal embedding port + FD API adapter
+  kg-algorithms/    # universal graph algorithms
+  kg-pipeline/      # cacheable pure pipeline contracts
 ```
 
 Dependency direction (enforced by CI):
@@ -54,9 +56,10 @@ Dependency direction (enforced by CI):
 ```
 da-domain  ──►  (no infra)
 da-ports   ──►  da-domain
-da-application / da-graph  ──►  da-domain, da-ports  (no da-adapters)
+da-application ──►  da-domain, da-ports  (no da-adapters)
 da-adapters  ──►  da-domain, da-ports, samyama
-da-cli       ──►  all of the above
+da-cli / da-mcp ──► composition and infrastructure layers
+kg-*          ──►  universal only (never da-*)
 ```
 
 ---
@@ -110,7 +113,7 @@ curl -sS http://127.0.0.1:8070/api/isalive   # true
 ## Extraction evaluation
 
 ```bash
-# Batch eval on 104 sources (100 arxiv PDF + 4 GNN textbook HTML)
+# Batch eval on all 200 reviewed gold fixtures (PDF/HTML)
 cargo run -p da-cli --example eval_batch
 
 # Single-paper extraction debug
@@ -125,7 +128,9 @@ cargo run -p da-cli --example eval_html -- \
 cargo run -p da-cli --example suggest_whitelist
 ```
 
-Current metrics: **P=0.759 R=0.999 F1=0.862** (104 sources, 746 gold entities).
+Current complete-denominator metrics: **P=0.766 R=1.000 micro-F1=0.868**
+(200/200 fixtures, 1,439 gold entities; see
+`artifacts/gold_corpus/eval_aggregate_all_sources.json`).
 
 ---
 
@@ -136,10 +141,10 @@ Current metrics: **P=0.759 R=0.999 F1=0.862** (104 sources, 746 gold entities).
 bash scripts/verify_rust_architecture.sh
 
 # Or piece-wise (preferred — avoids rocksdb test-profile rebuild):
-cargo fmt -p da-domain -p da-ports -p da-application -p da-graph -p da-adapters -p da-cli
-cargo check --workspace
+cargo fmt -p da-domain -p da-ports -p da-application -p da-adapters -p da-cli -p da-mcp
+cargo check -p da-cli
 cargo test -p da-domain --lib
-cargo test -p da-graph --lib
+cargo test -p kg-ontology --lib
 cargo test -p da-application --tests
 cargo test -p da-adapters --lib
 

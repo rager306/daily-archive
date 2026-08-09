@@ -38,8 +38,9 @@ impl NodeSchemaDef for SectionSchema {
         vec![
             ("text", FieldType::String),
             ("char_count", FieldType::Integer),
-            // Phase 3 GNN readiness — section text embedding
+            // Phase 3 GNN readiness — section text embedding and replay identity
             ("embedding", FieldType::Vector),
+            ("embedding_sha256", FieldType::String),
             // ADR-053 Layer A navigation fields (M365 S01 drift closure)
             ("path_id", FieldType::String),
             ("parent_section_id", FieldType::String),

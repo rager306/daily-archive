@@ -44,6 +44,7 @@ async fn would_be_extracted(label: &str, entity_type: &str) -> bool {
 
 #[tokio::main]
 async fn main() {
+    let _log_guard = da_cli::logging::init_pipeline_logging("suggest_whitelist");
     // Load all gold-standard fixtures
     let mut fixtures: Vec<String> = std::fs::read_dir("data/gold_standard")
         .unwrap()
