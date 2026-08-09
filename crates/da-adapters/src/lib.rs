@@ -5,6 +5,7 @@
 
 pub mod anthropic_llm;
 pub mod anthropic_multimodal;
+pub mod catalog_inventory;
 pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;
@@ -22,6 +23,7 @@ pub use anthropic_llm::AnthropicLlmClient;
 pub use anthropic_multimodal::{
     AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
 };
+pub use catalog_inventory::FilesystemCatalogInventory;
 pub use fd_embedder::FdApiEmbedder;
 pub use grobid_parser::{GrobidParser, GrobidProfile};
 pub use html_parser::HtmlParser;

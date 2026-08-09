@@ -1,5 +1,30 @@
 # Changelog
 
+### M371 S05 catalog reconciliation inventory
+
+Added the first safe catalog-repair slice as a hexagonal, read-only capability:
+typed findings in `da-domain`, a `CatalogInventoryPort`, a deterministic
+filesystem adapter, an application reconciliation use case, and the
+`catalog_reconcile` CLI example with atomic report output and optional
+fail-on-findings. No catalog metadata, index or graph state is mutated.
+
+The real inventory now classifies 230 metadata records, 254 PDFs, 17 content
+HTML files and **197 actionable findings**: 165 genuinely missing historical
+M056 variants, 31 asset roots without `article.json`, and one identity with
+conflicting PDF checksums. An initial 233-count was rejected during TDD because
+the adapter incorrectly resolved article-relative and repo-relative variant
+paths; multi-root resolution corrected the false positives before any apply
+mode existed. Finding keys are stable snake_case and output ordering is
+deterministic.
+
+Gold manifest composition now emits a semantic aggregate event. Governor also
+validates every manifest record structurally: ready sources require a live
+PDF/HTML path and SHA-256, unavailable sources require a typed reason and no
+path/hash, and metadata presence is explicitly not a source-readiness
+requirement. Twenty governor tests PASS; the committed 200/200 manifest passes
+the live-path check. Application log replay confirmed flat JSON composition and
+catalog inventory events under an isolated `LOG_DIR`.
+
 ### M371 S05 T06 close seven-source debt and complete the gold denominator
 
 Recovered the seven fixtures previously labelled unavailable and proved the

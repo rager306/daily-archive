@@ -310,6 +310,47 @@ class TrajectoryService:
                         dimension="extraction_coverage",
                     )
                 )
+            records = manifest.get("records")
+            if records is not None:
+                invalid_records = []
+                if not isinstance(records, list) or len(records) != fixture_count:
+                    invalid_records.append(
+                        f"records={len(records) if isinstance(records, list) else 'non-list'} "
+                        f"fixture={fixture_count}"
+                    )
+                else:
+                    for record in records:
+                        paper_id = str(record.get("paper_id", "unknown"))
+                        source = record.get("source") or {}
+                        kind = source.get("kind")
+                        path = source.get("path")
+                        sha256 = source.get("sha256")
+                        reason = source.get("unavailable_reason")
+                        if kind in ("pdf", "html"):
+                            candidate = self.root / str(path) if path else None
+                            if (
+                                not path
+                                or not isinstance(sha256, str)
+                                or len(sha256) != 64
+                                or reason is not None
+                                or candidate is None
+                                or not candidate.is_file()
+                            ):
+                                invalid_records.append(f"{paper_id}: invalid ready source")
+                        elif kind == "unavailable":
+                            if path is not None or sha256 is not None or not reason:
+                                invalid_records.append(f"{paper_id}: invalid unavailable source")
+                        else:
+                            invalid_records.append(f"{paper_id}: unknown source kind {kind}")
+                if invalid_records:
+                    flags.append(
+                        DriftFlag(
+                            flag="gold_manifest_record_integrity_invalid",
+                            severity="high",
+                            evidence="; ".join(invalid_records[:10]),
+                            dimension="extraction_coverage",
+                        )
+                    )
 
         if aggregate is not None:
             fixture_count = int(aggregate.get("fixture_count", -1))

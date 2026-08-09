@@ -5,10 +5,12 @@
 //! ADR-040 §11.3: Migration framework.
 
 pub mod artifact_stage;
+pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
 
 pub use artifact_stage::ArtifactPayloadStage;
+pub use catalog_reconcile::CatalogReconcileUseCase;
 pub use ingest::IngestUseCase;
 pub use pipeline::{
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,

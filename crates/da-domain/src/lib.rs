@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod article;
+pub mod catalog;
 pub mod cluster;
 pub mod domain;
 pub mod edge_contract;

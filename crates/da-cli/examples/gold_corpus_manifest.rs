@@ -27,6 +27,16 @@ fn main() -> Result<()> {
         .map_err(anyhow::Error::msg)
         .context("build gold corpus manifest")?;
     write_manifest(&args.output, &manifest).map_err(anyhow::Error::msg)?;
+    tracing::info!(
+        event = "gold_corpus_manifest_built",
+        fixture_count = manifest.fixture_count,
+        source_ready_count = manifest.source_ready_count,
+        unavailable_count = manifest.unavailable_count,
+        batch_count = manifest.batch_count,
+        batch_size = manifest.batch_size,
+        output = %args.output.display(),
+        "Gold corpus manifest built from live catalog"
+    );
     println!(
         "gold_corpus fixtures={} ready={} unavailable={} batches={} batch_size={}",
         manifest.fixture_count,

@@ -334,6 +334,49 @@ def test_gold_completeness_accepts_complete_artifacts_and_ignores_absence():
     assert service._check_gold_completeness() == []
 
 
+def test_gold_completeness_flags_ready_record_without_live_path_or_checksum():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(
+        service.root / "artifacts/gold_corpus/gold_corpus_manifest.json",
+        json.dumps({
+            "fixture_count": 1,
+            "source_ready_count": 1,
+            "unavailable_count": 0,
+            "records": [{
+                "paper_id": "synthetic-a",
+                "source": {"kind": "pdf", "path": "missing.pdf", "sha256": None,
+                           "unavailable_reason": None},
+                "layers": {"article_metadata": False},
+            }],
+        }),
+    )
+    flags = service._check_gold_completeness()
+    assert [flag.flag for flag in flags] == ["gold_manifest_record_integrity_invalid"]
+
+
+def test_gold_completeness_accepts_ready_without_article_metadata():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    source = service.root / "catalog/paper.pdf"
+    _write(source, "pdf")
+    _write(
+        service.root / "artifacts/gold_corpus/gold_corpus_manifest.json",
+        json.dumps({
+            "fixture_count": 1,
+            "source_ready_count": 1,
+            "unavailable_count": 0,
+            "records": [{
+                "paper_id": "synthetic-b",
+                "source": {"kind": "pdf", "path": "catalog/paper.pdf", "sha256": "a" * 64,
+                           "unavailable_reason": None},
+                "layers": {"article_metadata": False},
+            }],
+        }),
+    )
+    assert service._check_gold_completeness() == []
+
+
 def test_gold_completeness_flags_malformed_artifact_instead_of_crashing():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
