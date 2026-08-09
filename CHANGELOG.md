@@ -15,10 +15,15 @@ conflict was rejected by TDD: seven unrelated `original.pdf` files had been
 incorrectly grouped by basename instead of article-directory identity. An initial 233-count was rejected during TDD because
 the adapter incorrectly resolved article-relative and repo-relative variant
 paths; multi-root resolution corrected the false positives before any apply
-mode existed. Finding keys are stable snake_case and output ordering is
-deterministic. Of the 31 metadata gaps, seven have exactly one versioned donor
-with a checksum-identical PDF; they form the next bounded typed-plan/apply wave,
-while the remaining 24 stay blocked from automatic mutation.
+mode existed. Finding keys are stable snake_case and output ordering is deterministic. The
+pure reconciliation planner is now delivered: inventory and actions are
+SHA-256-bound, action IDs are content-addressed, duplicate/permuted findings
+produce the same plan, and risk ordering is explicit. Of 31 metadata gaps,
+exactly seven have one versioned donor with checksum-identical PDF content and a
+canonical lowercase target category; they become low-risk actions without any
+ID allowlist. The remaining 24 are high-risk and 165 unresolved historical
+variants are blocked. Apply is intentionally absent, so current writes are zero
+by construction; atomic mutation/rollback/replay is the next slice.
 
 Gold manifest composition now emits a semantic aggregate event. Governor also
 validates every manifest record structurally: ready sources require a live

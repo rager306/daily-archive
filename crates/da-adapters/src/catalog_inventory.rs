@@ -1,6 +1,6 @@
 //! Filesystem adapter for deterministic, read-only catalog reconciliation.
 
-use da_domain::catalog::{CatalogFinding, CatalogFindingKind};
+use da_domain::catalog::{CatalogFinding, CatalogFindingKind, CatalogRepairCandidate};
 use da_ports::{CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -110,13 +110,15 @@ impl CatalogInventoryPort for FilesystemCatalogInventory {
                     .and_then(|v| v.to_str())
                     .map(canonical_id)
                     .unwrap_or_else(|| "unknown".into());
-                findings.push(finding(
+                let mut gap = finding(
                     CatalogFindingKind::MissingArticleMetadata,
                     &id,
                     &root,
                     &self.root,
                     "source asset exists without article.json",
-                ));
+                );
+                gap.repair_candidate = find_metadata_donor(&root, &id, &self.root)?;
+                findings.push(gap);
             }
         }
         for (id, paths) in pdfs_by_identity(&pdfs) {
@@ -136,10 +138,11 @@ impl CatalogInventoryPort for FilesystemCatalogInventory {
             }
         }
         findings.sort_by(|a, b| {
-            (format!("{:?}", a.kind), &a.canonical_id, &a.path).cmp(&(
-                format!("{:?}", b.kind),
+            (a.kind.as_str(), &a.canonical_id, &a.path, &a.evidence).cmp(&(
+                b.kind.as_str(),
                 &b.canonical_id,
                 &b.path,
+                &b.evidence,
             ))
         });
         Ok(CatalogInventorySnapshot {
@@ -150,6 +153,75 @@ impl CatalogInventoryPort for FilesystemCatalogInventory {
             findings,
         })
     }
+}
+
+fn find_metadata_donor(
+    target_root: &Path,
+    canonical_identity: &str,
+    catalog_root: &Path,
+) -> Result<Option<CatalogRepairCandidate>, CatalogInventoryError> {
+    let Some(parent) = target_root.parent() else {
+        return Ok(None);
+    };
+    let category_is_canonical = parent
+        .file_name()
+        .and_then(|value| value.to_str())
+        .is_some_and(|value| value == value.to_ascii_lowercase());
+    if !category_is_canonical {
+        return Ok(None);
+    }
+    let target_pdfs = files_with_extension(target_root, "pdf").map_err(err)?;
+    if target_pdfs.len() != 1 {
+        return Ok(None);
+    }
+    let target_sha256 = sha256(&target_pdfs[0]).map_err(err)?;
+    let mut donors = Vec::new();
+    for entry in std::fs::read_dir(parent).map_err(err)? {
+        let path = entry.map_err(err)?.path();
+        if path == target_root || !path.is_dir() {
+            continue;
+        }
+        let identity = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .map(canonical_id);
+        let metadata = path.join("article.json");
+        if identity.as_deref() != Some(canonical_identity) || !metadata.is_file() {
+            continue;
+        }
+        let donor_pdfs = files_with_extension(&path, "pdf").map_err(err)?;
+        let donor_hashes = donor_pdfs
+            .iter()
+            .map(|pdf| sha256(pdf).map_err(err))
+            .collect::<Result<BTreeSet<_>, _>>()?;
+        if donor_hashes.len() == 1 && donor_hashes.contains(&target_sha256) {
+            donors.push(metadata);
+        }
+    }
+    if donors.len() != 1 {
+        return Ok(None);
+    }
+    Ok(Some(CatalogRepairCandidate {
+        donor_metadata_path: donors[0]
+            .strip_prefix(catalog_root)
+            .unwrap_or(&donors[0])
+            .display()
+            .to_string(),
+        content_sha256: target_sha256,
+    }))
+}
+
+fn files_with_extension(root: &Path, extension: &str) -> std::io::Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+    collect_files(root, &mut files)?;
+    Ok(files
+        .into_iter()
+        .filter(|path| {
+            path.extension()
+                .and_then(|value| value.to_str())
+                .is_some_and(|value| value.eq_ignore_ascii_case(extension))
+        })
+        .collect())
 }
 
 fn resolve_variant_path(catalog_root: &Path, metadata_path: &Path, value: &str) -> Option<PathBuf> {
@@ -232,6 +304,7 @@ fn finding(
             .display()
             .to_string(),
         evidence: evidence.into(),
+        repair_candidate: None,
     }
 }
 
@@ -279,6 +352,38 @@ mod tests {
         );
         std::fs::remove_dir_all(r).unwrap();
     }
+    #[test]
+    fn checksum_equal_versioned_metadata_is_a_low_risk_repair_candidate() {
+        let r = root("metadata-donor");
+        let donor = r.join("arxiv/cs-ai/1234.5678v1");
+        std::fs::create_dir_all(donor.join("source")).unwrap();
+        std::fs::write(donor.join("source/1234.5678v1.pdf"), b"same").unwrap();
+        std::fs::write(
+            donor.join("article.json"),
+            r#"{"article_key":"1234.5678v1"}"#,
+        )
+        .unwrap();
+        let target = r.join("arxiv/cs-ai/1234.5678");
+        std::fs::create_dir_all(target.join("source")).unwrap();
+        std::fs::write(target.join("source/1234.5678.pdf"), b"same").unwrap();
+        let snapshot = FilesystemCatalogInventory::new(&r).inventory().unwrap();
+        let gap = snapshot
+            .findings
+            .iter()
+            .find(|finding| {
+                finding.kind == CatalogFindingKind::MissingArticleMetadata
+                    && finding.canonical_id == "1234.5678"
+            })
+            .unwrap();
+        let candidate = gap.repair_candidate.as_ref().unwrap();
+        assert_eq!(
+            candidate.donor_metadata_path,
+            "arxiv/cs-ai/1234.5678v1/article.json"
+        );
+        assert_eq!(candidate.content_sha256.len(), 64);
+        std::fs::remove_dir_all(r).unwrap();
+    }
+
     #[test]
     fn original_pdf_names_are_scoped_by_article_directory() {
         let r = root("original-scoped");
