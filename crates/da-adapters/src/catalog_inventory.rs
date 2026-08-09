@@ -181,11 +181,19 @@ fn article_root(path: &Path) -> Option<PathBuf> {
 }
 fn pdfs_by_identity(paths: &[PathBuf]) -> BTreeMap<String, Vec<PathBuf>> {
     let mut out = BTreeMap::new();
-    for p in paths {
-        if let Some(stem) = p.file_stem().and_then(|v| v.to_str()) {
-            out.entry(canonical_id(stem))
+    for path in paths {
+        let identity = article_root(path)
+            .and_then(|root| root.file_name().map(|value| value.to_owned()))
+            .and_then(|value| value.to_str().map(canonical_id))
+            .or_else(|| {
+                path.file_stem()
+                    .and_then(|value| value.to_str())
+                    .map(canonical_id)
+            });
+        if let Some(identity) = identity {
+            out.entry(identity)
                 .or_insert_with(Vec::new)
-                .push(p.clone());
+                .push(path.clone());
         }
     }
     out
@@ -271,6 +279,23 @@ mod tests {
         );
         std::fs::remove_dir_all(r).unwrap();
     }
+    #[test]
+    fn original_pdf_names_are_scoped_by_article_directory() {
+        let r = root("original-scoped");
+        for (id, bytes) in [("1234.5678v1", b"one" as &[u8]), ("9999.0001v1", b"two")] {
+            let p = r.join(format!("arxiv/cs-ai/{id}/source"));
+            std::fs::create_dir_all(&p).unwrap();
+            std::fs::write(p.join("original.pdf"), bytes).unwrap();
+        }
+        let s = FilesystemCatalogInventory::new(&r).inventory().unwrap();
+        assert!(
+            !s.findings
+                .iter()
+                .any(|f| f.kind == CatalogFindingKind::ConflictingIdentityAssets)
+        );
+        std::fs::remove_dir_all(r).unwrap();
+    }
+
     #[test]
     fn conflicting_versions_fail_visible() {
         let r = root("conflict");

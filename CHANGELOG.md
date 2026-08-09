@@ -9,13 +9,16 @@ filesystem adapter, an application reconciliation use case, and the
 fail-on-findings. No catalog metadata, index or graph state is mutated.
 
 The real inventory now classifies 230 metadata records, 254 PDFs, 17 content
-HTML files and **197 actionable findings**: 165 genuinely missing historical
-M056 variants, 31 asset roots without `article.json`, and one identity with
-conflicting PDF checksums. An initial 233-count was rejected during TDD because
+HTML files and **196 actionable findings**: 165 genuinely missing historical
+M056 variants and 31 asset roots without `article.json`. An initial checksum
+conflict was rejected by TDD: seven unrelated `original.pdf` files had been
+incorrectly grouped by basename instead of article-directory identity. An initial 233-count was rejected during TDD because
 the adapter incorrectly resolved article-relative and repo-relative variant
 paths; multi-root resolution corrected the false positives before any apply
 mode existed. Finding keys are stable snake_case and output ordering is
-deterministic.
+deterministic. Of the 31 metadata gaps, seven have exactly one versioned donor
+with a checksum-identical PDF; they form the next bounded typed-plan/apply wave,
+while the remaining 24 stay blocked from automatic mutation.
 
 Gold manifest composition now emits a semantic aggregate event. Governor also
 validates every manifest record structurally: ready sources require a live
