@@ -1,5 +1,28 @@
 # Changelog
 
+### ADR-055 ACAP typed runtime vertical
+
+Implemented the first product ACAP slice across the onion. `da-domain` now owns
+validated SHA-256 digests, boundary modes, typed missingness, article FSM,
+conservation/count/write observations and fail-closed report normalization.
+`da-ports` defines an immutable assurance report store; `da-adapters` provides a
+race-safe atomic filesystem implementation with conflicting-first-write,
+tamper, identity-binding, traversal and symlink-escape tests.
+
+`da-application` now checks `ParsedArticle -> Paper/Section` graph readback using
+UTF-8 byte counts and checksums, parsed/ingest/graph denominators, structural
+minimums, graph-wide D127 scans and explicit replay evidence. Missing replay
+observation is a hard failure rather than an implied zero. The shared application
+MockGraphStore was corrected to delegate boolean reads, closing a false-PASS gap
+in D127 tests.
+
+The attempted direct gold-wave wiring was deliberately removed after review:
+existing `NetWrites` counts creations but cannot detect property rewrites, so it
+cannot truthfully prove replay idempotency. The next product slice instruments
+all graph mutations and only then connects durable ACAP reports and the
+same-process 20-wave rematerializer. Full architecture/governor gate PASS under
+GSD evidence `6b7c8f75-fd1b-4f15-b8e2-71d8d791f338`.
+
 ### ADR-055 Article Context Assurance Plane
 
 Accepted and materialized ADR-055 plus the executable

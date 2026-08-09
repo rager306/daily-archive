@@ -5,11 +5,16 @@
 //! ADR-040 §11.3: Migration framework.
 
 pub mod artifact_stage;
+pub mod assurance;
 pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
 
 pub use artifact_stage::ArtifactPayloadStage;
+pub use assurance::{
+    MaterializationAssuranceUseCase, MaterializationReadback, MaterializationReplayObservation,
+    MaterializedSectionObservation,
+};
 pub use catalog_reconcile::CatalogReconcileUseCase;
 pub use ingest::IngestUseCase;
 pub use pipeline::{

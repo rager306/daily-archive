@@ -4,6 +4,7 @@
 //! These traits define the boundaries between our application and external systems.
 
 pub mod algorithms;
+pub mod assurance;
 pub mod catalog;
 pub mod clock;
 pub mod embedder;
@@ -19,6 +20,7 @@ pub mod pipeline_cache;
 pub mod pipeline_stage;
 
 pub use algorithms::GraphAlgorithms;
+pub use assurance::{AssuranceReportStore, AssuranceStoreError};
 pub use catalog::{
     CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot, CatalogMutationPort,
     CatalogWriteDisposition,

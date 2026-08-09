@@ -5,6 +5,7 @@
 
 pub mod anthropic_llm;
 pub mod anthropic_multimodal;
+pub mod assurance_store;
 pub mod catalog_inventory;
 pub mod catalog_mutation;
 pub mod fd_embedder;
@@ -24,6 +25,7 @@ pub use anthropic_llm::AnthropicLlmClient;
 pub use anthropic_multimodal::{
     AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
 };
+pub use assurance_store::FilesystemAssuranceReportStore;
 pub use catalog_inventory::FilesystemCatalogInventory;
 pub use catalog_mutation::FilesystemCatalogMutation;
 pub use fd_embedder::FdApiEmbedder;

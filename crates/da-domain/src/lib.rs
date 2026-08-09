@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod article;
+pub mod assurance;
 pub mod catalog;
 pub mod cluster;
 pub mod domain;
@@ -38,6 +39,11 @@ pub mod yaml_schema_adapter;
 pub use article::{
     Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
     InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
+};
+pub use assurance::{
+    ACAP_POLICY_ID, ACAP_REPORT_SCHEMA_VERSION, ArticleAssuranceReport, ArticleContextState,
+    AssuranceError, AssuranceVerdict, BoundaryMode, ConservationObservation, ContentDigest,
+    CountObservation, LayerAssuranceResult, MissingnessReason, WriteDelta,
 };
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,

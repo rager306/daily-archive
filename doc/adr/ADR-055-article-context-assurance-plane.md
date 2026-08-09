@@ -194,9 +194,16 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
 
 ## Implementation sequence
 
-1. Policy and governor validation.
-2. Typed ACAP domain/port/report contracts.
-3. Required evidence for source through materialization.
+1. Policy and governor validation. **Delivered.**
+2. Typed ACAP domain/port/report contracts. **Delivered:** validated content digests,
+   FSM/missingness/boundary modes, conservation/count/write observations,
+   fail-closed verdict derivation, report-store port, immutable atomic filesystem
+   adapter, and a graph-readback materialization checker.
+3. Required evidence for source through materialization. **In progress.** The
+   checker reads Paper/Section values and scans graph-wide D127 state, but durable
+   replay evidence remains blocked on graph-write instrumentation: existing
+   create counters do not observe property rewrites and therefore cannot prove
+   replay net writes are zero. Missing replay observation is a hard failure.
 4. Refresh 200-paper checkpoint with new preservation fields.
 5. Prompt registry and typed ContextBundle.
 6. Summary/enrichment/resolution evidence.

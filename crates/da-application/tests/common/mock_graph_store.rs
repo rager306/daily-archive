@@ -186,6 +186,9 @@ impl DirectGraphStore for MockGraphStore {
     async fn get_node_property_int(&self, node_id: u64, key: &str) -> Option<i64> {
         self.inner.get_node_property_int(node_id, key).await
     }
+    async fn get_node_property_bool(&self, node_id: u64, key: &str) -> Option<bool> {
+        self.inner.get_node_property_bool(node_id, key).await
+    }
     async fn find_node_by_string_property(
         &self,
         label: &str,

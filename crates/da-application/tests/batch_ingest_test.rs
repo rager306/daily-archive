@@ -9,7 +9,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
-use da_application::{batch_ingest_pdfs, ingest::IngestUseCase};
+use da_application::{
+    MaterializationAssuranceUseCase, MaterializationReplayObservation, batch_ingest_pdfs,
+    ingest::IngestUseCase,
+};
+use da_domain::{AssuranceVerdict, ContentDigest, WriteDelta};
 use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
@@ -184,7 +188,7 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
         tei_xml: None,
         pdf_hash: "cached-hash-long".into(),
     };
-    ingest
+    let ingest_result = ingest
         .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
         .await
         .unwrap();
@@ -223,6 +227,45 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
             .await
             .as_deref(),
         Some(expected_sha256.as_str())
+    );
+
+    // ADR-055 Contour 3/4: checker obtains sink values from the real graph
+    // port rather than receiving a synthetic copy of the expected values.
+    let assurance = MaterializationAssuranceUseCase::new()
+        .evaluate_graph(
+            &store,
+            &parsed,
+            &ingest_result,
+            MaterializationReplayObservation::Observed(WriteDelta::default()),
+            ContentDigest::of_text("test-policy"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(assurance.verdict, AssuranceVerdict::Pass);
+    assert!(assurance.layer_results[0].hard_failures.is_empty());
+
+    // D127 scan is graph-wide: an unlock on a non-Paper/Section label must not
+    // evade the materialization assurance gate.
+    let rogue = store.create_node("Entity").await.unwrap();
+    store
+        .set_node_property_bool(rogue, "import_eligible", true)
+        .await
+        .unwrap();
+    let blocked = MaterializationAssuranceUseCase::new()
+        .evaluate_graph(
+            &store,
+            &parsed,
+            &ingest_result,
+            MaterializationReplayObservation::Observed(WriteDelta::default()),
+            ContentDigest::of_text("test-policy"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(blocked.verdict, AssuranceVerdict::Fail);
+    assert!(
+        blocked.layer_results[0]
+            .hard_failures
+            .contains(&"d127_unlock_count:1".into())
     );
 }
 
