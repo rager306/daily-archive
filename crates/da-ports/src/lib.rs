@@ -19,7 +19,10 @@ pub mod pipeline_cache;
 pub mod pipeline_stage;
 
 pub use algorithms::GraphAlgorithms;
-pub use catalog::{CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot};
+pub use catalog::{
+    CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot, CatalogMutationPort,
+    CatalogWriteDisposition,
+};
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use embedder::Embedder;
 pub use evidence_store::EvidenceStore;

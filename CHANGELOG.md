@@ -28,7 +28,13 @@ bibliographic identity/source classification from the donor, rebuilds PDF/HTML
 variants from live target descriptors, binds sizes and SHA-256, resets all
 readiness/import claims, records D127 false, and refuses traversal or checksum
 mismatch. Milestone-specific donor overrides, loader events and stale versioned
-URLs are not inherited. Atomic mutation/rollback/replay remains the next slice.
+URLs are not inherited. The mutation boundary and state-based application contract are now delivered:
+`CatalogMutationPort` exposes donor read, target asset description and atomic
+write-if-absent; `apply_low` rejects stale inventory fingerprints before I/O,
+filters to low metadata actions, produces typed receipts, and proves first-write
+plus unchanged replay against a state fake. No filesystem implementation or
+real catalog mutation is included yet; the same contract moves to the real
+adapter next.
 
 Gold manifest composition now emits a semantic aggregate event. Governor also
 validates every manifest record structurally: ready sources require a live

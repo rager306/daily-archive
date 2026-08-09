@@ -118,6 +118,36 @@ pub struct CatalogAssetDescriptor {
     pub byte_size: u64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CatalogApplyDisposition {
+    Applied,
+    SkippedUnchanged,
+    Rejected,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CatalogApplyResult {
+    pub action_id: String,
+    pub disposition: CatalogApplyDisposition,
+    pub target_metadata_path: String,
+    pub metadata_sha256: Option<String>,
+    pub evidence: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CatalogApplyReport {
+    pub schema_version: String,
+    pub plan_inventory_sha256: String,
+    pub live_inventory_sha256: String,
+    pub attempted: usize,
+    pub applied: usize,
+    pub skipped: usize,
+    pub rejected: usize,
+    pub write_ops: usize,
+    pub results: Vec<CatalogApplyResult>,
+}
+
 impl CatalogReconcilePlan {
     pub fn auto_applicable_count(&self) -> usize {
         self.actions

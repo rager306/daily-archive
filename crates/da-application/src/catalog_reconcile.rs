@@ -1,10 +1,13 @@
 //! Read-only catalog reconciliation use case.
 
 use da_domain::catalog::{
-    CatalogAction, CatalogActionKind, CatalogActionRisk, CatalogAssetDescriptor, CatalogAssetKind,
+    CatalogAction, CatalogActionKind, CatalogActionRisk, CatalogApplyDisposition,
+    CatalogApplyReport, CatalogApplyResult, CatalogAssetDescriptor, CatalogAssetKind,
     CatalogFindingKind, CatalogInventoryReport, CatalogReconcilePlan,
 };
-use da_ports::{CatalogInventoryError, CatalogInventoryPort};
+use da_ports::{
+    CatalogInventoryError, CatalogInventoryPort, CatalogMutationPort, CatalogWriteDisposition,
+};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -192,6 +195,108 @@ impl<P: CatalogInventoryPort> CatalogReconcileUseCase<P> {
         }))
     }
 
+    pub fn inventory_sha256(report: &CatalogInventoryReport) -> String {
+        let mut canonical = report.clone();
+        canonical.findings.sort_by(|left, right| {
+            (left.kind, &left.canonical_id, &left.path, &left.evidence).cmp(&(
+                right.kind,
+                &right.canonical_id,
+                &right.path,
+                &right.evidence,
+            ))
+        });
+        hex::encode(Sha256::digest(
+            serde_json::to_vec(&canonical).expect("catalog inventory must serialize"),
+        ))
+    }
+
+    pub fn apply_low<M: CatalogMutationPort>(
+        plan: &CatalogReconcilePlan,
+        live_report: &CatalogInventoryReport,
+        mutation: &M,
+    ) -> Result<CatalogApplyReport, CatalogInventoryError> {
+        let live_inventory_sha256 = Self::inventory_sha256(live_report);
+        if live_inventory_sha256 != plan.source_inventory_sha256 {
+            return Err(CatalogInventoryError::Infrastructure(format!(
+                "stale catalog plan: plan={} live={live_inventory_sha256}",
+                plan.source_inventory_sha256
+            )));
+        }
+        let mut results = Vec::new();
+        let mut write_ops = 0;
+        for action in plan.actions.iter().filter(|action| {
+            action.risk == CatalogActionRisk::Low
+                && action.kind == CatalogActionKind::MaterializeMissingMetadata
+        }) {
+            let donor_path = action.donor_metadata_path.as_deref().ok_or_else(|| {
+                CatalogInventoryError::Infrastructure(format!(
+                    "low action {} lacks donor metadata path",
+                    action.action_id
+                ))
+            })?;
+            let donor_bytes = mutation.read_metadata(donor_path)?;
+            let donor: serde_json::Value =
+                serde_json::from_slice(&donor_bytes).map_err(|error| {
+                    CatalogInventoryError::Infrastructure(format!(
+                        "invalid donor metadata {donor_path}: {error}"
+                    ))
+                })?;
+            let assets = mutation.describe_assets(&action.target_path)?;
+            let transformed = Self::transform_metadata(action, &donor, &assets)?;
+            let mut bytes = serde_json::to_vec_pretty(&transformed).map_err(|error| {
+                CatalogInventoryError::Infrastructure(format!(
+                    "cannot serialize action {}: {error}",
+                    action.action_id
+                ))
+            })?;
+            bytes.push(b'\n');
+            let metadata_sha256 = hex::encode(Sha256::digest(&bytes));
+            let target = format!("{}/article.json", action.target_path.trim_end_matches('/'));
+            let write = mutation.write_metadata_atomic_if_absent(&target, &bytes)?;
+            let (disposition, evidence) = match write {
+                CatalogWriteDisposition::Applied => {
+                    write_ops += 1;
+                    (
+                        CatalogApplyDisposition::Applied,
+                        "metadata committed atomically",
+                    )
+                }
+                CatalogWriteDisposition::Unchanged => (
+                    CatalogApplyDisposition::SkippedUnchanged,
+                    "identical metadata already present",
+                ),
+            };
+            results.push(CatalogApplyResult {
+                action_id: action.action_id.clone(),
+                disposition,
+                target_metadata_path: target,
+                metadata_sha256: Some(metadata_sha256),
+                evidence: evidence.into(),
+            });
+        }
+        results.sort_by(|left, right| left.action_id.cmp(&right.action_id));
+        Ok(CatalogApplyReport {
+            schema_version: "catalog-apply-report-v1".into(),
+            plan_inventory_sha256: plan.source_inventory_sha256.clone(),
+            live_inventory_sha256,
+            attempted: results.len(),
+            applied: results
+                .iter()
+                .filter(|result| result.disposition == CatalogApplyDisposition::Applied)
+                .count(),
+            skipped: results
+                .iter()
+                .filter(|result| result.disposition == CatalogApplyDisposition::SkippedUnchanged)
+                .count(),
+            rejected: results
+                .iter()
+                .filter(|result| result.disposition == CatalogApplyDisposition::Rejected)
+                .count(),
+            write_ops,
+            results,
+        })
+    }
+
     pub fn plan(report: &CatalogInventoryReport) -> CatalogReconcilePlan {
         let mut canonical = report.clone();
         canonical.findings.sort_by(|left, right| {
@@ -202,9 +307,7 @@ impl<P: CatalogInventoryPort> CatalogReconcileUseCase<P> {
                 &right.evidence,
             ))
         });
-        let source_inventory_sha256 = hex::encode(Sha256::digest(
-            serde_json::to_vec(&canonical).expect("catalog inventory must serialize"),
-        ));
+        let source_inventory_sha256 = Self::inventory_sha256(&canonical);
         let mut seen = BTreeSet::new();
         let mut actions = Vec::new();
         for finding in canonical.findings {
@@ -312,8 +415,48 @@ impl<P: CatalogInventoryPort> CatalogReconcileUseCase<P> {
 mod tests {
     use super::*;
     use da_domain::catalog::{CatalogFinding, CatalogFindingKind};
-    use da_ports::CatalogInventorySnapshot;
+    use da_ports::{CatalogInventorySnapshot, CatalogWriteDisposition};
+    use std::sync::Mutex;
     struct Fake;
+    struct MutationFake {
+        files: Mutex<BTreeMap<String, Vec<u8>>>,
+        assets: Vec<CatalogAssetDescriptor>,
+    }
+    impl CatalogMutationPort for MutationFake {
+        fn read_metadata(&self, relative_path: &str) -> Result<Vec<u8>, CatalogInventoryError> {
+            self.files
+                .lock()
+                .unwrap()
+                .get(relative_path)
+                .cloned()
+                .ok_or_else(|| {
+                    CatalogInventoryError::Infrastructure(format!("missing {relative_path}"))
+                })
+        }
+        fn describe_assets(
+            &self,
+            _article_root: &str,
+        ) -> Result<Vec<CatalogAssetDescriptor>, CatalogInventoryError> {
+            Ok(self.assets.clone())
+        }
+        fn write_metadata_atomic_if_absent(
+            &self,
+            relative_path: &str,
+            bytes: &[u8],
+        ) -> Result<CatalogWriteDisposition, CatalogInventoryError> {
+            let mut files = self.files.lock().unwrap();
+            match files.get(relative_path) {
+                Some(existing) if existing == bytes => Ok(CatalogWriteDisposition::Unchanged),
+                Some(_) => Err(CatalogInventoryError::Infrastructure(
+                    "target exists with different content".into(),
+                )),
+                None => {
+                    files.insert(relative_path.into(), bytes.to_vec());
+                    Ok(CatalogWriteDisposition::Applied)
+                }
+            }
+        }
+    }
     impl CatalogInventoryPort for Fake {
         fn inventory(&self) -> Result<CatalogInventorySnapshot, CatalogInventoryError> {
             Ok(CatalogInventorySnapshot {
@@ -340,6 +483,41 @@ mod tests {
         assert_eq!(plan.actions.len(), 1);
         assert_eq!(plan.actions[0].risk, CatalogActionRisk::Blocked);
         assert_eq!(plan.auto_applicable_count(), 0);
+    }
+
+    #[test]
+    fn apply_low_is_fenced_and_state_based() {
+        let mut report = CatalogReconcileUseCase::new(Fake).inspect().unwrap();
+        report.findings[0].kind = CatalogFindingKind::MissingArticleMetadata;
+        report.findings[0].path = "article_catalog/arxiv/cs-ai/x".into();
+        report.findings[0].repair_candidate = Some(da_domain::catalog::CatalogRepairCandidate {
+            donor_metadata_path: "donor.json".into(),
+            content_sha256: "f".repeat(64),
+        });
+        let plan = CatalogReconcileUseCase::<Fake>::plan(&report);
+        let mutation = MutationFake {
+            files: Mutex::new(BTreeMap::from([(
+                "donor.json".into(),
+                serde_json::to_vec(&serde_json::json!({"identity":{"title":"A paper"}})).unwrap(),
+            )])),
+            assets: vec![CatalogAssetDescriptor {
+                kind: CatalogAssetKind::Pdf,
+                relative_path: "source/paper.pdf".into(),
+                sha256: "f".repeat(64),
+                byte_size: 1,
+            }],
+        };
+        let first = CatalogReconcileUseCase::<Fake>::apply_low(&plan, &report, &mutation).unwrap();
+        assert_eq!((first.applied, first.write_ops), (1, 1));
+        let replay = CatalogReconcileUseCase::<Fake>::apply_low(&plan, &report, &mutation).unwrap();
+        assert_eq!(
+            (replay.applied, replay.skipped, replay.write_ops),
+            (0, 1, 0)
+        );
+        let mut changed = report.clone();
+        changed.pdf_count += 1;
+        assert!(CatalogReconcileUseCase::<Fake>::apply_low(&plan, &changed, &mutation).is_err());
+        assert_eq!(mutation.files.lock().unwrap().len(), 2);
     }
 
     #[test]
