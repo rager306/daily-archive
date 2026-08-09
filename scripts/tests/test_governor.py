@@ -22,6 +22,7 @@ from governor.adapters import (
 from governor.application import AuditService
 from governor.application.trajectory_service import TrajectoryService
 from governor.domain import CheckSeverity, CheckStatus
+from governor.domain.trajectory import DriftFlag, TrajectoryVerdict
 
 
 def _make_root() -> Path:
@@ -254,6 +255,100 @@ def _write_logging_contract(root: Path) -> None:
         root / "crates/da-application/src/extraction.rs",
         'tracing::info!(event = "extracted_entities_materialized", paper_id="a", entities_created=1, mentions_edges_written=1, found_in_edges_written=1);',
     )
+
+
+def _write_acap_policy(root: Path, *, rollout: str = "bootstrap") -> Path:
+    path = root / "scripts/governor/checks/article_context_assurance.yaml"
+    _write(path, f"""schema_version: article-context-assurance.v1
+rollout: {rollout}
+principles:
+  canonical_truth_is_lossless: true
+  optimizer_outputs_are_candidates_only: true
+  import_eligible_default: false
+fsm:
+  initial_state: source
+  terminal_states: [done, failed]
+  states: [source, done, failed]
+  transitions: [[source, done]]
+metric_definitions:
+  retention: {{kind: hard}}
+layers:
+  - id: source
+    state: source
+    hard_metrics: [retention]
+    quality_metrics: []
+    enforcement: required
+prompt_contract:
+  registry_is_data: true
+  output_must_validate_before_materialization: true
+optimizer_admission:
+  candidate_only: true
+  auto_promote: false
+  hard_gates:
+    same_n: true
+    dual_f1_non_regression: true
+    no_hard_invariant_regression: true
+    no_test_contamination: true
+    human_decision_required: true
+assurance_report_contract:
+  path: artifacts/article_context/assurance_report.json
+  required_top_level: [policy_sha256, layer_results, aggregate]
+""")
+    return path
+
+
+def test_assurance_high_drift_is_blocking_via_data_policy():
+    from types import SimpleNamespace
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(
+        service.root / "scripts/governor/checks/assurance_severity.yaml",
+        "schema_version: assurance-severity.v1\nblocking_dimensions: [information_preservation, article_context_assurance]\nblocking_severity: high\nphases: [preflight, active, closeout]\n",
+    )
+    verdict = service._derive_verdict(
+        SimpleNamespace(has_blocking=False),
+        [DriftFlag("broken", "high", "loss", "information_preservation")],
+        "active",
+    )
+    assert verdict == TrajectoryVerdict.BLOCKED
+
+
+def test_acap_policy_is_data_driven_and_bootstrap_allows_no_claim():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_policy(service.root)
+    assert service._check_article_context_assurance() == []
+
+
+def test_acap_rejects_optimizer_autopromote_and_unknown_metrics():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root)
+    text = path.read_text().replace("auto_promote: false", "auto_promote: true").replace("hard_metrics: [retention]", "hard_metrics: [missing]")
+    path.write_text(text)
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_policy_invalid"
+    assert "auto_promote=false" in flags[0].evidence
+    assert "unknown metric" in flags[0].evidence
+
+
+def test_acap_report_enforces_policy_hash_hard_failures_replay_and_d127():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root, rollout="required")
+    report_path = service.root / "artifacts/article_context/assurance_report.json"
+    _write(report_path, json.dumps({
+        "policy_sha256": "wrong",
+        "layer_results": [{"layer_id": "source", "hard_failures": 1}],
+        "aggregate": {"replay_net_writes": 2, "d127_unlock_count": 1},
+    }))
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_report_failed"
+    assert "policy_sha256 mismatch" in flags[0].evidence
+    assert "replay_net_writes" in flags[0].evidence
+    assert "d127_unlock_count" in flags[0].evidence
 
 
 def test_information_preservation_contracts_turn_lossy_mutations_into_regressions():

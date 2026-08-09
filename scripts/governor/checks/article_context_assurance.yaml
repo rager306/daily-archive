@@ -1,0 +1,287 @@
+schema_version: article-context-assurance.v1
+policy_id: acap-ontology-v2
+rollout: bootstrap
+principles:
+  canonical_truth_is_lossless: true
+  missingness_must_be_typed: true
+  cacheable_stages_are_graph_pure: true
+  graph_materializers_are_idempotent: true
+  optimizer_outputs_are_candidates_only: true
+  import_eligible_default: false
+
+fsm:
+  initial_state: source_registered
+  terminal_states: [accepted_checkpoint, failed_visible]
+  states:
+    - source_registered
+    - source_verified
+    - parsed
+    - structured
+    - extracted
+    - evidence_linked
+    - embedded
+    - materialized
+    - enriched
+    - resolved
+    - summarized
+    - finalized
+    - task_accepted
+    - accepted_checkpoint
+    - failed_visible
+  transitions:
+    - [source_registered, source_verified]
+    - [source_verified, parsed]
+    - [parsed, structured]
+    - [structured, extracted]
+    - [extracted, evidence_linked]
+    - [evidence_linked, embedded]
+    - [embedded, materialized]
+    - [materialized, enriched]
+    - [enriched, resolved]
+    - [resolved, summarized]
+    - [summarized, finalized]
+    - [finalized, task_accepted]
+    - [task_accepted, accepted_checkpoint]
+  failure_transition_from: "*"
+  failure_transition_to: failed_visible
+  retry_requires_same_semantic_key: true
+  skip_requires_typed_reason: true
+
+metric_definitions:
+  required_field_retention:
+    kind: hard
+    unit: ratio
+    formula: retained_required_fields / available_required_fields
+    pass: "== 1.0"
+  byte_conservation:
+    kind: hard
+    unit: ratio
+    formula: sink_canonical_bytes / source_canonical_bytes
+    pass: "== 1.0 when mode=full_fidelity"
+  checksum_lineage_coverage:
+    kind: hard
+    unit: ratio
+    formula: outputs_with_source_and_output_sha256 / outputs
+    pass: "== 1.0"
+  typed_missingness_coverage:
+    kind: hard
+    unit: ratio
+    formula: missing_values_with_reason / missing_values
+    pass: "== 1.0"
+  evidence_grounding_coverage:
+    kind: hard
+    unit: ratio
+    formula: semantic_facts_with_evidence_path / semantic_facts
+    pass: "== 1.0 for authoritative facts"
+  ontology_conformance:
+    kind: hard
+    unit: ratio
+    formula: valid_nodes_and_edges / checked_nodes_and_edges
+    pass: "== 1.0"
+  replay_net_writes:
+    kind: hard
+    unit: count
+    formula: replay_node_writes + replay_edge_writes + replay_vector_writes
+    pass: "== 0"
+  d127_unlock_count:
+    kind: hard
+    unit: count
+    formula: nodes_where_import_eligible_true
+    pass: "== 0 until explicit user authorization"
+  cache_lineage_exactness:
+    kind: hard
+    unit: ratio
+    formula: cache_records_with_exact_key_and_output_hash / cache_records
+    pass: "== 1.0"
+  semantic_task_pass_rate:
+    kind: hard
+    unit: ratio
+    formula: passed_tasks / required_tasks
+    pass: "== 1.0"
+  coverage:
+    kind: diagnostic
+    unit: ratio
+    formula: processed_units / eligible_units
+  quality_score:
+    kind: diagnostic
+    unit: ratio
+    formula: stage_specific_reviewed_quality
+  latency_p95_ms:
+    kind: diagnostic
+    unit: milliseconds
+  cache_hit_rate:
+    kind: diagnostic
+    unit: ratio
+  cost_per_article:
+    kind: diagnostic
+    unit: currency_or_compute
+  context_utilization:
+    kind: diagnostic
+    unit: ratio
+    formula: selected_tokens / available_tokens
+  disclosed_truncation_rate:
+    kind: diagnostic
+    unit: ratio
+    formula: bounded_outputs_with_truncation_metadata / bounded_outputs
+  semantic_density:
+    kind: diagnostic
+    unit: ratio
+    formula: grounded_information_units / context_tokens
+
+layers:
+  - id: source
+    state: source_verified
+    owner: da-cli
+    input: catalog_identity
+    output: canonical_pdf_html
+    hard_metrics: [required_field_retention, checksum_lineage_coverage, typed_missingness_coverage, d127_unlock_count]
+    quality_metrics: [coverage]
+    evidence: [catalog_manifest, source_recovery_report]
+    enforcement: required
+  - id: parse
+    state: parsed
+    owner: da-adapters
+    input: canonical_pdf_html
+    output: parsed_article
+    hard_metrics: [required_field_retention, byte_conservation, checksum_lineage_coverage, typed_missingness_coverage]
+    quality_metrics: [coverage, latency_p95_ms, cache_hit_rate]
+    evidence: [pipeline_run_report, parse_payload]
+    enforcement: required
+  - id: structure
+    state: structured
+    owner: da-domain
+    input: parsed_article
+    output: document_tree
+    hard_metrics: [required_field_retention, byte_conservation, checksum_lineage_coverage]
+    quality_metrics: [coverage, semantic_density]
+    evidence: [parsed_sections, structure_report]
+    enforcement: required
+  - id: extraction
+    state: extracted
+    owner: da-adapters
+    input: document_tree
+    output: extracted_entities
+    hard_metrics: [checksum_lineage_coverage, typed_missingness_coverage]
+    quality_metrics: [coverage, quality_score]
+    evidence: [extraction_payload, gold_evaluation]
+    enforcement: required
+  - id: evidence
+    state: evidence_linked
+    owner: da-application
+    input: extracted_entities
+    output: evidence_bundles_claims
+    hard_metrics: [evidence_grounding_coverage, ontology_conformance, checksum_lineage_coverage]
+    quality_metrics: [coverage]
+    evidence: [materialization_report, graph_queries]
+    enforcement: required
+  - id: embedding
+    state: embedded
+    owner: kg-embeddings
+    input: title_abstract_or_source_span
+    output: typed_vectors
+    hard_metrics: [required_field_retention, checksum_lineage_coverage, cache_lineage_exactness]
+    quality_metrics: [coverage, latency_p95_ms, cache_hit_rate]
+    evidence: [embedding_payload, model_info]
+    enforcement: required
+  - id: materialization
+    state: materialized
+    owner: da-application
+    input: cache_payloads
+    output: samyama_graph
+    hard_metrics: [required_field_retention, byte_conservation, ontology_conformance, replay_net_writes, d127_unlock_count]
+    quality_metrics: [coverage, latency_p95_ms]
+    evidence: [graph_wave_report, graph_snapshot]
+    enforcement: required
+  - id: enrichment
+    state: enriched
+    owner: da-application
+    input: materialized_graph
+    output: external_facts_candidates
+    hard_metrics: [evidence_grounding_coverage, typed_missingness_coverage, d127_unlock_count]
+    quality_metrics: [coverage, quality_score, latency_p95_ms]
+    evidence: [openalex_report, provenance_queries]
+    enforcement: bootstrap
+  - id: resolution
+    state: resolved
+    owner: da-application
+    input: entity_candidates
+    output: reviewed_identity_decisions
+    hard_metrics: [evidence_grounding_coverage, ontology_conformance, d127_unlock_count]
+    quality_metrics: [coverage, quality_score]
+    evidence: [candidate_report, decision_records]
+    enforcement: bootstrap
+  - id: summary
+    state: summarized
+    owner: da-application
+    input: bounded_context_bundle
+    output: typed_summaries
+    hard_metrics: [checksum_lineage_coverage, evidence_grounding_coverage, typed_missingness_coverage]
+    quality_metrics: [coverage, quality_score, context_utilization, disclosed_truncation_rate, semantic_density, cost_per_article]
+    evidence: [prompt_run_report, summary_validation]
+    prompt_stage: true
+    enforcement: bootstrap
+  - id: finalize
+    state: finalized
+    owner: da-application
+    input: enriched_graph
+    output: readiness_verdict
+    hard_metrics: [ontology_conformance, d127_unlock_count, cache_lineage_exactness]
+    quality_metrics: [coverage]
+    evidence: [finalize_report]
+    enforcement: bootstrap
+  - id: semantic_tasks
+    state: task_accepted
+    owner: da-cli
+    input: finalized_graph
+    output: task_verdicts
+    hard_metrics: [semantic_task_pass_rate, d127_unlock_count]
+    quality_metrics: [coverage]
+    evidence: [semantic_task_report]
+    enforcement: bootstrap
+  - id: checkpoint
+    state: accepted_checkpoint
+    owner: da-cli
+    input: accepted_graph
+    output: atomic_snapshot
+    hard_metrics: [checksum_lineage_coverage, replay_net_writes, d127_unlock_count]
+    quality_metrics: [latency_p95_ms]
+    evidence: [snapshot_checksum, aggregate_assurance_report]
+    enforcement: bootstrap
+
+cache_contract:
+  key_fields: [source_sha256, dependency_output_sha256, implementation_fingerprint, configuration_fingerprint, output_schema_fingerprint]
+  prompt_stage_extra_key_fields: [prompt_id, prompt_version, prompt_sha256, provider, model, inference_config_sha256, tool_schema_sha256]
+  operational_retry_fields_excluded_from_semantic_key: [timeout_seconds, retry_delay_seconds]
+  lookup_requires_exact_key_and_output_sha256: true
+
+prompt_contract:
+  registry_is_data: true
+  required_lineage_fields: [prompt_id, prompt_version, prompt_sha256, context_bundle_sha256, provider, model, inference_config_sha256, output_schema_sha256, output_sha256]
+  context_bundle_requires: [selected_units, source_spans, token_count, token_budget, truncated, omitted_units_with_reason]
+  raw_provider_payload_in_logs: false
+  output_must_validate_before_materialization: true
+
+optimizer_admission:
+  candidate_only: true
+  auto_promote: false
+  supported_candidate_families: [manual, dspy, grpo, rl, evolutionary]
+  required_evidence: [baseline_id, candidate_id, train_set_sha256, validation_set_sha256, same_n, metric_vector, hard_invariant_results, cost_delta, latency_delta, contamination_check, reward_definition_sha256, human_decision_ref]
+  required_metric_vector: [micro_f1, macro_f1, evidence_grounding_coverage, schema_validity_rate, semantic_task_pass_rate, val_gap]
+  hard_gates:
+    same_n: true
+    dual_f1_non_regression: true
+    val_gap_within_policy: true
+    no_hard_invariant_regression: true
+    no_test_contamination: true
+    no_reward_only_promotion: true
+    human_decision_required: true
+  grpo_extra_gates: [reward_component_breakdown, reward_hacking_probes, held_out_replay, deterministic_tool_validity]
+
+assurance_report_contract:
+  schema_version: article-context-assurance-report.v1
+  path: artifacts/article_context/assurance_report.json
+  required_top_level: [article_count, pipeline_revision, policy_sha256, layer_results, fsm_results, cache_results, prompt_results, optimizer_results, aggregate]
+  aggregate_required: [hard_failures, hard_pass_rate, weighted_layer_coverage, weighted_quality_score, replay_net_writes, d127_unlock_count, total_cost, latency_p95_ms]
+  missing_report_behavior:
+    bootstrap: no_claim
+    required: high

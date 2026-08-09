@@ -1,5 +1,31 @@
 # Changelog
 
+### ADR-055 Article Context Assurance Plane
+
+Accepted and materialized ADR-055 plus the executable
+`article_context_assurance.yaml` policy. ACAP models the article lifecycle as an
+FSM from source registration through accepted checkpoint, with typed visible
+failure, explicit skip reasons and semantic-key-preserving retry. Thirteen
+layers declare owners, inputs/outputs, hard invariants, diagnostic quality,
+evidence and rollout status.
+
+The policy defines conservation/grounding/cache/replay/D127 metrics separately
+from coverage, quality, latency, cache efficiency, context utilization,
+disclosed truncation, semantic density and cost. Hard failures can never be
+averaged away. Prompt stages bind prompt/context/provider/model/inference/tool
+and output schema lineage. DSPy, GRPO, RL and evolutionary outputs remain
+candidate-only: same-N, dual F1, val-gap, grounding/schema/task parity,
+contamination, reward-hacking, cost/latency and explicit human decision gates
+are required; auto-promotion remains false.
+
+Governor now validates ACAP policy structure, FSM transitions, metric references,
+prompt rules, optimizer admission, report policy hash, required layers, hard
+failures, replay writes and D127 unlock count. Bootstrap permits missing evidence
+as `no_claim`, not PASS. High ACAP or information-preservation findings become
+blocking through a separate data-driven severity policy. Twenty-six governor
+tests PASS and project ACAP policy is valid; runtime report/type/collector work
+remains the next product slice.
+
 ### M371 S05 information-preservation contracts
 
 End-to-end field audit found two canonical graph losses in

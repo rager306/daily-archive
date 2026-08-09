@@ -1,5 +1,6 @@
 """Application service: trajectory — builds the full trajectory report."""
 
+import hashlib
 import json
 import re
 
@@ -61,7 +62,10 @@ class TrajectoryService:
         # Boundary contracts prevent silent loss of canonical and derived information.
         drift_flags.extend(self._check_information_preservation())
 
-        verdict = self._derive_verdict(audit_report, drift_flags)
+        # ACAP validates multi-layer FSM, metrics, cache/prompt/optimizer and reports.
+        drift_flags.extend(self._check_article_context_assurance())
+
+        verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
 
@@ -170,6 +174,113 @@ class TrajectoryService:
             ))
 
         return flags
+
+    def _check_article_context_assurance(self) -> list[DriftFlag]:
+        """Validate the data-driven Article Context Assurance Plane policy/report."""
+        policy_path = self.root / "scripts/governor/checks/article_context_assurance.yaml"
+        if not policy_path.exists():
+            return []
+        try:
+            raw = policy_path.read_bytes()
+            policy = yaml.safe_load(raw) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="acap_policy_invalid", severity="high",
+                evidence=f"cannot load ACAP policy: {error}", dimension="article_context_assurance",
+            )]
+        errors = []
+        metrics = set((policy.get("metric_definitions") or {}).keys())
+        layers = policy.get("layers") or []
+        layer_ids = [str(layer.get("id")) for layer in layers]
+        if len(layer_ids) != len(set(layer_ids)) or not layer_ids:
+            errors.append("layer IDs must be non-empty and unique")
+        fsm = policy.get("fsm") or {}
+        states = [str(state) for state in fsm.get("states", [])]
+        state_set = set(states)
+        if len(states) != len(state_set) or not states:
+            errors.append("FSM states must be non-empty and unique")
+        if fsm.get("initial_state") not in state_set:
+            errors.append("FSM initial_state is unknown")
+        for terminal in fsm.get("terminal_states", []):
+            if terminal not in state_set:
+                errors.append(f"unknown terminal state {terminal}")
+        for transition in fsm.get("transitions", []):
+            if not isinstance(transition, list) or len(transition) != 2 or any(state not in state_set for state in transition):
+                errors.append(f"illegal FSM transition {transition}")
+        for layer in layers:
+            layer_id = layer.get("id")
+            if layer.get("state") not in state_set:
+                errors.append(f"{layer_id}: unknown FSM state")
+            if layer.get("enforcement") not in ("required", "bootstrap"):
+                errors.append(f"{layer_id}: enforcement must be required/bootstrap")
+            for metric in list(layer.get("hard_metrics", [])) + list(layer.get("quality_metrics", [])):
+                if metric not in metrics:
+                    errors.append(f"{layer_id}: unknown metric {metric}")
+        principles = policy.get("principles") or {}
+        for lock in ("canonical_truth_is_lossless", "optimizer_outputs_are_candidates_only", "import_eligible_default"):
+            expected = False if lock == "import_eligible_default" else True
+            if principles.get(lock) is not expected:
+                errors.append(f"principle {lock} must be {expected}")
+        optimizer = policy.get("optimizer_admission") or {}
+        if optimizer.get("candidate_only") is not True or optimizer.get("auto_promote") is not False:
+            errors.append("optimizer candidates must be candidate-only with auto_promote=false")
+        hard_gates = optimizer.get("hard_gates") or {}
+        for gate in ("same_n", "dual_f1_non_regression", "no_hard_invariant_regression", "no_test_contamination", "human_decision_required"):
+            if hard_gates.get(gate) is not True:
+                errors.append(f"optimizer hard gate {gate} must be true")
+        prompt = policy.get("prompt_contract") or {}
+        if prompt.get("registry_is_data") is not True or prompt.get("output_must_validate_before_materialization") is not True:
+            errors.append("prompt registry and pre-materialization validation are mandatory")
+        if errors:
+            return [DriftFlag(
+                flag="acap_policy_invalid", severity="high",
+                evidence="; ".join(errors[:20]), dimension="article_context_assurance",
+            )]
+
+        report_path = self.root / str((policy.get("assurance_report_contract") or {}).get("path", ""))
+        required_layers = {str(layer["id"]) for layer in layers if layer.get("enforcement") == "required"}
+        if not report_path.is_file():
+            if required_layers and policy.get("rollout") != "bootstrap":
+                return [DriftFlag(
+                    flag="acap_report_missing", severity="high",
+                    evidence=f"required ACAP report missing: {report_path}", dimension="article_context_assurance",
+                )]
+            return []
+        try:
+            report = json.loads(report_path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            return [DriftFlag(
+                flag="acap_report_invalid", severity="high", evidence=str(error),
+                dimension="article_context_assurance",
+            )]
+        failures = []
+        required_top = (policy.get("assurance_report_contract") or {}).get("required_top_level", [])
+        missing_top = [key for key in required_top if key not in report]
+        if missing_top:
+            failures.append(f"missing report keys {missing_top}")
+        expected_hash = hashlib.sha256(raw).hexdigest()
+        if report.get("policy_sha256") != expected_hash:
+            failures.append("policy_sha256 mismatch")
+        results = {str(item.get("layer_id")): item for item in report.get("layer_results", [])}
+        missing_required = sorted(required_layers - set(results))
+        if missing_required:
+            failures.append(f"missing required layers {missing_required}")
+        for layer_id, result in results.items():
+            if layer_id not in set(layer_ids):
+                failures.append(f"unknown report layer {layer_id}")
+            if result.get("hard_failures", 0) != 0:
+                failures.append(f"{layer_id}: hard_failures={result.get('hard_failures')}")
+        aggregate = report.get("aggregate") or {}
+        if aggregate.get("replay_net_writes", 0) != 0:
+            failures.append("aggregate replay_net_writes must be zero")
+        if aggregate.get("d127_unlock_count", 0) != 0:
+            failures.append("aggregate d127_unlock_count must be zero")
+        if failures:
+            return [DriftFlag(
+                flag="acap_report_failed", severity="high", evidence="; ".join(failures[:20]),
+                dimension="article_context_assurance",
+            )]
+        return []
 
     def _check_information_preservation(self) -> list[DriftFlag]:
         """Evaluate data-driven source-to-sink fidelity contracts."""
@@ -562,10 +673,24 @@ class TrajectoryService:
         return flags
 
     def _derive_verdict(
-        self, audit_report, drift_flags: list[DriftFlag]
+        self, audit_report, drift_flags: list[DriftFlag], phase: str = "preflight"
     ) -> str:
         if audit_report.has_blocking:
             return TrajectoryVerdict.BLOCKED
+        severity_path = self.root / "scripts/governor/checks/assurance_severity.yaml"
+        if severity_path.is_file():
+            try:
+                policy = yaml.safe_load(severity_path.read_text()) or {}
+                dimensions = set(policy.get("blocking_dimensions", []))
+                severity = policy.get("blocking_severity", "high")
+                phases = set(policy.get("phases", []))
+                if phase in phases and any(
+                    flag.severity == severity and flag.dimension in dimensions
+                    for flag in drift_flags
+                ):
+                    return TrajectoryVerdict.BLOCKED
+            except (OSError, yaml.YAMLError):
+                return TrajectoryVerdict.BLOCKED
         if any(f.severity == "high" for f in drift_flags):
             return TrajectoryVerdict.DRIFT_RISK
         if drift_flags:
