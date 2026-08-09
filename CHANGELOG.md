@@ -22,8 +22,13 @@ produce the same plan, and risk ordering is explicit. Of 31 metadata gaps,
 exactly seven have one versioned donor with checksum-identical PDF content and a
 canonical lowercase target category; they become low-risk actions without any
 ID allowlist. The remaining 24 are high-risk and 165 unresolved historical
-variants are blocked. Apply is intentionally absent, so current writes are zero
-by construction; atomic mutation/rollback/replay is the next slice.
+variants are blocked. Apply is intentionally absent, so current writes are zero by construction.
+The pure canonical metadata transform is now also delivered: it retains only
+bibliographic identity/source classification from the donor, rebuilds PDF/HTML
+variants from live target descriptors, binds sizes and SHA-256, resets all
+readiness/import claims, records D127 false, and refuses traversal or checksum
+mismatch. Milestone-specific donor overrides, loader events and stale versioned
+URLs are not inherited. Atomic mutation/rollback/replay remains the next slice.
 
 Gold manifest composition now emits a semantic aggregate event. Governor also
 validates every manifest record structurally: ready sources require a live

@@ -103,6 +103,21 @@ pub struct CatalogReconcilePlan {
     pub action_counts: BTreeMap<String, usize>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CatalogAssetKind {
+    Pdf,
+    Html,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CatalogAssetDescriptor {
+    pub kind: CatalogAssetKind,
+    pub relative_path: String,
+    pub sha256: String,
+    pub byte_size: u64,
+}
+
 impl CatalogReconcilePlan {
     pub fn auto_applicable_count(&self) -> usize {
         self.actions
