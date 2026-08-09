@@ -38,6 +38,7 @@ impl NodeSchemaDef for SectionSchema {
         vec![
             ("text", FieldType::String),
             ("char_count", FieldType::Integer),
+            ("text_sha256", FieldType::String),
             // Phase 3 GNN readiness — section text embedding and replay identity
             ("embedding", FieldType::Vector),
             ("embedding_sha256", FieldType::String),

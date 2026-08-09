@@ -284,6 +284,16 @@ impl IngestUseCase {
             .set_node_property_string(node_id, "pdf_hash", parsed.pdf_hash.clone())
             .await?;
         self.graph_store
+            .set_node_property_string(node_id, "abstract_text", parsed.abstract_text.clone())
+            .await?;
+        self.graph_store
+            .set_node_property_string(
+                node_id,
+                "abstract_sha256",
+                hex::encode(Sha256::digest(parsed.abstract_text.as_bytes())),
+            )
+            .await?;
+        self.graph_store
             .set_node_property_int(node_id, "valid_from", now)
             .await?;
         self.graph_store
@@ -508,13 +518,24 @@ impl IngestUseCase {
             self.graph_store
                 .set_node_property_int(section_node, "schema_version", 1)
                 .await?;
-            // Truncate text to ~10000 bytes, UTF-8 safe (avoid mid-char panic)
-            let text_trunc = section.text.get(..10000).unwrap_or(&section.text);
+            // Canonical graph truth preserves the complete parser output.
+            // Prompt/context consumers own explicit bounded excerpts with source hashes.
             self.graph_store
-                .set_node_property_string(section_node, "text", text_trunc.to_string())
+                .set_node_property_string(section_node, "text", section.text.clone())
                 .await?;
             self.graph_store
-                .set_node_property_int(section_node, "char_count", section.text.len() as i64)
+                .set_node_property_int(
+                    section_node,
+                    "char_count",
+                    section.text.chars().count() as i64,
+                )
+                .await?;
+            self.graph_store
+                .set_node_property_string(
+                    section_node,
+                    "text_sha256",
+                    hex::encode(Sha256::digest(section.text.as_bytes())),
+                )
                 .await?;
             let edge_type = da_domain::relation::structure::HAS_PART;
             if self

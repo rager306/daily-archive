@@ -163,6 +163,70 @@ async fn cached_parsed_materialization_replay_is_idempotent() {
 }
 
 #[tokio::test]
+async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum() {
+    use sha2::{Digest, Sha256};
+    let (ingest, store) = make_ingest(vec![]);
+    let full_text = format!("{}TAIL-科学", "αβγ".repeat(4_000));
+    let full_abstract = format!("{}ABSTRACT-尾", "résumé ".repeat(2_000));
+    let parsed = ParsedArticle {
+        paper_id: "2401.00009".into(),
+        title: "Long section".into(),
+        abstract_text: full_abstract.clone(),
+        body_text: full_text.clone(),
+        sections: vec![da_ports::parser::Section {
+            title: "Complete evidence".into(),
+            text: full_text.clone(),
+            level: 1,
+            ..Default::default()
+        }],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-hash-long".into(),
+    };
+    ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    let paper = store.get_nodes_by_label("Paper").await[0];
+    assert_eq!(
+        store
+            .get_node_property_string(paper, "abstract_text")
+            .await
+            .as_deref(),
+        Some(full_abstract.as_str())
+    );
+    let expected_abstract_sha256 = hex::encode(Sha256::digest(full_abstract.as_bytes()));
+    assert_eq!(
+        store
+            .get_node_property_string(paper, "abstract_sha256")
+            .await
+            .as_deref(),
+        Some(expected_abstract_sha256.as_str())
+    );
+    let section = store.get_nodes_by_label("Section").await[0];
+    assert_eq!(
+        store
+            .get_node_property_string(section, "text")
+            .await
+            .as_deref(),
+        Some(full_text.as_str())
+    );
+    assert_eq!(
+        store.get_node_property_int(section, "char_count").await,
+        Some(full_text.chars().count() as i64)
+    );
+    let expected_sha256 = hex::encode(Sha256::digest(full_text.as_bytes()));
+    assert_eq!(
+        store
+            .get_node_property_string(section, "text_sha256")
+            .await
+            .as_deref(),
+        Some(expected_sha256.as_str())
+    );
+}
+
+#[tokio::test]
 async fn changed_embedding_fails_closed_until_storage_upsert_is_available() {
     let (ingest, store) = make_ingest(vec![]);
     let parsed = ParsedArticle {

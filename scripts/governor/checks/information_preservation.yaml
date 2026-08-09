@@ -1,0 +1,40 @@
+schema_version: information-preservation.v1
+contracts:
+  - id: section_text_to_graph_full_fidelity
+    boundary: ParsedArticle.sections[].text -> Section.text
+    mode: full_fidelity
+    sink: crates/da-application/src/ingest.rs
+    required_patterns:
+      - 'set_node_property_string\(\s*section_node,\s*"text",\s*section\.text\.clone\(\)'
+      - '"text_sha256"'
+      - 'section\.text\.chars\(\)\.count\(\)'
+    forbidden_patterns:
+      - 'section\.text\.get\('
+      - 'section\.text\.chars\(\)\.take\('
+      - 'section\.text\.truncate\('
+    severity: high
+
+  - id: paper_abstract_to_graph_full_fidelity
+    boundary: ParsedArticle.abstract_text -> Paper.abstract_text
+    mode: full_fidelity
+    sink: crates/da-application/src/ingest.rs
+    required_patterns:
+      - '"abstract_text"'
+      - 'parsed\.abstract_text\.clone\(\)'
+    forbidden_patterns:
+      - 'parsed\.abstract_text\.get\('
+      - 'parsed\.abstract_text\.chars\(\)\.take\('
+      - 'parsed\.abstract_text\.truncate\('
+    severity: high
+
+  - id: raw_provider_payload_not_in_operational_logs
+    boundary: provider response -> operational diagnostics
+    mode: bounded_diagnostic
+    sink: crates/da-application/src/summary.rs
+    required_patterns:
+      - 'response_chars'
+      - 'response_sha256'
+    forbidden_patterns:
+      - 'raw\s*='
+      - 'response_text\s*='
+    severity: high

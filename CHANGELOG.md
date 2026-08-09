@@ -1,5 +1,30 @@
 # Changelog
 
+### M371 S05 information-preservation contracts
+
+End-to-end field audit found two canonical graph losses in
+`materialize_parsed`: Section text was silently capped near 10,000 bytes and
+Paper abstracts were never written. Both boundaries now preserve complete
+Unicode text, correct character counts and SHA-256 (`text_sha256`,
+`abstract_sha256`). TDD uses tails beyond the old cap (`TAIL-科学` and
+`ABSTRACT-尾`) and unchanged materialization replay. Rust and YAML ontology
+schemas carry the new checksum fields.
+
+Governor now has a general data-driven
+`information_preservation.yaml` mechanism. Contracts declare boundary, mode
+(`full_fidelity` or bounded diagnostic), sink, required evidence and forbidden
+lossy mutations. Generated regression tests prove `.get(..N)` and
+`.chars().take(N)` mutations fail, malformed contracts and missing sinks fail
+visible, and all live contracts pass. This first policy set protects Section
+text, Paper abstract and hashed/size-only provider diagnostics; future field
+gaps become new data contracts rather than one-off hardcoded Python checks.
+
+Audit also identified remaining product work without claiming it closed: old
+Samyama checkpoints predate these new properties and require a one-process
+200-paper cache rematerialization; citation provenance has source-model gaps;
+summary optional structured fields are parsed incompletely; older canary report
+shapes lack exact lineage keys; eval examples still need durable report parity.
+
 ### M371 S05 canonical catalog index rebuild
 
 Rebuilt both catalog indexes from live `article.json` records through the same

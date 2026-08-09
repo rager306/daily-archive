@@ -1082,6 +1082,22 @@ Budget: <30min.
 
 ---
 
+### 17.1 Information-preservation mutation contracts
+
+Canonical source-to-graph boundaries are governed by
+`scripts/governor/checks/information_preservation.yaml`. Each contract declares
+its source/sink boundary and one of two modes:
+
+- `full_fidelity`: canonical values survive byte-for-byte, with size/count and
+  SHA-256 where practical; truncation belongs only in downstream views.
+- `bounded_diagnostic`: a derivative may be bounded only when the original stays
+  durable and evidence exposes budget, truncation state, size and hash.
+
+Governor turns required/forbidden patterns into regression checks. Functional
+TDD still proves real values (Unicode tails, hashes, replay); the static contract
+ratchets against reintroducing `.get(..N)`, `.chars().take(N)` or raw-provider
+logging.
+
 ## 18. Anti-patterns
 
 1. **Mock every trait** — tests mock choreography, not use-case meaning.

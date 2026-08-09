@@ -82,6 +82,7 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
     fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
         vec![
             ("abstract_text", crate::schema::FieldType::String),
+            ("abstract_sha256", crate::schema::FieldType::String),
             ("doi", crate::schema::FieldType::String),
             ("pdf_hash", crate::schema::FieldType::String),
             ("section_count", crate::schema::FieldType::Integer),

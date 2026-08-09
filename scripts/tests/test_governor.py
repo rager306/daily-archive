@@ -256,6 +256,41 @@ def _write_logging_contract(root: Path) -> None:
     )
 
 
+def test_information_preservation_contracts_turn_lossy_mutations_into_regressions():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    config = service.root / "scripts/governor/checks/information_preservation.yaml"
+    sink = service.root / "crates/da-application/src/ingest.rs"
+    _write(config, """schema_version: information-preservation.v1
+contracts:
+  - id: preserve_text
+    boundary: source.text -> graph.text
+    mode: full_fidelity
+    sink: crates/da-application/src/ingest.rs
+    required_patterns: ['text\\.clone\\(\\)', 'text_sha256']
+    forbidden_patterns: ['text\\.get\\(', 'chars\\(\\)\\.take\\(']
+    severity: high
+""")
+    _write(sink, 'write(text.clone()); set("text_sha256");')
+    assert service._check_information_preservation() == []
+    for mutation in ["write(text.get(..10000));", "write(text.chars().take(100));"]:
+        _write(sink, mutation)
+        flags = service._check_information_preservation()
+        assert len(flags) == 1
+        assert flags[0].flag == "information_preservation_contract_broken"
+        assert flags[0].severity == "high"
+
+
+def test_information_preservation_contract_flags_missing_sink_and_bad_yaml():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    config = service.root / "scripts/governor/checks/information_preservation.yaml"
+    _write(config, "contracts:\n  - id: missing\n    sink: absent.rs\n")
+    assert service._check_information_preservation()[0].flag == "information_preservation_sink_missing"
+    _write(config, "{broken")
+    assert service._check_information_preservation()[0].flag == "information_preservation_contract_invalid"
+
+
 def test_logging_architecture_accepts_semantic_onion_aligned_contract():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()

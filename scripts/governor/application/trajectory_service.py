@@ -2,6 +2,8 @@
 
 import json
 import re
+
+import yaml
 from pathlib import Path
 
 from governor.application.audit_service import AuditService
@@ -55,6 +57,9 @@ class TrajectoryService:
 
         # Observability is an onion-aware semantic contract, not a log-call count.
         drift_flags.extend(self._check_logging_architecture())
+
+        # Boundary contracts prevent silent loss of canonical and derived information.
+        drift_flags.extend(self._check_information_preservation())
 
         verdict = self._derive_verdict(audit_report, drift_flags)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -164,6 +169,45 @@ class TrajectoryService:
                 evidence=f"{target['message']} Recommendation: {recs}",
             ))
 
+        return flags
+
+    def _check_information_preservation(self) -> list[DriftFlag]:
+        """Evaluate data-driven source-to-sink fidelity contracts."""
+        path = self.root / "scripts/governor/checks/information_preservation.yaml"
+        if not path.exists():
+            return []
+        try:
+            payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="information_preservation_contract_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="information_preservation",
+            )]
+        flags = []
+        for contract in payload.get("contracts", []):
+            contract_id = str(contract.get("id", "unnamed"))
+            sink = self.root / str(contract.get("sink", ""))
+            if not sink.is_file():
+                flags.append(DriftFlag(
+                    flag="information_preservation_sink_missing",
+                    severity=str(contract.get("severity", "high")),
+                    evidence=f"{contract_id}: missing sink {sink}",
+                    dimension="information_preservation",
+                ))
+                continue
+            text = sink.read_text(errors="replace")
+            missing = [pattern for pattern in contract.get("required_patterns", []) if not re.search(pattern, text, re.MULTILINE | re.DOTALL)]
+            forbidden = [pattern for pattern in contract.get("forbidden_patterns", []) if re.search(pattern, text, re.MULTILINE | re.DOTALL)]
+            if missing or forbidden:
+                flags.append(DriftFlag(
+                    flag="information_preservation_contract_broken",
+                    severity=str(contract.get("severity", "high")),
+                    evidence=(f"{contract_id} [{contract.get('boundary')} mode={contract.get('mode')}]: "
+                              f"missing={missing}; forbidden={forbidden}"),
+                    dimension="information_preservation",
+                ))
         return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
