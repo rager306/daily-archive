@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-09
 
-**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053; D127, D136, D202-D211; R084-R087
+**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053; D127, D136, D202-D215; R084-R090
 
 ## Context
 
@@ -92,7 +92,7 @@ A weighted score never overrides a failed hard invariant. Aggregate scores are d
 
 ### Quality metrics by layer
 
-- source/parse/structure: source readiness, parse success, section/reference/figure coverage, byte conservation;
+- source/parse/structure: source readiness, parse success, section/reference/figure coverage, byte conservation; TeX archives additionally require inventory/archive/member checksum binding, deterministic root/include closure, byte-exact candidates, bounded expansion and explicit reject/no-claim reports;
 - extraction: micro and macro F1, per-type F1, schema validity, evidence-span hit rate;
 - evidence/materialization: evidence-path coverage, nodes/edges/vectors per eligible unit, replay zero;
 - embedding/retrieval: valid vector rate, dimension/model lineage, recall@k, temporal/provenance filter correctness;
@@ -221,11 +221,32 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    shows the remaining rebuild bottleneck is fine-grained Samyama writes under a
    global lock; parallel immutable preparation is enabled, but unordered graph
    mutation is forbidden pending a typed bulk-write port.
-4. Refresh 200-paper checkpoint with new preservation fields.
-5. Prompt registry and typed ContextBundle.
-6. Summary/enrichment/resolution evidence.
-7. Finalize/task/checkpoint aggregate report.
-8. Only then optimizer candidate experiments under admission gates.
+4. Candidate-only TeX source evidence. **Delivered for the `2606.06036` canary.**
+   The hardened archive port validates inventory schema and authority, canonical
+   archive path, archive/member checksums, unique canonical member names and
+   bounded streamed output. Domain analysis selects `main.tex`, resolves 10 files
+   through 9 include edges, reads only `references.bib` and emits 30 byte-identity
+   candidates. Semantic failure is durably stored as `Reject`; invalid UTF-8,
+   incomplete commands and unsupported BibTeX fail rather than under-count.
+   Byte-identical replay and D127 false are verified. Provider denominators remain
+   conflicting candidates: local 30, Semantic Scholar 24 and OpenAlex 0.
+5. Ontology-v2 contract convergence: active endpoint, identity-index, temporal,
+   validator, materializer and task-wire projections must share one data-driven
+   source before another corpus mutation wave.
+6. ACAP contract convergence: Rust per-article and aggregate schemas, physical
+   replay partitions, FSM transitions, task classes, policy YAML and governor
+   must agree before required-layer claims.
+7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
+   extracted materializer APIs remain unchanged until graph-equivalence, failure
+   and replay evidence authorizes migration.
+8. Required-layer corpus assurance over verified cached computation and one
+   refreshed checkpoint.
+9. Data-driven prompt registry and typed ContextBundle, followed by a graph-pure
+   summary artifact and separate always-run ontology-v2 materializer.
+10. External evidence, clusters and reviewed resolution must become non-empty
+    before a first-class finalize/task/checkpoint command can accept a snapshot.
+11. Only then may bounded related-article and optimizer candidate experiments run
+    under their independent admission gates.
 
 ## LLM Reading Notes
 

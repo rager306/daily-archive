@@ -9,6 +9,7 @@ pub mod assurance;
 pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
+pub mod tex_inspect;
 
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{
@@ -21,6 +22,7 @@ pub use pipeline::{
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
     StageRunRecord,
 };
+pub use tex_inspect::TexInspectUseCase;
 pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod entity_resolution;

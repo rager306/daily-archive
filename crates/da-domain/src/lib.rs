@@ -31,6 +31,7 @@ pub mod scheduler;
 pub mod schema;
 pub mod source;
 pub mod temporal;
+pub mod tex_source;
 pub mod validator;
 pub mod vid;
 pub mod vocabulary;
@@ -76,6 +77,11 @@ pub use hypergraph::ConceptClusterSchema;
 pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
+};
+pub use tex_source::{
+    BibtexCandidate, ProviderDenominator, TEX_ANALYSIS_SCHEMA_VERSION, TexAnalysisError,
+    TexAnalysisPolicy, TexAnalysisStatus, TexIncludeEdge, TexSourceAnalysisReport,
+    analyze_tex_members,
 };
 pub mod confidence;
 pub use confidence::{clamp_confidence, is_unit_interval};

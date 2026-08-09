@@ -18,6 +18,7 @@ pub mod openalex;
 pub mod parser;
 pub mod pipeline_cache;
 pub mod pipeline_stage;
+pub mod tex_source;
 
 pub use algorithms::GraphAlgorithms;
 pub use assurance::{AssuranceReportStore, AssuranceStoreError};
@@ -46,6 +47,10 @@ pub use pdf_classification::{
 };
 
 pub use parser::ParserPort;
+pub use tex_source::{
+    TexAnalysisReportStore, TexAnalysisRequest, TexArchiveError, TexArchiveInventory,
+    TexArchiveMember, TexArchivePort,
+};
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 #[cfg(test)]

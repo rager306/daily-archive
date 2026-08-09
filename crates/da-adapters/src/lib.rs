@@ -17,6 +17,7 @@ pub mod pipeline_cache;
 pub mod pipeline_stages;
 pub mod rule_extractor;
 pub mod samyama_graph;
+pub mod tex_archive;
 
 #[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
@@ -43,3 +44,4 @@ pub use pipeline_stages::{
 };
 pub use rule_extractor::RuleBasedExtractor;
 pub use samyama_graph::SamyamaGraphStore;
+pub use tex_archive::{FilesystemTexAnalysisReportStore, FilesystemTexArchive};

@@ -101,6 +101,7 @@ def inspect_tex_source(path: Path) -> dict[str, object]:
     if archive_bytes == 0 or archive_bytes > MAX_TEX_ARCHIVE_BYTES:
         raise ValueError(f"invalid TeX archive size at {path} (bytes={archive_bytes})")
     files: list[dict[str, object]] = []
+    seen_names: set[str] = set()
     member_count = directory_count = tex_count = bib_count = 0
     total_bytes = 0
     with tarfile.open(path, mode="r:*") as archive:
@@ -109,13 +110,20 @@ def inspect_tex_source(path: Path) -> dict[str, object]:
             if member_count > MAX_TEX_MEMBERS:
                 raise ValueError(f"TeX archive member cap exceeded at {path}")
             name = member.name
-            parts = Path(name).parts
+            parts = name.split("/")
             if (
-                not name or name.startswith(("/", "\\")) or ".." in parts
-                or "\x00" in name or member.issym() or member.islnk()
+                not name or name.startswith(("/", "\\"))
+                or any(part in {"", ".", ".."} for part in parts)
+                or name.startswith("-")
+                or any(not char.isprintable() for char in name)
+                or "\\" in name or "\x00" in name
+                or member.issym() or member.islnk()
                 or member.isdev() or member.isfifo()
             ):
                 raise ValueError(f"unsafe TeX archive member: {name!r}")
+            if name in seen_names:
+                raise ValueError(f"duplicate TeX archive member: {name!r}")
+            seen_names.add(name)
             if member.isdir():
                 directory_count += 1
                 continue

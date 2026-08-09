@@ -1,5 +1,40 @@
 # Changelog
 
+### Candidate-only TeX source inspection vertical
+
+Added a complete domain-to-adapter TeX source inspection path for canonical arXiv
+archives. The application now verifies the inventory and archive before reading
+members, deterministically selects the scientific root, resolves a jailed include
+closure and parses only declared bibliography files into byte-identity candidates.
+Semantic failures are persisted as typed `Reject` evidence while the caller still
+fails; success and reject reports pass the same schema, digest and D127 validation.
+No candidate becomes graph truth and `import_eligible` remains false.
+
+The archive boundary is now hermetic and checksum-bound: it validates inventory
+schema, article identity, canonical archive path, archive size/hash, unique
+canonical member names, exact member size/hash and bounded streamed output.
+Traversal, backslashes, dot segments, duplicate members, links/devices and archive
+substitution fail closed. The TeX/BibTeX lexer rejects incomplete commands,
+invalid UTF-8, macros, top-level concatenation, crossrefs, duplicate keys,
+ambiguous roots, missing includes and include cycles instead of silently
+under-counting evidence. URL fragments inside braced values remain supported.
+
+The real `2606.06036` canary selects `main.tex`, closes 10 files through 9 unique
+include edges and emits 30 candidates from `references.bib`. Independent runs are
+byte-identical. The local denominator conflicts with Semantic Scholar 24 and
+OpenAlex 0 and remains `conflict`, not promoted truth. The durable report is
+`artifacts/article_context/article_2606.06036_tex_analysis.json`; its checksum is
+bound into `article_2606.06036_sources.json`. Focused ADR-051 coverage includes
+10 domain semantic/serde/negative tests, 3 application policy/failure tests,
+4 adapter integrity tests and 19 source inventory producer tests.
+
+Architecture research with GitNexus and codebase-memory corrected the remaining
+M371 order: ontology-v2 contract convergence precedes ACAP schema convergence;
+an additive ordered-mutation canary follows those contracts; required-layer
+corpus proof precedes non-empty summaries, external evidence, clusters, reviewed
+resolution and a first-class acceptance command. The critical existing parsed
+and extracted materializer APIs are not rewritten before equivalence proof.
+
 ### Deterministic all-wave rebuild and typed source evidence
 
 Added a fail-closed same-process multi-wave graph driver with explicit fixed

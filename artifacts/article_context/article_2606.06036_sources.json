@@ -36,7 +36,20 @@
       },
       "files": 28,
       "directories": 1,
-      "expanded_bytes": 7009156
+      "expanded_bytes": 7009156,
+      "root_analysis_path": "artifacts/article_context/article_2606.06036_tex_analysis.json",
+      "root_analysis_sha256": "a1f8e54d322af5531a3a3423b3c89b27e0dd4a3476de0369ceb767942ca24aaf",
+      "root_analysis": {
+        "root_document": "main.tex",
+        "closure_files": 10,
+        "include_edges": 9,
+        "declared_bibliographies": [
+          "references.bib"
+        ],
+        "bibliography_candidates": 30,
+        "status": "conflict",
+        "analysis_sha256": "417e5b4b50269c1ab942f0b19e5c50965d287a69897fee88c4e248722be0e6c2"
+      }
     }
   },
   "candidate_metadata": [
@@ -87,15 +100,20 @@
   ],
   "consistency_findings": [
     {
-      "class": "citation_denominator_conflict",
-      "severity": "review_required",
-      "detail": "OpenAlex currently reports 0 referenced works while Semantic Scholar reported 24 references. Neither value is graph truth until reconciled with the TeX bibliography."
-    },
-    {
       "class": "tex_template_contamination_risk",
       "severity": "must_filter",
       "detail": "Archive-wide inventory sees template/example TeX sections. Scientific structure must use the root document include closure, not every .tex member."
+    },
+    {
+      "class": "citation_denominator_conflict",
+      "severity": "review_required",
+      "detail": "Root-document TeX closure yields 30 bibliography candidates; Semantic Scholar observed 24 references and OpenAlex reports 0. All remain provider candidates."
+    },
+    {
+      "class": "archive_wide_bibliography_overcount",
+      "severity": "resolved_by_root_closure",
+      "detail": "Archive-wide scan found 38 keys, but root-document closure declares 30. The excluded 8 belong outside the scientific include closure."
     }
   ],
-  "next_stage": "root-document/include-closure TeX parsing plus bibliography candidate reconciliation; no graph promotion"
+  "next_stage": "review/resolve 30 bibliography candidates against S2/OpenAlex; no graph promotion"
 }

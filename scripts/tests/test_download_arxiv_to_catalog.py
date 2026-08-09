@@ -118,6 +118,31 @@ def test_inspect_tex_source_rejects_traversal(tmp_path: Path, name: str) -> None
         MODULE.inspect_tex_source(source)
 
 
+def test_inspect_tex_source_rejects_duplicate_and_noncanonical_names(tmp_path: Path) -> None:
+    duplicate = tmp_path / "duplicate.tar.gz"
+    _write_tar(duplicate, [("main.tex", b"first", "file"), ("main.tex", b"second", "file")])
+    with pytest.raises(ValueError, match="duplicate TeX archive member"):
+        MODULE.inspect_tex_source(duplicate)
+
+    for name in (
+        "./main.tex",
+        "a//b.tex",
+        "a/./b.tex",
+        "a\\b.tex",
+        "-option.tex",
+        "line\nbreak.tex",
+    ):
+        source = tmp_path / (name.replace("/", "_").replace("\\", "_") + ".tar.gz")
+        _write_tar(source, [(name, b"bad", "file")])
+        with pytest.raises(ValueError, match="unsafe TeX archive member"):
+            MODULE.inspect_tex_source(source)
+
+    unicode_source = tmp_path / "unicode.tar.gz"
+    _write_tar(unicode_source, [("sections/café.tex", b"ok", "file")])
+    report = MODULE.inspect_tex_source(unicode_source)
+    assert report["files"][0]["path"] == "sections/café.tex"
+
+
 def test_inspect_tex_source_rejects_links_and_caps(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source = tmp_path / "link.tar.gz"
     _write_tar(source, [("link.tex", b"", "symlink")])
