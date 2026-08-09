@@ -73,5 +73,15 @@ def test_find_local_versioned_pdf_reuses_unique_catalog_asset(tmp_path: Path) ->
     assert found == source
 
 
+def test_materialize_local_pdf_reports_skip_when_canonical_asset_exists(tmp_path: Path) -> None:
+    source = tmp_path / "versioned.pdf"
+    destination = tmp_path / "canonical.pdf"
+    payload = b"%PDF-1.7\n" + b"x" * 1200
+    source.write_bytes(payload)
+    destination.write_bytes(payload)
+    result = MODULE.materialize_local_pdf(source, destination)
+    assert result["status"] == "skip"
+
+
 def test_normalize_category_is_filesystem_canonical() -> None:
     assert MODULE.normalize_category("cs.CV") == "cs-cv"

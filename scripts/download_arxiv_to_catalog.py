@@ -63,6 +63,15 @@ def normalize_category(value: str) -> str:
     return normalized if re.fullmatch(r"[a-z0-9-]+", normalized) else "unknown"
 
 
+def report_path(path: Path) -> str:
+    """Use repository-relative paths for durable evidence when possible."""
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(ROOT))
+    except ValueError:
+        return str(resolved)
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -115,7 +124,8 @@ def category_from_catalog_pdf(catalog: Path, source: Path) -> str:
 def materialize_local_pdf(source: Path, destination: Path) -> PdfArtifact:
     source_metadata = inspect_pdf(source)
     destination.parent.mkdir(parents=True, exist_ok=True)
-    if not destination.exists():
+    destination_existed = destination.exists()
+    if not destination_existed:
         temporary = destination.with_name(f".{destination.name}.{os.getpid()}.part")
         try:
             shutil.copyfile(source, temporary)
@@ -127,8 +137,8 @@ def materialize_local_pdf(source: Path, destination: Path) -> PdfArtifact:
     if destination_metadata["sha256"] != source_metadata["sha256"]:
         raise RuntimeError(f"local PDF checksum mismatch: {source} -> {destination}")
     return {
-        "status": "skip" if source == destination else "ok",
-        "path": str(destination),
+        "status": "skip" if destination_existed else "ok",
+        "path": report_path(destination),
         "sha256": str(destination_metadata["sha256"]),
         "byte_size": int(destination_metadata["byte_size"]),
         "source_url": None,
@@ -198,7 +208,7 @@ def download_html(arxiv_id: str, destination: Path, *, allow_network: bool) -> P
     if destination.exists():
         metadata = inspect_html(destination)
         return {
-            "status": "skip", "path": str(destination),
+            "status": "skip", "path": report_path(destination),
             "sha256": str(metadata["sha256"]), "byte_size": int(metadata["byte_size"]),
             "source_url": None,
         }
@@ -222,7 +232,7 @@ def download_html(arxiv_id: str, destination: Path, *, allow_network: bool) -> P
             metadata = inspect_html(temporary)
             temporary.replace(destination)
             return {
-                "status": "ok", "path": str(destination),
+                "status": "ok", "path": report_path(destination),
                 "sha256": str(metadata["sha256"]), "byte_size": int(metadata["byte_size"]),
                 "source_url": url,
             }
@@ -239,7 +249,7 @@ def download_pdf(arxiv_id: str, destination: Path, *, allow_network: bool) -> Pd
     if destination.exists():
         metadata = inspect_pdf(destination)
         return {
-            "status": "skip", "path": str(destination),
+            "status": "skip", "path": report_path(destination),
             "sha256": str(metadata["sha256"]), "byte_size": int(metadata["byte_size"]),
             "source_url": None,
         }
@@ -257,7 +267,7 @@ def download_pdf(arxiv_id: str, destination: Path, *, allow_network: bool) -> Pd
         if ok:
             metadata = inspect_pdf(destination)
             return {
-                "status": "ok", "path": str(destination),
+                "status": "ok", "path": report_path(destination),
                 "sha256": str(metadata["sha256"]), "byte_size": int(metadata["byte_size"]),
                 "source_url": url,
             }
@@ -340,7 +350,7 @@ def main() -> int:
     summary = {
         "schema_version": "arxiv-source-recovery-v3-pdf-html",
         "network_authorized": args.allow_network,
-        "catalog_root": str(args.catalog),
+        "catalog_root": report_path(args.catalog),
         "total": len(results),
         "ok": sum(result["status"] == "ok" for result in results),
         "skip": sum(result["status"] == "skip" for result in results),
