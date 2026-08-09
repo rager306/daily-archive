@@ -29,6 +29,11 @@ pub trait CatalogMutationPort: Send + Sync {
         relative_path: &str,
         bytes: &[u8],
     ) -> Result<CatalogWriteDisposition, CatalogInventoryError>;
+    fn write_file_atomic(
+        &self,
+        relative_path: &str,
+        bytes: &[u8],
+    ) -> Result<CatalogWriteDisposition, CatalogInventoryError>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

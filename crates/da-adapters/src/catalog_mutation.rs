@@ -117,6 +117,45 @@ impl CatalogMutationPort for FilesystemCatalogMutation {
         }
         result
     }
+    fn write_file_atomic(
+        &self,
+        relative_path: &str,
+        bytes: &[u8],
+    ) -> Result<CatalogWriteDisposition, CatalogInventoryError> {
+        let target = self.safe_target(relative_path)?;
+        if target.exists() && std::fs::read(&target).map_err(err)? == bytes {
+            return Ok(CatalogWriteDisposition::Unchanged);
+        }
+        let parent = target
+            .parent()
+            .ok_or_else(|| err("target parent missing"))?;
+        create_dir_all(parent).map_err(err)?;
+        let root = self.root.canonicalize().map_err(err)?;
+        if !parent.canonicalize().map_err(err)?.starts_with(root) {
+            return Err(err("target parent escapes catalog root"));
+        }
+        let seq = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let name = target
+            .file_name()
+            .and_then(|v| v.to_str())
+            .ok_or_else(|| err("target filename invalid"))?;
+        let tmp = parent.join(format!(".{name}.tmp-{}-{seq}", std::process::id()));
+        let result = (|| {
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&tmp)
+                .map_err(err)?;
+            file.write_all(bytes).map_err(err)?;
+            file.sync_all().map_err(err)?;
+            std::fs::rename(&tmp, &target).map_err(err)?;
+            Ok(CatalogWriteDisposition::Applied)
+        })();
+        if result.is_err() {
+            let _ = std::fs::remove_file(&tmp);
+        }
+        result
+    }
 }
 impl FilesystemCatalogMutation {
     fn safe_target(&self, value: &str) -> Result<PathBuf, CatalogInventoryError> {
@@ -197,6 +236,27 @@ mod tests {
         );
         std::fs::remove_dir_all(r).unwrap()
     }
+    #[test]
+    fn atomic_file_update_replaces_then_replays_unchanged() {
+        let r = root();
+        let m = FilesystemCatalogMutation::new(&r);
+        let path = "index.json";
+        assert_eq!(
+            m.write_file_atomic(path, b"one").unwrap(),
+            CatalogWriteDisposition::Applied
+        );
+        assert_eq!(
+            m.write_file_atomic(path, b"two").unwrap(),
+            CatalogWriteDisposition::Applied
+        );
+        assert_eq!(
+            m.write_file_atomic(path, b"two").unwrap(),
+            CatalogWriteDisposition::Unchanged
+        );
+        assert_eq!(std::fs::read(r.join(path)).unwrap(), b"two");
+        std::fs::remove_dir_all(r).unwrap();
+    }
+
     #[test]
     fn rejects_traversal() {
         let r = root();

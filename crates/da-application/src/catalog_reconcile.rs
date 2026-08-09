@@ -439,6 +439,13 @@ mod tests {
         ) -> Result<Vec<CatalogAssetDescriptor>, CatalogInventoryError> {
             Ok(self.assets.clone())
         }
+        fn write_file_atomic(
+            &self,
+            relative_path: &str,
+            bytes: &[u8],
+        ) -> Result<CatalogWriteDisposition, CatalogInventoryError> {
+            self.write_metadata_atomic_if_absent(relative_path, bytes)
+        }
         fn write_metadata_atomic_if_absent(
             &self,
             relative_path: &str,

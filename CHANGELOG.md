@@ -1,5 +1,17 @@
 # Changelog
 
+### M371 S05 canonical catalog index rebuild
+
+Rebuilt both catalog indexes from live `article.json` records through the same
+contained filesystem mutation port. Duplicate bare/version identities are
+canonicalized non-destructively: bare metadata wins, versioned roots remain as
+provenance assets, and index keys are unique versionless identities. Both index
+files contain 230 entries, have identical SHA-256, preserve import/write safety
+false, and a second rebuild returns `Unchanged` for both files with zero writes.
+The index writer uses the same same-directory temp, fsync and atomic rename
+contract as metadata apply. Physical duplicate deletion was intentionally not
+performed because some versioned roots retain distinct HTML evidence.
+
 ### M371 S05 bounded catalog metadata apply
 
 Added the filesystem `CatalogMutationPort` adapter with catalog-root containment,
