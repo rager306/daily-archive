@@ -33,7 +33,7 @@ pub use figure_detection::{
     FigureDetectionError, FigureDetectionPort, FigureDetectionPortResult, FigureDetectionRequest,
     FigureDetectionResult,
 };
-pub use graph_store::{DirectGraphStore, GraphStore};
+pub use graph_store::{DirectGraphStore, GraphStore, MutationCounters, MutationFamilyCounters};
 pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};
 pub use multimodal_llm::{
     ImageMediaType, ModelRouteDescriptor, ModelWireProtocol, MultimodalImage, MultimodalLlmError,

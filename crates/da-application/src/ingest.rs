@@ -100,11 +100,20 @@ impl IngestUseCase {
     /// Construct the always-run graph materialization boundary without fake
     /// parser/embedder implementations. `ingest_pdf` fails closed in this mode.
     pub fn materializer_only(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
+        Self::materializer_only_with_clock(graph_store, std::sync::Arc::new(da_ports::SystemClock))
+    }
+
+    /// Construct the graph-only boundary with an injected clock. Replay and
+    /// temporal tests must use this instead of relying on wall-clock timing.
+    pub fn materializer_only_with_clock(
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+        clock: std::sync::Arc<dyn da_ports::Clock>,
+    ) -> Self {
         Self {
             parser: None,
             embedder: None,
             graph_store,
-            clock: std::sync::Arc::new(da_ports::SystemClock),
+            clock,
             pdf_classifier: None,
             eligibility: ImportEligibility::default(),
         }
@@ -257,16 +266,16 @@ impl IngestUseCase {
         paper_schema.validate(&paper_props)?;
 
         // 4. HOT PATH: Direct GraphStore API — replay-safe Paper identity.
-        let node_id = match self
+        let (node_id, paper_created) = match self
             .graph_store
             .find_node_by_string_property("Paper", "vid", &vid_str)
             .await
         {
-            Some(node) => node,
+            Some(node) => (node, false),
             None => {
                 let node = self.graph_store.create_node("Paper").await?;
                 tracing::debug!(paper_id, node_id = node, "Node created");
-                node
+                (node, true)
             }
         };
 
@@ -293,9 +302,17 @@ impl IngestUseCase {
                 hex::encode(Sha256::digest(parsed.abstract_text.as_bytes())),
             )
             .await?;
-        self.graph_store
-            .set_node_property_int(node_id, "valid_from", now)
-            .await?;
+        if paper_created
+            || self
+                .graph_store
+                .get_node_property_int(node_id, "valid_from")
+                .await
+                .is_none()
+        {
+            self.graph_store
+                .set_node_property_int(node_id, "valid_from", now)
+                .await?;
+        }
         self.graph_store
             .set_node_property_int(node_id, "schema_version", 1)
             .await?;
@@ -646,9 +663,17 @@ impl IngestUseCase {
                         .set_node_property_string(ref_node, "doi", doi.clone())
                         .await?;
                 }
-                self.graph_store
-                    .set_node_property_int(ref_node, "valid_from", now_ts)
-                    .await?;
+                if ref_created
+                    || self
+                        .graph_store
+                        .get_node_property_int(ref_node, "valid_from")
+                        .await
+                        .is_none()
+                {
+                    self.graph_store
+                        .set_node_property_int(ref_node, "valid_from", now_ts)
+                        .await?;
+                }
                 self.graph_store
                     .set_node_property_bool(ref_node, "retrieval_eligible", true)
                     .await?;

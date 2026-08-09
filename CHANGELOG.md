@@ -1,5 +1,37 @@
 # Changelog
 
+### ADR-055 physical graph mutation replay proof
+
+Added a universal `InstrumentedGraphStore` decorator in `kg-storage` without
+changing the high-blast-radius `DirectGraphStore` signatures. It records
+attempted/applied/unchanged/rejected outcomes independently for node, property,
+edge and vector operations. Equal typed property writes are compare-before-write
+and become `unchanged`; storage errors remain rejected errors. Write-capable
+query, index creation and snapshot import invalidate the observation rather than
+silently bypassing ACAP. Empty, inconsistent or unobservable observations fail
+closed, and phase reset/snapshot share the mutation lock.
+
+Fixed a real replay bug: Paper and Reference `valid_from` were refreshed on every
+materialization. They are now set only when created or missing, with an advancing
+injected-clock regression test. Gold graph waves now require nonzero clean first
+writes, valid zero-write replay partitions, ACAP PASS, stable graph counts and a
+derived D127 flag. The ACAP policy's replay equation now includes property writes
+and a hard observation-integrity metric.
+
+A fresh current-manifest/all-hit cache wave and real Samyama batch-1 run produced
+`artifacts/article_context/materialization_batch_01.{json,sgsnap}`. Across 10
+papers, first pass applied 9,743 physical writes; replay observed 5,113 attempts,
+0 applied, 5,113 unchanged, 0 rejected and 0 unobserved. Graph counts remained
+715 nodes/1,012 edges, all article assurance verdicts passed, import eligibility
+remained false, and snapshot SHA-256 is
+`20242694b9e0de154e2f298bf21f5a6af4bd8d7734d8061afdb3b4df78a9b59d`.
+The exact cache-wave report is preserved beside it. Evidence:
+`ef53fc8d-dd8a-4188-bc37-1b9b0764693f`.
+
+Remaining explicit debt: mutation identity/upsert under concurrent multi-writer
+use, vector content readback, deterministic clock binding across independent
+fresh runs, and the same-process 20-wave/200-paper aggregate report.
+
 ### ADR-055 ACAP typed runtime vertical
 
 Implemented the first product ACAP slice across the onion. `da-domain` now owns

@@ -2,12 +2,17 @@
 
 use anyhow::{Context, Result};
 use da_application::ingest::IngestResult;
-use da_application::{ExtractionResult, ExtractionUseCase, IngestUseCase};
+use da_application::{
+    ExtractionResult, ExtractionUseCase, IngestUseCase, MaterializationAssuranceUseCase,
+    MaterializationReplayObservation,
+};
 use da_application::{PipelineRunReport, StageDisposition};
+use da_domain::{ArticleAssuranceReport, ContentDigest};
 use da_ports::extractor::ExtractedEntity;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParsedArticle;
 use da_ports::pipeline_cache::{CacheLookup, PipelineCache, StageOutcome};
+use kg_storage::{InstrumentedGraphStore, MutationCounters};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::Path;
@@ -63,8 +68,13 @@ pub struct PaperGraphMaterialization {
     pub paper_id: String,
     pub source_sha256: String,
     pub artifacts: ArtifactHashes,
+    /// Business object creation counters retained for operator diagnostics.
     pub first: NetWrites,
     pub replay: NetWrites,
+    /// Physical storage mutation outcomes; authoritative for replay proof.
+    pub first_mutations: MutationCounters,
+    pub replay_mutations: MutationCounters,
+    pub assurance: ArticleAssuranceReport,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,7 +91,20 @@ pub struct BatchGraphMaterialization {
 
 impl BatchGraphMaterialization {
     pub fn passed(&self) -> bool {
-        self.replay_zero_writes
+        self.papers.iter().all(|paper| {
+            paper.first_mutations.partition_is_valid()
+                && paper.first_mutations.unobserved_operations == 0
+                && paper.first_mutations.rejected() == 0
+                && paper.first_mutations.applied() > 0
+        }) && self.replay_zero_writes
+            && self
+                .papers
+                .iter()
+                .all(|paper| paper.replay_mutations.replay_passes())
+            && self
+                .papers
+                .iter()
+                .all(|paper| paper.assurance.verdict == da_domain::AssuranceVerdict::Pass)
             && self.graph_after_first == self.graph_after_replay
             && !self.import_eligible
     }
@@ -148,10 +171,14 @@ pub async fn materialize_wave(
     store: Arc<dyn DirectGraphStore>,
     cache: &dyn PipelineCache,
     report: &GoldWaveReport,
+    policy_sha256: ContentDigest,
     metadata: impl Fn(&str) -> Result<(Option<String>, Option<String>)>,
 ) -> Result<BatchGraphMaterialization> {
-    let ingest = IngestUseCase::materializer_only(Arc::clone(&store));
-    let extraction = ExtractionUseCase::materializer_only(Arc::clone(&store));
+    let instrumented = InstrumentedGraphStore::new(store);
+    let observed_store: Arc<dyn DirectGraphStore> = Arc::new(instrumented.clone());
+    let ingest = IngestUseCase::materializer_only(Arc::clone(&observed_store));
+    let extraction = ExtractionUseCase::materializer_only(Arc::clone(&observed_store));
+    let assurance = MaterializationAssuranceUseCase::new();
     let graph_before = ingest.graph_stats().await;
     let mut prepared = Vec::with_capacity(report.papers.len());
     for paper in &report.papers {
@@ -164,6 +191,7 @@ pub async fn materialize_wave(
 
     let mut papers = Vec::with_capacity(prepared.len());
     for (paper, artifacts, (primary_domain, source_code)) in &prepared {
+        instrumented.reset().await;
         let first_ingest = ingest
             .materialize_parsed(
                 &artifacts.parsed,
@@ -182,6 +210,14 @@ pub async fn materialize_wave(
             artifacts: artifacts.hashes.clone(),
             first: net_writes(&first_ingest, &first_extract),
             replay: NetWrites::default(),
+            first_mutations: instrumented.snapshot().await,
+            replay_mutations: MutationCounters::default(),
+            assurance: ArticleAssuranceReport::new(
+                paper.paper_id.clone(),
+                policy_sha256.clone(),
+                da_domain::ArticleContextState::Materialized,
+                vec![],
+            )?,
         });
     }
     let graph_after_first = ingest.graph_stats().await;
@@ -189,6 +225,7 @@ pub async fn materialize_wave(
     for ((_, artifacts, (primary_domain, source_code)), paper_report) in
         prepared.into_iter().zip(&mut papers)
     {
+        instrumented.reset().await;
         let replay_ingest = ingest
             .materialize_parsed(
                 &artifacts.parsed,
@@ -202,11 +239,28 @@ pub async fn materialize_wave(
             .materialize_extracted(&artifacts.parsed, artifacts.entities)
             .await?;
         paper_report.replay = net_writes(&replay_ingest, &replay_extract);
+        paper_report.replay_mutations = instrumented.snapshot().await;
+        paper_report.assurance = assurance
+            .evaluate_graph(
+                &instrumented,
+                &artifacts.parsed,
+                &replay_ingest,
+                MaterializationReplayObservation::from_mutations(paper_report.replay_mutations),
+                policy_sha256.clone(),
+            )
+            .await?;
     }
     let graph_after_replay = ingest.graph_stats().await;
     let replay_zero_writes = papers
         .iter()
-        .all(|paper| paper.replay == NetWrites::default());
+        .all(|paper| paper.replay_mutations.replay_passes());
+    let import_eligible = papers.iter().any(|paper| {
+        paper
+            .assurance
+            .layer_results
+            .iter()
+            .any(|layer| layer.d127_unlock_count != 0)
+    });
     Ok(BatchGraphMaterialization {
         manifest_sha256: report.manifest_sha256.clone(),
         batch: report.batch,
@@ -214,7 +268,7 @@ pub async fn materialize_wave(
         graph_after_first,
         graph_after_replay,
         replay_zero_writes,
-        import_eligible: false,
+        import_eligible,
         papers,
     })
 }

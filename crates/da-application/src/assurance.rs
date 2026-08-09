@@ -9,7 +9,7 @@ use da_domain::{
     ContentDigest, CountObservation, LayerAssuranceResult, MissingnessReason, WriteDelta,
 };
 use da_ports::parser::ParsedArticle;
-use da_ports::{AssuranceReportStore, DirectGraphStore};
+use da_ports::{AssuranceReportStore, DirectGraphStore, MutationCounters};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,6 +33,24 @@ pub enum MaterializationReplayObservation {
     #[default]
     NotRun,
     Observed(WriteDelta),
+}
+
+impl MaterializationReplayObservation {
+    pub fn from_mutations(counters: MutationCounters) -> Self {
+        if counters.attempted() == 0
+            || !counters.partition_is_valid()
+            || counters.unobserved_operations != 0
+        {
+            return Self::NotRun;
+        }
+        Self::Observed(WriteDelta {
+            node_writes: counters.node.applied,
+            property_writes: counters.property.applied,
+            edge_writes: counters.edge.applied,
+            vector_writes: counters.vector.applied,
+            rejected_writes: counters.rejected(),
+        })
+    }
 }
 
 pub struct MaterializationAssuranceUseCase<'a> {
@@ -347,6 +365,91 @@ mod tests {
     }
 
     #[test]
+    fn pure_rejection_retains_specific_failure_diagnostic() {
+        let report = MaterializationAssuranceUseCase::new()
+            .evaluate(
+                &parsed(),
+                &ingest(),
+                &readback(),
+                MaterializationReplayObservation::from_mutations(MutationCounters {
+                    property: da_ports::MutationFamilyCounters {
+                        attempted: 1,
+                        applied: 0,
+                        unchanged: 0,
+                        rejected: 1,
+                    },
+                    ..MutationCounters::default()
+                }),
+                ContentDigest::of_text("policy"),
+            )
+            .unwrap();
+        assert_eq!(report.verdict, AssuranceVerdict::Fail);
+        assert!(
+            report.layer_results[0]
+                .hard_failures
+                .contains(&"replay_rejected_writes:1".into())
+        );
+    }
+
+    #[test]
+    fn property_mutation_from_instrumented_store_fails_replay() {
+        let observation = MaterializationReplayObservation::from_mutations(MutationCounters {
+            property: da_ports::MutationFamilyCounters {
+                attempted: 2,
+                applied: 1,
+                unchanged: 1,
+                rejected: 0,
+            },
+            ..MutationCounters::default()
+        });
+        let report = MaterializationAssuranceUseCase::new()
+            .evaluate(
+                &parsed(),
+                &ingest(),
+                &readback(),
+                observation,
+                ContentDigest::of_text("policy"),
+            )
+            .unwrap();
+        assert_eq!(report.verdict, AssuranceVerdict::Fail);
+        assert!(
+            report.layer_results[0]
+                .hard_failures
+                .contains(&"replay_net_writes:1".into())
+        );
+    }
+
+    #[test]
+    fn empty_or_invalid_mutation_counters_are_missing_evidence() {
+        for counters in [
+            MutationCounters::default(),
+            MutationCounters {
+                property: da_ports::MutationFamilyCounters {
+                    attempted: 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ] {
+            let report = MaterializationAssuranceUseCase::new()
+                .evaluate(
+                    &parsed(),
+                    &ingest(),
+                    &readback(),
+                    MaterializationReplayObservation::from_mutations(counters),
+                    ContentDigest::of_text("policy"),
+                )
+                .unwrap();
+            assert_eq!(report.verdict, AssuranceVerdict::Fail);
+            assert!(
+                report.layer_results[0]
+                    .hard_failures
+                    .contains(&"replay_net_writes:missing_observation".into())
+            );
+        }
+    }
+
+    #[test]
     fn missing_replay_observation_fails_closed() {
         let report = MaterializationAssuranceUseCase::new()
             .evaluate(
@@ -377,7 +480,7 @@ mod tests {
                 MaterializationReplayObservation::Observed(WriteDelta {
                     node_writes: 1,
                     edge_writes: 2,
-                    vector_writes: 0,
+                    ..WriteDelta::default()
                 }),
                 ContentDigest::of_text("policy"),
             )

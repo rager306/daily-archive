@@ -13,6 +13,7 @@ pub mod contract;
 pub mod error;
 pub mod graph_mode;
 pub mod mock;
+pub mod mutation;
 pub mod traits;
 
 #[cfg(feature = "samyama")]
@@ -23,6 +24,10 @@ pub use graph_mode::{
     GraphMode, GraphModeError, refuse_persistence_path, refuse_persistence_path_from_env,
 };
 pub use mock::MockGraphStore;
+pub use mutation::{
+    InstrumentedGraphStore, MutationCounters, MutationDisposition, MutationFamily,
+    MutationFamilyCounters,
+};
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
 #[cfg(feature = "samyama")]

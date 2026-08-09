@@ -5,6 +5,7 @@ use clap::Parser;
 use da_adapters::{FilePipelineCache, SamyamaGraphStore};
 use da_cli::gold_corpus::GoldCorpusManifest;
 use da_cli::gold_graph::{atomic_write, load_wave_report, materialize_wave, sha256};
+use da_domain::ContentDigest;
 use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -28,6 +29,11 @@ struct Args {
     output_snapshot: PathBuf,
     #[arg(long)]
     report: PathBuf,
+    #[arg(
+        long,
+        default_value = "scripts/governor/checks/article_context_assurance.yaml"
+    )]
+    assurance_policy: PathBuf,
 }
 
 type CatalogMetadata = (Option<String>, Option<String>);
@@ -72,11 +78,15 @@ async fn main() -> Result<()> {
     } else {
         None
     };
+    let policy_bytes = std::fs::read(&args.assurance_policy)
+        .with_context(|| format!("read {}", args.assurance_policy.display()))?;
+    let policy_sha256 = ContentDigest::of_bytes(&policy_bytes);
     let store: Arc<dyn DirectGraphStore> = concrete.clone();
     let materialization = materialize_wave(
         store,
         &FilePipelineCache::new(&args.cache_root),
         &wave,
+        policy_sha256,
         |paper_id| {
             metadata
                 .get(paper_id)
@@ -104,12 +114,12 @@ async fn main() -> Result<()> {
     let output_snapshot_sha256 = sha256(&snapshot);
     atomic_write(&args.output_snapshot, &snapshot)?;
     let report = GraphWaveReport {
+        import_eligible: materialization.import_eligible,
         materialization,
         input_snapshot_sha256,
         output_snapshot_sha256,
         output_snapshot: args.output_snapshot.display().to_string(),
         same_process: true,
-        import_eligible: false,
     };
     atomic_write(&args.report, &serde_json::to_vec_pretty(&report)?)?;
     println!("{}", serde_json::to_string_pretty(&report)?);

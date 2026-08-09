@@ -12,6 +12,7 @@
 
 // Re-export universal storage traits and types from kg-storage (ADR-050 Phase B).
 pub use kg_storage::error::{GraphResult, GraphStoreError};
+pub use kg_storage::mutation::{MutationCounters, MutationFamilyCounters};
 pub use kg_storage::traits::{
     DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult,
 };

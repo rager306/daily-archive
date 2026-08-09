@@ -167,13 +167,19 @@ impl CountObservation {
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct WriteDelta {
     pub node_writes: u64,
+    #[serde(default)]
+    pub property_writes: u64,
     pub edge_writes: u64,
     pub vector_writes: u64,
+    #[serde(default)]
+    pub rejected_writes: u64,
 }
 
 impl WriteDelta {
+    /// Total successfully applied physical writes. Rejections are reported as
+    /// a separate hard metric and deliberately excluded from this sum.
     pub fn total(self) -> u64 {
-        self.node_writes + self.edge_writes + self.vector_writes
+        self.node_writes + self.property_writes + self.edge_writes + self.vector_writes
     }
 }
 
@@ -225,6 +231,12 @@ impl LayerAssuranceResult {
             }
         }
         match self.replay_writes {
+            Some(writes) if writes.rejected_writes != 0 => {
+                failures.push(format!("replay_rejected_writes:{}", writes.rejected_writes));
+                if writes.total() != 0 {
+                    failures.push(format!("replay_net_writes:{}", writes.total()));
+                }
+            }
             Some(writes) if writes.total() != 0 => {
                 failures.push(format!("replay_net_writes:{}", writes.total()));
             }
@@ -365,6 +377,15 @@ mod tests {
         )
         .unwrap();
         crate::roundtrip_json(&report);
+    }
+
+    #[test]
+    fn write_delta_reads_pre_property_counter_schema_safely() {
+        let delta: WriteDelta =
+            serde_json::from_str(r#"{"node_writes":1,"edge_writes":2,"vector_writes":3}"#).unwrap();
+        assert_eq!(delta.property_writes, 0);
+        assert_eq!(delta.rejected_writes, 0);
+        assert_eq!(delta.total(), 6);
     }
 
     #[test]

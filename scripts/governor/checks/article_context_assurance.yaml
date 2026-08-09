@@ -81,8 +81,13 @@ metric_definitions:
   replay_net_writes:
     kind: hard
     unit: count
-    formula: replay_node_writes + replay_edge_writes + replay_vector_writes
+    formula: replay_node_writes + replay_property_writes + replay_edge_writes + replay_vector_writes
     pass: "== 0"
+  replay_observation_integrity:
+    kind: hard
+    unit: boolean
+    formula: attempted > 0 and attempted == applied + unchanged + rejected and unchanged > 0 and rejected == 0 and unobserved_operations == 0
+    pass: true
   d127_unlock_count:
     kind: hard
     unit: count
@@ -188,7 +193,7 @@ layers:
     owner: da-application
     input: cache_payloads
     output: samyama_graph
-    hard_metrics: [required_field_retention, byte_conservation, ontology_conformance, replay_net_writes, d127_unlock_count]
+    hard_metrics: [required_field_retention, byte_conservation, ontology_conformance, replay_net_writes, replay_observation_integrity, d127_unlock_count]
     quality_metrics: [coverage, latency_p95_ms]
     evidence: [graph_wave_report, graph_snapshot]
     enforcement: required
@@ -243,7 +248,7 @@ layers:
     owner: da-cli
     input: accepted_graph
     output: atomic_snapshot
-    hard_metrics: [checksum_lineage_coverage, replay_net_writes, d127_unlock_count]
+    hard_metrics: [checksum_lineage_coverage, replay_net_writes, replay_observation_integrity, d127_unlock_count]
     quality_metrics: [latency_p95_ms]
     evidence: [snapshot_checksum, aggregate_assurance_report]
     enforcement: bootstrap

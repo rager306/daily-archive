@@ -6,7 +6,7 @@
 #![cfg(test)]
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicI64, AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 use da_application::{
@@ -14,9 +14,21 @@ use da_application::{
     ingest::IngestUseCase,
 };
 use da_domain::{AssuranceVerdict, ContentDigest, WriteDelta};
+use da_ports::clock::Clock;
 use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
+use kg_storage::InstrumentedGraphStore;
+
+#[derive(Debug)]
+struct AdvancingClock(AtomicI64);
+
+impl Clock for AdvancingClock {
+    fn now(&self) -> chrono::DateTime<chrono::Utc> {
+        let seconds = self.0.fetch_add(60, Ordering::SeqCst);
+        chrono::DateTime::from_timestamp(seconds, 0).expect("valid test timestamp")
+    }
+}
 
 // ---------- Mock Parser ----------
 
@@ -164,6 +176,72 @@ async fn cached_parsed_materialization_replay_is_idempotent() {
     assert_eq!(store.get_nodes_by_label("Section").await.len(), 1);
     assert_eq!(store.node_count_total(), 2);
     assert_eq!(store.vector_add_call_count(), 1);
+}
+
+#[tokio::test]
+async fn identical_materialization_replay_has_no_physical_writes() {
+    let inner = MockGraphStore::new();
+    let instrumented = InstrumentedGraphStore::new(Arc::new(inner.clone()));
+    let graph: Arc<dyn DirectGraphStore> = Arc::new(instrumented.clone());
+    let ingest = IngestUseCase::materializer_only_with_clock(
+        graph,
+        Arc::new(AdvancingClock(AtomicI64::new(1_700_000_000))),
+    );
+    let parsed = ParsedArticle {
+        paper_id: "2401.00010".into(),
+        title: "Replay evidence".into(),
+        abstract_text: "ABSTRACT-尾".into(),
+        body_text: "Body TAIL-科学".into(),
+        sections: vec![da_ports::parser::Section {
+            title: "Body".into(),
+            text: "Body TAIL-科学".into(),
+            level: 1,
+            ..Default::default()
+        }],
+        citations: vec![da_ports::parser::CitationEntry {
+            raw_text: "Stable reference".into(),
+            doi: Some("10.1000/stable".into()),
+            arxiv_id: None,
+            title: Some("Stable reference".into()),
+        }],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "cached-replay-hash".into(),
+    };
+
+    let first = ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    assert!(instrumented.reset().await.applied() > 0);
+    let replay = ingest
+        .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
+        .await
+        .unwrap();
+    let replay_mutations = instrumented.snapshot().await;
+    assert!(replay_mutations.partition_is_valid());
+    assert!(replay_mutations.attempted() > 0);
+    assert_eq!(
+        replay_mutations.applied(),
+        0,
+        "identical replay must not change graph state"
+    );
+    assert_eq!(replay_mutations.rejected(), 0);
+    assert!(replay_mutations.unchanged() > 0);
+
+    let assurance = MaterializationAssuranceUseCase::new()
+        .evaluate_graph(
+            &instrumented,
+            &parsed,
+            &replay,
+            MaterializationReplayObservation::from_mutations(replay_mutations),
+            ContentDigest::of_text("test-policy"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(assurance.verdict, AssuranceVerdict::Pass);
+    assert_eq!(inner.get_nodes_by_label("Paper").await.len(), 1);
+    assert_eq!(first.graph_node_id, replay.graph_node_id);
 }
 
 #[tokio::test]

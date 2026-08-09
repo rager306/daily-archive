@@ -200,10 +200,16 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    fail-closed verdict derivation, report-store port, immutable atomic filesystem
    adapter, and a graph-readback materialization checker.
 3. Required evidence for source through materialization. **In progress.** The
-   checker reads Paper/Section values and scans graph-wide D127 state, but durable
-   replay evidence remains blocked on graph-write instrumentation: existing
-   create counters do not observe property rewrites and therefore cannot prove
-   replay net writes are zero. Missing replay observation is a hard failure.
+   checker reads Paper/Section values and scans graph-wide D127 state. Universal
+   `kg-storage` mutation instrumentation now records attempted/applied/unchanged/
+   rejected outcomes for node/property/edge/vector families and invalidates
+   evidence after unobservable query/index/import operations. Missing, empty or
+   invalid replay observation is a hard failure. A durable 10-paper real-Samyama
+   proof is stored in `artifacts/article_context/materialization_batch_01.json`:
+   first applied 9,743; replay attempted 5,113, applied 0, unchanged 5,113,
+   rejected 0, unobserved 0; all ACAP verdicts PASS and D127 remains false.
+   Remaining rollout work is the same-process 20-wave/200-paper report and
+   deterministic fresh-run clock binding.
 4. Refresh 200-paper checkpoint with new preservation fields.
 5. Prompt registry and typed ContextBundle.
 6. Summary/enrichment/resolution evidence.
