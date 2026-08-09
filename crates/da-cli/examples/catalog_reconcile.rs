@@ -2,7 +2,7 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use da_adapters::FilesystemCatalogInventory;
+use da_adapters::{FilesystemCatalogInventory, FilesystemCatalogMutation};
 use da_application::CatalogReconcileUseCase;
 use da_cli::gold_graph::atomic_write;
 use std::path::PathBuf;
@@ -17,6 +17,10 @@ struct Args {
     plan: PathBuf,
     #[arg(long)]
     fail_on_findings: bool,
+    #[arg(long)]
+    apply_low: bool,
+    #[arg(long, default_value = "artifacts/article_catalog/apply_report.json")]
+    apply_report: PathBuf,
 }
 
 fn main() -> Result<()> {
@@ -28,6 +32,18 @@ fn main() -> Result<()> {
     atomic_write(&args.report, &(serde_json::to_vec_pretty(&report)?))?;
     let plan = CatalogReconcileUseCase::<FilesystemCatalogInventory>::plan(&report);
     atomic_write(&args.plan, &serde_json::to_vec_pretty(&plan)?)?;
+    let apply = if args.apply_low {
+        let receipt = CatalogReconcileUseCase::<FilesystemCatalogInventory>::apply_low(
+            &plan,
+            &report,
+            &FilesystemCatalogMutation::new(&args.catalog_root),
+        )?;
+        atomic_write(&args.apply_report, &serde_json::to_vec_pretty(&receipt)?)?;
+        tracing::info!(event="catalog_low_actions_applied", attempted=receipt.attempted, applied=receipt.applied, skipped=receipt.skipped, rejected=receipt.rejected, write_ops=receipt.write_ops, apply_report=%args.apply_report.display(), "Low-risk catalog actions applied");
+        Some(receipt)
+    } else {
+        None
+    };
     tracing::info!(event="catalog_inventory_completed", metadata=report.article_metadata_count, pdf=report.pdf_count, html=report.html_count, canonical_identities=report.canonical_identity_count, findings=report.findings.len(), planned_actions=plan.actions.len(), auto_applicable_actions=plan.auto_applicable_count(), report=%args.report.display(), plan=%args.plan.display(), "Catalog reconciliation inventory and plan completed");
     println!(
         "metadata={} pdf={} html={} identities={} findings={} actions={} auto={} report={} plan={}",
@@ -41,6 +57,17 @@ fn main() -> Result<()> {
         args.report.display(),
         args.plan.display()
     );
+    if let Some(receipt) = apply {
+        println!(
+            "apply attempted={} applied={} skipped={} rejected={} write_ops={} report={}",
+            receipt.attempted,
+            receipt.applied,
+            receipt.skipped,
+            receipt.rejected,
+            receipt.write_ops,
+            args.apply_report.display()
+        );
+    }
     if args.fail_on_findings && !report.is_clean() {
         anyhow::bail!(
             "catalog has {} reconciliation finding(s)",

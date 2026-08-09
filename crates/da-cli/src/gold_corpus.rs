@@ -182,11 +182,33 @@ fn resolve_source(
     catalog_files: &[PathBuf],
 ) -> Result<Option<(CanonicalSourceKind, PathBuf)>, String> {
     let exact_pdf_name = format!("{paper_id}.pdf");
-    if let Some(path) = catalog_files
+    let exact_pdfs = catalog_files
         .iter()
-        .find(|path| path.file_name().and_then(|name| name.to_str()) == Some(&exact_pdf_name))
-    {
-        return Ok(Some((CanonicalSourceKind::Pdf, path.clone())));
+        .filter(|path| path.file_name().and_then(|name| name.to_str()) == Some(&exact_pdf_name))
+        .collect::<Vec<_>>();
+    if exact_pdfs.len() == 1 {
+        return Ok(Some((CanonicalSourceKind::Pdf, exact_pdfs[0].clone())));
+    }
+    if exact_pdfs.len() > 1 {
+        let hashes = exact_pdfs
+            .iter()
+            .map(|path| file_sha256(path))
+            .collect::<Result<std::collections::BTreeSet<_>, _>>()?;
+        let canonical = exact_pdfs
+            .iter()
+            .filter(|path| category_component_is_canonical(path))
+            .collect::<Vec<_>>();
+        if hashes.len() == 1 && canonical.len() == 1 {
+            return Ok(Some((CanonicalSourceKind::Pdf, (*canonical[0]).clone())));
+        }
+        return Err(format!(
+            "ambiguous exact PDF sources for '{paper_id}': {}",
+            exact_pdfs
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
     }
 
     let versioned_pdfs = catalog_files
@@ -225,6 +247,15 @@ fn resolve_source(
         })
         .cloned()
         .map(|path| (CanonicalSourceKind::Html, path)))
+}
+
+fn category_component_is_canonical(path: &Path) -> bool {
+    path.parent()
+        .and_then(Path::parent)
+        .and_then(Path::parent)
+        .and_then(Path::file_name)
+        .and_then(|value| value.to_str())
+        .is_some_and(|category| category == category.to_ascii_lowercase())
 }
 
 fn versioned_identity_matches(value: &str, paper_id: &str) -> bool {
@@ -464,6 +495,32 @@ mod tests {
         assert_eq!(manifest.unavailable_count, 0);
         assert_eq!(manifest.records[0].source.kind, CanonicalSourceKind::Pdf);
         assert_eq!(manifest.records[1].source.kind, CanonicalSourceKind::Html);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn duplicate_exact_pdf_prefers_unique_lowercase_category_when_content_matches() {
+        let root = temp_root("duplicate-category-case");
+        let fixtures = root.join("gold");
+        let catalog = root.join("catalog");
+        std::fs::create_dir_all(&fixtures).unwrap();
+        fixture(&fixtures.join("2605.26525.gold.json"), "2605.26525", 1);
+        for category in ["cs-CV", "cs-cv"] {
+            let source = catalog.join(format!("arxiv/{category}/2605.26525/source"));
+            std::fs::create_dir_all(&source).unwrap();
+            std::fs::write(source.join("2605.26525.pdf"), b"same").unwrap();
+        }
+        std::fs::write(catalog.join("arxiv/cs-cv/2605.26525/article.json"), b"{}").unwrap();
+        let manifest = build_gold_corpus_manifest(&fixtures, &catalog, 10).unwrap();
+        assert!(
+            manifest.records[0]
+                .source
+                .path
+                .as_ref()
+                .unwrap()
+                .contains("cs-cv")
+        );
+        assert!(manifest.records[0].layers.article_metadata);
         std::fs::remove_dir_all(root).unwrap();
     }
 

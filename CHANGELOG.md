@@ -1,5 +1,28 @@
 # Changelog
 
+### M371 S05 bounded catalog metadata apply
+
+Added the filesystem `CatalogMutationPort` adapter with catalog-root containment,
+symlink/path traversal rejection, live PDF/HTML hashing, same-directory
+`create_new` temporary files, `sync_all`, atomic rename, cleanup on failure and
+write-if-absent conflict semantics. Parallel adapter tests initially shared one
+PID-based temp directory and failed nondeterministically; unique atomic-sequence
+roots fixed the test harness rather than hiding the race with retries.
+
+Applied exactly the seven low-risk checksum-bound metadata actions. First apply:
+7 attempted / 7 applied / 7 write operations / 0 rejected. Every generated
+`article.v00.02` record rebuilds local PDF+HTML variants, strips donor execution
+history and stale URLs, and keeps graph/import/readiness claims false. Fresh
+inventory+plan removed all low actions; replay attempted 0 and wrote 0. The
+remaining catalog debt is explicit: 165 blocked historical sidecar references,
+24 high-risk metadata gaps, and 7 medium bare/version identity duplicates.
+
+A post-apply manifest exposed one more resolver bug: duplicate exact PDFs under
+`cs-CV` and `cs-cv` selected lexicographically, hiding the new metadata. The
+resolver now accepts duplicate exact assets only when all checksums match and
+there is exactly one canonical lowercase category; otherwise it fails closed.
+Gold manifest is again **200/200 source-ready, 200/200 article metadata**.
+
 ### M371 S05 catalog reconciliation inventory
 
 Added the first safe catalog-repair slice as a hexagonal, read-only capability:
