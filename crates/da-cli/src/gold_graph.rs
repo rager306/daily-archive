@@ -1,5 +1,6 @@
 //! Verified cache-to-graph materialization for bounded gold-corpus waves.
 
+use crate::gold_corpus::GoldCorpusManifest;
 use anyhow::{Context, Result};
 use da_application::ingest::IngestResult;
 use da_application::{
@@ -8,6 +9,7 @@ use da_application::{
 };
 use da_application::{PipelineRunReport, StageDisposition};
 use da_domain::{ArticleAssuranceReport, ContentDigest};
+use da_ports::Clock;
 use da_ports::extractor::ExtractedEntity;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::ParsedArticle;
@@ -15,7 +17,8 @@ use da_ports::pipeline_cache::{CacheLookup, PipelineCache, StageOutcome};
 use kg_storage::{InstrumentedGraphStore, MutationCounters};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::path::Path;
+use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +43,8 @@ pub struct VerifiedPaperArtifacts {
     pub embedding: Vec<f32>,
     pub hashes: ArtifactHashes,
 }
+
+type PreparedPaper = (GoldWavePaper, VerifiedPaperArtifacts, CatalogMetadata);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArtifactHashes {
@@ -81,6 +86,9 @@ pub struct PaperGraphMaterialization {
 pub struct BatchGraphMaterialization {
     pub manifest_sha256: String,
     pub batch: usize,
+    /// Explicit transaction time shared by every materializer in this wave.
+    pub valid_at: String,
+    pub prepare_workers: usize,
     pub graph_before: (usize, usize),
     pub graph_after_first: (usize, usize),
     pub graph_after_replay: (usize, usize),
@@ -108,6 +116,197 @@ impl BatchGraphMaterialization {
             && self.graph_after_first == self.graph_after_replay
             && !self.import_eligible
     }
+}
+
+pub type CatalogMetadata = (Option<String>, Option<String>);
+pub type MetadataLookup<'a> = dyn Fn(&str) -> Result<CatalogMetadata> + Sync + 'a;
+
+pub struct MaterializationRuntime<'a> {
+    pub policy_sha256: ContentDigest,
+    pub clock: Arc<dyn Clock>,
+    pub prepare_workers: usize,
+    pub metadata: &'a MetadataLookup<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IdentityIndexSpec {
+    pub label: String,
+    pub property: String,
+    pub identity: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct IdentityIndexPolicy {
+    schema_version: String,
+    indexes: Vec<IdentityIndexSpec>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OntologySchemas {
+    node_schemas: Vec<OntologySchema>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OntologySchema {
+    label: String,
+    required_fields: Vec<OntologyField>,
+    #[serde(default)]
+    optional_fields: Vec<OntologyField>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OntologyField {
+    name: String,
+}
+
+pub fn load_identity_indexes(
+    policy_path: &Path,
+    node_schemas_path: &Path,
+) -> Result<Vec<IdentityIndexSpec>> {
+    let policy: IdentityIndexPolicy = serde_yaml::from_slice(
+        &std::fs::read(policy_path).with_context(|| format!("read {}", policy_path.display()))?,
+    )
+    .with_context(|| format!("parse {}", policy_path.display()))?;
+    anyhow::ensure!(
+        policy.schema_version == "ontology-v2-identity-indexes.v1",
+        "unsupported identity index schema {}",
+        policy.schema_version
+    );
+    anyhow::ensure!(!policy.indexes.is_empty(), "identity index policy is empty");
+    let schemas: OntologySchemas = serde_yaml::from_slice(
+        &std::fs::read(node_schemas_path)
+            .with_context(|| format!("read {}", node_schemas_path.display()))?,
+    )
+    .with_context(|| format!("parse {}", node_schemas_path.display()))?;
+    let known = schemas
+        .node_schemas
+        .into_iter()
+        .map(|schema| {
+            let fields = schema
+                .required_fields
+                .into_iter()
+                .chain(schema.optional_fields)
+                .map(|field| field.name)
+                .collect::<std::collections::BTreeSet<_>>();
+            (schema.label, fields)
+        })
+        .collect::<BTreeMap<_, _>>();
+    let mut unique = std::collections::BTreeSet::new();
+    for index in &policy.indexes {
+        anyhow::ensure!(
+            index.identity,
+            "non-identity entry {}.{}",
+            index.label,
+            index.property
+        );
+        let fields = known
+            .get(&index.label)
+            .with_context(|| format!("unknown ontology label {}", index.label))?;
+        anyhow::ensure!(
+            fields.contains(&index.property),
+            "unknown ontology property {}.{}",
+            index.label,
+            index.property
+        );
+        anyhow::ensure!(
+            unique.insert((index.label.as_str(), index.property.as_str())),
+            "duplicate identity index {}.{}",
+            index.label,
+            index.property
+        );
+    }
+    Ok(policy.indexes)
+}
+
+pub async fn ensure_identity_indexes(
+    store: &dyn DirectGraphStore,
+    indexes: &[IdentityIndexSpec],
+) -> Result<()> {
+    for index in indexes {
+        store
+            .create_property_index(&index.label, &index.property)
+            .await
+            .with_context(|| format!("create identity index {}.{}", index.label, index.property))?;
+        let mut seen = BTreeMap::<String, u64>::new();
+        for node_id in store.get_nodes_by_label(&index.label).await {
+            let Some(value) = store
+                .get_node_property_string(node_id, &index.property)
+                .await
+            else {
+                continue;
+            };
+            if let Some(previous) = seen.insert(value.clone(), node_id) {
+                anyhow::bail!(
+                    "duplicate identity {}.{}={value:?} on nodes {previous} and {node_id}",
+                    index.label,
+                    index.property
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct ArticleMetadata {
+    source_code: Option<String>,
+    coarse_topic_code: Option<String>,
+}
+
+pub fn catalog_metadata_index(
+    manifest: &GoldCorpusManifest,
+) -> Result<BTreeMap<String, CatalogMetadata>> {
+    let mut index = BTreeMap::new();
+    for record in &manifest.records {
+        let Some(source) = record.source.path.as_deref() else {
+            continue;
+        };
+        let metadata_path = article_root(Path::new(source)).map(|root| root.join("article.json"));
+        let value = metadata_path
+            .filter(|path| path.is_file())
+            .map(|path| {
+                serde_json::from_slice::<ArticleMetadata>(
+                    &std::fs::read(&path).with_context(|| format!("read {}", path.display()))?,
+                )
+                .with_context(|| format!("parse {}", path.display()))
+            })
+            .transpose()?;
+        let fallback = infer_catalog_metadata(Path::new(source));
+        index.insert(
+            record.paper_id.clone(),
+            (
+                value
+                    .as_ref()
+                    .and_then(|item| item.coarse_topic_code.clone())
+                    .or(fallback.0),
+                value
+                    .as_ref()
+                    .and_then(|item| item.source_code.clone())
+                    .or(fallback.1),
+            ),
+        );
+    }
+    Ok(index)
+}
+
+fn article_root(source: &Path) -> Option<PathBuf> {
+    let parent = source.parent()?;
+    if parent.file_name().and_then(|name| name.to_str()) == Some("source") {
+        parent.parent().map(Path::to_path_buf)
+    } else {
+        Some(parent.to_path_buf())
+    }
+}
+
+fn infer_catalog_metadata(source: &Path) -> CatalogMetadata {
+    let parts = source
+        .components()
+        .map(|part| part.as_os_str().to_string_lossy().to_string())
+        .collect::<Vec<_>>();
+    let Some(index) = parts.iter().position(|part| part == "arxiv") else {
+        return (None, None);
+    };
+    (parts.get(index + 1).cloned(), Some("arxiv".into()))
 }
 
 pub fn load_wave_report(path: &Path) -> Result<GoldWaveReport> {
@@ -167,27 +366,237 @@ pub fn load_verified_artifacts(
     })
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorpusMutationAggregate {
+    pub first: MutationCounters,
+    pub replay: MutationCounters,
+    pub assurance_pass: usize,
+    pub assurance_fail: usize,
+    pub assurance_no_claim: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiWaveMaterialization {
+    pub manifest_sha256: String,
+    pub valid_at: String,
+    pub expected_batches: usize,
+    pub article_count: usize,
+    pub prepare_workers: usize,
+    pub graph_before: (usize, usize),
+    pub graph_after: (usize, usize),
+    pub same_process: bool,
+    pub import_eligible: bool,
+    pub aggregate: CorpusMutationAggregate,
+    pub waves: Vec<BatchGraphMaterialization>,
+}
+
+impl MultiWaveMaterialization {
+    pub fn passed(&self) -> bool {
+        self.same_process
+            && !self.import_eligible
+            && self.waves.len() == self.expected_batches
+            && self.article_count
+                == self
+                    .waves
+                    .iter()
+                    .map(|wave| wave.papers.len())
+                    .sum::<usize>()
+            && self.aggregate.assurance_pass == self.article_count
+            && self.aggregate.assurance_fail == 0
+            && self.aggregate.assurance_no_claim == 0
+            && self.aggregate.first.partition_is_valid()
+            && self.aggregate.first.rejected() == 0
+            && self.aggregate.replay.replay_passes()
+            && self.waves.iter().all(BatchGraphMaterialization::passed)
+            && self.waves.windows(2).all(|pair| {
+                pair[0].batch + 1 == pair[1].batch
+                    && pair[0].graph_after_replay == pair[1].graph_before
+            })
+            && self
+                .waves
+                .first()
+                .is_some_and(|wave| wave.graph_before == self.graph_before)
+            && self
+                .waves
+                .last()
+                .is_some_and(|wave| wave.graph_after_replay == self.graph_after)
+    }
+}
+
+pub fn validate_wave_sequence(reports: &[GoldWaveReport], expected_batches: usize) -> Result<()> {
+    anyhow::ensure!(
+        expected_batches > 0,
+        "expected batch count must be positive"
+    );
+    anyhow::ensure!(
+        reports.len() == expected_batches,
+        "wave denominator mismatch: expected {expected_batches}, got {}",
+        reports.len()
+    );
+    let manifest = reports
+        .first()
+        .context("multi-wave materialization requires reports")?
+        .manifest_sha256
+        .as_str();
+    let mut paper_ids = std::collections::BTreeSet::new();
+    for (index, report) in reports.iter().enumerate() {
+        let expected_batch = index + 1;
+        anyhow::ensure!(report.wave_passed, "wave {} did not pass", report.batch);
+        anyhow::ensure!(
+            report.batch == expected_batch,
+            "wave sequence gap: expected batch {expected_batch}, got {}",
+            report.batch
+        );
+        anyhow::ensure!(
+            report.manifest_sha256 == manifest,
+            "wave {} manifest mismatch",
+            report.batch
+        );
+        anyhow::ensure!(
+            !report.papers.is_empty(),
+            "wave {} has no papers",
+            report.batch
+        );
+        for paper in &report.papers {
+            anyhow::ensure!(
+                paper_ids.insert(paper.paper_id.as_str()),
+                "duplicate paper across waves: {}",
+                paper.paper_id
+            );
+        }
+    }
+    Ok(())
+}
+
+pub async fn materialize_waves(
+    store: Arc<dyn DirectGraphStore>,
+    cache: &dyn PipelineCache,
+    reports: &[GoldWaveReport],
+    expected_batches: usize,
+    runtime: &MaterializationRuntime<'_>,
+) -> Result<MultiWaveMaterialization> {
+    validate_wave_sequence(reports, expected_batches)?;
+    let graph_before = (store.node_count().await, store.edge_count().await);
+    let valid_at = runtime.clock.now().to_rfc3339();
+    let mut waves: Vec<BatchGraphMaterialization> = Vec::with_capacity(reports.len());
+    for report in reports {
+        let wave = materialize_wave(Arc::clone(&store), cache, report, runtime).await?;
+        anyhow::ensure!(wave.passed(), "batch {} materialization failed", wave.batch);
+        if let Some(previous) = waves.last() {
+            anyhow::ensure!(
+                previous.graph_after_replay == wave.graph_before,
+                "graph chain discontinuity before batch {}",
+                wave.batch
+            );
+        }
+        waves.push(wave);
+    }
+    let graph_after = (store.node_count().await, store.edge_count().await);
+    let article_count = waves.iter().map(|wave| wave.papers.len()).sum();
+    let import_eligible = waves.iter().any(|wave| wave.import_eligible);
+    let mut first = MutationCounters::default();
+    let mut replay = MutationCounters::default();
+    let mut assurance_pass = 0;
+    let mut assurance_fail = 0;
+    let mut assurance_no_claim = 0;
+    for wave in &waves {
+        for paper in &wave.papers {
+            first.merge(paper.first_mutations);
+            replay.merge(paper.replay_mutations);
+            match paper.assurance.verdict {
+                da_domain::AssuranceVerdict::Pass => assurance_pass += 1,
+                da_domain::AssuranceVerdict::Fail => assurance_fail += 1,
+                da_domain::AssuranceVerdict::NoClaim => assurance_no_claim += 1,
+            }
+        }
+    }
+    let aggregate = CorpusMutationAggregate {
+        first,
+        replay,
+        assurance_pass,
+        assurance_fail,
+        assurance_no_claim,
+    };
+    let result = MultiWaveMaterialization {
+        manifest_sha256: reports[0].manifest_sha256.clone(),
+        valid_at,
+        expected_batches,
+        article_count,
+        prepare_workers: runtime.prepare_workers,
+        graph_before,
+        graph_after,
+        same_process: true,
+        import_eligible,
+        aggregate,
+        waves,
+    };
+    anyhow::ensure!(result.passed(), "multi-wave materialization gate failed");
+    Ok(result)
+}
+
+fn prepare_wave(
+    cache: &dyn PipelineCache,
+    report: &GoldWaveReport,
+    metadata: &MetadataLookup<'_>,
+    workers: usize,
+) -> Result<Vec<PreparedPaper>> {
+    anyhow::ensure!(workers > 0, "prepare worker count must be positive");
+    let worker_count = workers.min(report.papers.len());
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::scope(|scope| {
+        for _ in 0..worker_count {
+            let sender = sender.clone();
+            let next = &next;
+            scope.spawn(move || {
+                loop {
+                    let index = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    let Some(paper) = report.papers.get(index) else {
+                        break;
+                    };
+                    let result = (|| {
+                        Ok((
+                            paper.clone(),
+                            load_verified_artifacts(cache, paper)?,
+                            metadata(&paper.paper_id)?,
+                        ))
+                    })();
+                    if sender.send((index, result)).is_err() {
+                        break;
+                    }
+                }
+            });
+        }
+        drop(sender);
+        let mut outputs = receiver.into_iter().collect::<Vec<_>>();
+        outputs.sort_by_key(|(index, _)| *index);
+        outputs
+            .into_iter()
+            .map(|(_, result)| result)
+            .collect::<Result<Vec<_>>>()
+    })
+}
+
 pub async fn materialize_wave(
     store: Arc<dyn DirectGraphStore>,
     cache: &dyn PipelineCache,
     report: &GoldWaveReport,
-    policy_sha256: ContentDigest,
-    metadata: impl Fn(&str) -> Result<(Option<String>, Option<String>)>,
+    runtime: &MaterializationRuntime<'_>,
 ) -> Result<BatchGraphMaterialization> {
     let instrumented = InstrumentedGraphStore::new(store);
     let observed_store: Arc<dyn DirectGraphStore> = Arc::new(instrumented.clone());
-    let ingest = IngestUseCase::materializer_only(Arc::clone(&observed_store));
-    let extraction = ExtractionUseCase::materializer_only(Arc::clone(&observed_store));
+    let valid_at = runtime.clock.now().to_rfc3339();
+    let ingest = IngestUseCase::materializer_only_with_clock(
+        Arc::clone(&observed_store),
+        Arc::clone(&runtime.clock),
+    );
+    let extraction = ExtractionUseCase::materializer_only_with_clock(
+        Arc::clone(&observed_store),
+        Arc::clone(&runtime.clock),
+    );
     let assurance = MaterializationAssuranceUseCase::new();
     let graph_before = ingest.graph_stats().await;
-    let mut prepared = Vec::with_capacity(report.papers.len());
-    for paper in &report.papers {
-        prepared.push((
-            paper.clone(),
-            load_verified_artifacts(cache, paper)?,
-            metadata(&paper.paper_id)?,
-        ));
-    }
+    let prepared = prepare_wave(cache, report, runtime.metadata, runtime.prepare_workers)?;
 
     let mut papers = Vec::with_capacity(prepared.len());
     for (paper, artifacts, (primary_domain, source_code)) in &prepared {
@@ -214,7 +623,7 @@ pub async fn materialize_wave(
             replay_mutations: MutationCounters::default(),
             assurance: ArticleAssuranceReport::new(
                 paper.paper_id.clone(),
-                policy_sha256.clone(),
+                runtime.policy_sha256.clone(),
                 da_domain::ArticleContextState::Materialized,
                 vec![],
             )?,
@@ -222,6 +631,7 @@ pub async fn materialize_wave(
     }
     let graph_after_first = ingest.graph_stats().await;
 
+    let mut replay_contexts = Vec::with_capacity(prepared.len());
     for ((_, artifacts, (primary_domain, source_code)), paper_report) in
         prepared.into_iter().zip(&mut papers)
     {
@@ -240,13 +650,19 @@ pub async fn materialize_wave(
             .await?;
         paper_report.replay = net_writes(&replay_ingest, &replay_extract);
         paper_report.replay_mutations = instrumented.snapshot().await;
+        replay_contexts.push((artifacts.parsed, replay_ingest));
+    }
+    let d127_unlock_count =
+        MaterializationAssuranceUseCase::count_d127_unlocks(&instrumented).await;
+    for ((parsed, replay_ingest), paper_report) in replay_contexts.into_iter().zip(&mut papers) {
         paper_report.assurance = assurance
-            .evaluate_graph(
+            .evaluate_graph_with_d127(
                 &instrumented,
-                &artifacts.parsed,
+                &parsed,
                 &replay_ingest,
                 MaterializationReplayObservation::from_mutations(paper_report.replay_mutations),
-                policy_sha256.clone(),
+                runtime.policy_sha256.clone(),
+                d127_unlock_count,
             )
             .await?;
     }
@@ -254,16 +670,12 @@ pub async fn materialize_wave(
     let replay_zero_writes = papers
         .iter()
         .all(|paper| paper.replay_mutations.replay_passes());
-    let import_eligible = papers.iter().any(|paper| {
-        paper
-            .assurance
-            .layer_results
-            .iter()
-            .any(|layer| layer.d127_unlock_count != 0)
-    });
+    let import_eligible = d127_unlock_count != 0;
     Ok(BatchGraphMaterialization {
         manifest_sha256: report.manifest_sha256.clone(),
         batch: report.batch,
+        valid_at,
+        prepare_workers: runtime.prepare_workers.min(report.papers.len()),
         graph_before,
         graph_after_first,
         graph_after_replay,
@@ -389,6 +801,98 @@ mod tests {
                 output_sha256: step.repeat(64),
             },
         }
+    }
+
+    fn wave(batch: usize, manifest: &str, paper_id: &str) -> GoldWaveReport {
+        GoldWaveReport {
+            manifest_sha256: manifest.into(),
+            batch,
+            wave_passed: true,
+            papers: vec![GoldWavePaper {
+                paper_id: paper_id.into(),
+                source_sha256: "a".repeat(64),
+                replay: PipelineRunReport {
+                    pipeline_id: "gold".into(),
+                    article_id: paper_id.into(),
+                    completed: true,
+                    stages: vec![],
+                },
+            }],
+        }
+    }
+
+    #[tokio::test]
+    async fn identity_index_setup_rejects_duplicate_values() {
+        let store = kg_storage::MockGraphStore::new();
+        for _ in 0..2 {
+            let node = store.create_node("Paper").await.unwrap();
+            store
+                .set_node_property_string(node, "vid", "vid:duplicate".into())
+                .await
+                .unwrap();
+        }
+        let error = ensure_identity_indexes(
+            &store,
+            &[IdentityIndexSpec {
+                label: "Paper".into(),
+                property: "vid".into(),
+                identity: true,
+            }],
+        )
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("duplicate identity"));
+    }
+
+    #[test]
+    fn identity_indexes_are_ontology_validated_data() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let indexes = load_identity_indexes(
+            &root.join("data/ontology/identity_indexes.yaml"),
+            &root.join("data/ontology/node_schemas.yaml"),
+        )
+        .unwrap();
+        assert!(indexes.len() >= 10);
+        assert!(indexes.iter().all(|index| index.identity));
+        let unique = indexes
+            .iter()
+            .map(|index| (&index.label, &index.property))
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(unique.len(), indexes.len());
+    }
+
+    #[test]
+    fn multi_wave_sequence_requires_complete_contiguous_unique_denominator() {
+        let valid = vec![wave(1, "manifest", "p1"), wave(2, "manifest", "p2")];
+        validate_wave_sequence(&valid, 2).unwrap();
+
+        assert!(
+            validate_wave_sequence(&valid, 3)
+                .unwrap_err()
+                .to_string()
+                .contains("denominator mismatch")
+        );
+        assert!(
+            validate_wave_sequence(&[wave(2, "manifest", "p1")], 1)
+                .unwrap_err()
+                .to_string()
+                .contains("sequence gap")
+        );
+        assert!(
+            validate_wave_sequence(
+                &[wave(1, "manifest-a", "p1"), wave(2, "manifest-b", "p2")],
+                2,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("manifest mismatch")
+        );
+        assert!(
+            validate_wave_sequence(&[wave(1, "manifest", "p1"), wave(2, "manifest", "p1")], 2,)
+                .unwrap_err()
+                .to_string()
+                .contains("duplicate paper")
+        );
     }
 
     #[test]

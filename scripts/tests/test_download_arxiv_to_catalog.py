@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import io
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -81,6 +83,64 @@ def test_materialize_local_pdf_reports_skip_when_canonical_asset_exists(tmp_path
     destination.write_bytes(payload)
     result = MODULE.materialize_local_pdf(source, destination)
     assert result["status"] == "skip"
+
+
+def _write_tar(path: Path, members: list[tuple[str, bytes, str]]) -> None:
+    with tarfile.open(path, "w:gz") as archive:
+        for name, payload, kind in members:
+            info = tarfile.TarInfo(name)
+            if kind == "symlink":
+                info.type = tarfile.SYMTYPE
+                info.linkname = "target"
+                archive.addfile(info)
+            else:
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+
+
+def test_inspect_tex_source_streams_safe_inventory(tmp_path: Path) -> None:
+    source = tmp_path / "source.tar.gz"
+    _write_tar(source, [("main.tex", b"\\section{Safe}", "file"), ("refs.bib", b"@article{x,}", "file")])
+    result = MODULE.inspect_tex_source(source)
+    assert result["member_count"] == 2
+    assert result["file_count"] == 2
+    assert result["tex_file_count"] == 1
+    assert result["bib_file_count"] == 1
+    assert result["expanded_bytes"] == len(b"\\section{Safe}") + len(b"@article{x,}")
+    assert [item["path"] for item in result["files"]] == ["main.tex", "refs.bib"]
+
+
+@pytest.mark.parametrize("name", ["../escape.tex", "/absolute.tex", "safe/../../escape.tex"])
+def test_inspect_tex_source_rejects_traversal(tmp_path: Path, name: str) -> None:
+    source = tmp_path / "unsafe.tar.gz"
+    _write_tar(source, [(name, b"bad", "file")])
+    with pytest.raises(ValueError, match="unsafe TeX archive member"):
+        MODULE.inspect_tex_source(source)
+
+
+def test_inspect_tex_source_rejects_links_and_caps(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    source = tmp_path / "link.tar.gz"
+    _write_tar(source, [("link.tex", b"", "symlink")])
+    with pytest.raises(ValueError, match="unsafe TeX archive member"):
+        MODULE.inspect_tex_source(source)
+
+    oversized = tmp_path / "oversized.tar.gz"
+    _write_tar(oversized, [("large.tex", b"x" * 16, "file")])
+    monkeypatch.setattr(MODULE, "MAX_TEX_MEMBER_BYTES", 8)
+    with pytest.raises(ValueError, match="member too large"):
+        MODULE.inspect_tex_source(oversized)
+
+
+def test_download_tex_source_existing_archive_is_network_free_and_atomic(tmp_path: Path) -> None:
+    source = tmp_path / "2606.06036.tar.gz"
+    inventory = tmp_path / "2606.06036.tex-inventory.json"
+    _write_tar(source, [("main.tex", b"content", "file")])
+    result = MODULE.download_tex_source(
+        "2606.06036", source, inventory, allow_network=False
+    )
+    assert result["status"] == "skip"
+    assert inventory.is_file()
+    assert result["inventory_sha256"] == MODULE.sha256_file(inventory)
 
 
 def test_normalize_category_is_filesystem_canonical() -> None:

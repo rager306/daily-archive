@@ -208,8 +208,19 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    proof is stored in `artifacts/article_context/materialization_batch_01.json`:
    first applied 9,743; replay attempted 5,113, applied 0, unchanged 5,113,
    rejected 0, unobserved 0; all ACAP verdicts PASS and D127 remains false.
-   Remaining rollout work is the same-process 20-wave/200-paper report and
-   deterministic fresh-run clock binding.
+   A deterministic fixed-clock same-process 20-wave/200-paper report is now
+   durable at `artifacts/article_context/materialization_all_200.json` with its
+   checksum-bound snapshot and all 20 exact hashed inputs under
+   `artifacts/article_context/waves/`. It records 23,928 nodes, 39,387 edges,
+   200 ACAP PASS,
+   D127 false and zero replay writes. The checksum-bound task report at
+   `artifacts/article_context/materialization_all_200_tasks.json` records seven
+   structural PASS results; Summary, reviewed Resolution and ConceptCluster
+   remain explicitly EMPTY and are
+   future layers, not hidden inside the materialization verdict. Runtime profiling
+   shows the remaining rebuild bottleneck is fine-grained Samyama writes under a
+   global lock; parallel immutable preparation is enabled, but unordered graph
+   mutation is forbidden pending a typed bulk-write port.
 4. Refresh 200-paper checkpoint with new preservation fields.
 5. Prompt registry and typed ContextBundle.
 6. Summary/enrichment/resolution evidence.

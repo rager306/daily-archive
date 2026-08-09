@@ -1,5 +1,43 @@
 # Changelog
 
+### Deterministic all-wave rebuild and typed source evidence
+
+Added a fail-closed same-process multi-wave graph driver with explicit fixed
+transaction time, ordered complete-batch/unique-paper denominator validation,
+per-wave chain continuity, aggregate physical mutation counters and ACAP verdict
+distribution. Cache decoding and checksum verification can use all available CPU
+cores while graph commits remain ordered. Identity indexes are now ontology-v2
+data in `data/ontology/identity_indexes.yaml`; Samyama lookups use and backfill
+those indexes. A full 20-wave/200-paper run produced
+`artifacts/article_context/materialization_all_200.{json,sgsnap}` with 23,928
+nodes, 39,387 edges, 200 ACAP passes, D127 false and zero replay writes. The
+structural semantic-task subset is 7/7 PASS; Summary, reviewed Resolution and
+ConceptCluster tasks remain honestly EMPTY and are not claimed delivered. The
+exact task report is `artifacts/article_context/materialization_all_200_tasks.json`
+(SHA-256 `eee4b95fb591f4f78c8b06627a12fa963bf94a4de8fb9d98a619efd85632fa03`).
+
+Performance profiling corrected the initial assumption that idle CPU meant cache
+preparation was the main bottleneck. The original run took ~4,041s and the
+indexed/parallel-preparation run ~3,429s: the remaining cost is approximately
+337,650 fine-grained in-process Samyama mutations serialized by its global graph
+lock. The ~4,041s and ~3,429s wall times come from operator timing logs rather
+than the materialization artifact; the mutation volume itself is durable. A typed
+bulk graph-write port is therefore the next performance slice;
+unsafe concurrent graph mutation is not enabled.
+
+Acquired official PDF, HTML and TeX source for arXiv `2606.06036` into its
+canonical `cs-ai` catalog root. The tested safe-archive path measures 29 members
+(28 files, 1 directory), 10 TeX files, 2 bibliography files and 7,009,156 expanded
+bytes under explicit member/file/total caps; traversal, links and devices are
+rejected. The archive is checksum-bound in
+`artifacts/article_context/article_2606.06036_sources.json`. OpenAlex metadata is
+preserved as candidate evidence. Semantic Scholar returned useful public identity
+and citation counts before rate limiting and is marked `rate_limited`; Litmaps
+and Connected Papers remain review links because no stable unauthenticated graph
+API was verified. OpenAlex's 0-reference denominator conflicts with Semantic
+Scholar's 24 and must be reconciled against the TeX bibliography. All evidence
+remains `import_eligible=false`.
+
 ### ADR-055 physical graph mutation replay proof
 
 Added a universal `InstrumentedGraphStore` decorator in `kg-storage` without

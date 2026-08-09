@@ -77,22 +77,50 @@ impl<'a> MaterializationAssuranceUseCase<'a> {
         replay: MaterializationReplayObservation,
         policy_sha256: ContentDigest,
     ) -> anyhow::Result<ArticleAssuranceReport> {
+        let d127_unlock_count = Self::count_d127_unlocks(graph).await;
+        self.evaluate_graph_with_d127(
+            graph,
+            parsed,
+            ingest,
+            replay,
+            policy_sha256,
+            d127_unlock_count,
+        )
+        .await
+    }
+
+    pub async fn count_d127_unlocks(graph: &dyn DirectGraphStore) -> u64 {
+        let mut count = 0_u64;
+        for node in graph.get_all_node_ids().await {
+            count += u64::from(
+                graph.get_node_property_bool(node, "import_eligible").await == Some(true),
+            );
+        }
+        count
+    }
+
+    /// Evaluate one article using a corpus-scoped D127 count already measured
+    /// after the ordered commit phase. Batch orchestrators use this to avoid an
+    /// O(articles × graph_nodes) full-graph scan per article.
+    pub async fn evaluate_graph_with_d127(
+        &self,
+        graph: &dyn DirectGraphStore,
+        parsed: &ParsedArticle,
+        ingest: &IngestResult,
+        replay: MaterializationReplayObservation,
+        policy_sha256: ContentDigest,
+        d127_unlock_count: u64,
+    ) -> anyhow::Result<ArticleAssuranceReport> {
         let paper_vid = da_domain::paper_vid(&parsed.paper_id);
         let paper_node = graph
             .find_node_by_string_property("Paper", "vid", &paper_vid)
             .await;
-        let mut import_eligible_true_nodes = 0_u64;
-        for node in graph.get_all_node_ids().await {
-            import_eligible_true_nodes += u64::from(
-                graph.get_node_property_bool(node, "import_eligible").await == Some(true),
-            );
-        }
         let mut readback = MaterializationReadback {
             abstract_text: None,
             sections: Vec::with_capacity(parsed.sections.len()),
             paper_section_count: None,
             paper_citation_count: None,
-            import_eligible_true_nodes,
+            import_eligible_true_nodes: d127_unlock_count,
         };
         if let Some(node) = paper_node {
             readback.abstract_text = graph.get_node_property_string(node, "abstract_text").await;

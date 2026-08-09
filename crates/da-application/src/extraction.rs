@@ -64,11 +64,20 @@ impl ExtractionUseCase {
     /// Construct only the always-run graph materializer. Compute methods fail
     /// closed instead of depending on a fake extractor implementation.
     pub fn materializer_only(graph_store: std::sync::Arc<dyn DirectGraphStore>) -> Self {
+        Self::materializer_only_with_clock(graph_store, std::sync::Arc::new(da_ports::SystemClock))
+    }
+
+    /// Construct the graph-only extraction boundary with an explicit clock.
+    /// Scientific batch rebuilds must use this deterministic path.
+    pub fn materializer_only_with_clock(
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+        clock: std::sync::Arc<dyn da_ports::Clock>,
+    ) -> Self {
         Self {
             extractor: None,
             graph_store,
             embedder: None,
-            clock: std::sync::Arc::new(da_ports::SystemClock),
+            clock,
         }
     }
 

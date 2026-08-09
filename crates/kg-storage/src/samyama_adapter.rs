@@ -305,10 +305,20 @@ impl GraphStore for SamyamaGraphStore {
 
     async fn create_property_index(&self, label: &str, property: &str) -> GraphResult<()> {
         let store = self.store_read().await;
-        store.property_index.create_index(
-            samyama::graph::types::Label::new(label),
-            property.to_string(),
-        );
+        let label = samyama::graph::types::Label::new(label);
+        store
+            .property_index
+            .create_index(label.clone(), property.to_string());
+        // Samyama's low-level create_index starts empty. Backfill existing live
+        // and snapshot-column values so indexed lookup is complete immediately
+        // and safe for input-snapshot continuation.
+        for node in store.get_nodes_by_label(&label) {
+            if let Some(value) = Self::resolve_node_property(&store, node.id.0, property) {
+                store
+                    .property_index
+                    .index_insert(&label, property, value, node.id);
+            }
+        }
         Ok(())
     }
 
@@ -500,6 +510,14 @@ impl DirectGraphStore for SamyamaGraphStore {
     ) -> Option<u64> {
         let store = self.store_read().await;
         let label = Label::new(label);
+        if let Some(index) = store.property_index.get_index(&label, key) {
+            let mut matches = index
+                .read()
+                .ok()?
+                .get(&PropertyValue::String(value.to_string()));
+            matches.sort_by_key(|node_id| node_id.0);
+            return matches.first().map(|node_id| node_id.0);
+        }
         for node in store.get_nodes_by_label(&label) {
             // M358: use resolve_node_property to also check node_columns
             // (snapshot import writes to column store, not HashMap)
@@ -687,6 +705,41 @@ impl DirectGraphStore for SamyamaGraphStore {
 mod mode_tests {
     use super::*;
     use crate::{GraphMode, GraphModeError};
+
+    #[tokio::test]
+    async fn property_index_backfills_and_tracks_future_identity_values() {
+        let store = SamyamaGraphStore::new();
+        let before = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(before, "vid", "vid:before".into())
+            .await
+            .unwrap();
+        store.create_property_index("Paper", "vid").await.unwrap();
+        assert_eq!(
+            store
+                .find_node_by_string_property("Paper", "vid", "vid:before")
+                .await,
+            Some(before)
+        );
+
+        let after = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(after, "vid", "vid:after".into())
+            .await
+            .unwrap();
+        assert_eq!(
+            store
+                .find_node_by_string_property("Paper", "vid", "vid:after")
+                .await,
+            Some(after)
+        );
+        assert_eq!(
+            store
+                .find_node_by_string_property("Paper", "vid", "vid:missing")
+                .await,
+            None
+        );
+    }
 
     #[test]
     fn open_for_mode_embedded_ok() {

@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import urllib.error
 import urllib.request
@@ -35,6 +36,10 @@ ARXIV_NS = "{http://arxiv.org/schemas/atom}"
 UA = "daily-archive/source-recovery (local research bot)"
 MODERN_ID = re.compile(r"^\d{4}\.\d{4,5}$")
 LEGACY_ID = re.compile(r"^[a-z][a-z0-9.-]+/\d{7}$", re.IGNORECASE)
+MAX_TEX_ARCHIVE_BYTES = 100 << 20
+MAX_TEX_MEMBERS = 1000
+MAX_TEX_MEMBER_BYTES = 20 << 20
+MAX_TEX_TOTAL_BYTES = 100 << 20
 
 
 class PdfArtifact(TypedDict):
@@ -88,6 +93,66 @@ def inspect_pdf(path: Path) -> dict[str, str | int]:
     if byte_size < 1000 or magic != b"%PDF-":
         raise ValueError(f"invalid PDF artifact at {path} (bytes={byte_size})")
     return {"sha256": sha256_file(path), "byte_size": byte_size}
+
+
+def inspect_tex_source(path: Path) -> dict[str, object]:
+    """Inventory an arXiv source tar without extracting it; reject unsafe archives."""
+    archive_bytes = path.stat().st_size
+    if archive_bytes == 0 or archive_bytes > MAX_TEX_ARCHIVE_BYTES:
+        raise ValueError(f"invalid TeX archive size at {path} (bytes={archive_bytes})")
+    files: list[dict[str, object]] = []
+    member_count = directory_count = tex_count = bib_count = 0
+    total_bytes = 0
+    with tarfile.open(path, mode="r:*") as archive:
+        for member in archive.getmembers():
+            member_count += 1
+            if member_count > MAX_TEX_MEMBERS:
+                raise ValueError(f"TeX archive member cap exceeded at {path}")
+            name = member.name
+            parts = Path(name).parts
+            if (
+                not name or name.startswith(("/", "\\")) or ".." in parts
+                or "\x00" in name or member.issym() or member.islnk()
+                or member.isdev() or member.isfifo()
+            ):
+                raise ValueError(f"unsafe TeX archive member: {name!r}")
+            if member.isdir():
+                directory_count += 1
+                continue
+            if not member.isfile():
+                raise ValueError(f"unsupported TeX archive member: {name!r}")
+            if member.size > MAX_TEX_MEMBER_BYTES:
+                raise ValueError(f"TeX archive member too large: {name!r}")
+            total_bytes += member.size
+            if total_bytes > MAX_TEX_TOTAL_BYTES:
+                raise ValueError(f"TeX archive expansion cap exceeded at {path}")
+            handle = archive.extractfile(member)
+            if handle is None:
+                raise ValueError(f"unreadable TeX archive member: {name!r}")
+            digest = hashlib.sha256()
+            observed = 0
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                observed += len(chunk)
+                if observed > member.size or observed > MAX_TEX_MEMBER_BYTES:
+                    raise ValueError(f"TeX archive stream cap exceeded: {name!r}")
+                digest.update(chunk)
+            if observed != member.size:
+                raise ValueError(f"TeX archive member size mismatch: {name!r}")
+            suffix = Path(name).suffix.lower()
+            tex_count += int(suffix == ".tex")
+            bib_count += int(suffix == ".bib")
+            files.append({
+                "path": name, "byte_size": observed, "sha256": digest.hexdigest(),
+                "suffix": suffix,
+            })
+    files.sort(key=lambda item: str(item["path"]))
+    return {
+        "sha256": sha256_file(path), "byte_size": archive_bytes,
+        "member_count": member_count, "file_count": len(files),
+        "directory_count": directory_count, "tex_file_count": tex_count,
+        "bib_file_count": bib_count, "expanded_bytes": total_bytes,
+        "files": files,
+    }
 
 
 def inspect_html(path: Path) -> dict[str, str | int]:
@@ -276,6 +341,61 @@ def download_pdf(arxiv_id: str, destination: Path, *, allow_network: bool) -> Pd
     raise RuntimeError("; ".join(failures))
 
 
+def download_tex_source(
+    arxiv_id: str,
+    destination: Path,
+    inventory_path: Path,
+    *,
+    allow_network: bool,
+) -> dict[str, object]:
+    """Download/verify TeX source and atomically publish its safe inventory."""
+    arxiv_id = normalize_arxiv_id(arxiv_id)
+    status = "skip"
+    source_url: str | None = None
+    if not destination.exists():
+        if not allow_network:
+            raise PermissionError("network recovery requires explicit --allow-network")
+        if not shutil.which("curl"):
+            raise RuntimeError("curl not found")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary = destination.with_name(f".{destination.name}.{os.getpid()}.part")
+        command = [
+            "curl", "-fsSL", "--retry", "5", "--retry-delay", "5",
+            "--retry-all-errors", "--max-time", "300", "-A", UA,
+            "-o", str(temporary), f"https://arxiv.org/src/{arxiv_id}",
+        ]
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=330)
+            if result.returncode != 0:
+                raise RuntimeError(f"curl exit {result.returncode}: {(result.stderr or '')[:120]}")
+            inspect_tex_source(temporary)
+            temporary.replace(destination)
+            status = "ok"
+            source_url = f"https://arxiv.org/src/{arxiv_id}"
+        finally:
+            temporary.unlink(missing_ok=True)
+    inventory = inspect_tex_source(destination)
+    durable_inventory = {
+        "schema_version": "arxiv-tex-source-inventory.v1",
+        "article_id": arxiv_id,
+        "import_eligible": False,
+        "archive_path": report_path(destination),
+        **inventory,
+    }
+    inventory_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_inventory = inventory_path.with_suffix(inventory_path.suffix + ".tmp")
+    temporary_inventory.write_text(json.dumps(durable_inventory, indent=2, sort_keys=True) + "\n")
+    temporary_inventory.replace(inventory_path)
+    return {
+        "status": status,
+        "path": report_path(destination),
+        "inventory_path": report_path(inventory_path),
+        "inventory_sha256": sha256_file(inventory_path),
+        "source_url": source_url,
+        **{key: value for key, value in inventory.items() if key != "files"},
+    }
+
+
 def parse_ids(values: list[str], ids_file: Path | None) -> list[str]:
     candidates = list(values)
     if ids_file:
@@ -295,6 +415,10 @@ def main() -> int:
     parser.add_argument("--sleep", type=float, default=4.0, help="seconds between items")
     parser.add_argument("--skip-meta", action="store_true", help="store under category=unknown")
     parser.add_argument("--allow-network", action="store_true", help="authorize external fetches")
+    parser.add_argument(
+        "--include-tex-source", action="store_true",
+        help="download and safely inventory the official arXiv source archive",
+    )
     args = parser.parse_args()
 
     try:
@@ -327,12 +451,20 @@ def main() -> int:
                 else download_pdf(arxiv_id, pdf_destination, allow_network=args.allow_network)
             )
             html = download_html(arxiv_id, html_destination, allow_network=args.allow_network)
+            representations: dict[str, object] = {"pdf": pdf, "html": html}
+            if args.include_tex_source:
+                representations["tex_source"] = download_tex_source(
+                    arxiv_id,
+                    article_root / "source" / f"{arxiv_id}.tar.gz",
+                    article_root / "source" / f"{arxiv_id}.tex-inventory.json",
+                    allow_network=args.allow_network,
+                )
             result: dict[str, object] = {
                 "id": arxiv_id,
                 **metadata,
                 "category": category,
                 "status": "ok" if "ok" in (pdf["status"], html["status"]) else "skip",
-                "representations": {"pdf": pdf, "html": html},
+                "representations": representations,
             }
         except Exception as error:
             result = {
@@ -348,7 +480,7 @@ def main() -> int:
             time.sleep(args.sleep)
 
     summary = {
-        "schema_version": "arxiv-source-recovery-v3-pdf-html",
+        "schema_version": "arxiv-source-recovery-v4-pdf-html-tex",
         "network_authorized": args.allow_network,
         "catalog_root": report_path(args.catalog),
         "total": len(results),

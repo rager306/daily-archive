@@ -47,6 +47,13 @@ impl MutationFamilyCounters {
         }
     }
 
+    pub fn merge(&mut self, other: Self) {
+        self.attempted += other.attempted;
+        self.applied += other.applied;
+        self.unchanged += other.unchanged;
+        self.rejected += other.rejected;
+    }
+
     pub fn partition_is_valid(self) -> bool {
         self.attempted == self.applied + self.unchanged + self.rejected
     }
@@ -87,6 +94,14 @@ impl MutationCounters {
             && self.unchanged() > 0
             && self.applied() == 0
             && self.rejected() == 0
+    }
+
+    pub fn merge(&mut self, other: Self) {
+        self.node.merge(other.node);
+        self.property.merge(other.property);
+        self.edge.merge(other.edge);
+        self.vector.merge(other.vector);
+        self.unobserved_operations += other.unobserved_operations;
     }
 
     pub fn partition_is_valid(self) -> bool {
@@ -484,6 +499,32 @@ mod tests {
 
     fn instrumented() -> InstrumentedGraphStore {
         InstrumentedGraphStore::new(Arc::new(MockGraphStore::new()))
+    }
+
+    #[test]
+    fn mutation_counter_merge_preserves_partition() {
+        let mut total = MutationCounters {
+            property: MutationFamilyCounters {
+                attempted: 2,
+                applied: 1,
+                unchanged: 1,
+                rejected: 0,
+            },
+            ..Default::default()
+        };
+        total.merge(MutationCounters {
+            node: MutationFamilyCounters {
+                attempted: 1,
+                applied: 0,
+                unchanged: 1,
+                rejected: 0,
+            },
+            ..Default::default()
+        });
+        assert_eq!(total.attempted(), 3);
+        assert_eq!(total.applied(), 1);
+        assert_eq!(total.unchanged(), 2);
+        assert!(total.partition_is_valid());
     }
 
     #[test]
