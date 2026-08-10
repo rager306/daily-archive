@@ -261,6 +261,15 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    `replay_observation_integrity:legacy_v1_incomplete` until upgraded from
    paper-level `replay_mutations`. No corpus rebuild and no D127 unlock.
 
+   **M371/S07/T03 (canonical corpus aggregate delivered):** Domain
+   `CorpusAssuranceReport` uses distinct aggregate schema version. Application
+   `CorpusAssuranceUseCase` composes per-article reports with optional
+   `replay_upgrade` from paper-level mutation counters. CLI emits
+   `artifacts/article_context/assurance_report.json` from the existing 200-paper
+   artifact. Required layers not present stay typed no_claim; aggregate hard
+   codes keep corpus Fail until those layers exist. Governor accepts list-typed
+   empty hard_failures without inventing product truth.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

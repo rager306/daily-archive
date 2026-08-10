@@ -73,6 +73,7 @@ pub use decision_recorder::{
     DecisionRecord, DecisionRecordError, DecisionRecorder, DecisionRequest, DecisionRequestBuilder,
 };
 pub mod acap_contract_audit;
+pub mod corpus_assurance;
 pub mod graph_finalize;
 pub mod graph_inventory;
 pub mod identity_compatibility;

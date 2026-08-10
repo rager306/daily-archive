@@ -20,6 +20,24 @@ from governor.ports.milestone_reader import MilestoneReader
 from governor.ports.rule_repository import RuleRepository
 
 
+
+def _acap_hard_failures_nonzero(value) -> bool:
+    """True when ACAP hard_failures indicates a failure.
+
+    Product reports emit list[str] codes. Legacy governor fixtures used a count.
+    Empty list and numeric 0 are both pass; non-empty list or non-zero count fail.
+    """
+    if value is None:
+        return False
+    if isinstance(value, list):
+        return len(value) > 0
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip() not in ("", "0")
+    return bool(value)
+
+
 class TrajectoryService:
     """Builds a trajectory report by orchestrating domain + ports."""
 
@@ -268,7 +286,8 @@ class TrajectoryService:
         for layer_id, result in results.items():
             if layer_id not in set(layer_ids):
                 failures.append(f"unknown report layer {layer_id}")
-            if result.get("hard_failures", 0) != 0:
+            # Product shape is list[str]; legacy fixtures may still use a count.
+            if _acap_hard_failures_nonzero(result.get("hard_failures", 0)):
                 failures.append(f"{layer_id}: hard_failures={result.get('hard_failures')}")
         aggregate = report.get("aggregate") or {}
         if aggregate.get("replay_net_writes", 0) != 0:

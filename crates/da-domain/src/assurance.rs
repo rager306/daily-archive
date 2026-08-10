@@ -26,6 +26,10 @@ pub enum AssuranceError {
     PolicyIdDrift,
     #[error("policy SHA-256 must be present")]
     MissingPolicySha256,
+    #[error("corpus assurance report must keep import_eligible=false")]
+    D127UnlockForbidden,
+    #[error("corpus assurance report is invalid: {0}")]
+    InvalidCorpusReport(String),
 }
 
 /// Validated lowercase SHA-256 hex digest used for source/sink lineage.
@@ -474,6 +478,113 @@ impl ArticleAssuranceReport {
         };
         Ok(self)
     }
+}
+
+/// Status of a layer row inside a corpus aggregate report.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CorpusLayerStatus {
+    /// At least one article contributed an observed layer result.
+    Observed,
+    /// Layer declared by policy but not present in the corpus artifact.
+    NoClaim,
+}
+
+/// Aggregated layer row for the corpus assurance report.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CorpusLayerResult {
+    pub layer_id: String,
+    pub enforcement: String,
+    pub status: CorpusLayerStatus,
+    pub article_count: u64,
+    pub available_required_fields: u64,
+    pub retained_required_fields: u64,
+    /// Typed hard-failure codes (product shape). Empty means no hard failures.
+    pub hard_failures: Vec<String>,
+    pub hard_failure_articles: u64,
+    pub pass_articles: u64,
+    pub fail_articles: u64,
+    pub no_claim_articles: u64,
+    pub d127_unlock_count: u64,
+    pub replay_net_writes: u64,
+    pub replay_integrity_pass_articles: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub missingness: Option<MissingnessReason>,
+}
+
+/// Corpus-level diagnostic and hard aggregate metrics (ADR-055).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CorpusAggregateMetrics {
+    /// Union of hard-failure codes across the corpus (product list shape).
+    pub hard_failures: Vec<String>,
+    pub hard_pass_rate: f64,
+    pub weighted_layer_coverage: f64,
+    /// Diagnostic only — never overrides hard invariants.
+    pub weighted_quality_score: f64,
+    pub replay_net_writes: u64,
+    pub d127_unlock_count: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_cost: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_p95_ms: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_missingness: Option<MissingnessReason>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_missingness: Option<MissingnessReason>,
+}
+
+/// Canonical corpus ACAP aggregate (distinct schema from per-article reports).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CorpusAssuranceReport {
+    pub schema_version: String,
+    pub policy_id: String,
+    pub policy_sha256: ContentDigest,
+    pub article_count: u64,
+    /// Opaque pipeline identity (manifest/schema binding), not a git SHA claim.
+    pub pipeline_revision: String,
+    pub layer_results: Vec<CorpusLayerResult>,
+    pub fsm_results: BTreeMap<String, u64>,
+    pub cache_results: BTreeMap<String, String>,
+    pub prompt_results: BTreeMap<String, String>,
+    pub optimizer_results: BTreeMap<String, String>,
+    pub aggregate: CorpusAggregateMetrics,
+    pub import_eligible: bool,
+    pub source_artifact_sha256: ContentDigest,
+    pub verdict: AssuranceVerdict,
+    /// Deterministic digest of all fields except this one.
+    pub report_sha256: String,
+}
+
+impl CorpusAssuranceReport {
+    pub fn validate(&self) -> Result<(), AssuranceError> {
+        if self.schema_version != ACAP_AGGREGATE_REPORT_SCHEMA_VERSION {
+            return Err(AssuranceError::SchemaVersionDrift);
+        }
+        if self.policy_id != ACAP_POLICY_ID {
+            return Err(AssuranceError::PolicyIdDrift);
+        }
+        if self.import_eligible {
+            return Err(AssuranceError::D127UnlockForbidden);
+        }
+        if self.report_sha256 != corpus_report_digest(self) {
+            return Err(AssuranceError::InvalidCorpusReport(
+                "report digest mismatch".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Digest over the report with `report_sha256` cleared, bound to aggregate schema.
+pub fn corpus_report_digest(report: &CorpusAssuranceReport) -> String {
+    let mut clone = report.clone();
+    clone.report_sha256 = String::new();
+    let json = serde_json::to_string(&clone).expect("corpus report must serialize");
+    let hash = Sha256::digest(json.as_bytes());
+    let mut binder = Vec::with_capacity(hash.len() + ACAP_AGGREGATE_REPORT_SCHEMA_VERSION.len());
+    binder.extend_from_slice(&hash);
+    binder.extend_from_slice(ACAP_AGGREGATE_REPORT_SCHEMA_VERSION.as_bytes());
+    hex::encode(Sha256::digest(&binder))
 }
 
 #[cfg(test)]

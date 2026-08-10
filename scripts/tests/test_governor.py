@@ -351,6 +351,37 @@ def test_acap_report_enforces_policy_hash_hard_failures_replay_and_d127():
     assert "d127_unlock_count" in flags[0].evidence
 
 
+
+def test_acap_report_accepts_list_typed_empty_hard_failures_and_rejects_nonempty_list():
+    """Product ACAP aggregate uses list[str] hard_failures (M371/S07/T03)."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root, rollout="required")
+    policy_sha = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    report_path = service.root / "artifacts/article_context/assurance_report.json"
+    # Empty list = pass for hard_failures gate (still need required keys/layers).
+    good = {
+        "article_count": 1,
+        "pipeline_revision": "test",
+        "policy_sha256": policy_sha,
+        "layer_results": [{"layer_id": "source", "hard_failures": []}],
+        "fsm_results": {},
+        "cache_results": {},
+        "prompt_results": {},
+        "optimizer_results": {},
+        "aggregate": {"replay_net_writes": 0, "d127_unlock_count": 0, "hard_failures": []},
+    }
+    _write(report_path, json.dumps(good))
+    assert service._check_article_context_assurance() == []
+    # Non-empty list still fails closed.
+    good["layer_results"] = [{"layer_id": "source", "hard_failures": ["replay_net_writes:1"]}]
+    _write(report_path, json.dumps(good))
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_report_failed"
+    assert "hard_failures" in flags[0].evidence
+
+
 def test_information_preservation_contracts_turn_lossy_mutations_into_regressions():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()

@@ -1,5 +1,24 @@
 # Changelog
 
+### Canonical corpus ACAP aggregate from existing 200-paper artifact (M371/S07/T03)
+
+Product-owned `CorpusAssuranceReport` (`article-context-assurance-aggregate.v1`)
+is now composed in `da-application` from already-validated per-article reports
+plus optional physical replay upgrades. The CLI projector
+`cargo run -p da-cli --example acap_aggregate` reads
+`materialization_all_200.json` and the ACAP policy YAML, upgrades 200 legacy
+layers from paper-level `replay_mutations`, and emits
+`artifacts/article_context/assurance_report.json` without graph writes or D127 unlock.
+
+Aggregate is honest: materialization is Observed with full replay integrity;
+six other required layers remain typed `no_claim` (not invented PASS), so corpus
+verdict is Fail with aggregate codes `required_layer_absent:*`. Layer rows keep
+empty hard_failures for no_claim missingness; governor thin-accepts list-typed
+empty hard_failures while still failing non-empty lists. D127=false, replay_net_writes=0.
+
+7 corpus contract tests green. Governor ACAP tests accept list shape.
+No corpus rebuild.
+
 ### ACAP physical replay observation in per-article evidence (M371/S07/T02)
 
 Reified physical mutation partitions inside ACAP domain reports. New
