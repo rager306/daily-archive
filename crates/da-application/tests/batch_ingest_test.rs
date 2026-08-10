@@ -13,7 +13,7 @@ use da_application::{
     MaterializationAssuranceUseCase, MaterializationReplayObservation, batch_ingest_pdfs,
     ingest::IngestUseCase,
 };
-use da_domain::{AssuranceVerdict, ContentDigest, WriteDelta};
+use da_domain::{AssuranceVerdict, ContentDigest, ReplayObservation};
 use da_ports::clock::Clock;
 use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::graph_store::DirectGraphStore;
@@ -314,7 +314,9 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
             &store,
             &parsed,
             &ingest_result,
-            MaterializationReplayObservation::Observed(WriteDelta::default()),
+            MaterializationReplayObservation::Observed(
+                ReplayObservation::valid_unchanged_property(1),
+            ),
             ContentDigest::of_text("test-policy"),
         )
         .await
@@ -334,7 +336,9 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
             &store,
             &parsed,
             &ingest_result,
-            MaterializationReplayObservation::Observed(WriteDelta::default()),
+            MaterializationReplayObservation::Observed(
+                ReplayObservation::valid_unchanged_property(1),
+            ),
             ContentDigest::of_text("test-policy"),
         )
         .await

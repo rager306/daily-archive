@@ -45,7 +45,7 @@ pub use assurance::{
     ACAP_AGGREGATE_REPORT_SCHEMA_VERSION, ACAP_POLICY_ID, ACAP_REPORT_SCHEMA_VERSION,
     ArticleAssuranceReport, ArticleContextState, AssuranceError, AssuranceVerdict, BoundaryMode,
     ConservationObservation, ContentDigest, CountObservation, LayerAssuranceResult,
-    MissingnessReason, WriteDelta,
+    MissingnessReason, MutationFamilyObservation, ReplayObservation, WriteDelta,
 };
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,

@@ -1,5 +1,28 @@
 # Changelog
 
+### ACAP physical replay observation in per-article evidence (M371/S07/T02)
+
+Reified physical mutation partitions inside ACAP domain reports. New
+`ReplayObservation` / `MutationFamilyObservation` types preserve
+attempted/applied/unchanged/rejected per family plus unobserved operations,
+so a serialized per-article report can recompute `replay_observation_integrity`
+without in-memory `MutationCounters`.
+
+`MaterializationReplayObservation` now maps `kg-storage` counters one-to-one
+into domain observations. Empty instrumentation remains `NotRun`; invalid or
+unobserved partitions are preserved as `Observed` and fail with specific hard
+codes. `WriteDelta` stays a diagnostic applied/rejected projection only and
+cannot satisfy the hard gate alone.
+
+Legacy v1 artifacts that only embed zero `replay_writes` deserialize safely
+and are flagged `replay_observation_integrity:legacy_v1_incomplete`. The
+10-paper batch artifact proves migration: paper-level `replay_mutations` still
+carries a valid partition that can be attached to make the layer self-validating.
+Producer path (`gold_graph` / `from_mutations`) is compatible without corpus rebuild.
+
+6 contract tests + domain/application suite green. D127 unchanged. Governor
+still follows product fixtures in T05.
+
 ### ACAP contract convergence detect-only audit (M371/S07/T01)
 
 Froze the ACAP schema authority boundary and exposed all current cross-surface

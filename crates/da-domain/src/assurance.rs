@@ -189,6 +189,97 @@ impl WriteDelta {
     }
 }
 
+/// One mutation family partition (attempted = applied + unchanged + rejected).
+/// Domain-owned mirror of kg-storage counters so reports stay self-validating
+/// without depending on infrastructure crates.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MutationFamilyObservation {
+    pub attempted: u64,
+    pub applied: u64,
+    pub unchanged: u64,
+    pub rejected: u64,
+}
+
+impl MutationFamilyObservation {
+    pub fn partition_is_valid(self) -> bool {
+        self.attempted == self.applied + self.unchanged + self.rejected
+    }
+}
+
+/// Full physical replay observation preserved in ACAP reports (ADR-055).
+///
+/// When present, this is the authoritative replay evidence. `WriteDelta` remains
+/// a diagnostic projection of applied/rejected totals only and cannot prove
+/// `attempted > 0`, `unchanged > 0`, or `unobserved_operations == 0`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReplayObservation {
+    pub node: MutationFamilyObservation,
+    pub property: MutationFamilyObservation,
+    pub edge: MutationFamilyObservation,
+    pub vector: MutationFamilyObservation,
+    pub unobserved_operations: u64,
+}
+
+impl ReplayObservation {
+    pub fn attempted(self) -> u64 {
+        self.node.attempted + self.property.attempted + self.edge.attempted + self.vector.attempted
+    }
+
+    pub fn applied(self) -> u64 {
+        self.node.applied + self.property.applied + self.edge.applied + self.vector.applied
+    }
+
+    pub fn unchanged(self) -> u64 {
+        self.node.unchanged + self.property.unchanged + self.edge.unchanged + self.vector.unchanged
+    }
+
+    pub fn rejected(self) -> u64 {
+        self.node.rejected + self.property.rejected + self.edge.rejected + self.vector.rejected
+    }
+
+    pub fn partition_is_valid(self) -> bool {
+        self.node.partition_is_valid()
+            && self.property.partition_is_valid()
+            && self.edge.partition_is_valid()
+            && self.vector.partition_is_valid()
+            && self.attempted() == self.applied() + self.unchanged() + self.rejected()
+    }
+
+    /// Authoritative ACAP hard gate for physical replay integrity.
+    pub fn integrity_passes(self) -> bool {
+        self.partition_is_valid()
+            && self.unobserved_operations == 0
+            && self.attempted() > 0
+            && self.unchanged() > 0
+            && self.applied() == 0
+            && self.rejected() == 0
+    }
+
+    /// Diagnostic applied/rejected projection. Never sufficient for integrity.
+    pub fn applied_write_delta(self) -> WriteDelta {
+        WriteDelta {
+            node_writes: self.node.applied,
+            property_writes: self.property.applied,
+            edge_writes: self.edge.applied,
+            vector_writes: self.vector.applied,
+            rejected_writes: self.rejected(),
+        }
+    }
+
+    /// Test/helper: valid zero-write replay with N unchanged property ops.
+    pub fn valid_unchanged_property(unchanged: u64) -> Self {
+        Self {
+            property: MutationFamilyObservation {
+                attempted: unchanged,
+                applied: 0,
+                unchanged,
+                rejected: 0,
+            },
+            ..Self::default()
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LayerAssuranceResult {
     pub layer_id: String,
@@ -200,6 +291,10 @@ pub struct LayerAssuranceResult {
     pub counts: Vec<CountObservation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replay_writes: Option<WriteDelta>,
+    /// Authoritative physical mutation partition when present.
+    /// Absent means legacy v1 report that only carried diagnostic WriteDelta.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replay_observation: Option<ReplayObservation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replay_missingness: Option<MissingnessReason>,
     pub d127_unlock_count: u64,
@@ -236,18 +331,57 @@ impl LayerAssuranceResult {
                 ));
             }
         }
-        match self.replay_writes {
-            Some(writes) if writes.rejected_writes != 0 => {
-                failures.push(format!("replay_rejected_writes:{}", writes.rejected_writes));
-                if writes.total() != 0 {
-                    failures.push(format!("replay_net_writes:{}", writes.total()));
+        match self.replay_observation {
+            Some(obs) => {
+                // Authoritative path: full physical partition is self-validating.
+                if !obs.partition_is_valid() {
+                    failures.push("replay_observation_integrity:invalid_partition".into());
+                }
+                if obs.unobserved_operations != 0 {
+                    failures.push(format!(
+                        "replay_observation_integrity:unobserved:{}",
+                        obs.unobserved_operations
+                    ));
+                }
+                if obs.attempted() == 0 {
+                    failures.push("replay_observation_integrity:empty_attempt".into());
+                } else if obs.unchanged() == 0 {
+                    failures.push("replay_observation_integrity:zero_unchanged".into());
+                }
+                if obs.rejected() != 0 {
+                    failures.push(format!("replay_rejected_writes:{}", obs.rejected()));
+                }
+                if obs.applied() != 0 {
+                    failures.push(format!("replay_net_writes:{}", obs.applied()));
                 }
             }
-            Some(writes) if writes.total() != 0 => {
-                failures.push(format!("replay_net_writes:{}", writes.total()));
+            None => {
+                // Legacy v1 path: only diagnostic WriteDelta is available.
+                // NetWrites alone cannot prove integrity; missing full observation
+                // is itself a hard failure when no write delta was recorded either.
+                match self.replay_writes {
+                    Some(writes) if writes.rejected_writes != 0 => {
+                        failures.push(format!("replay_rejected_writes:{}", writes.rejected_writes));
+                        if writes.total() != 0 {
+                            failures.push(format!("replay_net_writes:{}", writes.total()));
+                        }
+                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
+                    }
+                    Some(writes) if writes.total() != 0 => {
+                        failures.push(format!("replay_net_writes:{}", writes.total()));
+                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
+                    }
+                    None => {
+                        failures.push("replay_net_writes:missing_observation".into());
+                    }
+                    Some(_) => {
+                        // Zero applied/rejected WriteDelta without full partition:
+                        // compatible with old PASS artifacts but incomplete for
+                        // recomputing integrity from the report alone.
+                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
+                    }
+                }
             }
-            None => failures.push("replay_net_writes:missing_observation".to_string()),
-            Some(_) => {}
         }
         if self.d127_unlock_count != 0 {
             failures.push(format!("d127_unlock_count:{}", self.d127_unlock_count));
@@ -370,6 +504,7 @@ mod tests {
                 observed: 1,
             }],
             replay_writes: Some(WriteDelta::default()),
+            replay_observation: Some(ReplayObservation::valid_unchanged_property(1)),
             replay_missingness: None,
             d127_unlock_count: 0,
             quality_metrics: BTreeMap::from([("quality_score".into(), 1.0)]),
@@ -494,6 +629,92 @@ mod tests {
             undefined
                 .hard_failures
                 .contains(&"required_field_retention:undefined_denominator".to_string())
+        );
+    }
+
+    #[test]
+    fn full_replay_observation_is_self_validating_and_serde_stable() {
+        let obs = ReplayObservation::valid_unchanged_property(270);
+        assert!(obs.integrity_passes());
+        assert_eq!(obs.applied_write_delta().total(), 0);
+        crate::roundtrip_json(&obs);
+    }
+
+    #[test]
+    fn empty_or_applied_replay_observation_fails_integrity() {
+        assert!(!ReplayObservation::default().integrity_passes());
+        let mut applied = ReplayObservation::valid_unchanged_property(2);
+        applied.property.applied = 1;
+        applied.property.unchanged = 1;
+        assert!(!applied.integrity_passes());
+    }
+
+    #[test]
+    fn evaluate_hard_failures_uses_full_observation_when_present() {
+        let mut layer = layer();
+        layer.replay_observation = Some(ReplayObservation {
+            property: MutationFamilyObservation {
+                attempted: 2,
+                applied: 1,
+                unchanged: 1,
+                rejected: 0,
+            },
+            ..ReplayObservation::default()
+        });
+        layer.replay_writes = Some(WriteDelta {
+            property_writes: 1,
+            ..WriteDelta::default()
+        });
+        layer.evaluate_hard_failures();
+        assert!(
+            layer
+                .hard_failures
+                .contains(&"replay_net_writes:1".to_string())
+        );
+        assert!(!layer.hard_failures.iter().any(|f| f.contains("legacy_v1")));
+    }
+
+    #[test]
+    fn legacy_v1_zero_write_delta_without_full_observation_is_incomplete() {
+        let mut layer = layer();
+        layer.replay_observation = None;
+        layer.replay_writes = Some(WriteDelta::default());
+        layer.evaluate_hard_failures();
+        assert!(
+            layer
+                .hard_failures
+                .contains(&"replay_observation_integrity:legacy_v1_incomplete".to_string())
+        );
+    }
+
+    #[test]
+    fn legacy_v1_artifact_json_deserializes_without_replay_observation() {
+        let json = r#"{
+            "layer_id": "materialization",
+            "state": "materialized",
+            "article_count": 1,
+            "available_required_fields": 2,
+            "retained_required_fields": 2,
+            "conservations": [],
+            "counts": [],
+            "replay_writes": {
+                "node_writes": 0,
+                "property_writes": 0,
+                "edge_writes": 0,
+                "vector_writes": 0,
+                "rejected_writes": 0
+            },
+            "d127_unlock_count": 0,
+            "quality_metrics": {},
+            "hard_failures": []
+        }"#;
+        let mut layer: LayerAssuranceResult = serde_json::from_str(json).unwrap();
+        assert!(layer.replay_observation.is_none());
+        layer.evaluate_hard_failures();
+        assert!(
+            layer
+                .hard_failures
+                .contains(&"replay_observation_integrity:legacy_v1_incomplete".to_string())
         );
     }
 

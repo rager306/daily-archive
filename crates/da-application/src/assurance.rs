@@ -6,7 +6,8 @@
 use crate::ingest::IngestResult;
 use da_domain::{
     ArticleAssuranceReport, ArticleContextState, BoundaryMode, ConservationObservation,
-    ContentDigest, CountObservation, LayerAssuranceResult, MissingnessReason, WriteDelta,
+    ContentDigest, CountObservation, LayerAssuranceResult, MissingnessReason,
+    MutationFamilyObservation, ReplayObservation, WriteDelta,
 };
 use da_ports::parser::ParsedArticle;
 use da_ports::{AssuranceReportStore, DirectGraphStore, MutationCounters};
@@ -32,24 +33,53 @@ pub struct MaterializationReadback {
 pub enum MaterializationReplayObservation {
     #[default]
     NotRun,
-    Observed(WriteDelta),
+    /// Full physical partition. Authoritative for ACAP hard gates.
+    Observed(ReplayObservation),
 }
 
 impl MaterializationReplayObservation {
+    /// Map kg-storage MutationCounters one-to-one into domain ReplayObservation.
+    ///
+    /// Invalid / empty / unobserved counters are still preserved as Observed so
+    /// the report can diagnose *why* integrity fails. Only a total absence of
+    /// instrumentation yields NotRun.
     pub fn from_mutations(counters: MutationCounters) -> Self {
-        if counters.attempted() == 0
-            || !counters.partition_is_valid()
-            || counters.unobserved_operations != 0
-        {
+        // Completely empty counters with zero unobserved ops = instrumentation
+        // never ran. Everything else is an observation that must be evaluated.
+        if counters == MutationCounters::default() {
             return Self::NotRun;
         }
-        Self::Observed(WriteDelta {
-            node_writes: counters.node.applied,
-            property_writes: counters.property.applied,
-            edge_writes: counters.edge.applied,
-            vector_writes: counters.vector.applied,
-            rejected_writes: counters.rejected(),
+        Self::Observed(ReplayObservation {
+            node: family(counters.node),
+            property: family(counters.property),
+            edge: family(counters.edge),
+            vector: family(counters.vector),
+            unobserved_operations: counters.unobserved_operations,
         })
+    }
+
+    /// Diagnostic WriteDelta projection when present.
+    pub fn write_delta(self) -> Option<WriteDelta> {
+        match self {
+            Self::NotRun => None,
+            Self::Observed(obs) => Some(obs.applied_write_delta()),
+        }
+    }
+
+    pub fn replay_observation(self) -> Option<ReplayObservation> {
+        match self {
+            Self::NotRun => None,
+            Self::Observed(obs) => Some(obs),
+        }
+    }
+}
+
+fn family(c: da_ports::MutationFamilyCounters) -> MutationFamilyObservation {
+    MutationFamilyObservation {
+        attempted: c.attempted,
+        applied: c.applied,
+        unchanged: c.unchanged,
+        rejected: c.rejected,
     }
 }
 
@@ -236,10 +266,8 @@ impl<'a> MaterializationAssuranceUseCase<'a> {
                     ),
                 },
             ],
-            replay_writes: match replay {
-                MaterializationReplayObservation::NotRun => None,
-                MaterializationReplayObservation::Observed(writes) => Some(writes),
-            },
+            replay_writes: replay.write_delta(),
+            replay_observation: replay.replay_observation(),
             replay_missingness: matches!(replay, MaterializationReplayObservation::NotRun)
                 .then_some(MissingnessReason::NotApplicable),
             d127_unlock_count: readback.import_eligible_true_nodes
@@ -355,7 +383,9 @@ mod tests {
                 &parsed(),
                 &ingest(),
                 &readback(),
-                MaterializationReplayObservation::Observed(WriteDelta::default()),
+                MaterializationReplayObservation::Observed(
+                    ReplayObservation::valid_unchanged_property(1),
+                ),
                 ContentDigest::of_text("policy"),
             )
             .unwrap();
@@ -373,7 +403,9 @@ mod tests {
                 &parsed(),
                 &ingest(),
                 &sink,
-                MaterializationReplayObservation::Observed(WriteDelta::default()),
+                MaterializationReplayObservation::Observed(
+                    ReplayObservation::valid_unchanged_property(1),
+                ),
                 ContentDigest::of_text("policy"),
             )
             .unwrap();
@@ -448,33 +480,52 @@ mod tests {
     }
 
     #[test]
-    fn empty_or_invalid_mutation_counters_are_missing_evidence() {
-        for counters in [
-            MutationCounters::default(),
-            MutationCounters {
-                property: da_ports::MutationFamilyCounters {
-                    attempted: 1,
-                    ..Default::default()
-                },
+    fn empty_mutation_counters_are_missing_evidence() {
+        let report = MaterializationAssuranceUseCase::new()
+            .evaluate(
+                &parsed(),
+                &ingest(),
+                &readback(),
+                MaterializationReplayObservation::from_mutations(MutationCounters::default()),
+                ContentDigest::of_text("policy"),
+            )
+            .unwrap();
+        assert_eq!(report.verdict, AssuranceVerdict::Fail);
+        assert!(
+            report.layer_results[0]
+                .hard_failures
+                .contains(&"replay_net_writes:missing_observation".into())
+        );
+    }
+
+    #[test]
+    fn invalid_partition_counters_are_preserved_and_fail_integrity() {
+        let counters = MutationCounters {
+            property: da_ports::MutationFamilyCounters {
+                attempted: 1,
                 ..Default::default()
             },
-        ] {
-            let report = MaterializationAssuranceUseCase::new()
-                .evaluate(
-                    &parsed(),
-                    &ingest(),
-                    &readback(),
-                    MaterializationReplayObservation::from_mutations(counters),
-                    ContentDigest::of_text("policy"),
-                )
-                .unwrap();
-            assert_eq!(report.verdict, AssuranceVerdict::Fail);
-            assert!(
-                report.layer_results[0]
-                    .hard_failures
-                    .contains(&"replay_net_writes:missing_observation".into())
-            );
-        }
+            ..Default::default()
+        };
+        let report = MaterializationAssuranceUseCase::new()
+            .evaluate(
+                &parsed(),
+                &ingest(),
+                &readback(),
+                MaterializationReplayObservation::from_mutations(counters),
+                ContentDigest::of_text("policy"),
+            )
+            .unwrap();
+        assert_eq!(report.verdict, AssuranceVerdict::Fail);
+        let failures = &report.layer_results[0].hard_failures;
+        assert!(
+            failures.contains(&"replay_observation_integrity:invalid_partition".into()),
+            "failures: {failures:?}"
+        );
+        // Full observation is preserved in the report for independent recomputation.
+        let obs = report.layer_results[0].replay_observation.unwrap();
+        assert_eq!(obs.property.attempted, 1);
+        assert!(!obs.integrity_passes());
     }
 
     #[test]
@@ -505,10 +556,20 @@ mod tests {
                 &parsed(),
                 &ingest(),
                 &sink,
-                MaterializationReplayObservation::Observed(WriteDelta {
-                    node_writes: 1,
-                    edge_writes: 2,
-                    ..WriteDelta::default()
+                MaterializationReplayObservation::Observed(ReplayObservation {
+                    node: MutationFamilyObservation {
+                        attempted: 1,
+                        applied: 1,
+                        unchanged: 0,
+                        rejected: 0,
+                    },
+                    edge: MutationFamilyObservation {
+                        attempted: 2,
+                        applied: 2,
+                        unchanged: 0,
+                        rejected: 0,
+                    },
+                    ..ReplayObservation::default()
                 }),
                 ContentDigest::of_text("policy"),
             )
@@ -540,7 +601,9 @@ mod tests {
                 &source,
                 &result,
                 &sink,
-                MaterializationReplayObservation::Observed(WriteDelta::default()),
+                MaterializationReplayObservation::Observed(
+                    ReplayObservation::valid_unchanged_property(1),
+                ),
                 ContentDigest::of_text("policy"),
             )
             .unwrap();
@@ -561,7 +624,9 @@ mod tests {
                 &parsed(),
                 &ingest(),
                 &sink,
-                MaterializationReplayObservation::Observed(WriteDelta::default()),
+                MaterializationReplayObservation::Observed(
+                    ReplayObservation::valid_unchanged_property(1),
+                ),
                 ContentDigest::of_text("policy"),
             )
             .unwrap();
