@@ -335,54 +335,67 @@ impl LayerAssuranceResult {
                 ));
             }
         }
-        match self.replay_observation {
-            Some(obs) => {
-                // Authoritative path: full physical partition is self-validating.
-                if !obs.partition_is_valid() {
-                    failures.push("replay_observation_integrity:invalid_partition".into());
+        // Physical replay is materialization-layer evidence. Pre-materialization
+        // layers (source/parse/structure/...) must set
+        // replay_missingness=NotApplicable with no observation/writes so they are
+        // not fail-closed for an inapplicable gate.
+        let replay_not_applicable = self.replay_observation.is_none()
+            && self.replay_writes.is_none()
+            && self.replay_missingness == Some(MissingnessReason::NotApplicable);
+        if !replay_not_applicable {
+            match self.replay_observation {
+                Some(obs) => {
+                    // Authoritative path: full physical partition is self-validating.
+                    if !obs.partition_is_valid() {
+                        failures.push("replay_observation_integrity:invalid_partition".into());
+                    }
+                    if obs.unobserved_operations != 0 {
+                        failures.push(format!(
+                            "replay_observation_integrity:unobserved:{}",
+                            obs.unobserved_operations
+                        ));
+                    }
+                    if obs.attempted() == 0 {
+                        failures.push("replay_observation_integrity:empty_attempt".into());
+                    } else if obs.unchanged() == 0 {
+                        failures.push("replay_observation_integrity:zero_unchanged".into());
+                    }
+                    if obs.rejected() != 0 {
+                        failures.push(format!("replay_rejected_writes:{}", obs.rejected()));
+                    }
+                    if obs.applied() != 0 {
+                        failures.push(format!("replay_net_writes:{}", obs.applied()));
+                    }
                 }
-                if obs.unobserved_operations != 0 {
-                    failures.push(format!(
-                        "replay_observation_integrity:unobserved:{}",
-                        obs.unobserved_operations
-                    ));
-                }
-                if obs.attempted() == 0 {
-                    failures.push("replay_observation_integrity:empty_attempt".into());
-                } else if obs.unchanged() == 0 {
-                    failures.push("replay_observation_integrity:zero_unchanged".into());
-                }
-                if obs.rejected() != 0 {
-                    failures.push(format!("replay_rejected_writes:{}", obs.rejected()));
-                }
-                if obs.applied() != 0 {
-                    failures.push(format!("replay_net_writes:{}", obs.applied()));
-                }
-            }
-            None => {
-                // Legacy v1 path: only diagnostic WriteDelta is available.
-                // NetWrites alone cannot prove integrity; missing full observation
-                // is itself a hard failure when no write delta was recorded either.
-                match self.replay_writes {
-                    Some(writes) if writes.rejected_writes != 0 => {
-                        failures.push(format!("replay_rejected_writes:{}", writes.rejected_writes));
-                        if writes.total() != 0 {
-                            failures.push(format!("replay_net_writes:{}", writes.total()));
+                None => {
+                    // Legacy v1 path: only diagnostic WriteDelta is available.
+                    // NetWrites alone cannot prove integrity; missing full observation
+                    // is itself a hard failure when no write delta was recorded either.
+                    match self.replay_writes {
+                        Some(writes) if writes.rejected_writes != 0 => {
+                            failures
+                                .push(format!("replay_rejected_writes:{}", writes.rejected_writes));
+                            if writes.total() != 0 {
+                                failures.push(format!("replay_net_writes:{}", writes.total()));
+                            }
+                            failures
+                                .push("replay_observation_integrity:legacy_v1_incomplete".into());
                         }
-                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
-                    }
-                    Some(writes) if writes.total() != 0 => {
-                        failures.push(format!("replay_net_writes:{}", writes.total()));
-                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
-                    }
-                    None => {
-                        failures.push("replay_net_writes:missing_observation".into());
-                    }
-                    Some(_) => {
-                        // Zero applied/rejected WriteDelta without full partition:
-                        // compatible with old PASS artifacts but incomplete for
-                        // recomputing integrity from the report alone.
-                        failures.push("replay_observation_integrity:legacy_v1_incomplete".into());
+                        Some(writes) if writes.total() != 0 => {
+                            failures.push(format!("replay_net_writes:{}", writes.total()));
+                            failures
+                                .push("replay_observation_integrity:legacy_v1_incomplete".into());
+                        }
+                        None => {
+                            failures.push("replay_net_writes:missing_observation".into());
+                        }
+                        Some(_) => {
+                            // Zero applied/rejected WriteDelta without full partition:
+                            // compatible with old PASS artifacts but incomplete for
+                            // recomputing integrity from the report alone.
+                            failures
+                                .push("replay_observation_integrity:legacy_v1_incomplete".into());
+                        }
                     }
                 }
             }
@@ -826,6 +839,56 @@ mod tests {
             layer
                 .hard_failures
                 .contains(&"replay_observation_integrity:legacy_v1_incomplete".to_string())
+        );
+    }
+
+    #[test]
+    fn pre_materialization_layer_skips_physical_replay_when_not_applicable() {
+        let mut layer = LayerAssuranceResult {
+            layer_id: "source".into(),
+            state: ArticleContextState::SourceVerified,
+            article_count: 1,
+            available_required_fields: 1,
+            retained_required_fields: 1,
+            conservations: vec![],
+            counts: vec![],
+            replay_writes: None,
+            replay_observation: None,
+            replay_missingness: Some(MissingnessReason::NotApplicable),
+            d127_unlock_count: 0,
+            quality_metrics: BTreeMap::new(),
+            hard_failures: vec![],
+        };
+        layer.evaluate_hard_failures();
+        assert!(
+            layer.hard_failures.is_empty(),
+            "failures: {:?}",
+            layer.hard_failures
+        );
+    }
+
+    #[test]
+    fn materialization_missing_replay_without_not_applicable_still_fails() {
+        let mut layer = LayerAssuranceResult {
+            layer_id: "materialization".into(),
+            state: ArticleContextState::Materialized,
+            article_count: 1,
+            available_required_fields: 1,
+            retained_required_fields: 1,
+            conservations: vec![],
+            counts: vec![],
+            replay_writes: None,
+            replay_observation: None,
+            replay_missingness: None,
+            d127_unlock_count: 0,
+            quality_metrics: BTreeMap::new(),
+            hard_failures: vec![],
+        };
+        layer.evaluate_hard_failures();
+        assert!(
+            layer
+                .hard_failures
+                .contains(&"replay_net_writes:missing_observation".into())
         );
     }
 

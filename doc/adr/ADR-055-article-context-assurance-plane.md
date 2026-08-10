@@ -283,6 +283,13 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    `/tests/` via data-driven path_contains_exclude without weakening production
    src scanning.
 
+   **Post-S07 product wave (pipeline stage projection):** Application
+   `PipelineStageAssuranceUseCase` projects required pre-materialization layers
+   from durable wave checksum lineage and first-pass counts. Physical replay
+   remains materialization-only (`replay_missingness=NotApplicable` elsewhere).
+   Live 200-paper aggregate reaches corpus Pass with all required layers
+   Observed; bootstrap enrichment/summary/task layers stay typed no_claim.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

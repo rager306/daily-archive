@@ -1,5 +1,26 @@
 # Changelog
 
+### Project required pre-materialization ACAP layers from durable wave evidence
+
+Product wave after S07: `PipelineStageAssuranceUseCase` projects source/parse/
+structure/extraction/evidence/embedding (+ materialization when replay is
+present) from checksum lineage and first-pass graph counts already stored in
+`materialization_all_200.json`. Pre-materialization layers set
+`replay_missingness=NotApplicable` so physical replay gates stay typed and do
+not invent NetWrites proof.
+
+Evidence hard gate is claims-aware: FOUND_IN required when mentions exist;
+EvidenceBundle required only when Claims exist (mention-only papers are not
+failed for zero bundles). CLI
+`cargo run -p da-cli --example acap_project_pipeline_layers` emits corpus
+aggregate with all 7 required layers Observed for 200 papers, corpus
+verdict=Pass, D127=false, hard_failures=[]. Governor ACAP flags empty under
+bootstrap. Contract-audit canary merges observed aggregate layers and reports
+verdict=Converged.
+
+Domain evaluate_hard_failures additive skip when replay is NotApplicable.
+6 pipeline-stage unit tests + existing ACAP suites green. No graph rebuild.
+
 ### Governor aligned to product ACAP aggregate fixtures (M371/S07/T05)
 
 Governor now consumes the product corpus aggregate schema

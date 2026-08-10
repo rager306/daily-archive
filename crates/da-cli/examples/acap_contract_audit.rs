@@ -185,16 +185,46 @@ fn main() -> Result<()> {
         String::new()
     };
 
-    // Check canonical aggregate path.
+    // Check canonical aggregate path and merge its observed layers into the
+    // cross-surface audit view (product aggregate may project more layers than
+    // the raw materialization per-article assurance embeds).
     let aggregate_path = policy.assurance_report_contract.path.clone();
-    let aggregate_present = !aggregate_path.is_empty() && {
-        let full = if Path::new(&aggregate_path).is_absolute() {
-            PathBuf::from(&aggregate_path)
-        } else {
-            repo_root.join(&aggregate_path)
-        };
-        full.is_file()
+    let aggregate_full = if aggregate_path.is_empty() {
+        None
+    } else if Path::new(&aggregate_path).is_absolute() {
+        Some(PathBuf::from(&aggregate_path))
+    } else {
+        Some(repo_root.join(&aggregate_path))
     };
+    let aggregate_present = aggregate_full
+        .as_ref()
+        .map(|path| path.is_file())
+        .unwrap_or(false);
+    let mut embedded_layers = embedded_layers;
+    let mut embedded_source = "artifacts/article_context/materialization_all_200.json".to_string();
+    if let Some(full) = aggregate_full.as_ref().filter(|path| path.is_file()) {
+        if let Ok(bytes) = std::fs::read(full) {
+            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                if let Some(layers) = value.get("layer_results").and_then(|v| v.as_array()) {
+                    let mut set: std::collections::BTreeSet<String> =
+                        embedded_layers.into_iter().collect();
+                    for layer in layers {
+                        let status = layer.get("status").and_then(|v| v.as_str()).unwrap_or("");
+                        if status == "observed" {
+                            if let Some(id) = layer.get("layer_id").and_then(|v| v.as_str()) {
+                                set.insert(id.to_string());
+                            }
+                        }
+                    }
+                    embedded_layers = set.into_iter().collect();
+                    embedded_source = format!(
+                        "artifacts/article_context/materialization_all_200.json+{}",
+                        display_path(&repo_root, full)
+                    );
+                }
+            }
+        }
+    }
 
     // Build typed observations.
     let policy_layers = policy
@@ -239,7 +269,7 @@ fn main() -> Result<()> {
         embedded_reports: EmbeddedReportsSurface {
             count: embedded_count,
             layers_observed: embedded_layers,
-            source_ref: "artifacts/article_context/materialization_all_200.json".into(),
+            source_ref: embedded_source,
         },
         aggregate_report: AggregateReportSurface {
             present: aggregate_present,
@@ -283,6 +313,12 @@ fn main() -> Result<()> {
         );
     }
     Ok(())
+}
+
+fn display_path(repo_root: &Path, path: &Path) -> String {
+    path.strip_prefix(repo_root)
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| path.display().to_string())
 }
 
 fn resolve(repo_root: &Path, relative: &Path) -> PathBuf {
