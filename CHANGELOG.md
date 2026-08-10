@@ -1,5 +1,23 @@
 # Changelog
 
+### First-class ontology acceptance runner (M371/S14)
+
+Composable same-process acceptance over the enriched 200-paper snapshot:
+class-qualified semantic suite (structural/fact/summary/cluster/resolution)
+plus corpus checkpoint seal with injectable FULL_SEMANTIC required classes.
+Exports accepted snapshot only on PASS. D127 stays false.
+
+Domain `SealCorpusCheckpointInput.required_task_classes` and
+`FULL_SEMANTIC_REQUIRED_TASK_CLASSES` let S09-style packages require only
+structural+fact while S14 demands all five product classes. Checkpoint CLI
+gains `--allow-derived-snapshot` for enriched snaps whose bytes differ from
+materialization `output_snapshot_sha256`.
+
+Live acceptance: verdict=PASS, 200 articles, 33172 nodes / 49268 edges, all
+five classes Passed, semantic checkpoint findings=[], accepted snap
+`accepted_corpus_checkpoint.sgsnap`. 6 domain + 4 application checkpoint
+tests green. No PDF rebuild.
+
 ### Multi-provider scholarly evidence reconcile (M371/S11)
 
 Pure domain reconcile of OpenAlex / Semantic Scholar / local TeX bibliography

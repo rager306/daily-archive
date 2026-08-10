@@ -25,10 +25,18 @@ pub const REQUIRED_ACAP_LAYERS: [&str; 7] = [
     "materialization",
 ];
 
-/// Structural task classes that must PASS for a required-layer checkpoint.
-/// Summary/resolution/cluster remain bootstrap until dedicated verticals (S10+).
+/// Minimum structural/fact task classes for a required-layer checkpoint.
 pub const REQUIRED_STRUCTURAL_TASK_CLASSES: [GraphTaskClass; 2] =
     [GraphTaskClass::Structural, GraphTaskClass::Fact];
+
+/// Full semantic acceptance classes after S10–S13 verticals.
+pub const FULL_SEMANTIC_REQUIRED_TASK_CLASSES: [GraphTaskClass; 5] = [
+    GraphTaskClass::Structural,
+    GraphTaskClass::Fact,
+    GraphTaskClass::Summary,
+    GraphTaskClass::Cluster,
+    GraphTaskClass::Resolution,
+];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SnapshotIdentity {
@@ -147,6 +155,8 @@ pub struct SealCorpusCheckpointInput {
     pub snapshot: SnapshotIdentity,
     pub acap: AcapIdentity,
     pub structural_tasks: StructuralTaskEvidence,
+    /// When empty, defaults to REQUIRED_STRUCTURAL_TASK_CLASSES.
+    pub required_task_classes: Vec<GraphTaskClass>,
     pub same_process_tasks: bool,
     pub refreshed_at: String,
 }
@@ -163,6 +173,7 @@ pub fn seal_corpus_checkpoint(
         snapshot,
         acap,
         structural_tasks,
+        required_task_classes: requested_classes,
         same_process_tasks,
         refreshed_at,
     } = input;
@@ -207,7 +218,18 @@ pub fn seal_corpus_checkpoint(
         }
     }
 
-    let required_task_classes = REQUIRED_STRUCTURAL_TASK_CLASSES.to_vec();
+    let required_task_classes = if requested_classes.is_empty() {
+        REQUIRED_STRUCTURAL_TASK_CLASSES.to_vec()
+    } else {
+        // Dedup while preserving order.
+        let mut out = Vec::new();
+        for class in requested_classes {
+            if !out.contains(&class) {
+                out.push(class);
+            }
+        }
+        out
+    };
     for class in &required_task_classes {
         match structural_tasks.by_class.get(class) {
             Some(row) if row.status == TaskClassStatus::Passed => {}
@@ -391,6 +413,7 @@ mod tests {
             },
             acap,
             structural_tasks,
+            required_task_classes: vec![],
             same_process_tasks: same_process,
             refreshed_at: "2026-08-10T00:00:00Z".into(),
         })
@@ -460,5 +483,34 @@ mod tests {
         assert!(!tasks.overall_passed);
         let package = seal(acap_pass(), tasks, true).unwrap();
         assert_eq!(package.verdict, CorpusCheckpointVerdict::Pass);
+    }
+
+    #[test]
+    fn full_semantic_required_classes_fail_on_summary_empty() {
+        let package = seal_corpus_checkpoint(SealCorpusCheckpointInput {
+            package_id: "full".into(),
+            pipeline_revision: "manifest:test".into(),
+            materialization_manifest_sha256: digest("manifest"),
+            materialization_report_sha256: digest("mat-report"),
+            snapshot: SnapshotIdentity {
+                path: "snap.sgsnap".into(),
+                sha256: digest("snap"),
+                nodes: 10,
+                edges: 20,
+            },
+            acap: acap_pass(),
+            structural_tasks: structural_pass_with_bootstrap_empty(),
+            required_task_classes: FULL_SEMANTIC_REQUIRED_TASK_CLASSES.to_vec(),
+            same_process_tasks: true,
+            refreshed_at: "t".into(),
+        })
+        .unwrap();
+        assert_eq!(package.verdict, CorpusCheckpointVerdict::Fail);
+        assert!(
+            package
+                .findings
+                .iter()
+                .any(|f| f.starts_with("required_task_class:summary:"))
+        );
     }
 }

@@ -327,6 +327,12 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    D127 remains false. Canary artifact:
    `artifacts/article_context/scholarly_evidence_2606.06036.json`.
 
+   **M371/S14 (first-class ontology acceptance delivered):** Same-process
+   acceptance runner binds enriched snapshot identity, full five-class semantic
+   suite, and corpus checkpoint with injectable required task classes. Accepted
+   snapshot is exported only on PASS. Live package:
+   `artifacts/article_context/ontology_acceptance_report.json`.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

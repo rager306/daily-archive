@@ -53,6 +53,10 @@ struct Args {
     tasks_report: PathBuf,
     #[arg(long, default_value = "daily_archive")]
     graph: String,
+    /// Allow sealing a derived snapshot whose bytes differ from materialization
+    /// output_snapshot_sha256 (e.g. summary/cluster/resolution enriched snaps).
+    #[arg(long, default_value_t = false)]
+    allow_derived_snapshot: bool,
 }
 
 #[tokio::main]
@@ -84,10 +88,19 @@ async fn main() -> Result<()> {
         .get("output_snapshot_sha256")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("materialization report missing output_snapshot_sha256"))?;
-    anyhow::ensure!(
-        declared_snap_sha == snapshot_sha.as_str(),
-        "snapshot bytes diverge from materialization output_snapshot_sha256"
-    );
+    if declared_snap_sha != snapshot_sha.as_str() {
+        if args.allow_derived_snapshot {
+            eprintln!(
+                "warning: using derived snapshot (materialization output_snapshot_sha256={} actual={})",
+                declared_snap_sha,
+                snapshot_sha.as_str()
+            );
+        } else {
+            anyhow::bail!(
+                "snapshot bytes diverge from materialization output_snapshot_sha256 (pass --allow-derived-snapshot for enriched snaps)"
+            );
+        }
+    }
     let import_eligible = mat_json
         .get("import_eligible")
         .and_then(|v| v.as_bool())
@@ -149,6 +162,7 @@ async fn main() -> Result<()> {
         suite_sha256: suite_sha,
         overall_tasks_passed: task_report.passed(),
         class_tallies: tallies_from_class_results(&task_report.class_results),
+        required_task_classes: vec![],
         same_process_tasks: true,
         refreshed_at: Utc::now().to_rfc3339(),
         import_eligible: false,

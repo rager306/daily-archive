@@ -41,6 +41,8 @@ pub struct CorpusCheckpointInput {
     pub suite_sha256: String,
     pub overall_tasks_passed: bool,
     pub class_tallies: Vec<InjectedTaskClassTally>,
+    /// Empty => structural+fact only; set FULL_SEMANTIC for S14 acceptance.
+    pub required_task_classes: Vec<GraphTaskClass>,
     pub same_process_tasks: bool,
     pub refreshed_at: String,
     pub import_eligible: bool,
@@ -122,6 +124,7 @@ impl CorpusCheckpointUseCase {
                 overall_passed: input.overall_tasks_passed,
                 by_class,
             },
+            required_task_classes: input.required_task_classes,
             same_process_tasks: input.same_process_tasks,
             refreshed_at: input.refreshed_at,
         })
