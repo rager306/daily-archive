@@ -271,15 +271,32 @@ class TrajectoryService:
                 flag="acap_report_invalid", severity="high", evidence=str(error),
                 dimension="article_context_assurance",
             )]
-        failures = []
-        required_top = (policy.get("assurance_report_contract") or {}).get("required_top_level", [])
+        contract = policy.get("assurance_report_contract") or {}
+        failures: list[str] = []
+        coverage_gaps: list[str] = []
+        required_top = contract.get("required_top_level", [])
         missing_top = [key for key in required_top if key not in report]
         if missing_top:
             failures.append(f"missing report keys {missing_top}")
+        expected_schema = contract.get("schema_version")
+        if expected_schema and report.get("schema_version") != expected_schema:
+            failures.append(
+                f"schema_version mismatch: report={report.get('schema_version')!r} "
+                f"expected={expected_schema!r}"
+            )
         expected_hash = hashlib.sha256(raw).hexdigest()
-        if report.get("policy_sha256") != expected_hash:
+        report_policy_sha = report.get("policy_sha256")
+        # Product ContentDigest may be a plain hex string.
+        if isinstance(report_policy_sha, dict):
+            report_policy_sha = report_policy_sha.get("sha256") or report_policy_sha.get("hex")
+        if report_policy_sha != expected_hash:
             failures.append("policy_sha256 mismatch")
+        if report.get("import_eligible") is True:
+            failures.append("import_eligible must be false")
+
         results = {str(item.get("layer_id")): item for item in report.get("layer_results", [])}
+        # Product reports include no_claim rows for required layers; absence of a
+        # row is still a structural failure. Coverage is judged via status + codes.
         missing_required = sorted(required_layers - set(results))
         if missing_required:
             failures.append(f"missing required layers {missing_required}")
@@ -289,17 +306,64 @@ class TrajectoryService:
             # Product shape is list[str]; legacy fixtures may still use a count.
             if _acap_hard_failures_nonzero(result.get("hard_failures", 0)):
                 failures.append(f"{layer_id}: hard_failures={result.get('hard_failures')}")
+
         aggregate = report.get("aggregate") or {}
+        aggregate_required = contract.get("aggregate_required", [])
+        missing_agg = [key for key in aggregate_required if key not in aggregate]
+        if missing_agg:
+            failures.append(f"missing aggregate keys {missing_agg}")
         if aggregate.get("replay_net_writes", 0) != 0:
             failures.append("aggregate replay_net_writes must be zero")
         if aggregate.get("d127_unlock_count", 0) != 0:
             failures.append("aggregate d127_unlock_count must be zero")
+
+        rollout = str(policy.get("rollout") or "bootstrap")
+        coverage_prefixes = list(
+            contract.get("bootstrap_coverage_hard_failure_prefixes") or []
+        )
+        agg_hard = aggregate.get("hard_failures", 0)
+        # Normalize product list / legacy count into code list for classification.
+        if isinstance(agg_hard, list):
+            hard_codes = [str(code) for code in agg_hard]
+        elif _acap_hard_failures_nonzero(agg_hard):
+            hard_codes = [f"legacy_hard_failures_count:{agg_hard}"]
+        else:
+            hard_codes = []
+
+        for code in hard_codes:
+            if rollout == "bootstrap" and any(code.startswith(prefix) for prefix in coverage_prefixes):
+                coverage_gaps.append(code)
+            else:
+                failures.append(f"aggregate hard_failures:{code}")
+
+        # Product verdict is advisory cross-check: Fail with only bootstrap coverage
+        # codes should not invent PASS, but also must not block trajectory under
+        # bootstrap. Integrity Fail always blocks.
+        product_verdict = str(report.get("verdict") or "").lower()
+        if product_verdict == "pass" and hard_codes:
+            failures.append(
+                f"product verdict pass contradicts hard_failures {hard_codes[:5]}"
+            )
+
+        flags: list[DriftFlag] = []
         if failures:
-            return [DriftFlag(
-                flag="acap_report_failed", severity="high", evidence="; ".join(failures[:20]),
+            flags.append(DriftFlag(
+                flag="acap_report_failed",
+                severity="high",
+                evidence="; ".join(failures[:20]),
                 dimension="article_context_assurance",
-            )]
-        return []
+            ))
+        if coverage_gaps and not failures:
+            flags.append(DriftFlag(
+                flag="acap_coverage_gap",
+                severity="medium",
+                evidence=(
+                    f"bootstrap coverage gaps (not trajectory-blocking): "
+                    f"{'; '.join(coverage_gaps[:20])}"
+                ),
+                dimension="article_context_assurance",
+            ))
+        return flags
 
     def _check_information_preservation(self) -> list[DriftFlag]:
         """Evaluate data-driven source-to-sink fidelity contracts."""

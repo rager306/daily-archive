@@ -22,6 +22,7 @@ class FilesystemCodeScanner(CodeScanner):
         filename_filter: str | None = None,
         path_prefix_include: str | None = None,
         path_prefix_exclude: str | None = None,
+        path_contains_exclude: list[str] | None = None,
         suffix_allowlist: set[str] | None = None,
         section_filter: str | None = None,
     ) -> Iterator[tuple[Path, int, str]]:
@@ -33,6 +34,8 @@ class FilesystemCodeScanner(CodeScanner):
             filename_filter: If set, only scan files with this exact name.
             path_prefix_include: If set, only scan files with this path prefix.
             path_prefix_exclude: If set, skip files with this path prefix.
+            path_contains_exclude: If set, skip files whose relative path contains
+                any of these substrings (e.g. ["/tests/"] for fail-closed unit tests).
             suffix_allowlist: Set of file suffixes to scan.
             section_filter: If set (e.g. "dependencies"), only match lines inside
                 that TOML section header [dependencies], not [dev-dependencies].
@@ -63,6 +66,8 @@ class FilesystemCodeScanner(CodeScanner):
             if path_prefix_include and not rel.startswith(path_prefix_include):
                 continue
             if path_prefix_exclude and rel.startswith(path_prefix_exclude):
+                continue
+            if path_contains_exclude and any(token in rel for token in path_contains_exclude):
                 continue
 
             try:

@@ -291,8 +291,11 @@ optimizer_admission:
     no_test_contamination: true
     human_decision_required: true
 assurance_report_contract:
+  schema_version: article-context-assurance-aggregate.v1
   path: artifacts/article_context/assurance_report.json
-  required_top_level: [policy_sha256, layer_results, aggregate]
+  required_top_level: [schema_version, policy_sha256, layer_results, aggregate, import_eligible]
+  aggregate_required: [hard_failures, replay_net_writes, d127_unlock_count]
+  bootstrap_coverage_hard_failure_prefixes: ["required_layer_absent:"]
 """)
     return path
 
@@ -361,9 +364,11 @@ def test_acap_report_accepts_list_typed_empty_hard_failures_and_rejects_nonempty
     report_path = service.root / "artifacts/article_context/assurance_report.json"
     # Empty list = pass for hard_failures gate (still need required keys/layers).
     good = {
+        "schema_version": "article-context-assurance-aggregate.v1",
         "article_count": 1,
         "pipeline_revision": "test",
         "policy_sha256": policy_sha,
+        "import_eligible": False,
         "layer_results": [{"layer_id": "source", "hard_failures": []}],
         "fsm_results": {},
         "cache_results": {},
@@ -380,6 +385,136 @@ def test_acap_report_accepts_list_typed_empty_hard_failures_and_rejects_nonempty
     assert len(flags) == 1
     assert flags[0].flag == "acap_report_failed"
     assert "hard_failures" in flags[0].evidence
+
+
+
+def test_acap_bootstrap_coverage_gaps_are_medium_not_blocking():
+    """Product required_layer_absent codes are coverage under bootstrap (T05)."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root, rollout="bootstrap")
+    policy_sha = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    report_path = service.root / "artifacts/article_context/assurance_report.json"
+    _write(report_path, json.dumps({
+        "schema_version": "article-context-assurance-aggregate.v1",
+        "article_count": 200,
+        "pipeline_revision": "manifest:test",
+        "policy_sha256": policy_sha,
+        "import_eligible": False,
+        "verdict": "fail",
+        "layer_results": [
+            {"layer_id": "source", "status": "no_claim", "hard_failures": []},
+        ],
+        "fsm_results": {},
+        "cache_results": {},
+        "prompt_results": {},
+        "optimizer_results": {},
+        "aggregate": {
+            "hard_failures": ["required_layer_absent:source"],
+            "replay_net_writes": 0,
+            "d127_unlock_count": 0,
+            "hard_pass_rate": 0.0,
+            "weighted_layer_coverage": 0.5,
+            "weighted_quality_score": 0.0,
+        },
+    }))
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_coverage_gap"
+    assert flags[0].severity == "medium"
+    assert "required_layer_absent:source" in flags[0].evidence
+
+
+def test_acap_integrity_hard_failures_remain_high_under_bootstrap():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root, rollout="bootstrap")
+    policy_sha = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    report_path = service.root / "artifacts/article_context/assurance_report.json"
+    _write(report_path, json.dumps({
+        "schema_version": "article-context-assurance-aggregate.v1",
+        "article_count": 1,
+        "pipeline_revision": "manifest:test",
+        "policy_sha256": policy_sha,
+        "import_eligible": False,
+        "verdict": "fail",
+        "layer_results": [{"layer_id": "source", "hard_failures": []}],
+        "fsm_results": {},
+        "cache_results": {},
+        "prompt_results": {},
+        "optimizer_results": {},
+        "aggregate": {
+            "hard_failures": ["replay_net_writes:1", "required_layer_absent:source"],
+            "replay_net_writes": 1,
+            "d127_unlock_count": 0,
+        },
+    }))
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_report_failed"
+    assert flags[0].severity == "high"
+    assert "replay_net_writes" in flags[0].evidence
+
+
+def test_acap_schema_mismatch_and_import_eligible_true_fail_closed():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    path = _write_acap_policy(service.root, rollout="required")
+    policy_sha = __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    report_path = service.root / "artifacts/article_context/assurance_report.json"
+    _write(report_path, json.dumps({
+        "schema_version": "article-context-assurance-report.v1",
+        "article_count": 1,
+        "pipeline_revision": "test",
+        "policy_sha256": policy_sha,
+        "import_eligible": True,
+        "layer_results": [{"layer_id": "source", "hard_failures": []}],
+        "fsm_results": {},
+        "cache_results": {},
+        "prompt_results": {},
+        "optimizer_results": {},
+        "aggregate": {"hard_failures": [], "replay_net_writes": 0, "d127_unlock_count": 0},
+    }))
+    flags = service._check_article_context_assurance()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_report_failed"
+    assert "schema_version mismatch" in flags[0].evidence
+    assert "import_eligible must be false" in flags[0].evidence
+
+
+def test_import_eligible_scanner_excludes_tests_but_blocks_src():
+    """path_contains_exclude /tests/ must not hide production assignments (MEM718)."""
+    from governor.adapters.filesystem_code_scanner import FilesystemCodeScanner
+
+    root = _make_root()
+    # Production source assignment must still fire.
+    _write(
+        root / "crates/da-application/src/evil.rs",
+        "fn x() { let import_eligible = true; }\n",
+    )
+    # Fail-closed unit test fixture must be ignored.
+    _write(
+        root / "crates/da-application/tests/corpus_assurance_test.rs",
+        "fn t() { input.import_eligible = true; }\n",
+    )
+    scanner = FilesystemCodeScanner(root)
+    hits = list(scanner.scan_pattern(
+        "crates/",
+        r"import_eligible\s*[:=]\s*true",
+        suffix_allowlist={".rs"},
+        path_contains_exclude=["/tests/", "/test/"],
+    ))
+    rels = [str(p.relative_to(root)) for p, _, _ in hits]
+    assert any("src/evil.rs" in r for r in rels), rels
+    assert not any("/tests/" in r for r in rels), rels
+
+    hits_all = list(scanner.scan_pattern(
+        "crates/",
+        r"import_eligible\s*[:=]\s*true",
+        suffix_allowlist={".rs"},
+    ))
+    rels_all = [str(p.relative_to(root)) for p, _, _ in hits_all]
+    assert any("/tests/" in r for r in rels_all), rels_all
 
 
 def test_information_preservation_contracts_turn_lossy_mutations_into_regressions():

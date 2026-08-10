@@ -95,7 +95,23 @@ struct ReportContractYaml {
 }
 
 #[derive(Default, Deserialize)]
-struct MaterializationArtifact {
+struct MaterializationRoot {
+    #[serde(default)]
+    materialization: MaterializationBody,
+    #[serde(default)]
+    papers: Vec<PaperEntry>,
+}
+
+#[derive(Default, Deserialize)]
+struct MaterializationBody {
+    #[serde(default)]
+    waves: Vec<WaveBody>,
+    #[serde(default)]
+    papers: Vec<PaperEntry>,
+}
+
+#[derive(Default, Deserialize)]
+struct WaveBody {
     #[serde(default)]
     papers: Vec<PaperEntry>,
 }
@@ -118,6 +134,18 @@ struct LayerResultEntry {
     layer_id: String,
 }
 
+impl MaterializationRoot {
+    fn papers(&self) -> Vec<&PaperEntry> {
+        let mut out = Vec::new();
+        for wave in &self.materialization.waves {
+            out.extend(wave.papers.iter());
+        }
+        out.extend(self.materialization.papers.iter());
+        out.extend(self.papers.iter());
+        out
+    }
+}
+
 fn main() -> Result<()> {
     let _log_guard = da_cli::logging::init_pipeline_logging("acap_contract_audit");
     let args = Args::parse();
@@ -135,20 +163,18 @@ fn main() -> Result<()> {
     // Parse materialization artifact for embedded report observations.
     let (embedded_count, embedded_layers) = if mat_path.exists() {
         let mat_bytes = read_capped(&mat_path, MAX_ARTIFACT_BYTES)?;
-        let artifact: MaterializationArtifact = serde_json::from_slice(&mat_bytes)
+        let artifact: MaterializationRoot = serde_json::from_slice(&mat_bytes)
             .with_context(|| format!("parse {}", mat_path.display()))?;
+        let papers = artifact.papers();
         let mut layers = std::collections::BTreeSet::new();
-        for paper in &artifact.papers {
+        for paper in &papers {
             if let Some(assurance) = &paper.assurance {
                 for layer in &assurance.layer_results {
                     layers.insert(layer.layer_id.clone());
                 }
             }
         }
-        (
-            artifact.papers.len(),
-            layers.into_iter().collect::<Vec<_>>(),
-        )
+        (papers.len(), layers.into_iter().collect::<Vec<_>>())
     } else {
         (0, vec![])
     };
@@ -224,7 +250,8 @@ fn main() -> Result<()> {
             expected_schema_version: policy.assurance_report_contract.schema_version.clone(),
             // Governor currently checks `result.get("hard_failures", 0) != 0` which
             // expects a numeric value. Rust produces Vec<String>.
-            expected_hard_failures_kind: "numeric".into(),
+            // Product aggregate emits list[str]; governor dual-accepts list/int (T05).
+            expected_hard_failures_kind: "list".into(),
             required_top_level: policy.assurance_report_contract.required_top_level.clone(),
             source_ref: "governor/application/trajectory_service.py".into(),
         },

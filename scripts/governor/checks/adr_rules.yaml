@@ -38,9 +38,13 @@ rules:
     severity: high
     scan: crates/
     pattern: 'import_eligible\s*[:=]\s*true|"import_eligible"\s*:\s*true'
-    rationale: "import_eligible must remain false in Rust sources until independent review and explicit user yes (D127). Do not hardcode true or assign true."
+    rationale: "import_eligible must remain false in Rust production sources until independent review and explicit user yes (D127). Fail-closed unit tests that temporarily assign true to prove rejection are excluded via path_contains_exclude."
     suffix_allowlist:
       - .rs
+    # Exclude test trees only — production src/ and examples/ still scanned.
+    path_contains_exclude:
+      - /tests/
+      - /test/
 
   - id: no_graph_writes_allowed_true_in_artifacts
     anchor: "ADR-040 (Samyama sole KG store), D127"

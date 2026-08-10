@@ -283,10 +283,17 @@ optimizer_admission:
   grpo_extra_gates: [reward_component_breakdown, reward_hacking_probes, held_out_replay, deterministic_tool_validity]
 
 assurance_report_contract:
-  schema_version: article-context-assurance-report.v1
+  # Product corpus aggregate schema (M371/S07/T03). Per-article reports use
+  # article-context-assurance-report.v1 and are not governor trajectory inputs.
+  schema_version: article-context-assurance-aggregate.v1
   path: artifacts/article_context/assurance_report.json
-  required_top_level: [article_count, pipeline_revision, policy_sha256, layer_results, fsm_results, cache_results, prompt_results, optimizer_results, aggregate]
-  aggregate_required: [hard_failures, hard_pass_rate, weighted_layer_coverage, weighted_quality_score, replay_net_writes, d127_unlock_count, total_cost, latency_p95_ms]
+  required_top_level: [schema_version, article_count, pipeline_revision, policy_sha256, layer_results, fsm_results, cache_results, prompt_results, optimizer_results, aggregate, import_eligible]
+  aggregate_required: [hard_failures, hard_pass_rate, weighted_layer_coverage, weighted_quality_score, replay_net_writes, d127_unlock_count]
+  # Optional aggregate diagnostics may be null with typed missingness.
+  aggregate_optional: [total_cost, latency_p95_ms, cost_missingness, latency_missingness]
   missing_report_behavior:
     bootstrap: no_claim
     required: high
+  # Under bootstrap, these product codes are coverage gaps (medium), not trajectory blocks.
+  # Integrity codes (replay_*, d127_*, schema_*, import_*) always high.
+  bootstrap_coverage_hard_failure_prefixes: ["required_layer_absent:"]

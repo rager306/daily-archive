@@ -28,6 +28,7 @@ class CheckRule:
     filename_filter: Optional[str] = None
     path_prefix_include: Optional[str] = None
     path_prefix_exclude: Optional[str] = None
+    path_contains_exclude: Optional[list[str]] = None
     section_filter: Optional[str] = None
     suffix_allowlist: Optional[list[str]] = None
 

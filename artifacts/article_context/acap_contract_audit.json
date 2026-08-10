@@ -4,7 +4,7 @@
     "schema_version": "acap-contract-audit-input.v1",
     "source_fingerprints": {
       "materialization_artifact": "ff708c1918eb20fe92cb0cdb22dc00b47635d396ad0747115b4fe92b45b65779",
-      "policy_yaml": "b3058a86374690382078ef05520634503907a16380151a9d9a23100417c98df2"
+      "policy_yaml": "caf55dd76d72289c51c14a90c6a7a7766bc05c5fe303b03051a35310307d70eb"
     },
     "policy_id": "acap-ontology-v2",
     "policy_schema_version": "article-context-assurance.v1",
@@ -250,18 +250,20 @@
       "summarized",
       "task_accepted"
     ],
-    "aggregate_schema_declared": "article-context-assurance-report.v1",
+    "aggregate_schema_declared": "article-context-assurance-aggregate.v1",
     "aggregate_path_declared": "artifacts/article_context/assurance_report.json",
     "aggregate_required_keys": [
       "aggregate",
       "article_count",
       "cache_results",
       "fsm_results",
+      "import_eligible",
       "layer_results",
       "optimizer_results",
       "pipeline_revision",
       "policy_sha256",
-      "prompt_results"
+      "prompt_results",
+      "schema_version"
     ],
     "rust_surface": {
       "per_article_schema": "article-context-assurance-report.v1",
@@ -271,8 +273,10 @@
       "source_ref": "da-domain/src/assurance.rs"
     },
     "embedded_reports": {
-      "count": 0,
-      "layers_observed": [],
+      "count": 200,
+      "layers_observed": [
+        "materialization"
+      ],
       "source_ref": "artifacts/article_context/materialization_all_200.json"
     },
     "aggregate_report": {
@@ -281,9 +285,10 @@
       "source_ref": "fs_check"
     },
     "governor_contract": {
-      "expected_schema_version": "article-context-assurance-report.v1",
-      "expected_hard_failures_kind": "numeric",
+      "expected_schema_version": "article-context-assurance-aggregate.v1",
+      "expected_hard_failures_kind": "list",
       "required_top_level": [
+        "schema_version",
         "article_count",
         "pipeline_revision",
         "policy_sha256",
@@ -292,7 +297,8 @@
         "cache_results",
         "prompt_results",
         "optimizer_results",
-        "aggregate"
+        "aggregate",
+        "import_eligible"
       ],
       "source_ref": "governor/application/trajectory_service.py"
     },
@@ -300,40 +306,10 @@
   },
   "findings": [
     {
-      "severity": "error",
-      "code": "aggregate_schema_drift",
-      "subject": "aggregate_schema_version",
-      "detail": "policy declares aggregate schema 'article-context-assurance-report.v1' but Rust expects 'article-context-assurance-aggregate.v1'",
-      "source_refs": [
-        "policy.assurance_report_contract.schema_version",
-        "da-domain/src/assurance.rs"
-      ]
-    },
-    {
-      "severity": "error",
-      "code": "hard_failures_type_drift",
-      "subject": "rust_governor_hard_failures_type_mismatch",
-      "detail": "Rust produces hard_failures as 'list' but governor expects 'numeric'. Non-empty Vec<String> will never equal numeric 0.",
-      "source_refs": [
-        "da-domain/src/assurance.rs",
-        "governor/application/trajectory_service.py"
-      ]
-    },
-    {
-      "severity": "error",
-      "code": "schema_version_collision",
-      "subject": "per_article_and_aggregate_share_schema",
-      "detail": "Rust per-article schema 'article-context-assurance-report.v1' and policy aggregate schema 'article-context-assurance-report.v1' are identical — a corpus aggregate must use a distinct schema version ('article-context-assurance-aggregate.v1') to prevent contract confusion.",
-      "source_refs": [
-        "da-domain/src/assurance.rs",
-        "policy.assurance_report_contract.schema_version"
-      ]
-    },
-    {
       "severity": "warning",
       "code": "required_layer_absent",
       "subject": "embedding",
-      "detail": "required layer 'embedding' not observed in embedded reports (count=0)",
+      "detail": "required layer 'embedding' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[embedding]",
         "artifacts/article_context/materialization_all_200.json"
@@ -343,7 +319,7 @@
       "severity": "warning",
       "code": "required_layer_absent",
       "subject": "evidence",
-      "detail": "required layer 'evidence' not observed in embedded reports (count=0)",
+      "detail": "required layer 'evidence' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[evidence]",
         "artifacts/article_context/materialization_all_200.json"
@@ -353,7 +329,7 @@
       "severity": "warning",
       "code": "required_layer_absent",
       "subject": "extraction",
-      "detail": "required layer 'extraction' not observed in embedded reports (count=0)",
+      "detail": "required layer 'extraction' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[extraction]",
         "artifacts/article_context/materialization_all_200.json"
@@ -362,18 +338,8 @@
     {
       "severity": "warning",
       "code": "required_layer_absent",
-      "subject": "materialization",
-      "detail": "required layer 'materialization' not observed in embedded reports (count=0)",
-      "source_refs": [
-        "article_context_assurance.yaml#layers[materialization]",
-        "artifacts/article_context/materialization_all_200.json"
-      ]
-    },
-    {
-      "severity": "warning",
-      "code": "required_layer_absent",
       "subject": "parse",
-      "detail": "required layer 'parse' not observed in embedded reports (count=0)",
+      "detail": "required layer 'parse' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[parse]",
         "artifacts/article_context/materialization_all_200.json"
@@ -383,7 +349,7 @@
       "severity": "warning",
       "code": "required_layer_absent",
       "subject": "source",
-      "detail": "required layer 'source' not observed in embedded reports (count=0)",
+      "detail": "required layer 'source' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[source]",
         "artifacts/article_context/materialization_all_200.json"
@@ -393,14 +359,14 @@
       "severity": "warning",
       "code": "required_layer_absent",
       "subject": "structure",
-      "detail": "required layer 'structure' not observed in embedded reports (count=0)",
+      "detail": "required layer 'structure' not observed in embedded reports (count=200)",
       "source_refs": [
         "article_context_assurance.yaml#layers[structure]",
         "artifacts/article_context/materialization_all_200.json"
       ]
     }
   ],
-  "verdict": "drift",
+  "verdict": "incomplete",
   "import_eligible": false,
-  "report_sha256": "15b14553e19077967e7a51fca8c8eb3c0adabacbf11b898cc924cc7af6cc33f0"
+  "report_sha256": "a375266fe8b5b886253db078f21cfea963fe98702df1e299df6d54ef48fdb1a9"
 }

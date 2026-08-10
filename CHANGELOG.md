@@ -1,5 +1,28 @@
 # Changelog
 
+### Governor aligned to product ACAP aggregate fixtures (M371/S07/T05)
+
+Governor now consumes the product corpus aggregate schema
+(`article-context-assurance-aggregate.v1`) instead of the per-article report
+schema. Report validation checks `schema_version`, `import_eligible=false`,
+aggregate required keys, and `aggregate.hard_failures` (list[str] product shape
+with legacy int dual-accept).
+
+Under bootstrap rollout, `required_layer_absent:*` codes are trajectory
+`acap_coverage_gap` (medium), while integrity codes (`replay_*`, `d127_*`,
+schema/import failures) remain high `acap_report_failed`. Live 200-paper
+aggregate yields coverage gaps only; D127 stays false; reverse-ADR violations=0.
+
+D127 crate scanner gains data-driven `path_contains_exclude: [/tests/, /test/]`
+so fail-closed unit tests that temporarily assign `import_eligible` no longer
+false-positive (MEM718), while production `src/` assignments still block.
+
+Also fixed ACAP contract-audit canary to read multi-wave
+`materialization.waves[].papers[]` (was silently seeing 0 embedded reports).
+
+Policy YAML, governor tests (31), trajectory preflight DRIFT_RISK with
+acap_coverage_gap. No graph rebuild, no D127 unlock.
+
 ### Typed graph-task classes for structural vs semantic evidence (M371/S07/T04)
 
 Graph task suites no longer collapse structural / fact / summary / resolution /

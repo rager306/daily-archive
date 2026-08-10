@@ -276,6 +276,13 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    optional (legacy default structural). Finalize policy may list
    `required_task_classes`; empty preserves overall-boolean gate only.
 
+   **M371/S07/T05 (governor product alignment delivered):** Trajectory ACAP
+   check validates the corpus aggregate schema, list-typed hard_failures, and
+   import_eligible=false. Bootstrap `required_layer_absent:*` is coverage
+   (medium); integrity failures remain high. D127 crate scanner excludes
+   `/tests/` via data-driven path_contains_exclude without weakening production
+   src scanning.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

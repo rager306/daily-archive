@@ -16,6 +16,7 @@ class CodeScanner(ABC):
         filename_filter: str | None = None,
         path_prefix_include: str | None = None,
         path_prefix_exclude: str | None = None,
+        path_contains_exclude: list[str] | None = None,
         suffix_allowlist: set[str] | None = None,
         section_filter: str | None = None,
     ) -> Iterator[tuple[Path, int, str]]:
@@ -27,6 +28,7 @@ class CodeScanner(ABC):
             filename_filter: If set, only scan files with this exact name.
             path_prefix_include: If set, only scan files with this path prefix.
             path_prefix_exclude: If set, skip files with this path prefix.
+            path_contains_exclude: If set, skip files containing any substring.
             suffix_allowlist: Set of file suffixes to scan (e.g. {".py", ".json", ".toml"}).
         """
         ...

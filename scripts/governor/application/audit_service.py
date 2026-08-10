@@ -59,6 +59,7 @@ class AuditService:
                 filename_filter=rule_data.get("filename_filter"),
                 path_prefix_include=rule_data.get("path_prefix_include"),
                 path_prefix_exclude=rule_data.get("path_prefix_exclude"),
+                path_contains_exclude=rule_data.get("path_contains_exclude"),
                 section_filter=rule_data.get("section_filter"),
                 suffix_allowlist=rule_data.get("suffix_allowlist"),
             )
@@ -80,6 +81,7 @@ class AuditService:
             filename_filter=rule.filename_filter,
             path_prefix_include=rule.path_prefix_include,
             path_prefix_exclude=rule.path_prefix_exclude,
+            path_contains_exclude=rule.path_contains_exclude,
             section_filter=rule.section_filter,
             suffix_allowlist=set(rule.suffix_allowlist) if rule.suffix_allowlist else None,
         ):
