@@ -304,6 +304,12 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    the required-layer gate. Package path:
    `artifacts/article_context/corpus_required_layer_checkpoint.json`.
 
+   **M371/S10 (grounded extractive summary vertical delivered):** Pure
+   extractive digests from Section/Paper text already in the graph materialize
+   Summary nodes + hasSummary without LLM. Same-process canary proves summary
+   task class PASS on the 200-paper materialization snapshot. Bootstrap
+   resolution/cluster EMPTY remain for later verticals.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

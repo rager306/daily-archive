@@ -27,6 +27,7 @@ pub mod batch_ingest;
 pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
 pub mod entity_resolution;
 pub mod extraction;
+pub mod extractive_summary;
 pub use entity_resolution::{
     EntityResolutionError, EntityResolutionUseCase, ReviewedMergeRequest, ReviewedMergeResult,
 };

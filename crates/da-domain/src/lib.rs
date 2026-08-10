@@ -19,6 +19,7 @@ pub mod entity_resolution;
 pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;
+pub mod extractive_summary;
 pub mod figure;
 pub mod figure_analysis;
 pub mod figure_context;

@@ -1,5 +1,21 @@
 # Changelog
 
+### Grounded extractive summary vertical (M371/S10)
+
+Pure extractive digests (`extractive_lead_v1`) from Section/Paper text already
+in the graph, with always-run Summary materialization + hasSummary edges.
+No LLM. Empty section text is skipped (typed missingness), not invented prose.
+
+Domain `compute_extractive_summaries` + application `ExtractiveSummaryUseCase`
+are pure/compute+write. CLI canary imports pinned materialization snapshot,
+writes summaries for 200 papers (197 abstracts, 8356 section digests, 8553
+Summary nodes), exports
+`materialization_all_200_with_summaries.sgsnap`, and re-runs class-qualified
+graph tasks same-process: **summary class PASS**. Structural/fact remain PASS;
+resolution/cluster stay EMPTY for later verticals. D127=false.
+
+4 domain + 3 application tests green. No PDF/GROBID rebuild.
+
 ### Required-layer corpus assurance checkpoint (M371/S09)
 
 Seal a replay-safe corpus package that binds verified ACAP aggregate identity
