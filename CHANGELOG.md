@@ -1,5 +1,19 @@
 # Changelog
 
+### Multi-provider scholarly evidence reconcile (M371/S11)
+
+Pure domain reconcile of OpenAlex / Semantic Scholar / local TeX bibliography
+candidates into a durable candidate-only report with visible conflicts. Never
+promotes provider payloads to graph truth and never unlocks D127.
+
+`reconcile_scholarly_evidence` surfaces citation denominator conflicts, provider
+rate-limits, TeX analysis status, and local bib identity completeness. CLI canary
+on article 2606.06036 reads existing durable artifacts and emits
+`artifacts/article_context/scholarly_evidence_2606.06036.json`
+(verdict=NeedsReview, 9 findings, local bib=30, unmatched_local=18).
+
+4 domain tests green. No network, no graph writes, no PDF rebuild.
+
 ### Reviewed entity resolution Decision→Entity vertical (M371/S13)
 
 System-reviewed blocking-alias merges (Exact + AlphanumericFold) via existing

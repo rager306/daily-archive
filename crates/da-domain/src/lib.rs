@@ -33,6 +33,7 @@ pub mod process;
 pub mod relation;
 pub mod scheduler;
 pub mod schema;
+pub mod scholarly_evidence;
 pub mod source;
 pub mod temporal;
 pub mod tex_source;

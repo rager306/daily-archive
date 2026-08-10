@@ -321,6 +321,12 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    with canonical_vid. Profile auto_merge remains false. Same-process canary
    proves resolution task class PASS; all five product classes green.
 
+   **M371/S11 (external scholarly evidence reconcile delivered):** Pure multi-
+   provider reconcile (OpenAlex / Semantic Scholar / local TeX) emits candidate-only
+   scholarly evidence reports with visible denominator conflicts. No graph promotion;
+   D127 remains false. Canary artifact:
+   `artifacts/article_context/scholarly_evidence_2606.06036.json`.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

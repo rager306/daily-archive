@@ -58,6 +58,7 @@ pub use scheduler_runner::{
 pub mod cluster;
 pub mod cluster_stage;
 pub mod document_context_stage;
+pub mod scholarly_evidence;
 pub mod summary;
 pub use cluster::{ClusterResult, ClusterUseCase};
 pub use cluster_stage::{ClusterDetectionStage, EntityPapersArtifact, EntityPapersEntry};
