@@ -12,12 +12,18 @@ use thiserror::Error;
 pub const ACAP_POLICY_ID: &str = "acap-ontology-v2";
 pub const ACAP_REPORT_SCHEMA_VERSION: &str = "article-context-assurance-report.v1";
 
+pub const ACAP_AGGREGATE_REPORT_SCHEMA_VERSION: &str = "article-context-assurance-aggregate.v1";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Error)]
 pub enum AssuranceError {
     #[error("SHA-256 digest must be exactly 64 lowercase hexadecimal characters")]
     InvalidSha256,
     #[error("article ID must not be empty")]
     EmptyArticleId,
+    #[error("report schema version does not match per-article ACAP schema")]
+    SchemaVersionDrift,
+    #[error("report policy ID does not match accepted ACAP policy")]
+    PolicyIdDrift,
     #[error("policy SHA-256 must be present")]
     MissingPolicySha256,
 }
@@ -312,6 +318,12 @@ impl ArticleAssuranceReport {
         if self.article_id.trim().is_empty() {
             return Err(AssuranceError::EmptyArticleId);
         }
+        if self.schema_version != ACAP_REPORT_SCHEMA_VERSION {
+            return Err(AssuranceError::SchemaVersionDrift);
+        }
+        if self.policy_id != ACAP_POLICY_ID {
+            return Err(AssuranceError::PolicyIdDrift);
+        }
         for layer in &mut self.layer_results {
             layer.evaluate_hard_failures();
         }
@@ -326,8 +338,6 @@ impl ArticleAssuranceReport {
         } else {
             AssuranceVerdict::Pass
         };
-        self.schema_version = ACAP_REPORT_SCHEMA_VERSION.to_string();
-        self.policy_id = ACAP_POLICY_ID.to_string();
         Ok(self)
     }
 }
@@ -423,6 +433,54 @@ mod tests {
             report.layer_results[0].hard_failures,
             vec!["byte_conservation:section.text"]
         );
+    }
+
+    #[test]
+    fn normalize_rejects_wrong_schema_version() {
+        let mut report = ArticleAssuranceReport::new(
+            "paper",
+            ContentDigest::of_text("policy"),
+            ArticleContextState::Materialized,
+            vec![layer()],
+        )
+        .unwrap();
+        report.schema_version = "tampered.v9".into();
+        assert_eq!(
+            report.normalize().unwrap_err(),
+            AssuranceError::SchemaVersionDrift
+        );
+    }
+
+    #[test]
+    fn normalize_rejects_wrong_policy_id() {
+        let mut report = ArticleAssuranceReport::new(
+            "paper",
+            ContentDigest::of_text("policy"),
+            ArticleContextState::Materialized,
+            vec![layer()],
+        )
+        .unwrap();
+        report.policy_id = "tampered-policy".into();
+        assert_eq!(
+            report.normalize().unwrap_err(),
+            AssuranceError::PolicyIdDrift
+        );
+    }
+
+    #[test]
+    fn normalize_accepts_correct_identity() {
+        let report = ArticleAssuranceReport::new(
+            "paper",
+            ContentDigest::of_text("policy"),
+            ArticleContextState::Materialized,
+            vec![layer()],
+        )
+        .unwrap();
+        assert!(report.clone().normalize().is_ok());
+        // normalize preserves identity — does not silently rewrite
+        let normalized = report.normalize().unwrap();
+        assert_eq!(normalized.schema_version, ACAP_REPORT_SCHEMA_VERSION);
+        assert_eq!(normalized.policy_id, ACAP_POLICY_ID);
     }
 
     #[test]

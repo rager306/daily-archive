@@ -47,10 +47,19 @@ impl FilesystemAssuranceReportStore {
         let stored: ArticleAssuranceReport =
             serde_json::from_slice(&std::fs::read(canonical_path).map_err(storage)?)
                 .map_err(storage)?;
-        let normalized = stored.clone().normalize().map_err(storage)?;
+        let article_id = stored.article_id.clone();
+        let normalized = stored.clone().normalize().map_err(|e| {
+            use da_domain::AssuranceError;
+            match e {
+                AssuranceError::SchemaVersionDrift | AssuranceError::PolicyIdDrift => {
+                    AssuranceStoreError::Integrity { article_id }
+                }
+                other => storage(other),
+            }
+        })?;
         if normalized.article_id != expected_article_id || normalized != stored {
             return Err(AssuranceStoreError::Integrity {
-                article_id: stored.article_id,
+                article_id: normalized.article_id,
             });
         }
         Ok(normalized)

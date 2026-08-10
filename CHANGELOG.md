@@ -1,5 +1,35 @@
 # Changelog
 
+### ACAP contract convergence detect-only audit (M371/S07/T01)
+
+Froze the ACAP schema authority boundary and exposed all current cross-surface
+drifts through a new `AcapContractAuditUseCase` in `da-application`. The audit
+compares typed observations from the policy YAML, Rust DTO constants, embedded
+200-paper materialization reports, the canonical aggregate path and governor
+expectations. It detects 8 finding classes: schema version collision
+(per-article and aggregate sharing a version), `hard_failures` type drift
+(Rust `Vec<String>` vs governor numeric), policy ID drift, undefined layer
+metrics, unknown FSM states, required layer absence from observed reports,
+unknown report layers, and canonical aggregate report missing.
+
+The domain `normalize()` method was hardened from silent identity rewrite to
+fail-closed rejection. A wrong schema version or policy ID is now an explicit
+`SchemaVersionDrift` / `PolicyIdDrift` error instead of being silently
+overwritten. The filesystem assurance store classifies these as `Integrity`
+errors rather than generic `Storage` failures. A separate aggregate schema
+version (`article-context-assurance-aggregate.v1`) was introduced to prevent
+per-article and aggregate contract collision.
+
+The CLI canary (`cargo run -p da-cli --example acap_contract_audit`) reads the
+live policy YAML and materialization artifact and emits
+`artifacts/article_context/acap_contract_audit.json`. Running against the real
+200-paper corpus, the audit verdict is `Drift` with 11 findings (3 errors, 7
+warnings, 1 coverage gap). D127 remains false. The governor is not changed;
+it follows Rust-generated fixtures in T05.
+
+14 new tests cover valid convergence, all 8 drift classes, metamorphic ordering,
+serde roundtrip, fail-closed validation and D127 lock integrity.
+
 ### Ontology v2 bounded convergence evidence
 
 Composed the T01 contract audit, T02 identity compatibility report and T03

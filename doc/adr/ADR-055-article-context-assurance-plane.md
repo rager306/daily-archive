@@ -235,7 +235,19 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    source before another corpus mutation wave.
 6. ACAP contract convergence: Rust per-article and aggregate schemas, physical
    replay partitions, FSM transitions, task classes, policy YAML and governor
-   must agree before required-layer claims.
+   must agree before required-layer claims. **M371/S07/T01 (detect-only audit
+   delivered):** A cross-surface  in 
+   now detects 8 classes of drift between the policy YAML, Rust DTO constants,
+   embedded 200-paper reports, canonical aggregate path, and governor
+   expectations. The audit emits a durable artifact with a deterministic SHA-256
+   bound to the schema version. Domain  was hardened from silent
+   identity rewrite to fail-closed rejection of wrong schema/policy identity
+   ( / ). A separate aggregate schema version
+   () was introduced to prevent
+   per-article and aggregate contract collision. The CLI canary
+   (acap_contract_audit verdict=Drift findings=11 errors=3 report_sha256=775203639c85b3341bdb5d46b984b97a1ebf77e4a3a7d8cc1ab49493f6a06272 import_eligible=false) reads the live policy
+   YAML and materialization artifact and emits
+   .
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.
