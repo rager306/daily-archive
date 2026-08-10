@@ -47,6 +47,40 @@ pub struct ReviewedMergeResult {
     pub merge: MergeResult,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SystemExactAliasApplied {
+    pub keep_vid: String,
+    pub merge_vid: String,
+    pub decision_vid: String,
+    pub decision_node_id: u64,
+    pub replay: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SystemExactAliasSkip {
+    pub keep_vid: String,
+    pub merge_vid: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SystemExactAliasFailure {
+    pub keep_vid: String,
+    pub merge_vid: String,
+    pub error: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SystemExactAliasBatchResult {
+    pub candidate_count: usize,
+    pub exact_pair_count: usize,
+    pub applied: Vec<SystemExactAliasApplied>,
+    pub skipped: Vec<SystemExactAliasSkip>,
+    pub failed: Vec<SystemExactAliasFailure>,
+    pub oversized_blocks: usize,
+    pub profile_version: String,
+}
+
 pub struct EntityResolutionUseCase {
     graph_store: Arc<dyn DirectGraphStore>,
     clock: Arc<dyn da_ports::Clock>,
@@ -76,6 +110,14 @@ impl EntityResolutionUseCase {
                 .get_node_property_bool(node, "retrieval_eligible")
                 .await
                 == Some(false)
+            {
+                continue;
+            }
+            if self
+                .graph_store
+                .get_node_property_string(node, "canonical_vid")
+                .await
+                .is_some()
             {
                 continue;
             }
@@ -222,6 +264,154 @@ impl EntityResolutionUseCase {
             decision_vid,
             decision_node_id: decision.node_id,
             merge,
+        })
+    }
+
+    /// Apply system-reviewed merges for blocking candidates (Exact and/or
+    /// AlphanumericFold keys). Profile keeps `auto_merge: false` — merges are
+    /// never silent: each apply records a Decision (ADR-053 Layer G) with actor
+    /// `system:entity-resolution-blocking-alias-v1`.
+    pub async fn apply_system_exact_alias_candidates(
+        &self,
+    ) -> Result<SystemExactAliasBatchResult, EntityResolutionError> {
+        // Backward-compatible name: historically Exact-only; now all blocking pairs.
+        self.apply_system_blocking_alias_candidates().await
+    }
+
+    /// System-reviewed Decision merges for every blocking candidate pair.
+    ///
+    /// Runs to closure: after each applied merge, re-inventory candidates so
+    /// residual fold/exact pairs involving survivors are resolved in the same
+    /// batch. Replay of a fully-closed graph applies zero new Decisions.
+    pub async fn apply_system_blocking_alias_candidates(
+        &self,
+    ) -> Result<SystemExactAliasBatchResult, EntityResolutionError> {
+        let initial = self.candidates().await;
+        let candidate_count = initial.candidates.len();
+        let oversized_blocks = initial.oversized_blocks.len();
+
+        let mut applied = Vec::new();
+        let mut skipped = Vec::new();
+        let mut failed = Vec::new();
+        let mut resolved: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+
+        // Closure loop: keep applying until a pass produces no new merges.
+        for _round in 0..64 {
+            let blocking = self.candidates().await;
+            let mut pairs = blocking.candidates;
+            pairs.sort_by(|a, b| (&a.left_vid, &a.right_vid).cmp(&(&b.left_vid, &b.right_vid)));
+            let mut round_applied = 0_usize;
+            for pair in pairs {
+                let key_kinds: Vec<String> = pair
+                    .shared_keys
+                    .iter()
+                    .map(|key| format!("{:?}", key.kind).to_ascii_lowercase())
+                    .collect();
+                let (keep_vid, merge_vid) = if pair.left_vid <= pair.right_vid {
+                    (pair.left_vid.clone(), pair.right_vid.clone())
+                } else {
+                    (pair.right_vid.clone(), pair.left_vid.clone())
+                };
+                if resolved.contains(&merge_vid) {
+                    skipped.push(SystemExactAliasSkip {
+                        keep_vid: keep_vid.clone(),
+                        merge_vid: merge_vid.clone(),
+                        reason: "merge_already_resolved_in_batch".into(),
+                    });
+                    continue;
+                }
+                // If keep was itself merged into something else this batch, skip.
+                if resolved.contains(&keep_vid) {
+                    skipped.push(SystemExactAliasSkip {
+                        keep_vid,
+                        merge_vid,
+                        reason: "keep_already_merged_away_in_batch".into(),
+                    });
+                    continue;
+                }
+                // Prefer keep retrieval-eligible if one side already silenced.
+                let keep_node = self
+                    .graph_store
+                    .find_node_by_string_property("Entity", "vid", &keep_vid)
+                    .await;
+                let merge_node = self
+                    .graph_store
+                    .find_node_by_string_property("Entity", "vid", &merge_vid)
+                    .await;
+                let (keep_vid, merge_vid) = match (keep_node, merge_node) {
+                    (Some(k), Some(m)) => {
+                        let k_ret = self
+                            .graph_store
+                            .get_node_property_bool(k, "retrieval_eligible")
+                            .await
+                            != Some(false);
+                        let m_ret = self
+                            .graph_store
+                            .get_node_property_bool(m, "retrieval_eligible")
+                            .await
+                            != Some(false);
+                        if !k_ret && m_ret {
+                            (merge_vid, keep_vid)
+                        } else {
+                            (keep_vid, merge_vid)
+                        }
+                    }
+                    _ => (keep_vid, merge_vid),
+                };
+
+                let reason = format!(
+                    "System-reviewed blocking alias (profile v{}, keys=[{}]); merge {} into {}",
+                    self.profile.version,
+                    key_kinds.join(","),
+                    merge_vid,
+                    keep_vid
+                );
+                match self
+                    .resolve_reviewed_merge(ReviewedMergeRequest {
+                        keep_vid: keep_vid.clone(),
+                        merge_vid: merge_vid.clone(),
+                        reason,
+                        actor: HealingActor::System("entity-resolution-blocking-alias-v1".into()),
+                    })
+                    .await
+                {
+                    Ok(result) => {
+                        // Only the silenced merge side is closed; keep can absorb
+                        // residual fold/exact aliases in later rounds.
+                        resolved.insert(merge_vid.clone());
+                        applied.push(SystemExactAliasApplied {
+                            keep_vid,
+                            merge_vid,
+                            decision_vid: result.decision_vid,
+                            decision_node_id: result.decision_node_id,
+                            replay: false,
+                        });
+                        round_applied += 1;
+                        // One merge per round then re-inventory for residual pairs.
+                        break;
+                    }
+                    Err(error) => {
+                        failed.push(SystemExactAliasFailure {
+                            keep_vid,
+                            merge_vid,
+                            error: error.to_string(),
+                        });
+                    }
+                }
+            }
+            if round_applied == 0 {
+                break;
+            }
+        }
+
+        Ok(SystemExactAliasBatchResult {
+            candidate_count,
+            exact_pair_count: applied.len() + skipped.len() + failed.len(),
+            applied,
+            skipped,
+            failed,
+            oversized_blocks,
+            profile_version: self.profile.version.clone(),
         })
     }
 

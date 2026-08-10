@@ -1,5 +1,21 @@
 # Changelog
 
+### Reviewed entity resolution Decision→Entity vertical (M371/S13)
+
+System-reviewed blocking-alias merges (Exact + AlphanumericFold) via existing
+EntityResolutionUseCase.resolve_reviewed_merge — profile keeps auto_merge=false.
+Each merge records Decision + AFFECTS + canonical_vid + retrieval silence.
+Batch runs to closure; candidates() skips already-silenced/canonical entities;
+replay applies zero new Decisions.
+
+CLI canary seeds controlled punctuation-variant aliases (corpus gold identity
+already collapses many exact aliases), applies 2 Decision merges, exports
+materialization_all_200_with_resolution.sgsnap, and re-runs class-qualified
+tasks same-process: **resolution class PASS**. All five product classes
+(structural/fact/summary/cluster/resolution) now PASS. D127=false.
+
+6 application entity_resolution tests green (batch + idempotent replay).
+
 ### Derived ConceptCluster materialization from graph inventory (M371/S12)
 
 Always-run derived semantic clusters from live Paper-[:MENTIONS]->Entity

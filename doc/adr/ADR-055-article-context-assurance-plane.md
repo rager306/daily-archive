@@ -316,6 +316,11 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    Same-process canary proves cluster task class PASS with idempotent replay.
    Resolution remains EMPTY for the Decision→Entity vertical.
 
+   **M371/S13 (reviewed entity resolution vertical delivered):** System-reviewed
+   blocking-alias merges (Exact + AlphanumericFold) create Decision→AFFECTS→Entity
+   with canonical_vid. Profile auto_merge remains false. Same-process canary
+   proves resolution task class PASS; all five product classes green.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

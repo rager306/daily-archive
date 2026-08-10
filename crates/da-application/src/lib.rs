@@ -30,6 +30,8 @@ pub mod extraction;
 pub mod extractive_summary;
 pub use entity_resolution::{
     EntityResolutionError, EntityResolutionUseCase, ReviewedMergeRequest, ReviewedMergeResult,
+    SystemExactAliasApplied, SystemExactAliasBatchResult, SystemExactAliasFailure,
+    SystemExactAliasSkip,
 };
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub mod figure_analysis;

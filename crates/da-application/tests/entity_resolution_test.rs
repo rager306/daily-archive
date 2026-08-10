@@ -220,3 +220,91 @@ async fn non_candidate_and_cross_type_fail_before_decision() {
             .is_none()
     );
 }
+
+#[tokio::test]
+async fn system_exact_alias_batch_merges_and_is_idempotent() {
+    let store = MockGraphStore::new();
+    let keep = entity(&store, "vid:keep", "Model", "GPT-4").await;
+    let merge = entity(&store, "vid:merge", "Model", "gpt-4").await;
+    let other = entity(&store, "vid:other", "Model", "Claude 3").await;
+    let fold_only = entity(&store, "vid:fold", "Model", "gpt4").await;
+
+    let resolver = use_case(&store);
+    let first = resolver
+        .apply_system_exact_alias_candidates()
+        .await
+        .unwrap();
+    // Blocking forms a clique among keep/merge/fold. Batch resolves one pair
+    // first; remaining pairs involving already-resolved vids are skipped.
+    assert!(
+        !first.applied.is_empty(),
+        "expected at least one Decision merge: {:?}",
+        first
+    );
+    assert!(
+        !first
+            .applied
+            .iter()
+            .any(|a| a.merge_vid == "vid:other" || a.keep_vid == "vid:other"),
+        "unrelated entity must not merge: {:?}",
+        first.applied
+    );
+
+    let decisions = store.get_nodes_by_label("Decision").await;
+    assert_eq!(decisions.len(), first.applied.len());
+    let decision = decisions[0];
+    let affects_total = store
+        .get_edges_between(decision, keep, da_domain::relation::decision::AFFECTS)
+        .await
+        .len()
+        + store
+            .get_edges_between(decision, merge, da_domain::relation::decision::AFFECTS)
+            .await
+            .len()
+        + store
+            .get_edges_between(decision, fold_only, da_domain::relation::decision::AFFECTS)
+            .await
+            .len();
+    assert!(affects_total >= 1, "Decision must AFFECTS an entity");
+
+    let mut any_canonical = false;
+    for node in [keep, merge, fold_only] {
+        if store
+            .get_node_property_string(node, "canonical_vid")
+            .await
+            .is_some()
+        {
+            any_canonical = true;
+        }
+    }
+    assert!(
+        any_canonical,
+        "canonical_vid must be set on a merged entity"
+    );
+
+    let decisions_after_first = decisions.len();
+    let _second = resolver
+        .apply_system_exact_alias_candidates()
+        .await
+        .unwrap();
+    assert_eq!(
+        store.get_nodes_by_label("Decision").await.len(),
+        decisions_after_first,
+        "replay must not create more Decision nodes"
+    );
+    let _ = other;
+}
+
+#[tokio::test]
+async fn system_exact_alias_empty_when_no_candidates() {
+    let store = MockGraphStore::new();
+    entity(&store, "vid:a", "Model", "Unique A").await;
+    entity(&store, "vid:b", "Model", "Unique B").await;
+    let result = use_case(&store)
+        .apply_system_exact_alias_candidates()
+        .await
+        .unwrap();
+    assert_eq!(result.applied.len(), 0);
+    assert_eq!(result.candidate_count, 0);
+    assert!(store.get_nodes_by_label("Decision").await.is_empty());
+}
