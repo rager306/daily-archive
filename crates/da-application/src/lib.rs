@@ -74,6 +74,7 @@ pub use decision_recorder::{
 };
 pub mod graph_finalize;
 pub mod graph_inventory;
+pub mod ontology_contract_audit;
 pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};
 pub mod temporal_stamp;

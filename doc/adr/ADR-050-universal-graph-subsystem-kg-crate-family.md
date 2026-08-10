@@ -362,6 +362,17 @@ Each phase is independently shippable. No big-bang rewrite.
   the registry.
 - Tests pass; YAML is now the source of truth for schema data.
 
+**M371 contract-convergence status.** A detect-only project audit now keeps
+`OntologyRegistry` as the sole ontology authority and compares injected project
+surfaces in `da-application`; it deliberately does not load finalize/task policy
+inside `kg-ontology` and does not add a second manifest. The CLI edge owns
+filesystem loading, bounded read-only Samyama checkpoint observation and the
+checksum-bound report. The 200-paper checkpoint currently yields `incomplete`:
+13 active endpoint contracts are unobserved, 15 registered labels have no active
+edge topology, and static materializer/production-consumer observations remain
+explicit gaps. This is evidence for Phase F convergence work, not permission to
+rewrite the ontology or claim semantic acceptance. D127 remains false.
+
 #### Phase E — kg-algorithms + kg-pipeline (3-4 sessions)
 
 - Create `crates/kg-algorithms/`.

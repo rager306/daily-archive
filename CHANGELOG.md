@@ -1,5 +1,38 @@
 # Changelog
 
+### Detect-only ontology v2 contract audit
+
+Added the first executable M371 ontology-convergence product slice without
+changing ontology data or graph state. A pure `da-application` use case compares
+injected identity-index, finalize-policy, semantic-task and real graph
+observations against the existing `kg-ontology::OntologyRegistry`; filesystem,
+Samyama checkpoint import and report composition remain in the CLI edge. This
+avoids both an onion inversion and a second ontology manifest.
+
+The audit is fail-closed and deterministic. It validates source fingerprints,
+D127, identity properties, active/planned edge status, every matching endpoint
+contract for duplicate wire names, runtime node labels, task relationship wires,
+report semantics and report checksum. Runtime evidence is collected through the
+read-only `DirectGraphStore` port. The task-wire projection handles Cypher
+alternation and emits explicit diagnostics for incomplete relationship patterns.
+Repository paths, compressed and decompressed checkpoint size, record length,
+header/body counts, node and edge budgets and report destination are bounded
+before Samyama import.
+
+The real 200-paper checkpoint audit observes 23,928 nodes, 39,387 edges, 10 node
+labels, 11 edge wire types and 13 endpoint triples. It reports `incomplete`, not
+PASS: 30 explicit coverage gaps remain (13 unobserved active endpoint contracts,
+15 registered labels without active topology, and two known static-consumer /
+materializer observation gaps). There are no hidden error findings and
+`import_eligible=false`. Independent runs are byte-identical; durable output is
+`artifacts/ontology/ontology_v2_contract_audit.json`.
+
+ADR-051 coverage now includes application semantic, negative, serde, port and
+metamorphic tests; graph-task lexer regression tests; and CLI snapshot/path
+boundary tests. The next work remains S06/T02 identity/index unification, then
+S06/T03 endpoint/validator/task-wire convergence. Governor is intentionally not
+used to mask the product gaps detected by this slice.
+
 ### Candidate-only TeX source inspection vertical
 
 Added a complete domain-to-adapter TeX source inspection path for canonical arXiv

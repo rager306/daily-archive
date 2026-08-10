@@ -125,6 +125,83 @@ impl TaskVerdict {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TaskEdgeWireProjection {
+    pub wires: Vec<(String, String)>,
+    pub diagnostics: Vec<(String, String)>,
+}
+
+/// Return relationship type wires referenced by parsed task queries.
+///
+/// This intentionally inspects only relationship patterns (`[...]`) and ignores
+/// colons in node labels, maps and string literals. It is an audit projection,
+/// not a second Cypher parser or execution path.
+pub fn project_task_edge_wires(suite: &GraphTaskSuite) -> TaskEdgeWireProjection {
+    let mut wires = std::collections::BTreeSet::new();
+    let mut diagnostics = std::collections::BTreeSet::new();
+    for task in &suite.tasks {
+        let bytes = task.cypher.as_bytes();
+        let mut cursor = 0;
+        let mut quoted = None;
+        while cursor < bytes.len() {
+            let byte = bytes[cursor];
+            if let Some(quote) = quoted {
+                if byte == b'\\' {
+                    cursor = cursor.saturating_add(2);
+                    continue;
+                }
+                if byte == quote {
+                    quoted = None;
+                }
+                cursor += 1;
+                continue;
+            }
+            if matches!(byte, b'\'' | b'"') {
+                quoted = Some(byte);
+                cursor += 1;
+                continue;
+            }
+            if byte != b'[' {
+                cursor += 1;
+                continue;
+            }
+            let Some(relative_end) = bytes[cursor + 1..].iter().position(|item| *item == b']')
+            else {
+                diagnostics.insert((task.id.clone(), "unclosed_relationship_pattern".into()));
+                cursor += 1;
+                continue;
+            };
+            let end = cursor + 1 + relative_end;
+            let pattern = &bytes[cursor + 1..end];
+            if let Some(colon) = pattern.iter().position(|item| *item == b':') {
+                for alternate in pattern[colon + 1..].split(|item| *item == b'|') {
+                    let alternate = alternate.strip_prefix(b":").unwrap_or(alternate);
+                    let edge = alternate
+                        .iter()
+                        .skip_while(|item| item.is_ascii_whitespace())
+                        .take_while(|item| item.is_ascii_alphanumeric() || **item == b'_')
+                        .copied()
+                        .collect::<Vec<_>>();
+                    if edge.is_empty() {
+                        diagnostics.insert((task.id.clone(), "empty_relationship_type".into()));
+                    } else if let Ok(edge) = String::from_utf8(edge) {
+                        wires.insert((edge, task.id.clone()));
+                    }
+                }
+            }
+            cursor = end + 1;
+        }
+    }
+    TaskEdgeWireProjection {
+        wires: wires.into_iter().collect(),
+        diagnostics: diagnostics.into_iter().collect(),
+    }
+}
+
+pub fn task_edge_wires(suite: &GraphTaskSuite) -> Vec<(String, String)> {
+    project_task_edge_wires(suite).wires
+}
+
 /// Classify a query result after successful execution.
 ///
 /// - Fewer than `min_rows` records → EMPTY
@@ -472,6 +549,76 @@ MATCH (n:Paper {arxiv_id: "2507.19457"}) RETURN n.arxiv_id LIMIT 1;
 // @query Citation edges | Fact edge CITES
 MATCH (p:Paper)-[:CITES]->(c) RETURN count(c) AS cites;
 "#;
+
+    #[test]
+    fn task_edge_wires_extract_only_relationship_patterns() {
+        let suite = parse_tasks_cypher(
+            r#"
+// @query Edges | audit
+MATCH (p:Paper)-[:CITES]->(q:Paper), (q)-[r:hasPart]->(s:Section)
+WHERE p.note = "ignore [:FAKE]" AND q.map = {kind: "also-ignore"}
+RETURN p;
+"#,
+        )
+        .unwrap();
+        assert_eq!(
+            task_edge_wires(&suite),
+            vec![
+                ("CITES".into(), "edges".into()),
+                ("hasPart".into(), "edges".into())
+            ]
+        );
+    }
+
+    #[test]
+    fn task_edge_wires_are_deduplicated_and_unclosed_pattern_is_safe() {
+        let suite = GraphTaskSuite {
+            tasks: vec![GraphTask {
+                id: "one".into(),
+                title: "one".into(),
+                insight: String::new(),
+                cypher: "MATCH ()-[:REL]->(), ()-[:REL]->(), ()-[broken RETURN 1".into(),
+                min_rows: 1,
+                allow_empty: false,
+                expect_rows: None,
+                expect_min_value: None,
+                expect_value: None,
+            }],
+        };
+        let projection = project_task_edge_wires(&suite);
+        assert_eq!(projection.wires, vec![("REL".into(), "one".into())]);
+        assert_eq!(
+            projection.diagnostics,
+            vec![("one".into(), "unclosed_relationship_pattern".into())]
+        );
+    }
+
+    #[test]
+    fn task_edge_wire_projection_supports_cypher_alternation() {
+        let suite = GraphTaskSuite {
+            tasks: vec![GraphTask {
+                id: "alternate".into(),
+                title: "alternate".into(),
+                insight: String::new(),
+                cypher: "MATCH ()-[:REL_A|REL_B|:REL_C]->() RETURN 1".into(),
+                min_rows: 1,
+                allow_empty: false,
+                expect_rows: None,
+                expect_min_value: None,
+                expect_value: None,
+            }],
+        };
+        let projection = project_task_edge_wires(&suite);
+        assert_eq!(
+            projection.wires,
+            vec![
+                ("REL_A".into(), "alternate".into()),
+                ("REL_B".into(), "alternate".into()),
+                ("REL_C".into(), "alternate".into()),
+            ]
+        );
+        assert!(projection.diagnostics.is_empty());
+    }
 
     #[test]
     fn parse_three_tasks() {
