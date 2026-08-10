@@ -67,13 +67,14 @@ pub use queries::{
     EntityQueries, PaperLookupError, PaperQueries, RelationQueries, find_paper_node_id,
 };
 pub mod schema_init;
-pub use schema_init::{CURRENT_SCHEMA_VERSION, SchemaInitializer};
+pub use schema_init::CURRENT_SCHEMA_VERSION;
 pub mod decision_recorder;
 pub use decision_recorder::{
     DecisionRecord, DecisionRecordError, DecisionRecorder, DecisionRequest, DecisionRequestBuilder,
 };
 pub mod graph_finalize;
 pub mod graph_inventory;
+pub mod identity_compatibility;
 pub mod ontology_contract_audit;
 pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};

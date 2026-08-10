@@ -370,8 +370,15 @@ filesystem loading, bounded read-only Samyama checkpoint observation and the
 checksum-bound report. The 200-paper checkpoint currently yields `incomplete`:
 13 active endpoint contracts are unobserved, 15 registered labels have no active
 edge topology, and static materializer/production-consumer observations remain
-explicit gaps. This is evidence for Phase F convergence work, not permission to
-rewrite the ontology or claim semantic acceptance. D127 remains false.
+explicit gaps. Identity-index convergence now uses a separate typed policy from
+non-identity property indexes; both validate against `OntologyRegistry`, while
+accepted VID mint functions remain frozen and outside those policies. A read-only
+200-paper compatibility proof finds all 13 observed identity keys unique and
+exactly lookup-compatible, with 26 future-label keys explicitly unobserved and an
+`incomplete` verdict. Storage indexes are not unique constraints, so ongoing
+write-time uniqueness and transactional multi-index creation remain future
+adapter capabilities. This evidence is not permission to rewrite ontology IDs or
+claim semantic acceptance. D127 remains false.
 
 #### Phase E — kg-algorithms + kg-pipeline (3-4 sessions)
 

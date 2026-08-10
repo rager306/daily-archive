@@ -23,12 +23,17 @@
 pub mod bitemporal;
 pub mod edge_contract;
 pub mod healing;
+pub mod identity_index;
 pub mod retry;
 pub mod schema;
 pub mod temporal;
 pub mod validator;
 pub mod vid;
 
+pub use identity_index::{
+    IDENTITY_INDEX_SCHEMA_VERSION, IdentityIndexError, IdentityIndexPolicy, IdentityIndexSpec,
+    PROPERTY_INDEX_SCHEMA_VERSION, PropertyIndexPolicy,
+};
 pub use temporal::{
     OPEN, RetroactiveExtension, TemporalEdge, parse_datetime, validate_temporal_edge,
 };

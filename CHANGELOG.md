@@ -1,5 +1,39 @@
 # Changelog
 
+### Ontology v2 identity and property index convergence
+
+Replaced CLI-private and dead schema-index hand lists with two separately typed,
+data-driven policies validated against `OntologyRegistry`. The identity policy
+now covers all registered `vid` surfaces plus explicit natural keys; the property
+policy preserves validated filter/performance indexes without granting them
+identity authority. Optional natural identity is explicit (`Citation.arxiv_id`
+uses `required:false`), while mandatory keys fail before any index creation.
+Neither policy defines or changes VID prefixes, hashing or migration semantics.
+
+`da schema init`, gold-graph examples and ontology audit now consume the same
+bounded repository-jailed policy loaders. Identity values are scanned completely
+for missing required keys and duplicates before index creation; plan-only
+validation performs zero graph mutation, schema initialization fails fast between
+index families, and non-identity indexes remain separate from vector indexes.
+The obsolete application `SchemaInitializer` Cypher/list mirror was removed,
+leaving one schema version contract.
+
+Added a read-only identity compatibility use case over `DirectGraphStore`. It
+checks every declared key, exact indexed lookup parity, missingness and duplicate
+groups, recomputes semantic status from counts, validates a checksum-bound report
+and keeps `import_eligible=false`. On the real 200-paper checkpoint, all 13
+observed keys are compatible and unique, 26 future-label keys are honestly
+unobserved, lookup mismatches are zero, and the overall verdict is `incomplete`
+rather than false PASS. Unchanged replay is byte-identical; the durable artifact
+is `artifacts/ontology/ontology_v2_identity_compatibility.json`.
+
+ADR-051 coverage includes policy negative/determinism tests, identity/property
+confusion tests, accepted VID golden bytes, plan-only and double-ensure
+idempotency, missing/duplicate identity rejection, exact lookup compatibility,
+report tamper checks and real checkpoint replay. Storage-level unique constraints
+and transactional multi-index creation remain explicit adapter limitations; T02
+does not claim them.
+
 ### Detect-only ontology v2 contract audit
 
 Added the first executable M371 ontology-convergence product slice without

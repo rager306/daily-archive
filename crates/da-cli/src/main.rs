@@ -1313,30 +1313,33 @@ fn schema_init(dimensions: usize) {
         da_application::schema_init::CURRENT_SCHEMA_VERSION
     );
 
-    // Property indexes: (label, property)
-    let property_indexes = [
-        ("Paper", "vid"),
-        ("Paper", "arxiv_id"),
-        ("Paper", "primary_category"),
-        ("Citation", "vid"),
-        ("Citation", "arxiv_id"),
-        ("Entity", "vid"),
-        ("Entity", "entity_type"),
-        ("Section", "vid"),
-        ("Section", "paper_id"),
-        ("Keyword", "vid"),
-        ("Keyword", "keyword"),
-        ("Topic", "vid"),
-        ("Topic", "label"),
-        ("Category", "vid"),
-        ("Category", "code"),
-    ];
+    let identity_policy = match da_cli::gold_graph::load_identity_indexes(
+        std::path::Path::new("data/ontology/identity_indexes.yaml"),
+        std::path::Path::new("data/ontology/node_schemas.yaml"),
+    ) {
+        Ok(policy) => policy,
+        Err(error) => {
+            eprintln!("  ❌ Identity index policy failed: {error:#}");
+            std::process::exit(1);
+        }
+    };
+    let property_policy = match da_cli::gold_graph::load_property_indexes(
+        std::path::Path::new("data/ontology/property_indexes.yaml"),
+        std::path::Path::new("data/ontology/node_schemas.yaml"),
+    ) {
+        Ok(policy) => policy,
+        Err(error) => {
+            eprintln!("  ❌ Property index policy failed: {error:#}");
+            std::process::exit(1);
+        }
+    };
     // Vector indexes: (label, property, dimensions)
     let vector_indexes = [("Paper", "embedding", dimensions)];
 
     println!(
-        "  Indexes to create: {} property + {} vector",
-        property_indexes.len(),
+        "  Indexes to create: {} identity + {} property + {} vector",
+        identity_policy.indexes().len(),
+        property_policy.indexes().len(),
         vector_indexes.len()
     );
 
@@ -1347,16 +1350,29 @@ fn schema_init(dimensions: usize) {
         let mut ok = 0;
         let mut fail = 0;
 
-        for (label, property) in &property_indexes {
-            match store.create_property_index(label, property).await {
-                Ok(()) => {
-                    println!("    [property] {label}.{property}");
-                    ok += 1;
+        match da_cli::gold_graph::ensure_identity_indexes(&store, &identity_policy).await {
+            Ok(()) => {
+                for index in identity_policy.indexes() {
+                    println!("    [identity] {}.{}", index.label, index.property);
                 }
-                Err(e) => {
-                    fail += 1;
-                    eprintln!("  ❌ Property index {label}.{property} failed: {e}");
+                ok += identity_policy.indexes().len();
+            }
+            Err(error) => {
+                eprintln!("  ❌ Identity index policy application failed: {error:#}");
+                std::process::exit(1);
+            }
+        }
+
+        match da_cli::gold_graph::ensure_property_indexes(&store, &property_policy).await {
+            Ok(()) => {
+                for index in property_policy.indexes() {
+                    println!("    [property] {}.{}", index.label, index.property);
                 }
+                ok += property_policy.indexes().len();
+            }
+            Err(error) => {
+                eprintln!("  ❌ Property index policy application failed: {error:#}");
+                std::process::exit(1);
             }
         }
 

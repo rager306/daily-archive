@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use clap::Parser;
 use da_adapters::SamyamaGraphStore;
+use da_application::identity_compatibility::IdentityCompatibilityUseCase;
 use da_application::ontology_contract_audit::{
     AUDIT_INPUT_SCHEMA_VERSION, ContractAuditInput, IdentityIndexObservation,
     OntologyContractAuditUseCase, SurfaceObservation, TaskWireObservation, observe_runtime_graph,
@@ -20,7 +21,7 @@ use da_cli::graph_tasks::{parse_tasks_cypher, project_task_edge_wires};
 use da_domain::{ContentDigest, finalize::FinalizePolicy};
 use da_ports::GraphStore;
 use flate2::read::GzDecoder;
-use kg_ontology::registry::OntologyRegistry;
+use kg_ontology::{IdentityIndexPolicy, registry::OntologyRegistry};
 use serde::Deserialize;
 
 const MAX_POLICY_BYTES: u64 = 4 * 1024 * 1024;
@@ -38,6 +39,8 @@ struct Args {
     ontology_dir: PathBuf,
     #[arg(long, default_value = "data/ontology/identity_indexes.yaml")]
     identity_indexes: PathBuf,
+    #[arg(long, default_value = "data/ontology/property_indexes.yaml")]
+    property_indexes: PathBuf,
     #[arg(long, default_value = "data/ontology/finalize_policy.yaml")]
     finalize_policy: PathBuf,
     #[arg(long, default_value = "data/graph_tasks/gepa_hub.tasks.cypher")]
@@ -52,19 +55,11 @@ struct Args {
         default_value = "artifacts/ontology/ontology_v2_contract_audit.json"
     )]
     report: PathBuf,
-}
-
-#[derive(Debug, Deserialize)]
-struct IdentityIndexesFile {
-    schema_version: String,
-    indexes: Vec<IdentityIndexEntry>,
-}
-
-#[derive(Debug, Deserialize)]
-struct IdentityIndexEntry {
-    label: String,
-    property: String,
-    identity: bool,
+    #[arg(
+        long,
+        default_value = "artifacts/ontology/ontology_v2_identity_compatibility.json"
+    )]
+    identity_report: PathBuf,
 }
 
 #[derive(Debug, Deserialize)]
@@ -86,10 +81,12 @@ async fn main() -> Result<()> {
     let repo_root = std::env::current_dir()?.canonicalize()?;
     let ontology_dir = input_path(&repo_root, &args.ontology_dir)?;
     let identity_path = input_path(&repo_root, &args.identity_indexes)?;
+    let property_path = input_path(&repo_root, &args.property_indexes)?;
     let finalize_path = input_path(&repo_root, &args.finalize_policy)?;
     let tasks_path = input_path(&repo_root, &args.tasks)?;
     let snapshot_path = input_path(&repo_root, &args.snapshot)?;
     let report_path = output_path(&repo_root, &args.report)?;
+    let identity_report_path = output_path(&repo_root, &args.identity_report)?;
     let node_schema_path = input_path(&repo_root, &ontology_dir.join("node_schemas.yaml"))?;
     let edge_contract_path = input_path(&repo_root, &ontology_dir.join("edge_contracts.yaml"))?;
     let node_schema_source = read_capped(&node_schema_path, MAX_POLICY_BYTES)?;
@@ -97,21 +94,18 @@ async fn main() -> Result<()> {
     let registry = load_registry_from_bounded_bytes(&node_schema_source, &edge_contract_source)?;
 
     let identity_source = read_capped(&identity_path, MAX_POLICY_BYTES)?;
-    let identity: IdentityIndexesFile = serde_yaml::from_slice(&identity_source)
-        .with_context(|| format!("parse {}", display_path(&repo_root, &identity_path)))?;
-    if identity.schema_version != "ontology-v2-identity-indexes.v1" {
-        anyhow::bail!(
-            "unsupported identity index schema: {}",
-            identity.schema_version
-        );
-    }
-    let identity_indexes = identity
-        .indexes
-        .into_iter()
-        .filter(|entry| entry.identity)
+    let identity_policy = IdentityIndexPolicy::parse_and_validate(&identity_source, &registry)
+        .map_err(anyhow::Error::msg)?;
+    let property_source = read_capped(&property_path, MAX_POLICY_BYTES)?;
+    let _property_policy =
+        kg_ontology::PropertyIndexPolicy::parse_and_validate(&property_source, &registry)
+            .map_err(anyhow::Error::msg)?;
+    let identity_indexes = identity_policy
+        .indexes()
+        .iter()
         .map(|entry| IdentityIndexObservation {
-            label: entry.label,
-            property: entry.property,
+            label: entry.label.clone(),
+            property: entry.property.clone(),
             source_ref: display_path(&repo_root, &identity_path),
         })
         .collect();
@@ -150,6 +144,14 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| format!("import {}", display_path(&repo_root, &snapshot_path)))?;
     let runtime_source = display_path(&repo_root, &snapshot_path);
+    let snapshot_sha256 = fingerprint(&snapshot);
+    let identity_report = IdentityCompatibilityUseCase::new(&store)
+        .audit(&identity_policy, &snapshot_sha256)
+        .await?;
+    atomic_write_report(
+        &identity_report_path,
+        &serde_json::to_vec_pretty(&identity_report)?,
+    )?;
     let runtime = observe_runtime_graph(&store, &runtime_source).await;
     if runtime.nodes.iter().map(|node| node.count).sum::<usize>()
         > usize::try_from(MAX_SNAPSHOT_NODES).unwrap_or(usize::MAX)
@@ -163,9 +165,10 @@ async fn main() -> Result<()> {
         ("node_schemas".into(), fingerprint(&node_schema_source)),
         ("edge_contracts".into(), fingerprint(&edge_contract_source)),
         ("identity_indexes".into(), fingerprint(&identity_source)),
+        ("property_indexes".into(), fingerprint(&property_source)),
         ("finalize_policy".into(), fingerprint(&finalize_source)),
         ("graph_tasks".into(), fingerprint(&task_source)),
-        ("runtime_snapshot".into(), fingerprint(&snapshot)),
+        ("runtime_snapshot".into(), snapshot_sha256),
     ]);
 
     let mut coverage_gaps = runtime.coverage_gaps;
@@ -201,12 +204,14 @@ async fn main() -> Result<()> {
     })?;
     atomic_write_report(&report_path, &serde_json::to_vec_pretty(&report)?)?;
     println!(
-        "ontology_contract_audit verdict={:?} labels={} edges={} findings={} report_sha256={} import_eligible={}",
+        "ontology_contract_audit verdict={:?} labels={} edges={} findings={} report_sha256={} identity_verdict={:?} identity_report_sha256={} import_eligible={}",
         report.verdict,
         report.ontology_labels,
         report.ontology_edges,
         report.findings.len(),
         report.report_sha256,
+        identity_report.verdict,
+        identity_report.report_sha256,
         report.import_eligible
     );
     Ok(())

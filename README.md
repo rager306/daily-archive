@@ -158,10 +158,11 @@ cargo run -p da-cli --example graph_task_suite -- \
   --snapshot artifacts/gepa_hub_production/hub.sgsnap \
   --tasks data/graph_tasks/gepa_hub.tasks.cypher
 
-# Detect-only ontology v2 contract audit (M371/S06)
+# Detect-only ontology v2 contract + identity compatibility audit (M371/S06)
 cargo run -p da-cli --example ontology_contract_audit -- \
   --snapshot artifacts/article_context/materialization_all_200.sgsnap \
-  --report artifacts/ontology/ontology_v2_contract_audit.json
+  --report artifacts/ontology/ontology_v2_contract_audit.json \
+  --identity-report artifacts/ontology/ontology_v2_identity_compatibility.json
 
 # PDF OCR triage via pdf-inspector (M346–M351; optional feature)
 cargo test -p da-adapters --features pdf-classifier --lib pdf_classifier
@@ -272,7 +273,7 @@ in YAML data files.
 - **Phase 3 (active)**: kg-* crate family (ADR-050) — Phase A+D done, Phase B follow-up pending
 - **Phase 3.5 ✅**: ADR-051 P0 contract suites — GraphStore + Embedder contract suites (Mock + Samyama), serde roundtrip tests (M291)
 - **Phase 4 (active)**: OntologyRegistry reads YAML as source of truth; the bounded detect-only contract audit currently reports explicit endpoint/topology/consumer coverage gaps instead of semantic PASS (ADR-050 Phase D/F, M371)
-- **Phase 5**: Deprecation cleanup and consumer/materializer convergence (NodeSchemaDef -> OntologyRegistry)
+- **Phase 5 (active)**: identity/property index policies are registry-validated and accepted VID bytes are frozen; endpoint, consumer and materializer convergence remains (NodeSchemaDef -> OntologyRegistry)
 
 Import lock (D127): `import_eligible = false`. Graph writes stay locked
 until explicit user yes.

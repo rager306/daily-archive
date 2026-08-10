@@ -18,6 +18,7 @@ use kg_storage::{InstrumentedGraphStore, MutationCounters};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -128,111 +129,90 @@ pub struct MaterializationRuntime<'a> {
     pub metadata: &'a MetadataLookup<'a>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct IdentityIndexSpec {
-    pub label: String,
-    pub property: String,
-    pub identity: bool,
-}
+const MAX_INDEX_POLICY_BYTES: u64 = 4 * 1024 * 1024;
 
-#[derive(Debug, Deserialize)]
-struct IdentityIndexPolicy {
-    schema_version: String,
-    indexes: Vec<IdentityIndexSpec>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OntologySchemas {
-    node_schemas: Vec<OntologySchema>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OntologySchema {
-    label: String,
-    required_fields: Vec<OntologyField>,
-    #[serde(default)]
-    optional_fields: Vec<OntologyField>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OntologyField {
-    name: String,
+fn read_project_policy(path: &Path) -> Result<Vec<u8>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()?;
+    let candidate = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        root.join(path)
+    };
+    let resolved = candidate
+        .canonicalize()
+        .with_context(|| format!("resolve {}", path.display()))?;
+    anyhow::ensure!(
+        resolved.starts_with(&root),
+        "policy path escapes repository: {}",
+        path.display()
+    );
+    let mut file =
+        std::fs::File::open(&resolved).with_context(|| format!("open {}", resolved.display()))?;
+    anyhow::ensure!(file.metadata()?.is_file(), "policy is not a regular file");
+    let mut bytes = Vec::new();
+    Read::by_ref(&mut file)
+        .take(MAX_INDEX_POLICY_BYTES + 1)
+        .read_to_end(&mut bytes)?;
+    anyhow::ensure!(
+        bytes.len() as u64 <= MAX_INDEX_POLICY_BYTES,
+        "policy exceeds byte budget"
+    );
+    Ok(bytes)
 }
 
 pub fn load_identity_indexes(
     policy_path: &Path,
     node_schemas_path: &Path,
-) -> Result<Vec<IdentityIndexSpec>> {
-    let policy: IdentityIndexPolicy = serde_yaml::from_slice(
-        &std::fs::read(policy_path).with_context(|| format!("read {}", policy_path.display()))?,
-    )
-    .with_context(|| format!("parse {}", policy_path.display()))?;
-    anyhow::ensure!(
-        policy.schema_version == "ontology-v2-identity-indexes.v1",
-        "unsupported identity index schema {}",
-        policy.schema_version
-    );
-    anyhow::ensure!(!policy.indexes.is_empty(), "identity index policy is empty");
-    let schemas: OntologySchemas = serde_yaml::from_slice(
-        &std::fs::read(node_schemas_path)
-            .with_context(|| format!("read {}", node_schemas_path.display()))?,
-    )
-    .with_context(|| format!("parse {}", node_schemas_path.display()))?;
-    let known = schemas
-        .node_schemas
-        .into_iter()
-        .map(|schema| {
-            let fields = schema
-                .required_fields
-                .into_iter()
-                .chain(schema.optional_fields)
-                .map(|field| field.name)
-                .collect::<std::collections::BTreeSet<_>>();
-            (schema.label, fields)
-        })
-        .collect::<BTreeMap<_, _>>();
-    let mut unique = std::collections::BTreeSet::new();
-    for index in &policy.indexes {
-        anyhow::ensure!(
-            index.identity,
-            "non-identity entry {}.{}",
-            index.label,
-            index.property
-        );
-        let fields = known
-            .get(&index.label)
-            .with_context(|| format!("unknown ontology label {}", index.label))?;
-        anyhow::ensure!(
-            fields.contains(&index.property),
-            "unknown ontology property {}.{}",
-            index.label,
-            index.property
-        );
-        anyhow::ensure!(
-            unique.insert((index.label.as_str(), index.property.as_str())),
-            "duplicate identity index {}.{}",
-            index.label,
-            index.property
-        );
-    }
-    Ok(policy.indexes)
+) -> Result<kg_ontology::IdentityIndexPolicy> {
+    let policy_bytes = read_project_policy(policy_path)?;
+    let schema_bytes = read_project_policy(node_schemas_path)?;
+    let schema_text = std::str::from_utf8(&schema_bytes)
+        .with_context(|| format!("{} is not UTF-8", node_schemas_path.display()))?;
+    let registry = kg_ontology::OntologyRegistry::load_from_str(
+        schema_text,
+        &node_schemas_path.display().to_string(),
+    )?;
+    kg_ontology::IdentityIndexPolicy::parse_and_validate(&policy_bytes, &registry)
+        .map_err(anyhow::Error::msg)
 }
 
-pub async fn ensure_identity_indexes(
+pub fn load_property_indexes(
+    policy_path: &Path,
+    node_schemas_path: &Path,
+) -> Result<kg_ontology::PropertyIndexPolicy> {
+    let policy_bytes = read_project_policy(policy_path)?;
+    let schema_bytes = read_project_policy(node_schemas_path)?;
+    let schema_text = std::str::from_utf8(&schema_bytes)
+        .with_context(|| format!("{} is not UTF-8", node_schemas_path.display()))?;
+    let registry = kg_ontology::OntologyRegistry::load_from_str(
+        schema_text,
+        &node_schemas_path.display().to_string(),
+    )?;
+    kg_ontology::PropertyIndexPolicy::parse_and_validate(&policy_bytes, &registry)
+        .map_err(anyhow::Error::msg)
+}
+
+pub async fn validate_identity_values(
     store: &dyn DirectGraphStore,
-    indexes: &[IdentityIndexSpec],
+    policy: &kg_ontology::IdentityIndexPolicy,
 ) -> Result<()> {
-    for index in indexes {
-        store
-            .create_property_index(&index.label, &index.property)
-            .await
-            .with_context(|| format!("create identity index {}.{}", index.label, index.property))?;
+    for index in policy.indexes() {
         let mut seen = BTreeMap::<String, u64>::new();
         for node_id in store.get_nodes_by_label(&index.label).await {
             let Some(value) = store
                 .get_node_property_string(node_id, &index.property)
                 .await
+                .filter(|value| !value.trim().is_empty())
             else {
+                if index.required {
+                    anyhow::bail!(
+                        "missing identity {}.{} on node {node_id}",
+                        index.label,
+                        index.property
+                    );
+                }
                 continue;
             };
             if let Some(previous) = seen.insert(value.clone(), node_id) {
@@ -243,6 +223,33 @@ pub async fn ensure_identity_indexes(
                 );
             }
         }
+    }
+    Ok(())
+}
+
+pub async fn ensure_identity_indexes(
+    store: &dyn DirectGraphStore,
+    policy: &kg_ontology::IdentityIndexPolicy,
+) -> Result<()> {
+    validate_identity_values(store, policy).await?;
+    for index in policy.indexes() {
+        store
+            .create_property_index(&index.label, &index.property)
+            .await
+            .with_context(|| format!("create identity index {}.{}", index.label, index.property))?;
+    }
+    Ok(())
+}
+
+pub async fn ensure_property_indexes(
+    store: &dyn DirectGraphStore,
+    policy: &kg_ontology::PropertyIndexPolicy,
+) -> Result<()> {
+    for index in policy.indexes() {
+        store
+            .create_property_index(&index.label, &index.property)
+            .await
+            .with_context(|| format!("create property index {}.{}", index.label, index.property))?;
     }
     Ok(())
 }
@@ -824,23 +831,24 @@ mod tests {
     #[tokio::test]
     async fn identity_index_setup_rejects_duplicate_values() {
         let store = kg_storage::MockGraphStore::new();
-        for _ in 0..2 {
+        for ordinal in 0..2 {
             let node = store.create_node("Paper").await.unwrap();
             store
                 .set_node_property_string(node, "vid", "vid:duplicate".into())
                 .await
                 .unwrap();
+            store
+                .set_node_property_string(node, "arxiv_id", format!("2401.{ordinal:05}"))
+                .await
+                .unwrap();
         }
-        let error = ensure_identity_indexes(
-            &store,
-            &[IdentityIndexSpec {
-                label: "Paper".into(),
-                property: "vid".into(),
-                identity: true,
-            }],
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let policy = load_identity_indexes(
+            &root.join("data/ontology/identity_indexes.yaml"),
+            &root.join("data/ontology/node_schemas.yaml"),
         )
-        .await
-        .unwrap_err();
+        .unwrap();
+        let error = ensure_identity_indexes(&store, &policy).await.unwrap_err();
         assert!(error.to_string().contains("duplicate identity"));
     }
 
@@ -852,13 +860,14 @@ mod tests {
             &root.join("data/ontology/node_schemas.yaml"),
         )
         .unwrap();
-        assert!(indexes.len() >= 10);
-        assert!(indexes.iter().all(|index| index.identity));
+        assert!(indexes.indexes().len() >= 36);
+        assert!(indexes.indexes().iter().all(|index| index.identity));
         let unique = indexes
+            .indexes()
             .iter()
             .map(|index| (&index.label, &index.property))
             .collect::<std::collections::BTreeSet<_>>();
-        assert_eq!(unique.len(), indexes.len());
+        assert_eq!(unique.len(), indexes.indexes().len());
     }
 
     #[test]
