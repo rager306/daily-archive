@@ -163,6 +163,10 @@ mod tests {
     fn test_is_known_source_code() {
         assert!(is_known_source_code("arxiv"));
         assert!(is_known_source_code("openalex"));
+        assert!(is_known_source_code("gnn_textbook"));
+        assert!(is_known_source_code("company_blog"));
+        assert!(is_known_source_code("nature"));
+        assert!(is_known_source_code("local"));
         assert!(!is_known_source_code("unknown_source"));
     }
 
@@ -185,6 +189,10 @@ mod tests {
         assert!(is_known_source_code("arxiv"));
         assert!(is_known_source_code("openalex"));
         assert!(is_known_source_code("textbook"));
+        assert!(is_known_source_code("gnn_textbook"));
+        assert!(is_known_source_code("company_blog"));
+        assert!(is_known_source_code("nature"));
+        assert!(is_known_source_code("local"));
         assert!(!is_known_source_code("unknown_source"));
     }
 }

@@ -1,5 +1,40 @@
 # Changelog
 
+### M372 W1–W5 product path — universal `da load` plane (ADR-056 / D220)
+
+Shipped the Accepted load plane as thin hexagonal slices (no provider-rooted
+architecture, D127 locked, network fail-closed):
+
+- **S01 DATA:** `source_codes.yaml` registers catalog-used codes
+  (`gnn_textbook`, `company_blog`, `nature`, `local`) so
+  `is_known_source_code` is honest without Rust hardcodes.
+- **S02 domain:** `da-domain::load` — `ArticleLocator` normalize (arXiv before
+  local-path so `.pdf` URLs are not misclassified), `AcquisitionPolicy`,
+  `LoadStageSet` / `LoadRunMode`, durable `LoadReport` `load-report.v1` with
+  cache/queue fields, `container_ref` metadata for non-article units,
+  `graph_readiness=not_claimed`, digest seal. 11 unit tests.
+- **S03 ports:** `SourceAcquisitionPort` + `MockSourceAcquisition` contract
+  (catalog_hit, network deny). 5 tests.
+- **S04 application:** `ArticleLoadUseCase` ensure-only orchestration + honest
+  report; dry_run; D127 stamp. 5 tests.
+- **S05 adapter:** `ArxivSourceAcquisition` offline catalog_hit walk + sha256;
+  network fetch explicitly not implemented (typed error). 4 tests.
+- **S06 CLI:** `da load` composition root (`crates/da-cli/src/load.rs`); writes
+  report JSON; draft `load_arxiv.rs` remains non-product.
+
+Verify (per-crate, no workspace rocksdb trap):
+`cargo test -p da-domain --lib load::` / `acquisition::` / `article_load::` /
+`arxiv_acquisition::` / `da-cli --lib load::` — all green.
+
+### ADR-056 Accepted — Universal Article Acquisition & Load Plane
+
+Binding load architecture (D220): one `ArticleLoadUseCase` / `da load` over
+provider-agnostic acquisition ports; arXiv and textbook HTML are adapters, not
+products. Catalog ensure + checksums + durable LoadReport; D127 and network
+fail-closed; reuse PipelineCache and GraphScheduler. Non-article KB ontology and
+paper↔chapter edges deferred to a future ADR before graph promote; textbook path
+is ensure-only for now. Draft provider-rooted CLI is non-binding until W5.
+
 ### First-class ontology acceptance runner (M371/S14)
 
 Composable same-process acceptance over the enriched 200-paper snapshot:

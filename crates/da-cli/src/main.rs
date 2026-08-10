@@ -5,6 +5,7 @@ mod analyze;
 mod batch_ids;
 mod graph_ping;
 mod health_report;
+mod load;
 mod serve_graph;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
@@ -342,6 +343,10 @@ enum Commands {
     /// RESP health probe against a running serve-graph (PING → PONG).
     /// Not a full remote GraphStore; does not change open_graph_store.
     GraphPing(graph_ping::GraphPingArgs),
+
+    /// Universal article load plane (ADR-056): locator → ensure catalog assets → LoadReport.
+    /// Default stages=ensure (offline catalog_hit). Network fetch not productized until later wave.
+    Load(load::LoadArgs),
 }
 
 fn main() {
@@ -565,6 +570,12 @@ fn main() {
                     std::process::exit(1);
                 }
             });
+        }
+        Commands::Load(args) => {
+            if let Err(e) = load::run_load(&args) {
+                eprintln!("❌ load failed: {e}");
+                std::process::exit(1);
+            }
         }
     }
 }

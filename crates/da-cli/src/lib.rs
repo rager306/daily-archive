@@ -5,6 +5,7 @@ pub mod gold_corpus;
 pub mod gold_graph;
 pub mod graph_tasks;
 pub mod health_report;
+pub mod load;
 pub mod logging;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.

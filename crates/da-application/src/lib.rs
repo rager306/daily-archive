@@ -4,6 +4,7 @@
 //! ADR-037 §4: Data flows (ingest, extraction, agent, ETL scheduler).
 //! ADR-040 §11.3: Migration framework.
 
+pub mod article_load;
 pub mod artifact_stage;
 pub mod assurance;
 pub mod catalog_reconcile;
@@ -11,6 +12,7 @@ pub mod ingest;
 pub mod pipeline;
 pub mod tex_inspect;
 
+pub use article_load::{ArticleLoadError, ArticleLoadUseCase};
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{
     MaterializationAssuranceUseCase, MaterializationReadback, MaterializationReplayObservation,

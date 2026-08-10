@@ -3,6 +3,7 @@
 //! ADR-037 §2: Ports layer depends on Domain only.
 //! These traits define the boundaries between our application and external systems.
 
+pub mod acquisition;
 pub mod algorithms;
 pub mod assurance;
 pub mod catalog;
@@ -20,6 +21,10 @@ pub mod pipeline_cache;
 pub mod pipeline_stage;
 pub mod tex_source;
 
+pub use acquisition::{
+    AcquisitionError, EnsuredAsset, EnsuredAssets, EnsuredPrimary, MockSourceAcquisition,
+    ResolvedArticleRef, SourceAcquisitionPort,
+};
 pub use algorithms::GraphAlgorithms;
 pub use assurance::{AssuranceReportStore, AssuranceStoreError};
 pub use catalog::{

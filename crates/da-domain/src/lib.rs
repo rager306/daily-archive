@@ -27,6 +27,7 @@ pub mod finalize;
 pub mod graph_tasks;
 pub mod healing;
 pub mod hypergraph;
+pub mod load;
 pub mod ordered_mutation;
 pub mod paper;
 pub mod process;
@@ -99,6 +100,12 @@ pub mod import_eligibility;
 pub use import_eligibility::ImportEligibility;
 
 pub mod pdf_classification;
+pub use load::{
+    AcquisitionPolicy, ArticleLocator, AssetDisposition, LOAD_REPORT_SCHEMA_VERSION,
+    LoadAssetRecord, LoadCacheRecord, LoadDomainError, LoadFinding, LoadQueueRecord,
+    LoadQueueTaskRef, LoadReport, LoadRunMode, LoadStageName, LoadStageSet, PrimaryContentKind,
+    StageStatus, try_normalize_arxiv_id,
+};
 pub use pdf_classification::{
     OCR_REASON_NO_TEXT, OCR_REASON_SCANNED, OCR_REASON_SUSPECTED_GARBLED_TEXT,
     OCR_REASON_VECTOR_TEXT, PageOcrReasons, PdfClassification, PdfType,

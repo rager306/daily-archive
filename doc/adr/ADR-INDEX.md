@@ -25,6 +25,7 @@ listed here — see `legacy/doc/adr/`.
 | [053](ADR-053-article-preparation-multi-layer-document-model.md) | Article Preparation 2.0 — Multi-Layer Document Model for Agent Readiness | Proposed | 2026-08-05 |
 | [054](ADR-054-mcp-server-knowledge-base-access.md) | MCP Server for Knowledge Base External Access | Proposed | 2026-08-07 |
 | [055](ADR-055-article-context-assurance-plane.md) | Article Context Assurance Plane | Accepted | 2026-08-09 |
+| [056](ADR-056-universal-article-acquisition-load-plane.md) | Universal Article Acquisition and Load Plane | Accepted | 2026-08-10 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
