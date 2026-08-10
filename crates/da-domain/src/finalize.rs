@@ -15,6 +15,10 @@ pub struct FinalizePolicy {
     pub required_stage_outcomes: Vec<String>,
     pub snapshot_on_pass_only: bool,
     pub semantic_tasks_required: bool,
+    /// When non-empty, finalize requires each listed class to PASS.
+    /// Empty keeps legacy overall-boolean semantic_tasks gate only.
+    #[serde(default)]
+    pub required_task_classes: Vec<String>,
 }
 
 impl FinalizePolicy {
@@ -87,6 +91,11 @@ pub struct GraphFinalizeReport {
     pub stage_outcomes: std::collections::BTreeMap<String, bool>,
     pub pipeline_report_fingerprint: String,
     pub semantic_tasks_passed: bool,
+    /// Per-class gate rows (empty when only overall boolean was supplied).
+    #[serde(default)]
+    pub task_class_results: std::collections::BTreeMap<String, String>,
+    #[serde(default)]
+    pub required_task_classes: Vec<String>,
     pub unregistered_node_labels: Vec<String>,
     pub findings: Vec<FinalizeFinding>,
     pub snapshot_eligible: bool,

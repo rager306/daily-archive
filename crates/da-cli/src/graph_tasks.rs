@@ -1,9 +1,15 @@
-//! Semantic graph task suite parser (ADR-051 §8.1 / M336).
+//! Semantic graph task suite parser (ADR-051 §8.1 / M336 + M371/S07/T04).
 //!
 //! Samyama case-study pattern: `// @query Title | insight` markers in a Cypher
-//! file define showcase tasks. Pure parse — no I/O beyond the caller.
+//! file define showcase tasks. Optional `// @class <name>` keeps structural /
+//! fact / summary / resolution / cluster / ontology_endpoint evidence from
+//! collapsing into one boolean. Pure parse — no I/O beyond the caller.
 
+use da_domain::graph_tasks::{
+    ClassifiedTaskEvidence, GraphTaskClass, TaskClassResult, TaskClassStatus,
+};
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::time::Instant;
 
 /// One showcase (or scale) task from a suite file.
@@ -26,6 +32,26 @@ pub struct GraphTask {
     /// Exact first numeric cell assertion. Supports zero-valued safety gates.
     #[serde(default)]
     pub expect_value: Option<f64>,
+    /// Task class (defaults to structural for legacy files without // @class).
+    #[serde(default = "GraphTaskClass::default_for_legacy")]
+    pub class: GraphTaskClass,
+}
+
+impl Default for GraphTask {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            title: String::new(),
+            insight: String::new(),
+            cypher: String::new(),
+            min_rows: 1,
+            allow_empty: false,
+            expect_rows: None,
+            expect_min_value: None,
+            expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
+        }
+    }
 }
 
 impl GraphTask {
@@ -84,6 +110,8 @@ pub struct GraphTaskResult {
     pub id: String,
     pub title: String,
     pub insight: String,
+    #[serde(default = "GraphTaskClass::default_for_legacy")]
+    pub class: GraphTaskClass,
     pub verdict: TaskVerdict,
     pub rows: usize,
     pub min_rows: usize,
@@ -107,11 +135,33 @@ pub struct GraphTaskSuiteReport {
     pub error: usize,
     pub failed: bool,
     pub tasks: Vec<GraphTaskResult>,
+    /// Per-class tallies; empty only if no tasks (should not happen).
+    #[serde(default)]
+    pub class_results: BTreeMap<GraphTaskClass, TaskClassResult>,
 }
 
 impl GraphTaskSuiteReport {
     pub fn passed(&self) -> bool {
         !self.failed
+    }
+
+    /// Class-qualified evidence for finalize / ACAP. Overall boolean is preserved.
+    pub fn classified_evidence(
+        &self,
+        required_classes: impl IntoIterator<Item = GraphTaskClass>,
+    ) -> ClassifiedTaskEvidence {
+        ClassifiedTaskEvidence {
+            overall_passed: self.passed(),
+            by_class: self.class_results.clone(),
+            required_classes: required_classes.into_iter().collect(),
+        }
+    }
+
+    pub fn class_passed(&self, class: GraphTaskClass) -> bool {
+        self.class_results
+            .get(&class)
+            .map(|row| row.status == TaskClassStatus::Passed)
+            .unwrap_or(false)
     }
 }
 
@@ -256,6 +306,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
     let mut pending_expect_rows: Option<usize> = None;
     let mut pending_expect_min_value: Option<f64> = None;
     let mut pending_expect_value: Option<f64> = None;
+    let mut pending_class: GraphTaskClass = GraphTaskClass::default_for_legacy();
     let mut cypher_buf: Vec<String> = Vec::new();
 
     let flush = |title: &Option<String>,
@@ -265,6 +316,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
                  expect_rows: Option<usize>,
                  expect_min_value: Option<f64>,
                  expect_value: Option<f64>,
+                 class: GraphTaskClass,
                  buf: &mut Vec<String>,
                  out: &mut Vec<GraphTask>|
      -> Result<(), String> {
@@ -290,6 +342,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
             expect_rows,
             expect_min_value,
             expect_value,
+            class,
         });
         Ok(())
     };
@@ -308,6 +361,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
                 pending_expect_rows,
                 pending_expect_min_value,
                 pending_expect_value,
+                pending_class,
                 &mut cypher_buf,
                 &mut tasks,
             )
@@ -317,6 +371,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
             pending_expect_rows = None;
             pending_expect_min_value = None;
             pending_expect_value = None;
+            pending_class = GraphTaskClass::default_for_legacy();
             let rest = rest.trim();
             let (title, insight) = match rest.split_once('|') {
                 Some((t, i)) => (t.trim().to_string(), i.trim().to_string()),
@@ -383,6 +438,15 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
             continue;
         }
 
+        if let Some(rest) = trimmed.strip_prefix("// @class") {
+            let class = rest
+                .trim()
+                .parse::<GraphTaskClass>()
+                .map_err(|error| format!("line {}: {error}", lineno + 1))?;
+            pending_class = class;
+            continue;
+        }
+
         // Skip other comments and blank lines outside cypher accumulation
         if pending_title.is_none() {
             if trimmed.is_empty() || trimmed.starts_with("//") {
@@ -411,6 +475,7 @@ pub fn parse_tasks_cypher(source: &str) -> Result<GraphTaskSuite, String> {
         pending_expect_rows,
         pending_expect_min_value,
         pending_expect_value,
+        pending_class,
         &mut cypher_buf,
         &mut tasks,
     )?;
@@ -469,6 +534,7 @@ pub async fn run_graph_task_suite(
                     id: task.id.clone(),
                     title: task.title.clone(),
                     insight: task.insight.clone(),
+                    class: task.class,
                     verdict: task.classify(rows, first_number),
                     rows,
                     min_rows: task.min_rows,
@@ -485,6 +551,7 @@ pub async fn run_graph_task_suite(
                 id: task.id.clone(),
                 title: task.title.clone(),
                 insight: task.insight.clone(),
+                class: task.class,
                 verdict: TaskVerdict::Error,
                 rows: 0,
                 min_rows: task.min_rows,
@@ -515,13 +582,62 @@ pub async fn run_graph_task_suite(
         .iter()
         .map(|task| (task.verdict, task.allow_empty))
         .collect();
+    let class_results = classify_suite_results(&tasks);
     GraphTaskSuiteReport {
         pass,
         empty,
         error,
         failed: suite_failed(&gate),
         tasks,
+        class_results,
     }
+}
+
+/// Build per-class tallies from executed task results.
+pub fn classify_suite_results(
+    tasks: &[GraphTaskResult],
+) -> BTreeMap<GraphTaskClass, TaskClassResult> {
+    let mut by_class: BTreeMap<GraphTaskClass, (usize, usize, usize, usize, bool)> =
+        BTreeMap::new();
+    for task in tasks {
+        let entry = by_class.entry(task.class).or_insert((0, 0, 0, 0, false));
+        entry.0 += 1; // task_count
+        match task.verdict {
+            TaskVerdict::Pass => entry.1 += 1,
+            TaskVerdict::Empty => {
+                entry.2 += 1;
+                if !task.allow_empty {
+                    entry.4 = true; // gate failed
+                }
+            }
+            TaskVerdict::Error => {
+                entry.3 += 1;
+                entry.4 = true;
+            }
+        }
+    }
+    by_class
+        .into_iter()
+        .map(|(class, (task_count, pass, empty, error, gate_failed))| {
+            // Class passes when every task is Pass or Empty+allow_empty.
+            let status = if gate_failed || task_count == 0 {
+                TaskClassStatus::Failed
+            } else {
+                TaskClassStatus::Passed
+            };
+            (
+                class,
+                TaskClassResult {
+                    class,
+                    status,
+                    task_count,
+                    pass,
+                    empty,
+                    error,
+                },
+            )
+        })
+        .collect()
 }
 
 /// Suite-level gate: fail if any task is EMPTY (unless allow_empty) or ERROR.
@@ -583,6 +699,7 @@ RETURN p;
                 expect_rows: None,
                 expect_min_value: None,
                 expect_value: None,
+                class: GraphTaskClass::default_for_legacy(),
             }],
         };
         let projection = project_task_edge_wires(&suite);
@@ -606,6 +723,7 @@ RETURN p;
                 expect_rows: None,
                 expect_min_value: None,
                 expect_value: None,
+                class: GraphTaskClass::default_for_legacy(),
             }],
         };
         let projection = project_task_edge_wires(&suite);
@@ -679,6 +797,7 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
             error: 0,
             failed: false,
             tasks: vec![],
+            class_results: BTreeMap::new(),
         };
         assert!(report.passed());
     }
@@ -715,6 +834,7 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
                     expect_rows: None,
                     expect_min_value: None,
                     expect_value: None,
+                    class: GraphTaskClass::default_for_legacy(),
                 },
                 GraphTask {
                     id: "missing".into(),
@@ -726,6 +846,7 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
                     expect_rows: None,
                     expect_min_value: None,
                     expect_value: None,
+                    class: GraphTaskClass::default_for_legacy(),
                 },
                 GraphTask {
                     id: "paper_count".into(),
@@ -737,6 +858,7 @@ MATCH (n:Legacy) RETURN n LIMIT 1;
                     expect_rows: Some(1),
                     expect_min_value: Some(2.0),
                     expect_value: None,
+                    class: GraphTaskClass::default_for_legacy(),
                 },
             ],
         };
@@ -826,6 +948,7 @@ MATCH (n) WHERE n.import_eligible RETURN count(n) AS unlocked;
             expect_rows: Some(1),
             expect_min_value: None,
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         };
         assert_eq!(task.classify(1, None), TaskVerdict::Pass);
     }
@@ -842,6 +965,7 @@ MATCH (n) WHERE n.import_eligible RETURN count(n) AS unlocked;
             expect_rows: Some(1),
             expect_min_value: None,
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         };
         // Engine returns 24 rows (per-paper grouping) but we expected 1 aggregate
         assert_eq!(task.classify(24, Some(24.0)), TaskVerdict::Empty);
@@ -859,6 +983,7 @@ MATCH (n) WHERE n.import_eligible RETURN count(n) AS unlocked;
             expect_rows: None,
             expect_min_value: Some(20.0),
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         };
         assert_eq!(task.classify(1, Some(24.0)), TaskVerdict::Pass);
     }
@@ -875,6 +1000,7 @@ MATCH (n) WHERE n.import_eligible RETURN count(n) AS unlocked;
             expect_rows: None,
             expect_min_value: Some(30.0),
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         };
         assert_eq!(task.classify(1, Some(24.0)), TaskVerdict::Empty);
     }
@@ -891,6 +1017,7 @@ MATCH (n) WHERE n.import_eligible RETURN count(n) AS unlocked;
             expect_rows: None,
             expect_min_value: Some(1.0),
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         };
         // Rows returned but first cell is not numeric → cannot verify bound → EMPTY
         assert_eq!(task.classify(1, None), TaskVerdict::Empty);
@@ -1011,5 +1138,99 @@ mod proptest_tests {
         fn prop_never_panic(s in ".*") {
             let _ = parse_tasks_cypher(&s); // may Err, must not panic
         }
+    }
+
+    #[test]
+    fn class_directive_is_parsed_and_defaults_to_structural() {
+        let source = r#"
+// @query Structural papers | scale
+// @class structural
+// @expect_min_value 1
+MATCH (n:Paper) RETURN count(n);
+
+// @query Summary presence | layer B
+// @class summary
+// @allow_empty
+MATCH (s:Summary) RETURN count(s);
+
+// @query Legacy without class | defaults
+MATCH (n:Paper) RETURN count(n);
+"#;
+        let suite = parse_tasks_cypher(source).unwrap();
+        assert_eq!(suite.tasks.len(), 3);
+        assert_eq!(suite.tasks[0].class, GraphTaskClass::Structural);
+        assert_eq!(suite.tasks[1].class, GraphTaskClass::Summary);
+        assert_eq!(suite.tasks[2].class, GraphTaskClass::Structural); // legacy default
+    }
+
+    #[test]
+    fn unknown_class_directive_fails_closed() {
+        let source = r#"
+// @query Bad | x
+// @class not_a_real_class
+MATCH (n) RETURN count(n);
+"#;
+        let err = parse_tasks_cypher(source).unwrap_err();
+        assert!(err.contains("unknown graph task class"), "{err}");
+    }
+
+    #[test]
+    fn classify_suite_results_does_not_collapse_classes() {
+        let tasks = vec![
+            GraphTaskResult {
+                id: "s1".into(),
+                title: "S".into(),
+                insight: "".into(),
+                class: GraphTaskClass::Structural,
+                verdict: TaskVerdict::Pass,
+                rows: 1,
+                min_rows: 1,
+                allow_empty: false,
+                expected_rows: None,
+                expected_min_value: None,
+                expected_value: None,
+                observed_first_cell_number: Some(1.0),
+                duration_ms: 1,
+                error: None,
+            },
+            GraphTaskResult {
+                id: "sum1".into(),
+                title: "Sum".into(),
+                insight: "".into(),
+                class: GraphTaskClass::Summary,
+                verdict: TaskVerdict::Empty,
+                rows: 0,
+                min_rows: 1,
+                allow_empty: false,
+                expected_rows: None,
+                expected_min_value: None,
+                expected_value: None,
+                observed_first_cell_number: None,
+                duration_ms: 1,
+                error: None,
+            },
+        ];
+        let class_results = classify_suite_results(&tasks);
+        let report = GraphTaskSuiteReport {
+            pass: 1,
+            empty: 1,
+            error: 0,
+            failed: true,
+            tasks,
+            class_results,
+        };
+        assert!(report.class_passed(GraphTaskClass::Structural));
+        assert!(!report.class_passed(GraphTaskClass::Summary));
+        let evidence =
+            report.classified_evidence([GraphTaskClass::Structural, GraphTaskClass::Summary]);
+        assert!(!evidence.required_classes_satisfied());
+        assert_eq!(
+            evidence.failed_required_classes(),
+            vec![GraphTaskClass::Summary]
+        );
+        // Overall false, but structural alone required would pass:
+        let structural_only = report.classified_evidence([GraphTaskClass::Structural]);
+        assert!(structural_only.required_classes_satisfied());
+        assert!(!structural_only.overall_passed); // overall still failed
     }
 }

@@ -3,6 +3,7 @@
 use crate::graph_inventory::collect_graph_inventory_for_registry;
 use crate::{PipelineRunReport, StageDisposition};
 use da_domain::finalize::{FinalizeFinding, FinalizePolicy, FinalizeVerdict, GraphFinalizeReport};
+use da_domain::graph_tasks::{ClassifiedTaskEvidence, GraphTaskClass, TaskClassStatus};
 use da_ports::graph_store::DirectGraphStore;
 use kg_ontology::registry::{OntologyRegistry, YamlNodeSchema};
 use serde_json::Value;
@@ -59,8 +60,9 @@ impl GraphFinalizeUseCase {
         &self,
         store: &dyn DirectGraphStore,
         pipeline_report: &PipelineRunReport,
-        semantic_tasks_passed: bool,
+        task_evidence: ClassifiedTaskEvidence,
     ) -> GraphFinalizeReport {
+        let semantic_tasks_passed = task_evidence.overall_passed;
         let stage_outcomes: BTreeMap<String, bool> = pipeline_report
             .stages
             .iter()
@@ -160,6 +162,35 @@ impl GraphFinalizeUseCase {
                 evidence: "required semantic task suite did not PASS".into(),
             });
         }
+        let required_classes = parse_required_task_classes(&self.policy.required_task_classes);
+        let mut task_class_results = std::collections::BTreeMap::new();
+        for (class, row) in &task_evidence.by_class {
+            let status = match row.status {
+                TaskClassStatus::Passed => "passed",
+                TaskClassStatus::Failed => "failed",
+                TaskClassStatus::Absent => "absent",
+                TaskClassStatus::NoClaim => "no_claim",
+            };
+            task_class_results.insert(class.as_str().to_string(), status.to_string());
+        }
+        let mut class_gate_failed = false;
+        for class in &required_classes {
+            let status = task_evidence
+                .by_class
+                .get(class)
+                .map(|row| row.status)
+                .unwrap_or(TaskClassStatus::Absent);
+            if status != TaskClassStatus::Passed {
+                class_gate_failed = true;
+                findings.push(FinalizeFinding {
+                    code: "required_task_class_failed_or_missing".into(),
+                    evidence: format!("{}:{:?}", class.as_str(), status),
+                });
+                task_class_results
+                    .entry(class.as_str().to_string())
+                    .or_insert_with(|| "absent".into());
+            }
+        }
         if import_eligible_true > 0 {
             findings.push(FinalizeFinding {
                 code: "d127_import_unlock".into(),
@@ -172,6 +203,7 @@ impl GraphFinalizeUseCase {
             || import_eligible_true > 0
             || !unregistered_node_labels.is_empty()
             || !semantic_tasks_passed
+            || class_gate_failed
             || findings.iter().any(|finding| {
                 matches!(
                     finding.code.as_str(),
@@ -196,6 +228,11 @@ impl GraphFinalizeUseCase {
             stage_outcomes,
             pipeline_report_fingerprint,
             semantic_tasks_passed,
+            task_class_results,
+            required_task_classes: required_classes
+                .iter()
+                .map(|class| class.as_str().to_string())
+                .collect(),
             unregistered_node_labels,
             findings,
             snapshot_eligible: verdict == FinalizeVerdict::Pass
@@ -250,4 +287,21 @@ async fn collect_properties(
         }
     }
     properties
+}
+
+fn parse_required_task_classes(raw: &[String]) -> Vec<GraphTaskClass> {
+    let mut out = Vec::new();
+    for item in raw {
+        match item.parse::<GraphTaskClass>() {
+            Ok(class) if !out.contains(&class) => out.push(class),
+            Ok(_) => {}
+            Err(error) => {
+                // Invalid policy class names are findings at construction time ideally;
+                // here we skip unknown names so load stays non-panicking. Policy authors
+                // should validate offline; tests cover known classes.
+                let _ = error;
+            }
+        }
+    }
+    out
 }

@@ -1,5 +1,22 @@
 # Changelog
 
+### Typed graph-task classes for structural vs semantic evidence (M371/S07/T04)
+
+Graph task suites no longer collapse structural / fact / summary / resolution /
+cluster / ontology_endpoint evidence into one boolean. Domain
+`GraphTaskClass` + `ClassifiedTaskEvidence` keep per-class PASS/FAIL/ABSENT
+status. The Cypher task DSL accepts optional `// @class <name>` (default
+`structural` for legacy files). Suite reports expose `class_results` and
+`classified_evidence(required_classes)`.
+
+Finalize policy gains optional `required_task_classes: []` (empty keeps legacy
+overall-boolean gate). Non-empty lists require each class to PASS independently
+with finding `required_task_class_failed_or_missing`. GEPA hub and ontology
+endpoint canary task files are annotated with explicit classes.
+
+Tests: domain class parse/gates, parser @class + classify_suite_results,
+finalize class-absent fail. D127 unchanged. No corpus rebuild.
+
 ### Canonical corpus ACAP aggregate from existing 200-paper artifact (M371/S07/T03)
 
 Product-owned `CorpusAssuranceReport` (`article-context-assurance-aggregate.v1`)

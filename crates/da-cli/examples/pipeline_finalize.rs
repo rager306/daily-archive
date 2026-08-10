@@ -65,7 +65,11 @@ async fn main() -> Result<()> {
     let semantic_tasks = run_graph_task_suite(&store, &args.graph, &suite).await;
     let finalizer = GraphFinalizeUseCase::load_project().map_err(anyhow::Error::msg)?;
     let finalize = finalizer
-        .finalize(&store, &pipeline_report, semantic_tasks.passed())
+        .finalize(
+            &store,
+            &pipeline_report,
+            semantic_tasks.classified_evidence(std::iter::empty()),
+        )
         .await;
 
     let (output_snapshot_sha256, output_snapshot) = if finalize.verdict == FinalizeVerdict::Pass

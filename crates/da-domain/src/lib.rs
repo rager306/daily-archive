@@ -22,6 +22,7 @@ pub mod figure;
 pub mod figure_analysis;
 pub mod figure_context;
 pub mod finalize;
+pub mod graph_tasks;
 pub mod healing;
 pub mod hypergraph;
 pub mod paper;

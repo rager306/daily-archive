@@ -270,6 +270,12 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    codes keep corpus Fail until those layers exist. Governor accepts list-typed
    empty hard_failures without inventing product truth.
 
+   **M371/S07/T04 (typed graph-task classes delivered):** Domain
+   `GraphTaskClass` / `ClassifiedTaskEvidence` prevent structural and semantic
+   suite evidence from collapsing into one boolean. Task DSL `// @class` is
+   optional (legacy default structural). Finalize policy may list
+   `required_task_classes`; empty preserves overall-boolean gate only.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

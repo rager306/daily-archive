@@ -275,7 +275,11 @@ async fn main() -> Result<()> {
         }],
     };
     let finalize = finalizer
-        .finalize(direct_store.as_ref(), &pipeline, semantic_tasks.passed())
+        .finalize(
+            direct_store.as_ref(),
+            &pipeline,
+            semantic_tasks.classified_evidence(std::iter::empty()),
+        )
         .await;
     let finalize_blockers = finalize
         .findings

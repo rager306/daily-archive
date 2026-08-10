@@ -1,5 +1,8 @@
 use da_application::{GraphFinalizeUseCase, PipelineRunReport, StageDisposition, StageRunRecord};
 use da_domain::finalize::{FinalizePolicy, FinalizeVerdict};
+use da_domain::graph_tasks::{
+    ClassifiedTaskEvidence, GraphTaskClass, TaskClassResult, TaskClassStatus,
+};
 use da_ports::graph_store::DirectGraphStore;
 use kg_storage::MockGraphStore;
 
@@ -83,7 +86,11 @@ async fn valid_locked_graph_and_required_stages_pass_without_import_unlock() {
 
     let report = GraphFinalizeUseCase::load_project()
         .unwrap()
-        .finalize(&store, &pipeline(true), true)
+        .finalize(
+            &store,
+            &pipeline(true),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
         .await;
 
     assert_eq!(report.verdict, FinalizeVerdict::Pass);
@@ -103,7 +110,11 @@ async fn d127_unlock_fails_finalize_and_snapshot_eligibility() {
 
     let report = GraphFinalizeUseCase::load_project()
         .unwrap()
-        .finalize(&store, &pipeline(true), true)
+        .finalize(
+            &store,
+            &pipeline(true),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
         .await;
 
     assert_eq!(report.verdict, FinalizeVerdict::Fail);
@@ -125,7 +136,11 @@ async fn semantic_evidence_and_registered_labels_are_required() {
 
     let report = GraphFinalizeUseCase::load_project()
         .unwrap()
-        .finalize(&store, &pipeline(true), false)
+        .finalize(
+            &store,
+            &pipeline(true),
+            ClassifiedTaskEvidence::overall_only(false),
+        )
         .await;
 
     assert_eq!(report.verdict, FinalizeVerdict::Fail);
@@ -162,7 +177,11 @@ async fn cache_hit_stages_pass_and_missing_required_label_is_explicit() {
     valid_paper(&store, false).await;
     let report = GraphFinalizeUseCase::load_project()
         .unwrap()
-        .finalize(&store, &cache_hit_pipeline(), true)
+        .finalize(
+            &store,
+            &cache_hit_pipeline(),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
         .await;
     assert_eq!(report.verdict, FinalizeVerdict::Pass);
     assert!(report.stage_outcomes.values().all(|passed| *passed));
@@ -170,7 +189,11 @@ async fn cache_hit_stages_pass_and_missing_required_label_is_explicit() {
     let empty = MockGraphStore::new();
     let report = GraphFinalizeUseCase::load_project()
         .unwrap()
-        .finalize(&empty, &cache_hit_pipeline(), true)
+        .finalize(
+            &empty,
+            &cache_hit_pipeline(),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
         .await;
     assert!(
         report.findings.iter().any(|finding| {
@@ -183,7 +206,13 @@ async fn cache_hit_stages_pass_and_missing_required_label_is_explicit() {
 async fn schema_unknown_edge_empty_graph_and_missing_stage_fail_closed() {
     let finalizer = GraphFinalizeUseCase::load_project().unwrap();
     let empty = MockGraphStore::new();
-    let report = finalizer.finalize(&empty, &pipeline(true), true).await;
+    let report = finalizer
+        .finalize(
+            &empty,
+            &pipeline(true),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
+        .await;
     assert_eq!(report.verdict, FinalizeVerdict::Fail);
     assert!(
         report
@@ -199,11 +228,68 @@ async fn schema_unknown_edge_empty_graph_and_missing_stage_fail_closed() {
         .create_edge(paper, broken, "UNKNOWN_WIRE")
         .await
         .unwrap();
-    let report = finalizer.finalize(&store, &pipeline(false), true).await;
+    let report = finalizer
+        .finalize(
+            &store,
+            &pipeline(false),
+            ClassifiedTaskEvidence::overall_only(true),
+        )
+        .await;
     assert_eq!(report.verdict, FinalizeVerdict::Fail);
     assert!(report.schema_violations > 0);
     assert_eq!(report.unknown_edge_types, vec!["UNKNOWN_WIRE"]);
     assert!(report.findings.iter().any(|finding| {
         finding.code == "required_stage_not_passed" && finding.evidence == "entity_resolution"
     }));
+}
+
+#[tokio::test]
+async fn required_task_class_gate_fails_when_summary_absent() {
+    let (mut policy, fingerprint) = FinalizePolicy::load_project().unwrap();
+    policy.required_task_classes = vec!["structural".into(), "summary".into()];
+    let registry = kg_ontology::OntologyRegistry::load_project_meta_ontology().unwrap();
+    let finalizer = GraphFinalizeUseCase::new(policy, fingerprint, registry).unwrap();
+    let store = MockGraphStore::new();
+    valid_paper(&store, false).await;
+
+    let mut by_class = std::collections::BTreeMap::new();
+    by_class.insert(
+        GraphTaskClass::Structural,
+        TaskClassResult {
+            class: GraphTaskClass::Structural,
+            status: TaskClassStatus::Passed,
+            task_count: 1,
+            pass: 1,
+            empty: 0,
+            error: 0,
+        },
+    );
+    // overall_passed true, but required summary class absent → Fail without collapsing
+    // structural success into a single boolean green light.
+    let evidence = ClassifiedTaskEvidence {
+        overall_passed: true,
+        by_class,
+        required_classes: vec![GraphTaskClass::Structural, GraphTaskClass::Summary],
+    };
+    let report = finalizer.finalize(&store, &pipeline(true), evidence).await;
+    assert_eq!(report.verdict, FinalizeVerdict::Fail);
+    assert!(report.findings.iter().any(|finding| {
+        finding.code == "required_task_class_failed_or_missing"
+            && finding.evidence.contains("summary")
+    }));
+    assert_eq!(
+        report
+            .task_class_results
+            .get("structural")
+            .map(String::as_str),
+        Some("passed")
+    );
+    assert_eq!(
+        report.task_class_results.get("summary").map(String::as_str),
+        Some("absent")
+    );
+    assert_eq!(
+        report.required_task_classes,
+        vec!["structural".to_string(), "summary".to_string()]
+    );
 }

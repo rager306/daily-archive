@@ -23,6 +23,7 @@ where
 mod serde_roundtrip_tests {
     use super::*;
     use crate::graph_tasks::{GraphTask, GraphTaskSuite, TaskVerdict};
+    use da_domain::graph_tasks::GraphTaskClass;
 
     #[test]
     fn roundtrip_graph_task_basic() {
@@ -36,6 +37,7 @@ mod serde_roundtrip_tests {
             expect_rows: None,
             expect_min_value: None,
             expect_value: None,
+            class: GraphTaskClass::default_for_legacy(),
         });
     }
 
@@ -51,6 +53,7 @@ mod serde_roundtrip_tests {
             expect_rows: Some(1),
             expect_min_value: Some(24.0),
             expect_value: None,
+            class: GraphTaskClass::Structural,
         });
     }
 
@@ -68,6 +71,7 @@ mod serde_roundtrip_tests {
                     expect_rows: None,
                     expect_min_value: None,
                     expect_value: None,
+                    class: GraphTaskClass::Structural,
                 },
                 GraphTask {
                     id: "t2".into(),
@@ -79,15 +83,16 @@ mod serde_roundtrip_tests {
                     expect_rows: Some(1),
                     expect_min_value: None,
                     expect_value: None,
+                    class: GraphTaskClass::Fact,
                 },
             ],
         });
     }
 
     #[test]
-    fn roundtrip_task_verdict_all_variants() {
-        roundtrip_json(&TaskVerdict::Pass);
-        roundtrip_json(&TaskVerdict::Empty);
-        roundtrip_json(&TaskVerdict::Error);
+    fn roundtrip_task_verdict() {
+        for v in [TaskVerdict::Pass, TaskVerdict::Empty, TaskVerdict::Error] {
+            roundtrip_json(&v);
+        }
     }
 }
