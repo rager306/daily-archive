@@ -32,6 +32,28 @@ pub fn reference_vid(raw_text: &str) -> Vid {
     sha256_vid("reference", &canonical)
 }
 
+/// Canonical OpenAlex work ID (`W` plus ASCII digits) from a full URL or bare ID.
+pub fn canonical_openalex_work_id(external_id: &str) -> Result<String, String> {
+    let trimmed = external_id.trim().trim_end_matches('/');
+    let candidate = trimmed
+        .rsplit('/')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    if candidate.len() < 2
+        || !candidate.starts_with('W')
+        || !candidate[1..].bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return Err(format!("invalid OpenAlex work ID: {external_id:?}"));
+    }
+    Ok(candidate)
+}
+
+/// Compute a Citation stub VID from a canonical OpenAlex work ID.
+pub fn citation_vid(external_id: &str) -> Result<Vid, String> {
+    canonical_openalex_work_id(external_id).map(|canonical| sha256_vid("citation", &canonical))
+}
+
 /// Compute a replay-safe EvidenceBundle VID from document, section and members.
 /// Member VIDs are sorted so extractor output ordering cannot change identity.
 pub fn evidence_bundle_vid(paper_id: &str, section_title: &str, member_vids: &[Vid]) -> Vid {
@@ -86,6 +108,21 @@ mod tests {
             entity_vid("Method", "Transformer"),
             entity_vid("Model", "Transformer")
         );
+    }
+
+    #[test]
+    fn citation_vid_canonicalizes_openalex_urls_and_rejects_invalid_ids() {
+        assert_eq!(
+            citation_vid("https://openalex.org/W123").unwrap(),
+            citation_vid("w123/").unwrap()
+        );
+        assert_eq!(
+            canonical_openalex_work_id("openalex.org/W123").unwrap(),
+            "W123"
+        );
+        for invalid in ["", "https://openalex.org/", "123", "WABC"] {
+            assert!(citation_vid(invalid).is_err());
+        }
     }
 
     #[test]

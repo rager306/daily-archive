@@ -1,12 +1,11 @@
 //! Ontology-driven graph inventory (M322–M324).
 //!
-//! Node labels: external meta-ontology first (`registered_node_labels_or_yaml`).
-//! Known edges: `contract_edge_types_or_yaml` from `data/ontology/edge_contracts.yaml`.
-//! CLI / research tools must not hardcode Paper/Section/hasPart lists.
+//! Production composition injects `OntologyRegistry`; the compatibility wrapper
+//! uses compiled contracts only and performs no filesystem access.
 
 use std::collections::BTreeMap;
 
-use da_domain::{contract_edge_types_or_yaml, registered_node_labels_or_yaml};
+use da_domain::{contract_edge_types, registered_node_labels};
 use da_ports::graph_store::DirectGraphStore;
 use serde::{Deserialize, Serialize};
 
@@ -34,21 +33,44 @@ impl GraphInventory {
         *self.edge_type_histogram.get(edge_type).unwrap_or(&0)
     }
 
-    /// Edge types declared in the (YAML-first) contract matrix but missing from histogram.
+    /// Compiled compatibility check. Production finalize uses the injected registry variant.
     pub fn missing_contract_edges(&self) -> Vec<String> {
-        contract_edge_types_or_yaml()
+        contract_edge_types()
             .into_iter()
-            .filter(|e| !self.edge_type_histogram.contains_key(e))
+            .filter(|e| !self.edge_type_histogram.contains_key(*e))
+            .map(str::to_string)
             .collect()
     }
 
-    /// Edge types present in the graph but not in the contract matrix (drift signal).
+    pub fn missing_contract_edges_for(
+        &self,
+        registry: &kg_ontology::registry::OntologyRegistry,
+    ) -> Vec<String> {
+        registry
+            .edge_types()
+            .into_iter()
+            .filter(|edge| !self.edge_type_histogram.contains_key(edge))
+            .collect()
+    }
+
+    /// Compiled compatibility check. Production finalize uses the injected registry variant.
     pub fn unknown_edge_types(&self) -> Vec<String> {
-        let known: std::collections::HashSet<String> =
-            contract_edge_types_or_yaml().into_iter().collect();
+        let known: std::collections::HashSet<&str> = contract_edge_types().into_iter().collect();
         self.edge_type_histogram
             .keys()
-            .filter(|k| !known.contains(*k))
+            .filter(|k| !known.contains(k.as_str()))
+            .cloned()
+            .collect()
+    }
+
+    pub fn unknown_edge_types_for(
+        &self,
+        registry: &kg_ontology::registry::OntologyRegistry,
+    ) -> Vec<String> {
+        let known: std::collections::HashSet<String> = registry.edge_types().into_iter().collect();
+        self.edge_type_histogram
+            .keys()
+            .filter(|edge| !known.contains(*edge))
             .cloned()
             .collect()
     }
@@ -59,8 +81,24 @@ impl GraphInventory {
 /// Labels are not hard-coded in the caller: when `all_node_schemas()` gains a
 /// type, inventory automatically queries it.
 pub async fn collect_graph_inventory(store: &dyn DirectGraphStore) -> GraphInventory {
-    // External meta-ontology first (data/ontology/*.yaml); Rust fallback inside helpers.
-    let labels = registered_node_labels_or_yaml();
+    let labels = registered_node_labels()
+        .into_iter()
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    collect_graph_inventory_for_labels(store, labels).await
+}
+
+pub async fn collect_graph_inventory_for_registry(
+    store: &dyn DirectGraphStore,
+    registry: &kg_ontology::registry::OntologyRegistry,
+) -> GraphInventory {
+    collect_graph_inventory_for_labels(store, registry.labels_owned()).await
+}
+
+async fn collect_graph_inventory_for_labels(
+    store: &dyn DirectGraphStore,
+    labels: Vec<String>,
+) -> GraphInventory {
     let mut node_counts = BTreeMap::new();
     let mut all_node_ids: Vec<u64> = Vec::new();
     let mut seen_ids = std::collections::HashSet::new();
@@ -123,6 +161,7 @@ pub fn render_inventory_markdown(inv: &GraphInventory) -> String {
 mod tests {
     use super::*;
     use da_domain::relation::{bibliographic, structure};
+    use kg_storage::{DirectGraphStore, mock::MockGraphStore};
 
     #[test]
     fn inventory_accessors_default_zero() {
@@ -172,14 +211,30 @@ mod tests {
         assert!(md.contains("hasPart"));
     }
 
+    #[tokio::test]
+    async fn injected_registry_drives_inventory_without_project_file_lookup() {
+        let registry = kg_ontology::registry::OntologyRegistry::load_from_str(
+            "node_schemas:\n  - label: QualitySignal\n    required_fields: [{name: vid, field_type: String}]\n",
+            "fixture.yaml",
+        )
+        .unwrap();
+        let store = MockGraphStore::new();
+        let injected_label = "QualitySignal";
+        store.create_node(injected_label).await.unwrap();
+        store.create_node("Paper").await.unwrap();
+        let inv = collect_graph_inventory_for_registry(&store, &registry).await;
+        assert_eq!(inv.nodes("QualitySignal"), 1);
+        assert_eq!(inv.nodes("Paper"), 0);
+        assert_eq!(inv.total_nodes, 1);
+    }
+
     #[test]
     fn registered_labels_drive_inventory_shape() {
-        // External meta-ontology first (YAML), then compiled fallback.
-        let labels = registered_node_labels_or_yaml();
+        let labels = registered_node_labels();
         assert!(labels.len() >= 10);
-        assert!(labels.iter().any(|l| l == "Paper"));
-        let edges = contract_edge_types_or_yaml();
-        assert!(edges.iter().any(|e| e == structure::HAS_PART));
-        assert!(edges.iter().any(|e| e == bibliographic::MENTIONS));
+        assert!(labels.contains(&"Paper"));
+        let edges = contract_edge_types();
+        assert!(edges.contains(&structure::HAS_PART));
+        assert!(edges.contains(&bibliographic::MENTIONS));
     }
 }

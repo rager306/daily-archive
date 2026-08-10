@@ -28,6 +28,10 @@ pub fn edge_type_is_temporal_fact(edge_type: &str) -> bool {
                     | "SUPERSEDES"
                     | "CAUSED"
                     | "AFFECTS"
+                    | "INFLUENCED"
+                    | "PRECEDENT_FOR"
+                    | "TRIGGERED_BY"
+                    | "hasQualitySignal"
                     | "AFFILIATED_WITH"
                     | "PARTICIPATES_IN"
                     | "MEMBER_OF_CLUSTER"
@@ -112,6 +116,8 @@ mod tests {
         assert!(edge_type_is_temporal_fact("MENTIONS"));
         assert!(edge_type_is_temporal_fact("SUPPORTS"));
         assert!(edge_type_is_temporal_fact("SUPERSEDES"));
+        assert!(edge_type_is_temporal_fact("hasQualitySignal"));
+        assert!(edge_type_is_temporal_fact("TRIGGERED_BY"));
     }
 
     #[test]

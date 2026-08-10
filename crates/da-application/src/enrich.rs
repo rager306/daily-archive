@@ -7,6 +7,8 @@ use da_domain::vid;
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::openalex::OpenAlexClient;
 
+const MAX_REFERENCED_WORKS: usize = 500;
+
 /// Enrichment use case: fetch OpenAlex metadata → write graph nodes.
 pub struct EnrichUseCase {
     pub openalex: std::sync::Arc<dyn OpenAlexClient>,
@@ -32,7 +34,7 @@ pub struct EnrichResult {
     pub institutions_reused: usize,
     pub affiliation_edges_written: usize,
     /// Number of CITES edges created from OpenAlex `referenced_works`.
-    /// Each referenced work becomes a stub Paper node + CITES edge (ADR-053 Layer F).
+    /// Each valid work ID becomes a candidate-only Citation stub + CITES edge.
     pub cites_edges_written: usize,
     pub doi: Option<String>,
     pub cited_by_count: u32,
@@ -389,33 +391,45 @@ impl EnrichUseCase {
         let concepts_written = 0;
         let concepts_candidates = work.concepts.len();
 
-        // ADR-053 Layer F prerequisite: create CITES edges from OpenAlex
-        // `referenced_works`. Previously this field was fetched but discarded
-        // (data loss — citation graph was incomplete). Each referenced work
-        // becomes a stub Paper node (openalex_id only) + CITES edge.
-        // Stub nodes are retrieval_eligible=false, import_eligible=false (D127).
+        // ADR-053 Layer F prerequisite: preserve OpenAlex `referenced_works`
+        // as Citation evidence. A provider reference is not an authoritative
+        // Paper; it becomes a candidate-only Citation stub + CITES edge.
         let mut cites_edges_written = 0usize;
         if let Some(paper_node) = self
             .graph_store
             .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
             .await
         {
+            anyhow::ensure!(
+                work.referenced_works.len() <= MAX_REFERENCED_WORKS,
+                "OpenAlex referenced_works exceeds limit: {} > {}",
+                work.referenced_works.len(),
+                MAX_REFERENCED_WORKS
+            );
+            da_domain::validate_compiled_edge_endpoint(
+                da_domain::relation::bibliographic::CITES,
+                "Paper",
+                "Citation",
+            )
+            .map_err(anyhow::Error::msg)?;
             for ref_openalex_id in &work.referenced_works {
-                // Idempotent: check if a stub Paper for this openalex_id exists.
+                let canonical_openalex_id =
+                    vid::canonical_openalex_work_id(ref_openalex_id).map_err(anyhow::Error::msg)?;
+                let citation_vid =
+                    vid::citation_vid(&canonical_openalex_id).map_err(anyhow::Error::msg)?;
                 let ref_node = match self
                     .graph_store
-                    .find_node_by_string_property("Paper", "openalex_id", ref_openalex_id)
+                    .find_node_by_string_property("Citation", "vid", &citation_vid)
                     .await
                 {
                     Some(existing) => existing,
                     None => {
-                        // Create stub Paper node for the referenced work.
-                        let node = self.graph_store.create_node("Paper").await?;
+                        let node = self.graph_store.create_node("Citation").await?;
                         self.graph_store
-                            .set_node_property_string(node, "openalex_id", ref_openalex_id.clone())
+                            .set_node_property_string(node, "vid", citation_vid)
                             .await?;
                         self.graph_store
-                            .set_node_property_string(node, "vid", vid::paper_vid(ref_openalex_id))
+                            .set_node_property_string(node, "openalex_id", canonical_openalex_id)
                             .await?;
                         self.graph_store
                             .set_node_property_bool(node, "retrieval_eligible", false)
@@ -432,8 +446,7 @@ impl EnrichUseCase {
                         node
                     }
                 };
-                // CITES edge: Paper → referenced Paper (structural, created_at only).
-                // Not a fact edge — citation relationship is stable metadata.
+                // CITES is a revisable fact: Paper → Citation evidence.
                 let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                 if self
                     .graph_store

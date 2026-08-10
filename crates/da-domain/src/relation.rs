@@ -148,6 +148,7 @@ pub mod structure {
     /// Paper/Section → Summary: multi-granularity digest (ADR-053 Layer B).
     /// Links a document node to its Summary node(s) for quick retrieval.
     pub const HAS_SUMMARY: &str = "hasSummary";
+    pub const HAS_QUALITY_SIGNAL: &str = "hasQualitySignal";
 
     /// Method → Method: lineage edge (ADR-053 Layer F).
     /// Method A predecessor_of Method B means A builds on / extends / improves B.
@@ -356,6 +357,7 @@ impl crate::schema::NodeSchemaDef for CitationSchema {
     fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
         vec![
             ("arxiv_id", crate::schema::FieldType::String),
+            ("openalex_id", crate::schema::FieldType::String),
             ("title", crate::schema::FieldType::String),
             ("doi", crate::schema::FieldType::String),
             ("schema_version", crate::schema::FieldType::Integer),

@@ -47,6 +47,9 @@ impl LLMClient for FixedSummaryLlm {
                     "value": "89.4%",
                     "baseline": "83.1%"
                 }],
+                "quantitative_results": "Accuracy improves from 83.1% to 89.4%.",
+                "limitations": "Evaluation is limited to the fixture corpus.",
+                "reproducibility": {"score": 4, "justification": "Code and prompts are described."},
                 "tags": ["prompt optimization"]
             })
             .to_string(),
@@ -219,6 +222,28 @@ async fn structured_summary_materializes_typed_nodes_with_d127_lock() {
         );
     }
 
+    let quality_signals = store.get_nodes_by_label("QualitySignal").await;
+    assert_eq!(quality_signals.len(), 2);
+    for signal in quality_signals {
+        assert_eq!(
+            store
+                .get_edges_between(
+                    paper,
+                    signal,
+                    da_domain::relation::structure::HAS_QUALITY_SIGNAL,
+                )
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            store
+                .get_edges_between(paper, signal, da_domain::relation::structure::HAS_SUMMARY,)
+                .await
+                .is_empty()
+        );
+    }
+
     let metric = store.get_nodes_by_label("Metric").await[0];
     assert_eq!(
         store
@@ -313,6 +338,7 @@ async fn repeated_summary_is_idempotent_for_typed_nodes_and_edges() {
     assert_eq!(store.get_nodes_by_label("Method").await.len(), 1);
     assert_eq!(store.get_nodes_by_label("Dataset").await.len(), 1);
     assert_eq!(store.get_nodes_by_label("Metric").await.len(), 1);
+    assert_eq!(store.get_nodes_by_label("QualitySignal").await.len(), 2);
     let mut section_summaries = Vec::new();
     for node in store.get_nodes_by_label("Summary").await {
         if store

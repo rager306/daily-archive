@@ -77,7 +77,10 @@ pub mod graph_inventory;
 pub mod identity_compatibility;
 pub mod ontology_contract_audit;
 pub use graph_finalize::GraphFinalizeUseCase;
-pub use graph_inventory::{GraphInventory, collect_graph_inventory, render_inventory_markdown};
+pub use graph_inventory::{
+    GraphInventory, collect_graph_inventory, collect_graph_inventory_for_registry,
+    render_inventory_markdown,
+};
 pub mod temporal_stamp;
 pub use temporal_stamp::{
     create_edge_with_temporal, edge_type_is_temporal_fact, open_fact_edge_now,

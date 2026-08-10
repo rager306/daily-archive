@@ -375,7 +375,15 @@ RULES:
 
         // 1. Abstract summary → Summary node.
         if !s.abstract_summary.is_empty() {
-            let node = self.graph_store.create_node("Summary").await?;
+            let summary_vid = format!("vid:summary:{paper_id}:abstract");
+            let node = match self
+                .graph_store
+                .find_node_by_string_property("Summary", "vid", &summary_vid)
+                .await
+            {
+                Some(existing) => existing,
+                None => self.graph_store.create_node("Summary").await?,
+            };
             self.set_props_summary(
                 node,
                 paper_id,
@@ -384,9 +392,16 @@ RULES:
                 "llm_minimax_full",
             )
             .await?;
-            self.graph_store
-                .create_edge(paper_node_id, node, HAS_SUMMARY)
-                .await?;
+            if self
+                .graph_store
+                .get_edges_between(paper_node_id, node, HAS_SUMMARY)
+                .await
+                .is_empty()
+            {
+                self.graph_store
+                    .create_edge(paper_node_id, node, HAS_SUMMARY)
+                    .await?;
+            }
             tracing::info!(
                 paper_id,
                 chars = s.abstract_summary.len(),
@@ -446,66 +461,28 @@ RULES:
 
         // 4. Quantitative results → QualitySignal node.
         if !s.quantitative_results.is_empty() {
-            let node = self.graph_store.create_node("QualitySignal").await?;
-            self.graph_store
-                .set_node_property_string(node, "vid", format!("vid:signal:{}:quant", paper_id))
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "text", s.quantitative_results.clone())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "signal_type", "quantitative_results".into())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "source_label", "Paper".into())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "source_id", paper_id.to_string())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "method", "llm_minimax_full".into())
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "import_eligible", false)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "retrieval_eligible", true)
-                .await?;
-            self.graph_store
-                .set_node_property_int(node, "schema_version", 1)
-                .await?;
-            self.graph_store
-                .create_edge(paper_node_id, node, HAS_SUMMARY)
-                .await?;
+            self.upsert_quality_signal(
+                paper_id,
+                paper_node_id,
+                "quant",
+                "quantitative_results",
+                &s.quantitative_results,
+                None,
+            )
+            .await?;
         }
 
         // 5. Reproducibility → QualitySignal.
         if s.reproducibility.score > 0 {
-            let node = self.graph_store.create_node("QualitySignal").await?;
-            self.graph_store
-                .set_node_property_string(node, "vid", format!("vid:signal:{}:repro", paper_id))
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "text", s.reproducibility.justification.clone())
-                .await?;
-            self.graph_store
-                .set_node_property_string(node, "signal_type", "reproducibility".into())
-                .await?;
-            self.graph_store
-                .set_node_property_int(node, "score", s.reproducibility.score as i64)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "import_eligible", false)
-                .await?;
-            self.graph_store
-                .set_node_property_bool(node, "retrieval_eligible", true)
-                .await?;
-            self.graph_store
-                .set_node_property_int(node, "schema_version", 1)
-                .await?;
-            self.graph_store
-                .create_edge(paper_node_id, node, HAS_SUMMARY)
-                .await?;
+            self.upsert_quality_signal(
+                paper_id,
+                paper_node_id,
+                "repro",
+                "reproducibility",
+                &s.reproducibility.justification,
+                Some(s.reproducibility.score as i64),
+            )
+            .await?;
         }
 
         // 6. Tags → store as Paper property for search.
@@ -544,41 +521,38 @@ RULES:
             .await
         {
             Some(existing) => existing,
-            None => {
-                let node = self.graph_store.create_node("Summary").await?;
-                self.graph_store
-                    .set_node_property_string(node, "vid", summary_vid)
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(node, "text", summary.summary.clone())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(node, "granularity", "section".into())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(node, "source_label", "Section".into())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(node, "source_id", summary.path_id.clone())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(node, "method", "llm_minimax_full".into())
-                    .await?;
-                self.graph_store
-                    .set_node_property_int(node, "char_count", summary.summary.len() as i64)
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(node, "retrieval_eligible", true)
-                    .await?;
-                self.graph_store
-                    .set_node_property_bool(node, "import_eligible", false)
-                    .await?;
-                self.graph_store
-                    .set_node_property_int(node, "schema_version", 1)
-                    .await?;
-                node
-            }
+            None => self.graph_store.create_node("Summary").await?,
         };
+        self.graph_store
+            .set_node_property_string(node, "vid", summary_vid)
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "text", summary.summary.clone())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "granularity", "section".into())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "source_label", "Section".into())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "source_id", summary.path_id.clone())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "method", "llm_minimax_full".into())
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "char_count", summary.summary.len() as i64)
+            .await?;
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", true)
+            .await?;
+        self.graph_store
+            .set_node_property_bool(node, "import_eligible", false)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "schema_version", 1)
+            .await?;
         if self
             .graph_store
             .get_edges_between(section, node, da_domain::relation::structure::HAS_SUMMARY)
@@ -616,22 +590,120 @@ RULES:
         None
     }
 
+    async fn upsert_quality_signal(
+        &self,
+        paper_id: &str,
+        paper_node_id: u64,
+        identity_suffix: &str,
+        signal_type: &str,
+        text: &str,
+        score: Option<i64>,
+    ) -> anyhow::Result<u64> {
+        let signal_vid = format!("vid:signal:{paper_id}:{identity_suffix}");
+        let node = match self
+            .graph_store
+            .find_node_by_string_property("QualitySignal", "vid", &signal_vid)
+            .await
+        {
+            Some(existing) => existing,
+            None => self.graph_store.create_node("QualitySignal").await?,
+        };
+        self.graph_store
+            .set_node_property_string(node, "vid", signal_vid)
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "text", text.to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "signal_type", signal_type.to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "source_label", "Paper".into())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "source_id", paper_id.to_string())
+            .await?;
+        self.graph_store
+            .set_node_property_string(node, "method", "llm_minimax_full".into())
+            .await?;
+        if let Some(score) = score {
+            self.graph_store
+                .set_node_property_int(node, "score", score)
+                .await?;
+        }
+        self.graph_store
+            .set_node_property_bool(node, "import_eligible", false)
+            .await?;
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", true)
+            .await?;
+        self.graph_store
+            .set_node_property_int(node, "schema_version", 1)
+            .await?;
+        da_domain::validate_compiled_edge_endpoint(
+            da_domain::relation::structure::HAS_QUALITY_SIGNAL,
+            "Paper",
+            "QualitySignal",
+        )
+        .map_err(anyhow::Error::msg)?;
+        if self
+            .graph_store
+            .get_edges_between(
+                paper_node_id,
+                node,
+                da_domain::relation::structure::HAS_QUALITY_SIGNAL,
+            )
+            .await
+            .is_empty()
+        {
+            let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+            crate::temporal_stamp::create_edge_with_temporal(
+                self.graph_store.as_ref(),
+                paper_node_id,
+                node,
+                da_domain::relation::structure::HAS_QUALITY_SIGNAL,
+                &temporal,
+            )
+            .await?;
+        }
+        Ok(node)
+    }
+
     async fn write_limitations(
         &self,
         paper_id: &str,
         paper_node_id: u64,
         text: &str,
     ) -> anyhow::Result<()> {
-        let node = self.graph_store.create_node("Summary").await?;
+        let summary_vid = format!("vid:summary:{paper_id}:limitations");
+        let node = match self
+            .graph_store
+            .find_node_by_string_property("Summary", "vid", &summary_vid)
+            .await
+        {
+            Some(existing) => existing,
+            None => self.graph_store.create_node("Summary").await?,
+        };
         self.set_props_summary(node, paper_id, text, "limitations", "llm_minimax_full")
             .await?;
-        self.graph_store
-            .create_edge(
+        if self
+            .graph_store
+            .get_edges_between(
                 paper_node_id,
                 node,
                 da_domain::relation::structure::HAS_SUMMARY,
             )
-            .await?;
+            .await
+            .is_empty()
+        {
+            self.graph_store
+                .create_edge(
+                    paper_node_id,
+                    node,
+                    da_domain::relation::structure::HAS_SUMMARY,
+                )
+                .await?;
+        }
         Ok(())
     }
 

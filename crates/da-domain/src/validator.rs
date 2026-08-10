@@ -599,48 +599,7 @@ fn value_kind(val: &serde_json::Value) -> &'static str {
 /// Validate that an edge type is registered in the relation registry.
 /// Returns Some(violation) if the edge type is not declared.
 pub fn validate_edge_type(edge_type: &str) -> Option<SchemaViolation> {
-    let known_edges: &[&str] = &[
-        // Structural (relation::structure)
-        crate::relation::structure::HAS_PART,
-        crate::relation::structure::HAS_TOPIC,
-        crate::relation::structure::AUTHORED_BY,
-        crate::relation::structure::FROM_SOURCE,
-        crate::relation::structure::FOUND_IN,
-        crate::relation::structure::IN_CATEGORY,
-        // Document tree navigation (ADR-053 Layer A)
-        crate::relation::structure::NEXT_SIBLING,
-        crate::relation::structure::FIRST_CHILD,
-        crate::relation::structure::PARENT_SECTION,
-        // Summary + lineage (ADR-053 Layer B+F, D194)
-        crate::relation::structure::HAS_SUMMARY,
-        crate::relation::structure::PREDECESSOR_OF,
-        // Bibliographic (relation::bibliographic)
-        crate::relation::bibliographic::CITES,
-        crate::relation::bibliographic::CITED_BY,
-        crate::relation::bibliographic::CO_AUTHORED,
-        crate::relation::bibliographic::AFFILIATED_WITH,
-        crate::relation::bibliographic::MENTIONS,
-        crate::relation::bibliographic::SUPERSEDES,
-        crate::relation::bibliographic::SPLITS,
-        // Conflict plane (relation::conflict)
-        crate::relation::conflict::CONFLICTS_OVER,
-        crate::relation::conflict::RESOLVED_BY,
-        // Decision plane (relation::decision)
-        crate::relation::decision::CAUSED,
-        crate::relation::decision::AFFECTS,
-        crate::relation::decision::INFLUENCED,
-        crate::relation::decision::PRECEDENT_FOR,
-        crate::relation::decision::AUTHORITY_FOR,
-        crate::relation::decision::TRIGGERED_BY,
-        // Hypergraph / evidence (relation::hypergraph)
-        crate::relation::hypergraph::MEMBER_OF_CLUSTER,
-        crate::relation::hypergraph::SUBSUMES,
-        crate::relation::hypergraph::PARTICIPATES_IN,
-        crate::relation::hypergraph::SUPPORTS,
-        crate::relation::hypergraph::CONTRADICTS,
-        crate::relation::hypergraph::QUALIFIES,
-    ];
-    if known_edges.contains(&edge_type) {
+    if crate::edge_contract::contract_edge_types().contains(&edge_type) {
         None
     } else {
         Some(SchemaViolation::critical_no_field(

@@ -1,5 +1,39 @@
 # Changelog
 
+### Ontology v2 endpoint and materializer convergence
+
+Closed the confirmed endpoint contradictions without changing accepted IDs or
+rebuilding the corpus. OpenAlex `referenced_works` no longer create fake Paper
+nodes: validated/canonicalized work IDs materialize as candidate-only Citation
+nodes and `Paper-[:CITES]->Citation`. Invalid IDs and more than 500 references
+fail closed; replay reuses nodes and edges. Quality signals now use the distinct
+fact edge `Paper-[:hasQualitySignal]->QualitySignal` instead of abusing
+`hasSummary`, and receive full temporal fact stamps. Abstract, section,
+limitations and quality materialization are replay-idempotent.
+
+The ontology contract is now executable at product boundaries. Active YAML and
+compiled endpoint rows must match exactly, including polymorphic `hasSummary`
+and causal Decision rows. The handwritten validator edge list was removed in
+favour of compiled contracts. Graph finalization now injects
+`OntologyRegistry` into inventory collection; the high-blast-radius compatibility
+wrapper remains no-filesystem and uses compiled labels. Wrong endpoints,
+planned-only materialization, unknown task wires and schema drift remain visible
+through the contract audit.
+
+Added a process-local real-Samyama endpoint canary. It proves two Citation nodes,
+two QualitySignal nodes, two CITES edges, two quality edges, four temporally
+stamped fact edges, zero forbidden Paper-to-Paper CITES, zero hasSummary links to
+QualitySignal, zero CITES writes on replay, full graph replay stability and
+graph-derived `import_eligible=false`. Durable output:
+`artifacts/ontology/ontology_v2_endpoint_canary.json`.
+
+ADR-051 coverage includes endpoint negative/polymorphic/parity tests, Citation
+canonicalization/caps, Summary and QualitySignal replay, injected inventory,
+finalize, temporal classification, task wires and real Samyama replay. The
+remaining static materializer-observation and application logging gaps are left
+explicit for T04/first-class command work rather than hidden with governor
+regexes.
+
 ### Ontology v2 identity and property index convergence
 
 Replaced CLI-private and dead schema-index hand lists with two separately typed,

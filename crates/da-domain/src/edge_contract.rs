@@ -111,6 +111,30 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             target_labels: &["Entity"],
             rationale: "Decision directly affected an Entity (ADR-053 Layer G).",
         },
+        EdgeContract {
+            edge_constant: crate::relation::decision::CAUSED,
+            source_label: "Decision",
+            target_labels: &["Decision"],
+            rationale: "Decision caused a later decision (ADR-048).",
+        },
+        EdgeContract {
+            edge_constant: crate::relation::decision::INFLUENCED,
+            source_label: "Decision",
+            target_labels: &["Decision"],
+            rationale: "Decision influenced a later decision (ADR-048).",
+        },
+        EdgeContract {
+            edge_constant: crate::relation::decision::PRECEDENT_FOR,
+            source_label: "Decision",
+            target_labels: &["Decision"],
+            rationale: "Decision is precedent for a later decision (ADR-048).",
+        },
+        EdgeContract {
+            edge_constant: crate::relation::decision::TRIGGERED_BY,
+            source_label: "Decision",
+            target_labels: &["Conflict"],
+            rationale: "Decision was triggered by a conflict (ADR-048).",
+        },
         // ─── ADR-053 Layer A document tree navigation edges (T03) ───
         EdgeContract {
             edge_constant: structure::NEXT_SIBLING,
@@ -143,6 +167,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             target_labels: &["Summary"],
             rationale: "Section has a path-identity-linked section digest (ADR-053 Layer B).",
         },
+        EdgeContract {
+            edge_constant: structure::HAS_QUALITY_SIGNAL,
+            source_label: "Paper",
+            target_labels: &["QualitySignal"],
+            rationale: "Paper has a typed quality signal; this evidence is not a Summary and may be revised.",
+        },
         // ─── ADR-053 Layer F: Method lineage (D194 M368 S03) ───
         EdgeContract {
             edge_constant: structure::PREDECESSOR_OF,
@@ -156,6 +186,25 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
 /// Unique edge wire strings from the **compiled** contract matrix.
 ///
 /// Prefer [`contract_edge_types_or_yaml`] for inventory — external meta-ontology first.
+pub fn validate_compiled_edge_endpoint(
+    edge_type: &str,
+    source_label: &str,
+    target_label: &str,
+) -> Result<(), String> {
+    let matches = edge_contracts().into_iter().any(|contract| {
+        contract.edge_constant == edge_type
+            && contract.source_label == source_label
+            && contract.target_labels.contains(&target_label)
+    });
+    if matches {
+        Ok(())
+    } else {
+        Err(format!(
+            "edge endpoint is not registered: {source_label}-[{edge_type}]->{target_label}"
+        ))
+    }
+}
+
 pub fn contract_edge_types() -> Vec<&'static str> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
@@ -210,9 +259,14 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
                 | bibliographic::AFFILIATED_WITH
                 | bibliographic::SUPERSEDES
                 | crate::relation::decision::AFFECTS
+                | crate::relation::decision::CAUSED
+                | crate::relation::decision::INFLUENCED
+                | crate::relation::decision::PRECEDENT_FOR
+                | crate::relation::decision::TRIGGERED_BY
                 | hypergraph::SUPPORTS
                 | hypergraph::PARTICIPATES_IN
                 | hypergraph::MEMBER_OF_CLUSTER => TemporalClass::Fact,
+                structure::HAS_QUALITY_SIGNAL => TemporalClass::Fact,
                 structure::HAS_PART
                 | structure::FROM_SOURCE
                 | structure::AUTHORED_BY
@@ -291,6 +345,18 @@ mod tests {
     use std::collections::HashSet;
 
     #[test]
+    fn compiled_endpoint_validation_supports_polymorphic_wires_and_rejects_drift() {
+        assert!(validate_compiled_edge_endpoint("CITES", "Paper", "Citation").is_ok());
+        assert!(validate_compiled_edge_endpoint("hasSummary", "Paper", "Summary").is_ok());
+        assert!(validate_compiled_edge_endpoint("hasSummary", "Section", "Summary").is_ok());
+        assert!(
+            validate_compiled_edge_endpoint("hasQualitySignal", "Paper", "QualitySignal").is_ok()
+        );
+        assert!(validate_compiled_edge_endpoint("CITES", "Paper", "Paper").is_err());
+        assert!(validate_compiled_edge_endpoint("hasSummary", "Paper", "QualitySignal").is_err());
+    }
+
+    #[test]
     fn test_contract_edge_types_includes_pipeline_wires() {
         use crate::relation::{bibliographic, structure};
         let types = contract_edge_types();
@@ -313,6 +379,43 @@ mod tests {
             assert!(types.iter().any(|e| e == w));
             assert!(compiled.contains(w), "compiled missing {w}");
         }
+    }
+
+    #[test]
+    fn active_yaml_and_compiled_endpoint_rows_are_exactly_equal() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let registry =
+            kg_ontology::registry::OntologyRegistry::load_from_dir(root.join("data/ontology"))
+                .unwrap();
+        let yaml = registry
+            .edge_contracts()
+            .iter()
+            .filter(|contract| {
+                contract.implementation_status == kg_ontology::registry::ContractStatus::Active
+            })
+            .flat_map(|contract| {
+                contract.target_labels.iter().map(move |target| {
+                    (
+                        contract.edge_constant.clone(),
+                        contract.source_label.clone(),
+                        target.clone(),
+                    )
+                })
+            })
+            .collect::<std::collections::BTreeSet<_>>();
+        let compiled = edge_contracts()
+            .into_iter()
+            .flat_map(|contract| {
+                contract.target_labels.iter().map(move |target| {
+                    (
+                        contract.edge_constant.to_string(),
+                        contract.source_label.to_string(),
+                        (*target).to_string(),
+                    )
+                })
+            })
+            .collect::<std::collections::BTreeSet<_>>();
+        assert_eq!(compiled, yaml);
     }
 
     #[test]
@@ -420,6 +523,7 @@ mod tests {
             structure::FROM_SOURCE,
             structure::FOUND_IN,
             structure::IN_CATEGORY,
+            structure::HAS_QUALITY_SIGNAL,
             bibliographic::CITES,
             bibliographic::MENTIONS,
             bibliographic::SUPERSEDES,

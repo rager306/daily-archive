@@ -377,8 +377,16 @@ accepted VID mint functions remain frozen and outside those policies. A read-onl
 exactly lookup-compatible, with 26 future-label keys explicitly unobserved and an
 `incomplete` verdict. Storage indexes are not unique constraints, so ongoing
 write-time uniqueness and transactional multi-index creation remain future
-adapter capabilities. This evidence is not permission to rewrite ontology IDs or
-claim semantic acceptance. D127 remains false.
+adapter capabilities. Endpoint convergence now also enforces exact active YAML
+versus compiled rows. OpenAlex references materialize as candidate-only Citation
+nodes (`Paper-[:CITES]->Citation`), while quality evidence uses the distinct
+fact edge `Paper-[:hasQualitySignal]->QualitySignal`; both are temporally stamped
+and replay-idempotent. Finalize inventory consumes an injected registry instead
+of project-path discovery in inner layers. A bounded real-Samyama canary proves
+those endpoint triples, rejects the former Paper-to-Paper and hasSummary-to-
+QualitySignal shapes, and remains fully replay-stable. This evidence is not
+permission to rewrite ontology IDs or claim corpus semantic acceptance. D127
+remains false.
 
 #### Phase E — kg-algorithms + kg-pipeline (3-4 sessions)
 

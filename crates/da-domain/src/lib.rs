@@ -49,6 +49,7 @@ pub use assurance::{
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,
     edge_contracts_or_yaml, render_edge_contracts_yaml, render_markdown_table,
+    validate_compiled_edge_endpoint,
 };
 pub use entity::{ENTITY_TYPES, Entity, EntitySchema, EntityType};
 pub use eval::{

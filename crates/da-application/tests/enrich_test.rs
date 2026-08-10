@@ -354,7 +354,7 @@ async fn test_enrich_creates_cites_edges_from_referenced_works() {
 
     let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
 
-    // 3 referenced works → 3 CITES edges
+    // 3 referenced works → 3 ontology-valid Citation nodes and CITES edges.
     assert_eq!(
         result.cites_edges_written, 3,
         "expected 3 CITES edges from referenced_works, got {}",
@@ -362,7 +362,36 @@ async fn test_enrich_creates_cites_edges_from_referenced_works() {
     );
     let replay = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
     assert_eq!(replay.cites_edges_written, 0);
-    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 4);
+    assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(citations.len(), 3);
+    for citation in citations {
+        assert_eq!(
+            store
+                .get_node_property_bool(citation, "import_eligible")
+                .await,
+            Some(false)
+        );
+        assert_eq!(
+            store
+                .get_node_property_bool(citation, "retrieval_eligible")
+                .await,
+            Some(false)
+        );
+        assert!(
+            !store
+                .get_edges_between(
+                    store
+                        .find_node_by_string_property("Paper", "arxiv_id", "2401.00001")
+                        .await
+                        .unwrap(),
+                    citation,
+                    da_domain::relation::bibliographic::CITES,
+                )
+                .await
+                .is_empty()
+        );
+    }
 }
 
 #[tokio::test]
@@ -378,5 +407,55 @@ async fn test_enrich_empty_referenced_works_creates_zero_cites_edges() {
     assert_eq!(
         result.cites_edges_written, 0,
         "empty referenced_works should create 0 CITES edges"
+    );
+}
+
+#[tokio::test]
+async fn citation_ids_are_canonical_and_invalid_or_oversized_provider_data_fails_closed() {
+    let mut work = make_mock_work();
+    work.referenced_works = vec!["https://openalex.org/W123".into(), "w123/".into()];
+    let store = make_store();
+    add_paper(&store, "2401.00001").await;
+    let use_case = EnrichUseCase::new(
+        Box::new(MockOpenAlex { work: Some(work) }),
+        Box::new(store.clone()),
+    );
+    let result = use_case.enrich_by_arxiv_id("2401.00001").await.unwrap();
+    assert_eq!(result.cites_edges_written, 1);
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(citations.len(), 1);
+    assert_eq!(
+        store
+            .get_node_property_string(citations[0], "openalex_id")
+            .await
+            .as_deref(),
+        Some("W123")
+    );
+
+    let mut invalid = make_mock_work();
+    invalid.referenced_works = vec!["".into()];
+    let invalid_case = EnrichUseCase::new(
+        Box::new(MockOpenAlex {
+            work: Some(invalid),
+        }),
+        Box::new(store.clone()),
+    );
+    assert!(invalid_case.enrich_by_arxiv_id("2401.00001").await.is_err());
+
+    let mut oversized = make_mock_work();
+    oversized.referenced_works = (0..501).map(|index| format!("W{index}")).collect();
+    let oversized_case = EnrichUseCase::new(
+        Box::new(MockOpenAlex {
+            work: Some(oversized),
+        }),
+        Box::new(store),
+    );
+    assert!(
+        oversized_case
+            .enrich_by_arxiv_id("2401.00001")
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("exceeds limit")
     );
 }

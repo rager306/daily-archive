@@ -1,6 +1,6 @@
 //! Ontology-driven graph finalization gate.
 
-use crate::graph_inventory::collect_graph_inventory;
+use crate::graph_inventory::collect_graph_inventory_for_registry;
 use crate::{PipelineRunReport, StageDisposition};
 use da_domain::finalize::{FinalizeFinding, FinalizePolicy, FinalizeVerdict, GraphFinalizeReport};
 use da_ports::graph_store::DirectGraphStore;
@@ -50,7 +50,7 @@ impl GraphFinalizeUseCase {
             "sha256:{}",
             hex::encode(Sha256::digest(pipeline_material.as_bytes()))
         );
-        let inventory = collect_graph_inventory(store).await;
+        let inventory = collect_graph_inventory_for_registry(store, &self.registry).await;
         let mut findings = Vec::new();
         let mut validated_nodes = 0usize;
         let mut schema_violations = 0usize;
@@ -98,7 +98,7 @@ impl GraphFinalizeUseCase {
             }
         }
 
-        let unknown_edge_types = inventory.unknown_edge_types();
+        let unknown_edge_types = inventory.unknown_edge_types_for(&self.registry);
         if !unknown_edge_types.is_empty() {
             findings.push(FinalizeFinding {
                 code: "unknown_edge_types".into(),
