@@ -17,15 +17,42 @@ pub struct GraphFinalizeUseCase {
 }
 
 impl GraphFinalizeUseCase {
-    pub fn load_project() -> Result<Self, String> {
-        let (policy, policy_fingerprint) = FinalizePolicy::load_project()?;
-        let registry =
-            OntologyRegistry::load_project_meta_ontology().map_err(|error| error.to_string())?;
+    pub fn new(
+        policy: FinalizePolicy,
+        policy_fingerprint: String,
+        registry: OntologyRegistry,
+    ) -> Result<Self, String> {
+        policy.validate()?;
+        if policy_fingerprint.len() != 71
+            || !policy_fingerprint.starts_with("sha256:")
+            || !policy_fingerprint[7..]
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+        {
+            return Err("finalize policy fingerprint is malformed".into());
+        }
+        for label in &policy.required_nonempty_labels {
+            if registry.get_schema(label).is_none() {
+                return Err(format!(
+                    "finalize policy requires unregistered label {label}"
+                ));
+            }
+        }
         Ok(Self {
             policy,
             policy_fingerprint,
             registry,
         })
+    }
+
+    /// Compatibility constructor. New composition roots should load bounded
+    /// policy/registry bytes and call `new` so application logic stays free of
+    /// path defaults.
+    pub fn load_project() -> Result<Self, String> {
+        let (policy, policy_fingerprint) = FinalizePolicy::load_project()?;
+        let registry =
+            OntologyRegistry::load_project_meta_ontology().map_err(|error| error.to_string())?;
+        Self::new(policy, policy_fingerprint, registry)
     }
 
     pub async fn finalize(

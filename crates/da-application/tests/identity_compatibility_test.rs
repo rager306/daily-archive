@@ -129,6 +129,19 @@ async fn malformed_source_digest_and_report_tamper_fail_closed() {
 }
 
 #[test]
+fn durable_report_serde_roundtrip_preserves_semantic_hash() {
+    let report: da_application::identity_compatibility::IdentityCompatibilityReport =
+        serde_json::from_str(include_str!(
+            "../../../artifacts/ontology/ontology_v2_identity_compatibility.json"
+        ))
+        .unwrap();
+    assert!(report.validate().is_ok());
+    let roundtrip = serde_json::to_vec(&report).unwrap();
+    let decoded = serde_json::from_slice(&roundtrip).unwrap();
+    assert_eq!(report, decoded);
+}
+
+#[test]
 fn accepted_vid_bytes_are_frozen() {
     assert_eq!(
         da_domain::vid::paper_vid("1206.6423"),

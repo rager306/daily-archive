@@ -8,16 +8,26 @@ use async_trait::async_trait;
 use clap::Parser;
 use da_adapters::SamyamaGraphStore;
 use da_application::ontology_contract_audit::observe_runtime_graph;
-use da_application::{EnrichUseCase, SummaryUseCase};
+use da_application::ontology_endpoint_evidence::{
+    ENDPOINT_EVIDENCE_SCHEMA_VERSION, OntologyEndpointEvidence,
+};
+use da_application::{
+    EnrichUseCase, GraphFinalizeUseCase, PipelineRunReport, StageDisposition, StageRunRecord,
+    SummaryUseCase,
+};
 use da_cli::gold_graph::atomic_write;
-use da_domain::vid;
+use da_cli::graph_tasks::{parse_tasks_cypher, run_graph_task_suite};
+use da_domain::{
+    ContentDigest,
+    finalize::{FinalizePolicy, FinalizeVerdict},
+    vid,
+};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::llm_client::{
     ChatMessage, ChatOptions, ChatResponse, LLMClient, LLMError, LLMResult,
 };
 use da_ports::openalex::{OpenAlexClient, OpenAlexError, OpenAlexResult, OpenAlexWork};
 use da_ports::parser::ParsedArticle;
-use serde::Serialize;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -103,31 +113,13 @@ impl LLMClient for FixedSummary {
     }
 }
 
-#[derive(Debug, Serialize)]
-struct EndpointCanaryReport {
-    schema_version: &'static str,
-    paper_id: &'static str,
-    first_cites_edges_written: usize,
-    replay_cites_edges_written: usize,
-    citation_nodes: usize,
-    quality_signal_nodes: usize,
-    cites_edges: usize,
-    quality_signal_edges: usize,
-    forbidden_paper_to_paper_cites: usize,
-    forbidden_summary_to_quality_signal: usize,
-    temporally_stamped_fact_edges: usize,
-    endpoint_triples: Vec<String>,
-    endpoint_replay_stable: bool,
-    full_graph_replay_stable: bool,
-    import_eligible: bool,
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("ontology_endpoint_canary");
     let args = Args::parse();
     ensure_report_path(&args.report)?;
-    let store: Arc<dyn DirectGraphStore> =
-        Arc::new(SamyamaGraphStore::try_from_env().map_err(anyhow::Error::msg)?);
+    let store = Arc::new(SamyamaGraphStore::try_from_env().map_err(anyhow::Error::msg)?);
+    let direct_store: Arc<dyn DirectGraphStore> = store.clone();
     let paper_id = "9999.00001";
     let paper = store.create_node("Paper").await?;
     for (key, value) in [
@@ -169,9 +161,9 @@ async fn main() -> Result<()> {
         .set_node_property_int(section, "schema_version", 1)
         .await?;
 
-    let enrich = EnrichUseCase::from_shared(Arc::new(FixedOpenAlex), Arc::clone(&store));
+    let enrich = EnrichUseCase::from_shared(Arc::new(FixedOpenAlex), direct_store.clone());
     let first = enrich.enrich_by_arxiv_id(paper_id).await?;
-    let summary = SummaryUseCase::new(Arc::clone(&store), Arc::new(FixedSummary));
+    let summary = SummaryUseCase::new(direct_store.clone(), Arc::new(FixedSummary));
     summary
         .generate_summaries(paper_id, paper, &parsed(paper_id))
         .await?;
@@ -244,9 +236,98 @@ async fn main() -> Result<()> {
         "full canary graph changed on replay"
     );
 
-    let report = EndpointCanaryReport {
-        schema_version: "ontology-v2-endpoint-canary.v1",
-        paper_id,
+    let node_schema_source = include_bytes!("../../../data/ontology/node_schemas.yaml");
+    let edge_contract_source = include_bytes!("../../../data/ontology/edge_contracts.yaml");
+    let task_source =
+        include_str!("../../../data/graph_tasks/ontology_v2_endpoint_canary.tasks.cypher");
+    let task_suite = parse_tasks_cypher(task_source).map_err(anyhow::Error::msg)?;
+    let semantic_tasks =
+        run_graph_task_suite(store.as_ref(), "ontology_v2_canary", &task_suite).await;
+    anyhow::ensure!(
+        semantic_tasks.passed(),
+        "endpoint semantic task suite failed: {}",
+        serde_json::to_string(&semantic_tasks)?
+    );
+
+    let policy_source = include_str!("../../../data/ontology/finalize_policy.yaml");
+    let policy: FinalizePolicy = serde_yaml::from_str(policy_source)?;
+    let policy_fingerprint = format!(
+        "sha256:{}",
+        ContentDigest::of_bytes(policy_source.as_bytes()).as_str()
+    );
+    let registry = kg_ontology::OntologyRegistry::load_from_dir("data/ontology")?;
+    let finalizer = GraphFinalizeUseCase::new(policy, policy_fingerprint, registry)
+        .map_err(anyhow::Error::msg)?;
+    let pipeline = PipelineRunReport {
+        pipeline_id: "ontology-v2-endpoint-canary".into(),
+        article_id: paper_id.into(),
+        completed: false,
+        stages: vec![StageRunRecord {
+            step_name: "semantic_enrichment".into(),
+            stage_id: "semantic_enrichment".into(),
+            cache_key_sha256: None,
+            disposition: StageDisposition::Executed {
+                output_sha256: format!(
+                    "sha256:{}",
+                    ContentDigest::of_bytes(&serde_json::to_vec(&after)?).as_str()
+                ),
+            },
+        }],
+    };
+    let finalize = finalizer
+        .finalize(direct_store.as_ref(), &pipeline, semantic_tasks.passed())
+        .await;
+    let finalize_blockers = finalize
+        .findings
+        .iter()
+        .map(|finding| format!("{}:{}", finding.code, finding.evidence))
+        .collect::<Vec<_>>();
+    anyhow::ensure!(
+        finalize.schema_violations == 0,
+        "endpoint graph has schema violations: {:?}",
+        finalize.findings
+    );
+    anyhow::ensure!(
+        finalize.unknown_edge_types.is_empty(),
+        "endpoint graph has unknown edge types"
+    );
+    anyhow::ensure!(
+        finalize.import_eligible_true == 0 && !finalize.import_eligible,
+        "D127 drift in finalize"
+    );
+    anyhow::ensure!(
+        !finalize_blockers.is_empty()
+            && finalize_blockers
+                .iter()
+                .all(|code| code.starts_with("required_stage_not_passed:")),
+        "unexpected finalize blockers: {:?}",
+        finalize.findings
+    );
+
+    let graph_semantics_sha256 = format!(
+        "sha256:{}",
+        ContentDigest::of_bytes(&serde_json::to_vec(&after)?).as_str()
+    );
+    let report = OntologyEndpointEvidence {
+        schema_version: ENDPOINT_EVIDENCE_SCHEMA_VERSION.into(),
+        paper_id: paper_id.into(),
+        graph_semantics_sha256,
+        node_schemas_sha256: format!(
+            "sha256:{}",
+            ContentDigest::of_bytes(node_schema_source).as_str()
+        ),
+        edge_contracts_sha256: format!(
+            "sha256:{}",
+            ContentDigest::of_bytes(edge_contract_source).as_str()
+        ),
+        finalize_policy_sha256: format!(
+            "sha256:{}",
+            ContentDigest::of_bytes(policy_source.as_bytes()).as_str()
+        ),
+        semantic_tasks_source_sha256: format!(
+            "sha256:{}",
+            ContentDigest::of_bytes(task_source.as_bytes()).as_str()
+        ),
         first_cites_edges_written: first.cites_edges_written,
         replay_cites_edges_written: replay.cites_edges_written,
         citation_nodes: citation_nodes.len(),
@@ -259,8 +340,16 @@ async fn main() -> Result<()> {
         endpoint_triples,
         endpoint_replay_stable,
         full_graph_replay_stable,
+        semantic_task_count: semantic_tasks.tasks.len(),
+        semantic_tasks_passed: semantic_tasks.passed(),
+        finalize_passed: finalize.verdict == FinalizeVerdict::Pass,
+        finalize_schema_violations: finalize.schema_violations,
+        finalize_unknown_edge_types: finalize.unknown_edge_types,
+        finalize_blockers,
         import_eligible,
-    };
+        report_sha256: String::new(),
+    }
+    .seal()?;
     atomic_write(&args.report, &serde_json::to_vec_pretty(&report)?)?;
     println!(
         "ontology_endpoint_canary citations={} quality_signals={} endpoint_replay_stable={} full_graph_replay_stable={} import_eligible=false",

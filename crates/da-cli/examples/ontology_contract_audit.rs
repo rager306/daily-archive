@@ -77,6 +77,7 @@ struct SnapshotRecordKind {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("ontology_contract_audit");
     let args = Args::parse();
     let repo_root = std::env::current_dir()?.canonicalize()?;
     let ontology_dir = input_path(&repo_root, &args.ontology_dir)?;
@@ -181,15 +182,6 @@ async fn main() -> Result<()> {
                 source_ref: format!("{}#{task_id}", display_path(&repo_root, &tasks_path)),
             }),
     );
-    coverage_gaps.push(SurfaceObservation {
-        value: "static_materializer_endpoint_declarations_not_yet_typed".into(),
-        source_ref: "M371-pr59ty/S06/T03".into(),
-    });
-    coverage_gaps.push(SurfaceObservation {
-        value: "production_consumer_label_walk_not_yet_registry_driven".into(),
-        source_ref: "crates/da-cli/src/main.rs".into(),
-    });
-
     let report = OntologyContractAuditUseCase::new(&registry).audit(ContractAuditInput {
         schema_version: AUDIT_INPUT_SCHEMA_VERSION.into(),
         source_fingerprints,

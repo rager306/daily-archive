@@ -1,5 +1,5 @@
 use da_application::{GraphFinalizeUseCase, PipelineRunReport, StageDisposition, StageRunRecord};
-use da_domain::finalize::FinalizeVerdict;
+use da_domain::finalize::{FinalizePolicy, FinalizeVerdict};
 use da_ports::graph_store::DirectGraphStore;
 use kg_storage::MockGraphStore;
 
@@ -33,6 +33,16 @@ fn pipeline(pass: bool) -> PipelineRunReport {
         })
         .collect(),
     }
+}
+
+fn cache_hit_pipeline() -> PipelineRunReport {
+    let mut report = pipeline(true);
+    for stage in &mut report.stages {
+        stage.disposition = StageDisposition::CacheHit {
+            output_sha256: format!("sha256:{}", "b".repeat(64)),
+        };
+    }
+    report
 }
 
 async fn valid_paper(store: &MockGraphStore, import_eligible: bool) -> u64 {
@@ -134,6 +144,38 @@ async fn semantic_evidence_and_registered_labels_are_required() {
             .findings
             .iter()
             .any(|finding| finding.code == "unregistered_node_labels")
+    );
+}
+
+#[tokio::test]
+async fn injected_constructor_validates_policy_registry_and_fingerprint() {
+    let (policy, fingerprint) = FinalizePolicy::load_project().unwrap();
+    let registry = kg_ontology::OntologyRegistry::load_project_meta_ontology().unwrap();
+    assert!(GraphFinalizeUseCase::new(policy.clone(), fingerprint, registry).is_ok());
+    let registry = kg_ontology::OntologyRegistry::load_project_meta_ontology().unwrap();
+    assert!(GraphFinalizeUseCase::new(policy, "bad".into(), registry).is_err());
+}
+
+#[tokio::test]
+async fn cache_hit_stages_pass_and_missing_required_label_is_explicit() {
+    let store = MockGraphStore::new();
+    valid_paper(&store, false).await;
+    let report = GraphFinalizeUseCase::load_project()
+        .unwrap()
+        .finalize(&store, &cache_hit_pipeline(), true)
+        .await;
+    assert_eq!(report.verdict, FinalizeVerdict::Pass);
+    assert!(report.stage_outcomes.values().all(|passed| *passed));
+
+    let empty = MockGraphStore::new();
+    let report = GraphFinalizeUseCase::load_project()
+        .unwrap()
+        .finalize(&empty, &cache_hit_pipeline(), true)
+        .await;
+    assert!(
+        report.findings.iter().any(|finding| {
+            finding.code == "required_label_empty" && finding.evidence == "Paper"
+        })
     );
 }
 

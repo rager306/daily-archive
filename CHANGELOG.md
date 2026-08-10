@@ -1,5 +1,46 @@
 # Changelog
 
+### Ontology v2 bounded convergence evidence
+
+Composed the T01 contract audit, T02 identity compatibility report and T03
+endpoint journey through a pure `da-application` evidence use case. Every child
+report is self-validating and bound by semantic and file digests. Checkpoint and
+process-local endpoint graphs remain separate first-class sources; the composer
+never implies that they observed one graph. `Converged` is structurally
+unreachable while graph digests differ or endpoint finalization is incomplete;
+error findings yield `Drift`, and declared absent surfaces yield `Incomplete`.
+D127 remains false in every child, runtime graph walk and aggregate report.
+
+The real endpoint canary now executes materializers, unchanged replay, five
+read-only Samyama semantic tasks and an injected-registry finalize gate in one
+process. It proves Citation, QualitySignal and polymorphic Summary topology,
+rejects the former forbidden shapes through schema-discriminating safety
+queries, reports zero schema violations and unknown edges, and preserves the
+three genuinely missing production pipeline stages as explicit finalize
+blockers rather than fabricating PASS. The endpoint report moved from
+CLI-private JSON to an application-owned sealed DTO with ontology, policy,
+task-source, graph-semantics and report digests.
+
+Added a bounded CLI composition root and durable
+`artifacts/ontology/ontology_v2_convergence_canary.json`. The real verdict is
+`incomplete`: checkpoint and endpoint graph digests differ and unobserved
+ontology layers remain explicit. Stale T01 coverage markers for materializer
+endpoint typing and the old Paper-only inventory walk were removed after T03
+product evidence proved them closed. `GraphFinalizeUseCase::new` accepts an
+injected validated policy, fingerprint and registry; the filesystem-based
+constructor remains a compatibility wrapper only.
+
+ADR-051 coverage now includes deterministic/serde evidence reports, binding and
+ontology revision tamper, D127, endpoint/temporal/replay/task/finalize negative
+matrices, explicit `Converged`/`Incomplete`/`Drift` paths, durable real-Samyama
+artifact validation, identity report roundtrip and finalize cache-hit sequence.
+A new governor rule was intentionally not added: the discovered
+false-convergence bug is enforced by typed product semantics, while Samyama
+target-label query behaviour requires executable runtime safety tasks rather
+than a Python regex. The existing closeout governor did expose a real
+operability gap, so all three ontology pipeline composition roots now initialize
+`.env`-backed ADR-052 rolling JSON logging and retain their `WorkerGuard`.
+
 ### Ontology v2 endpoint and materializer convergence
 
 Closed the confirmed endpoint contradictions without changing accepted IDs or
@@ -30,8 +71,8 @@ graph-derived `import_eligible=false`. Durable output:
 ADR-051 coverage includes endpoint negative/polymorphic/parity tests, Citation
 canonicalization/caps, Summary and QualitySignal replay, injected inventory,
 finalize, temporal classification, task wires and real Samyama replay. The
-remaining static materializer-observation and application logging gaps are left
-explicit for T04/first-class command work rather than hidden with governor
+remaining first-class command and application logging gaps are left explicit
+for the supported acceptance-runner work rather than hidden with governor
 regexes.
 
 ### Ontology v2 identity and property index convergence

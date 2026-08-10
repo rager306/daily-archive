@@ -164,9 +164,13 @@ cargo run -p da-cli --example ontology_contract_audit -- \
   --report artifacts/ontology/ontology_v2_contract_audit.json \
   --identity-report artifacts/ontology/ontology_v2_identity_compatibility.json
 
-# Bounded real-Samyama ontology endpoint canary (M371/S06)
+# Bounded real-Samyama ontology endpoint journey (M371/S06)
 cargo run -p da-cli --example ontology_endpoint_canary -- \
   --report artifacts/ontology/ontology_v2_endpoint_canary.json
+
+# Bind checkpoint + endpoint evidence without merging their graph identity
+cargo run -p da-cli --example ontology_v2_convergence_canary -- \
+  --report artifacts/ontology/ontology_v2_convergence_canary.json
 
 # PDF OCR triage via pdf-inspector (M346–M351; optional feature)
 cargo test -p da-adapters --features pdf-classifier --lib pdf_classifier
@@ -277,7 +281,7 @@ in YAML data files.
 - **Phase 3 (active)**: kg-* crate family (ADR-050) — Phase A+D done, Phase B follow-up pending
 - **Phase 3.5 ✅**: ADR-051 P0 contract suites — GraphStore + Embedder contract suites (Mock + Samyama), serde roundtrip tests (M291)
 - **Phase 4 (active)**: OntologyRegistry reads YAML as source of truth; the bounded detect-only contract audit currently reports explicit endpoint/topology/consumer coverage gaps instead of semantic PASS (ADR-050 Phase D/F, M371)
-- **Phase 5 (active)**: identity/property index policies are registry-validated, accepted VID bytes are frozen, and Citation/QualitySignal endpoint materializers are converged; remaining consumer and acceptance-runner work continues (NodeSchemaDef -> OntologyRegistry)
+- **Phase 5 (active)**: identity/property policies and accepted VID bytes are stable; Citation/QualitySignal materializers, real endpoint tasks, injected finalize and digest-bound split-source convergence evidence are executable. The bounded report remains honestly `incomplete`; a supported acceptance runner and absent semantic layers remain (NodeSchemaDef -> OntologyRegistry)
 
 Import lock (D127): `import_eligible = false`. Graph writes stay locked
 until explicit user yes.

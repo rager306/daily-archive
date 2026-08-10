@@ -368,9 +368,10 @@ surfaces in `da-application`; it deliberately does not load finalize/task policy
 inside `kg-ontology` and does not add a second manifest. The CLI edge owns
 filesystem loading, bounded read-only Samyama checkpoint observation and the
 checksum-bound report. The 200-paper checkpoint currently yields `incomplete`:
-13 active endpoint contracts are unobserved, 15 registered labels have no active
-edge topology, and static materializer/production-consumer observations remain
-explicit gaps. Identity-index convergence now uses a separate typed policy from
+the remaining active endpoint contracts and registered labels without active
+topology stay explicit; stale static materializer and Paper-only inventory gap
+markers were removed only after executable product evidence closed them.
+Identity-index convergence now uses a separate typed policy from
 non-identity property indexes; both validate against `OntologyRegistry`, while
 accepted VID mint functions remain frozen and outside those policies. A read-only
 200-paper compatibility proof finds all 13 observed identity keys unique and
@@ -384,9 +385,20 @@ fact edge `Paper-[:hasQualitySignal]->QualitySignal`; both are temporally stampe
 and replay-idempotent. Finalize inventory consumes an injected registry instead
 of project-path discovery in inner layers. A bounded real-Samyama canary proves
 those endpoint triples, rejects the former Paper-to-Paper and hasSummary-to-
-QualitySignal shapes, and remains fully replay-stable. This evidence is not
-permission to rewrite ontology IDs or claim corpus semantic acceptance. D127
-remains false.
+QualitySignal shapes, and remains fully replay-stable.
+
+T04 binds the checkpoint contract audit, checkpoint identity compatibility and
+process-local endpoint journey through a pure application evidence composer.
+Child reports carry self-validating semantic hashes and external file bindings;
+common ontology and finalize-policy fingerprints must match, while different
+graph-source fingerprints remain distinct. The endpoint journey executes five
+real Samyama tasks and an injected `GraphFinalizeUseCase`; missing downstream
+pipeline stages are preserved as explicit finalize blockers. `Converged` is
+structurally unavailable for split graph sources or incomplete finalization,
+`Drift` requires error evidence, and registered but absent surfaces produce
+`Incomplete`. The bounded durable report is therefore honestly `incomplete`,
+not a corpus acceptance or seal. This evidence is not permission to rewrite
+ontology IDs or claim corpus semantic acceptance. D127 remains false.
 
 #### Phase E — kg-algorithms + kg-pipeline (3-4 sessions)
 

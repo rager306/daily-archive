@@ -76,6 +76,8 @@ pub mod graph_finalize;
 pub mod graph_inventory;
 pub mod identity_compatibility;
 pub mod ontology_contract_audit;
+pub mod ontology_endpoint_evidence;
+pub mod ontology_v2_convergence;
 pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{
     GraphInventory, collect_graph_inventory, collect_graph_inventory_for_registry,
