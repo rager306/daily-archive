@@ -1,5 +1,19 @@
 # Changelog
 
+### Additive ordered mutation canary (M371/S08)
+
+Product-owned ordered mutation plan + executor prove physical MutationCounters
+for deterministic DirectGraphStore steps without changing materializer APIs.
+Domain `OrderedMutationPlan` validates binds/labels/D127 fail-closed.
+Application `OrderedMutationUseCase` runs first pass (create/set/edge) then
+property-only replay against first-pass binds so compare-before-write proves
+Unchanged. CLI canary emits
+`artifacts/article_context/ordered_mutation_canary.json` (verdict=Pass,
+first_applied=8, replay_property_unchanged=5, D127=false).
+
+5 application + 4 domain tests green. S07 lifecycle sealed via skip-delivered
++ runtime UAT. No graph rebuild.
+
 ### Project required pre-materialization ACAP layers from durable wave evidence
 
 Product wave after S07: `PipelineStageAssuranceUseCase` projects source/parse/

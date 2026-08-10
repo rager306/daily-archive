@@ -25,6 +25,7 @@ pub mod finalize;
 pub mod graph_tasks;
 pub mod healing;
 pub mod hypergraph;
+pub mod ordered_mutation;
 pub mod paper;
 pub mod process;
 pub mod relation;

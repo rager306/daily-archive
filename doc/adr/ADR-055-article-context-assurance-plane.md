@@ -290,6 +290,12 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    Live 200-paper aggregate reaches corpus Pass with all required layers
    Observed; bootstrap enrichment/summary/task layers stay typed no_claim.
 
+   **M371/S08 (additive ordered mutation canary delivered):** Domain plan +
+   application executor apply ordered DirectGraphStore mutations through
+   InstrumentedGraphStore. First pass records applied creates/sets; replay
+   re-applies property steps only and requires Unchanged. Durable canary
+   artifact keeps import_eligible=false. Materializer APIs unchanged.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.
