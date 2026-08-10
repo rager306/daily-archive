@@ -1,5 +1,19 @@
 # Changelog
 
+### `da load` end-to-end — network ensure + ingest (not ensure-only theater)
+
+Closes the operator gap on ADR-056 plane:
+
+- `ArxivSourceAcquisition` fetches missing PDF/HTML via catalog recovery script
+  when `--allow-network` (process-boundary in adapters only).
+- `ArticleLoadUseCase::run_with_ingest` binds real `IngestUseCase` / GROBID +
+  embed + snapshot through injected `LoadContentIngest`.
+- CLI default `--stages ingest`; one command from HTML/abs URL → catalog → graph
+  snapshot + `load-report.v1`.
+
+Verified: `da load https://arxiv.org/html/2608.07067v1 --allow-network --stages ingest`
+→ ensure `fetched` + ingest ok (55 sections) + `.sgsnap`.
+
 ### M372 W1–W5 product path — universal `da load` plane (ADR-056 / D220)
 
 Shipped the Accepted load plane as thin hexagonal slices (no provider-rooted

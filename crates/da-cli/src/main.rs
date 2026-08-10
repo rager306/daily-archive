@@ -572,7 +572,7 @@ fn main() {
             });
         }
         Commands::Load(args) => {
-            if let Err(e) = load::run_load(&args) {
+            if let Err(e) = rt.block_on(async { load::run_load(&args).await }) {
                 eprintln!("❌ load failed: {e}");
                 std::process::exit(1);
             }

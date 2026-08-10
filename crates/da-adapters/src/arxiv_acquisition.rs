@@ -1,10 +1,8 @@
-//! ArXiv source acquisition adapter — offline catalog_hit first (ADR-056 W4).
+//! ArXiv source acquisition adapter (ADR-056).
 //!
-//! Network fetch is intentionally **not** implemented in this wave. Missing PDF
-//! with `allow_network=false` → `NetworkDenied`. With `allow_network=true` still
-//! returns a typed error until W10 Rust fetch / script boundary lands.
-//!
-//! Never call Python from `da-application`; any future script boundary stays here.
+//! Offline: catalog_hit when `{id}.pdf` exists under catalog_root.
+//! Network: temporary process-boundary to `scripts/download_arxiv_to_catalog.py`
+//! (never called from da-application). After success, re-walk catalog for PDF.
 
 use da_domain::{AcquisitionPolicy, ArticleLocator, AssetDisposition, PrimaryContentKind};
 use da_ports::{
@@ -14,26 +12,134 @@ use da_ports::{
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 const PROVIDER: &str = "arxiv";
+const DOWNLOAD_SCRIPT: &str = "scripts/download_arxiv_to_catalog.py";
 
-/// Filesystem-backed arXiv acquisition (catalog_hit path).
+/// Filesystem-backed arXiv acquisition.
 #[derive(Debug, Clone)]
 pub struct ArxivSourceAcquisition {
-    /// Root containing `article_catalog/...` or the `article_catalog` dir itself.
+    /// Root containing `article_catalog/...` (typically `data/article_catalog`).
     pub catalog_root: PathBuf,
+    /// Repo root for spawning the recovery script (default: cwd).
+    pub repo_root: PathBuf,
+    /// Override download script path (tests).
+    pub download_script: PathBuf,
 }
 
 impl ArxivSourceAcquisition {
     pub fn new(catalog_root: impl Into<PathBuf>) -> Self {
+        let catalog_root = catalog_root.into();
         Self {
-            catalog_root: catalog_root.into(),
+            catalog_root,
+            repo_root: PathBuf::from("."),
+            download_script: PathBuf::from(DOWNLOAD_SCRIPT),
         }
+    }
+
+    pub fn with_repo_root(mut self, repo_root: impl Into<PathBuf>) -> Self {
+        self.repo_root = repo_root.into();
+        self
     }
 
     fn find_pdf(&self, arxiv_id: &str) -> Option<PathBuf> {
         let name = format!("{arxiv_id}.pdf");
         find_named_file(&self.catalog_root, &name)
+    }
+
+    fn ensured_from_pdf(
+        &self,
+        pdf: &Path,
+        disposition: AssetDisposition,
+        catalog_hit: bool,
+    ) -> Result<EnsuredAssets, AcquisitionError> {
+        let meta = fs::metadata(pdf).map_err(|e| {
+            AcquisitionError::Infrastructure(format!("stat {}: {e}", pdf.display()))
+        })?;
+        let bytes = meta.len();
+        let sha = sha256_file(pdf).map_err(|e| {
+            AcquisitionError::Infrastructure(format!("hash {}: {e}", pdf.display()))
+        })?;
+        let path_str = path_for_report(&self.catalog_root, pdf);
+        let mut assets = vec![EnsuredAsset {
+            kind: "pdf".into(),
+            path: path_str.clone(),
+            sha256: Some(sha.clone()),
+            bytes: Some(bytes),
+            disposition,
+        }];
+
+        // Optional HTML sibling (article.html next to unit root).
+        if let Some(html) = sibling_html(pdf)
+            && let Ok(hmeta) = fs::metadata(&html)
+        {
+            let hsha = sha256_file(&html).ok();
+            assets.push(EnsuredAsset {
+                kind: "html".into(),
+                path: path_for_report(&self.catalog_root, &html),
+                sha256: hsha,
+                bytes: Some(hmeta.len()),
+                disposition: if catalog_hit {
+                    AssetDisposition::CatalogHit
+                } else {
+                    AssetDisposition::Fetched
+                },
+            });
+        }
+
+        Ok(EnsuredAssets {
+            primary: EnsuredPrimary {
+                kind: PrimaryContentKind::Pdf,
+                path: path_str,
+                sha256: Some(sha),
+                bytes: Some(bytes),
+            },
+            assets,
+            catalog_hit,
+        })
+    }
+
+    fn fetch_via_script(&self, arxiv_id: &str, include_tex: bool) -> Result<(), AcquisitionError> {
+        let script = if self.download_script.is_absolute() {
+            self.download_script.clone()
+        } else {
+            self.repo_root.join(&self.download_script)
+        };
+        if !script.is_file() {
+            return Err(AcquisitionError::Infrastructure(format!(
+                "download script missing: {}",
+                script.display()
+            )));
+        }
+
+        let report_dir = self.repo_root.join("artifacts/source_recovery");
+        let _ = fs::create_dir_all(&report_dir);
+        let report_path = report_dir.join(format!("{arxiv_id}.json"));
+
+        let mut cmd = Command::new("python3");
+        cmd.current_dir(&self.repo_root)
+            .arg(&script)
+            .arg("--allow-network")
+            .arg("--report")
+            .arg(&report_path)
+            .arg(arxiv_id);
+        if include_tex {
+            cmd.arg("--include-tex-source");
+        }
+
+        let output = cmd.output().map_err(|e| {
+            AcquisitionError::Infrastructure(format!("spawn {}: {e}", script.display()))
+        })?;
+        if !output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AcquisitionError::Infrastructure(format!(
+                "download failed for {arxiv_id} (exit={:?}): stdout={stdout} stderr={stderr}",
+                output.status.code()
+            )));
+        }
+        Ok(())
     }
 }
 
@@ -100,46 +206,41 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
         policy: &AcquisitionPolicy,
     ) -> Result<EnsuredAssets, AcquisitionError> {
         if let Some(pdf) = self.find_pdf(&resolved.unit_key) {
-            let meta = fs::metadata(&pdf).map_err(|e| {
-                AcquisitionError::Infrastructure(format!("stat {}: {e}", pdf.display()))
-            })?;
-            let bytes = meta.len();
-            let sha = sha256_file(&pdf).map_err(|e| {
-                AcquisitionError::Infrastructure(format!("hash {}: {e}", pdf.display()))
-            })?;
-            let path_str = path_for_report(&self.catalog_root, &pdf);
-            return Ok(EnsuredAssets {
-                primary: EnsuredPrimary {
-                    kind: PrimaryContentKind::Pdf,
-                    path: path_str.clone(),
-                    sha256: Some(sha.clone()),
-                    bytes: Some(bytes),
-                },
-                assets: vec![EnsuredAsset {
-                    kind: "pdf".into(),
-                    path: path_str,
-                    sha256: Some(sha),
-                    bytes: Some(bytes),
-                    disposition: AssetDisposition::CatalogHit,
-                }],
-                catalog_hit: true,
-            });
+            return self.ensured_from_pdf(&pdf, AssetDisposition::CatalogHit, true);
         }
 
         if !policy.allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "PDF for {} not under {}; re-run with allow_network when fetch is wired",
+                "PDF for {} not under {}; pass --allow-network to fetch",
                 resolved.unit_key,
                 self.catalog_root.display()
             )));
         }
 
-        // W4: network path not implemented (script/native fetch later).
-        Err(AcquisitionError::Infrastructure(format!(
-            "network fetch for arXiv {} not implemented in W4 catalog_hit adapter",
-            resolved.unit_key
-        )))
+        if policy.dry_run {
+            return Err(AcquisitionError::MissingAsset(format!(
+                "dry_run: would fetch {} via network",
+                resolved.unit_key
+            )));
+        }
+
+        self.fetch_via_script(&resolved.unit_key, policy.include_tex_source)?;
+
+        match self.find_pdf(&resolved.unit_key) {
+            Some(pdf) => self.ensured_from_pdf(&pdf, AssetDisposition::Fetched, false),
+            None => Err(AcquisitionError::MissingAsset(format!(
+                "download finished but PDF still missing for {}",
+                resolved.unit_key
+            ))),
+        }
     }
+}
+
+fn sibling_html(pdf: &Path) -> Option<PathBuf> {
+    // .../source/{id}.pdf → .../article.html
+    let unit_root = pdf.parent()?.parent()?;
+    let html = unit_root.join("article.html");
+    if html.is_file() { Some(html) } else { None }
 }
 
 fn sha256_file(path: &Path) -> std::io::Result<String> {
@@ -155,7 +256,6 @@ fn path_for_report(root: &Path, file: &Path) -> String {
         .unwrap_or_else(|_| file.to_string_lossy().into_owned())
 }
 
-/// Depth-limited walk for a file name under catalog (avoids unbounded find).
 fn find_named_file(root: &Path, file_name: &str) -> Option<PathBuf> {
     if !root.exists() {
         return None;
@@ -249,12 +349,14 @@ mod tests {
     }
 
     #[test]
-    fn network_true_still_not_implemented() {
+    fn network_missing_script_is_infrastructure_error() {
         let root = std::env::temp_dir().join(format!("da-arxiv-acq-net-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).unwrap();
 
-        let acq = ArxivSourceAcquisition::new(&root);
+        let mut acq = ArxivSourceAcquisition::new(&root);
+        acq.download_script = root.join("no-such-script.py");
+        acq.repo_root = root.clone();
         let loc = ArticleLocator::parse("1111.22222").unwrap();
         let resolved = acq.resolve(&loc).unwrap();
         let mut policy = AcquisitionPolicy::ensure_only();

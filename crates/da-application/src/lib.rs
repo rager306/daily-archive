@@ -12,7 +12,9 @@ pub mod ingest;
 pub mod pipeline;
 pub mod tex_inspect;
 
-pub use article_load::{ArticleLoadError, ArticleLoadUseCase};
+pub use article_load::{
+    ArticleLoadError, ArticleLoadUseCase, LoadContentIngest, LoadIngestOutcome,
+};
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{
     MaterializationAssuranceUseCase, MaterializationReadback, MaterializationReplayObservation,
