@@ -19,7 +19,7 @@ MATCH (n:Paper) WHERE n.retrieval_eligible = true RETURN count(n) AS papers;
 MATCH (n:Paper {arxiv_id: "2507.19457"}) RETURN n.arxiv_id AS arxiv_id LIMIT 1;
 
 // @query Citation fact edges | Fact edge CITES — bibliography resolution present
-// @class resolution
+// @class fact
 // @expect_min_value 1
 MATCH (p:Paper)-[:CITES]->(c) RETURN count(c) AS cites;
 
@@ -45,7 +45,7 @@ MATCH (p:Paper {arxiv_id: "2507.19457"})-[:CITES]->(c) RETURN count(c) AS hub_ci
 MATCH (p:Paper)-[:inCategory]->(cat) RETURN count(p) AS categorized;
 
 // @query Section summaries | ADR-053 Layer B — path-linked summaries are graph-reachable
-// @class structural
+// @class summary
 // @expect_min_value 1
 MATCH (s:Section)-[:hasSummary]->(summary:Summary) RETURN count(summary) AS section_summaries;
 

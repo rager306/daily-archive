@@ -296,6 +296,14 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
    re-applies property steps only and requires Unchanged. Durable canary
    artifact keeps import_eligible=false. Materializer APIs unchanged.
 
+
+   **M371/S09 (required-layer corpus checkpoint delivered):** Durable package
+   binds ACAP aggregate Pass + snapshot sha256/nodes/edges + class-qualified
+   same-process structural/fact task evidence. Bootstrap summary/resolution/
+   cluster EMPTY remains typed findings; overall suite boolean is not used as
+   the required-layer gate. Package path:
+   `artifacts/article_context/corpus_required_layer_checkpoint.json`.
+
 7. Additive ordered-mutation canary. Existing high-blast-radius parsed and
    extracted materializer APIs remain unchanged until graph-equivalence, failure
    and replay evidence authorizes migration.

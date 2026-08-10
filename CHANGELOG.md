@@ -1,5 +1,24 @@
 # Changelog
 
+### Required-layer corpus assurance checkpoint (M371/S09)
+
+Seal a replay-safe corpus package that binds verified ACAP aggregate identity
+(200 papers, 7 required layers Observed, Pass), materialization snapshot
+identity (sha256 + nodes/edges), and class-qualified same-process graph tasks.
+Required structural+fact classes must PASS; bootstrap summary/resolution/cluster
+EMPTY stays visible as findings without inventing PASS or blocking the required
+layer seal.
+
+Domain `seal_corpus_checkpoint` + application `CorpusCheckpointUseCase` are pure.
+CLI `corpus_required_layer_checkpoint` imports pinned
+`materialization_all_200.sgsnap`, runs `materialization_all_200.tasks.cypher`
+(same-process), and emits
+`artifacts/article_context/corpus_required_layer_checkpoint.json` (verdict=Pass,
+D127=false). Task class annotations corrected so fact/summary are not collapsed
+into structural.
+
+5 domain + 4 application tests green. No corpus rebuild.
+
 ### Additive ordered mutation canary (M371/S08)
 
 Product-owned ordered mutation plan + executor prove physical MutationCounters
