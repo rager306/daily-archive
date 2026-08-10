@@ -175,6 +175,64 @@ impl ClusterUseCase {
         })
     }
 
+    /// Inventory Entity→paper co-occurrence from the live graph via Paper-[:MENTIONS]->Entity.
+    ///
+    /// Pure graph read (hexagonal: no Cypher). Papers without arxiv_id/vid are skipped.
+    /// Entities missing label or entity_type are skipped (typed missingness, not invented).
+    pub async fn inventory_entity_papers(&self) -> EntityPapers {
+        use da_domain::relation::bibliographic::MENTIONS;
+        let mut entity_papers = EntityPapers::new();
+        let papers = self.graph_store.get_nodes_by_label("Paper").await;
+        for paper in papers {
+            let paper_id = match self
+                .graph_store
+                .get_node_property_string(paper, "arxiv_id")
+                .await
+                .or(self
+                    .graph_store
+                    .get_node_property_string(paper, "vid")
+                    .await)
+            {
+                Some(id) if !id.trim().is_empty() => id,
+                _ => continue,
+            };
+            for (target, edge_type) in self.graph_store.get_outgoing_edges(paper).await {
+                if edge_type != MENTIONS {
+                    continue;
+                }
+                let label = match self
+                    .graph_store
+                    .get_node_property_string(target, "label")
+                    .await
+                {
+                    Some(l) if !l.trim().is_empty() => l,
+                    _ => continue,
+                };
+                let entity_type = match self
+                    .graph_store
+                    .get_node_property_string(target, "entity_type")
+                    .await
+                {
+                    Some(t) if !t.trim().is_empty() => t,
+                    _ => continue,
+                };
+                let key = cluster::normalize_entity_key(&entity_type, &label);
+                entity_papers
+                    .entry(key)
+                    .or_default()
+                    .insert(paper_id.clone());
+            }
+        }
+        entity_papers
+    }
+
+    /// Detect + materialize clusters from the live graph inventory (always-run).
+    pub async fn materialize_from_graph(&self) -> anyhow::Result<(EntityPapers, ClusterResult)> {
+        let entity_papers = self.inventory_entity_papers().await;
+        let result = self.materialize_clusters(&entity_papers).await?;
+        Ok((entity_papers, result))
+    }
+
     /// Build entity label → node_id lookup by querying all Entity nodes.
     ///
     /// Uses get_nodes_by_label + get_node_property_string (hexagonal: no Cypher).

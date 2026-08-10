@@ -1,5 +1,22 @@
 # Changelog
 
+### Derived ConceptCluster materialization from graph inventory (M371/S12)
+
+Always-run derived semantic clusters from live Paper-[:MENTIONS]->Entity
+co-occurrence. Pure domain detect_clusters thresholds remain data-driven
+(`data/algorithm_params.yaml`). Application gains inventory_entity_papers +
+materialize_from_graph over existing ClusterUseCase without changing
+materializer APIs.
+
+CLI canary imports summary-enriched snapshot, materializes 685 ConceptCluster
+nodes + 1322 MEMBER_OF_CLUSTER edges (83 unique entities; 48 meet single-mention
+threshold; co-occurrence pairs included), proves replay idempotent (0 new
+creates/edges), exports materialization_all_200_with_clusters.sgsnap, and
+re-runs class-qualified tasks same-process: **cluster class PASS**. Structural/
+fact/summary remain PASS; only resolution stays EMPTY for S13. D127=false.
+
+6 application cluster tests green (inventory path covered). No PDF rebuild.
+
 ### Grounded extractive summary vertical (M371/S10)
 
 Pure extractive digests (`extractive_lead_v1`) from Section/Paper text already

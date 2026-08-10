@@ -227,3 +227,66 @@ async fn test_cluster_use_case_creates_concept_cluster_with_correct_label() {
     // Verify edges were created (ConceptCluster → Entity via MEMBER_OF_CLUSTER)
     assert!(result.member_edges_created >= 1);
 }
+
+#[tokio::test]
+async fn inventory_entity_papers_from_mentions_and_materialize_from_graph() {
+    let store = MockGraphStore::new();
+    // Need ≥5 papers for single-entity threshold (min_single_mentions=5).
+    let mut papers = Vec::new();
+    for i in 0..6 {
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", format!("2401.0000{i}"))
+            .await
+            .unwrap();
+        papers.push(paper);
+    }
+    let entity = store.create_node("Entity").await.unwrap();
+    store
+        .set_node_property_string(entity, "vid", "vid:entity:gpt4".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(entity, "label", "GPT-4".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(entity, "entity_type", "Model".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity, "retrieval_eligible", true)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(entity, "import_eligible", false)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(entity, "schema_version", 1)
+        .await
+        .unwrap();
+    for paper in &papers {
+        store
+            .create_edge(*paper, entity, da_domain::relation::bibliographic::MENTIONS)
+            .await
+            .unwrap();
+    }
+    let use_case = ClusterUseCase::new(Box::new(store.clone()));
+    let inventory = use_case.inventory_entity_papers().await;
+    assert_eq!(inventory.len(), 1);
+    assert_eq!(inventory.values().next().unwrap().len(), 6);
+
+    let (entity_papers, result) = use_case.materialize_from_graph().await.unwrap();
+    assert_eq!(entity_papers.len(), 1);
+    assert!(result.clusters_created >= 1);
+    assert!(result.member_edges_created >= 1);
+    assert_eq!(store.get_nodes_by_label("ConceptCluster").await.len(), 1);
+
+    let (_, replay) = use_case.materialize_from_graph().await.unwrap();
+    assert_eq!(replay.clusters_created, 0);
+    assert_eq!(replay.member_edges_created, 0);
+    // Only assert cluster/entity conformance; papers are inventory stubs.
+    let clusters = store.get_nodes_by_label("ConceptCluster").await;
+    assert!(!clusters.is_empty());
+}
