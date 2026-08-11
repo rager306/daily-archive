@@ -410,8 +410,18 @@ pub struct LoadReport {
     pub queue: LoadQueueRecord,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snapshot_path: Option<String>,
+    /// Physical SHA256 of exact compressed `.sgsnap` bytes (legacy field).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snapshot_sha256: Option<String>,
+    /// Deterministic ontology-v2 graph-state identity, independent of gzip/header/physical IDs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_semantic_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_semantic_algorithm: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_node_count: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_edge_count: Option<u64>,
     pub import_eligible: bool,
     pub ok: bool,
     pub duration_ms: u64,
@@ -502,6 +512,10 @@ impl LoadReport {
             },
             snapshot_path: None,
             snapshot_sha256: None,
+            snapshot_semantic_sha256: None,
+            snapshot_semantic_algorithm: None,
+            snapshot_node_count: None,
+            snapshot_edge_count: None,
             import_eligible: false,
             ok: false,
             duration_ms: 0,

@@ -248,7 +248,7 @@ pre-commit run --all-files
 | `da version` | Version + ADR pin |
 | `da ingest --pdf … --id …` | Single-paper HOT path |
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
-| `da load <locator> [--allow-network] [--stages ensure\|ingest\|ingest+extract] [--include-tex-source] [--cache-root …] [--report …] [--output …]` | Universal acquisition+load plane (ADR-056): catalog ensure + optional content; parse+embed+extract PipelineCache; atomic report; D127 locked |
+| `da load <locator> [--allow-network] [--stages ensure\|ingest\|ingest+extract] [--include-tex-source] [--cache-root …] [--report …] [--output …]` | Universal acquisition+load plane: parse+embed+extract cache; report carries physical snapshot SHA plus strict VID-based semantic SHA; D127 locked |
 | `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--cache-root …] [--batch-report-dir …] [--output hub.sgsnap]` | DATA-driven batch ensure or hub content; atomic per-unit reports and one process-local snapshot |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
 | `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |

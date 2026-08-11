@@ -16,6 +16,7 @@ pub mod mock;
 pub mod mutation;
 pub mod readonly;
 pub mod remote;
+pub mod snapshot_identity;
 pub mod traits;
 
 #[cfg(feature = "samyama")]
@@ -32,6 +33,10 @@ pub use mutation::{
 };
 pub use readonly::validate_readonly_cypher;
 pub use remote::{RemoteGraphConfig, RemoteGraphStore};
+pub use snapshot_identity::{
+    SnapshotIdentity, SnapshotIdentityError, SnapshotIdentityLimits, fingerprint_snapshot,
+    fingerprint_snapshot_with_limits,
+};
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
 #[cfg(feature = "samyama")]

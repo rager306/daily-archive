@@ -1,5 +1,27 @@
 # Changelog
 
+### M381 S01-S02 strict semantic snapshot identity
+
+- Added bounded project-owned `.sgsnap` identity parsing with two explicit
+  identities: SHA256 of exact compressed bytes and strict ontology-v2 semantic
+  SHA over unique node VIDs, labels, every node/edge property and edge endpoints
+  resolved through VIDs.
+- Canonicalization ignores only physical IDs, gzip/header timestamp, JSON map
+  order and record order. Missing/duplicate VID, dangling endpoints, count/
+  format/version/type errors and decompression/record limits fail closed.
+- Real accepted snapshot proof: repeated exports and reload of one unchanged
+  graph state have different physical SHA but the same strict semantic SHA;
+  one property mutation invalidates semantic SHA.
+- Universal `da load` now populates its formerly-empty legacy
+  `snapshot_sha256` physical field plus semantic SHA/algorithm and node/edge
+  counts before resealing the report digest. Invalid exported snapshots make the
+  report fail visibly.
+- Two independent exact-v1 loads surfaced a real temporal determinism gap:
+  VIDs/topology/node properties match, but 23 edge `created_at` and 9 fact
+  `valid_at` values differ. Strict semantic SHA correctly differs. D227 forbids
+  hiding ADR-046 temporal truth in canonicalization; Clock injection is the
+  next product fix.
+
 ### M380 unified read-only query contract
 
 - Fixed a mode-dependent security/logic gap: embedded

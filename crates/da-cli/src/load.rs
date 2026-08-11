@@ -927,7 +927,7 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
     let store = Arc::new(open_graph_store_for_load());
     let pipe = make_content_pipeline(store, true, args);
 
-    let report = match provider.as_str() {
+    let mut report = match provider.as_str() {
         "arxiv" => {
             let acq = ArxivSourceAcquisition::new(&args.catalog_root).with_repo_root(".");
             run_with_acq(
@@ -967,6 +967,12 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
             ));
         }
     };
+
+    if let Err(error) = enrich_snapshot_identity(&mut report) {
+        report.ok = false;
+        report.errors.push(error);
+    }
+    report.seal_digest();
 
     println!(
         "load schema={} ok={} import_eligible={} provider={} source_code={}",
@@ -1070,6 +1076,32 @@ async fn run_with_acq<A: SourceAcquisitionPort + ?Sized>(
     }
 }
 
+fn enrich_snapshot_identity(report: &mut da_domain::LoadReport) -> Result<(), String> {
+    let Some(path) = report.snapshot_path.as_deref() else {
+        return Ok(());
+    };
+    let bytes = std::fs::read(path)
+        .map_err(|error| format!("read exported snapshot {path} for identity: {error}"))?;
+    let identity = kg_storage::fingerprint_snapshot(&bytes)
+        .map_err(|error| format!("fingerprint exported snapshot {path}: {error}"))?;
+    report.snapshot_sha256 = Some(identity.physical_sha256);
+    report.snapshot_semantic_sha256 = Some(identity.semantic_sha256.clone());
+    report.snapshot_semantic_algorithm = Some(identity.semantic_algorithm.clone());
+    report.snapshot_node_count = Some(identity.node_count);
+    report.snapshot_edge_count = Some(identity.edge_count);
+    report.findings.push(da_domain::LoadFinding {
+        code: "snapshot_identity_ok".into(),
+        message: format!(
+            "semantic_sha256={} algorithm={} nodes={} edges={} physical_sha256=present",
+            identity.semantic_sha256,
+            identity.semantic_algorithm,
+            identity.node_count,
+            identity.edge_count
+        ),
+    });
+    Ok(())
+}
+
 fn default_snapshot_path(locator: &str) -> Option<PathBuf> {
     let source_key = da_domain::ArticleLocator::parse(locator)
         .ok()
@@ -1134,6 +1166,58 @@ fn resolve_provider(hint: &str, locator: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_identity_populates_dual_fields_and_reseals_digest() {
+        let mut report = da_domain::LoadReport::new_skeleton(
+            "2506.07853",
+            da_domain::ArticleLocator::parse("2506.07853").unwrap(),
+        );
+        report.snapshot_path = Some(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../artifacts/article_context/revision_graph_2506.07853.sgsnap")
+                .display()
+                .to_string(),
+        );
+        enrich_snapshot_identity(&mut report).unwrap();
+        report.seal_digest();
+        assert_eq!(report.snapshot_sha256.as_deref().unwrap().len(), 64);
+        assert_eq!(
+            report.snapshot_semantic_sha256.as_deref(),
+            Some("86cb28372eedc3a46c0dc547eaff3730b2c7ca42d3c12ba6815cc0dfdd83d9cb")
+        );
+        assert_eq!(report.snapshot_node_count, Some(33));
+        assert_eq!(report.snapshot_edge_count, Some(33));
+        assert_eq!(
+            report.report_digest_sha256.as_deref(),
+            Some(report.compute_digest().as_str())
+        );
+        assert!(
+            report
+                .findings
+                .iter()
+                .any(|finding| finding.code == "snapshot_identity_ok")
+        );
+    }
+
+    #[test]
+    fn invalid_exported_snapshot_identity_is_visible() {
+        let root = std::env::temp_dir().join(format!(
+            "da-invalid-snapshot-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::write(&root, b"not-a-snapshot").unwrap();
+        let mut report = da_domain::LoadReport::new_skeleton(
+            "2506.07853",
+            da_domain::ArticleLocator::parse("2506.07853").unwrap(),
+        );
+        report.snapshot_path = Some(root.display().to_string());
+        let error = enrich_snapshot_identity(&mut report).unwrap_err();
+        assert!(error.contains("fingerprint exported snapshot"), "{error}");
+        assert!(report.snapshot_sha256.is_none());
+        std::fs::remove_file(root).unwrap();
+    }
 
     #[test]
     fn parse_stages_shapes() {
