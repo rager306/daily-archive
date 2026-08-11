@@ -1,5 +1,15 @@
 # Changelog
 
+### GNN textbook full TOC ensure + load batch + governor load-report rules
+
+- DATA: `data/source_catalogs/gnn_textbook_toc.yaml` (28 units, source-catalog-toc.v1).
+- `CatalogHtmlAcquisition` network ensure: TOC lookup → curl fetch → atomic
+  `article.json` + `source/chapter.html` under catalog (adapters only).
+- CLI: `da load --batch-toc … --allow-network` ensures all TOC units (default
+  stages=ensure); 28/28 ok live (about + chapters 00–26).
+- Governor: forbid legacy load-report schema ids and `import_eligible:true`
+  under `artifacts/loads/` (ADR-056 / D127).
+
 ### `da load` multi-provider + single-parse content path
 
 - **Catalog HTML provider** (`CatalogHtmlAcquisition`): offline ensure for

@@ -414,3 +414,23 @@ rules:
     rationale: "da-mcp must import ruvector_hybrid. Wave 2 integrated RrfHybridIndex (commit 3147d22c). If hybrid.rs is removed, this sentinel won't catch it."
     suffix_allowlist:
       - .rs
+
+  # --- ADR-056 load plane: durable load-report.v1 honesty ---
+  # Scanner is a forbidden-pattern finder: flag wrong schema_version values if present.
+  - id: load_report_forbid_legacy_schema_ids
+    anchor: "ADR-056 / D220 (LoadReport load-report.v1)"
+    severity: medium
+    scan: artifacts/loads/
+    pattern: '"schema_version"\s*:\s*"(load-report\.v0|load_report_v1|LoadReport)"'
+    rationale: "Load reports must use load-report.v1; legacy schema ids under artifacts/loads/ are forbidden."
+    suffix_allowlist:
+      - .json
+
+  - id: load_report_import_eligible_must_stay_false
+    anchor: "ADR-056 / D127 (load plane does not unlock import)"
+    severity: high
+    scan: artifacts/loads/
+    pattern: '"import_eligible"\s*:\s*true'
+    rationale: "da load must not stamp import_eligible=true without explicit enable_import + user unlock path."
+    suffix_allowlist:
+      - .json

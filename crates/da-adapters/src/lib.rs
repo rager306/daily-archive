@@ -30,7 +30,7 @@ pub use anthropic_multimodal::{
 };
 pub use arxiv_acquisition::ArxivSourceAcquisition;
 pub use assurance_store::FilesystemAssuranceReportStore;
-pub use catalog_html_acquisition::CatalogHtmlAcquisition;
+pub use catalog_html_acquisition::{CatalogHtmlAcquisition, load_toc, toc_unit_keys};
 pub use catalog_inventory::FilesystemCatalogInventory;
 pub use catalog_mutation::FilesystemCatalogMutation;
 pub use fd_embedder::FdApiEmbedder;

@@ -1,12 +1,11 @@
 //! `da load` — composition root for universal article load plane (ADR-056 / D220).
 //!
-//! Wires acquisition (arxiv | catalog HTML) + content pipeline (single parse →
-//! materialize → optional extract → snapshot).
+//! Single locator or `--batch-toc` for catalog HTML ensure of entire TOC.
 
 use clap::Args;
 use da_adapters::{
     ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, GrobidParser, HtmlParser,
-    RuleBasedExtractor,
+    RuleBasedExtractor, toc_unit_keys,
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
@@ -22,8 +21,10 @@ use std::sync::Arc;
 
 #[derive(Debug, Args)]
 pub struct LoadArgs {
-    /// Locator: arXiv id/URL, catalog:… pin, gnn-ch-* unit, or local path
-    pub locator: String,
+    /// Locator: arXiv id/URL, catalog:… pin, gnn-ch-* unit, or local path.
+    /// Optional when `--batch-toc` is set.
+    #[arg(required_unless_present = "batch_toc")]
+    pub locator: Option<String>,
 
     /// Provider: auto | arxiv | gnn_textbook | textbook | catalog
     #[arg(long, default_value = "auto")]
@@ -53,13 +54,21 @@ pub struct LoadArgs {
     #[arg(long, default_value_t = false)]
     pub enable_import: bool,
 
-    /// Write LoadReport JSON
+    /// Write LoadReport JSON (single locator)
     #[arg(long)]
     pub report: Option<PathBuf>,
 
-    /// Export .sgsnap after content stages
+    /// Export .sgsnap after content stages (single locator)
     #[arg(long)]
     pub output: Option<PathBuf>,
+
+    /// Batch ensure all units from a source-catalog TOC YAML
+    #[arg(long)]
+    pub batch_toc: Option<PathBuf>,
+
+    /// Directory for per-unit batch load reports
+    #[arg(long, default_value = "artifacts/loads/batch")]
+    pub batch_report_dir: PathBuf,
 }
 
 struct CliContentPipeline;
@@ -88,7 +97,6 @@ impl LoadContentPipeline for CliContentPipeline {
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
 
-        // Single parse — reused for extract (no double GROBID / double HTML parse).
         let parsed: ParsedArticle = if is_html {
             let parser = HtmlParser::new();
             parser
@@ -126,13 +134,9 @@ impl LoadContentPipeline for CliContentPipeline {
             materializer
         };
 
-        // Domain/source inferred from path inside materialize when None? We pass
-        // None and let extract_source_from_path inside if we used ingest_pdf —
-        // materialize_parsed takes explicit source_code. Infer here from path.
         let source_code = infer_source_code(&primary_path);
-        let primary_domain = None;
         let result = materializer
-            .materialize_parsed(&parsed, vector, primary_domain, source_code, None)
+            .materialize_parsed(&parsed, vector, None, source_code, None)
             .await
             .map_err(|e| format!("materialize: {e:#}"))?;
 
@@ -213,6 +217,110 @@ pub fn open_graph_store_for_load() -> da_adapters::SamyamaGraphStore {
 }
 
 pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
+    if let Some(toc) = &args.batch_toc {
+        return run_batch_toc(args, toc).await;
+    }
+    let locator = args
+        .locator
+        .as_deref()
+        .ok_or_else(|| "locator required unless --batch-toc".to_string())?;
+    run_single(args, locator).await
+}
+
+async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
+    let keys = toc_unit_keys(toc).map_err(|e| format!("TOC: {e}"))?;
+    if keys.is_empty() {
+        return Err(format!("TOC {} has no units", toc.display()));
+    }
+    // Batch defaults to ensure unless user overrode stages explicitly via non-default?
+    // Prefer ensure for catalog completeness (product debt close).
+    let stages_str = if args.stages == "ingest" {
+        "ensure".to_string()
+    } else {
+        args.stages.clone()
+    };
+    let stages = parse_stages(&stages_str)?;
+    let policy = AcquisitionPolicy {
+        allow_network: args.allow_network,
+        include_html: true,
+        include_tex_source: false,
+        dry_run: args.dry_run,
+        enable_import: false,
+        stages,
+        run_mode: da_domain::LoadRunMode::Inline,
+    };
+
+    let provider = if args.provider == "auto" || args.provider == "catalog" {
+        // Infer from TOC filename / first unit
+        "gnn_textbook".to_string()
+    } else {
+        args.provider.clone()
+    };
+
+    let acq = CatalogHtmlAcquisition::new(&args.catalog_root, &provider)
+        .with_repo_root(".")
+        .with_toc_path(toc);
+    let pipe = CliContentPipeline;
+    let _ = std::fs::create_dir_all(&args.batch_report_dir);
+
+    let mut ok_n = 0usize;
+    let mut fail_n = 0usize;
+    let mut hit_n = 0usize;
+    let mut fetched_n = 0usize;
+
+    println!(
+        "batch-toc units={} provider={} stages={:?} allow_network={}",
+        keys.len(),
+        provider,
+        policy.stages,
+        policy.allow_network
+    );
+
+    for (i, unit_key) in keys.iter().enumerate() {
+        let locator = format!("catalog:{provider}/html/{unit_key}");
+        let report = run_with_acq(&acq, &args.catalog_root, &locator, &policy, &pipe, None).await;
+        let status = if report.ok { "ok" } else { "FAIL" };
+        if report.ok {
+            ok_n += 1;
+        } else {
+            fail_n += 1;
+        }
+        if report.stages.iter().any(|s| s.status == "catalog_hit") {
+            hit_n += 1;
+        }
+        if report.stages.iter().any(|s| s.status == "fetched") {
+            fetched_n += 1;
+        }
+        println!(
+            "[{}/{}] {} {} primary={:?}",
+            i + 1,
+            keys.len(),
+            status,
+            unit_key,
+            report.primary_kind
+        );
+        let rep_path = args.batch_report_dir.join(format!("{unit_key}.json"));
+        if let Ok(json) = serde_json::to_string_pretty(&report) {
+            let _ = std::fs::write(&rep_path, json);
+        }
+        if !report.ok {
+            for e in &report.errors {
+                eprintln!("    error: {e}");
+            }
+        }
+    }
+
+    println!(
+        "batch done ok={ok_n} fail={fail_n} catalog_hit≈{hit_n} fetched≈{fetched_n} reports={}",
+        args.batch_report_dir.display()
+    );
+    if fail_n > 0 {
+        return Err(format!("batch-toc: {fail_n} unit(s) failed"));
+    }
+    Ok(())
+}
+
+async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
     let stages = parse_stages(&args.stages)?;
     let policy = AcquisitionPolicy {
         allow_network: args.allow_network,
@@ -224,38 +332,26 @@ pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
         run_mode: da_domain::LoadRunMode::Inline,
     };
 
-    let provider = resolve_provider(&args.provider, &args.locator)?;
+    let provider = resolve_provider(&args.provider, locator)?;
     let snap = args
         .output
         .clone()
-        .or_else(|| default_snapshot_path(&args.locator));
+        .or_else(|| default_snapshot_path(locator));
     let snap_ref = snap.as_deref();
     let pipe = CliContentPipeline;
 
     let report = match provider.as_str() {
         "arxiv" => {
             let acq = ArxivSourceAcquisition::new(&args.catalog_root).with_repo_root(".");
-            run_with_acq(
-                &acq,
-                &args.catalog_root,
-                &args.locator,
-                &policy,
-                &pipe,
-                snap_ref,
-            )
-            .await
+            run_with_acq(&acq, &args.catalog_root, locator, &policy, &pipe, snap_ref).await
         }
         "gnn_textbook" | "textbook" | "stanford" | "company_blog" | "nature" => {
-            let acq = CatalogHtmlAcquisition::new(&args.catalog_root, &provider);
-            run_with_acq(
-                &acq,
-                &args.catalog_root,
-                &args.locator,
-                &policy,
-                &pipe,
-                snap_ref,
-            )
-            .await
+            let mut acq =
+                CatalogHtmlAcquisition::new(&args.catalog_root, &provider).with_repo_root(".");
+            if let Some(toc) = &args.batch_toc {
+                acq = acq.with_toc_path(toc);
+            }
+            run_with_acq(&acq, &args.catalog_root, locator, &policy, &pipe, snap_ref).await
         }
         other => {
             return Err(format!(
@@ -307,7 +403,6 @@ pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
     }
 
     assert_eq!(report.schema_version, LOAD_REPORT_SCHEMA_VERSION);
-    // silence unused import warning if PrimaryContentKind only in debug
     let _ = PrimaryContentKind::Pdf;
     if !report.ok {
         return Err("load failed (see report/errors)".into());
@@ -337,7 +432,6 @@ fn default_snapshot_path(locator: &str) -> Option<PathBuf> {
             .ok()
             .map(|l| l.canonical_key().to_string())
     })?;
-    // sanitize path segments
     let safe = id.replace('/', "_");
     Some(PathBuf::from(format!(
         "artifacts/article_context/paper_{safe}.sgsnap"
