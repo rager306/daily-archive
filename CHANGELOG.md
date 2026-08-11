@@ -19,8 +19,12 @@
 - Two independent exact-v1 loads surfaced a real temporal determinism gap:
   VIDs/topology/node properties match, but 23 edge `created_at` and 9 fact
   `valid_at` values differ. Strict semantic SHA correctly differs. D227 forbids
-  hiding ADR-046 temporal truth in canonicalization; Clock injection is the
-  next product fix.
+  hiding ADR-046 temporal truth in canonicalization.
+- Added explicit `da load --materialization-time <RFC3339>` (D228). CLI parses
+  once and injects one Clock into ingest and extraction; default remains the
+  honest SystemClock. Two fresh exact-v1 loads at the same explicit time now
+  share strict semantic SHA while physical SHAs differ; changing the time
+  changes strict semantic SHA. Reports record the explicit temporal basis.
 
 ### M380 unified read-only query contract
 

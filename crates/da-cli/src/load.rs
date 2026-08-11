@@ -93,6 +93,11 @@ pub struct LoadArgs {
     /// Bypass PipelineCache for parse stage (always re-parse).
     #[arg(long, default_value_t = false)]
     pub no_cache: bool,
+
+    /// Explicit RFC3339 time for deterministic graph materialization/replay.
+    /// When omitted, current wall clock is used.
+    #[arg(long)]
+    pub materialization_time: Option<String>,
 }
 
 /// Content pipeline with optional shared process-local store (hub batch).
@@ -102,6 +107,8 @@ struct CliContentPipeline {
     export_per_unit: bool,
     /// Content-addressed parse cache (not graph truth).
     cache: Option<Arc<FilePipelineCache>>,
+    /// One temporal basis shared by ingest and extraction for this load run.
+    clock: Arc<dyn da_ports::Clock>,
 }
 
 #[async_trait::async_trait]
@@ -144,8 +151,10 @@ impl LoadContentPipeline for CliContentPipeline {
         .await?;
         cache_records.extend(embed_records);
 
-        let materializer =
-            IngestUseCase::materializer_only(self.store.clone() as Arc<dyn DirectGraphStore>);
+        let materializer = IngestUseCase::materializer_only_with_clock(
+            self.store.clone() as Arc<dyn DirectGraphStore>,
+            self.clock.clone(),
+        );
         let materializer = if req.enable_import {
             materializer.with_import_eligibility(da_domain::ImportEligibility::Eligible)
         } else {
@@ -181,8 +190,9 @@ impl LoadContentPipeline for CliContentPipeline {
             )
             .await?;
             cache_records.extend(extract_records);
-            let extract_uc = ExtractionUseCase::materializer_only(
-                self.store.clone() as Arc<dyn DirectGraphStore>
+            let extract_uc = ExtractionUseCase::materializer_only_with_clock(
+                self.store.clone() as Arc<dyn DirectGraphStore>,
+                self.clock.clone(),
             );
             let er = extract_uc
                 .materialize_extracted_with_context(&parsed, extracted, revision_context.as_ref())
@@ -711,18 +721,36 @@ fn make_content_pipeline(
     store: Arc<da_adapters::SamyamaGraphStore>,
     export_per_unit: bool,
     args: &LoadArgs,
-) -> CliContentPipeline {
+) -> Result<CliContentPipeline, String> {
     let cache = if args.no_cache {
         None
     } else {
         let _ = std::fs::create_dir_all(&args.cache_root);
         Some(Arc::new(FilePipelineCache::new(&args.cache_root)))
     };
-    CliContentPipeline {
+    let clock: Arc<dyn da_ports::Clock> =
+        match validate_materialization_time(args.materialization_time.as_deref())? {
+            None => Arc::new(da_ports::SystemClock),
+            Some(parsed) => Arc::new(da_ports::FixedClock::from_timestamp(parsed.timestamp())),
+        };
+    Ok(CliContentPipeline {
         store,
         export_per_unit,
         cache,
-    }
+        clock,
+    })
+}
+
+fn validate_materialization_time(
+    value: Option<&str>,
+) -> Result<Option<chrono::DateTime<chrono::Utc>>, String> {
+    value
+        .map(|value| {
+            chrono::DateTime::parse_from_rfc3339(value)
+                .map(|time| time.with_timezone(&chrono::Utc))
+                .map_err(|error| format!("invalid --materialization-time {value:?}: {error}"))
+        })
+        .transpose()
 }
 
 fn infer_source_code(path: &str) -> Option<String> {
@@ -754,6 +782,7 @@ pub fn open_graph_store_for_load() -> da_adapters::SamyamaGraphStore {
 }
 
 pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
+    validate_materialization_time(args.materialization_time.as_deref())?;
     if let Some(toc) = &args.batch_toc {
         return run_batch_toc(args, toc).await;
     }
@@ -800,7 +829,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
 
     let content_mode = policy.stages.includes_ingest() && !policy.dry_run;
     let store = Arc::new(open_graph_store_for_load());
-    let pipe = make_content_pipeline(store.clone(), false, args);
+    let pipe = make_content_pipeline(store.clone(), false, args)?;
     let _ = std::fs::create_dir_all(&args.batch_report_dir);
 
     let mut ok_n = 0usize;
@@ -925,7 +954,7 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         .or_else(|| default_snapshot_path(locator));
     let snap_ref = snap.as_deref();
     let store = Arc::new(open_graph_store_for_load());
-    let pipe = make_content_pipeline(store, true, args);
+    let pipe = make_content_pipeline(store, true, args)?;
 
     let mut report = match provider.as_str() {
         "arxiv" => {
@@ -968,6 +997,12 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         }
     };
 
+    if let Some(time) = validate_materialization_time(args.materialization_time.as_deref())? {
+        report.findings.push(da_domain::LoadFinding {
+            code: "materialization_time_explicit".into(),
+            message: format!("graph temporal basis={}", time.to_rfc3339()),
+        });
+    }
     if let Err(error) = enrich_snapshot_identity(&mut report) {
         report.ok = false;
         report.errors.push(error);
@@ -1444,11 +1479,34 @@ mod tests {
             batch_report_dir: PathBuf::from("artifacts/loads/batch"),
             cache_root: PathBuf::from("artifacts/pipeline_cache"),
             no_cache: false,
+            materialization_time: None,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(
             resolve_stages(&args, false).unwrap(),
             LoadStageSet::EnsureIngest
         );
+
+        let mut fixed = args;
+        fixed.materialization_time = Some("2023-11-14T22:13:20Z".into());
+        let pipeline = make_content_pipeline(
+            Arc::new(da_adapters::SamyamaGraphStore::new()),
+            true,
+            &fixed,
+        )
+        .unwrap();
+        assert_eq!(
+            pipeline.clock.now(),
+            chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap()
+        );
+        fixed.materialization_time = Some("not-a-time".into());
+        let error = make_content_pipeline(
+            Arc::new(da_adapters::SamyamaGraphStore::new()),
+            true,
+            &fixed,
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("invalid --materialization-time"), "{error}");
     }
 }

@@ -89,6 +89,10 @@ cargo build -p da-cli
 ./target/debug/da load 'https://arxiv.org/html/2506.07853v1' --allow-network \
   --stages ingest+extract --cache-root artifacts/pipeline_cache/2506.07853v1 \
   --output artifacts/article_context/paper_2506.07853v1.sgsnap
+# Deterministic temporal replay: same explicit RFC3339 basis yields the same
+# strict semantic SHA even when compressed snapshot bytes differ.
+./target/debug/da load 'https://arxiv.org/html/2506.07853v1' \
+  --stages ingest+extract --materialization-time 2023-11-14T22:13:20Z
 # Optional TeX source sidecar (+ inventory) under catalog:
 ./target/debug/da load 2608.07067 --allow-network --stages ensure --include-tex-source
 
