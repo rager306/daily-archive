@@ -1,5 +1,22 @@
 # Changelog
 
+### M380 unified read-only query contract
+
+- Fixed a mode-dependent security/logic gap: embedded
+  `SamyamaGraphStore::query_readonly` previously called the unrestricted Cypher
+  engine directly, while only RemoteGraphStore enforced the read-only policy.
+- Extracted one adapter-neutral `kg_storage::validate_readonly_cypher` module.
+  Embedded and remote adapters now reject the same mutation/admin tokens before
+  engine or network execution; trusted full `query` remains separate.
+- Contract corpus covers MATCH/RETURN/WITH/UNWIND, quoted strings, comments and
+  backticks, plus CREATE/MERGE/SET/REMOVE/DETACH DELETE/CALL/LOAD/FOREACH/USE and
+  malformed quote/comment rejection.
+- Embedded physical proof captures node/edge totals and identity, rejects CREATE,
+  then reloads before/after exports into fresh stores and verifies semantic
+  equivalence. Samyama export bytes themselves are nondeterministic across
+  unchanged exports, so byte equality is not falsely claimed.
+- Existing cross-layer revision preparation graph tasks remain 4/4 PASS.
+
 ### M379 remote graph health convergence
 
 - Deleted the second hand-written RESP client/parser from `da graph-ping`.

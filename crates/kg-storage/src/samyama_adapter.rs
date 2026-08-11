@@ -280,6 +280,7 @@ impl GraphStore for SamyamaGraphStore {
     }
 
     async fn query_readonly(&self, _graph: &str, cypher: &str) -> GraphResult<QueryResult> {
+        crate::validate_readonly_cypher(cypher)?;
         self.execute_cypher(cypher).await
     }
 
@@ -739,6 +740,53 @@ mod mode_tests {
                 .await,
             None
         );
+    }
+
+    #[tokio::test]
+    async fn query_readonly_rejects_mutation_without_changing_graph_or_snapshot() {
+        let store = SamyamaGraphStore::new();
+        let node = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(node, "vid", "paper-1".into())
+            .await
+            .unwrap();
+        let nodes_before = store.node_count().await;
+        let edges_before = store.edge_count().await;
+        let snapshot_before = store.export_snapshot().await.unwrap();
+        let error = store
+            .query_readonly("g", "CREATE (n:Forbidden) RETURN n")
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("Cypher token CREATE"), "{error}");
+        assert_eq!(store.node_count().await, nodes_before);
+        assert_eq!(store.edge_count().await, edges_before);
+        assert_eq!(
+            store
+                .find_node_by_string_property("Paper", "vid", "paper-1")
+                .await,
+            Some(node)
+        );
+        let snapshot_after = store.export_snapshot().await.unwrap();
+        // Samyama snapshot bytes are not deterministic across exports, so prove
+        // semantic equivalence by reloading both physical outputs independently.
+        for snapshot in [snapshot_before, snapshot_after] {
+            let reloaded = SamyamaGraphStore::new();
+            reloaded.import_snapshot(&snapshot).await.unwrap();
+            assert_eq!(reloaded.node_count().await, nodes_before);
+            assert_eq!(reloaded.edge_count().await, edges_before);
+            assert!(
+                reloaded
+                    .find_node_by_string_property("Paper", "vid", "paper-1")
+                    .await
+                    .is_some()
+            );
+        }
+        let read = store
+            .query_readonly("g", "MATCH (p:Paper) RETURN count(p) AS papers")
+            .await
+            .unwrap();
+        assert_eq!(read.records, vec![vec![serde_json::json!(1)]]);
     }
 
     #[test]
