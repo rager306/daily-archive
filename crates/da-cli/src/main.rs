@@ -660,30 +660,61 @@ async fn check_health() {
 
     println!("daily-archive v2 — health check");
 
-    // Graph mode honesty (M312): do NOT call open_graph_store() here — that
-    // process-exits on RemoteNotConfigured. Health must report and continue.
-    let mode_text = match GraphMode::from_env() {
-        Ok(m) => health_report::mode_label(m).to_string(),
-        Err(e) => health_report::open_error_detail(&e),
-    };
-    match da_adapters::SamyamaGraphStore::try_from_env() {
-        Ok(graph) => {
-            let healthy = GraphStore::health(&graph).await.unwrap_or(false);
-            let nodes = graph.node_count().await;
-            for line in health_report::format_graph_health_lines(
-                &mode_text,
-                true,
-                healthy,
-                &nodes.to_string(),
-            ) {
+    // Remote health is a real scalar read probe (M379) but never opens the HOT
+    // DirectGraphStore path, auto-starts a daemon, or falls back to embedded.
+    match GraphMode::from_env() {
+        Ok(GraphMode::Remote) => {
+            let status = match std::env::var("DA_GRAPH_ENDPOINT")
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+            {
+                None => health_report::RemoteReadHealth::MissingEndpoint,
+                Some(endpoint) => match kg_storage::RemoteGraphConfig::new(endpoint)
+                    .and_then(kg_storage::RemoteGraphStore::new)
+                {
+                    Err(error) => health_report::RemoteReadHealth::Unreachable {
+                        error_class: health_report::remote_error_class(&error.to_string()),
+                    },
+                    Ok(graph) => match GraphStore::health(&graph).await {
+                        Ok(true) => health_report::RemoteReadHealth::Reachable,
+                        Ok(false) => health_report::RemoteReadHealth::Unreachable {
+                            error_class: "unhealthy response".into(),
+                        },
+                        Err(error) => health_report::RemoteReadHealth::Unreachable {
+                            error_class: health_report::remote_error_class(&error.to_string()),
+                        },
+                    },
+                },
+            };
+            for line in health_report::format_remote_graph_health_lines(&status) {
                 println!("{line}");
             }
         }
-        Err(e) => {
-            let detail = health_report::open_error_detail(&e);
-            // Prefer resolved mode_text; if mode parse failed, still show detail.
-            for line in health_report::format_graph_health_lines(&mode_text, false, false, &detail)
-            {
+        Ok(GraphMode::Embedded) => match da_adapters::SamyamaGraphStore::try_from_env() {
+            Ok(graph) => {
+                let healthy = GraphStore::health(&graph).await.unwrap_or(false);
+                let nodes = graph.node_count().await;
+                for line in health_report::format_graph_health_lines(
+                    "embedded",
+                    true,
+                    healthy,
+                    &nodes.to_string(),
+                ) {
+                    println!("{line}");
+                }
+            }
+            Err(error) => {
+                let detail = health_report::open_error_detail(&error);
+                for line in
+                    health_report::format_graph_health_lines("embedded", false, false, &detail)
+                {
+                    println!("{line}");
+                }
+            }
+        },
+        Err(error) => {
+            let detail = health_report::open_error_detail(&error);
+            for line in health_report::format_graph_health_lines(&detail, false, false, &detail) {
                 println!("{line}");
             }
         }

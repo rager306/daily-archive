@@ -1,5 +1,22 @@
 # Changelog
 
+### M379 remote graph health convergence
+
+- Deleted the second hand-written RESP client/parser from `da graph-ping`.
+  The command now delegates to bounded `RemoteGraphStore::health`, preserving
+  exact `PONG` stdout and inheriting common endpoint/connect/timeout/protocol
+  diagnostics.
+- Removed now-dead `response_is_pong`, `RESP_PING`, raw `TcpStream` I/O and the
+  stale `mode_label` helper/tests. Live and unreachable graph-ping contracts now
+  exercise the same universal transport as graph-query.
+- `da health` now branches explicitly by graph mode. Embedded retains local
+  health/node count; remote resolves `DA_GRAPH_ENDPOINT` and reports scalar read
+  reachability independently from HOT write capability.
+- Runtime matrix PASS: embedded healthy; remote endpoint missing; remote
+  unreachable with endpoint redacted; remote reachable against live daemon.
+  Every remote state says HOT writes unsupported and D127 false; no auto-start
+  or embedded fallback occurs.
+
 ### M378 S03 remote read operational contract
 
 - Extended the real remote probe with a capability matrix, before/after revision

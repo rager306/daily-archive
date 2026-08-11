@@ -9,7 +9,47 @@
 //!
 //! Does **not** change `open_graph_store` (other commands still exit 1 on remote).
 
-use kg_storage::{GraphMode, GraphModeError};
+use kg_storage::GraphModeError;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RemoteReadHealth {
+    MissingEndpoint,
+    Reachable,
+    Unreachable { error_class: String },
+}
+
+pub fn remote_error_class(message: &str) -> String {
+    for (needle, class) in [
+        ("timed out", "timeout"),
+        ("connect failed", "connect failed"),
+        ("protocol", "protocol error"),
+        ("PING returned", "unexpected PING response"),
+    ] {
+        if message.contains(needle) {
+            return class.into();
+        }
+    }
+    "remote health failure".into()
+}
+
+pub fn format_remote_graph_health_lines(status: &RemoteReadHealth) -> Vec<String> {
+    let read_line = match status {
+        RemoteReadHealth::MissingEndpoint => {
+            "❌ not configured (set DA_GRAPH_ENDPOINT=host:port)".into()
+        }
+        RemoteReadHealth::Reachable => "✅ reachable (bounded scalar reads)".into(),
+        RemoteReadHealth::Unreachable { error_class } => {
+            format!("❌ unreachable ({error_class})")
+        }
+    };
+    vec![
+        "  DA_GRAPH_MODE:  remote".into(),
+        format!("  Persistence:    {}", persistence_status_line()),
+        format!("  Import:         {}", d127_import_status_line()),
+        format!("  Remote reads:   {read_line}"),
+        "  Remote writes:  ⛔ unsupported (embedded HOT path only)".into(),
+    ]
+}
 
 /// Whether `FD_API_KEY` is usable after dotenv / process env load.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,14 +130,6 @@ pub fn wave3_tip() -> &'static str {
     "  tip: scalar remote reads use `da graph-query --mode remote --endpoint HOST:PORT`; HOT GraphMode::remote writes remain intentionally not configured"
 }
 
-/// Label for a successfully resolved mode.
-pub fn mode_label(mode: GraphMode) -> &'static str {
-    match mode {
-        GraphMode::Embedded => "embedded",
-        GraphMode::Remote => "remote",
-    }
-}
-
 /// Format graph section lines for health output.
 ///
 /// - `mode_text`: resolved mode label or invalid raw value
@@ -146,6 +178,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn remote_health_states_separate_reads_from_hot_writes() {
+        let missing =
+            format_remote_graph_health_lines(&RemoteReadHealth::MissingEndpoint).join("\n");
+        assert!(missing.contains("not configured"));
+        assert!(missing.contains("DA_GRAPH_ENDPOINT"));
+        assert!(missing.contains("Remote writes:  ⛔ unsupported"));
+        let reachable = format_remote_graph_health_lines(&RemoteReadHealth::Reachable).join("\n");
+        assert!(reachable.contains("✅ reachable"));
+        assert!(reachable.contains("bounded scalar reads"));
+        let unreachable = format_remote_graph_health_lines(&RemoteReadHealth::Unreachable {
+            error_class: remote_error_class("remote graph connect failed at 127.0.0.1:9: refused"),
+        })
+        .join("\n");
+        assert!(unreachable.contains("❌ unreachable"));
+        assert!(unreachable.contains("connect failed"));
+        assert!(!unreachable.contains("127.0.0.1"));
+    }
+
+    #[test]
     fn embedded_success_lines() {
         let lines = format_graph_health_lines("embedded", true, true, "12");
         let joined = lines.join("\n");
@@ -183,12 +234,6 @@ mod tests {
         let joined = lines.join("\n");
         assert!(joined.contains("❌ not open (disk full)"));
         assert!(!joined.contains("serve-graph"));
-    }
-
-    #[test]
-    fn mode_label_stable() {
-        assert_eq!(mode_label(GraphMode::Embedded), "embedded");
-        assert_eq!(mode_label(GraphMode::Remote), "remote");
     }
 
     #[test]

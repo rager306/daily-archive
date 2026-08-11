@@ -143,6 +143,9 @@ cargo run -p kg-storage --example remote_graph_probe -- 127.0.0.1:16379
 # Product CLI composition (JSON stdout only; no daemon auto-start):
 cargo run -p da-cli -- graph-query --mode remote --endpoint 127.0.0.1:16379 \
   --cypher 'MATCH (r:PaperRevision) RETURN r.revision AS revision' --json
+# Mode-aware operator health: probes scalar reads while keeping HOT writes explicit.
+DA_GRAPH_MODE=remote DA_GRAPH_ENDPOINT=127.0.0.1:16379 \
+  cargo run -p da-cli -- health
 # Note: default port 16379 (not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380)
 ```
 
