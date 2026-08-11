@@ -1,5 +1,26 @@
 # Changelog
 
+### M363 S01 revision-safe grounded summaries
+
+- Fixed a historical identity bug in `ExtractiveSummaryUseCase`: section summary
+  VIDs no longer use only canonical `paper_id + path_id`, which collided when
+  v1/v5 shared section ordinals and silently overwrote older summary evidence.
+- Summary identity is now a SHA256 VID over exact `PaperRevision`, granularity,
+  and exact source VID. Abstract digests attach to `PaperRevision`; section
+  digests attach to the revision-scoped `Section` from ADR-058.
+- Materialization validates `(label, vid) -> node_id` for the revision and every
+  Section before writing anything. Replaced a vacuous missing-section test with
+  executable fail-closed tests for missing revision and missing Section owners.
+- `RevisionMaterializationUseCase` now persists `canonical_id` and revision-local
+  `abstract_text`; production ontology DATA exposes those fields plus complete
+  Summary provenance fields (`revision_vid`, source hash/size, future
+  `summary_type`).
+- Added production and compiled `PaperRevision -[:hasSummary]-> Summary`
+  endpoint parity without removing legacy paper-level digest compatibility.
+- Reworked the real Samyama canary around the revision graph. Exact v1/v5 proof:
+  2 revisions, 24 distinct grounded summaries, replay-stable batches, D127
+  false, and 4/4 revision-summary graph tasks PASS with no EMPTY/ERROR.
+
 ### M377 extraction-stage PipelineCache under `da load`
 
 - `RuleBasedExtractor` now owns `ExtractionCacheIdentity`: explicit implementation

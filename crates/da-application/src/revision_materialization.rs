@@ -142,6 +142,8 @@ impl RevisionMaterializationUseCase {
             .await?;
         self.set_string(revision_node, "paper_vid", &paper_vid_value)
             .await?;
+        self.set_string(revision_node, "canonical_id", &request.canonical_id)
+            .await?;
         self.set_string(
             revision_node,
             "source_code",
@@ -160,6 +162,14 @@ impl RevisionMaterializationUseCase {
             revision_node,
             "content_identity_sha256",
             &content_identity_sha256,
+        )
+        .await?;
+        // Abstract is revision-mutable content (ADR-058): never project an
+        // older abstract onto canonical Paper or share it across revisions.
+        self.set_string(
+            revision_node,
+            "abstract_text",
+            &request.parsed.abstract_text,
         )
         .await?;
         self.set_bool(revision_node, "import_eligible", false)
@@ -666,6 +676,20 @@ mod tests {
             .find_node_by_string_property("PaperRevision", "vid", &v1.revision_vid)
             .await
             .unwrap();
+        assert_eq!(
+            store
+                .get_node_property_string(v1_node, "canonical_id")
+                .await
+                .as_deref(),
+            Some("2506.07853")
+        );
+        assert_eq!(
+            store
+                .get_node_property_string(v1_node, "abstract_text")
+                .await
+                .as_deref(),
+            Some("abstract")
+        );
         assert_eq!(
             store
                 .get_edges_between(v5_node, v1_node, bibliographic::SUPERSEDES)

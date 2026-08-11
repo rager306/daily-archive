@@ -11,6 +11,7 @@ use da_domain::extractive_summary::{
     ExtractiveSummaryUnit, compute_extractive_summaries,
 };
 use da_domain::relation::structure::HAS_SUMMARY;
+use da_domain::vid::revision_summary_vid;
 use da_ports::DirectGraphStore;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -18,6 +19,7 @@ use thiserror::Error;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SectionSource {
     pub path_id: String,
+    pub source_vid: String,
     pub title: String,
     pub text: String,
     pub node_id: u64,
@@ -26,7 +28,8 @@ pub struct SectionSource {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExtractiveSummaryMaterializeInput {
     pub paper_id: String,
-    pub paper_node_id: u64,
+    pub revision_node_id: u64,
+    pub revision_vid: String,
     pub abstract_text: String,
     pub sections: Vec<SectionSource>,
     pub max_chars: usize,
@@ -48,8 +51,12 @@ pub enum ExtractiveSummaryMaterializeError {
     Domain(#[from] ExtractiveSummaryError),
     #[error("graph: {0}")]
     Graph(String),
-    #[error("section node missing for path_id {0}")]
+    #[error("PaperRevision node missing or mismatched for VID {0}")]
+    MissingRevisionNode(String),
+    #[error("Section node missing or mismatched for VID {0}")]
     MissingSectionNode(String),
+    #[error("invalid summary identity: {0}")]
+    InvalidIdentity(String),
 }
 
 pub struct ExtractiveSummaryUseCase {
@@ -66,13 +73,42 @@ impl ExtractiveSummaryUseCase {
         &self,
         input: ExtractiveSummaryMaterializeInput,
     ) -> Result<ExtractiveSummaryMaterializeResult, ExtractiveSummaryMaterializeError> {
+        let revision_node = self
+            .graph_store
+            .find_node_by_string_property("PaperRevision", "vid", &input.revision_vid)
+            .await;
+        if revision_node != Some(input.revision_node_id) {
+            return Err(ExtractiveSummaryMaterializeError::MissingRevisionNode(
+                input.revision_vid.clone(),
+            ));
+        }
+        for section in &input.sections {
+            let section_node = self
+                .graph_store
+                .find_node_by_string_property("Section", "vid", &section.source_vid)
+                .await;
+            if section_node != Some(section.node_id) {
+                return Err(ExtractiveSummaryMaterializeError::MissingSectionNode(
+                    section.source_vid.clone(),
+                ));
+            }
+        }
+
         let section_tuples = input
             .sections
             .iter()
-            .map(|s| (s.path_id.clone(), s.title.clone(), s.text.clone()))
+            .map(|s| {
+                (
+                    s.path_id.clone(),
+                    s.source_vid.clone(),
+                    s.title.clone(),
+                    s.text.clone(),
+                )
+            })
             .collect::<Vec<_>>();
         let batch = compute_extractive_summaries(
             &input.paper_id,
+            &input.revision_vid,
             &input.abstract_text,
             &section_tuples,
             input.max_chars,
@@ -86,13 +122,8 @@ impl ExtractiveSummaryUseCase {
 
         let mut abstract_written = false;
         if let Some(unit) = &batch.abstract_summary {
-            self.write_summary_node(
-                &input.paper_id,
-                input.paper_node_id,
-                unit,
-                /*link_source*/ input.paper_node_id,
-            )
-            .await?;
+            self.write_summary_node(&input.revision_vid, unit, input.revision_node_id)
+                .await?;
             abstract_written = true;
         }
 
@@ -101,7 +132,7 @@ impl ExtractiveSummaryUseCase {
             let section_node = *path_to_node.get(&unit.path_id).ok_or_else(|| {
                 ExtractiveSummaryMaterializeError::MissingSectionNode(unit.path_id.clone())
             })?;
-            self.write_summary_node(&input.paper_id, section_node, unit, section_node)
+            self.write_summary_node(&input.revision_vid, unit, section_node)
                 .await?;
             section_summaries_written += 1;
         }
@@ -118,16 +149,12 @@ impl ExtractiveSummaryUseCase {
 
     async fn write_summary_node(
         &self,
-        paper_id: &str,
-        _owner_hint: u64,
+        revision_vid: &str,
         unit: &ExtractiveSummaryUnit,
         link_source: u64,
     ) -> Result<u64, ExtractiveSummaryMaterializeError> {
-        let summary_vid = if unit.granularity == "abstract" {
-            format!("vid:summary:{paper_id}:abstract")
-        } else {
-            format!("vid:summary:{paper_id}:section:{}", unit.path_id)
-        };
+        let summary_vid = revision_summary_vid(revision_vid, &unit.granularity, &unit.source_id)
+            .map_err(ExtractiveSummaryMaterializeError::InvalidIdentity)?;
         let node = match self
             .graph_store
             .find_node_by_string_property("Summary", "vid", &summary_vid)
@@ -159,6 +186,10 @@ impl ExtractiveSummaryUseCase {
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
             .set_node_property_string(node, "source_id", unit.source_id.clone())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "revision_vid", revision_vid.to_string())
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store

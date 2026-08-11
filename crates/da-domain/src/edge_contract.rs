@@ -187,6 +187,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
         },
         EdgeContract {
             edge_constant: structure::HAS_SUMMARY,
+            source_label: "PaperRevision",
+            target_labels: &["Summary"],
+            rationale: "PaperRevision has a revision-scoped grounded abstract digest (ADR-058, D224).",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_SUMMARY,
             source_label: "Section",
             target_labels: &["Summary"],
             rationale: "Section has a path-identity-linked section digest (ADR-053 Layer B).",
@@ -374,6 +380,7 @@ mod tests {
     fn compiled_endpoint_validation_supports_polymorphic_wires_and_rejects_drift() {
         assert!(validate_compiled_edge_endpoint("CITES", "Paper", "Citation").is_ok());
         assert!(validate_compiled_edge_endpoint("hasSummary", "Paper", "Summary").is_ok());
+        assert!(validate_compiled_edge_endpoint("hasSummary", "PaperRevision", "Summary").is_ok());
         assert!(validate_compiled_edge_endpoint("hasSummary", "Section", "Summary").is_ok());
         assert!(
             validate_compiled_edge_endpoint("hasQualitySignal", "Paper", "QualitySignal").is_ok()

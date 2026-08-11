@@ -19,6 +19,7 @@ pub struct ExtractiveSummaryUnit {
     pub text: String,
     pub granularity: String,
     pub source_label: String,
+    /// Exact immutable graph VID of the owning PaperRevision or Section.
     pub source_id: String,
     pub method: String,
     pub char_count: usize,
@@ -83,8 +84,9 @@ fn text_sha256(text: &str) -> String {
 /// Build a deterministic extractive batch from abstract + sections.
 pub fn compute_extractive_summaries(
     paper_id: &str,
+    revision_vid: &str,
     abstract_text: &str,
-    sections: &[(String, String, String)], // (path_id, title, text)
+    sections: &[(String, String, String, String)], // (path_id, source_vid, title, text)
     max_chars: usize,
 ) -> Result<ExtractiveSummaryBatch, ExtractiveSummaryError> {
     if paper_id.trim().is_empty() {
@@ -93,7 +95,12 @@ pub fn compute_extractive_summaries(
     let mut seen = std::collections::BTreeSet::new();
     let mut section_summaries = Vec::new();
     let mut skipped_empty_sections = 0_usize;
-    for (path_id, title, text) in sections {
+    if revision_vid.trim().is_empty() {
+        return Err(ExtractiveSummaryError::InvalidSection(
+            "revision_vid must not be empty".into(),
+        ));
+    }
+    for (path_id, source_vid, title, text) in sections {
         if path_id.trim().is_empty() {
             return Err(ExtractiveSummaryError::InvalidSection(
                 "path_id must not be empty".into(),
@@ -115,7 +122,7 @@ pub fn compute_extractive_summaries(
             text: lead.clone(),
             granularity: "section".into(),
             source_label: "Section".into(),
-            source_id: path_id.clone(),
+            source_id: source_vid.clone(),
             method: EXTRACTIVE_SUMMARY_METHOD.into(),
             char_count: lead.chars().count(),
             source_text_sha256: text_sha256(text),
@@ -133,8 +140,8 @@ pub fn compute_extractive_summaries(
                 title: "Abstract".into(),
                 text: lead.clone(),
                 granularity: "abstract".into(),
-                source_label: "Paper".into(),
-                source_id: paper_id.to_string(),
+                source_label: "PaperRevision".into(),
+                source_id: revision_vid.to_string(),
                 method: EXTRACTIVE_SUMMARY_METHOD.into(),
                 char_count: lead.chars().count(),
                 source_text_sha256: text_sha256(abstract_text),
@@ -167,11 +174,13 @@ mod tests {
     fn empty_sections_are_skipped_not_invented() {
         let batch = compute_extractive_summaries(
             "2507.19457",
+            "revision-1",
             "Problem approach results.",
             &[
-                ("1".into(), "Intro".into(), "   ".into()),
+                ("1".into(), "section-1".into(), "Intro".into(), "   ".into()),
                 (
                     "2".into(),
+                    "section-2".into(),
                     "Method".into(),
                     "We propose GEPA for prompt evolution.".into(),
                 ),
@@ -190,10 +199,11 @@ mod tests {
     fn duplicate_path_id_fails_closed() {
         let err = compute_extractive_summaries(
             "p",
+            "revision-1",
             "a",
             &[
-                ("1".into(), "A".into(), "text a".into()),
-                ("1".into(), "B".into(), "text b".into()),
+                ("1".into(), "section-a".into(), "A".into(), "text a".into()),
+                ("1".into(), "section-b".into(), "B".into(), "text b".into()),
             ],
             80,
         )
@@ -205,8 +215,14 @@ mod tests {
     fn serde_roundtrip() {
         let batch = compute_extractive_summaries(
             "p",
+            "revision-1",
             "Abstract body with results 12.3%.",
-            &[("1".into(), "Intro".into(), "Intro text about GEPA.".into())],
+            &[(
+                "1".into(),
+                "section-1".into(),
+                "Intro".into(),
+                "Intro text about GEPA.".into(),
+            )],
             80,
         )
         .unwrap();

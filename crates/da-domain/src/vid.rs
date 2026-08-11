@@ -71,6 +71,33 @@ pub fn revision_section_vid(revision_vid: &str, ordinal: usize) -> Result<Vid, S
     ))
 }
 
+/// Compute a revision-scoped Summary VID from revision and exact source identity.
+///
+/// `granularity` is part of identity so a revision-level digest and a Section
+/// digest cannot collide even if they happen to share source text.
+pub fn revision_summary_vid(
+    revision_vid: &str,
+    granularity: &str,
+    source_vid: &str,
+) -> Result<Vid, String> {
+    let revision_vid = revision_vid.trim();
+    let granularity = granularity.trim().to_ascii_lowercase();
+    let source_vid = source_vid.trim();
+    if revision_vid.len() != 64 || !revision_vid.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("revision VID must be a 64-character SHA256 VID".into());
+    }
+    if source_vid.len() != 64 || !source_vid.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("summary source VID must be a 64-character SHA256 VID".into());
+    }
+    if !matches!(granularity.as_str(), "abstract" | "section") {
+        return Err(format!("unsupported summary granularity {granularity:?}"));
+    }
+    Ok(sha256_vid(
+        "revision_summary",
+        &format!("{revision_vid}\n{granularity}\n{source_vid}"),
+    ))
+}
+
 /// Compute an Entity VID from (entity_type, canonical_label).
 pub fn entity_vid(entity_type: &str, label: &str) -> Vid {
     let canonical = label.trim().to_lowercase();
