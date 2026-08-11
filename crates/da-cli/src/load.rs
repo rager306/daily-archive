@@ -122,7 +122,7 @@ impl LoadContentPipeline for CliContentPipeline {
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
 
-        let (parsed, cache_records) = parse_with_cache(
+        let (parsed, mut cache_records, parse_payload_sha) = parse_with_cache(
             self.cache.as_deref(),
             req.paper_id,
             req.primary_path,
@@ -130,16 +130,21 @@ impl LoadContentPipeline for CliContentPipeline {
         )
         .await?;
 
-        let embedder = FdApiEmbedder::from_env();
         let embed_text = if parsed.abstract_text.is_empty() {
             parsed.title.as_str()
         } else {
             parsed.abstract_text.as_str()
         };
-        let vector = embedder
-            .embed(embed_text)
-            .await
-            .map_err(|e| format!("embed: {e:#}"))?;
+        let (vector, embed_records) = embed_with_cache(
+            self.cache.as_deref(),
+            req.paper_id,
+            req.primary_path,
+            is_html,
+            &parse_payload_sha,
+            embed_text,
+        )
+        .await?;
+        cache_records.extend(embed_records);
 
         let materializer =
             IngestUseCase::materializer_only(self.store.clone() as Arc<dyn DirectGraphStore>);
@@ -209,14 +214,11 @@ impl LoadContentPipeline for CliContentPipeline {
     }
 }
 
-/// Parse primary content with optional PipelineCache (derived payload only).
-async fn parse_with_cache(
-    cache: Option<&FilePipelineCache>,
+fn source_identity_for_primary(
     paper_id: &str,
     primary_path: &Path,
     is_html: bool,
-) -> Result<(ParsedArticle, Vec<LoadCacheRecord>), String> {
-    let primary_str = primary_path.display().to_string();
+) -> Result<SourceIdentity, String> {
     let bytes = std::fs::read(primary_path)
         .map_err(|e| format!("read primary {}: {e}", primary_path.display()))?;
     let content_sha = sha256_hex(&bytes);
@@ -225,7 +227,7 @@ async fn parse_with_cache(
     } else {
         SourceFormat::Pdf
     };
-    let source = SourceIdentity {
+    Ok(SourceIdentity {
         article_id: paper_id.to_string(),
         selected_format: format,
         pdf_sha256: if is_html {
@@ -238,9 +240,21 @@ async fn parse_with_cache(
         } else {
             None
         },
-        acquisition_fingerprint: content_sha.clone(),
+        acquisition_fingerprint: content_sha,
         normalization_fingerprint: "identity-v1".into(),
-    };
+    })
+}
+
+/// Parse primary content with optional PipelineCache (derived payload only).
+/// Returns (parsed, cache records, payload_sha256 for dependency keys).
+async fn parse_with_cache(
+    cache: Option<&FilePipelineCache>,
+    paper_id: &str,
+    primary_path: &Path,
+    is_html: bool,
+) -> Result<(ParsedArticle, Vec<LoadCacheRecord>, String), String> {
+    let primary_str = primary_path.display().to_string();
+    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
     let impl_fp = if is_html {
         "da_adapters::HtmlParser@load-v1"
     } else {
@@ -260,73 +274,212 @@ async fn parse_with_cache(
         model_fingerprint: None,
         output_schema_fingerprint: "ParsedArticle.v1".into(),
     };
+
+    // Async produce needs to be outside the sync cache helper: pre-run only on miss path
+    // is handled by checking lookup first when cache is present.
     let key_sha = serde_json::to_vec(&key)
         .map(|v| sha256_hex(&v))
         .unwrap_or_default();
 
-    let Some(cache) = cache else {
-        let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
-        return Ok((
-            parsed,
-            vec![LoadCacheRecord {
-                stage_id: "parse".into(),
-                status: "bypass".into(),
-                key_sha256: Some(key_sha),
-                payload_sha256: None,
-            }],
-        ));
-    };
-
-    let now = chrono::Utc::now().to_rfc3339();
-    match cache
-        .lookup(&key, &now)
-        .map_err(|e| format!("cache lookup: {e}"))?
-    {
-        CacheLookup::Hit(hit) => {
-            let parsed: ParsedArticle = serde_json::from_slice(&hit.payload)
-                .map_err(|e| format!("cache payload decode: {e}"))?;
-            Ok((
-                parsed,
-                vec![LoadCacheRecord {
-                    stage_id: "parse".into(),
-                    status: "hit".into(),
-                    key_sha256: Some(hit.manifest.key_sha256),
-                    payload_sha256: Some(sha256_hex(&hit.payload)),
-                }],
-            ))
-        }
-        CacheLookup::RetryableFailure(m) => {
-            // Do not suppress re-parse forever; treat as miss for product path.
-            let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
-            let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize: {e}"))?;
-            let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
-            Ok((
-                parsed,
-                vec![LoadCacheRecord {
-                    stage_id: "parse".into(),
-                    status: "retryable_failure".into(),
-                    key_sha256: Some(m.key_sha256),
-                    payload_sha256: Some(sha256_hex(&payload)),
-                }],
-            ))
-        }
-        CacheLookup::Miss => {
-            let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
-            let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize: {e}"))?;
-            let entry = cache
-                .store_success(&key, &payload, BTreeMap::new(), &now)
-                .map_err(|e| format!("cache store: {e}"))?;
-            Ok((
-                parsed,
-                vec![LoadCacheRecord {
-                    stage_id: "parse".into(),
-                    status: "miss".into(),
-                    key_sha256: Some(entry.key_sha256),
-                    payload_sha256: Some(sha256_hex(&payload)),
-                }],
-            ))
+    if let Some(cache) = cache {
+        let now = chrono::Utc::now().to_rfc3339();
+        match cache
+            .lookup(&key, &now)
+            .map_err(|e| format!("parse cache lookup: {e}"))?
+        {
+            CacheLookup::Hit(hit) => {
+                let parsed: ParsedArticle = serde_json::from_slice(&hit.payload)
+                    .map_err(|e| format!("parse cache payload decode: {e}"))?;
+                let payload_sha = sha256_hex(&hit.payload);
+                return Ok((
+                    parsed,
+                    vec![LoadCacheRecord {
+                        stage_id: "parse".into(),
+                        status: "hit".into(),
+                        key_sha256: Some(hit.manifest.key_sha256),
+                        payload_sha256: Some(payload_sha.clone()),
+                    }],
+                    payload_sha,
+                ));
+            }
+            CacheLookup::RetryableFailure(m) => {
+                let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+                let payload =
+                    serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
+                let payload_sha = sha256_hex(&payload);
+                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
+                return Ok((
+                    parsed,
+                    vec![LoadCacheRecord {
+                        stage_id: "parse".into(),
+                        status: "retryable_failure".into(),
+                        key_sha256: Some(m.key_sha256),
+                        payload_sha256: Some(payload_sha.clone()),
+                    }],
+                    payload_sha,
+                ));
+            }
+            CacheLookup::Miss => {
+                let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+                let payload =
+                    serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
+                let payload_sha = sha256_hex(&payload);
+                let entry = cache
+                    .store_success(&key, &payload, BTreeMap::new(), &now)
+                    .map_err(|e| format!("parse cache store: {e}"))?;
+                return Ok((
+                    parsed,
+                    vec![LoadCacheRecord {
+                        stage_id: "parse".into(),
+                        status: "miss".into(),
+                        key_sha256: Some(entry.key_sha256),
+                        payload_sha256: Some(payload_sha.clone()),
+                    }],
+                    payload_sha,
+                ));
+            }
         }
     }
+
+    let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+    let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
+    let payload_sha = sha256_hex(&payload);
+    Ok((
+        parsed,
+        vec![LoadCacheRecord {
+            stage_id: "parse".into(),
+            status: "bypass".into(),
+            key_sha256: Some(key_sha),
+            payload_sha256: Some(payload_sha.clone()),
+        }],
+        payload_sha,
+    ))
+}
+
+/// Embed abstract/title with PipelineCache. Depends on parse payload sha so a
+/// re-parse with different bytes cannot silently reuse an old vector.
+async fn embed_with_cache(
+    cache: Option<&FilePipelineCache>,
+    paper_id: &str,
+    primary_path: &Path,
+    is_html: bool,
+    parse_payload_sha: &str,
+    embed_text: &str,
+) -> Result<(Vec<f32>, Vec<LoadCacheRecord>), String> {
+    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
+    let embedder = FdApiEmbedder::from_env();
+    let model_id = embedder.model_id().to_string();
+    let text_sha = sha256_hex(embed_text.as_bytes());
+    let mut deps = BTreeMap::new();
+    deps.insert("parse".into(), parse_payload_sha.to_string());
+    deps.insert("embed_text".into(), text_sha);
+    let key = StageCacheKey {
+        source,
+        stage_id: "embed".into(),
+        dependency_output_sha256: deps,
+        implementation_fingerprint: "da_adapters::FdApiEmbedder@load-v1".into(),
+        configuration_fingerprint: format!("model={model_id};input=abstract_or_title"),
+        prompt_fingerprint: None,
+        model_fingerprint: Some(model_id),
+        output_schema_fingerprint: "Vec<f32>.le-bytes.v1".into(),
+    };
+    let key_sha = serde_json::to_vec(&key)
+        .map(|v| sha256_hex(&v))
+        .unwrap_or_default();
+
+    if let Some(cache) = cache {
+        let now = chrono::Utc::now().to_rfc3339();
+        match cache
+            .lookup(&key, &now)
+            .map_err(|e| format!("embed cache lookup: {e}"))?
+        {
+            CacheLookup::Hit(hit) => {
+                let vector = decode_f32_le(&hit.payload)?;
+                return Ok((
+                    vector,
+                    vec![LoadCacheRecord {
+                        stage_id: "embed".into(),
+                        status: "hit".into(),
+                        key_sha256: Some(hit.manifest.key_sha256),
+                        payload_sha256: Some(sha256_hex(&hit.payload)),
+                    }],
+                ));
+            }
+            CacheLookup::RetryableFailure(m) => {
+                let vector = embedder
+                    .embed(embed_text)
+                    .await
+                    .map_err(|e| format!("embed: {e:#}"))?;
+                let payload = encode_f32_le(&vector);
+                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
+                return Ok((
+                    vector,
+                    vec![LoadCacheRecord {
+                        stage_id: "embed".into(),
+                        status: "retryable_failure".into(),
+                        key_sha256: Some(m.key_sha256),
+                        payload_sha256: Some(sha256_hex(&payload)),
+                    }],
+                ));
+            }
+            CacheLookup::Miss => {
+                let vector = embedder
+                    .embed(embed_text)
+                    .await
+                    .map_err(|e| format!("embed: {e:#}"))?;
+                let payload = encode_f32_le(&vector);
+                let entry = cache
+                    .store_success(&key, &payload, BTreeMap::new(), &now)
+                    .map_err(|e| format!("embed cache store: {e}"))?;
+                return Ok((
+                    vector,
+                    vec![LoadCacheRecord {
+                        stage_id: "embed".into(),
+                        status: "miss".into(),
+                        key_sha256: Some(entry.key_sha256),
+                        payload_sha256: Some(sha256_hex(&payload)),
+                    }],
+                ));
+            }
+        }
+    }
+
+    let vector = embedder
+        .embed(embed_text)
+        .await
+        .map_err(|e| format!("embed: {e:#}"))?;
+    let payload = encode_f32_le(&vector);
+    Ok((
+        vector,
+        vec![LoadCacheRecord {
+            stage_id: "embed".into(),
+            status: "bypass".into(),
+            key_sha256: Some(key_sha),
+            payload_sha256: Some(sha256_hex(&payload)),
+        }],
+    ))
+}
+
+fn encode_f32_le(v: &[f32]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(v.len() * 4);
+    for f in v {
+        out.extend_from_slice(&f.to_le_bytes());
+    }
+    out
+}
+
+fn decode_f32_le(bytes: &[u8]) -> Result<Vec<f32>, String> {
+    if !bytes.len().is_multiple_of(4) {
+        return Err(format!(
+            "embed cache payload length {} not multiple of 4",
+            bytes.len()
+        ));
+    }
+    let mut out = Vec::with_capacity(bytes.len() / 4);
+    for chunk in bytes.chunks_exact(4) {
+        out.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+    }
+    Ok(out)
 }
 
 async fn parse_primary(
@@ -778,6 +931,15 @@ mod tests {
             .unwrap(),
             "gnn_textbook"
         );
+    }
+
+    #[test]
+    fn encode_decode_f32_le_roundtrip() {
+        let v = vec![0.0_f32, 1.5, -2.25, 1024.0];
+        let bytes = encode_f32_le(&v);
+        assert_eq!(bytes.len(), 16);
+        assert_eq!(decode_f32_le(&bytes).unwrap(), v);
+        assert!(decode_f32_le(&[1, 2, 3]).is_err());
     }
 
     #[test]

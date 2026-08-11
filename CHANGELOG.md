@@ -1,5 +1,15 @@
 # Changelog
 
+### `da load` PipelineCache for embed stage (depends on parse payload)
+
+- Embed abstract/title vectors cached under stage_id `embed` via same
+  `FilePipelineCache` / `StageCacheKey` as parse.
+- Dependency key includes parse payload sha + embed_text sha + model_id so a
+  re-parse cannot silently reuse a stale vector.
+- Payload: little-endian `Vec<f32>` bytes; LoadReport.cache stamps hit|miss|bypass.
+- Live: fresh cache dir on `2608.07067` → parse+embed **miss**, second run both
+  **hit** with identical embed payload sha (no GROBID on 2nd run).
+
 ### `da load` binds PipelineCache for parse stage (ADR-056 reuse)
 
 - Content path uses existing `FilePipelineCache` / `StageCacheKey` / `SourceIdentity`
