@@ -140,6 +140,9 @@ cargo run -p da-cli --example revision_readiness_canary -- \
 ./target/debug/da graph-ping --port 16379   # → PONG
 # Direct universal read-plane probe: scalar GraphStore query + fail-closed write
 cargo run -p kg-storage --example remote_graph_probe -- 127.0.0.1:16379
+# Product CLI composition (JSON stdout only; no daemon auto-start):
+cargo run -p da-cli -- graph-query --mode remote --endpoint 127.0.0.1:16379 \
+  --cypher 'MATCH (r:PaperRevision) RETURN r.revision AS revision' --json
 # Note: default port 16379 (not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380)
 ```
 

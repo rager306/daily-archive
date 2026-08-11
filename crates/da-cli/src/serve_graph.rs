@@ -5,7 +5,7 @@
 //! - Does not call `open_graph_store` (CRITICAL blast radius — left untouched)
 //! - Does not auto-start from other commands
 //! - Does not open D127 / import_eligible
-//! - Does not wire GraphMode::Remote client
+//! - Serves M378 scalar `graph-query --mode remote`; HOT GraphMode writes stay unsupported
 //!
 //! M309: optional `--snapshot` preloads `.sgsnap` into the same process memory
 //! before listen. Store still dies when the process exits (honest banners).
@@ -58,7 +58,7 @@ pub fn operator_banners(
         format!("  persistence:     NONE (RespServer::new, data_path=None)"),
         format!("  rocksdb:         not used"),
         format!("  import_eligible: false (D127 locked)"),
-        format!("  remote client:   not wired (GraphMode::Remote still NotConfigured)"),
+        format!("  remote client:   scalar read plane available; HOT writes unsupported"),
     ];
     match preload {
         Some(p) => {

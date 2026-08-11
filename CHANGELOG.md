@@ -1,5 +1,20 @@
 # Changelog
 
+### M378 S02 mode-aware scalar graph query
+
+- Added `da graph-query` as a separate read composition root instead of modifying
+  CRITICAL-blast-radius `open_graph_store` used by HOT DirectGraphStore commands.
+- Supports explicit `--mode embedded|remote` or `DA_GRAPH_MODE`; embedded can
+  preload a same-process snapshot, while remote requires `--endpoint` or
+  `DA_GRAPH_ENDPOINT`, rejects `--snapshot`, and never auto-starts a daemon.
+- `--json` emits QueryResult JSON only. Configuration failures exit 2;
+  unreachable/protocol/query-policy failures exit 3 with stderr diagnostics.
+- Live embedded/remote comparison over the same snapshot confirms identical
+  integer revision values/rows. Boolean differs honestly by wire contract:
+  embedded JSON bool versus vendor RESP bulk strings; no heuristic coercion.
+- Health and serve-graph banners now advertise the scalar read plane while
+  retaining explicit `RemoteNotConfigured` status for full/HOT GraphStore.
+
 ### M378 S01 bounded RemoteGraphStore read plane
 
 - Added a real universal `RemoteGraphStore` over bounded Samyama RESP instead of

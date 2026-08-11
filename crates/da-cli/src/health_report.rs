@@ -87,7 +87,7 @@ pub fn d127_import_status_line() -> String {
 
 /// Operator tip for multi-process health path (M307–M310).
 pub fn wave3_tip() -> &'static str {
-    "  tip: multi-process RESP health uses `da serve-graph` + `da graph-ping` (port 16379); full GraphMode::remote store is not configured"
+    "  tip: scalar remote reads use `da graph-query --mode remote --endpoint HOST:PORT`; HOT GraphMode::remote writes remain intentionally not configured"
 }
 
 /// Label for a successfully resolved mode.
@@ -172,9 +172,9 @@ mod tests {
         assert!(joined.contains("DA_GRAPH_MODE:  remote"));
         assert!(joined.contains("❌ not open"));
         assert!(joined.contains("RemoteNotConfigured"));
-        assert!(joined.contains("serve-graph"));
-        assert!(joined.contains("graph-ping"));
-        assert!(joined.contains("16379"));
+        assert!(joined.contains("graph-query"));
+        assert!(joined.contains("scalar remote reads"));
+        assert!(joined.contains("HOT"));
     }
 
     #[test]

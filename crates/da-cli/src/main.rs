@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod analyze;
 mod batch_ids;
 mod graph_ping;
+mod graph_query;
 mod health_report;
 mod load;
 mod serve_graph;
@@ -186,6 +187,9 @@ enum Commands {
         #[arg(long)]
         snapshot: Option<PathBuf>,
     },
+
+    /// Execute one provider-neutral scalar read query in embedded or remote mode.
+    GraphQuery(graph_query::GraphQueryArgs),
 
     /// Query accepted ADR-058 article revision history from a snapshot.
     RevisionQuery {
@@ -462,6 +466,14 @@ fn main() {
         } => {
             rt.block_on(async {
                 query_graph(&kind, id.as_deref(), hops, snapshot.as_deref()).await;
+            });
+        }
+        Commands::GraphQuery(args) => {
+            rt.block_on(async {
+                if let Err(error) = graph_query::run(args).await {
+                    eprintln!("{error}");
+                    std::process::exit(error.exit_code());
+                }
             });
         }
         Commands::RevisionQuery {
