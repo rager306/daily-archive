@@ -1,42 +1,58 @@
-# Handoff — 2026-08-11 (M375 Wave 1)
+# Handoff — 2026-08-11 (M375 Wave 2)
 
-## Sealed
+## Completed milestones
 
-M371, M372, M373, M374 complete. M374 commits: `12939518` product, `1aa16a77` GSD closeout, `9f963e89` handoff.
+M371-M374 complete. M375-h6s6bp active.
 
-## Active M375-h6s6bp
+## M375 delivered
 
-Vision: accepted ADR-058 revision-aware graph with one Paper, immutable revisions/manifests, revision-scoped Sections, real Samyama proof.
+### S01 Accepted revision ontology DATA
 
-### Delivered
+- User accepted ADR-058; human decision D223.
+- `f7c1e079`: production `PaperRevision`, `SourceManifestation`, `HAS_REVISION`, `HAS_MANIFESTATION`, revision `hasPart`, revision `SUPERSEDES`; draft superseded; additive revision/manif/section VIDs; governor accepted-state ratchet.
+- `39c9d6b1`: compiled endpoint matrix exact with YAML; workspace-aware DATA registry.
+- S01/S02 skip-delivered.
 
-- User accepted ADR-058; human decision D223 recorded.
-- Commit `f7c1e079`: production DATA for `PaperRevision`, `SourceManifestation`, `HAS_REVISION`, `HAS_MANIFESTATION`, revision `hasPart`, revision `SUPERSEDES`; draft marked superseded.
-- Additive VIDs: `paper_revision_vid`, `source_manifestation_vid`, `revision_section_vid`; `paper_vid` unchanged.
-- Property test found/fixed generic id `av0` false-positive; regression seed tracked.
-- Governor ratcheted: production DATA required by tests; direct revision graph writes inside universal `ArticleLoadUseCase` blocked.
-- Commit `39c9d6b1`: compiled edge endpoint matrix aligned exactly with production YAML; workspace-aware DATA registry prevents silent compiled fallback in tests.
-- S01/S02 skip-delivered. Full architecture guardrail PASS; da-domain 360 tests; VID 21; governor 33, zero violations.
+### S03 dedicated application materializer
 
-### Next
+- `b85c14ba`: new `RevisionMaterializationUseCase` over injected `DirectGraphStore` + `Clock`.
+- One canonical Paper (unchanged `paper_vid`), immutable PaperRevision, content-addressed SourceManifestation, revision-scoped Sections.
+- D127 false; structured create/reuse counters and contextual errors.
+- Current revision = max observed revision; reverse load order works.
+- Adjacent observed SUPERSEDES reconciliation: v1→v5 creates v5→v1; later v3 invalidates stale v5→v1 and creates v5→v3→v1.
+- Replay creates zero duplicate mock nodes/edges.
+- Corrected manifestation ownership: content-addressed manifestation has no single `revision_vid`; `HAS_MANIFESTATION` supports shared bytes across revisions.
+- 8 revision tests; all 124 da-application tests; clippy; full architecture guardrail PASS.
 
-Plan/execute S03 `RevisionMaterializationUseCase` as additive da-application use case over injected GraphStore:
+## Important semantic blocker / next task
 
-1. input carries canonical paper id, provider/revision, exact PDF/HTML manifestations, parsed article;
-2. get/create one Paper via unchanged `paper_vid`;
-3. get/create PaperRevision + SourceManifestation via new VIDs;
-4. revision-scoped Section VIDs and `PaperRevision-hasPart->Section`;
-5. observed predecessor `SUPERSEDES`; explicit `is_current` update;
-6. idempotent replay counters and D127 false;
-7. do not inline writes in ArticleLoadUseCase; CLI composes after normal ingest until migration is proven;
-8. S04 real one-process Samyama v1+v5 proof and query tasks.
+S03 remains active with newly planned T04 `Unify Revision Section Context`.
 
-## Proven source artifacts
+Do **not** wire the new materializer directly into current `da load` yet. Existing `IngestUseCase` and `ExtractionUseCase` still create/resolve revision-agnostic Section VIDs. Half-wiring would duplicate Sections and corrupt `FOUND_IN` provenance.
 
-- v1 PDF `bd601ac0…`, HTML `0e11dbd…`, 20 sections, 3 entities.
-- v5 PDF `aa6e247b…`, HTML `4dc4abdd…`, 13 sections, 2 entities.
-- Both exact independent SHA matches; cold miss/miss, offline hit/hit; canonical unit `2506.07853`; D127 false.
+Next thin slice:
 
-## Locks
+1. introduce typed optional revision context at application materialization/extraction boundary;
+2. versioned ingest uses only `revision_section_vid`; unversioned behavior remains unchanged;
+3. extraction resolves FOUND_IN using the same context;
+4. then CLI composes revision context from typed locator + ensured exact assets;
+5. add old/new/negative/replay tests before live Samyama proof.
 
-D127 false; ADR-057 Proposed; ADR-058 Accepted; no `paper_vid` change (GitNexus CRITICAL 74 symbols/8 flows); cache/catalog evidence is not authoritative graph truth.
+## Following S04
+
+One-process real Samyama v1+v5:
+- one Paper, two revisions;
+- exact PDF/HTML manifestations;
+- v1 sections=20, v5 sections=13;
+- current=v5 and explicit v1 queries;
+- adjacent SUPERSEDES;
+- replay physical writes zero;
+- snapshot export/reload;
+- D127 false.
+
+## Evidence and locks
+
+- v1 PDF `bd601ac0…`, HTML `0e11dbd…`; v5 PDF `aa6e247b…`, HTML `4dc4abdd…`.
+- Full architecture PASS; governor active 0 violations / 2 operational drift flags; app logs no ERROR/panic.
+- D127 false; ADR-057 Proposed; ADR-058 Accepted.
+- Never change existing `paper_vid` semantics (GitNexus CRITICAL 74 symbols, 8 flows).
