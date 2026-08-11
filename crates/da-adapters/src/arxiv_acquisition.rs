@@ -268,6 +268,8 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
             catalog_path,
             locator: locator.clone(),
             raw_locator: locator.canonical_key().to_string(),
+            source_profile: Some("scientific_paper".into()),
+            container_ref: None,
         })
     }
 

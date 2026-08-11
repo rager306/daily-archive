@@ -1,5 +1,25 @@
 # Changelog
 
+### ADR-057 Proposed — non-article ontology + LoadReport container metadata
+
+- Draft **ADR-057** (textbook/chapter ontology): Collection + KnowledgeUnit,
+  shared Entity plane, forbidden loader edges; waves N1–N6 after Accept.
+- Load path stamps `source_profile` / `container_ref` from TOC on resolve
+  (string metadata only); textbook units force `graph_readiness=not_claimed`.
+- DATA draft only: `data/ontology/drafts/non_article_structure_contracts.yaml`
+  (not loaded by OntologyRegistry).
+- Tests: textbook ensure report carries container; TOC resolve stamps profile.
+
+### Optional TeX source on native arXiv load + README da load
+
+- `--include-tex-source` fetches `arxiv.org/src/{id}` into catalog as
+  `{id}.tar.gz` + `arxiv-tex-source-inventory.v1` inventory (safe name caps;
+  member digests deferred to FilesystemTexArchive).
+- TeX is a **sidecar**: failure does not block PDF primary ensure.
+- README operators + CLI table document `da load` / `--batch-toc` / TeX flag.
+- Live: `da load 2608.07067 --stages ensure --allow-network --include-tex-source`
+  → pdf catalog_hit + tex_tar/tex_inventory fetched.
+
 ### Native arXiv acquisition — no Python process boundary
 
 - `ArxivSourceAcquisition` fetches PDF (+ optional HTML) via shared

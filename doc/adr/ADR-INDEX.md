@@ -26,6 +26,7 @@ listed here — see `legacy/doc/adr/`.
 | [054](ADR-054-mcp-server-knowledge-base-access.md) | MCP Server for Knowledge Base External Access | Proposed | 2026-08-07 |
 | [055](ADR-055-article-context-assurance-plane.md) | Article Context Assurance Plane | Accepted | 2026-08-09 |
 | [056](ADR-056-universal-article-acquisition-load-plane.md) | Universal Article Acquisition and Load Plane | Accepted | 2026-08-10 |
+| [057](ADR-057-non-article-knowledge-unit-ontology.md) | Non-Article Knowledge Unit Ontology (Textbook / Chapter) | Proposed | 2026-08-11 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 

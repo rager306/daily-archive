@@ -224,12 +224,24 @@ impl SourceAcquisitionPort for CatalogHtmlAcquisition {
             }
         };
 
+        // TOC container is string metadata only (ADR-057) — no graph edges.
+        let container_ref = self.toc_path.as_ref().and_then(|p| {
+            let full = if p.is_absolute() {
+                p.clone()
+            } else {
+                self.repo_root.join(p)
+            };
+            load_toc(&full).ok().map(|t| t.container)
+        });
+
         Ok(ResolvedArticleRef {
             source_code: self.source_code.clone(),
             unit_key,
             catalog_path,
             locator: locator.clone(),
             raw_locator: locator.canonical_key().to_string(),
+            source_profile: Some("textbook".into()),
+            container_ref,
         })
     }
 
@@ -521,6 +533,27 @@ mod tests {
         let loc = ArticleLocator::parse("gnn-ch-about").unwrap();
         assert!(matches!(loc, ArticleLocator::Raw { .. }));
         assert!(acq.can_resolve(&loc));
+    }
+
+    #[test]
+    fn resolve_stamps_textbook_profile_and_toc_container() {
+        let toc = Path::new("data/source_catalogs/gnn_textbook_toc.yaml");
+        if !toc.is_file() {
+            return;
+        }
+        let acq = CatalogHtmlAcquisition::new("/tmp", "gnn_textbook")
+            .with_repo_root(".")
+            .with_toc_path(toc);
+        let loc =
+            ArticleLocator::parse("catalog:gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs")
+                .unwrap();
+        let r = acq.resolve(&loc).unwrap();
+        assert_eq!(r.source_profile.as_deref(), Some("textbook"));
+        assert_eq!(
+            r.container_ref.as_deref(),
+            Some("Graph Neural Networks Textbook")
+        );
+        // Metadata only — no graph edge type fields on ResolvedArticleRef.
     }
 
     #[test]

@@ -1,0 +1,41 @@
+# DRAFT — ADR-057 Proposed. NOT loaded by OntologyRegistry until Accept + N1.
+# Do not merge into edge_contracts.yaml / node_schemas.yaml without milestone.
+
+schema_version: non-article-structure-draft.v0
+adr: ADR-057
+status: draft_not_loaded
+
+node_labels:
+  - label: Collection
+    role: book_or_course_container
+    vid_sketch: "vid:collection:{source_code}:{slug}"
+  - label: KnowledgeUnit
+    role: chapter_lecture_about_page
+    vid_sketch: "vid:ku:{source_code}:{unit_key}"
+
+edge_contracts:
+  - edge_constant: hasPart
+    source_label: Collection
+    target_labels: [KnowledgeUnit]
+    temporal_class: structural
+    rationale: "Book/course contains chapter/unit (FaBiO frbr:part at collection level)."
+  - edge_constant: hasPart
+    source_label: KnowledgeUnit
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Knowledge unit contains document sections."
+  - edge_constant: MENTIONS
+    source_label: KnowledgeUnit
+    target_labels: [Entity, Method, Dataset, Metric, ResearchProblem]
+    temporal_class: fact
+    rationale: "Unit mentions shared Entity plane (same as Paper MENTIONS)."
+  - edge_constant: DISCUSSES_PAPER
+    source_label: KnowledgeUnit
+    target_labels: [Paper]
+    temporal_class: fact
+    rationale: "Curriculum unit discusses a scholarly paper — candidate until evidence; not loader-invented."
+
+non_goals:
+  - loader_writes_collection_edges
+  - d127_unlock
+  - parallel_textbook_entity_namespace

@@ -399,6 +399,12 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
         if let Some(cp) = &resolved.catalog_path {
             report.category_or_topic = Some(cp.clone());
         }
+        // ADR-056/057: report metadata only — never invent graph edges here.
+        report.source_profile = resolved.source_profile.clone();
+        report.container_ref = resolved.container_ref.clone();
+        if report.source_profile.as_deref() == Some("textbook") {
+            report.graph_readiness = "not_claimed".into();
+        }
         report.stages.push(StageStatus {
             stage: LoadStageName::Resolve,
             status: "ok".into(),
@@ -602,12 +608,35 @@ mod tests {
         let report = uc.run("2602.04837", &policy);
         assert!(report.ok, "errors={:?}", report.errors);
         assert!(!report.import_eligible);
+        assert_eq!(report.source_profile.as_deref(), Some("scientific_paper"));
         assert!(
             report
                 .stages
                 .iter()
                 .any(|s| s.stage == LoadStageName::EnsureAssets && s.status == "catalog_hit")
         );
+    }
+
+    #[test]
+    fn textbook_ensure_stamps_container_not_graph_edges() {
+        let mock = MockSourceAcquisition::catalog_hit_html_textbook(
+            "gnn-ch-chapters__01-intro-to-graphs",
+            "article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html",
+            "Graph Neural Networks Textbook",
+        );
+        let uc = ArticleLoadUseCase::new(&mock);
+        let report = uc.run(
+            "catalog:gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs",
+            &AcquisitionPolicy::ensure_only(),
+        );
+        assert!(report.ok, "errors={:?}", report.errors);
+        assert_eq!(report.source_profile.as_deref(), Some("textbook"));
+        assert_eq!(
+            report.container_ref.as_deref(),
+            Some("Graph Neural Networks Textbook")
+        );
+        assert_eq!(report.graph_readiness, "not_claimed");
+        assert!(!report.import_eligible);
     }
 
     #[test]

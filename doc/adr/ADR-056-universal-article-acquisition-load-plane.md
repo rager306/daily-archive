@@ -776,14 +776,14 @@ W9–W12 prevent the next generation of hacks.
 3. Governor rule consuming `load-report.v1` (after product fixtures exist).
 4. Exact `article.json` schema version bump for universal `source_variants`
    if current arXiv drops lack it — additive fields only.
-5. **Registry debt:** catalog uses `gnn_textbook` / `company_blog` / `nature`
-   while `data/source_codes.yaml` has `textbook` but not those codes — align
-   DATA before treating them as known load targets.
-6. **GNN textbook completeness:** site TOC has chapters 00–26 + about; catalog
-   currently holds ~4 units — full ensure is load-plane work (§2.11), not graph.
-7. **Future ADR (not this one):** non-article KB ontology + paper↔chapter/
-   concept link model — must land **before** graph promotion of textbook
-   structure; load must not pre-invent those edges.
+5. ~~**Registry debt**~~ — closed in M372: `gnn_textbook` / `company_blog` /
+   `nature` / `local` registered in `data/source_codes.yaml`.
+6. ~~**GNN textbook completeness**~~ — closed: TOC ensure 28/28 via
+   `da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml`.
+7. **Non-article KB ontology** — **ADR-057 Proposed** (Collection /
+   KnowledgeUnit + paper↔chapter link model). Must be Accepted before graph
+   promotion of textbook structure; load stamps `container_ref` /
+   `source_profile` metadata only (`graph_readiness=not_claimed`).
 
 These must not block W1–W5; they must not be “solved” by hardcoding arXiv-only
 CLI or by inventing textbook ontology inside the loader.

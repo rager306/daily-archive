@@ -33,6 +33,10 @@ pub struct ResolvedArticleRef {
     pub catalog_path: Option<String>,
     pub locator: ArticleLocator,
     pub raw_locator: String,
+    /// Genre for process (scientific_paper | textbook | …) — report metadata only.
+    pub source_profile: Option<String>,
+    /// Non-article container title/id (book) — string metadata only (ADR-056/057).
+    pub container_ref: Option<String>,
 }
 
 /// Result of ensure_assets — primary selection is explicit (never "first file").
@@ -90,6 +94,8 @@ pub struct MockSourceAcquisition {
     pub hit: Option<EnsuredAssets>,
     /// When true and no hit, ensure requires allow_network (then still fails unless hit).
     pub require_network_if_miss: bool,
+    pub source_profile: Option<String>,
+    pub container_ref: Option<String>,
 }
 
 impl MockSourceAcquisition {
@@ -113,6 +119,8 @@ impl MockSourceAcquisition {
                 catalog_hit: true,
             }),
             require_network_if_miss: true,
+            source_profile: Some("scientific_paper".into()),
+            container_ref: None,
         }
     }
 
@@ -121,7 +129,40 @@ impl MockSourceAcquisition {
             provider: "arxiv".into(),
             hit: None,
             require_network_if_miss: true,
+            source_profile: Some("scientific_paper".into()),
+            container_ref: None,
         }
+    }
+
+    /// Textbook-shaped mock: HTML primary + container metadata (ADR-057 report only).
+    pub fn catalog_hit_html_textbook(unit_key: &str, path: &str, container: &str) -> Self {
+        Self {
+            provider: "gnn_textbook".into(),
+            hit: Some(EnsuredAssets {
+                primary: EnsuredPrimary {
+                    kind: PrimaryContentKind::Html,
+                    path: path.into(),
+                    sha256: Some("htmlsha".into()),
+                    bytes: Some(50),
+                },
+                assets: vec![EnsuredAsset {
+                    kind: "html".into(),
+                    path: path.into(),
+                    sha256: Some("htmlsha".into()),
+                    bytes: Some(50),
+                    disposition: AssetDisposition::CatalogHit,
+                }],
+                catalog_hit: true,
+            }),
+            require_network_if_miss: true,
+            source_profile: Some("textbook".into()),
+            container_ref: Some(container.into()),
+        }
+        .with_unit_key_hint(unit_key)
+    }
+
+    fn with_unit_key_hint(self, _unit_key: &str) -> Self {
+        self
     }
 }
 
@@ -157,6 +198,14 @@ impl SourceAcquisitionPort for MockSourceAcquisition {
             catalog_path,
             locator: locator.clone(),
             raw_locator: locator.canonical_key().to_string(),
+            source_profile: self.source_profile.clone().or_else(|| {
+                if self.provider == "arxiv" {
+                    Some("scientific_paper".into())
+                } else {
+                    None
+                }
+            }),
+            container_ref: self.container_ref.clone(),
         })
     }
 
@@ -226,8 +275,10 @@ mod tests {
         let mock = MockSourceAcquisition::miss_requires_network();
         let loc = ArticleLocator::parse("9999.99999").unwrap();
         let resolved = mock.resolve(&loc).unwrap();
-        let mut policy = AcquisitionPolicy::default();
-        policy.allow_network = true;
+        let policy = AcquisitionPolicy {
+            allow_network: true,
+            ..AcquisitionPolicy::default()
+        };
         let err = mock.ensure_assets(&resolved, &policy).unwrap_err();
         assert!(matches!(err, AcquisitionError::MissingAsset(_)));
     }
