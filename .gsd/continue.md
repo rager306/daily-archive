@@ -1,57 +1,67 @@
-# Handoff — 2026-08-11 (M378 remote scalar read plane delivered)
+# Handoff — 2026-08-11 (M379 remote health convergence delivered)
 
 ## Delivered milestone
 
-**M378-pfsidy Remote Samyama Read Plane**
+**M379-1lm76b Remote Graph Health Convergence**
 
-### S01 `722ca5f1`
-- New universal `kg_storage::RemoteGraphStore` over bounded RESP.
-- Real `health`, `query`, `query_readonly`; all vector/index/snapshot capabilities explicit NotImplemented.
-- Incremental parser: partial/malformed/error/wrong-width/UTF-8/null/integer tests.
-- 5s default timeout, 8 MiB response cap, no retry.
-- Fail-closed Cypher classifier rejects CREATE/MERGE/DELETE/SET/REMOVE/DROP/CALL/LOAD/FOREACH/USE before connect.
-- Vendor GRAPH.RO_QUERY delegates to GRAPH.QUERY, so local guard is mandatory.
-- D226: integers/null typed; bulk strings stay strings. Bool/float cannot be inferred safely from current vendor wire.
-- Live PING/revision/count proof against snapshot-preloaded serve-graph.
+### Shared PING transport — `a3d822f7`
+- `da graph-ping` now delegates to `kg_storage::RemoteGraphStore::health`.
+- Deleted duplicate raw TcpStream RESP request/parser and stale tests.
+- Exact PONG stdout preserved; unreachable error now uses common endpoint/connect/timeout/protocol diagnostic.
+- 3 graph-ping tests and live PONG PASS.
 
-### S02 `486a3e34`
-- Added `da graph-query --mode embedded|remote` separate from CRITICAL HOT `open_graph_store`.
-- Explicit mode or DA_GRAPH_MODE; remote requires endpoint/DA_GRAPH_ENDPOINT and never auto-starts daemon.
-- Embedded supports same-process snapshot; remote rejects snapshot.
-- JSON stdout clean. Configuration exits 2; runtime/protocol/query-policy exits 3.
-- Live unambiguous integer query remote == embedded: revisions [1,5].
-- Health/serve banners updated: scalar read available, full/HOT remote still NotConfigured.
+### Mode-aware health — `a3d822f7`
+- `da health` explicitly separates embedded and remote composition.
+- Embedded remains local health/node count.
+- Remote resolves DA_GRAPH_ENDPOINT and probes bounded scalar reads.
+- Missing endpoint, unreachable and reachable states are distinct.
+- Endpoint value is redacted from health output.
+- HOT remote writes remain explicit unsupported; no daemon auto-start or embedded fallback.
+- Removed dead `mode_label` after clippy surfaced it.
 
-### S03 `0ec2a62b`
-- Probe reports capability matrix, before/after counts, 8 concurrent reads and duration.
-- Two repeats: 16 concurrent reads, every count=2; before=after=2; revisions stable.
-- CREATE rejected locally; index/snapshot explicit unsupported.
-- Full architecture guardrail PASS; governor zero violations; logs clean.
+### Graceful daemon lifecycle — `7a7d988f`
+- Background alert exposed a real operational gap: SIGTERM previously looked like a crash.
+- `serve-graph` now handles SIGINT/SIGTERM through tokio select, prints explicit expected shutdown and exits 0.
+- Real proof: start snapshot daemon, PING=PONG, SIGTERM, exit=0, no daemon left.
 
-## Verification and UAT
+## Verification
 
-- kg-storage remote tests: 10.
-- da-cli graph-query tests: 2; health/serve 10 each; da-cli lib 73.
-- all-target clippy kg-storage+da-cli: 0 project errors.
-- `scripts/verify_rust_architecture.sh`: PASS.
-- UAT S01 `74b97eb7-0da1-4cdc-8d90-bbefce026e6b`
-- UAT S02 `cbb924f1-7612-4c99-a31e-57075d095f92`
-- UAT S03 `6d829f17-65ef-4efd-8ec0-0de656582381`
-- GitNexus reindexed after structural waves; final S03 detect LOW.
+- graph-ping: 3 tests.
+- health-report: 10 tests.
+- graph-query: 2 tests.
+- da-cli lib: 73 tests.
+- serve-graph: 10 tests.
+- all-target clippy: 0 project errors.
+- full architecture guardrail after final signal fix: PASS.
+- governor: zero violations; trajectory DRIFT_RISK only operational flags.
+- application logs: no ERROR/panic; GSD exec failures before blocked UAT command: zero.
+- GitNexus authoritative impact/detect/reindex used; final reindex after graceful shutdown.
 - Codebase Memory MCP timed out; supplemental unavailable.
-- serve-graph launched for proof and stopped cleanly.
+
+## Runtime UAT
+
+- S01 `242a29c5-bab7-4a44-939c-3786128403ae`
+- S02 `e52c6f8b-e7bb-446f-9cca-7368ee6fbbf6`
+- S03 operator `0bb2d7c1-6200-42e8-8c89-3d749aedd8d9`
+- S03 graceful shutdown `91e46541-bb4e-4172-86f3-46babb723d8f`
+
+One attempted S02 UAT shell command was blocked before execution because the UAT guard interpreted `env` as environment dumping. It was replaced by a Python artifact check over four already-executed runtime outputs; no bypass or fabricated result.
 
 ## Governor assessment
 
-No new governor regex. The key risk (vendor RO_QUERY not read-only) now has executable negative tests proving local rejection before connect. A governor rule would be weaker than this product contract unless a future alternate remote adapter bypasses `validate_readonly_cypher`; add a DATA-backed architecture check only after such a negative fixture exists.
+No new regex. Shared RemoteGraphStore transport tests and live health matrix are stronger. Graceful shutdown is now executable product behavior. Add a governor rule only if future code reintroduces a second RESP transport; first create a negative fixture that detects raw TcpStream usage outside kg-storage.
+
+## Vendor note
+
+Do not edit `/root/vendor-source/samyama-graph` yet: working tree contains extensive pre-existing modified/untracked changes unrelated to this project session. Next server-protocol wave requires explicit isolation/ownership before adding server-enforced RO_QUERY or typed RESP envelopes.
 
 ## Next product gap
 
-Remote plane is intentionally scalar read-only, not full GraphStore. Next wave should be chosen by need:
-1. Prefer server protocol improvement: typed RESP envelope (bool/float/node/edge) plus server-enforced RO_QUERY.
-2. Then add remote vector/index/snapshot only with real server commands and shared contract tests.
-3. Do not wire remote into HOT DirectGraphStore until atomic mutations, temporal stamping and transaction semantics exist.
+1. Safely isolate vendor Samyama changes or upstream workspace before server protocol work.
+2. Add server-enforced read-only query and typed response envelope (bool/float/node/edge).
+3. Only then expand remote vector/index/snapshot capabilities with shared contracts.
+4. Do not wire HOT DirectGraphStore remotely until atomic mutation, temporal and transaction semantics exist.
 
 ## Locks
 
-D127 false; Samyama sole store; no hidden fallback/auto-start; remote writes unsupported; ADR-057 Proposed; ADR-058 Accepted; DSPy disabled.
+D127 false; Samyama sole store; remote scalar reads only; no hidden fallback/auto-start; ADR-057 Proposed; ADR-058 Accepted; DSPy disabled.
