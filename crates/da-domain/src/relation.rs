@@ -109,8 +109,14 @@ pub struct Relation {
 /// and provenance. Distinct from bibliographic citation edges and from
 /// evidence/hypergraph edges.
 pub mod structure {
-    /// Work → Section (FaBiO frbr:part). Work contains a structural section.
+    /// Work/revision → Section (FaBiO frbr:part).
     pub const HAS_PART: &str = "hasPart";
+
+    /// Canonical Paper → immutable PaperRevision expression (ADR-058).
+    pub const HAS_REVISION: &str = "HAS_REVISION";
+
+    /// PaperRevision → captured SourceManifestation (ADR-058).
+    pub const HAS_MANIFESTATION: &str = "HAS_MANIFESTATION";
 
     /// Work → Topic (OpenAlex topic assignment).
     pub const HAS_TOPIC: &str = "hasTopic";
@@ -408,6 +414,8 @@ mod tests {
     fn test_structure_edge_constants() {
         // Structural edges (FaBiO + OpenAlex) must be stable strings.
         assert_eq!(structure::HAS_PART, "hasPart");
+        assert_eq!(structure::HAS_REVISION, "HAS_REVISION");
+        assert_eq!(structure::HAS_MANIFESTATION, "HAS_MANIFESTATION");
         assert_eq!(structure::HAS_TOPIC, "hasTopic");
         assert_eq!(structure::AUTHORED_BY, "authoredBy");
         assert_eq!(structure::FROM_SOURCE, "FROM_SOURCE");

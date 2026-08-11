@@ -121,7 +121,10 @@ pub use schema::{
 pub use source::{
     SourceSchema, is_known_source_code, is_known_source_profile, is_known_source_type,
 };
-pub use vid::{Vid, entity_vid, paper_vid, reference_vid};
+pub use vid::{
+    Vid, entity_vid, paper_revision_vid, paper_vid, reference_vid, revision_section_vid,
+    source_manifestation_vid,
+};
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 /// Uses JSON-string comparison to avoid requiring PartialEq on all types.

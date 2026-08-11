@@ -1,5 +1,24 @@
 # Changelog
 
+### M375 Wave 1 accepted article revision ontology and identity
+
+- ADR-058 accepted by explicit human decision D223: one canonical `Paper`,
+  immutable `PaperRevision`, content-addressed `SourceManifestation`,
+  revision-scoped Sections, and observed `SUPERSEDES` history.
+- Promoted `PaperRevision` and `SourceManifestation` from isolated draft into
+  production `node_schemas.yaml`; promoted `HAS_REVISION`, `HAS_MANIFESTATION`,
+  revision `hasPart`, and revision `SUPERSEDES` endpoint contracts.
+- Added additive `paper_revision_vid`, `source_manifestation_vid`, and
+  `revision_section_vid`; existing `paper_vid` behavior is unchanged.
+- VID validation is provider-aware: only a real versioned arXiv canonical id is
+  rejected. Property testing caught and fixed the false positive generic id `av0`.
+- Governor ratcheted from “block Proposed labels” to “require accepted production
+  DATA and prevent direct revision graph writes inside universal ArticleLoadUseCase.”
+- Contract gate: kg-ontology registry 14, relation 15, VID unit/property 21,
+  governor 33 tests; YAML valid; zero trajectory violations.
+- D127 remains false. Revision materializer and real two-revision Samyama proof
+  are the next M375 slices, not claimed by this wave.
+
 ### M374 exact arXiv revision acquisition and ontology boundary
 
 - Fixed a live revision-fidelity bug: `https://arxiv.org/html/2506.07853v1`

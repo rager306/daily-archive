@@ -83,6 +83,8 @@ cargo build -p da-cli
   --output artifacts/article_context/paper_2608.07067.sgsnap \
   --report artifacts/loads/2608.07067.json
 # Exact arXiv revision: canonical Paper id stays versionless, source bytes/cache do not.
+# ADR-058 accepted: production ontology now includes PaperRevision and
+# SourceManifestation DATA; revision-aware graph materialization lands in M375 S03.
 ./target/debug/da load 'https://arxiv.org/html/2506.07853v1' --allow-network \
   --stages ingest+extract --cache-root artifacts/pipeline_cache/2506.07853v1 \
   --output artifacts/article_context/paper_2506.07853v1.sgsnap

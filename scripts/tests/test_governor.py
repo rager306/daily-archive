@@ -53,32 +53,39 @@ def test_clean_workspace_has_zero_violations():
     assert report.violations_count == 0, f"Expected 0 violations, got {report.violations_count}"
 
 
-def test_proposed_article_revision_ontology_leak_is_caught():
-    """ADR-058 labels may exist in drafts but not production ontology YAML."""
+def test_accepted_article_revision_ontology_is_in_production_data():
+    """D223 promotes ADR-058 labels/edges while the draft is superseded."""
+    repo = Path(__file__).resolve().parents[2]
+    node_text = (repo / "data" / "ontology" / "node_schemas.yaml").read_text()
+    edge_text = (repo / "data" / "ontology" / "edge_contracts.yaml").read_text()
+    draft_text = (
+        repo / "data" / "ontology" / "drafts" / "article_revision_contracts.yaml"
+    ).read_text()
+    assert "label: PaperRevision" in node_text
+    assert "label: SourceManifestation" in node_text
+    assert "edge_constant: HAS_REVISION" in edge_text
+    assert "edge_constant: HAS_MANIFESTATION" in edge_text
+    assert "status: superseded" in draft_text
+
+
+def test_article_load_inline_revision_graph_write_is_caught():
+    """Accepted ontology still belongs in a dedicated application use case."""
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
     _write(
-        root / "data" / "ontology" / "node_schemas.yaml",
-        "- label: PaperRevision\n  required_fields: []\n",
+        root / "crates" / "da-application" / "src" / "article_load.rs",
+        'store.create_node("PaperRevision");\n',
     )
-    _write(
-        root / "data" / "ontology" / "drafts" / "article_revision_contracts.yaml",
-        "- label: PaperRevision\n",
-    )
-
     scanner = FilesystemCodeScanner(root)
     rule_repo = YAMLRuleRepository(checks_dir)
-    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
-    report = audit.run_audit()
-
+    report = AuditService(scanner=scanner, rule_repo=rule_repo).run_audit()
     violations = [
         v
         for result in report.results
-        if result.rule.id == "production_node_schemas_must_not_list_paper_revision"
+        if result.rule.id == "article_load_must_not_inline_revision_graph_writes"
         for v in result.violations
     ]
     assert len(violations) == 1
-    assert violations[0].file.endswith("data/ontology/node_schemas.yaml")
 
 
 def test_kg_crate_da_dependency_caught():

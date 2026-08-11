@@ -14,6 +14,63 @@ pub fn paper_vid(arxiv_id: &str) -> Vid {
     sha256_vid("paper", &id)
 }
 
+/// Compute an immutable article revision expression VID.
+///
+/// `canonical_id` must be versionless; `revision` selects source bytes but does
+/// not change [`paper_vid`]. Provider is normalized so the contract is reusable
+/// beyond arXiv.
+pub fn paper_revision_vid(
+    source_code: &str,
+    canonical_id: &str,
+    revision: u32,
+) -> Result<Vid, String> {
+    let source = source_code.trim().to_ascii_lowercase();
+    let id = canonical_id.trim();
+    if source.is_empty() {
+        return Err("source_code must not be empty".into());
+    }
+    if id.is_empty() {
+        return Err("canonical article id must not be empty".into());
+    }
+    if revision == 0 {
+        return Err("article revision must be greater than zero".into());
+    }
+    if source == "arxiv"
+        && crate::load::try_parse_arxiv_locator(id)
+            .is_some_and(|(_canonical, requested_revision)| requested_revision.is_some())
+    {
+        return Err(format!(
+            "canonical arXiv id must be versionless, got {canonical_id:?}"
+        ));
+    }
+    Ok(sha256_vid(
+        "paper_revision",
+        &format!("{source}\n{id}\nv{revision}"),
+    ))
+}
+
+/// Compute a content-addressed SourceManifestation VID from a SHA256 digest.
+pub fn source_manifestation_vid(content_sha256: &str) -> Result<Vid, String> {
+    let digest = content_sha256.trim().to_ascii_lowercase();
+    if digest.len() != 64 || !digest.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("source manifestation sha256 must be 64 hexadecimal characters".into());
+    }
+    Ok(sha256_vid("source_manifestation", &digest))
+}
+
+/// Compute a revision-scoped Section VID from revision identity and ordinal.
+pub fn revision_section_vid(revision_vid: &str, ordinal: usize) -> Result<Vid, String> {
+    let revision_vid = revision_vid.trim();
+    if revision_vid.len() != 64 || !revision_vid.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("revision VID must be a 64-character SHA256 VID".into());
+    }
+    Ok(sha256_vid2(
+        "revision_section",
+        revision_vid,
+        &ordinal.to_string(),
+    ))
+}
+
 /// Compute an Entity VID from (entity_type, canonical_label).
 pub fn entity_vid(entity_type: &str, label: &str) -> Vid {
     let canonical = label.trim().to_lowercase();
@@ -95,6 +152,47 @@ mod tests {
     #[test]
     fn test_paper_vid_strips_prefix() {
         assert_eq!(paper_vid("arxiv:1206.6423"), paper_vid("1206.6423"));
+    }
+
+    #[test]
+    fn revision_vids_are_additive_stable_and_source_scoped() {
+        let paper_before = paper_vid("2506.07853");
+        let v1 = paper_revision_vid("arxiv", "2506.07853", 1).unwrap();
+        let v5 = paper_revision_vid("ARXIV", "2506.07853", 5).unwrap();
+        assert_eq!(paper_vid("2506.07853"), paper_before);
+        assert_eq!(v1.len(), 64);
+        assert_eq!(v5.len(), 64);
+        assert_ne!(v1, v5);
+        assert_eq!(paper_revision_vid("ARXIV", "2506.07853", 1).unwrap(), v1);
+        assert_ne!(paper_revision_vid("crossref", "2506.07853", 1).unwrap(), v1);
+    }
+
+    #[test]
+    fn revision_vids_reject_ambiguous_or_invalid_identity() {
+        assert!(paper_revision_vid("", "2506.07853", 1).is_err());
+        assert!(paper_revision_vid("arxiv", "", 1).is_err());
+        assert!(paper_revision_vid("arxiv", "2506.07853", 0).is_err());
+        assert!(paper_revision_vid("arxiv", "2506.07853v1", 1).is_err());
+    }
+
+    #[test]
+    fn manifestation_and_revision_section_vids_are_content_scoped() {
+        let sha_a = "a".repeat(64);
+        let sha_b = "b".repeat(64);
+        let manifest_a = source_manifestation_vid(&sha_a).unwrap();
+        assert_eq!(
+            source_manifestation_vid(&sha_a.to_ascii_uppercase()).unwrap(),
+            manifest_a
+        );
+        assert_ne!(manifest_a, source_manifestation_vid(&sha_b).unwrap());
+        assert!(source_manifestation_vid("not-sha").is_err());
+
+        let revision = paper_revision_vid("arxiv", "2506.07853", 1).unwrap();
+        assert_ne!(
+            revision_section_vid(&revision, 0).unwrap(),
+            revision_section_vid(&revision, 1).unwrap()
+        );
+        assert!(revision_section_vid("bad", 0).is_err());
     }
 
     #[test]
@@ -198,6 +296,32 @@ mod proptest_tests {
             let bare = paper_vid(&id);
             let with = paper_vid(&format!("arxiv:{id}"));
             prop_assert_eq!(bare, with);
+        }
+
+        /// Revision identity is deterministic, revision-separated, and never changes Paper identity.
+        #[test]
+        fn prop_revision_vid_additive_and_distinct(
+            source in arb_key(),
+            id in arb_key(),
+            revision in 1u32..10_000,
+        ) {
+            let paper_before = paper_vid(&id);
+            let current = paper_revision_vid(&source, &id, revision).unwrap();
+            let next = paper_revision_vid(&source, &id, revision + 1).unwrap();
+            prop_assert!(is_sha256_hex(&current));
+            prop_assert_ne!(current, next);
+            prop_assert_eq!(paper_vid(&id), paper_before);
+        }
+
+        /// Manifestation identity is case-insensitive on digest representation.
+        #[test]
+        fn prop_manifestation_vid_sha_case_stable(bytes in any::<[u8; 32]>()) {
+            let lower = bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
+            let upper = lower.to_ascii_uppercase();
+            prop_assert_eq!(
+                source_manifestation_vid(&lower).unwrap(),
+                source_manifestation_vid(&upper).unwrap()
+            );
         }
 
         /// Property 3: entity_vid is case-insensitive on label and hex.

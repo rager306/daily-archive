@@ -37,6 +37,21 @@ edge_contracts:
     target_labels: [Section, Reference]
     temporal_class: structural
     rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part)."
+  - edge_constant: hasPart
+    source_label: PaperRevision
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Immutable article revision has this revision-scoped Section (ADR-058)."
+  - edge_constant: HAS_REVISION
+    source_label: Paper
+    target_labels: [PaperRevision]
+    temporal_class: structural
+    rationale: "Canonical scholarly work has this immutable revision expression (ADR-058)."
+  - edge_constant: HAS_MANIFESTATION
+    source_label: PaperRevision
+    target_labels: [SourceManifestation]
+    temporal_class: structural
+    rationale: "Article revision is represented by this captured PDF, HTML, TEI, or TeX manifestation (ADR-058)."
   - edge_constant: hasTopic
     source_label: Paper
     target_labels: [Topic]
@@ -72,6 +87,11 @@ edge_contracts:
     target_labels: [Entity]
     temporal_class: fact
     rationale: "Source Entity supersedes target Entity (D135 merge scenario)."
+  - edge_constant: SUPERSEDES
+    source_label: PaperRevision
+    target_labels: [PaperRevision]
+    temporal_class: fact
+    rationale: "Newer observed article revision supersedes the previous observed revision without deleting history (ADR-058)."
   # ─── Decision plane (ADR-048 causal primitives) ───
   # Six decision audit and causal edges scoped to scientific KG use.
   # All temporal_class=fact: causal claims can be revised (wrong attribution,

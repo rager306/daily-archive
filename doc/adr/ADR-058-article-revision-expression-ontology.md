@@ -1,6 +1,6 @@
 # ADR-058: Article Revision Expression Ontology
 
-**Status:** Proposed  
+**Status:** Accepted
 **Date:** 2026-08-11  
 **Depends on:** ADR-037, ADR-043, ADR-046, ADR-050, ADR-053, ADR-056  
 **Trigger:** live `da load https://arxiv.org/html/2506.07853v1` initially processed latest bytes; exact v1/v5 acquisition then proved materially different document structures under one arXiv work id.
@@ -16,7 +16,7 @@ arXiv identity and source revision are different concepts:
 
 The current production graph has versionless `Paper` and revision-agnostic Section VIDs (`vid:section:{paper}:{ordinal}`). Loading multiple revisions into one store would overwrite or alias revision-specific structure. `Source` is a provider registry node, not a document expression. `ArtifactVersion` is scoped to immutable process/code/config/model/container artifacts and is not a scholarly document expression.
 
-## Decision proposed
+## Decision
 
 Adopt a three-level FRBR/FaBiO-aligned shape without changing canonical Paper identity:
 
@@ -73,7 +73,7 @@ schema_version = 1
 
 ## Non-decisions and locks
 
-- This ADR does **not** authorize production ontology materialization while Proposed.
+- Accepted by explicit user decision on 2026-08-11 (D223). Production ontology materialization is authorized only through the planned revision-aware use case and remains D127-locked.
 - `Paper` VID remains versionless; no `Paper` per vN.
 - Source files and load reports are provenance, not graph truth.
 - D127 remains `import_eligible=false` until explicit user authorization.
@@ -90,9 +90,9 @@ schema_version = 1
 
 ## Acceptance evidence required
 
-Before status may become Accepted:
+Acceptance implementation evidence:
 
-1. user explicitly accepts the ontology choice;
+1. user explicitly accepted the ontology choice (D223);
 2. YAML schemas and edge contracts pass registry/endpoint audits;
 3. VID functions have unit/property/serde tests and do not alter `paper_vid`;
 4. v1 and v5 coexist in one process-local Samyama graph with one Paper, two PaperRevision nodes, distinct Sections, manifestations, and cache lineage;
@@ -103,4 +103,4 @@ Before status may become Accepted:
 
 ## Current product state
 
-ADR-056 acquisition carries typed optional revision and selects exact `idvN` bytes. Versioned catalog metadata is stored separately (`article.vN.json`, `article.vN.html`, `source/idvN.pdf`). Until this ADR is accepted, `da load` continues to materialize the existing versionless Paper graph in process-local/D127-locked mode; operators must not merge multiple revisions into one authoritative graph.
+ADR-056 acquisition carries typed optional revision and selects exact `idvN` bytes. Versioned catalog metadata is stored separately (`article.vN.json`, `article.vN.html`, `source/idvN.pdf`). Until M375 revision-aware materialization and runtime proof complete, `da load` continues to materialize the existing versionless Paper graph in process-local/D127-locked mode; operators must not merge multiple revisions into one authoritative graph. Acceptance authorizes implementation, not an automatic D127 import unlock.
