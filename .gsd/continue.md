@@ -1,65 +1,66 @@
-# Handoff — 2026-08-11 (M376 sealed)
+# Handoff — 2026-08-11 (M377 sealed)
 
 ## Completed
 
-M371-M376 complete. Latest: **M376-y7um7o Revision Aware Article Query**.
+M371-M377 complete. Latest: **M377-42cdf7 Extraction Stage Pipeline Cache**.
 
-## Product operator
+## Universal load cache plane
 
-```bash
-# Build/prove accepted revision graph (M375)
-cargo run -p da-cli --example revision_graph_canary
+`da load --stages ingest+extract --cache-root …` now records:
 
-# Query durable snapshot; selector = current | history | vN
-cargo run -p da-cli -- revision-query \
-  --id 2506.07853 \
-  --selector history \
-  --snapshot artifacts/article_context/revision_graph_2506.07853.sgsnap \
-  --json
+```text
+parse   hit|miss|bypass|retryable_failure
+embed   hit|miss|bypass|retryable_failure
+extract hit|miss|bypass|retryable_failure
 ```
 
-## M376 delivered
+Extract stage contract:
+- depends on parse payload SHA;
+- `RuleBasedExtractor` owns implementation/config/output-schema identity;
+- configuration SHA hashes actual loaded `ExtractionConfig` values, not a path;
+- equivalent bundled/filesystem DATA matches; rule mutation invalidates;
+- payload is serialized `Vec<ExtractedEntity>`;
+- graph materialization always runs after hit/miss/bypass through revision context;
+- cache is derived evidence, not graph truth.
 
-Commit `7ea36bc3`:
-- typed read-only `RevisionQueryUseCase` in da-application;
-- selectors: `current`, exact positive `vN`, numeric `history`;
-- response: Paper/revision/source identities, current, predecessor, Section count, manifestations, D127;
-- typed Paper/revision/current/ambiguous/invalid-graph errors;
-- dedicated CLI `revision-query`, human and clean JSON output;
-- invalid selector exit 2, query failure exit 3;
-- quiet snapshot preload for machine JSON;
-- architecture schema audit corrected to workspace-aware ADR-050 production DATA;
-- temporal SUPERSEDES fixture corrected to mandatory temporal stamp helper.
+## Real M377 proof
 
-Real committed M375 snapshot proof:
-- history: v1 current=false Sections=14 manifestations=2 predecessor=None;
-- history: v5 current=true Sections=11 manifestations=2 predecessor=v1;
-- current → v5;
-- exact v1/v5 → correct revision;
-- v3 → exit 3, no fallback;
-- latest → exit 2, no implicit latest;
-- snapshot SHA before/after unchanged: `9e5c2b8a168cbcb3581d352d8bfae4ebd8f18e301261894263a290b4547c93b0`;
-- D127 false.
+Exact local `2506.07853v1`, fresh `artifacts/pipeline_cache/m377_v1`:
 
-Verification:
-- revision query 4 tests;
-- schema audit 2;
-- da-cli 72;
-- all-target clippy PASS;
-- governor 33, YAML valid, violations=0;
-- full architecture guardrail PASS;
-- logs clean;
-- UAT/validation/closeout PASS.
+- cold: parse=miss, embed=miss, extract=miss;
+- offline replay without FD_API_KEY: parse=hit, embed=hit, extract=hit;
+- no-cache: parse/embed/extract=bypass;
+- stable parse/embed/extract payload SHA cold→replay;
+- each run: `entities_extracted=3 found_in=3`, `revision_graph_ok`, D127=false;
+- ingest-only: parse/embed records only; no extract record/finding;
+- corrupted payload: FilePipelineCache checksum mismatch hard failure before decode.
 
-GSD auto-closeout commit: `3c10b5ba`.
+Runtime reports remain ignored under `artifacts/loads/m377_v1/`; structured GSD UAT is durable evidence.
 
-## Next product waves
+## Verification
 
-1. Extraction-stage PipelineCache with exact rule/config/output-schema fingerprints and honest LoadReport records.
-2. Review queued M363-ma2kmw relevance before spending on its stale roadmap.
-3. Full remote GraphStore remains a future integration; revision-query currently uses same-process snapshot import intentionally.
+- fingerprint tests: 3
+- adapter rule_extractor: 37
+- da-cli load: 8
+- extraction: 4
+- revision materialization: 9
+- all-target clippy PASS
+- full architecture guardrail PASS
+- governor 33 / YAML valid / violations=0
+- logs clean
+- UAT/validation/closeout PASS
+
+Commits:
+- `053e00fa` product
+- `4d7b11f5` GSD closeout auto-commit
+
+## Next product decisions
+
+1. **Review queued M363-ma2kmw relevance** before executing its stale four-slice article-preparation roadmap.
+2. Do not cache graph materializers. Cache later stages only where a pure deterministic compute seam exists with complete identity.
+3. Remote GraphStore remains future integration.
 4. ADR-057 remains Proposed.
 
 ## Locks
 
-D127 false; ADR-057 Proposed; ADR-058 Accepted. Current revision must come from exactly one `is_current`, never insertion order or implicit latest. Query path is read-only; cache/catalog evidence remains provenance, not graph truth.
+D127 false; ADR-057 Proposed; ADR-058 Accepted. Existing `paper_vid` unchanged. Current revision explicit. Cache/catalog evidence is provenance, never authoritative graph truth.
