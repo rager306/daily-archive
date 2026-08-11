@@ -220,6 +220,11 @@ cargo test -p da-cli --lib proptest        # graph_tasks parser (6)
 # strict-semantic equal to durable graph, replay applied=0, D127=false.
 # RocksDB is not active on this in-memory + .sgsnap path; tune it only for a
 # separately profiled persistent/daemon flow.
+# prepare-workers=4 is the measured default on this 12-vCPU host: 30-paper
+# 1/2/4/8/12 worker times = 1.74/1.53/1.40/1.58/1.48s. Graph writes remain one writer.
+# Current scalar writer: ~27k observed mutation attempts/s. Do not wrap writes
+# in Samyama MVCC and claim atomic bulk: abort does not roll back in-place writes.
+# Future bulk must reuse OrderedMutationPlan and prove real rollback/atomicity.
 
 # ADR-051 §8.1 semantic graph task suite (M336–M338)
 cargo run -p da-cli --example graph_task_suite -- \

@@ -21,6 +21,24 @@
 - RocksDB tuning is explicitly not applicable to this process-local in-memory
   Samyama + snapshot-export path (D234). Persistent/daemon flows require their
   own measured RocksDB benchmark before block-cache/write-buffer tuning.
+- SMP worker-count metamorphic profile (30 papers, same binary/cache/time) was
+  deterministic for 1/2/4/8/12 workers: identical strict semantic SHA, graph,
+  mutation aggregates and D127=false. Wall times were 1.74/1.53/1.40/1.58/1.48s;
+  CPU 101–121%, RSS 43–49 MB. Four remains the measured default; more workers
+  oversubscribe a small preparation phase and cannot parallelize the single writer.
+- Bulk feasibility audit reuses the existing `OrderedMutationPlan` rather than
+  inventing a second DSL. Current Samyama MVCC transactions cannot provide the
+  required atomic batch contract: ordinary writes are not transaction-bound and
+  abort explicitly does not roll back in-place mutations. A pseudo-atomic wrapper
+  is forbidden (D235). The accepted scalar path already sustains 27,163 observed
+  mutation attempts/s (504,965 attempts in 18.59s); true bulk is deferred until
+  persistent/remote HOT requirements justify a clean vendor atomic API or
+  copy-on-write store swap with rollback contracts.
+- Persistent storage applicability audit found no current RocksDB runtime to
+  benchmark: `serve-graph` forces `data_path=None`, `DA_GRAPH_DATA_PATH` fails
+  closed as `PersistenceNotConfigured`, and remote HOT is unsupported. RocksDB
+  tuning is deferred to a separate persistent-daemon capability with vendor
+  isolation, crash recovery and real write fixtures (D236), not guessed here.
 
 ### M384 S01 observable corpus materialization
 
