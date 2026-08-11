@@ -434,3 +434,43 @@ rules:
     rationale: "da load must not stamp import_eligible=true without explicit enable_import + user unlock path."
     suffix_allowlist:
       - .json
+
+  # --- ADR-057 Proposed: drafts must not leak into production ontology DATA ---
+  - id: production_node_schemas_must_not_list_knowledge_unit
+    anchor: "ADR-057 Proposed (non-article ontology not Accepted/materialized)"
+    severity: high
+    scan: data/ontology/node_schemas.yaml
+    pattern: "label:\\s*KnowledgeUnit"
+    rationale: "KnowledgeUnit must not appear in production node_schemas.yaml until ADR-057 Accept + N1 DATA wave."
+
+  - id: production_node_schemas_must_not_list_collection_book
+    anchor: "ADR-057 Proposed (non-article ontology not Accepted/materialized)"
+    severity: high
+    scan: data/ontology/node_schemas.yaml
+    pattern: "label:\\s*Collection"
+    rationale: "Collection (book/course) must not appear in production node_schemas until ADR-057 Accept + N1."
+
+  - id: production_edge_contracts_must_not_list_discusses_paper
+    anchor: "ADR-057 Proposed (DISCUSSES_PAPER deferred)"
+    severity: high
+    scan: data/ontology/edge_contracts.yaml
+    pattern: "edge_constant:\\s*DISCUSSES_PAPER"
+    rationale: "DISCUSSES_PAPER is draft-only under data/ontology/drafts/ until ADR-057 Accept."
+
+  - id: load_plane_must_not_write_discusses_paper_edges
+    anchor: "ADR-056 + ADR-057 (loader forbids curriculum edges)"
+    severity: high
+    scan: crates/da-application/src/article_load.rs
+    pattern: "DISCUSSES_PAPER|KnowledgeUnit"
+    rationale: "ArticleLoadUseCase must not invent KnowledgeUnit/DISCUSSES_PAPER graph materialization."
+    suffix_allowlist:
+      - .rs
+
+  - id: load_cli_must_not_materialize_non_article_structure
+    anchor: "ADR-056 + ADR-057 (CLI composition only)"
+    severity: high
+    scan: crates/da-cli/src/load.rs
+    pattern: "DISCUSSES_PAPER|KnowledgeUnit"
+    rationale: "da load CLI must not materialize non-article structure graph nodes/edges."
+    suffix_allowlist:
+      - .rs

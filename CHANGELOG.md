@@ -1,5 +1,15 @@
 # Changelog
 
+### M372 complete + ADR-057 draft isolation in governor/registry
+
+- **M372-sqj6hc complete** (validate pass): universal `da load` plane sealed with
+  runtime-executable UAT on all slices.
+- Governor: forbid production `KnowledgeUnit`/`Collection`/`DISCUSSES_PAPER` until
+  ADR-057 Accept; forbid those strings in article_load/load CLI.
+- kg-ontology: test `load_from_dir` ignores `drafts/` subdirectory.
+- Preflight trajectory: **0 ADR violations** (DRIFT_RISK remains ops: STATE/ROADMAP,
+  target/ bloat).
+
 ### ADR-057 Proposed — non-article ontology + LoadReport container metadata
 
 - Draft **ADR-057** (textbook/chapter ontology): Collection + KnowledgeUnit,

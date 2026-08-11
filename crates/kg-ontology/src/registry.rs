@@ -594,4 +594,47 @@ edge_contracts:
         assert_eq!(edges[0].temporal_class, TemporalClass::Fact);
         assert!(edges[0].is_temporal_fact());
     }
+
+    /// ADR-057 drafts live under data/ontology/drafts/ and must not be auto-loaded
+    /// by load_from_dir (only node_schemas.yaml + edge_contracts.yaml).
+    #[test]
+    fn test_load_from_dir_ignores_drafts_subdirectory() {
+        let dir =
+            std::env::temp_dir().join(format!("kg-ontology-drafts-ignored-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("node_schemas.yaml"),
+            concat!(
+                "node_schemas:\n",
+                "  - label: Paper\n    required_fields: []\n    optional_fields: []\n",
+                "  - label: Section\n    required_fields: []\n    optional_fields: []\n",
+            ),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("edge_contracts.yaml"),
+            "edge_contracts:\n  - edge_constant: hasPart\n    source_label: Paper\n    target_labels: [Section]\n    rationale: structural\n",
+        )
+        .unwrap();
+        let drafts = dir.join("drafts");
+        std::fs::create_dir_all(&drafts).unwrap();
+        std::fs::write(
+            drafts.join("non_article_structure_contracts.yaml"),
+            concat!(
+                "node_schemas:\n  - label: KnowledgeUnit\n    required_fields: []\n    optional_fields: []\n",
+                "edge_contracts:\n  - edge_constant: DISCUSSES_PAPER\n    source_label: KnowledgeUnit\n    target_labels: [Paper]\n",
+            ),
+        )
+        .unwrap();
+
+        let reg = OntologyRegistry::load_from_dir(&dir).unwrap();
+        assert!(reg.get_schema("Paper").is_some());
+        assert!(
+            reg.get_schema("KnowledgeUnit").is_none(),
+            "drafts/ must not pollute production registry"
+        );
+        assert!(!reg.edge_types().iter().any(|e| e == "DISCUSSES_PAPER"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
