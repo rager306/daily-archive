@@ -1,5 +1,15 @@
 # Changelog
 
+### Native arXiv acquisition — no Python process boundary
+
+- `ArxivSourceAcquisition` fetches PDF (+ optional HTML) via shared
+  `http_fetch` (reqwest): Atom meta → category path → atomic catalog write.
+- Validates `%PDF-` magic / HTML shape; fail-closed network; D127 unchanged.
+- Python `download_arxiv_to_catalog.py` no longer on the `da load` path
+  (script may remain for ops recovery only).
+- Live: `da load https://arxiv.org/abs/2608.07067 --stages ensure --allow-network`
+  → ensure `fetched` PDF+HTML under `arxiv/cs-ai/2608.07067/`.
+
 ### Batch hub content + native HTML HTTP for load plane
 
 - `--batch-toc` with `--stages ingest|ingest+extract` materializes all TOC units

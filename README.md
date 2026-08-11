@@ -76,7 +76,21 @@ cargo build -p da-cli
 # Single paper (HOT path, in-memory — data lost on exit)
 ./target/debug/da ingest --pdf path/to/paper.pdf --id 1206.6423
 
-# Batch + snapshot (durable backup)
+# Universal load plane (ADR-056): resolve → ensure catalog → optional ingest/extract
+# Network fail-closed; D127 import_eligible stays false unless --enable-import
+./target/debug/da load 'https://arxiv.org/abs/2608.07067' --allow-network --stages ensure
+./target/debug/da load 'https://arxiv.org/abs/2608.07067' --allow-network --stages ingest+extract \
+  --output artifacts/article_context/paper_2608.07067.sgsnap \
+  --report artifacts/loads/2608.07067.json
+# Optional TeX source sidecar (+ inventory) under catalog:
+./target/debug/da load 2608.07067 --allow-network --stages ensure --include-tex-source
+
+# GNN textbook: full catalog ensure / content hub (one process-local snap)
+./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml --allow-network
+./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml \
+  --stages ingest+extract --output artifacts/article_context/gnn_textbook_hub.sgsnap
+
+# Batch + snapshot (durable backup) — legacy multi-id path still available
 ./target/debug/da batch-ingest \
   --ids 1206.6423,1606.01540,1612.00341 \
   --output data/samyama/batch.sgsnap
@@ -195,6 +209,8 @@ pre-commit run --all-files
 | `da version` | Version + ADR pin |
 | `da ingest --pdf … --id …` | Single-paper HOT path |
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
+| `da load <locator> [--allow-network] [--stages ensure\|ingest\|ingest+extract] [--include-tex-source] [--report …] [--output …]` | Universal acquisition+load plane (ADR-056): catalog ensure + optional content; D127 locked |
+| `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--output hub.sgsnap]` | Batch TOC ensure or hub content into one process-local snapshot |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
 | `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
 | `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph (M310; not full remote store) |

@@ -48,6 +48,7 @@ impl ArxivSourceAcquisition {
         pdf: &Path,
         disposition: AssetDisposition,
         catalog_hit: bool,
+        extra_assets: Vec<EnsuredAsset>,
     ) -> Result<EnsuredAssets, AcquisitionError> {
         let meta = fs::metadata(pdf).map_err(|e| {
             AcquisitionError::Infrastructure(format!("stat {}: {e}", pdf.display()))
@@ -82,6 +83,8 @@ impl ArxivSourceAcquisition {
             });
         }
 
+        assets.extend(extra_assets);
+
         Ok(EnsuredAssets {
             primary: EnsuredPrimary {
                 kind: PrimaryContentKind::Pdf,
@@ -94,12 +97,13 @@ impl ArxivSourceAcquisition {
         })
     }
 
-    /// Native fetch: Atom meta → category dir → PDF (+ optional HTML).
+    /// Native fetch: Atom meta → category dir → PDF (+ optional HTML/TeX).
     fn fetch_native(
         &self,
         arxiv_id: &str,
         include_html: bool,
-    ) -> Result<PathBuf, AcquisitionError> {
+        include_tex: bool,
+    ) -> Result<(PathBuf, Vec<EnsuredAsset>), AcquisitionError> {
         let meta = fetch_atom_meta(arxiv_id, &self.user_agent);
         let category = meta.category;
         let title = meta.title;
@@ -152,6 +156,23 @@ impl ArxivSourceAcquisition {
             // HTML is optional sidecar — ignore fetch failure.
         }
 
+        let mut extra = Vec::new();
+        if include_tex {
+            match ensure_tex_source(
+                &unit_root,
+                arxiv_id,
+                &self.catalog_root,
+                &self.user_agent,
+                true,
+            ) {
+                Ok(assets) => extra.extend(assets),
+                Err(e) => {
+                    // TeX is optional sidecar: PDF ensure still succeeds.
+                    tracing::warn!(%arxiv_id, error = %e, "tex source ensure skipped");
+                }
+            }
+        }
+
         let pdf_bytes = fs::read(&pdf_path).map_err(|e| {
             AcquisitionError::Infrastructure(format!("read {}: {e}", pdf_path.display()))
         })?;
@@ -165,7 +186,31 @@ impl ArxivSourceAcquisition {
             pdf_bytes.len() as u64,
         )?;
 
-        Ok(pdf_path)
+        Ok((pdf_path, extra))
+    }
+
+    fn ensure_tex_sidecars(
+        &self,
+        pdf: &Path,
+        arxiv_id: &str,
+        allow_network: bool,
+    ) -> Vec<EnsuredAsset> {
+        let Some(unit_root) = pdf.parent().and_then(|p| p.parent()) else {
+            return Vec::new();
+        };
+        match ensure_tex_source(
+            unit_root,
+            arxiv_id,
+            &self.catalog_root,
+            &self.user_agent,
+            allow_network,
+        ) {
+            Ok(assets) => assets,
+            Err(e) => {
+                tracing::warn!(%arxiv_id, error = %e, "tex source ensure skipped");
+                Vec::new()
+            }
+        }
     }
 }
 
@@ -232,7 +277,12 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
         policy: &AcquisitionPolicy,
     ) -> Result<EnsuredAssets, AcquisitionError> {
         if let Some(pdf) = self.find_pdf(&resolved.unit_key) {
-            return self.ensured_from_pdf(&pdf, AssetDisposition::CatalogHit, true);
+            let extra = if policy.include_tex_source && !policy.dry_run {
+                self.ensure_tex_sidecars(&pdf, &resolved.unit_key, policy.allow_network)
+            } else {
+                Vec::new()
+            };
+            return self.ensured_from_pdf(&pdf, AssetDisposition::CatalogHit, true, extra);
         }
 
         if !policy.allow_network {
@@ -250,14 +300,248 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
             )));
         }
 
-        if policy.include_tex_source {
-            // TeX optional later; PDF/HTML primary path is product-critical.
-            // Do not fail ensure solely because TeX is requested.
-        }
-
-        let pdf = self.fetch_native(&resolved.unit_key, policy.include_html)?;
-        self.ensured_from_pdf(&pdf, AssetDisposition::Fetched, false)
+        let (pdf, extra) = self.fetch_native(
+            &resolved.unit_key,
+            policy.include_html,
+            policy.include_tex_source,
+        )?;
+        self.ensured_from_pdf(&pdf, AssetDisposition::Fetched, false, extra)
     }
+}
+
+// ─── TeX source sidecar (optional; never blocks PDF primary) ─────────────────
+
+// Caps mirrored from scripts/download_arxiv_to_catalog.py (safe inventory).
+const MAX_TEX_ARCHIVE_BYTES: u64 = 100 << 20;
+const MAX_TEX_MEMBERS: usize = 1000;
+/// Per-member and expanded-total caps enforced when full member streams are hashed
+/// (FilesystemTexArchive path). Ensure-time listing uses archive size + member count.
+#[allow(dead_code)]
+const MAX_TEX_MEMBER_BYTES: u64 = 20 << 20;
+#[allow(dead_code)]
+const MAX_TEX_TOTAL_BYTES: u64 = 100 << 20;
+const TEX_INVENTORY_SCHEMA: &str = "arxiv-tex-source-inventory.v1";
+
+fn ensure_tex_source(
+    unit_root: &Path,
+    arxiv_id: &str,
+    catalog_root: &Path,
+    user_agent: &str,
+    allow_network: bool,
+) -> Result<Vec<EnsuredAsset>, AcquisitionError> {
+    let source_dir = unit_root.join("source");
+    fs::create_dir_all(&source_dir).map_err(|e| {
+        AcquisitionError::Infrastructure(format!("mkdir {}: {e}", source_dir.display()))
+    })?;
+    let tar_path = source_dir.join(format!("{arxiv_id}.tar.gz"));
+    let inventory_path = source_dir.join(format!("{arxiv_id}.tex-inventory.json"));
+
+    let mut disposition = AssetDisposition::CatalogHit;
+    if !tar_path.is_file() {
+        if !allow_network {
+            return Err(AcquisitionError::NetworkDenied(format!(
+                "TeX archive for {arxiv_id} missing; pass --allow-network"
+            )));
+        }
+        let url = format!("https://arxiv.org/src/{arxiv_id}");
+        let bytes = http_get_bytes(&url, Some(user_agent))?;
+        if bytes.len() as u64 > MAX_TEX_ARCHIVE_BYTES || bytes.is_empty() {
+            return Err(AcquisitionError::Infrastructure(format!(
+                "TeX archive size invalid for {arxiv_id} ({} bytes)",
+                bytes.len()
+            )));
+        }
+        // Stage then inspect before publish.
+        let tmp = tar_path.with_extension("tar.gz.partial");
+        fs::write(&tmp, &bytes).map_err(|e| {
+            AcquisitionError::Infrastructure(format!("write {}: {e}", tmp.display()))
+        })?;
+        inspect_tex_archive(&tmp).map_err(|e| {
+            let _ = fs::remove_file(&tmp);
+            AcquisitionError::Infrastructure(format!("unsafe TeX archive for {arxiv_id}: {e}"))
+        })?;
+        fs::rename(&tmp, &tar_path).map_err(|e| {
+            AcquisitionError::Infrastructure(format!("rename {}: {e}", tar_path.display()))
+        })?;
+        disposition = AssetDisposition::Fetched;
+    } else {
+        inspect_tex_archive(&tar_path).map_err(|e| {
+            AcquisitionError::Infrastructure(format!("existing TeX archive unsafe: {e}"))
+        })?;
+    }
+
+    let inv = build_tex_inventory(arxiv_id, &tar_path, catalog_root)?;
+    let inv_bytes = serde_json::to_vec_pretty(&inv)
+        .map_err(|e| AcquisitionError::Infrastructure(format!("serialize tex inventory: {e}")))?;
+    atomic_write(&inventory_path, &inv_bytes)?;
+
+    let tar_meta = fs::metadata(&tar_path).map_err(|e| {
+        AcquisitionError::Infrastructure(format!("stat {}: {e}", tar_path.display()))
+    })?;
+    let tar_sha = sha256_file(&tar_path).map_err(|e| {
+        AcquisitionError::Infrastructure(format!("hash {}: {e}", tar_path.display()))
+    })?;
+    let inv_sha = sha256_file(&inventory_path).map_err(|e| {
+        AcquisitionError::Infrastructure(format!("hash {}: {e}", inventory_path.display()))
+    })?;
+
+    Ok(vec![
+        EnsuredAsset {
+            kind: "tex_tar".into(),
+            path: path_for_report(catalog_root, &tar_path),
+            sha256: Some(tar_sha),
+            bytes: Some(tar_meta.len()),
+            disposition,
+        },
+        EnsuredAsset {
+            kind: "tex_inventory".into(),
+            path: path_for_report(catalog_root, &inventory_path),
+            sha256: Some(inv_sha),
+            bytes: Some(inv_bytes.len() as u64),
+            disposition,
+        },
+    ])
+}
+
+/// Safe inventory via `tar -tzvf` listing + size caps (no extract to disk).
+fn inspect_tex_archive(path: &Path) -> Result<(), String> {
+    let meta = fs::metadata(path).map_err(|e| e.to_string())?;
+    if meta.len() == 0 || meta.len() > MAX_TEX_ARCHIVE_BYTES {
+        return Err(format!("invalid size {}", meta.len()));
+    }
+    let output = std::process::Command::new("tar")
+        .args(["-tzf"])
+        .arg(path)
+        .output()
+        .map_err(|e| format!("spawn tar: {e}"))?;
+    if !output.status.success() {
+        // try uncompressed / auto
+        let output2 = std::process::Command::new("tar")
+            .args(["-tf"])
+            .arg(path)
+            .output()
+            .map_err(|e| format!("spawn tar -tf: {e}"))?;
+        if !output2.status.success() {
+            return Err(format!(
+                "tar list failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        return validate_tar_names(&String::from_utf8_lossy(&output2.stdout));
+    }
+    validate_tar_names(&String::from_utf8_lossy(&output.stdout))
+}
+
+fn validate_tar_names(listing: &str) -> Result<(), String> {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut count = 0usize;
+    for line in listing.lines() {
+        let name = line.trim();
+        if name.is_empty() {
+            continue;
+        }
+        count += 1;
+        if count > MAX_TEX_MEMBERS {
+            return Err("member cap exceeded".into());
+        }
+        if name.starts_with('/')
+            || name.starts_with('\\')
+            || name.contains("..")
+            || name.contains('\\')
+            || name.contains('\0')
+            || name.starts_with('-')
+        {
+            return Err(format!("unsafe member name: {name:?}"));
+        }
+        if !seen.insert(name.to_string()) {
+            return Err(format!("duplicate member: {name:?}"));
+        }
+    }
+    if count == 0 {
+        return Err("empty archive listing".into());
+    }
+    Ok(())
+}
+
+fn build_tex_inventory(
+    arxiv_id: &str,
+    tar_path: &Path,
+    catalog_root: &Path,
+) -> Result<serde_json::Value, AcquisitionError> {
+    let archive_bytes = fs::metadata(tar_path)
+        .map_err(|e| AcquisitionError::Infrastructure(e.to_string()))?
+        .len();
+    let archive_sha =
+        sha256_file(tar_path).map_err(|e| AcquisitionError::Infrastructure(e.to_string()))?;
+    let listing = {
+        let out = std::process::Command::new("tar")
+            .args(["-tzf"])
+            .arg(tar_path)
+            .output();
+        match out {
+            Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
+            _ => {
+                let o = std::process::Command::new("tar")
+                    .args(["-tf"])
+                    .arg(tar_path)
+                    .output()
+                    .map_err(|e| AcquisitionError::Infrastructure(e.to_string()))?;
+                if !o.status.success() {
+                    return Err(AcquisitionError::Infrastructure(
+                        "tar listing failed for inventory".into(),
+                    ));
+                }
+                String::from_utf8_lossy(&o.stdout).into_owned()
+            }
+        }
+    };
+    validate_tar_names(&listing).map_err(AcquisitionError::Infrastructure)?;
+    let mut files = Vec::new();
+    let mut directory_count = 0u64;
+    let mut tex_count = 0u64;
+    let mut bib_count = 0u64;
+    for name in listing.lines().map(str::trim).filter(|n| !n.is_empty()) {
+        if name.ends_with('/') {
+            directory_count += 1;
+            continue;
+        }
+        let suffix = Path::new(name)
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|s| format!(".{}", s.to_ascii_lowercase()))
+            .unwrap_or_default();
+        if suffix == ".tex" {
+            tex_count += 1;
+        }
+        if suffix == ".bib" {
+            bib_count += 1;
+        }
+        // Member digests require stream extract; inventory lists paths only for ensure.
+        // Full member hashes remain available via FilesystemTexArchive after ensure.
+        files.push(serde_json::json!({
+            "path": name,
+            "byte_size": null,
+            "sha256": null,
+            "suffix": suffix,
+        }));
+    }
+    let archive_path = path_for_report(catalog_root, tar_path);
+    Ok(serde_json::json!({
+        "schema_version": TEX_INVENTORY_SCHEMA,
+        "article_id": arxiv_id,
+        "import_eligible": false,
+        "archive_path": archive_path,
+        "sha256": archive_sha,
+        "byte_size": archive_bytes,
+        "member_count": files.len() as u64 + directory_count,
+        "file_count": files.len(),
+        "directory_count": directory_count,
+        "tex_file_count": tex_count,
+        "bib_file_count": bib_count,
+        "expanded_bytes": null,
+        "files": files,
+        "note": "member digests deferred; archive-level sha256 is authoritative for ensure"
+    }))
 }
 
 // ─── Meta / validation / IO ─────────────────────────────────────────────────
@@ -527,6 +811,7 @@ mod tests {
             .unwrap();
         assert!(assets.catalog_hit);
         assert_eq!(assets.primary.kind, PrimaryContentKind::Pdf);
+        assert!(!assets.assets.iter().any(|a| a.kind == "tex_tar"));
 
         let _ = fs::remove_dir_all(&root);
     }
@@ -583,5 +868,21 @@ mod tests {
     fn normalize_category_dot_to_dash() {
         assert_eq!(normalize_category("cs.CL"), "cs-cl");
         assert_eq!(normalize_category("bad/cat"), "unknown");
+    }
+
+    #[test]
+    fn validate_tar_names_rejects_traversal() {
+        assert!(validate_tar_names("../evil.tex\n").is_err());
+        assert!(validate_tar_names("/abs/path.tex\n").is_err());
+        assert!(validate_tar_names("ok/main.tex\nok/refs.bib\n").is_ok());
+    }
+
+    #[test]
+    fn tex_inventory_schema_constant() {
+        assert_eq!(TEX_INVENTORY_SCHEMA, "arxiv-tex-source-inventory.v1");
+        assert_eq!(MAX_TEX_ARCHIVE_BYTES, 100 << 20);
+        assert_eq!(MAX_TEX_MEMBERS, 1000);
+        assert_eq!(MAX_TEX_MEMBER_BYTES, 20 << 20);
+        assert_eq!(MAX_TEX_TOTAL_BYTES, 100 << 20);
     }
 }
