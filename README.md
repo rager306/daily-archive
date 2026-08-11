@@ -214,6 +214,12 @@ cargo test -p da-cli --lib proptest        # graph_tasks parser (6)
 # PROGRESS phase=first_write wave=1/20 papers=... current=... eta=... mutations=...
 # Override with --progress-interval-seconds N --progress-stall-seconds N.
 # --no-progress disables terminal ticks only; final progress metrics remain in report.
+# Profile a controlled set of run/resource/identity artifacts:
+# cargo run -p da-cli --example materialization_profile -- --case NAME:PAPERS:RUN:RESOURCE:IDENTITY ...
+# Current measured 200-paper process-local rebuild: 18.59s, 229 MB RSS,
+# strict-semantic equal to durable graph, replay applied=0, D127=false.
+# RocksDB is not active on this in-memory + .sgsnap path; tune it only for a
+# separately profiled persistent/daemon flow.
 
 # ADR-051 §8.1 semantic graph task suite (M336–M338)
 cargo run -p da-cli --example graph_task_suite -- \

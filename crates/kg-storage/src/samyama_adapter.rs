@@ -638,10 +638,9 @@ impl DirectGraphStore for SamyamaGraphStore {
         let tgt = NodeId(target);
         let et = EdgeType::new(edge_type);
         store
-            .all_edges()
+            .edges_between(src, tgt, Some(&et))
             .into_iter()
-            .filter(|e| e.source == src && e.target == tgt && e.edge_type == et)
-            .map(|e| (e.id.0, e.edge_type.as_str().to_string()))
+            .map(|edge_id| (edge_id.0, edge_type.to_string()))
             .collect()
     }
 

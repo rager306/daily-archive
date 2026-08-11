@@ -28,6 +28,7 @@ pub mod graph_tasks;
 pub mod healing;
 pub mod hypergraph;
 pub mod load;
+pub mod materialization_profile;
 pub mod ordered_mutation;
 pub mod paper;
 pub mod process;

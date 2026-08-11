@@ -1,5 +1,27 @@
 # Changelog
 
+### M384 S02 measured hot-path optimization
+
+- Added typed, self-digested `materialization-scaling-profile.v1` evidence and
+  bounded 1/10/30/200-paper profiling with host, binary, CPU/RSS, mutation,
+  strict semantic identity and D127 provenance.
+- Profiling found two algorithmic defects before any speculative batching:
+  `edge_type_is_temporal_fact` reparsed ontology YAML for every edge (8.8 ms
+  per call), and `SamyamaGraphStore::get_edges_between` scanned every graph
+  edge despite vendor HOT+FROZEN adjacency APIs.
+- Cached the immutable DATA registry with exact all-edge-type parity and reused
+  Samyama `edges_between`. Microprofile improvements: temporal classification
+  8,806→7.2 µs (1,226×); missing edge lookup at 3,000 edges 512→1.65 µs
+  (311×). Shared GraphStore and Samyama HOT/FROZEN contracts pass.
+- Real strict-semantic-equal wall times on the same debug binary/cache/time:
+  1 paper 0.11s, 10 papers 0.63s, 30 papers 1.56s, 200 papers **18.59s**.
+  The prior M382 rebuild took about 57 minutes: ~184× end-to-end improvement.
+  200-paper replay applied zero mutations, graph remained 23,836/39,295,
+  heartbeat had no stalls, peak RSS was 229 MB and D127 remained false.
+- RocksDB tuning is explicitly not applicable to this process-local in-memory
+  Samyama + snapshot-export path (D234). Persistent/daemon flows require their
+  own measured RocksDB benchmark before block-cache/write-buffer tuning.
+
 ### M384 S01 observable corpus materialization
 
 - `gold_graph_all_waves` now emits a concise stderr heartbeat every 5 seconds

@@ -6,6 +6,8 @@
 //!
 //! Policy source: `OntologyRegistry::is_temporal_edge_type` (YAML-first).
 
+use std::sync::OnceLock;
+
 use chrono::{DateTime, Utc};
 use da_ports::graph_store::DirectGraphStore;
 use kg_ontology::registry::OntologyRegistry;
@@ -16,28 +18,31 @@ use kg_ontology::temporal::TemporalEdge;
 /// Loads project `data/ontology/` when available; unknown types → not fact
 /// (safe default: do not invent temporal fields).
 pub fn edge_type_is_temporal_fact(edge_type: &str) -> bool {
-    match OntologyRegistry::load_project_meta_ontology() {
-        Ok(reg) => reg.is_temporal_edge_type(edge_type),
-        Err(_) => {
-            // Compiled fallback when YAML unavailable (CI without data/ontology).
-            matches!(
-                edge_type,
-                "CITES"
-                    | "MENTIONS"
-                    | "SUPPORTS"
-                    | "SUPERSEDES"
-                    | "CAUSED"
-                    | "AFFECTS"
-                    | "INFLUENCED"
-                    | "PRECEDENT_FOR"
-                    | "TRIGGERED_BY"
-                    | "hasQualitySignal"
-                    | "AFFILIATED_WITH"
-                    | "PARTICIPATES_IN"
-                    | "MEMBER_OF_CLUSTER"
-            )
-        }
+    static REGISTRY: OnceLock<Option<OntologyRegistry>> = OnceLock::new();
+    match REGISTRY.get_or_init(|| OntologyRegistry::load_project_meta_ontology().ok()) {
+        Some(registry) => registry.is_temporal_edge_type(edge_type),
+        None => compiled_temporal_fact_fallback(edge_type),
     }
+}
+
+fn compiled_temporal_fact_fallback(edge_type: &str) -> bool {
+    // Compiled fallback when YAML is unavailable (CI without data/ontology).
+    matches!(
+        edge_type,
+        "CITES"
+            | "MENTIONS"
+            | "SUPPORTS"
+            | "SUPERSEDES"
+            | "CAUSED"
+            | "AFFECTS"
+            | "INFLUENCED"
+            | "PRECEDENT_FOR"
+            | "TRIGGERED_BY"
+            | "hasQualitySignal"
+            | "AFFILIATED_WITH"
+            | "PARTICIPATES_IN"
+            | "MEMBER_OF_CLUSTER"
+    )
 }
 
 /// Open fact edge at `now` (valid, not yet invalidated).
@@ -125,6 +130,19 @@ mod tests {
         assert!(!edge_type_is_temporal_fact(structure::HAS_PART));
         assert!(!edge_type_is_temporal_fact("FROM_SOURCE"));
         assert!(!edge_type_is_temporal_fact("inCategory"));
+    }
+
+    #[test]
+    fn cached_classifier_matches_fresh_data_registry_for_all_edge_types() {
+        let registry = OntologyRegistry::load_project_meta_ontology().unwrap();
+        for edge_type in registry.edge_types() {
+            assert_eq!(
+                edge_type_is_temporal_fact(&edge_type),
+                registry.is_temporal_edge_type(&edge_type),
+                "classification drift for {edge_type}"
+            );
+        }
+        assert!(!edge_type_is_temporal_fact("UNKNOWN_EDGE_TYPE"));
     }
 
     #[test]
