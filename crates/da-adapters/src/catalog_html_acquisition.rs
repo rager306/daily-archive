@@ -14,7 +14,6 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 /// Offline + optional network catalog HTML provider.
 #[derive(Debug, Clone)]
@@ -406,20 +405,41 @@ fn build_article_json(
 }
 
 fn http_get_bytes(url: &str, user_agent: &str) -> Result<Vec<u8>, AcquisitionError> {
-    // Process-boundary HTTP (adapters only). curl is available in ops env;
-    // avoids requiring reqwest blocking feature.
-    let output = Command::new("curl")
-        .args(["-fsSL", "--max-time", "60", "-A", user_agent, url])
-        .output()
-        .map_err(|e| AcquisitionError::Infrastructure(format!("spawn curl: {e}")))?;
-    if !output.status.success() {
-        return Err(AcquisitionError::Infrastructure(format!(
-            "curl failed for {url} (exit={:?}): {}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stderr)
-        )));
+    // Native reqwest (adapters only). Sync trait boundary → temporary runtime.
+    let url = url.to_string();
+    let ua = user_agent.to_string();
+    let fetch = async move {
+        let client = reqwest::Client::builder()
+            .user_agent(ua)
+            .timeout(std::time::Duration::from_secs(60))
+            .build()
+            .map_err(|e| AcquisitionError::Infrastructure(format!("reqwest client: {e}")))?;
+        let resp = client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| AcquisitionError::Infrastructure(format!("GET {url}: {e}")))?;
+        if !resp.status().is_success() {
+            return Err(AcquisitionError::Infrastructure(format!(
+                "GET {url} status {}",
+                resp.status()
+            )));
+        }
+        resp.bytes()
+            .await
+            .map(|b| b.to_vec())
+            .map_err(|e| AcquisitionError::Infrastructure(format!("body {url}: {e}")))
+    };
+    match tokio::runtime::Handle::try_current() {
+        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(fetch)),
+        Err(_) => {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .map_err(|e| AcquisitionError::Infrastructure(format!("tokio rt: {e}")))?;
+            rt.block_on(fetch)
+        }
     }
-    Ok(output.stdout)
 }
 
 fn ensured_html(

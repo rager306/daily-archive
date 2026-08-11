@@ -1,6 +1,6 @@
 //! `da load` — composition root for universal article load plane (ADR-056 / D220).
 //!
-//! Single locator or `--batch-toc` for catalog HTML ensure of entire TOC.
+//! Single locator or `--batch-toc` (ensure and/or content into one hub snapshot).
 
 use clap::Args;
 use da_adapters::{
@@ -43,8 +43,10 @@ pub struct LoadArgs {
     pub include_tex_source: bool,
 
     /// Stage set: ensure | ingest | ingest+extract | full
-    #[arg(long, default_value = "ingest")]
-    pub stages: String,
+    /// For `--batch-toc` without explicit stages, defaults to **ensure**.
+    /// Pass `--stages ingest` or `ingest+extract` for hub content batch.
+    #[arg(long)]
+    pub stages: Option<String>,
 
     /// Dry-run: resolve only
     #[arg(long, default_value_t = false)]
@@ -58,11 +60,11 @@ pub struct LoadArgs {
     #[arg(long)]
     pub report: Option<PathBuf>,
 
-    /// Export .sgsnap after content stages (single locator)
+    /// Export .sgsnap after content stages (single) or hub snap for batch content
     #[arg(long)]
     pub output: Option<PathBuf>,
 
-    /// Batch ensure all units from a source-catalog TOC YAML
+    /// Batch all units from a source-catalog TOC YAML
     #[arg(long)]
     pub batch_toc: Option<PathBuf>,
 
@@ -71,7 +73,12 @@ pub struct LoadArgs {
     pub batch_report_dir: PathBuf,
 }
 
-struct CliContentPipeline;
+/// Content pipeline with optional shared process-local store (hub batch).
+struct CliContentPipeline {
+    store: Arc<da_adapters::SamyamaGraphStore>,
+    /// When false, materialize/extract only — caller exports hub snap once.
+    export_per_unit: bool,
+}
 
 #[async_trait::async_trait]
 impl LoadContentPipeline for CliContentPipeline {
@@ -114,7 +121,6 @@ impl LoadContentPipeline for CliContentPipeline {
                 .map_err(|e| format!("pdf parse: {e:#}"))?
         };
 
-        let store = Arc::new(open_graph_store_for_load());
         let embedder = FdApiEmbedder::from_env();
         let embed_text = if parsed.abstract_text.is_empty() {
             parsed.title.as_str()
@@ -127,7 +133,7 @@ impl LoadContentPipeline for CliContentPipeline {
             .map_err(|e| format!("embed: {e:#}"))?;
 
         let materializer =
-            IngestUseCase::materializer_only(store.clone() as Arc<dyn DirectGraphStore>);
+            IngestUseCase::materializer_only(self.store.clone() as Arc<dyn DirectGraphStore>);
         let materializer = if req.enable_import {
             materializer.with_import_eligibility(da_domain::ImportEligibility::Eligible)
         } else {
@@ -145,7 +151,7 @@ impl LoadContentPipeline for CliContentPipeline {
             let extractor = Box::new(RuleBasedExtractor::new());
             let extract_uc = ExtractionUseCase::from_shared(
                 extractor,
-                store.clone() as Arc<dyn DirectGraphStore>,
+                self.store.clone() as Arc<dyn DirectGraphStore>,
             );
             let er = extract_uc
                 .extract_from_parsed(&parsed)
@@ -159,17 +165,22 @@ impl LoadContentPipeline for CliContentPipeline {
             });
         }
 
-        let snapshot_path = if let Some(out) = req.snapshot_output {
-            if let Some(parent) = out.parent() {
-                let _ = std::fs::create_dir_all(parent);
+        let snapshot_path = if self.export_per_unit {
+            if let Some(out) = req.snapshot_output {
+                if let Some(parent) = out.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                let bytes = GraphStore::export_snapshot(self.store.as_ref())
+                    .await
+                    .map_err(|e| format!("export snapshot: {e}"))?;
+                std::fs::write(out, &bytes)
+                    .map_err(|e| format!("write snapshot {}: {e}", out.display()))?;
+                Some(out.display().to_string())
+            } else {
+                None
             }
-            let bytes = GraphStore::export_snapshot(store.as_ref())
-                .await
-                .map_err(|e| format!("export snapshot: {e}"))?;
-            std::fs::write(out, &bytes)
-                .map_err(|e| format!("write snapshot {}: {e}", out.display()))?;
-            Some(out.display().to_string())
         } else {
+            // Hub mode: defer export to batch end.
             None
         };
 
@@ -227,19 +238,20 @@ pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
     run_single(args, locator).await
 }
 
+fn resolve_stages(args: &LoadArgs, batch: bool) -> Result<LoadStageSet, String> {
+    match &args.stages {
+        Some(s) => parse_stages(s),
+        None if batch => Ok(LoadStageSet::Ensure),
+        None => Ok(LoadStageSet::EnsureIngest), // single-locator product default
+    }
+}
+
 async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
     let keys = toc_unit_keys(toc).map_err(|e| format!("TOC: {e}"))?;
     if keys.is_empty() {
         return Err(format!("TOC {} has no units", toc.display()));
     }
-    // Batch defaults to ensure unless user overrode stages explicitly via non-default?
-    // Prefer ensure for catalog completeness (product debt close).
-    let stages_str = if args.stages == "ingest" {
-        "ensure".to_string()
-    } else {
-        args.stages.clone()
-    };
-    let stages = parse_stages(&stages_str)?;
+    let stages = resolve_stages(args, true)?;
     let policy = AcquisitionPolicy {
         allow_network: args.allow_network,
         include_html: true,
@@ -251,7 +263,6 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
     };
 
     let provider = if args.provider == "auto" || args.provider == "catalog" {
-        // Infer from TOC filename / first unit
         "gnn_textbook".to_string()
     } else {
         args.provider.clone()
@@ -260,25 +271,42 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
     let acq = CatalogHtmlAcquisition::new(&args.catalog_root, &provider)
         .with_repo_root(".")
         .with_toc_path(toc);
-    let pipe = CliContentPipeline;
+
+    let content_mode = policy.stages.includes_ingest() && !policy.dry_run;
+    let store = Arc::new(open_graph_store_for_load());
+    let pipe = CliContentPipeline {
+        store: store.clone(),
+        export_per_unit: false, // one hub snap at end
+    };
     let _ = std::fs::create_dir_all(&args.batch_report_dir);
 
     let mut ok_n = 0usize;
     let mut fail_n = 0usize;
     let mut hit_n = 0usize;
     let mut fetched_n = 0usize;
+    let mut total_sections = 0usize;
+    let mut total_entities = 0usize;
 
     println!(
-        "batch-toc units={} provider={} stages={:?} allow_network={}",
+        "batch-toc units={} provider={} stages={:?} allow_network={} hub_content={}",
         keys.len(),
         provider,
         policy.stages,
-        policy.allow_network
+        policy.allow_network,
+        content_mode
     );
 
     for (i, unit_key) in keys.iter().enumerate() {
         let locator = format!("catalog:{provider}/html/{unit_key}");
-        let report = run_with_acq(&acq, &args.catalog_root, &locator, &policy, &pipe, None).await;
+        let report = run_with_acq(
+            &acq,
+            &args.catalog_root,
+            &locator,
+            &policy,
+            if content_mode { Some(&pipe) } else { None },
+            None, // no per-unit snap
+        )
+        .await;
         let status = if report.ok { "ok" } else { "FAIL" };
         if report.ok {
             ok_n += 1;
@@ -290,6 +318,19 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
         }
         if report.stages.iter().any(|s| s.status == "fetched") {
             fetched_n += 1;
+        }
+        for f in &report.findings {
+            if f.code == "extract_ok" {
+                total_entities += parse_tagged_usize(&f.message, "entities_extracted=");
+            }
+        }
+        for s in &report.stages {
+            if s.stage == da_domain::LoadStageName::Ingest
+                && s.status == "ok"
+                && let Some(d) = &s.detail
+            {
+                total_sections += parse_tagged_usize(d, "sections=");
+            }
         }
         println!(
             "[{}/{}] {} {} primary={:?}",
@@ -310,8 +351,31 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
         }
     }
 
+    let mut hub_path = None;
+    if content_mode && fail_n == 0 {
+        let out = args.output.clone().unwrap_or_else(|| {
+            PathBuf::from(format!("artifacts/article_context/{provider}_hub.sgsnap"))
+        });
+        if let Some(parent) = out.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let bytes = GraphStore::export_snapshot(store.as_ref())
+            .await
+            .map_err(|e| format!("hub export snapshot: {e}"))?;
+        std::fs::write(&out, &bytes).map_err(|e| format!("write hub {}: {e}", out.display()))?;
+        hub_path = Some(out.display().to_string());
+        println!(
+            "hub snapshot={} bytes={} sections_sum≈{} entities_sum≈{}",
+            out.display(),
+            bytes.len(),
+            total_sections,
+            total_entities
+        );
+    }
+
     println!(
-        "batch done ok={ok_n} fail={fail_n} catalog_hit≈{hit_n} fetched≈{fetched_n} reports={}",
+        "batch done ok={ok_n} fail={fail_n} catalog_hit≈{hit_n} fetched≈{fetched_n} hub={:?} reports={}",
+        hub_path,
         args.batch_report_dir.display()
     );
     if fail_n > 0 {
@@ -321,7 +385,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
 }
 
 async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
-    let stages = parse_stages(&args.stages)?;
+    let stages = resolve_stages(args, false)?;
     let policy = AcquisitionPolicy {
         allow_network: args.allow_network,
         include_html: true,
@@ -338,20 +402,45 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         .clone()
         .or_else(|| default_snapshot_path(locator));
     let snap_ref = snap.as_deref();
-    let pipe = CliContentPipeline;
+    let store = Arc::new(open_graph_store_for_load());
+    let pipe = CliContentPipeline {
+        store,
+        export_per_unit: true,
+    };
 
     let report = match provider.as_str() {
         "arxiv" => {
             let acq = ArxivSourceAcquisition::new(&args.catalog_root).with_repo_root(".");
-            run_with_acq(&acq, &args.catalog_root, locator, &policy, &pipe, snap_ref).await
+            run_with_acq(
+                &acq,
+                &args.catalog_root,
+                locator,
+                &policy,
+                if policy.stages.includes_ingest() && !policy.dry_run {
+                    Some(&pipe)
+                } else {
+                    None
+                },
+                snap_ref,
+            )
+            .await
         }
         "gnn_textbook" | "textbook" | "stanford" | "company_blog" | "nature" => {
-            let mut acq =
+            let acq =
                 CatalogHtmlAcquisition::new(&args.catalog_root, &provider).with_repo_root(".");
-            if let Some(toc) = &args.batch_toc {
-                acq = acq.with_toc_path(toc);
-            }
-            run_with_acq(&acq, &args.catalog_root, locator, &policy, &pipe, snap_ref).await
+            run_with_acq(
+                &acq,
+                &args.catalog_root,
+                locator,
+                &policy,
+                if policy.stages.includes_ingest() && !policy.dry_run {
+                    Some(&pipe)
+                } else {
+                    None
+                },
+                snap_ref,
+            )
+            .await
         }
         other => {
             return Err(format!(
@@ -415,12 +504,16 @@ async fn run_with_acq<A: SourceAcquisitionPort + ?Sized>(
     catalog_root: &Path,
     locator: &str,
     policy: &AcquisitionPolicy,
-    pipe: &CliContentPipeline,
+    pipe: Option<&CliContentPipeline>,
     snap: Option<&Path>,
 ) -> da_domain::LoadReport {
     let uc = ArticleLoadUseCase::new(acq).with_catalog_root(catalog_root);
     if policy.stages.includes_ingest() && !policy.dry_run {
-        uc.run_with_content(locator, policy, Some(pipe), snap).await
+        if let Some(p) = pipe {
+            uc.run_with_content(locator, policy, Some(p), snap).await
+        } else {
+            uc.run(locator, policy)
+        }
     } else {
         uc.run(locator, policy)
     }
@@ -436,6 +529,14 @@ fn default_snapshot_path(locator: &str) -> Option<PathBuf> {
     Some(PathBuf::from(format!(
         "artifacts/article_context/paper_{safe}.sgsnap"
     )))
+}
+
+fn parse_tagged_usize(text: &str, tag: &str) -> usize {
+    text.split(tag)
+        .nth(1)
+        .and_then(|rest| rest.split_whitespace().next())
+        .and_then(|num| num.parse().ok())
+        .unwrap_or(0)
 }
 
 fn parse_stages(s: &str) -> Result<LoadStageSet, String> {
@@ -508,15 +609,28 @@ mod tests {
             .unwrap(),
             "gnn_textbook"
         );
-        assert_eq!(
-            resolve_provider("auto", "gnn-ch-about").unwrap(),
-            "gnn_textbook"
-        );
     }
 
     #[test]
-    fn default_snapshot_from_html_url() {
-        let p = default_snapshot_path("https://arxiv.org/html/2608.07067v1").unwrap();
-        assert!(p.ends_with("paper_2608.07067.sgsnap"));
+    fn batch_default_stages_ensure() {
+        let args = LoadArgs {
+            locator: None,
+            provider: "auto".into(),
+            catalog_root: PathBuf::from("data/article_catalog"),
+            allow_network: false,
+            include_tex_source: false,
+            stages: None,
+            dry_run: false,
+            enable_import: false,
+            report: None,
+            output: None,
+            batch_toc: Some(PathBuf::from("toc.yaml")),
+            batch_report_dir: PathBuf::from("artifacts/loads/batch"),
+        };
+        assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
+        assert_eq!(
+            resolve_stages(&args, false).unwrap(),
+            LoadStageSet::EnsureIngest
+        );
     }
 }

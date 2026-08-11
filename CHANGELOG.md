@@ -1,5 +1,16 @@
 # Changelog
 
+### Batch hub content + native HTML HTTP for load plane
+
+- `--batch-toc` with `--stages ingest|ingest+extract` materializes all TOC units
+  into **one process-local graph** and exports a single hub `.sgsnap` (`--output`).
+  Default without `--stages` remains **ensure** (catalog only).
+- Shared `CliContentPipeline` store: no per-unit empty graph; entity reuse across
+  chapters (created < observed when labels overlap).
+- `CatalogHtmlAcquisition` HTTP via **reqwest** (no curl process boundary).
+- Live mini hub: about + ch01 + ch06 → 3/3 ok, hub snap ~52KB, ~100 sections,
+  ~27 extract entities.
+
 ### GNN textbook full TOC ensure + load batch + governor load-report rules
 
 - DATA: `data/source_catalogs/gnn_textbook_toc.yaml` (28 units, source-catalog-toc.v1).
