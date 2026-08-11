@@ -1,66 +1,84 @@
-# Handoff — 2026-08-11 (M377 sealed)
+# Handoff — 2026-08-11 (M363 S01-S02 delivered, S03 planned)
 
-## Completed
+## Active milestone
 
-M371-M377 complete. Latest: **M377-42cdf7 Extraction Stage Pipeline Cache**.
+**M363-ma2kmw** — article preparation agent readiness.
 
-## Universal load cache plane
+- S01 skipped-delivered + runtime UAT PASS.
+- S02 skipped-delivered + runtime UAT PASS.
+- S03 planned, pending.
+- S04 pending.
 
-`da load --stages ingest+extract --cache-root …` now records:
+## Delivered in this session
 
-```text
-parse   hit|miss|bypass|retryable_failure
-embed   hit|miss|bypass|retryable_failure
-extract hit|miss|bypass|retryable_failure
-```
+### S01 revision-safe grounded summaries — `464ef9c2`
 
-Extract stage contract:
-- depends on parse payload SHA;
-- `RuleBasedExtractor` owns implementation/config/output-schema identity;
-- configuration SHA hashes actual loaded `ExtractionConfig` values, not a path;
-- equivalent bundled/filesystem DATA matches; rule mutation invalidates;
-- payload is serialized `Vec<ExtractedEntity>`;
-- graph materialization always runs after hit/miss/bypass through revision context;
-- cache is derived evidence, not graph truth.
+Fixed a real revision-history bug:
+- old Summary VID used `paper_id + section path_id`;
+- v1/v5 shared path IDs and could overwrite historical summary evidence;
+- new VID is SHA256 over exact `PaperRevision VID + granularity + source VID`;
+- abstract digest owner is PaperRevision; Section digest owner is exact revision Section;
+- materializer validates `(label, vid) -> node_id` for revision and every Section before writes;
+- replaced vacuous `let _ = err` test with missing-revision and missing-Section fail-closed tests;
+- RevisionMaterializationUseCase now writes `canonical_id` and revision-local `abstract_text`;
+- production ontology DATA + compiled edge parity includes `PaperRevision -[:hasSummary]-> Summary`.
 
-## Real M377 proof
+Real Samyama: 2 revisions, 24 distinct summaries, replay stable, D127 false, base tasks PASS.
 
-Exact local `2506.07853v1`, fresh `artifacts/pipeline_cache/m377_v1`:
+### S02 DATA-driven semantic roles — `9d69ba09`
 
-- cold: parse=miss, embed=miss, extract=miss;
-- offline replay without FD_API_KEY: parse=hit, embed=hit, extract=hit;
-- no-cache: parse/embed/extract=bypass;
-- stable parse/embed/extract payload SHA cold→replay;
-- each run: `entities_extracted=3 found_in=3`, `revision_graph_ok`, D127=false;
-- ingest-only: parse/embed records only; no extract record/finding;
-- corrupted payload: FilePipelineCache checksum mismatch hard failure before decode.
+- New pure domain `SectionRolePolicy`; no Methods/Results title vocabulary in application/CLI.
+- Production DATA: `data/ontology/section_summary_roles.yaml`.
+- Adapter loads bundled/project YAML and fingerprints canonical loaded values.
+- Validated open `SummaryType` wire strings; exact/suffix rules, duplicate rejection, serde.
+- `max_title_chars=160` prevents paragraph-sized parser titles from role classification.
+- Generic `Summary` nodes use `summary_type=methods|results|generic`, no new labels.
+- Nodes bind role policy schema + SHA; replay without policy resets stale role/lineage.
+- Fixture proves methods+results+generic and policy removal replay.
 
-Runtime reports remain ignored under `artifacts/loads/m377_v1/`; structured GSD UAT is durable evidence.
+Real exact v1/v5 paper is legal ontology content:
+- revisions=2;
+- summaries=24;
+- methods=2;
+- results=0 (honest missingness; no Results section);
+- generic=22;
+- malformed parser titles remain generic evidence;
+- semantic tasks=5 PASS, EMPTY=0, ERROR=0;
+- D127=false.
 
-## Verification
+UAT evidence:
+- S01 `2e2848c0-3f46-48cb-be03-d7d5e6c49cf2`
+- S02 `5d48d5c8-ded1-4d85-bda9-1a6bee4ec490`
 
-- fingerprint tests: 3
-- adapter rule_extractor: 37
-- da-cli load: 8
-- extraction: 4
-- revision materialization: 9
-- all-target clippy PASS
-- full architecture guardrail PASS
-- governor 33 / YAML valid / violations=0
-- logs clean
-- UAT/validation/closeout PASS
+Full `scripts/verify_rust_architecture.sh`: PASS. Focused all-target clippy: 0 project errors. Governor: zero violations; generated trajectory report remains unstaged.
 
-Commits:
-- `053e00fa` product
-- `4d7b11f5` GSD closeout auto-commit
+## Next action — S03
 
-## Next product decisions
+Implement planned **revision-scoped readiness QualitySignal** thinly:
 
-1. **Review queued M363-ma2kmw relevance** before executing its stale four-slice article-preparation roadmap.
-2. Do not cache graph materializers. Cache later stages only where a pure deterministic compute seam exists with complete identity.
-3. Remote GraphStore remains future integration.
-4. ADR-057 remains Proposed.
+1. TDD `revision_readiness` domain observation/policy:
+   - exact section/summary/methods/results/manifestation counts;
+   - integer ratio (basis points), zero denominator safe;
+   - `ready|partial|blocked`;
+   - blockers separate from diagnostics;
+   - serde + property + negative tests.
+2. Add production `data/ontology/revision_readiness_policy.yaml` + adapter canonical-value SHA.
+3. Application reads one explicit PaperRevision neighborhood and materializes one QualitySignal with exact evidence digest, policy lineage, state/reasons, D127 false.
+4. Add additive `PaperRevision -[:hasQualitySignal]-> QualitySignal`; retain legacy Paper endpoint.
+5. Use temporal fact helper for edge; real v1/v5 canary and task suite; replay unchanged.
+
+Decision D225: legacy LLM `reproducibility_score` is not readiness authority. No network/LLM. Results absence is a diagnostic reason, never invented evidence.
+
+## Governor assessment
+
+Do not add a regex now. The session bugs (revision identity collision, vacuous negative test) are better prevented by product contract tests and ontology endpoint audit. After S03 has a negative fixture, consider a DATA-backed ratchet rejecting Paper-scoped `agent_readiness` signals when revision evidence exists.
+
+## Intelligence notes
+
+- GitNexus reindexed after S01 and S02; authoritative impact/detect_changes used.
+- Codebase Memory MCP timed out on all narrow searches; recorded as supplemental unavailable.
+- GitNexus briefly exited during reindex, then recovered.
 
 ## Locks
 
-D127 false; ADR-057 Proposed; ADR-058 Accepted. Existing `paper_vid` unchanged. Current revision explicit. Cache/catalog evidence is provenance, never authoritative graph truth.
+D127 false; ADR-057 Proposed; ADR-058 Accepted; no DSPy enablement; Samyama sole graph/vector/persist store; cache and QualitySignal are derived evidence, never graph truth.
