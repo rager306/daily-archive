@@ -1,4 +1,4 @@
-# Handoff — 2026-08-11 (M373 sealed)
+# Handoff — 2026-08-11 (M374 sealed)
 
 ## Sealed
 
@@ -7,33 +7,38 @@
 | M371-pr59ty | complete | pipeline semantic acceptance |
 | M372-sqj6hc | complete | universal article load plane |
 | M373-2d52vo | complete | reliable cached 28-unit textbook hub |
+| M374-fvqtlt | complete | exact version-faithful arXiv acquisition |
 
-## M373 proof
+## M374 proof
 
-- Commit `57ccc3ab`: atomic fail-closed LoadReport writes; semantic embed-cache checks; ACAP missing replay fail-closed; Rust 1.94 canary lint cleanup.
-- First `da load --batch-toc ... --stages ingest`: 28/28, 771 sections, parse miss=28, embed miss=28, D127 false.
-- Exact replay: 28/28, parse hit=28, embed hit=28, stable payload hashes, no network/GROBID.
-- Warm embed hit works without `FD_API_KEY`; miss/bypass still requires credentials.
-- Full architecture gate passed; governor closeout: 0 violations (2 operational drift flags); app logs: no ERROR/panic.
-- UAT/validation/closeout PASS. GSD auto-commit `f0481aef` was followed by a hygiene commit removing generated runtime/cache files from Git only; local evidence remains available.
+- Commit `12939518`: typed arXiv revision selector, exact idvN assets, no bare fallback, versioned cache/report/snapshot identity.
+- `2506.07853v1`: PDF `bd601ac0…`, HTML `0e11dbd…`, 20 sections, 3 entities.
+- `2506.07853v5`: PDF `aa6e247b…`, HTML `4dc4abdd…`, 13 sections, 2 entities.
+- Both match independent provider fetches, coexist under canonical unit `2506.07853`, and replay offline with parse/embed hits and stable hashes.
+- D127 false; full architecture PASS; governor 32/32, YAML valid, 0 violations; logs clean.
+- D222 recorded. ADR-056 clarified. ADR-058 + `data/ontology/drafts/article_revision_contracts.yaml` remain Proposed/draft-only.
+- Governor blocks `PaperRevision`, `SourceManifestation`, `HAS_REVISION`, and `HAS_MANIFESTATION` leakage into production ontology before acceptance.
 
-## Operator
+## Ontology decision pending
 
-```bash
-da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml \
-  --stages ingest \
-  --cache-root artifacts/pipeline_cache/gnn_textbook \
-  --batch-report-dir artifacts/loads/gnn_textbook \
-  --output artifacts/article_context/gnn_textbook_hub.sgsnap
+Recommended ADR-058 model:
+
+```text
+Paper (one canonical work)
+  -> HAS_REVISION -> PaperRevision(v1..vN)
+      -> HAS_MANIFESTATION -> PDF/HTML
+      -> hasPart -> revision-scoped Section
+      -> SUPERSEDES -> prior observed revision
 ```
 
-## Next product wave
+Do not change `paper_vid` (GitNexus CRITICAL: 74 symbols, 8 flows). Do not materialize revision nodes until explicit human acceptance.
 
-1. Review queued M363-ma2kmw relevance (article preparation/agent readiness; four unplanned slices).
-2. Next reusable load gap: extraction-stage PipelineCache with exact pattern/config/output-schema identity; no provider/model hardcode.
-3. ADR-057 remains Proposed. Collection/KnowledgeUnit materialization requires explicit human acceptance first.
-4. Related-article expansion remains a separate future milestone.
+## Next after decision
+
+- If ADR-058 accepted: DATA schemas/edges, revision VIDs, revision-scoped Sections, one-Paper/two-revision Samyama runtime proof, current/as-of queries, replay idempotency.
+- If deferred: continue with extraction-stage PipelineCache; keep revision data catalog/cache-only.
+- ADR-057 remains independently Proposed.
 
 ## Locks
 
-D127 false; ADR-057 Proposed; no Collection/KnowledgeUnit/DISCUSSES_PAPER production writes; cache is derived evidence, not graph truth.
+D127 false; ADR-057 Proposed; ADR-058 Proposed; cache/catalog evidence is not authoritative graph truth.
