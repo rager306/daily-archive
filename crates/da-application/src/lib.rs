@@ -10,6 +10,7 @@ pub mod assurance;
 pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
+pub mod revision_materialization;
 pub mod tex_inspect;
 
 pub use article_load::{
@@ -26,6 +27,10 @@ pub use ingest::IngestUseCase;
 pub use pipeline::{
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
     StageRunRecord,
+};
+pub use revision_materialization::{
+    RevisionManifestationInput, RevisionMaterializationError, RevisionMaterializationRequest,
+    RevisionMaterializationResult, RevisionMaterializationUseCase,
 };
 pub use tex_inspect::TexInspectUseCase;
 pub mod batch_ingest;

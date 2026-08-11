@@ -48,11 +48,12 @@ schema_version = 1
 
 ### SourceManifestation
 
-Immutable captured representation:
+Immutable content-addressed captured representation. Revision ownership is
+represented by `HAS_MANIFESTATION`, not a single-valued property, because the
+same bytes may legitimately be shared by multiple revisions:
 
 ```text
 vid = vid:source-manifestation:<sha256>
-revision_vid = vid:paper-revision:arxiv:2506.07853:v5
 format = pdf|html|tei|tex
 sha256 = ...
 bytes = ...

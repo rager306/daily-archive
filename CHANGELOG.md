@@ -1,5 +1,25 @@
 # Changelog
 
+### M375 Wave 2 revision-scoped application materializer
+
+- Added dedicated hexagonal `RevisionMaterializationUseCase` over injected
+  `DirectGraphStore` + `Clock`; universal `ArticleLoadUseCase` remains free of
+  direct revision graph policy.
+- Materializes one canonical Paper, immutable PaperRevision nodes,
+  content-addressed SourceManifestation nodes, and revision-scoped Sections
+  with D127 false and structured create/reuse counters.
+- `SUPERSEDES` reconciliation is independent of load order: v5→v1 still creates
+  v5 SUPERSEDES v1; inserting v3 later invalidates stale v5→v1 and creates
+  adjacent v5→v3→v1 temporal facts.
+- Replay creates zero duplicate nodes/edges in MockGraphStore; v1/v5 retain
+  distinct section structure while sharing one Paper.
+- Corrected accepted ontology ownership: SourceManifestation no longer has a
+  single `revision_vid`; many revisions may share identical content-addressed
+  bytes through separate `HAS_MANIFESTATION` edges.
+- Contract gate: 8 new revision tests, all 124 da-application tests and clippy
+  pass; kg-ontology registry 14; governor active has zero violations.
+- CLI wiring and real Samyama v1+v5 proof remain M375 S04 work, not claimed.
+
 ### M375 Wave 1 accepted article revision ontology and identity
 
 - ADR-058 accepted by explicit human decision D223: one canonical `Paper`,
