@@ -53,6 +53,24 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part).",
         },
         EdgeContract {
+            edge_constant: structure::HAS_PART,
+            source_label: "PaperRevision",
+            target_labels: &["Section"],
+            rationale: "Immutable article revision has this revision-scoped Section (ADR-058).",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_REVISION,
+            source_label: "Paper",
+            target_labels: &["PaperRevision"],
+            rationale: "Canonical scholarly work has this immutable revision expression (ADR-058).",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_MANIFESTATION,
+            source_label: "PaperRevision",
+            target_labels: &["SourceManifestation"],
+            rationale: "Article revision is represented by this captured source manifestation (ADR-058).",
+        },
+        EdgeContract {
             edge_constant: structure::HAS_TOPIC,
             source_label: "Paper",
             target_labels: &["Topic"],
@@ -104,6 +122,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             source_label: "Entity",
             target_labels: &["Entity"],
             rationale: "Source Entity supersedes target Entity (D135 merge scenario).",
+        },
+        EdgeContract {
+            edge_constant: bibliographic::SUPERSEDES,
+            source_label: "PaperRevision",
+            target_labels: &["PaperRevision"],
+            rationale: "Newer observed revision supersedes the previous observed article revision (ADR-058).",
         },
         EdgeContract {
             edge_constant: crate::relation::decision::AFFECTS,
@@ -268,6 +292,8 @@ pub fn edge_contracts_or_yaml() -> Vec<kg_ontology::registry::YamlEdgeContract> 
                 | hypergraph::MEMBER_OF_CLUSTER => TemporalClass::Fact,
                 structure::HAS_QUALITY_SIGNAL => TemporalClass::Fact,
                 structure::HAS_PART
+                | structure::HAS_REVISION
+                | structure::HAS_MANIFESTATION
                 | structure::FROM_SOURCE
                 | structure::AUTHORED_BY
                 | structure::FOUND_IN
@@ -447,10 +473,13 @@ mod tests {
 
     #[test]
     fn test_all_contract_edges_reference_registered_labels() {
-        let registered: HashSet<String> = crate::schema::all_node_schemas()
-            .into_iter()
-            .map(|s| s.label().to_string())
-            .collect();
+        // ADR-050: production YAML is authoritative for active ontology labels.
+        // Use the workspace-aware loader so cargo's test cwd cannot silently
+        // fall back to the smaller compiled schema inventory.
+        let registry = kg_ontology::registry::OntologyRegistry::load_project_meta_ontology()
+            .expect("load production ontology DATA");
+        let registered: HashSet<String> =
+            registry.labels().into_iter().map(str::to_string).collect();
         for c in edge_contracts() {
             assert!(
                 registered.contains(c.source_label),
