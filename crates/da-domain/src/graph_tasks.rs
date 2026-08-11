@@ -19,6 +19,8 @@ pub enum GraphTaskClass {
     Fact,
     /// Path-linked Summary presence (ADR-053 Layer B).
     Summary,
+    /// Revision-scoped deterministic readiness evidence (D225).
+    Readiness,
     /// Reviewed resolution / Decision audit (ADR-053 Layer G).
     Resolution,
     /// ConceptCluster membership / semantic convergence.
@@ -28,10 +30,11 @@ pub enum GraphTaskClass {
 }
 
 impl GraphTaskClass {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 7] = [
         Self::Structural,
         Self::Fact,
         Self::Summary,
+        Self::Readiness,
         Self::Resolution,
         Self::Cluster,
         Self::OntologyEndpoint,
@@ -42,6 +45,7 @@ impl GraphTaskClass {
             Self::Structural => "structural",
             Self::Fact => "fact",
             Self::Summary => "summary",
+            Self::Readiness => "readiness",
             Self::Resolution => "resolution",
             Self::Cluster => "cluster",
             Self::OntologyEndpoint => "ontology_endpoint",
@@ -68,6 +72,7 @@ impl FromStr for GraphTaskClass {
             "structural" | "structure" => Ok(Self::Structural),
             "fact" | "facts" => Ok(Self::Fact),
             "summary" | "summaries" => Ok(Self::Summary),
+            "readiness" | "ready" => Ok(Self::Readiness),
             "resolution" | "resolve" | "resolved" => Ok(Self::Resolution),
             "cluster" | "clusters" => Ok(Self::Cluster),
             "ontology_endpoint" | "ontology-endpoint" | "endpoint" | "ontology" => {

@@ -18,6 +18,7 @@ pub mod openalex_adapter;
 pub mod pdffigures2;
 pub mod pipeline_cache;
 pub mod pipeline_stages;
+pub mod revision_readiness_policy;
 pub mod rule_extractor;
 pub mod samyama_graph;
 pub mod section_summary_policy;

@@ -1,5 +1,29 @@
 # Changelog
 
+### M363 S03 revision-scoped deterministic readiness
+
+- Replaced the stale Paper-scoped/LLM-score readiness proposal with a distinct
+  revision-scoped derived-evidence path. Legacy `SummaryUseCase` quality signals
+  remain compatible but are not agent-readiness authority (D225).
+- Added pure `RevisionReadinessObservation`, validated policy evaluation, integer
+  basis-point coverage, open DATA-driven expected summary roles, explicit
+  blocker versus diagnostic codes, `ready|partial|blocked`, serde and proptest.
+- Added `data/ontology/revision_readiness_policy.yaml` plus canonical loaded-value
+  SHA adapter. Invalid thresholds fail closed; threshold mutation invalidates
+  policy identity.
+- `RevisionReadinessUseCase` reads only exact typed PaperRevision/Section/
+  SourceManifestation/Summary neighborhoods, excluding wrong-label and foreign-
+  revision evidence. It materializes content-addressed `QualitySignal` history
+  with exact observation/policy/evidence hashes and D127 false.
+- Exact replay reuses signal and temporal edge. Evidence changes create a new
+  current signal, mark the previous signal non-current, and close only the old
+  `agent_readiness` fact edge; legacy quality signals are untouched.
+- Added production + compiled `PaperRevision -[:hasQualitySignal]-> QualitySignal`
+  parity and a typed `readiness` semantic graph-task contour.
+- Real Samyama v1/v5 chain PASS: two current partial signals, four readiness
+  tasks PASS, no EMPTY/ERROR. v1 lacks Methods+Results; v5 has Methods but lacks
+  Results. Missingness remains explicit and no LLM/network invents evidence.
+
 ### M363 S02 DATA-driven Methods and Results summary roles
 
 - Added pure-domain `SectionRolePolicy` with open validated `SummaryType` wire

@@ -32,6 +32,7 @@ pub mod ordered_mutation;
 pub mod paper;
 pub mod process;
 pub mod relation;
+pub mod revision_readiness;
 pub mod scheduler;
 pub mod schema;
 pub mod scholarly_evidence;

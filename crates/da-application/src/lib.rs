@@ -12,6 +12,7 @@ pub mod ingest;
 pub mod pipeline;
 pub mod revision_materialization;
 pub mod revision_query;
+pub mod revision_readiness;
 pub mod tex_inspect;
 
 pub use article_load::{

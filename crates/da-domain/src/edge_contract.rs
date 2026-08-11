@@ -201,7 +201,13 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             edge_constant: structure::HAS_QUALITY_SIGNAL,
             source_label: "Paper",
             target_labels: &["QualitySignal"],
-            rationale: "Paper has a typed quality signal; this evidence is not a Summary and may be revised.",
+            rationale: "Legacy work-level typed quality signal.",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_QUALITY_SIGNAL,
+            source_label: "PaperRevision",
+            target_labels: &["QualitySignal"],
+            rationale: "Revision-scoped readiness and quality evidence (D225).",
         },
         // ─── ADR-053 Layer F: Method lineage (D194 M368 S03) ───
         EdgeContract {
@@ -384,6 +390,10 @@ mod tests {
         assert!(validate_compiled_edge_endpoint("hasSummary", "Section", "Summary").is_ok());
         assert!(
             validate_compiled_edge_endpoint("hasQualitySignal", "Paper", "QualitySignal").is_ok()
+        );
+        assert!(
+            validate_compiled_edge_endpoint("hasQualitySignal", "PaperRevision", "QualitySignal")
+                .is_ok()
         );
         assert!(validate_compiled_edge_endpoint("CITES", "Paper", "Paper").is_err());
         assert!(validate_compiled_edge_endpoint("hasSummary", "Paper", "QualitySignal").is_err());
