@@ -405,41 +405,7 @@ fn build_article_json(
 }
 
 fn http_get_bytes(url: &str, user_agent: &str) -> Result<Vec<u8>, AcquisitionError> {
-    // Native reqwest (adapters only). Sync trait boundary → temporary runtime.
-    let url = url.to_string();
-    let ua = user_agent.to_string();
-    let fetch = async move {
-        let client = reqwest::Client::builder()
-            .user_agent(ua)
-            .timeout(std::time::Duration::from_secs(60))
-            .build()
-            .map_err(|e| AcquisitionError::Infrastructure(format!("reqwest client: {e}")))?;
-        let resp = client
-            .get(&url)
-            .send()
-            .await
-            .map_err(|e| AcquisitionError::Infrastructure(format!("GET {url}: {e}")))?;
-        if !resp.status().is_success() {
-            return Err(AcquisitionError::Infrastructure(format!(
-                "GET {url} status {}",
-                resp.status()
-            )));
-        }
-        resp.bytes()
-            .await
-            .map(|b| b.to_vec())
-            .map_err(|e| AcquisitionError::Infrastructure(format!("body {url}: {e}")))
-    };
-    match tokio::runtime::Handle::try_current() {
-        Ok(handle) => tokio::task::block_in_place(|| handle.block_on(fetch)),
-        Err(_) => {
-            let rt = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .map_err(|e| AcquisitionError::Infrastructure(format!("tokio rt: {e}")))?;
-            rt.block_on(fetch)
-        }
-    }
+    crate::http_fetch::http_get_bytes(url, Some(user_agent))
 }
 
 fn ensured_html(
