@@ -4,10 +4,11 @@ use std::sync::Arc;
 
 use da_application::extractive_summary::{
     ExtractiveSummaryMaterializeError, ExtractiveSummaryMaterializeInput, ExtractiveSummaryUseCase,
-    SectionSource,
+    SectionRolePolicyBinding, SectionSource,
 };
 use da_domain::extractive_summary::EXTRACTIVE_SUMMARY_METHOD;
 use da_domain::relation::structure::HAS_SUMMARY;
+use da_domain::section_summary_policy::{SectionRolePolicy, SectionRoleRule, SummaryType};
 use da_domain::vid::{paper_revision_vid, revision_section_vid, revision_summary_vid};
 use da_ports::DirectGraphStore;
 use kg_storage::MockGraphStore;
@@ -144,6 +145,13 @@ async fn materializes_revision_abstract_and_section_summaries() {
     );
     assert_eq!(
         store
+            .get_node_property_string(section_summary, "summary_type")
+            .await
+            .as_deref(),
+        Some("generic")
+    );
+    assert_eq!(
+        store
             .get_edges_between(sections[0].node_id, section_summary, HAS_SUMMARY)
             .await
             .len(),
@@ -201,6 +209,108 @@ async fn two_revisions_with_same_paths_keep_distinct_summary_history() {
             .await
             .as_deref(),
         Some("Version five uses Pareto search.")
+    );
+}
+
+#[tokio::test]
+async fn role_policy_specializes_matching_summaries_and_counts_unmatched() {
+    let store = Arc::new(MockGraphStore::new());
+    let (revision_node, revision_vid, mut sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    sections[0].title = "Results".into();
+    sections[1].title = "2. Methods".into();
+    let policy = SectionRolePolicy {
+        schema_version: "test.v1".into(),
+        max_title_chars: 160,
+        rules: vec![
+            SectionRoleRule {
+                summary_type: SummaryType::new("methods").unwrap(),
+                allow_suffix_match: true,
+                title_aliases: vec!["methods".into()],
+            },
+            SectionRoleRule {
+                summary_type: SummaryType::new("results").unwrap(),
+                allow_suffix_match: true,
+                title_aliases: vec!["results".into()],
+            },
+        ],
+    };
+    let use_case = ExtractiveSummaryUseCase::with_role_policy(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        SectionRolePolicyBinding {
+            policy,
+            configuration_sha256: "a".repeat(64),
+        },
+    )
+    .unwrap();
+    let result = use_case
+        .materialize(input(revision_node, revision_vid.clone(), sections.clone()))
+        .await
+        .unwrap();
+    assert_eq!(result.summary_type_counts.get("methods"), Some(&1));
+    assert_eq!(result.summary_type_counts.get("results"), Some(&1));
+    assert_eq!(result.unmatched_section_summaries, 0);
+
+    let methods_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let methods_node = store
+        .find_node_by_string_property("Summary", "vid", &methods_vid)
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(methods_node, "summary_type")
+            .await
+            .as_deref(),
+        Some("methods")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(methods_node, "role_policy_sha256")
+            .await
+            .as_deref(),
+        Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    );
+    let results_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[0].source_vid).unwrap();
+    let results_node = store
+        .find_node_by_string_property("Summary", "vid", &results_vid)
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(results_node, "summary_type")
+            .await
+            .as_deref(),
+        Some("results")
+    );
+
+    // Replaying without specialization must clear stale role metadata rather
+    // than leave a historical policy decision looking current.
+    ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .materialize(input(revision_node, revision_vid, sections))
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(methods_node, "summary_type")
+            .await
+            .as_deref(),
+        Some("generic")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(methods_node, "role_policy_sha256")
+            .await
+            .as_deref(),
+        Some("")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(results_node, "summary_type")
+            .await
+            .as_deref(),
+        Some("generic")
     );
 }
 

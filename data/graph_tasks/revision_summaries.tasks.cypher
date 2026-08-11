@@ -18,6 +18,11 @@ MATCH (r:PaperRevision)-[:hasPart]->(section:Section)-[:hasSummary]->(s:Summary)
 // @expect_min_value 1
 MATCH (r:PaperRevision)-[:hasPart]->(section:Section)-[:hasSummary]->(s:Summary) WHERE r.is_current = true RETURN count(s) AS current_revision_summaries;
 
+// @query Methods summaries are grounded revision evidence | DATA-driven title role, no specialized label
+// @class summary
+// @expect_min_value 2
+MATCH (r:PaperRevision)-[:hasPart]->(section:Section)-[:hasSummary]->(s:Summary) WHERE s.summary_type = "methods" AND s.source_id = section.vid RETURN count(s) AS grounded_methods_summaries;
+
 // @query Summary import remains locked | D127
 // @class summary
 // @expect_min_value 2

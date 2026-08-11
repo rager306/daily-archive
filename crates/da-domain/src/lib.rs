@@ -35,6 +35,7 @@ pub mod relation;
 pub mod scheduler;
 pub mod schema;
 pub mod scholarly_evidence;
+pub mod section_summary_policy;
 pub mod source;
 pub mod temporal;
 pub mod tex_source;

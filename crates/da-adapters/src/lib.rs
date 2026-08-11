@@ -20,6 +20,7 @@ pub mod pipeline_cache;
 pub mod pipeline_stages;
 pub mod rule_extractor;
 pub mod samyama_graph;
+pub mod section_summary_policy;
 pub mod tex_archive;
 
 #[cfg(feature = "pdf-classifier")]

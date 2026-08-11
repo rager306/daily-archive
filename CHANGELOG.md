@@ -1,5 +1,25 @@
 # Changelog
 
+### M363 S02 DATA-driven Methods and Results summary roles
+
+- Added pure-domain `SectionRolePolicy` with open validated `SummaryType` wire
+  strings, ordered exact/suffix title matching, duplicate-rule rejection,
+  serde roundtrip, and a DATA-configured maximum title length. No section-role
+  vocabulary is compiled into application or CLI code.
+- Added `data/ontology/section_summary_roles.yaml` and an adapter loader whose
+  SHA256 identity is computed from canonical loaded values. Bundled and project
+  DATA match; a one-rule mutation invalidates the configuration fingerprint.
+- Generic revision-scoped `Summary` nodes now record `summary_type` rather than
+  proliferating `MethodsSummary`/`ResultsSummary` labels. Role policy schema and
+  SHA are written beside exact source VID/hash provenance; replay without a
+  policy resets type/lineage to `generic` instead of leaving stale metadata.
+- Application tests prove methods, results, unmatched generic, role-policy
+  replay reset, D127, owner/source identity, and fail-closed invalid owners.
+- Real v1/v5 Samyama proof is evidence-honest: 2 Methods summaries, 0 Results
+  (the legal-ontology paper has no Results section), 22 generic summaries, and
+  five semantic tasks PASS. Paragraph-sized parser title artifacts are retained
+  as evidence but rejected by the 160-character classification guard.
+
 ### M363 S01 revision-safe grounded summaries
 
 - Fixed a historical identity bug in `ExtractiveSummaryUseCase`: section summary

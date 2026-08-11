@@ -10,7 +10,8 @@ use std::sync::Arc;
 use anyhow::{Context, Result, anyhow};
 use clap::Parser;
 use da_application::extractive_summary::{
-    ExtractiveSummaryMaterializeInput, ExtractiveSummaryUseCase, SectionSource,
+    ExtractiveSummaryMaterializeInput, ExtractiveSummaryUseCase, SectionRolePolicyBinding,
+    SectionSource,
 };
 use da_cli::graph_tasks::{parse_tasks_cypher, run_graph_task_suite};
 use da_domain::relation::structure::{HAS_PART, HAS_SUMMARY};
@@ -62,9 +63,21 @@ async fn main() -> Result<()> {
     let store = Arc::new(da_adapters::SamyamaGraphStore::from_env());
     store.import_snapshot(&snapshot_bytes).await?;
 
-    let use_case = ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let loaded_policy =
+        da_adapters::section_summary_policy::LoadedSectionRolePolicy::load_project()?;
+    let policy_identity = loaded_policy.identity().clone();
+    let use_case = ExtractiveSummaryUseCase::with_role_policy(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        SectionRolePolicyBinding {
+            policy: loaded_policy.policy().clone(),
+            configuration_sha256: policy_identity.configuration_sha256.clone(),
+        },
+    )?;
     let mut revision_vids = Vec::new();
     let mut summaries_written = 0_usize;
+    let mut summary_type_counts = std::collections::BTreeMap::<String, usize>::new();
+    let mut unmatched_section_summaries = 0_usize;
+    let mut unmatched_section_titles = std::collections::BTreeMap::<String, usize>::new();
     let mut skipped_empty_sections = 0_usize;
     let mut failures = Vec::new();
 
@@ -125,6 +138,13 @@ async fn main() -> Result<()> {
                 Ok(replay) if replay.batch == first.batch => {
                     summaries_written +=
                         usize::from(first.abstract_written) + first.section_summaries_written;
+                    for (summary_type, count) in &first.summary_type_counts {
+                        *summary_type_counts.entry(summary_type.clone()).or_insert(0) += count;
+                    }
+                    unmatched_section_summaries += first.unmatched_section_summaries;
+                    for (title, count) in &first.unmatched_section_titles {
+                        *unmatched_section_titles.entry(title.clone()).or_insert(0) += count;
+                    }
                     skipped_empty_sections += first.skipped_empty_sections;
                     revision_vids.push(revision_vid);
                 }
@@ -156,6 +176,10 @@ async fn main() -> Result<()> {
         "revisions_processed": revision_vids.len(),
         "summaries_written": summaries_written,
         "summary_nodes": summary_nodes,
+        "summary_type_counts": summary_type_counts,
+        "unmatched_section_summaries": unmatched_section_summaries,
+        "unmatched_section_titles": unmatched_section_titles,
+        "policy_identity": policy_identity,
         "skipped_empty_sections": skipped_empty_sections,
         "failures": failures,
         "tasks": task_report,
@@ -164,14 +188,22 @@ async fn main() -> Result<()> {
     });
     atomic_write(&report_path, &serde_json::to_vec_pretty(&report)?)?;
     println!(
-        "revision_summary_canary revisions={} summaries={} nodes={} task_failed={} import_eligible=false report={}",
+        "revision_summary_canary revisions={} summaries={} methods={} results={} generic={} nodes={} task_failed={} import_eligible=false report={}",
         revision_vids.len(),
         summaries_written,
+        summary_type_counts.get("methods").copied().unwrap_or(0),
+        summary_type_counts.get("results").copied().unwrap_or(0),
+        unmatched_section_summaries,
         summary_nodes,
         task_report.failed,
         display_path(&repo_root, &report_path),
     );
-    if !failures.is_empty() || revision_vids.len() < 2 || summary_nodes < 2 || task_report.failed {
+    if !failures.is_empty()
+        || revision_vids.len() < 2
+        || summary_nodes < 2
+        || summary_type_counts.get("methods").copied().unwrap_or(0) == 0
+        || task_report.failed
+    {
         for failure in &failures {
             eprintln!("failure: {failure}");
         }
