@@ -1,5 +1,17 @@
 # Changelog
 
+### `da load` multi-provider + single-parse content path
+
+- **Catalog HTML provider** (`CatalogHtmlAcquisition`): offline ensure for
+  `catalog:gnn_textbook/html/...` (and other HTML source_codes); HTML primary.
+- **CLI auto-provider** selects arxiv vs gnn_textbook from locator.
+- **Single parse**: GROBID/HTML once → embed → `materialize_parsed` → extract
+  on the same `ParsedArticle` (no double GROBID).
+- **Bugfix:** `extract_source_from_path` no longer maps every
+  `article_catalog` path to arxiv; prefers concrete source_code segments.
+- Live textbook: `da load catalog:gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs
+  --stages ingest+extract` → title Chapter 1…, 56 sections, 8 entities, snap.
+
 ### `da load` content pipeline — real title + extract + dead code drop
 
 - `LoadContentPipeline` binds one process-local store: ingest (real GROBID title)

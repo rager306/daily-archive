@@ -828,18 +828,31 @@ fn embedding_fingerprint(vector: &[f32]) -> String {
 ///              `.../textbooks/<book>/...` → "textbook"
 /// Returns None if path doesn't match known source patterns.
 fn extract_source_from_path(path: &str) -> Option<String> {
+    // Prefer concrete path segments over blanket `article_catalog` (which holds
+    // every source_code). Order: known non-arxiv codes first, then arxiv.
     let path_str = path.to_lowercase();
-    if path_str.contains("arxiv") || path_str.contains("article_catalog") {
-        Some("arxiv".to_string())
-    } else if path_str.contains("textbook") {
-        Some("textbook".to_string())
-    } else if path_str.contains("stanford") {
-        Some("stanford".to_string())
-    } else if path_str.contains("openalex") {
-        Some("openalex".to_string())
-    } else {
-        None
+    let segments: Vec<&str> = std::path::Path::new(&path_str)
+        .components()
+        .filter_map(|c| c.as_os_str().to_str())
+        .collect();
+    // DATA-driven known codes that appear as catalog roots.
+    for code in [
+        "gnn_textbook",
+        "textbook",
+        "stanford",
+        "openalex",
+        "crossref",
+        "semantic_scholar",
+        "company_blog",
+        "nature",
+        "local",
+        "arxiv",
+    ] {
+        if segments.contains(&code) || path_str.contains(code) {
+            return Some(code.to_string());
+        }
     }
+    None
 }
 
 /// Canonicalize a filesystem-style category segment to arXiv dotted form.
