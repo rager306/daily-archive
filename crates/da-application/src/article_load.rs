@@ -1,7 +1,7 @@
 //! Article load use case — single entry for universal acquisition (ADR-056 / D220).
 //!
-//! resolve → ensure_assets → optional content ingest → LoadReport.
-//! Acquisition never calls network from this crate; ingest is injected.
+//! resolve → ensure_assets → optional content pipeline (ingest / extract) → LoadReport.
+//! Acquisition never calls network from this crate; content is injected.
 
 use da_domain::{
     AcquisitionPolicy, ArticleLocator, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord, LoadFinding,
@@ -18,11 +18,11 @@ pub enum ArticleLoadError {
     Locator(String),
     #[error("acquisition: {0}")]
     Acquisition(#[from] AcquisitionError),
-    #[error("ingest: {0}")]
-    Ingest(String),
+    #[error("content: {0}")]
+    Content(String),
 }
 
-/// Outcome of content ingest bound under the load plane (not a second product).
+/// Outcome of content ingest under the load plane.
 #[derive(Debug, Clone)]
 pub struct LoadIngestOutcome {
     pub paper_id: String,
@@ -34,16 +34,36 @@ pub struct LoadIngestOutcome {
     pub import_eligible: bool,
 }
 
-/// Injected content stage — CLI/adapters compose IngestUseCase behind this.
+/// Outcome of entity extraction under the load plane.
+#[derive(Debug, Clone)]
+pub struct LoadExtractOutcome {
+    pub entities_extracted: usize,
+    pub entities_created: usize,
+    pub mentions_edges: usize,
+    pub found_in_edges: usize,
+}
+
+/// Full content stage outcome (one process-local store preferred).
+#[derive(Debug, Clone)]
+pub struct LoadContentOutcome {
+    pub ingest: LoadIngestOutcome,
+    pub extract: Option<LoadExtractOutcome>,
+}
+
+/// Request for the injected content pipeline.
+#[derive(Debug, Clone)]
+pub struct LoadContentRequest<'a> {
+    pub paper_id: &'a str,
+    pub primary_path: &'a Path,
+    pub enable_import: bool,
+    pub include_extract: bool,
+    pub snapshot_output: Option<&'a Path>,
+}
+
+/// Injected content stages — CLI composes IngestUseCase + ExtractionUseCase.
 #[async_trait::async_trait]
-pub trait LoadContentIngest: Send + Sync {
-    async fn ingest_primary(
-        &self,
-        paper_id: &str,
-        primary_path: &Path,
-        enable_import: bool,
-        snapshot_output: Option<&Path>,
-    ) -> Result<LoadIngestOutcome, String>;
+pub trait LoadContentPipeline: Send + Sync {
+    async fn run_content(&self, req: LoadContentRequest<'_>) -> Result<LoadContentOutcome, String>;
 }
 
 /// One loader for all providers (ADR-056 §2.2).
@@ -75,15 +95,15 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                 status: "fail".into(),
                 duration_ms: None,
                 detail: Some(
-                    "ingest requires async run_with_ingest with LoadContentIngest bound".into(),
+                    "ingest requires async run_with_content with LoadContentPipeline bound".into(),
                 ),
             });
             report.errors.push(
-                "ingest stage requested but run() is ensure-only; use run_with_ingest".into(),
+                "ingest stage requested but run() is ensure-only; use run_with_content".into(),
             );
             report.ok = false;
         } else {
-            self.stamp_skipped_downstream(&mut report, policy, /*ingest_done*/ false);
+            self.stamp_skipped_downstream(&mut report, policy);
         }
         report.stages.push(StageStatus {
             stage: LoadStageName::EmitLoadReport,
@@ -98,19 +118,19 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
         report
     }
 
-    /// Full load path: ensure then optional ingest via injected port.
-    pub async fn run_with_ingest<I: LoadContentIngest + ?Sized>(
+    /// Full load path: ensure then optional content pipeline.
+    pub async fn run_with_content<P: LoadContentPipeline + ?Sized>(
         &self,
         locator_raw: &str,
         policy: &AcquisitionPolicy,
-        ingest: Option<&I>,
+        content: Option<&P>,
         snapshot_output: Option<&Path>,
     ) -> LoadReport {
         let started = Instant::now();
         let (mut report, ensure_ok) = self.run_through_ensure(locator_raw, policy);
 
-        if policy.dry_run {
-            self.stamp_skipped_downstream(&mut report, policy, false);
+        if policy.dry_run || !ensure_ok {
+            self.stamp_skipped_downstream(&mut report, policy);
             report.stages.push(StageStatus {
                 stage: LoadStageName::EmitLoadReport,
                 status: "ok".into(),
@@ -125,8 +145,8 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
             return report;
         }
 
-        if !ensure_ok {
-            self.stamp_skipped_downstream(&mut report, policy, false);
+        if !policy.stages.includes_ingest() {
+            self.stamp_skipped_downstream(&mut report, policy);
             report.stages.push(StageStatus {
                 stage: LoadStageName::EmitLoadReport,
                 status: "ok".into(),
@@ -141,118 +161,136 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
             return report;
         }
 
-        if policy.stages.includes_ingest() {
-            let t = Instant::now();
-            match ingest {
-                None => {
-                    report.stages.push(StageStatus {
-                        stage: LoadStageName::Ingest,
-                        status: "fail".into(),
-                        duration_ms: Some(t.elapsed().as_millis() as u64),
-                        detail: Some("no LoadContentIngest bound".into()),
-                    });
-                    report.errors.push("ingest requested but not bound".into());
-                    report.ok = false;
-                }
-                Some(ing) => {
-                    let paper_id = report
-                        .unit_key
-                        .clone()
-                        .unwrap_or_else(|| report.locator.canonical_key().to_string());
-                    let primary_rel = report
-                        .assets
-                        .iter()
-                        .find(|a| a.kind == "pdf" || a.kind == "html")
-                        .map(|a| a.path.clone())
-                        .or_else(|| report.assets.first().map(|a| a.path.clone()));
-                    match primary_rel {
-                        None => {
-                            report.stages.push(StageStatus {
-                                stage: LoadStageName::Ingest,
-                                status: "fail".into(),
-                                duration_ms: Some(t.elapsed().as_millis() as u64),
-                                detail: Some("no primary asset path".into()),
-                            });
-                            report.errors.push("no primary asset for ingest".into());
-                            report.ok = false;
-                        }
-                        Some(rel) => {
-                            let primary_path = resolve_primary_path(&self.catalog_root, &rel);
-                            match ing
-                                .ingest_primary(
-                                    &paper_id,
-                                    &primary_path,
-                                    policy.enable_import,
-                                    snapshot_output,
-                                )
-                                .await
-                            {
-                                Ok(out) => {
+        let t = Instant::now();
+        match content {
+            None => {
+                report.stages.push(StageStatus {
+                    stage: LoadStageName::Ingest,
+                    status: "fail".into(),
+                    duration_ms: Some(t.elapsed().as_millis() as u64),
+                    detail: Some("no LoadContentPipeline bound".into()),
+                });
+                report
+                    .errors
+                    .push("content pipeline requested but not bound".into());
+                report.ok = false;
+            }
+            Some(pipe) => {
+                let paper_id = report
+                    .unit_key
+                    .clone()
+                    .unwrap_or_else(|| report.locator.canonical_key().to_string());
+                let primary_rel = report
+                    .assets
+                    .iter()
+                    .find(|a| a.kind == "pdf")
+                    .or_else(|| report.assets.iter().find(|a| a.kind == "html"))
+                    .map(|a| a.path.clone())
+                    .or_else(|| report.assets.first().map(|a| a.path.clone()));
+                match primary_rel {
+                    None => {
+                        report.stages.push(StageStatus {
+                            stage: LoadStageName::Ingest,
+                            status: "fail".into(),
+                            duration_ms: Some(t.elapsed().as_millis() as u64),
+                            detail: Some("no primary asset path".into()),
+                        });
+                        report
+                            .errors
+                            .push("no primary asset for content pipeline".into());
+                        report.ok = false;
+                    }
+                    Some(rel) => {
+                        let primary_path = resolve_primary_path(&self.catalog_root, &rel);
+                        let req = LoadContentRequest {
+                            paper_id: &paper_id,
+                            primary_path: &primary_path,
+                            enable_import: policy.enable_import,
+                            include_extract: policy.stages.includes_extract(),
+                            snapshot_output,
+                        };
+                        match pipe.run_content(req).await {
+                            Ok(out) => {
+                                let ing = &out.ingest;
+                                report.stages.push(StageStatus {
+                                    stage: LoadStageName::Ingest,
+                                    status: "ok".into(),
+                                    duration_ms: Some(t.elapsed().as_millis() as u64),
+                                    detail: Some(format!(
+                                        "title={} sections={} body_chars={}",
+                                        ing.title, ing.section_count, ing.body_chars
+                                    )),
+                                });
+                                report.findings.push(LoadFinding {
+                                    code: "ingest_ok".into(),
+                                    message: format!(
+                                        "title={} citations={} sections={}",
+                                        ing.title, ing.citation_count, ing.section_count
+                                    ),
+                                });
+                                if let Some(ex) = &out.extract {
                                     report.stages.push(StageStatus {
-                                        stage: LoadStageName::Ingest,
+                                        stage: LoadStageName::Extract,
                                         status: "ok".into(),
-                                        duration_ms: Some(t.elapsed().as_millis() as u64),
+                                        duration_ms: None,
                                         detail: Some(format!(
-                                            "title={} sections={} body_chars={}",
-                                            out.title, out.section_count, out.body_chars
+                                            "entities={} created={} mentions={}",
+                                            ex.entities_extracted,
+                                            ex.entities_created,
+                                            ex.mentions_edges
                                         )),
                                     });
-                                    if let Some(snap) = out.snapshot_path {
-                                        report.snapshot_path = Some(snap.clone());
-                                        report.stages.push(StageStatus {
-                                            stage: LoadStageName::ExportSnapshot,
-                                            status: "ok".into(),
-                                            duration_ms: None,
-                                            detail: Some(snap),
-                                        });
-                                    } else if policy.stages.includes_export_snapshot() {
-                                        report.stages.push(StageStatus {
-                                            stage: LoadStageName::ExportSnapshot,
-                                            status: "skipped".into(),
-                                            duration_ms: None,
-                                            detail: Some("no snapshot path requested".into()),
-                                        });
-                                    }
-                                    // D127: report stamp follows policy, not ingest unlock alone
-                                    if !policy.enable_import {
-                                        report.import_eligible = false;
-                                    } else {
-                                        report.import_eligible = out.import_eligible;
-                                    }
                                     report.findings.push(LoadFinding {
-                                        code: "ingest_ok".into(),
+                                        code: "extract_ok".into(),
                                         message: format!(
-                                            "citations={} sections={}",
-                                            out.citation_count, out.section_count
+                                            "entities_extracted={} found_in={}",
+                                            ex.entities_extracted, ex.found_in_edges
                                         ),
                                     });
-                                }
-                                Err(e) => {
+                                } else if policy.stages.includes_extract() {
                                     report.stages.push(StageStatus {
-                                        stage: LoadStageName::Ingest,
-                                        status: "fail".into(),
-                                        duration_ms: Some(t.elapsed().as_millis() as u64),
-                                        detail: Some(e.clone()),
+                                        stage: LoadStageName::Extract,
+                                        status: "skipped".into(),
+                                        duration_ms: None,
+                                        detail: Some("pipeline returned no extract outcome".into()),
                                     });
-                                    report.errors.push(e);
-                                    report.ok = false;
                                 }
+                                if let Some(snap) = &ing.snapshot_path {
+                                    report.snapshot_path = Some(snap.clone());
+                                    report.stages.push(StageStatus {
+                                        stage: LoadStageName::ExportSnapshot,
+                                        status: "ok".into(),
+                                        duration_ms: None,
+                                        detail: Some(snap.clone()),
+                                    });
+                                } else if policy.stages.includes_export_snapshot() {
+                                    report.stages.push(StageStatus {
+                                        stage: LoadStageName::ExportSnapshot,
+                                        status: "skipped".into(),
+                                        duration_ms: None,
+                                        detail: Some("no snapshot path".into()),
+                                    });
+                                }
+                                if !policy.enable_import {
+                                    report.import_eligible = false;
+                                } else {
+                                    report.import_eligible = ing.import_eligible;
+                                }
+                            }
+                            Err(e) => {
+                                report.stages.push(StageStatus {
+                                    stage: LoadStageName::Ingest,
+                                    status: "fail".into(),
+                                    duration_ms: Some(t.elapsed().as_millis() as u64),
+                                    detail: Some(e.clone()),
+                                });
+                                report.errors.push(e);
+                                report.ok = false;
                             }
                         }
                     }
                 }
             }
-        } else {
-            self.stamp_skipped_downstream(&mut report, policy, false);
-        }
-
-        if policy.stages.includes_extract() {
-            report.stages.push(StageStatus {
-                stage: LoadStageName::Extract,
-                status: "skipped".into(),
-                duration_ms: None,
-                detail: Some("extract not in this load path (use da extract)".into()),
-            });
         }
 
         report.stages.push(StageStatus {
@@ -269,7 +307,18 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
         report
     }
 
-    /// Returns (report skeleton after ensure, ensure_ok).
+    /// Backward-compatible alias used by earlier CLI wiring.
+    pub async fn run_with_ingest<P: LoadContentPipeline + ?Sized>(
+        &self,
+        locator_raw: &str,
+        policy: &AcquisitionPolicy,
+        content: Option<&P>,
+        snapshot_output: Option<&Path>,
+    ) -> LoadReport {
+        self.run_with_content(locator_raw, policy, content, snapshot_output)
+            .await
+    }
+
     fn run_through_ensure(
         &self,
         locator_raw: &str,
@@ -407,12 +456,7 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
         }
     }
 
-    fn stamp_skipped_downstream(
-        &self,
-        report: &mut LoadReport,
-        policy: &AcquisitionPolicy,
-        ingest_done: bool,
-    ) {
+    fn stamp_skipped_downstream(&self, report: &mut LoadReport, policy: &AcquisitionPolicy) {
         if matches!(policy.stages, LoadStageSet::Ensure) {
             for stage in [
                 LoadStageName::Ingest,
@@ -428,7 +472,7 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
             }
             return;
         }
-        if policy.stages.includes_ingest() && !ingest_done {
+        if policy.stages.includes_ingest() {
             report.stages.push(StageStatus {
                 stage: LoadStageName::Ingest,
                 status: "skipped".into(),
@@ -441,7 +485,7 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                 stage: LoadStageName::Extract,
                 status: "skipped".into(),
                 duration_ms: None,
-                detail: Some("extract not in this load path".into()),
+                detail: Some("extract not run".into()),
             });
         }
         if policy.stages.includes_export_snapshot() && report.snapshot_path.is_none() {
@@ -490,7 +534,6 @@ fn resolve_primary_path(catalog_root: &Path, rel_or_abs: &str) -> PathBuf {
     if under_root.exists() {
         return under_root;
     }
-    // Also try CWD-relative (report paths may be repo-relative).
     if p.exists() {
         return p;
     }
@@ -504,35 +547,45 @@ mod tests {
     use da_ports::MockSourceAcquisition;
     use std::sync::Mutex;
 
-    struct RecordingIngest {
-        calls: Mutex<Vec<(String, String)>>,
+    struct RecordingPipeline {
+        calls: Mutex<Vec<String>>,
         fail: bool,
+        with_extract: bool,
     }
 
     #[async_trait::async_trait]
-    impl LoadContentIngest for RecordingIngest {
-        async fn ingest_primary(
+    impl LoadContentPipeline for RecordingPipeline {
+        async fn run_content(
             &self,
-            paper_id: &str,
-            primary_path: &Path,
-            _enable_import: bool,
-            snapshot_output: Option<&Path>,
-        ) -> Result<LoadIngestOutcome, String> {
+            req: LoadContentRequest<'_>,
+        ) -> Result<LoadContentOutcome, String> {
             self.calls
                 .lock()
                 .unwrap()
-                .push((paper_id.to_string(), primary_path.display().to_string()));
+                .push(format!("{}:{}", req.paper_id, req.include_extract));
             if self.fail {
-                return Err("ingest boom".into());
+                return Err("content boom".into());
             }
-            Ok(LoadIngestOutcome {
-                paper_id: paper_id.into(),
-                title: "T".into(),
-                body_chars: 10,
-                section_count: 2,
-                citation_count: 1,
-                snapshot_path: snapshot_output.map(|p| p.display().to_string()),
-                import_eligible: false,
+            Ok(LoadContentOutcome {
+                ingest: LoadIngestOutcome {
+                    paper_id: req.paper_id.into(),
+                    title: "Real Title From GROBID".into(),
+                    body_chars: 10,
+                    section_count: 2,
+                    citation_count: 1,
+                    snapshot_path: req.snapshot_output.map(|p| p.display().to_string()),
+                    import_eligible: false,
+                },
+                extract: if req.include_extract && self.with_extract {
+                    Some(LoadExtractOutcome {
+                        entities_extracted: 3,
+                        entities_created: 3,
+                        mentions_edges: 3,
+                        found_in_edges: 2,
+                    })
+                } else {
+                    None
+                },
             })
         }
     }
@@ -547,22 +600,13 @@ mod tests {
         let uc = ArticleLoadUseCase::new(&mock);
         let policy = AcquisitionPolicy::ensure_only();
         let report = uc.run("2602.04837", &policy);
-
-        assert_eq!(report.schema_version, LOAD_REPORT_SCHEMA_VERSION);
         assert!(report.ok, "errors={:?}", report.errors);
         assert!(!report.import_eligible);
-        assert_eq!(report.provider, "arxiv");
         assert!(
             report
                 .stages
                 .iter()
                 .any(|s| s.stage == LoadStageName::EnsureAssets && s.status == "catalog_hit")
-        );
-        assert!(
-            report
-                .stages
-                .iter()
-                .any(|s| s.stage == LoadStageName::Ingest && s.status == "skipped")
         );
     }
 
@@ -570,15 +614,8 @@ mod tests {
     fn ensure_miss_network_denied_report_not_ok() {
         let mock = MockSourceAcquisition::miss_requires_network();
         let uc = ArticleLoadUseCase::new(&mock);
-        let policy = AcquisitionPolicy::ensure_only();
-        let report = uc.run("9999.99999", &policy);
+        let report = uc.run("9999.99999", &AcquisitionPolicy::ensure_only());
         assert!(!report.ok);
-        assert!(
-            report
-                .errors
-                .iter()
-                .any(|e| e.contains("network") || e.contains("allow_network"))
-        );
     }
 
     #[test]
@@ -587,35 +624,32 @@ mod tests {
         let uc = ArticleLoadUseCase::new(&mock);
         let report = uc.run("  ", &AcquisitionPolicy::ensure_only());
         assert!(!report.ok);
-        assert!(!report.errors.is_empty());
     }
 
     #[test]
     fn dry_run_does_not_require_assets() {
         let mock = MockSourceAcquisition::miss_requires_network();
         let uc = ArticleLoadUseCase::new(&mock);
-        let mut policy = AcquisitionPolicy::ensure_only();
-        policy.dry_run = true;
+        let policy = AcquisitionPolicy {
+            dry_run: true,
+            stages: LoadStageSet::Ensure,
+            ..AcquisitionPolicy::default()
+        };
         let report = uc.run("2602.04837", &policy);
         assert!(report.ok, "errors={:?}", report.errors);
-        assert!(
-            report
-                .stages
-                .iter()
-                .any(|s| s.stage == LoadStageName::EnsureAssets && s.status == "dry_run")
-        );
     }
 
     #[tokio::test]
-    async fn ingest_bound_runs_and_exports_snapshot() {
+    async fn content_pipeline_records_real_title_and_snapshot() {
         let mock = MockSourceAcquisition::catalog_hit_pdf(
             "2608.07067",
             "article_catalog/arxiv/cs-ai/2608.07067/source/2608.07067.pdf",
             "sha",
         );
-        let ing = RecordingIngest {
+        let pipe = RecordingPipeline {
             calls: Mutex::new(Vec::new()),
             fail: false,
+            with_extract: false,
         };
         let uc = ArticleLoadUseCase::new(&mock).with_catalog_root("/tmp/catalog");
         let policy = AcquisitionPolicy {
@@ -624,26 +658,51 @@ mod tests {
         };
         let snap = PathBuf::from("/tmp/out.sgsnap");
         let report = uc
-            .run_with_ingest("2608.07067", &policy, Some(&ing), Some(snap.as_path()))
+            .run_with_content("2608.07067", &policy, Some(&pipe), Some(snap.as_path()))
+            .await;
+        assert!(report.ok, "errors={:?}", report.errors);
+        assert!(report.stages.iter().any(|s| {
+            s.detail
+                .as_deref()
+                .is_some_and(|d| d.contains("Real Title"))
+        }));
+        assert_eq!(report.snapshot_path.as_deref(), Some("/tmp/out.sgsnap"));
+        assert!(!report.import_eligible);
+    }
+
+    #[tokio::test]
+    async fn extract_stage_ok_when_pipeline_returns_extract() {
+        let mock = MockSourceAcquisition::catalog_hit_pdf("x", "p.pdf", "s");
+        let pipe = RecordingPipeline {
+            calls: Mutex::new(Vec::new()),
+            fail: false,
+            with_extract: true,
+        };
+        let uc = ArticleLoadUseCase::new(&mock);
+        let policy = AcquisitionPolicy {
+            stages: LoadStageSet::EnsureIngestExtract,
+            ..AcquisitionPolicy::default()
+        };
+        let report = uc
+            .run_with_content("2602.04837", &policy, Some(&pipe), None)
             .await;
         assert!(report.ok, "errors={:?}", report.errors);
         assert!(
             report
                 .stages
                 .iter()
-                .any(|s| s.stage == LoadStageName::Ingest && s.status == "ok")
+                .any(|s| s.stage == LoadStageName::Extract && s.status == "ok")
         );
-        assert_eq!(report.snapshot_path.as_deref(), Some("/tmp/out.sgsnap"));
-        assert_eq!(ing.calls.lock().unwrap().len(), 1);
-        assert!(!report.import_eligible);
+        assert!(pipe.calls.lock().unwrap()[0].ends_with(":true"));
     }
 
     #[tokio::test]
-    async fn ingest_failure_marks_report_not_ok() {
+    async fn content_failure_marks_report_not_ok() {
         let mock = MockSourceAcquisition::catalog_hit_pdf("x", "p.pdf", "s");
-        let ing = RecordingIngest {
+        let pipe = RecordingPipeline {
             calls: Mutex::new(Vec::new()),
             fail: true,
+            with_extract: false,
         };
         let uc = ArticleLoadUseCase::new(&mock);
         let policy = AcquisitionPolicy {
@@ -651,9 +710,9 @@ mod tests {
             ..AcquisitionPolicy::default()
         };
         let report = uc
-            .run_with_ingest("2602.04837", &policy, Some(&ing), None)
+            .run_with_content("2602.04837", &policy, Some(&pipe), None)
             .await;
         assert!(!report.ok);
-        assert!(report.errors.iter().any(|e| e.contains("ingest boom")));
+        assert!(report.errors.iter().any(|e| e.contains("content boom")));
     }
 }

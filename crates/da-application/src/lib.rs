@@ -13,7 +13,8 @@ pub mod pipeline;
 pub mod tex_inspect;
 
 pub use article_load::{
-    ArticleLoadError, ArticleLoadUseCase, LoadContentIngest, LoadIngestOutcome,
+    ArticleLoadError, ArticleLoadUseCase, LoadContentOutcome, LoadContentPipeline,
+    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
 };
 pub use artifact_stage::ArtifactPayloadStage;
 pub use assurance::{

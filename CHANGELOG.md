@@ -1,5 +1,14 @@
 # Changelog
 
+### `da load` content pipeline — real title + extract + dead code drop
+
+- `LoadContentPipeline` binds one process-local store: ingest (real GROBID title)
+  then optional rule extract, then snapshot export.
+- CLI `--stages ingest+extract|full` runs extract under the same load command.
+- Deleted non-product draft `crates/da-cli/src/load_arxiv.rs`.
+- Live: `da load https://arxiv.org/html/2608.07067v1 --stages ingest+extract` →
+  title DocMemo…, 55 sections, extract ok, `.sgsnap` + load-report.v1.
+
 ### `da load` end-to-end — network ensure + ingest (not ensure-only theater)
 
 Closes the operator gap on ADR-056 plane:

@@ -1,14 +1,18 @@
 //! `da load` — composition root for universal article load plane (ADR-056 / D220).
 //!
-//! Wires acquisition adapters + optional real ingest (GROBID + embed + graph).
+//! Wires acquisition + real content pipeline (GROBID ingest, optional extract, snapshot).
 
 use clap::Args;
-use da_adapters::{ArxivSourceAcquisition, FdApiEmbedder, GrobidParser};
+use da_adapters::{ArxivSourceAcquisition, FdApiEmbedder, GrobidParser, RuleBasedExtractor};
 use da_application::{
-    ArticleLoadUseCase, IngestUseCase, LoadContentIngest, LoadIngestOutcome, batch_ingest_pdfs,
+    ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
+    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
 };
 use da_domain::{AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadStageSet};
-use std::path::{Path, PathBuf};
+use da_ports::graph_store::{DirectGraphStore, GraphStore};
+use da_ports::parser::ParserPort;
+use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Debug, Args)]
 pub struct LoadArgs {
@@ -32,7 +36,7 @@ pub struct LoadArgs {
     pub include_tex_source: bool,
 
     /// Stage set: ensure | ingest | ingest+extract | full
-    /// Default **ingest** so one command materializes content (not ensure-only theater).
+    /// Default **ingest** materializes content. Use ingest+extract for entities.
     #[arg(long, default_value = "ingest")]
     pub stages: String,
 
@@ -48,26 +52,21 @@ pub struct LoadArgs {
     #[arg(long)]
     pub report: Option<PathBuf>,
 
-    /// Export .sgsnap after ingest (default under artifacts/article_context/)
+    /// Export .sgsnap after content stages
     #[arg(long)]
     pub output: Option<PathBuf>,
 }
 
-struct CliIngest {
-    enable_import_default: bool,
-}
+struct CliContentPipeline;
 
 #[async_trait::async_trait]
-impl LoadContentIngest for CliIngest {
-    async fn ingest_primary(
-        &self,
-        paper_id: &str,
-        primary_path: &Path,
-        enable_import: bool,
-        snapshot_output: Option<&Path>,
-    ) -> Result<LoadIngestOutcome, String> {
-        if !primary_path.is_file() {
-            return Err(format!("primary PDF missing: {}", primary_path.display()));
+impl LoadContentPipeline for CliContentPipeline {
+    async fn run_content(&self, req: LoadContentRequest<'_>) -> Result<LoadContentOutcome, String> {
+        if !req.primary_path.is_file() {
+            return Err(format!(
+                "primary PDF missing: {}",
+                req.primary_path.display()
+            ));
         }
         if std::env::var("FD_API_KEY")
             .unwrap_or_default()
@@ -77,42 +76,82 @@ impl LoadContentIngest for CliIngest {
             return Err("FD_API_KEY is not set (required for ingest embeddings)".into());
         }
 
-        let parser = Box::new(GrobidParser::from_env());
+        let parser = GrobidParser::from_env();
         if !parser.is_alive().await {
             return Err("GROBID is not reachable (start sidecar on :8070)".into());
         }
+
+        let store = Arc::new(open_graph_store_for_load());
         let embedder = Box::new(FdApiEmbedder::from_env());
-        let graph_store = Box::new(open_graph_store_for_load());
-        let mut ingest = IngestUseCase::new(parser, embedder, graph_store);
-        if enable_import || self.enable_import_default {
-            ingest.eligibility = da_domain::ImportEligibility::Eligible;
+        let mut ingest = IngestUseCase::from_shared(
+            Box::new(parser),
+            embedder,
+            store.clone() as Arc<dyn DirectGraphStore>,
+        );
+        if req.enable_import {
+            ingest = ingest.with_import_eligibility(da_domain::ImportEligibility::Eligible);
         }
 
-        let pdfs = vec![(primary_path.display().to_string(), paper_id.to_string())];
-        let result = batch_ingest_pdfs(&ingest, &pdfs, snapshot_output)
+        let pdf_path = req.primary_path.display().to_string();
+        let result = ingest
+            .ingest_pdf(&pdf_path, req.paper_id)
             .await
-            .map_err(|e| format!("{e:#}"))?;
-        if result.ok == 0 {
-            let detail = result
-                .errors
-                .first()
-                .map(|(_, e)| e.clone())
-                .unwrap_or_else(|| "ingest failed".into());
-            return Err(detail);
+            .map_err(|e| format!("ingest: {e:#}"))?;
+
+        let mut extract_out = None;
+        if req.include_extract {
+            // Same process-local store; re-parse for section text (GROBID may cache locally).
+            let parser2 = GrobidParser::from_env();
+            let parsed = parser2
+                .parse_pdf(&pdf_path, req.paper_id)
+                .await
+                .map_err(|e| format!("parse for extract: {e:#}"))?;
+            let extractor = Box::new(RuleBasedExtractor::new());
+            let extract_uc = ExtractionUseCase::from_shared(
+                extractor,
+                store.clone() as Arc<dyn DirectGraphStore>,
+            );
+            let er = extract_uc
+                .extract_from_parsed(&parsed)
+                .await
+                .map_err(|e| format!("extract: {e:#}"))?;
+            extract_out = Some(LoadExtractOutcome {
+                entities_extracted: er.entities_extracted,
+                entities_created: er.entities_created,
+                mentions_edges: er.mentions_edges,
+                found_in_edges: er.found_in_edges,
+            });
         }
-        Ok(LoadIngestOutcome {
-            paper_id: paper_id.into(),
-            title: paper_id.into(),
-            body_chars: result.total_body_chars,
-            section_count: result.total_sections,
-            citation_count: result.total_citations,
-            snapshot_path: result.snapshot_path,
-            import_eligible: result.import_eligible,
+
+        let snapshot_path = if let Some(out) = req.snapshot_output {
+            if let Some(parent) = out.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let bytes = GraphStore::export_snapshot(store.as_ref())
+                .await
+                .map_err(|e| format!("export snapshot: {e}"))?;
+            std::fs::write(out, &bytes)
+                .map_err(|e| format!("write snapshot {}: {e}", out.display()))?;
+            Some(out.display().to_string())
+        } else {
+            None
+        };
+
+        Ok(LoadContentOutcome {
+            ingest: LoadIngestOutcome {
+                paper_id: result.paper_id,
+                title: result.title,
+                body_chars: result.body_chars,
+                section_count: result.section_count,
+                citation_count: result.citation_count,
+                snapshot_path,
+                import_eligible: result.import_eligible,
+            },
+            extract: extract_out,
         })
     }
 }
 
-/// Graph open for load composition (mirrors main open_graph_store).
 pub fn open_graph_store_for_load() -> da_adapters::SamyamaGraphStore {
     match da_adapters::SamyamaGraphStore::try_from_env() {
         Ok(store) => store,
@@ -150,10 +189,8 @@ pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
     let snap_ref = snap.as_deref();
 
     let report = if policy.stages.includes_ingest() && !policy.dry_run {
-        let ing = CliIngest {
-            enable_import_default: args.enable_import,
-        };
-        uc.run_with_ingest(&args.locator, &policy, Some(&ing), snap_ref)
+        let pipe = CliContentPipeline;
+        uc.run_with_content(&args.locator, &policy, Some(&pipe), snap_ref)
             .await
     } else {
         uc.run(&args.locator, &policy)
@@ -220,8 +257,9 @@ fn parse_stages(s: &str) -> Result<LoadStageSet, String> {
     match s.trim().to_ascii_lowercase().as_str() {
         "ensure" => Ok(LoadStageSet::Ensure),
         "ingest" | "ensure+ingest" | "ensure_ingest" => Ok(LoadStageSet::EnsureIngest),
-        "ingest+extract" | "ensure+ingest+extract" => Ok(LoadStageSet::EnsureIngestExtract),
-        "full" => Ok(LoadStageSet::Full),
+        "ingest+extract" | "ensure+ingest+extract" | "full" => {
+            Ok(LoadStageSet::EnsureIngestExtract)
+        }
         other => Err(format!(
             "unknown --stages {other:?}; use ensure|ingest|ingest+extract|full"
         )),
@@ -250,9 +288,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_stages_ingest_default_shape() {
+    fn parse_stages_shapes() {
         assert_eq!(parse_stages("ingest").unwrap(), LoadStageSet::EnsureIngest);
-        assert_eq!(parse_stages("ensure").unwrap(), LoadStageSet::Ensure);
+        assert_eq!(
+            parse_stages("ingest+extract").unwrap(),
+            LoadStageSet::EnsureIngestExtract
+        );
+        assert_eq!(
+            parse_stages("full").unwrap(),
+            LoadStageSet::EnsureIngestExtract
+        );
     }
 
     #[test]
