@@ -1,5 +1,25 @@
 # Changelog
 
+### M378 S01 bounded RemoteGraphStore read plane
+
+- Added a real universal `RemoteGraphStore` over bounded Samyama RESP instead of
+  widening the CRITICAL-blast-radius embedded `open_for_mode` path.
+- Implements honest GraphStore `health`, `query`, and `query_readonly`; vector,
+  index, snapshot and all HOT DirectGraphStore capabilities fail explicitly as
+  unsupported. Embedded materialization paths are unchanged.
+- Added incremental RESP parsing with timeout and response-size limits, typed
+  connect/write/read/protocol/query errors, row-width validation, UTF-8 checks,
+  partial-frame handling and no hidden retry.
+- Vendor `GRAPH.RO_QUERY` currently delegates to `GRAPH.QUERY`, so a local
+  fail-closed Cypher policy rejects mutation/admin tokens before socket connect
+  while ignoring quoted literals, identifiers and comments.
+- Preserves wire fidelity (D226): RESP integers/null stay typed; bulk values stay
+  strings because vendor bool/float bulk encodings are indistinguishable from
+  legitimate strings `"true"` and `"1.5"`.
+- Real two-process proof against snapshot-preloaded `serve-graph`: PING=PONG,
+  revisions `[1,5]`, count=2, bool wire values preserved as strings, CREATE
+  rejected locally and snapshot export reported unsupported.
+
 ### M363 S04 typed revision preparation read path
 
 - Extended existing application-owned `revision-query` instead of adding a

@@ -14,6 +14,7 @@ pub mod error;
 pub mod graph_mode;
 pub mod mock;
 pub mod mutation;
+pub mod remote;
 pub mod traits;
 
 #[cfg(feature = "samyama")]
@@ -28,6 +29,7 @@ pub use mutation::{
     InstrumentedGraphStore, MutationCounters, MutationDisposition, MutationFamily,
     MutationFamilyCounters,
 };
+pub use remote::{RemoteGraphConfig, RemoteGraphStore, validate_readonly_cypher};
 pub use traits::{DirectGraphStore, GraphStore, QueryResult, VectorMetric, VectorSearchResult};
 
 #[cfg(feature = "samyama")]

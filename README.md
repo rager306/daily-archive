@@ -27,7 +27,7 @@ explicit human go (D127).
 | OpenAlex enrichment | **Done** — `da enrich` |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
 | **Wave 3 health path** | **Done (M307–M310)** — `da serve-graph` (in-memory RESP, optional `--snapshot`), `da graph-ping` |
-| Cross-process **full** GraphStore | **Not yet** — `DA_GRAPH_MODE=remote` → RemoteNotConfigured; health only via RESP |
+| Cross-process GraphStore | **Scalar read plane in progress (M378)** — bounded RESP health/query adapter; vectors/index/snapshot/HOT writes explicitly unsupported |
 | RuVector GNN (Tier 2) | Port traits ready; adapter pending |
 | Agent layer (RuVector/SONA) | Vendored, port traits defined |
 
@@ -138,6 +138,8 @@ cargo run -p da-cli --example revision_readiness_canary -- \
 # or: da serve-graph --snapshot data/samyama/batch.sgsnap --port 16379
 # Terminal B: health probe
 ./target/debug/da graph-ping --port 16379   # → PONG
+# Direct universal read-plane probe: scalar GraphStore query + fail-closed write
+cargo run -p kg-storage --example remote_graph_probe -- 127.0.0.1:16379
 # Note: default port 16379 (not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380)
 ```
 
@@ -243,7 +245,7 @@ pre-commit run --all-files
 | `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--cache-root …] [--batch-report-dir …] [--output hub.sgsnap]` | DATA-driven batch ensure or hub content; atomic per-unit reports and one process-local snapshot |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
 | `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
-| `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph (M310; not full remote store) |
+| `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph; M378 scalar remote query adapter is separate from HOT writes |
 | `da graph-stats` | Node/edge counts |
 | `da analyze --algorithm ppr --seed …` | Graph algorithms on process-local store (Wave 1–2) |
 | `da schema-init` | Initialize all 26 graph indexes |
