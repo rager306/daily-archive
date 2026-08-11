@@ -1,5 +1,19 @@
 # Changelog
 
+### M382 S01-S02 typed checkpoint identity evidence
+
+- Bumped corpus checkpoint package to `corpus-required-layer-checkpoint.v2` and
+  replaced ambiguous `snapshot.sha256` with explicit physical SHA, strict
+  semantic SHA, semantic algorithm, path and graph counts. Domain validation,
+  package digest and serde roundtrip bind every identity field.
+- Added production `da snapshot-identity --input … --report …`. It delegates
+  canonicalization to `kg_storage::fingerprint_snapshot`, enforces compressed
+  and decompressed bounds, emits atomic self-digested evidence, keeps D127
+  false, and preserves an existing report when malformed input fails.
+- Migrated both corpus checkpoint compositions to the typed identity contract.
+  Derived lineage is not yet accepted: D229 requires ordered producer-report
+  continuity before the unsafe waiver can be removed in S03.
+
 ### M381 S01-S02 strict semantic snapshot identity
 
 - Added bounded project-owned `.sgsnap` identity parsing with two explicit

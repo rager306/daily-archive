@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use da_domain::corpus_checkpoint::{
     AcapIdentity, CorpusCheckpointError, CorpusCheckpointPackage, REQUIRED_ACAP_LAYERS,
-    SealCorpusCheckpointInput, SnapshotIdentity, StructuralTaskEvidence, TaskClassGateRow,
+    SealCorpusCheckpointInput, SnapshotArtifactIdentity, StructuralTaskEvidence, TaskClassGateRow,
     seal_corpus_checkpoint,
 };
 use da_domain::graph_tasks::{GraphTaskClass, TaskClassStatus};
@@ -31,10 +31,7 @@ pub struct CorpusCheckpointInput {
     pub pipeline_revision: String,
     pub materialization_manifest_sha256: ContentDigest,
     pub materialization_report_sha256: ContentDigest,
-    pub snapshot_path: String,
-    pub snapshot_sha256: ContentDigest,
-    pub snapshot_nodes: u64,
-    pub snapshot_edges: u64,
+    pub snapshot: SnapshotArtifactIdentity,
     pub acap_report_path: String,
     pub acap: CorpusAssuranceReport,
     pub suite_path: String,
@@ -111,12 +108,7 @@ impl CorpusCheckpointUseCase {
             pipeline_revision: input.pipeline_revision,
             materialization_manifest_sha256: input.materialization_manifest_sha256,
             materialization_report_sha256: input.materialization_report_sha256,
-            snapshot: SnapshotIdentity {
-                path: input.snapshot_path,
-                sha256: input.snapshot_sha256,
-                nodes: input.snapshot_nodes,
-                edges: input.snapshot_edges,
-            },
+            snapshot: input.snapshot,
             acap,
             structural_tasks: StructuralTaskEvidence {
                 suite_path: input.suite_path,

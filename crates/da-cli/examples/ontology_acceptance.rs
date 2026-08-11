@@ -81,7 +81,9 @@ struct AcceptanceReport {
     same_process: bool,
     import_eligible: bool,
     snapshot_path: String,
-    snapshot_sha256: String,
+    snapshot_physical_sha256: String,
+    snapshot_semantic_sha256: String,
+    snapshot_semantic_algorithm: String,
     nodes: u64,
     edges: u64,
     acap_verdict: String,
@@ -120,6 +122,8 @@ async fn main() -> Result<()> {
     let snapshot_bytes = std::fs::read(&snapshot_path)
         .with_context(|| format!("read {}", snapshot_path.display()))?;
     let snapshot_sha = ContentDigest::of_bytes(&snapshot_bytes);
+    let snapshot_identity = kg_storage::fingerprint_snapshot(&snapshot_bytes)
+        .map_err(|error| anyhow!("fingerprint {}: {error}", snapshot_path.display()))?;
 
     let mat_bytes =
         std::fs::read(&mat_path).with_context(|| format!("read {}", mat_path.display()))?;
@@ -156,6 +160,14 @@ async fn main() -> Result<()> {
     let nodes = store.node_count().await as u64;
     let edges = store.edge_count().await as u64;
     anyhow::ensure!(nodes > 0, "input snapshot contains zero nodes");
+    anyhow::ensure!(
+        nodes == snapshot_identity.node_count && edges == snapshot_identity.edge_count,
+        "snapshot identity counts differ from imported graph: identity={}/{} graph={}/{}",
+        snapshot_identity.node_count,
+        snapshot_identity.edge_count,
+        nodes,
+        edges
+    );
 
     let task_report = run_graph_task_suite(&store, &args.graph, &suite).await;
     let tasks_json = serde_json::to_vec_pretty(&serde_json::json!({
@@ -192,10 +204,15 @@ async fn main() -> Result<()> {
         materialization_manifest_sha256: ContentDigest::try_from(manifest_sha.to_string())
             .map_err(|e| anyhow!("manifest digest: {e}"))?,
         materialization_report_sha256: mat_report_sha,
-        snapshot_path: display_path(&repo_root, &snapshot_path),
-        snapshot_sha256: snapshot_sha.clone(),
-        snapshot_nodes: nodes,
-        snapshot_edges: edges,
+        snapshot: da_domain::corpus_checkpoint::SnapshotArtifactIdentity {
+            path: display_path(&repo_root, &snapshot_path),
+            physical_sha256: snapshot_sha.clone(),
+            semantic_sha256: ContentDigest::try_from(snapshot_identity.semantic_sha256.clone())
+                .map_err(|e| anyhow!("semantic snapshot digest: {e}"))?,
+            semantic_algorithm: snapshot_identity.semantic_algorithm.clone(),
+            nodes,
+            edges,
+        },
         acap_report_path: display_path(&repo_root, &acap_path),
         acap: acap.clone(),
         suite_path: display_path(&repo_root, &tasks_path),
@@ -229,12 +246,14 @@ async fn main() -> Result<()> {
     };
 
     let acceptance = AcceptanceReport {
-        schema_version: "ontology-acceptance.v1",
+        schema_version: "ontology-acceptance.v2",
         verdict: verdict.into(),
         same_process: true,
         import_eligible: false,
         snapshot_path: display_path(&repo_root, &snapshot_path),
-        snapshot_sha256: snapshot_sha.as_str().to_string(),
+        snapshot_physical_sha256: snapshot_sha.as_str().to_string(),
+        snapshot_semantic_sha256: snapshot_identity.semantic_sha256,
+        snapshot_semantic_algorithm: snapshot_identity.semantic_algorithm,
         nodes,
         edges,
         acap_verdict: format!("{:?}", acap.verdict).to_ascii_lowercase(),

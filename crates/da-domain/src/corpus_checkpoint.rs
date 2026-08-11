@@ -12,7 +12,9 @@ use std::collections::BTreeMap;
 use crate::graph_tasks::{GraphTaskClass, TaskClassStatus};
 use crate::{AssuranceVerdict, ContentDigest};
 
-pub const CORPUS_CHECKPOINT_SCHEMA_VERSION: &str = "corpus-required-layer-checkpoint.v1";
+pub const CORPUS_CHECKPOINT_SCHEMA_VERSION: &str = "corpus-required-layer-checkpoint.v2";
+pub const STRICT_SEMANTIC_SNAPSHOT_ALGORITHM: &str = "sgsnap-vid-canonical-json.v1";
+pub const SNAPSHOT_IDENTITY_REPORT_SCHEMA_VERSION: &str = "snapshot-identity-evidence.v1";
 
 /// Required ACAP layers that must be Observed for S09 corpus assurance.
 pub const REQUIRED_ACAP_LAYERS: [&str; 7] = [
@@ -39,11 +41,87 @@ pub const FULL_SEMANTIC_REQUIRED_TASK_CLASSES: [GraphTaskClass; 5] = [
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SnapshotIdentity {
+pub struct SnapshotArtifactIdentity {
     pub path: String,
-    pub sha256: ContentDigest,
+    pub physical_sha256: ContentDigest,
+    pub semantic_sha256: ContentDigest,
+    pub semantic_algorithm: String,
     pub nodes: u64,
     pub edges: u64,
+}
+
+impl SnapshotArtifactIdentity {
+    pub fn validate(&self) -> Result<(), CorpusCheckpointError> {
+        if self.path.trim().is_empty() {
+            return Err(CorpusCheckpointError::InvalidInput(
+                "snapshot path must not be empty".into(),
+            ));
+        }
+        if self.semantic_algorithm != STRICT_SEMANTIC_SNAPSHOT_ALGORITHM {
+            return Err(CorpusCheckpointError::InvalidInput(format!(
+                "unsupported snapshot semantic algorithm: {}",
+                self.semantic_algorithm
+            )));
+        }
+        if self.nodes == 0 {
+            return Err(CorpusCheckpointError::InvalidInput(
+                "snapshot node count must be > 0".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotIdentityEvidence {
+    pub schema_version: String,
+    pub snapshot: SnapshotArtifactIdentity,
+    pub import_eligible: bool,
+    pub report_sha256: String,
+}
+
+impl SnapshotIdentityEvidence {
+    pub fn seal(snapshot: SnapshotArtifactIdentity) -> Result<Self, CorpusCheckpointError> {
+        snapshot.validate()?;
+        let mut report = Self {
+            schema_version: SNAPSHOT_IDENTITY_REPORT_SCHEMA_VERSION.into(),
+            snapshot,
+            import_eligible: false,
+            report_sha256: String::new(),
+        };
+        report.report_sha256 = snapshot_identity_report_digest(&report);
+        report.validate()?;
+        Ok(report)
+    }
+
+    pub fn validate(&self) -> Result<(), CorpusCheckpointError> {
+        if self.schema_version != SNAPSHOT_IDENTITY_REPORT_SCHEMA_VERSION {
+            return Err(CorpusCheckpointError::InvalidPackage(
+                "snapshot identity report schema version mismatch".into(),
+            ));
+        }
+        if self.import_eligible {
+            return Err(CorpusCheckpointError::InvalidPackage(
+                "snapshot identity report import_eligible must be false".into(),
+            ));
+        }
+        self.snapshot.validate().map_err(|error| {
+            CorpusCheckpointError::InvalidPackage(format!("snapshot identity: {error}"))
+        })?;
+        if self.report_sha256 != snapshot_identity_report_digest(self) {
+            return Err(CorpusCheckpointError::InvalidPackage(
+                "snapshot identity report digest mismatch".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+pub fn snapshot_identity_report_digest(report: &SnapshotIdentityEvidence) -> String {
+    let mut clone = report.clone();
+    clone.report_sha256.clear();
+    let json = serde_json::to_string(&clone).expect("snapshot identity report must serialize");
+    hex::encode(Sha256::digest(json.as_bytes()))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -97,7 +175,7 @@ pub struct CorpusCheckpointPackage {
     pub pipeline_revision: String,
     pub materialization_manifest_sha256: ContentDigest,
     pub materialization_report_sha256: ContentDigest,
-    pub snapshot: SnapshotIdentity,
+    pub snapshot: SnapshotArtifactIdentity,
     pub acap: AcapIdentity,
     pub structural_tasks: StructuralTaskEvidence,
     pub required_acap_layers: Vec<String>,
@@ -130,6 +208,9 @@ impl CorpusCheckpointPackage {
                 "import_eligible must be false".into(),
             ));
         }
+        self.snapshot.validate().map_err(|error| {
+            CorpusCheckpointError::InvalidPackage(format!("snapshot identity: {error}"))
+        })?;
         if self.package_sha256 != package_digest(self) {
             return Err(CorpusCheckpointError::InvalidPackage(
                 "package digest mismatch".into(),
@@ -152,7 +233,7 @@ pub struct SealCorpusCheckpointInput {
     pub pipeline_revision: String,
     pub materialization_manifest_sha256: ContentDigest,
     pub materialization_report_sha256: ContentDigest,
-    pub snapshot: SnapshotIdentity,
+    pub snapshot: SnapshotArtifactIdentity,
     pub acap: AcapIdentity,
     pub structural_tasks: StructuralTaskEvidence,
     /// When empty, defaults to REQUIRED_STRUCTURAL_TASK_CLASSES.
@@ -183,11 +264,7 @@ pub fn seal_corpus_checkpoint(
             "D127 must remain locked".into(),
         ));
     }
-    if snapshot.sha256.as_str().len() != 64 {
-        return Err(CorpusCheckpointError::InvalidInput(
-            "snapshot sha256 must be canonical".into(),
-        ));
-    }
+    snapshot.validate()?;
     if acap.article_count == 0 {
         return Err(CorpusCheckpointError::InvalidInput(
             "article_count must be > 0".into(),
@@ -405,9 +482,11 @@ mod tests {
             pipeline_revision: "manifest:test".into(),
             materialization_manifest_sha256: digest("manifest"),
             materialization_report_sha256: digest("mat-report"),
-            snapshot: SnapshotIdentity {
+            snapshot: SnapshotArtifactIdentity {
                 path: "snap.sgsnap".into(),
-                sha256: digest("snap"),
+                physical_sha256: digest("snap-physical"),
+                semantic_sha256: digest("snap-semantic"),
+                semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
                 nodes: 23928,
                 edges: 39387,
             },
@@ -478,6 +557,42 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_identity_evidence_roundtrips_and_rejects_mutation() {
+        let identity = SnapshotArtifactIdentity {
+            path: "artifact.sgsnap".into(),
+            physical_sha256: digest("physical"),
+            semantic_sha256: digest("semantic"),
+            semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
+            nodes: 3,
+            edges: 2,
+        };
+        let report = SnapshotIdentityEvidence::seal(identity).unwrap();
+        let bytes = serde_json::to_vec(&report).unwrap();
+        let mut roundtrip: SnapshotIdentityEvidence = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(roundtrip, report);
+        assert!(roundtrip.validate().is_ok());
+        roundtrip.snapshot.semantic_sha256 = digest("mutated");
+        assert!(roundtrip.validate().is_err());
+    }
+
+    #[test]
+    fn snapshot_identity_fields_are_validated_and_digest_bound() {
+        let package = seal(acap_pass(), structural_pass_with_bootstrap_empty(), true).unwrap();
+        let mut bad_algorithm = package.clone();
+        bad_algorithm.snapshot.semantic_algorithm = "counts-only.v0".into();
+        bad_algorithm.package_sha256 = package_digest(&bad_algorithm);
+        assert!(bad_algorithm.validate().is_err());
+
+        let mut semantic_mutation = package.clone();
+        semantic_mutation.snapshot.semantic_sha256 = digest("different-semantic");
+        assert_ne!(package_digest(&semantic_mutation), package.package_sha256);
+
+        let mut physical_mutation = package.clone();
+        physical_mutation.snapshot.physical_sha256 = digest("different-physical");
+        assert_ne!(package_digest(&physical_mutation), package.package_sha256);
+    }
+
+    #[test]
     fn overall_suite_false_does_not_block_when_required_classes_pass() {
         let tasks = structural_pass_with_bootstrap_empty();
         assert!(!tasks.overall_passed);
@@ -492,9 +607,11 @@ mod tests {
             pipeline_revision: "manifest:test".into(),
             materialization_manifest_sha256: digest("manifest"),
             materialization_report_sha256: digest("mat-report"),
-            snapshot: SnapshotIdentity {
+            snapshot: SnapshotArtifactIdentity {
                 path: "snap.sgsnap".into(),
-                sha256: digest("snap"),
+                physical_sha256: digest("snap-physical"),
+                semantic_sha256: digest("snap-semantic"),
+                semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
                 nodes: 10,
                 edges: 20,
             },

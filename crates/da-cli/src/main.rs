@@ -8,6 +8,7 @@ mod graph_query;
 mod health_report;
 mod load;
 mod serve_graph;
+mod snapshot_identity;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
 /// Remote mode exits with a clear error — no fake success, no server auto-start.
@@ -159,6 +160,9 @@ enum Commands {
         #[arg(long)]
         input: String,
     },
+
+    /// Compute exact-byte and strict-semantic identity for a `.sgsnap`.
+    SnapshotIdentity(snapshot_identity::SnapshotIdentityArgs),
 
     /// Show graph statistics (node/edge counts)
     GraphStats {
@@ -452,6 +456,12 @@ fn main() {
             rt.block_on(async {
                 load_snapshot(&input).await;
             });
+        }
+        Commands::SnapshotIdentity(args) => {
+            if let Err(error) = snapshot_identity::run(&args) {
+                eprintln!("snapshot-identity failed: {error:#}");
+                std::process::exit(2);
+            }
         }
         Commands::GraphStats { snapshot } => {
             rt.block_on(async {

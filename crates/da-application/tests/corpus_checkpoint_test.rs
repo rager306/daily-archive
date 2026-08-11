@@ -12,12 +12,25 @@ use da_application::pipeline_stage_assurance::{
     PipelineStageAssuranceInput, PipelineStageAssuranceUseCase, StageArtifactLineage,
     StageGraphCounts, StageMaterializationReplay,
 };
-use da_domain::corpus_checkpoint::CorpusCheckpointVerdict;
+use da_domain::corpus_checkpoint::{
+    CorpusCheckpointVerdict, STRICT_SEMANTIC_SNAPSHOT_ALGORITHM, SnapshotArtifactIdentity,
+};
 use da_domain::graph_tasks::{GraphTaskClass, TaskClassStatus};
 use da_domain::{ContentDigest, ReplayObservation};
 
 fn digest(seed: &str) -> ContentDigest {
     ContentDigest::of_text(seed)
+}
+
+fn snapshot_identity() -> SnapshotArtifactIdentity {
+    SnapshotArtifactIdentity {
+        path: "snap.sgsnap".into(),
+        physical_sha256: digest("snap-physical"),
+        semantic_sha256: digest("snap-semantic"),
+        semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
+        nodes: 10,
+        edges: 20,
+    }
 }
 
 fn policy_layers() -> Vec<CorpusPolicyLayer> {
@@ -126,10 +139,7 @@ fn seals_pass_with_bootstrap_summary_empty_visible() {
         pipeline_revision: "manifest:test".into(),
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
-        snapshot_path: "snap.sgsnap".into(),
-        snapshot_sha256: digest("snap"),
-        snapshot_nodes: 10,
-        snapshot_edges: 20,
+        snapshot: snapshot_identity(),
         acap_report_path: "assurance_report.json".into(),
         acap,
         suite_path: "tasks.cypher".into(),
@@ -161,10 +171,7 @@ fn missing_fact_class_fails_checkpoint() {
         pipeline_revision: "manifest:test".into(),
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
-        snapshot_path: "snap.sgsnap".into(),
-        snapshot_sha256: digest("snap"),
-        snapshot_nodes: 10,
-        snapshot_edges: 20,
+        snapshot: snapshot_identity(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
@@ -187,10 +194,7 @@ fn d127_import_eligible_rejected() {
         pipeline_revision: "manifest:test".into(),
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
-        snapshot_path: "snap.sgsnap".into(),
-        snapshot_sha256: digest("snap"),
-        snapshot_nodes: 10,
-        snapshot_edges: 20,
+        snapshot: snapshot_identity(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
@@ -216,10 +220,7 @@ fn deterministic_digest() {
         pipeline_revision: "manifest:test".into(),
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
-        snapshot_path: "snap.sgsnap".into(),
-        snapshot_sha256: digest("snap"),
-        snapshot_nodes: 10,
-        snapshot_edges: 20,
+        snapshot: snapshot_identity(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
