@@ -96,7 +96,8 @@ cargo build -p da-cli
 cargo run -p da-cli --example revision_graph_canary
 cargo run -p da-cli -- graph-stats --snapshot \
   artifacts/article_context/revision_graph_2506.07853.sgsnap
-# Read-only revision queries: selector is current, history, or exact vN.
+# Read-only prepared revision query: current/history/exact vN plus grounded
+# summaries and current readiness state/reasons/policy lineage in JSON.
 cargo run -p da-cli -- revision-query --id 2506.07853 --selector history \
   --snapshot artifacts/article_context/revision_graph_2506.07853.sgsnap --json
 # Deterministic revision summaries: generic Summary nodes, DATA-driven semantic

@@ -1,5 +1,26 @@
 # Changelog
 
+### M363 S04 typed revision preparation read path
+
+- Extended existing application-owned `revision-query` instead of adding a
+  parallel CLI command. Each selected revision now returns exact grounded
+  Summary records and one current deterministic readiness record beside source,
+  Section count, predecessor and manifestations.
+- Summary joins require the exact revision Section VID and revision VID;
+  readiness joins require `signal_type=agent_readiness`, `is_current=true`, and
+  exact revision source identity. Foreign/stale signals are ignored and multiple
+  current readiness signals fail as invalid graph state.
+- Additive JSON fields expose summary role/text/source hash/method and readiness
+  state, blocker/diagnostic codes, evidence hash and policy lineage. Numeric
+  current/vN/history selector and failure exit semantics are unchanged.
+- Real read-only proof over the readiness snapshot: history `[v1,v5]`, current
+  v5, v1 has 14 summaries including 2 Methods, v5 has 10 generic summaries,
+  both readiness states partial with version-faithful reasons, D127 false, and
+  source snapshot SHA unchanged.
+- Added four cross-layer revision preparation tasks tying explicit revision
+  numbers to grounded Methods evidence, current readiness, manifestations and
+  D127. All PASS with no EMPTY/ERROR.
+
 ### M363 S03 revision-scoped deterministic readiness
 
 - Replaced the stale Paper-scoped/LLM-score readiness proposal with a distinct
@@ -21,8 +42,9 @@
 - Added production + compiled `PaperRevision -[:hasQualitySignal]-> QualitySignal`
   parity and a typed `readiness` semantic graph-task contour.
 - Real Samyama v1/v5 chain PASS: two current partial signals, four readiness
-  tasks PASS, no EMPTY/ERROR. v1 lacks Methods+Results; v5 has Methods but lacks
-  Results. Missingness remains explicit and no LLM/network invents evidence.
+  tasks PASS, no EMPTY/ERROR. v1 has grounded Methods but lacks Results; current
+  v5 lacks both Methods and Results. Missingness remains explicit and no
+  LLM/network invents evidence.
 
 ### M363 S02 DATA-driven Methods and Results summary roles
 

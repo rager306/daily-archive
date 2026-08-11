@@ -64,6 +64,27 @@ pub struct RevisionManifestationView {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RevisionSummaryView {
+    pub vid: String,
+    pub source_vid: String,
+    pub summary_type: String,
+    pub text: String,
+    pub source_text_sha256: String,
+    pub method: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RevisionReadinessView {
+    pub vid: String,
+    pub state: String,
+    pub blocker_codes: Vec<String>,
+    pub diagnostic_codes: Vec<String>,
+    pub evidence_sha256: String,
+    pub policy_schema_version: String,
+    pub policy_sha256: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ArticleRevisionView {
     pub revision: u32,
     pub revision_vid: String,
@@ -72,6 +93,8 @@ pub struct ArticleRevisionView {
     pub is_current: bool,
     pub predecessor_revision: Option<u32>,
     pub section_count: usize,
+    pub summaries: Vec<RevisionSummaryView>,
+    pub readiness: Option<RevisionReadinessView>,
     pub manifestations: Vec<RevisionManifestationView>,
     pub import_eligible: bool,
 }
@@ -251,6 +274,7 @@ impl RevisionQueryUseCase {
 
         let section_nodes = self.active_targets(node, "hasPart").await;
         let manifestation_nodes = self.active_targets(node, "HAS_MANIFESTATION").await;
+        let readiness_nodes = self.active_targets(node, "hasQualitySignal").await;
         let predecessor_nodes = self.active_targets(node, "SUPERSEDES").await;
         let predecessor_revision = match predecessor_nodes.as_slice() {
             [] => None,
@@ -287,6 +311,86 @@ impl RevisionQueryUseCase {
         }
         manifestations.sort_by(|a, b| a.format.cmp(&b.format).then(a.vid.cmp(&b.vid)));
 
+        let mut summaries = Vec::new();
+        for section in &section_nodes {
+            let source_vid = self.required_string(*section, "vid").await?;
+            for summary in self.active_targets(*section, "hasSummary").await {
+                if self
+                    .graph
+                    .get_node_property_string(summary, "source_id")
+                    .await
+                    .as_deref()
+                    != Some(source_vid.as_str())
+                    || self
+                        .graph
+                        .get_node_property_string(summary, "revision_vid")
+                        .await
+                        .as_deref()
+                        != Some(revision_vid.as_str())
+                {
+                    continue;
+                }
+                summaries.push(RevisionSummaryView {
+                    vid: self.required_string(summary, "vid").await?,
+                    source_vid: source_vid.clone(),
+                    summary_type: self.required_string(summary, "summary_type").await?,
+                    text: self.required_string(summary, "text").await?,
+                    source_text_sha256: self.required_string(summary, "source_text_sha256").await?,
+                    method: self.required_string(summary, "method").await?,
+                });
+            }
+        }
+        summaries.sort_by(|left, right| {
+            left.source_vid
+                .cmp(&right.source_vid)
+                .then(left.vid.cmp(&right.vid))
+        });
+
+        let mut current_readiness = Vec::new();
+        for signal in readiness_nodes {
+            if self
+                .graph
+                .get_node_property_string(signal, "signal_type")
+                .await
+                .as_deref()
+                == Some("agent_readiness")
+                && self
+                    .graph
+                    .get_node_property_bool(signal, "is_current")
+                    .await
+                    == Some(true)
+                && self
+                    .graph
+                    .get_node_property_string(signal, "source_id")
+                    .await
+                    .as_deref()
+                    == Some(revision_vid.as_str())
+            {
+                current_readiness.push(signal);
+            }
+        }
+        let readiness = match current_readiness.as_slice() {
+            [] => None,
+            [signal] => Some(RevisionReadinessView {
+                vid: self.required_string(*signal, "vid").await?,
+                state: self.required_string(*signal, "state").await?,
+                blocker_codes: self.required_json_strings(*signal, "blocker_codes").await?,
+                diagnostic_codes: self
+                    .required_json_strings(*signal, "diagnostic_codes")
+                    .await?,
+                evidence_sha256: self.required_string(*signal, "evidence_sha256").await?,
+                policy_schema_version: self
+                    .required_string(*signal, "policy_schema_version")
+                    .await?,
+                policy_sha256: self.required_string(*signal, "policy_sha256").await?,
+            }),
+            _ => {
+                return Err(RevisionQueryError::InvalidGraph(format!(
+                    "PaperRevision v{revision} has multiple current agent_readiness signals"
+                )));
+            }
+        };
+
         Ok(ArticleRevisionView {
             revision,
             revision_vid,
@@ -295,6 +399,8 @@ impl RevisionQueryUseCase {
             is_current,
             predecessor_revision,
             section_count: section_nodes.len(),
+            summaries,
+            readiness,
             manifestations,
             import_eligible,
         })
@@ -327,6 +433,19 @@ impl RevisionQueryUseCase {
             }
         }
         targets.into_iter().collect()
+    }
+
+    async fn required_json_strings(
+        &self,
+        node: u64,
+        property: &str,
+    ) -> Result<Vec<String>, RevisionQueryError> {
+        let raw = self.required_string(node, property).await?;
+        serde_json::from_str(&raw).map_err(|error| {
+            RevisionQueryError::InvalidGraph(format!(
+                "node {node} has invalid JSON string array {property}: {error}"
+            ))
+        })
     }
 
     async fn required_string(
@@ -399,6 +518,7 @@ mod tests {
                 .create_edge(paper, revision_node, "HAS_REVISION")
                 .await
                 .unwrap();
+            let mut revision_sections = Vec::new();
             for ordinal in 0..if revision == 1 { 2 } else { 3 } {
                 let section = store.create_node("Section").await.unwrap();
                 store
@@ -413,7 +533,73 @@ mod tests {
                     .create_edge(revision_node, section, "hasPart")
                     .await
                     .unwrap();
+                revision_sections.push(section);
             }
+            let summary = store.create_node("Summary").await.unwrap();
+            for (property, value) in [
+                ("vid", format!("summary-{revision}")),
+                ("source_id", format!("section-{revision}-0")),
+                ("revision_vid", format!("revision-vid-{revision}")),
+                (
+                    "summary_type",
+                    if revision == 5 {
+                        "methods".into()
+                    } else {
+                        "generic".into()
+                    },
+                ),
+                ("text", format!("summary text v{revision}")),
+                ("source_text_sha256", format!("{:064x}", revision)),
+                ("method", "extractive.first_sentence.v1".into()),
+            ] {
+                store
+                    .set_node_property_string(summary, property, value)
+                    .await
+                    .unwrap();
+            }
+            store
+                .create_edge(revision_sections[0], summary, "hasSummary")
+                .await
+                .unwrap();
+            let readiness = store.create_node("QualitySignal").await.unwrap();
+            for (property, value) in [
+                ("vid", format!("readiness-{revision}")),
+                ("signal_type", "agent_readiness".into()),
+                ("source_id", format!("revision-vid-{revision}")),
+                ("state", "partial".into()),
+                ("blocker_codes", "[]".into()),
+                (
+                    "diagnostic_codes",
+                    if revision == 5 {
+                        "[\"missing_results_summary\"]".into()
+                    } else {
+                        "[\"missing_methods_summary\",\"missing_results_summary\"]".into()
+                    },
+                ),
+                ("evidence_sha256", format!("{:064x}", revision + 10)),
+                ("policy_schema_version", "revision-readiness.v1".into()),
+                ("policy_sha256", "b".repeat(64)),
+            ] {
+                store
+                    .set_node_property_string(readiness, property, value)
+                    .await
+                    .unwrap();
+            }
+            store
+                .set_node_property_bool(readiness, "is_current", true)
+                .await
+                .unwrap();
+            crate::temporal_stamp::create_edge_with_temporal(
+                &store,
+                revision_node,
+                readiness,
+                "hasQualitySignal",
+                &crate::temporal_stamp::open_fact_edge_now(
+                    chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
             for format in ["pdf", "html"] {
                 let manifestation = store.create_node("SourceManifestation").await.unwrap();
                 store
@@ -505,6 +691,25 @@ mod tests {
         assert_eq!(response.revisions[0].section_count, 2);
         assert_eq!(response.revisions[1].section_count, 3);
         assert_eq!(response.revisions[1].predecessor_revision, Some(1));
+        assert_eq!(response.revisions[0].summaries.len(), 1);
+        assert_eq!(response.revisions[0].summaries[0].summary_type, "generic");
+        assert_eq!(response.revisions[1].summaries[0].summary_type, "methods");
+        assert_eq!(
+            response.revisions[0]
+                .readiness
+                .as_ref()
+                .unwrap()
+                .diagnostic_codes,
+            ["missing_methods_summary", "missing_results_summary"]
+        );
+        assert_eq!(
+            response.revisions[1]
+                .readiness
+                .as_ref()
+                .unwrap()
+                .diagnostic_codes,
+            ["missing_results_summary"]
+        );
         assert!(
             response
                 .revisions
@@ -560,6 +765,46 @@ mod tests {
         assert!(matches!(
             query.query("2506.07853", RevisionSelector::Exact(0)).await,
             Err(RevisionQueryError::InvalidSelector(_))
+        ));
+    }
+
+    #[tokio::test]
+    async fn duplicate_current_readiness_is_invalid_graph() {
+        let (store, query) = fixture(&[5]).await;
+        let revision = store
+            .find_node_by_string_property("PaperRevision", "vid", "revision-vid-5")
+            .await
+            .unwrap();
+        let duplicate = store.create_node("QualitySignal").await.unwrap();
+        for (property, value) in [
+            ("vid", "duplicate-readiness"),
+            ("signal_type", "agent_readiness"),
+            ("source_id", "revision-vid-5"),
+        ] {
+            store
+                .set_node_property_string(duplicate, property, value.into())
+                .await
+                .unwrap();
+        }
+        store
+            .set_node_property_bool(duplicate, "is_current", true)
+            .await
+            .unwrap();
+        crate::temporal_stamp::create_edge_with_temporal(
+            &store,
+            revision,
+            duplicate,
+            "hasQualitySignal",
+            &crate::temporal_stamp::open_fact_edge_now(
+                chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+            ),
+        )
+        .await
+        .unwrap();
+        assert!(matches!(
+            query.query("2506.07853", RevisionSelector::Exact(5)).await,
+            Err(RevisionQueryError::InvalidGraph(message))
+                if message.contains("multiple current agent_readiness")
         ));
     }
 
