@@ -242,7 +242,7 @@ fn main() -> Result<()> {
 
 fn read_json(path: &Path) -> Result<Value> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-    Ok(serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))?)
+    serde_json::from_slice(&bytes).with_context(|| format!("parse {}", path.display()))
 }
 
 fn resolve(repo_root: &Path, relative: &Path) -> PathBuf {

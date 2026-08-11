@@ -172,11 +172,11 @@ async fn main() -> Result<()> {
         );
         std::process::exit(1);
     }
-    if let Some(class) = cluster_class {
-        if class.status != da_domain::graph_tasks::TaskClassStatus::Passed {
-            eprintln!("cluster class did not PASS: {:?}", class);
-            std::process::exit(1);
-        }
+    if let Some(class) = cluster_class
+        && class.status != da_domain::graph_tasks::TaskClassStatus::Passed
+    {
+        eprintln!("cluster class did not PASS: {:?}", class);
+        std::process::exit(1);
     }
     Ok(())
 }

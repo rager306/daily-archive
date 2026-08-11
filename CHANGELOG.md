@@ -1,5 +1,25 @@
 # Changelog
 
+### M373 reliable cached 28-unit textbook hub
+
+- Batch `LoadReport` persistence is atomic and fail-closed; serialization, directory,
+  temporary write, sync, and rename errors include the unit/path instead of being ignored.
+- Real DATA-driven `da load --batch-toc … --stages ingest` completed **28/28**
+  local textbook units: 771 sections, one 494,656-byte Samyama hub artifact,
+  28 parse misses + 28 embed misses, zero report errors, D127 false.
+- Exact replay completed **28/28** with 28 parse hits + 28 embed hits and stable
+  per-stage payload sha256 values; no acquisition network or GROBID calls.
+- Warm embed-cache hits no longer require `FD_API_KEY`; uncached miss/bypass remains
+  explicit and fail-closed. Cached vectors now validate model dimension and reject
+  NaN/Inf before graph materialization.
+- Full architecture verification exposed and fixed an ACAP hard-gate regression:
+  missing materialization replay evidence was incorrectly stamped `NotApplicable`
+  and could PASS. It now fails closed; 16 assurance tests and all 116 application
+  library tests pass.
+- Rust 1.94 clippy-only debts in six existing canary examples were normalized
+  without changing behavior, restoring the all-target architecture gate.
+- ADR-057 remains Proposed: no Collection, KnowledgeUnit, or textbook graph edges.
+
 ### `da load` PipelineCache for embed stage (depends on parse payload)
 
 - Embed abstract/title vectors cached under stage_id `embed` via same

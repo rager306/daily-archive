@@ -268,8 +268,11 @@ impl<'a> MaterializationAssuranceUseCase<'a> {
             ],
             replay_writes: replay.write_delta(),
             replay_observation: replay.replay_observation(),
-            replay_missingness: matches!(replay, MaterializationReplayObservation::NotRun)
-                .then_some(MissingnessReason::NotApplicable),
+            // Replay is a required hard gate at the materialization layer.
+            // NotApplicable is reserved for pre-materialization layers; marking
+            // NotRun as NotApplicable here would silently turn missing physical
+            // write evidence into PASS.
+            replay_missingness: None,
             d127_unlock_count: readback.import_eligible_true_nodes
                 + u64::from(ingest.import_eligible),
             quality_metrics: BTreeMap::from([(

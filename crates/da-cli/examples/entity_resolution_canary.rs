@@ -294,11 +294,11 @@ async fn main() -> Result<()> {
     {
         // soft: only enforce non-growth vs first
     }
-    if let Some(class) = resolution_class {
-        if class.status != da_domain::graph_tasks::TaskClassStatus::Passed {
-            eprintln!("resolution class did not PASS: {:?}", class);
-            std::process::exit(1);
-        }
+    if let Some(class) = resolution_class
+        && class.status != da_domain::graph_tasks::TaskClassStatus::Passed
+    {
+        eprintln!("resolution class did not PASS: {:?}", class);
+        std::process::exit(1);
     }
     Ok(())
 }

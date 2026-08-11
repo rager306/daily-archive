@@ -202,28 +202,25 @@ fn main() -> Result<()> {
         .unwrap_or(false);
     let mut embedded_layers = embedded_layers;
     let mut embedded_source = "artifacts/article_context/materialization_all_200.json".to_string();
-    if let Some(full) = aggregate_full.as_ref().filter(|path| path.is_file()) {
-        if let Ok(bytes) = std::fs::read(full) {
-            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                if let Some(layers) = value.get("layer_results").and_then(|v| v.as_array()) {
-                    let mut set: std::collections::BTreeSet<String> =
-                        embedded_layers.into_iter().collect();
-                    for layer in layers {
-                        let status = layer.get("status").and_then(|v| v.as_str()).unwrap_or("");
-                        if status == "observed" {
-                            if let Some(id) = layer.get("layer_id").and_then(|v| v.as_str()) {
-                                set.insert(id.to_string());
-                            }
-                        }
-                    }
-                    embedded_layers = set.into_iter().collect();
-                    embedded_source = format!(
-                        "artifacts/article_context/materialization_all_200.json+{}",
-                        display_path(&repo_root, full)
-                    );
-                }
+    if let Some(full) = aggregate_full.as_ref().filter(|path| path.is_file())
+        && let Ok(bytes) = std::fs::read(full)
+        && let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes)
+        && let Some(layers) = value.get("layer_results").and_then(|v| v.as_array())
+    {
+        let mut set: std::collections::BTreeSet<String> = embedded_layers.into_iter().collect();
+        for layer in layers {
+            let status = layer.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            if status == "observed"
+                && let Some(id) = layer.get("layer_id").and_then(|v| v.as_str())
+            {
+                set.insert(id.to_string());
             }
         }
+        embedded_layers = set.into_iter().collect();
+        embedded_source = format!(
+            "artifacts/article_context/materialization_all_200.json+{}",
+            display_path(&repo_root, full)
+        );
     }
 
     // Build typed observations.

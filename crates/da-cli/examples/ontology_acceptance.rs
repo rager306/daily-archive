@@ -130,11 +130,10 @@ async fn main() -> Result<()> {
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("materialization report missing manifest_sha256"))?;
     anyhow::ensure!(
-        mat_json
+        !mat_json
             .get("import_eligible")
             .and_then(|v| v.as_bool())
-            .unwrap_or(false)
-            == false,
+            .unwrap_or(false),
         "materialization import_eligible must be false"
     );
 

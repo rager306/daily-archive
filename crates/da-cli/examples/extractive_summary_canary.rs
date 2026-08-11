@@ -204,11 +204,11 @@ async fn main() -> Result<()> {
     if !failures.is_empty() {
         std::process::exit(1);
     }
-    if let Some(class) = summary_class {
-        if class.status != da_domain::graph_tasks::TaskClassStatus::Passed {
-            eprintln!("summary class did not PASS: {:?}", class);
-            std::process::exit(1);
-        }
+    if let Some(class) = summary_class
+        && class.status != da_domain::graph_tasks::TaskClassStatus::Passed
+    {
+        eprintln!("summary class did not PASS: {:?}", class);
+        std::process::exit(1);
     }
     Ok(())
 }

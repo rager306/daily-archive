@@ -85,10 +85,14 @@ cargo build -p da-cli
 # Optional TeX source sidecar (+ inventory) under catalog:
 ./target/debug/da load 2608.07067 --allow-network --stages ensure --include-tex-source
 
-# GNN textbook: full catalog ensure / content hub (one process-local snap)
+# GNN textbook: DATA-driven full catalog ensure / content hub
 ./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml --allow-network
 ./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml \
-  --stages ingest+extract --output artifacts/article_context/gnn_textbook_hub.sgsnap
+  --stages ingest --cache-root artifacts/pipeline_cache/gnn_textbook \
+  --batch-report-dir artifacts/loads/gnn_textbook \
+  --output artifacts/article_context/gnn_textbook_hub.sgsnap
+# Exact replay: the same command with local catalog + warm cache needs no network
+# and no FD_API_KEY; every report records parse=hit + embed=hit.
 
 # Batch + snapshot (durable backup) — legacy multi-id path still available
 ./target/debug/da batch-ingest \
@@ -209,8 +213,8 @@ pre-commit run --all-files
 | `da version` | Version + ADR pin |
 | `da ingest --pdf … --id …` | Single-paper HOT path |
 | `da batch-ingest --ids a,b --output f.sgsnap` | Multi-paper + snapshot export |
-| `da load <locator> [--allow-network] [--stages ensure\|ingest\|ingest+extract] [--include-tex-source] [--cache-root …] [--report …] [--output …]` | Universal acquisition+load plane (ADR-056): catalog ensure + optional content; parse PipelineCache; D127 locked |
-| `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--output hub.sgsnap]` | Batch TOC ensure or hub content into one process-local snapshot |
+| `da load <locator> [--allow-network] [--stages ensure\|ingest\|ingest+extract] [--include-tex-source] [--cache-root …] [--report …] [--output …]` | Universal acquisition+load plane (ADR-056): catalog ensure + optional content; parse+embed PipelineCache; atomic report; D127 locked |
+| `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--cache-root …] [--batch-report-dir …] [--output hub.sgsnap]` | DATA-driven batch ensure or hub content; atomic per-unit reports and one process-local snapshot |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
 | `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
 | `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph (M310; not full remote store) |

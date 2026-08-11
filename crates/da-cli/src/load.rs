@@ -24,8 +24,12 @@ use da_ports::pipeline_cache::{
 };
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static REPORT_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Args)]
 pub struct LoadArgs {
@@ -107,14 +111,6 @@ impl LoadContentPipeline for CliContentPipeline {
                 req.primary_path.display()
             ));
         }
-        if std::env::var("FD_API_KEY")
-            .unwrap_or_default()
-            .trim()
-            .is_empty()
-        {
-            return Err("FD_API_KEY is not set (required for ingest embeddings)".into());
-        }
-
         let primary_path = req.primary_path.display().to_string();
         let is_html = req
             .primary_path
@@ -394,7 +390,7 @@ async fn embed_with_cache(
             .map_err(|e| format!("embed cache lookup: {e}"))?
         {
             CacheLookup::Hit(hit) => {
-                let vector = decode_f32_le(&hit.payload)?;
+                let vector = decode_f32_le(&hit.payload, embedder.dimensions())?;
                 return Ok((
                     vector,
                     vec![LoadCacheRecord {
@@ -406,6 +402,7 @@ async fn embed_with_cache(
                 ));
             }
             CacheLookup::RetryableFailure(m) => {
+                require_embed_credentials()?;
                 let vector = embedder
                     .embed(embed_text)
                     .await
@@ -423,6 +420,7 @@ async fn embed_with_cache(
                 ));
             }
             CacheLookup::Miss => {
+                require_embed_credentials()?;
                 let vector = embedder
                     .embed(embed_text)
                     .await
@@ -444,6 +442,7 @@ async fn embed_with_cache(
         }
     }
 
+    require_embed_credentials()?;
     let vector = embedder
         .embed(embed_text)
         .await
@@ -468,16 +467,37 @@ fn encode_f32_le(v: &[f32]) -> Vec<u8> {
     out
 }
 
-fn decode_f32_le(bytes: &[u8]) -> Result<Vec<f32>, String> {
+fn require_embed_credentials() -> Result<(), String> {
+    if std::env::var("FD_API_KEY")
+        .unwrap_or_default()
+        .trim()
+        .is_empty()
+    {
+        return Err("FD_API_KEY is not set (required for uncached ingest embeddings)".into());
+    }
+    Ok(())
+}
+
+fn decode_f32_le(bytes: &[u8], expected_dimensions: usize) -> Result<Vec<f32>, String> {
     if !bytes.len().is_multiple_of(4) {
         return Err(format!(
             "embed cache payload length {} not multiple of 4",
             bytes.len()
         ));
     }
-    let mut out = Vec::with_capacity(bytes.len() / 4);
+    let actual_dimensions = bytes.len() / 4;
+    if actual_dimensions != expected_dimensions {
+        return Err(format!(
+            "embed cache vector dimension mismatch: expected {expected_dimensions}, got {actual_dimensions}"
+        ));
+    }
+    let mut out = Vec::with_capacity(actual_dimensions);
     for chunk in bytes.chunks_exact(4) {
-        out.push(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
+        let value = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+        if !value.is_finite() {
+            return Err("embed cache vector contains non-finite value".into());
+        }
+        out.push(value);
     }
     Ok(out)
 }
@@ -666,9 +686,8 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
             report.primary_kind
         );
         let rep_path = args.batch_report_dir.join(format!("{unit_key}.json"));
-        if let Ok(json) = serde_json::to_string_pretty(&report) {
-            let _ = std::fs::write(&rep_path, json);
-        }
+        write_json_atomic(&rep_path, &report)
+            .map_err(|e| format!("persist batch report for {unit_key}: {e}"))?;
         if !report.ok {
             for e in &report.errors {
                 eprintln!("    error: {e}");
@@ -804,12 +823,7 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
     }
 
     if let Some(path) = &args.report {
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        let json = serde_json::to_string_pretty(&report)
-            .map_err(|e| format!("serialize LoadReport: {e}"))?;
-        std::fs::write(path, json).map_err(|e| format!("write report {}: {e}", path.display()))?;
+        write_json_atomic(path, &report)?;
         println!("  report: {}", path.display());
     }
 
@@ -819,6 +833,43 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         return Err("load failed (see report/errors)".into());
     }
     Ok(())
+}
+
+fn write_json_atomic(path: &Path, value: &impl serde::Serialize) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    std::fs::create_dir_all(parent)
+        .map_err(|e| format!("create report directory {}: {e}", parent.display()))?;
+    let bytes = serde_json::to_vec_pretty(value)
+        .map_err(|e| format!("serialize report {}: {e}", path.display()))?;
+    let sequence = REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let tmp = path.with_extension(format!("tmp-{}-{sequence}", std::process::id()));
+
+    let result = (|| {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&tmp)
+            .map_err(|e| format!("create temporary report {}: {e}", tmp.display()))?;
+        file.write_all(&bytes)
+            .map_err(|e| format!("write temporary report {}: {e}", tmp.display()))?;
+        file.sync_all()
+            .map_err(|e| format!("sync temporary report {}: {e}", tmp.display()))?;
+        std::fs::rename(&tmp, path).map_err(|e| {
+            format!(
+                "replace report {} from {}: {e}",
+                path.display(),
+                tmp.display()
+            )
+        })?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    result
 }
 
 async fn run_with_acq<A: SourceAcquisitionPort + ?Sized>(
@@ -938,8 +989,54 @@ mod tests {
         let v = vec![0.0_f32, 1.5, -2.25, 1024.0];
         let bytes = encode_f32_le(&v);
         assert_eq!(bytes.len(), 16);
-        assert_eq!(decode_f32_le(&bytes).unwrap(), v);
-        assert!(decode_f32_le(&[1, 2, 3]).is_err());
+        assert_eq!(decode_f32_le(&bytes, 4).unwrap(), v);
+        assert!(decode_f32_le(&[1, 2, 3], 1).is_err());
+        assert!(
+            decode_f32_le(&bytes, 3)
+                .unwrap_err()
+                .contains("dimension mismatch")
+        );
+        let nan = encode_f32_le(&[f32::NAN]);
+        assert!(decode_f32_le(&nan, 1).unwrap_err().contains("non-finite"));
+    }
+
+    #[test]
+    fn batch_report_atomic_create_and_replace() {
+        let root = std::env::temp_dir().join(format!(
+            "da-load-report-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let path = root.join("nested/unit.json");
+        write_json_atomic(&path, &serde_json::json!({"run": 1})).unwrap();
+        write_json_atomic(&path, &serde_json::json!({"run": 2})).unwrap();
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(value["run"], 2);
+        let leftovers = std::fs::read_dir(path.parent().unwrap())
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| entry.file_name().to_string_lossy().contains(".tmp-"))
+            .count();
+        assert_eq!(leftovers, 0);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn batch_report_failure_is_explicit_and_preserves_existing_file() {
+        let root = std::env::temp_dir().join(format!(
+            "da-load-report-fail-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let blocker = root.join("not-a-directory");
+        std::fs::write(&blocker, b"preserve-me").unwrap();
+        let target = blocker.join("unit.json");
+        let err = write_json_atomic(&target, &serde_json::json!({"run": 1})).unwrap_err();
+        assert!(err.contains("create report directory"), "{err}");
+        assert_eq!(std::fs::read(&blocker).unwrap(), b"preserve-me");
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
