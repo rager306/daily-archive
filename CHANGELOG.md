@@ -1,5 +1,14 @@
 # Changelog
 
+### M371 complete — pipeline architecture + semantic acceptance sealed
+
+- **M371-pr59ty complete** (validate pass): free-form product path for pipeline
+  cache through ontology acceptance formally closed in GSD.
+- S01–S05 skip-delivered with unit/integration evidence; S06–S14 prior product
+  path; S15 related-article canary **descoped** after acceptance seal.
+- Durable proof unchanged: `corpus_semantic_checkpoint.json` verdict=pass,
+  five task classes pass, `accepted_corpus_checkpoint.sgsnap`, D127 false.
+
 ### M372 complete + ADR-057 draft isolation in governor/registry
 
 - **M372-sqj6hc complete** (validate pass): universal `da load` plane sealed with

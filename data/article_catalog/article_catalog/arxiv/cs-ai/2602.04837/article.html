@@ -1,0 +1,1251 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing</title>
+<!--Generated on Tue Jul 28 12:12:25 2026 by LaTeXML (version 0.8.8) http://dlmf.nist.gov/LaTeXML/.-->
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.9.0/css/all.min.css" type="text/css">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="/static/browse/0.3.4/css/arxiv-html-papers-20260131.css" type="text/css">
+<script src="/static/browse/0.3.4/js/arxiv-html-papers-20260131.js"></script>
+<script>
+  // Restore the saved color scheme preference, or
+  // enact the browser preference if "automatic", 
+  // without expecting DOM load to have completed.
+  //
+  // Also restore any saved readingmode and ToC display preferences.
+  function initializeReadingPreferences() {
+    let saved_theme = localStorage.getItem("ar5iv_theme") || "automatic";
+    if (saved_theme === "automatic") {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved_theme = "dark";
+      }
+    }
+    if (saved_theme == "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+
+    const tocDisplay = localStorage.getItem('arxiv_html_paper_toc_display');
+    if (tocDisplay) {
+      document.documentElement.setAttribute("data-toc-display", tocDisplay);
+    }
+    const readingMode = localStorage.getItem('arxiv_html_paper_reading_mode');
+    if (readingMode) {
+      document.documentElement.setAttribute("data-reading-mode", readingMode);
+    }
+    // Pre-apply spinout-banner dismissal here, before the banner paints, so it
+    // never flashes in only to be hidden later by the deferred arxiv-header.js.
+    // Key matches arxiv-header.js: "arxiv-banner-dismissed:" + data-banner-name.
+    if (localStorage.getItem('arxiv-banner-dismissed:spinout-nonprofit')) {
+      document.documentElement.setAttribute("data-banner-dismissed", "");
+    }
+  }
+  // Run as soon as JS starts, to minimize repainting
+  initializeReadingPreferences();
+</script>
+<link rel="apple-touch-icon" sizes="180x180"
+  href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32"
+  href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16"
+  href="/static/browse/0.3.4/images/icons/favicon-16x16.png">
+<link rel="manifest" href="/static/browse/0.3.4/images/icons/site.webmanifest">
+<link rel="mask-icon" href="/static/browse/0.3.4/images/icons/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="stylesheet" type="text/css" media="screen" href="https://use.typekit.net/utz6mli.css"><link rel="stylesheet" type="text/css" media="screen"
+  href="/static/base/1.0.1/css/arxiv-header-footer.css?v=20260626"><style>
+  /* Banner pre-dismissal (set above before paint -> no flash-then-hide) and
+     reading-mode chrome hiding. */
+  html[data-banner-dismissed] .ds-announcement { display: none; }
+  html[data-reading-mode="enabled"] .ds-announcement,
+  html[data-reading-mode="enabled"] .ds-site-footer { display: none; }
+  /* Keep the announcement text dark on the Open-Blue band in both colour themes
+     (otherwise it inherits the paper's warm-wash text in dark mode and washes out). */
+  .ds-announcement-text { color: var(--arxiv-ink, #1c1a17); }
+</style>
+<script defer src="/static/base/1.0.1/js/arxiv-header.js?v=20260626"></script>
+</head>
+<body>
+<dialog id="modal-form" aria-labelledby="modal-title" closedby="any">
+  <form id="modal-form-content" method="dialog" enctype="multipart/form-data">
+    <header class="modal-header">
+      <h5 id="modal-title" class="modal-title">Report GitHub Issue</h5>
+      <button type="submit" formnovalidate class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <label for="form_title">Title:</label>
+      <input class="form-control" id="form_title" name="form_title" required placeholder="Enter title">
+
+      <p id="selectedTextModalDescription" hidden>Content selection saved. Describe the issue below:</p>
+
+      <label for="description">Description:</label>
+      <textarea class="form-control" id="description" name="description" required maxlength="500"
+        placeholder="500 characters maximum"></textarea>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="submit" value="internal-report" class="sr-only modal-submit">Submit without GitHub</button>
+      <button type="submit" value="github-report" class="modal-submit">Submit in GitHub</button>
+    </footer>
+  </form>
+</dialog><div class="ds-announcement" id="announcement-banner" role="region" aria-label="Announcement"
+    data-banner-name="spinout-nonprofit">
+    <img class="ds-announcement-glyph" src="/static/base/1.0.1/images/icons/smileybones-small.svg" alt="" aria-hidden="true">
+    <span class="ds-announcement-text">arXiv is now an independent nonprofit!</span>
+    <a class="ds-announcement-link" href="https://info.arxiv.org/about">Learn more</a>
+    <button type="button" class="ds-announcement-close" aria-label="Dismiss announcement">&times;</button>
+  </div>
+
+<header class="arxiv-html-header">
+  <div class="html-header-logo">
+    <a href="/"><img alt="arXiv logo" class="logo desktop-only" width="100"
+        src="/static/base/1.0.1/images/arxiv-logo-primary-light.svg">
+      <span class="sr-only">Back to arXiv</span>
+    </a>
+  </div>
+  <!--TOC, dark mode, links-->
+  <nav class="html-header-nav">
+    <a class="header-button hover-effect desktop-only" href="https://info.arxiv.org/about/accessible_HTML.html"
+      target="_blank">Why HTML?</a>
+    <a class="header-button" title="Report an Issue" href="#" title="Report an issue"
+      onclick="event.preventDefault(); showModalForm();">
+      <svg role="presentation" class="mobile-only toggle-icon" aria-hidden="true" height="1.25rem"
+        viewBox="0 0 640 640">
+        <path
+          d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+      </svg>
+      <span class="desktop-only">Report Issue</span></a>
+    <!--back to abstract-->
+    <a class="header-button" title="Back to abstract page" aria-label="Back to abstract page"
+      href="/abs/2602.04837v1">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 512 512" fill="#ffffff"
+        aria-hidden="true">
+        <path
+          d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z">
+        </path>
+      </svg>
+      <span class="desktop-only">Back to Abstract</span>
+    </a>
+    <!-- PDF download link -->
+    <a class="header-button" title="Download PDF" href="/pdf/2602.04837v1"
+      target="_blank">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 576 542">
+        <path
+          d="M208 48L96 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16l80 0 0 48-80 0c-35.3 0-64-28.7-64-64L32 64C32 28.7 60.7 0 96 0L229.5 0c17 0 33.3 6.7 45.3 18.7L397.3 141.3c12 12 18.7 28.3 18.7 45.3l0 149.5-48 0 0-128-88 0c-39.8 0-72-32.2-72-72l0-88zM348.1 160L256 67.9 256 136c0 13.3 10.7 24 24 24l68.1 0zM240 380l32 0c33.1 0 60 26.9 60 60s-26.9 60-60 60l-12 0 0 28c0 11-9 20-20 20s-20-9-20-20l0-128c0-11 9-20 20-20zm32 80c11 0 20-9 20-20s-9-20-20-20l-12 0 0 40 12 0zm96-80l32 0c28.7 0 52 23.3 52 52l0 64c0 28.7-23.3 52-52 52l-32 0c-11 0-20-9-20-20l0-128c0-11 9-20 20-20zm32 128c6.6 0 12-5.4 12-12l0-64c0-6.6-5.4-12-12-12l-12 0 0 88 12 0zm76-108c0-11 9-20 20-20l48 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 24 28 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 44c0 11-9 20-20 20s-20-9-20-20l0-128z" />
+      </svg>
+      <span class="desktop-only">Download PDF</span></a>
+    <!-- navigational table of contents toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleNavTOC();" title="Toggle navigation"
+      aria-label="Toggle navigation">
+      <svg height="1.25rem" role="presentation" viewBox="0 0 512 512">
+        <path
+          d="M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z">
+        </path>
+      </svg>
+    </a>
+    <!--- collapsable header / reading mode toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleReadingMode();"
+      title="Disable reading mode, show header and footer">
+      <svg role="presentation" height="1.25rem"
+        viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+        <path
+          d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z" />
+      </svg>
+    </a>
+    <!--- colored theme toggle -->
+    <button type="button" class="header-button color-tog" onclick="toggleColorScheme();" title="Toggle dark/light mode" aria-label="Toggle color scheme">
+      <span class="toggle-icon automatic-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9h-1.9M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69m-9.15 3.96h2.3L12 9l-1.15 3.65Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon light-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon dark-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+    </button>
+  </nav>
+</header><nav class="ltx_page_navbar">
+<nav class="ltx_TOC">
+<ol class="ltx_toclist">
+<li class="ltx_tocentry ltx_tocentry_abstract"><a href="#abstract1" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">Abstract</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S1" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">1 </span>Introduction</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S2" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2 </span>Related Work</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S3" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3 </span>Method</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S3.SS1" title="In 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.1 </span>Parent Group Selection</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S3.SS2" title="In 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.2 </span>Open-Ended Group Evolution</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S4" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4 </span>Experiments</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection">
+<a href="#S4.SS1" title="In 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.1 </span>Benchmarks</span></a>
+<ol class="ltx_toclist ltx_toclist_subsection">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS0.Px1" title="In 4.1 Benchmarks ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">SWE-bench.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS0.Px2" title="In 4.1 Benchmarks ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">Polyglot.</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S4.SS2" title="In 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.2 </span>Experimental Settings</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection">
+<a href="#S4.SS3" title="In 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.3 </span>Baselines</span></a>
+<ol class="ltx_toclist ltx_toclist_subsection">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS3.SSS0.Px1" title="In 4.3 Baselines ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">Open-Ended Self-Evolving Baseline.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS3.SSS0.Px2" title="In 4.3 Baselines ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">Human-Designed Frameworks.</span></a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S5" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5 </span>Results and Analysis</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection">
+<a href="#S5.SS1" title="In 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.1 </span>Main Results</span></a>
+<ol class="ltx_toclist ltx_toclist_subsection">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S5.SS1.SSS0.Px1" title="In 5.1 Main Results ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">GEA vs. State-of-the-Art Open-Ended Self-Evolving Systems.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S5.SS1.SSS0.Px2" title="In 5.1 Main Results ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">GEA vs. State-of-the-Art Human-Designed Agents.</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S5.SS1.SSS0.Px3" title="In 5.1 Main Results ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">Analysis of evolutionary patterns on two benchmarks.</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS2" title="In 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.2 </span>Evolution Analysis</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS3" title="In 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.3 </span>Transferability</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S5.SS4" title="In 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5.4 </span>Robustness</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S6" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">6 </span>Conclusion</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_bibliography"><a href="#bib" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title">References</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_appendix">
+<a href="#A1" title="In Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">A </span>Appendix</span></a>
+<ol class="ltx_toclist ltx_toclist_appendix">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#A1.SS1" title="In Appendix A Appendix ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">A.1 </span>Cost Estimate</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#A1.SS2" title="In Appendix A Appendix ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">A.2 </span>Case Study</span></a></li>
+</ol>
+</li>
+</ol></nav>
+</nav>
+<div class="ltx_page_main">
+<div id="infobox" class="infobox">
+  <a id="license-tr" href="https://info.arxiv.org/help/license/index.html#licenses-available">
+    License: CC BY 4.0
+  </a>
+  <div id="watermark-tr">
+arXiv:2602.04837v1 [cs.AI] 04 Feb 2026</div>
+</div><div class="ltx_page_content">
+<article class="ltx_document ltx_authors_1line" lang="en">
+<h1 class="ltx_title ltx_title_document">Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing</h1>
+<div class="ltx_authors">
+<span class="ltx_creator ltx_role_author">
+<span class="ltx_personname"><span id="id1.1.id1" class="ltx_text ltx_font_bold ltx_align_center">Zhaotian Weng<sup id="id1.1.id1.1" class="ltx_sup">1</sup>   Antonis Antoniades<sup id="id1.1.id1.2" class="ltx_sup">1</sup> 
+<br class="ltx_break">Deepak Nathani<sup id="id1.1.id1.3" class="ltx_sup">1</sup>   Zhen Zhang<sup id="id1.1.id1.4" class="ltx_sup">1</sup>   Xiao Pu <sup id="id1.1.id1.5" class="ltx_sup">1</sup>   Xin Eric Wang<sup id="id1.1.id1.6" class="ltx_sup">†</sup><sup id="id1.1.id1.7" class="ltx_sup">1</sup>
+
+<br class="ltx_break"><sup id="id1.1.id1.8" class="ltx_sup ltx_centering"><span id="id1.1.id1.8.1" class="ltx_text ltx_font_medium">1</span></sup></span> University of California, Santa Barbara  
+<br class="ltx_break"><span id="id2.2.id2" class="ltx_text ltx_font_typewriter">{zhaotian,ericxwang}@ucsb.edu</span>
+</span><span class="ltx_author_notes">
+<span class="ltx_contact ltx_role_affiliation">
+</span></span></span>
+</div>
+
+<div id="abstract1" class="ltx_abstract">
+<h6 class="ltx_title ltx_title_abstract">Abstract</h6>
+<p class="ltx_p"><span class="ltx_text">Open-ended self-improving agents can autonomously modify their own structural designs to advance their capabilities and overcome the limits of pre-defined architectures, thus reducing reliance on human intervention. We introduce <span class="ltx_text ltx_font_bold">Group-Evolving Agents (GEA)</span>, a new paradigm for open-ended self-improvements, which treats a group of agents as the fundamental evolutionary unit, enabling explicit experience sharing and reuse within the group throughout evolution. Unlike existing open-ended self-evolving paradigms that adopt tree-structured evolution, GEA overcomes the limitation of inefficient utilization of exploratory diversity caused by isolated evolutionary branches. We evaluate GEA on challenging coding benchmarks, where it significantly outperforms state-of-the-art self-evolving methods (71.0% vs. 56.7% on SWE-bench Verified, 88.3% vs. 68.3% on Polyglot) and matches or exceeds top human-designed agent frameworks (71.8% and 52.0% on two benchmarks, respectively). Analysis reveals that GEA more effectively converts early-stage exploratory diversity into sustained, long-term progress, achieving stronger performance under the same number of evolved agents. Furthermore, GEA exhibits consistent transferability across different coding models and greater robustness, fixing framework-level bugs in 1.4 iterations on average, versus 5 for self-evolving methods.</span></p>
+</div>
+<figure id="S0.F1" class="ltx_figure"><img src="2602.04837v1/x1.png" id="S0.F1.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="595" height="157" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S0.F1.4.1.1" class="ltx_text" style="font-size:90%;">Figure 1</span>: </span><span id="S0.F1.5.2" class="ltx_text ltx_font_bold" style="font-size:90%;">Overview of Group-Evolving Agents (GEA) vs. tree-structured self-evolution for open-endedness.<span id="S0.F1.5.2.1" class="ltx_text ltx_font_medium">
+GEA treats a <em id="S0.F1.5.2.1.1" class="ltx_emph ltx_font_italic">group of agents</em>, rather than an individual agent, as the fundamental unit of evolution. At each iteration, a parent group jointly gives rise to an offspring group through explicit intra-group Experience sharing and reuse.</span></span></figcaption>
+</figure>
+<section id="S1" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">1 </span>Introduction</h2>
+
+<div id="S1.p1" class="ltx_para">
+<p id="S1.p1.1" class="ltx_p">Open-endedness and cumulative progress are key characteristics of scientific breakthroughs <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">stanley2017open</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">stanley2015greatness</span>]</cite>. However, most existing AI systems rely on pre-defined model architectures designed by humans. Although such systems can accumulate experience through training, they often struggle to transcend the capability boundaries imposed by their initial designs, as they lack the ability to modify their own structural configurations <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">yin2025godel</span>]</cite>. Thus, progress remains heavily dependent on continuous human intervention.</p>
+</div>
+<div id="S1.p2" class="ltx_para">
+<p id="S1.p2.1" class="ltx_p">Existing open-ended self-improving systems are largely inspired by biological evolution and designed around individual-centric evolutionary processes <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">yin2025godel</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">schmidhuber2003godel</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">robeyns2025self</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">novikov2025alphaevolve</span>]</cite>. At each iteration, a single agent is selected as the parent and refined to produce one or more offspring(Figure <a href="#S0.F1" title="Figure 1 ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>a). The overall structure follows chain- or tree-structured evolution, where different branches remain strictly isolated. Consequently, although such systems often exhibit substantial exploratory diversity, this diversity rarely serves as effective stepping stones <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">mouret2015illuminating</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">pugh2016quality</span>]</cite>. Instead, many agents provide only temporary diversity, producing short-lived variants that fail to contribute to long-term cumulative progress.</p>
+</div>
+<div id="S1.p3" class="ltx_para">
+<p id="S1.p3.1" class="ltx_p">It is time to rethink agent evolution. <em id="S1.p3.1.1" class="ltx_emph ltx_font_italic">AI agents are not biological individuals; why should their evolution remain constrained by biological paradigms?</em>
+In fact, AI agents can directly share trajectories, tools, and learned artifacts, and they can aggregate complementary skills without the constraints of reproduction or lineage.</p>
+</div>
+<div id="S1.p4" class="ltx_para">
+<p id="S1.p4.1" class="ltx_p">Therefore, we introduce <span id="S1.p4.1.1" class="ltx_text ltx_font_bold">Group-Evolving Agents (GEA)</span>, a new paradigm for open-ended self-improvement that treats a <em id="S1.p4.1.2" class="ltx_emph ltx_font_italic">group of agents</em>, rather than an individual agent, as the fundamental unit of evolution (Figure <a href="#S0.F1" title="Figure 1 ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>b).
+This shift enables explicit experience sharing and reuse across agents within a group, naturally allowing exploratory discoveries from different agents to be consolidated and accumulated into long-term progress rather than remaining as short-lived variants.
+At each iteration, GEA first selects a parent group of agents using a Performance-Novelty criterion that balances immediate performance gains with evolutionary diversity. The parent agents then jointly produce a child group through a shared pool of aggregated experience from all members.</p>
+</div>
+<div id="S1.p5" class="ltx_para">
+<p id="S1.p5.1" class="ltx_p">We evaluate GEA on challenging coding benchmarks, achieving success rates of 71.0% on SWE-bench Verified and 88.3% on Polyglot, significantly outperforming state-of-the-art open-ended self-evolving methods (56.7% and 68.3%, respectively). Analysis reveals that GEA more effectively consolidates the diversity generated during open-ended exploration, yielding sustained progress and stronger performance given the same number of evolved agents. By leveraging experience from better-performing agents, GEA also exhibits stronger robustness to framework-level perturbations. Furthermore, its improvements stem from workflow and tool enhancements rather than model-specific optimizations, thus transferring consistently across GPT- and Claude-series models.</p>
+</div>
+<div id="S1.p6" class="ltx_para">
+<p id="S1.p6.1" class="ltx_p">Additionally, by leveraging meta-learning for self-improvement in open-ended exploration, without any human intervention, GEA achieves performance comparable to or even surpassing human-designed state-of-the-art frameworks on both benchmarks (71.0% vs. 71.8% on SWE-bench Verified, 88.3% vs. 52.0% on Polyglot).</p>
+</div>
+<div id="S1.p7" class="ltx_para">
+<p id="S1.p7.1" class="ltx_p">In summary, we propose <span id="S1.p7.1.1" class="ltx_text ltx_font_bold">Group-Evolving Agents</span>, a new paradigm for open-ended self-improvement that:</p>
+</div>
+<div id="S1.p8" class="ltx_para">
+<ol id="S1.I1" class="ltx_enumerate">
+<li id="S1.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">1.</span> 
+<div id="S1.I1.i1.p1" class="ltx_para">
+<p id="S1.I1.i1.p1.1" class="ltx_p">Overcomes the limitation of inefficient utilization of exploratory diversity caused by branch isolation in existing tree-structured evolution, by enabling explicit experience sharing and reuse within the group during evolution.</p>
+</div>
+</li>
+<li id="S1.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">2.</span> 
+<div id="S1.I1.i2.p1" class="ltx_para">
+<p id="S1.I1.i2.p1.1" class="ltx_p">More effectively consolidates and reuses experience and evolutionary diversity from other agents, achieving significant performance gains and stronger robustness over state-of-the-art open-ended self-evolving methods, with improvements that transfer consistently across different coding models.</p>
+</div>
+</li>
+<li id="S1.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">3.</span> 
+<div id="S1.I1.i3.p1" class="ltx_para">
+<p id="S1.I1.i3.p1.1" class="ltx_p">Matches or surpasses human-designed state-of-the-art frameworks through meta-learning-based self-improvement without human intervention.</p>
+</div>
+</li>
+</ol>
+</div>
+</section>
+<section id="S2" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">2 </span>Related Work</h2>
+
+<div id="S2.p1" class="ltx_para">
+<p id="S2.p1.1" class="ltx_p">Recent years have witnessed growing interest in how AI systems can continuously improve themselves without human intervention <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">fang2025comprehensive</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">gao2025survey</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wang2025evoagentx</span>]</cite>. Most existing self-improving approaches mainly focus on continuous, iterative refinement of the given agent system <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">shinn2023reflexion</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">songmind</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">gao2025survey</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zelikman2024self</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">singhbeyond</span>]</cite>, typically evolving toward a specific optimization objective and following a linear, chain-based evolutionary structure <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025population</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wang2025evoagentx</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">robeyns2025self</span>]</cite> . Such systems achieve self-improvement through mechanisms such as self-play against historical versions or self-generated verification <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">setlur2024rewarding</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wang2024math</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2025r</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wang2025socratic</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wei2025toward</span>]</cite>, supervised fine-tuning <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zelikman2022star</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">gou2023tora</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">ni2024next</span>]</cite> or reinforcement learning on selectively filtered feedback <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">xin2024deepseek</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhao2025absolute</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">yuan2024self</span>]</cite> , and reflection-based methods <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">wang2025mobile</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">yin2025godel</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">shinn2023reflexion</span>]</cite> or in-context learning <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">hua2024trustagent</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">sun2023adaplanner</span>]</cite>. While this goal-oriented, chain-based evolutionary paradigm enables autonomous improvement along a particular direction, it inherently limits the ability of self-evolving systems to explore diverse evolutionary directions in open-ended solution spaces.</p>
+</div>
+<div id="S2.p2" class="ltx_para">
+<p id="S2.p2.1" class="ltx_p">A line of work has pointed out that one of the key challenges in enabling unbounded improvement and innovation lies in developing open-ended AI systems that can continuously produce both novel and learnable artifacts <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">stanley2017open</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">stanley2015greatness</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">shapere1964structure</span>]</cite>. Building on this insight, open-endedness has been characterized as the capability of systems to continuously generate artifacts that are novel, interesting, and learnable from a human perspective <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">clune2019ai</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">hughes2024open</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">jiang2023general</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhangomni</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">faldoromni</span>]</cite>.</p>
+</div>
+<div id="S2.p3" class="ltx_para">
+<p id="S2.p3.1" class="ltx_p">Motivated by the potential of enabling unbounded evolution through open-ended exploration in self-evolving agents, more recent studies adopt lineage-based, tree-structured evolutionary strategies <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">antoniadesswe</span>]</cite> inspired by biological inheritance and mutation <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">novikov2025alphaevolve</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">fernando2024promptbreeder</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">huang2023large</span>]</cite>. In these frameworks, individual parent agents are selected at each iteration to independently produce offspring, enabling various branching exploration across multiple evolutionary directions and helping avoid local optima. However, the strict isolation between evolutionary branches prevents effective information and experience sharing and reuse across lineages. As a result, many promising directions discovered early in evolution persist only as temporary diversity and fail to contribute to long-term cumulative progress.
+To overcome this limitation, we introduce a group-centric evolutionary paradigm, <span id="S2.p3.1.1" class="ltx_text ltx_font_bold">Group-Evolving Agents (GEA)</span>, which explicitly enables intra-group experience sharing and reuse throughout the evolutionary process. By consolidating complementary discoveries across agents, GEA more effectively leverages the diversity generated by open-ended exploration to support sustained cumulative progress.</p>
+</div>
+</section>
+<section id="S3" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">3 </span>Method</h2>
+
+<div id="S3.p1" class="ltx_para">
+<p id="S3.p1.1" class="ltx_p">We propose <span id="S3.p1.1.1" class="ltx_text ltx_font_bold">G</span>roup-<span id="S3.p1.1.2" class="ltx_text ltx_font_bold">E</span>volving <span id="S3.p1.1.3" class="ltx_text ltx_font_bold">A</span>gents, a framework for open-ended evolution that treats a <em id="S3.p1.1.4" class="ltx_emph ltx_font_italic">group of agents</em> as the fundamental unit of evolution. GEA maintains an archive that stores all discovered agents throughout the evolutionary process. As shown in Figure <a href="#S0.F1" title="Figure 1 ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>, at each iteration, GEA proceeds in two core stages:</p>
+</div>
+<div id="S3.p2" class="ltx_para">
+<p id="S3.p2.1" class="ltx_p"><span id="S3.p2.1.1" class="ltx_text ltx_font_bold">(1) Parent Group Selection</span> (§<a href="#S3.SS1" title="3.1 Parent Group Selection ‣ 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.1</span></a>): GEA first selects <math id="S3.p2.1.m1" class="ltx_Math" alttext="K" display="inline" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math> parent agents from the archive using a Performance–Novelty selection strategy <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">mouret2015illuminating</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">pugh2016quality</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">chatzilygeroudis2021quality</span>]</cite> that balances immediate task-solving competence with long-term evolutionary diversity and potential.</p>
+</div>
+<div id="S3.p3" class="ltx_para">
+<p id="S3.p3.1" class="ltx_p"><span id="S3.p3.1.1" class="ltx_text ltx_font_bold">(2) Open-ended Group Evolution</span> (§<a href="#S3.SS2" title="3.2 Open-Ended Group Evolution ‣ 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3.2</span></a>): The selected agents form a parent group that jointly produces an offspring group of the same size through explicit experience sharing and reuse across parent agents.</p>
+</div>
+<div id="S3.p4" class="ltx_para">
+<p id="S3.p4.1" class="ltx_p">We detail the method below.</p>
+</div>
+<figure id="alg1" class="ltx_float ltx_float_algorithm ltx_framed ltx_framed_top">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_float"><span id="alg1.2.1.1" class="ltx_text ltx_font_bold">Algorithm 1</span> </span> Parent Group Selection with KNN Novelty</figcaption>
+<div id="alg1.3" class="ltx_listing ltx_listing">
+<div id="alg1.l1" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l1.1.1.1" class="ltx_text" style="font-size:80%;">1:</span></span> <span id="alg1.l1.2" class="ltx_text ltx_font_bold">Input:</span> Archive of agents <math id="alg1.l1.m1" class="ltx_Math" alttext="\mathcal{A}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>; agent-representation vectors <math id="alg1.l1.m2" class="ltx_Math" alttext="\{z_{i}\in\{0,1\}^{D}\}_{i\in\mathcal{A}}" display="inline" intent=":literal"><semantics><msub><mrow><mo stretchy="false">{</mo><mrow><msub><mi>z</mi><mi>i</mi></msub><mo>∈</mo><msup><mrow><mo stretchy="false">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><mi>D</mi></msup></mrow><mo stretchy="false">}</mo></mrow><mrow><mi>i</mi><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow></msub><annotation encoding="application/x-tex">\{z_{i}\in\{0,1\}^{D}\}_{i\in\mathcal{A}}</annotation></semantics></math>;
+performance scores <math id="alg1.l1.m3" class="ltx_Math" alttext="\{\alpha_{i}\}_{i\in\mathcal{A}}" display="inline" intent=":literal"><semantics><msub><mrow><mo stretchy="false">{</mo><msub><mi>α</mi><mi>i</mi></msub><mo stretchy="false">}</mo></mrow><mrow><mi>i</mi><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow></msub><annotation encoding="application/x-tex">\{\alpha_{i}\}_{i\in\mathcal{A}}</annotation></semantics></math>;
+parent group size <math id="alg1.l1.m4" class="ltx_Math" alttext="K" display="inline" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>;
+KNN size <math id="alg1.l1.m5" class="ltx_Math" alttext="M" display="inline" intent=":literal"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>.
+
+</div>
+<div id="alg1.l2" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l2.1.1.1" class="ltx_text" style="font-size:80%;">2:</span></span> <span id="alg1.l2.2" class="ltx_text ltx_font_bold">Output:</span> Parent agent group <math id="alg1.l2.m1" class="ltx_Math" alttext="\mathcal{G}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒢</mi><annotation encoding="application/x-tex">\mathcal{G}</annotation></semantics></math> with <math id="alg1.l2.m2" class="ltx_Math" alttext="|\mathcal{G}|=K" display="inline" intent=":literal"><semantics><mrow><mrow><mo stretchy="false">|</mo><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo stretchy="false">|</mo></mrow><mo>=</mo><mi>K</mi></mrow><annotation encoding="application/x-tex">|\mathcal{G}|=K</annotation></semantics></math>.
+
+</div>
+<div id="alg1.l3" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l3.1.1.1" class="ltx_text" style="font-size:80%;">3:</span></span> <span id="alg1.l3.2" class="ltx_text ltx_font_bold">/* Compute novelty for each agent */</span>
+
+</div>
+<div id="alg1.l4" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l4.1.1.1" class="ltx_text" style="font-size:80%;">4:</span></span> <span id="alg1.l4.2" class="ltx_text ltx_font_bold">for</span> <math id="alg1.l4.m1" class="ltx_Math" alttext="i\in\mathcal{A}" display="inline" intent=":literal"><semantics><mrow><mi>i</mi><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow><annotation encoding="application/x-tex">i\in\mathcal{A}</annotation></semantics></math> <span id="alg1.l4.3" class="ltx_text ltx_font_bold">do</span>
+
+
+
+</div>
+<div id="alg1.l5" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l5.1.1.1" class="ltx_text" style="font-size:80%;">5:</span></span>  Initialize empty list <math id="alg1.l5.m1" class="ltx_Math" alttext="\mathcal{D}_{i}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">𝒟</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathcal{D}_{i}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l6" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l6.1.1.1" class="ltx_text" style="font-size:80%;">6:</span></span>  <span id="alg1.l6.2" class="ltx_text ltx_font_bold">for</span> <math id="alg1.l6.m1" class="ltx_Math" alttext="j\in\mathcal{A},\ j\neq i" display="inline" intent=":literal"><semantics><mrow><mrow><mi>j</mi><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow><mo rspace="0.667em">,</mo><mrow><mi>j</mi><mo>≠</mo><mi>i</mi></mrow></mrow><annotation encoding="application/x-tex">j\in\mathcal{A},\ j\neq i</annotation></semantics></math> <span id="alg1.l6.3" class="ltx_text ltx_font_bold">do</span>
+
+
+
+</div>
+<div id="alg1.l7" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l7.1.1.1" class="ltx_text" style="font-size:80%;">7:</span></span>   <math id="alg1.l7.m1" class="ltx_Math" alttext="d_{ij}\leftarrow 1-\dfrac{z_{i}^{\top}z_{j}}{\|z_{i}\|_{2}\,\|z_{j}\|_{2}+\varepsilon}" display="inline" intent=":literal"><semantics><mrow><msub><mi>d</mi><mrow><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>j</mi></mrow></msub><mo stretchy="false">←</mo><mrow><mn>1</mn><mo>−</mo><mstyle displaystyle="true"><mfrac><mrow><msubsup><mi>z</mi><mi>i</mi><mo>⊤</mo></msubsup><mo lspace="0em" rspace="0em">​</mo><msub><mi>z</mi><mi>j</mi></msub></mrow><mrow><mrow><msub><mrow><mo stretchy="false">‖</mo><msub><mi>z</mi><mi>i</mi></msub><mo stretchy="false">‖</mo></mrow><mn>2</mn></msub><mo lspace="0.170em" rspace="0em">​</mo><msub><mrow><mo stretchy="false">‖</mo><msub><mi>z</mi><mi>j</mi></msub><mo stretchy="false">‖</mo></mrow><mn>2</mn></msub></mrow><mo>+</mo><mi>ε</mi></mrow></mfrac></mstyle></mrow></mrow><annotation encoding="application/x-tex">d_{ij}\leftarrow 1-\dfrac{z_{i}^{\top}z_{j}}{\|z_{i}\|_{2}\,\|z_{j}\|_{2}+\varepsilon}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l8" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l8.1.1.1" class="ltx_text" style="font-size:80%;">8:</span></span>   Append <math id="alg1.l8.m1" class="ltx_Math" alttext="d_{ij}" display="inline" intent=":literal"><semantics><msub><mi>d</mi><mrow><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">d_{ij}</annotation></semantics></math> to <math id="alg1.l8.m2" class="ltx_Math" alttext="\mathcal{D}_{i}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">𝒟</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathcal{D}_{i}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l9" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l9.1.1.1" class="ltx_text" style="font-size:80%;">9:</span></span>  <span id="alg1.l9.2" class="ltx_text ltx_font_bold">end</span> <span id="alg1.l9.3" class="ltx_text ltx_font_bold">for</span>
+</div>
+<div id="alg1.l10" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l10.1.1.1" class="ltx_text" style="font-size:80%;">10:</span></span>  Let <math id="alg1.l10.m1" class="ltx_Math" alttext="\mathcal{N}_{M}(i)" display="inline" intent=":literal"><semantics><mrow><msub><mi class="ltx_font_mathcaligraphic">𝒩</mi><mi>M</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{N}_{M}(i)</annotation></semantics></math> be the indices of the <math id="alg1.l10.m2" class="ltx_Math" alttext="M" display="inline" intent=":literal"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math> smallest values in <math id="alg1.l10.m3" class="ltx_Math" alttext="\mathcal{D}_{i}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">𝒟</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\mathcal{D}_{i}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l11" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l11.1.1.1" class="ltx_text" style="font-size:80%;">11:</span></span>  <math id="alg1.l11.m1" class="ltx_Math" alttext="\text{nov}(i)\leftarrow\dfrac{1}{M}\sum_{j\in\mathcal{N}_{M}(i)}d_{ij}" display="inline" intent=":literal"><semantics><mrow><mrow><mtext>nov</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><mo stretchy="false">←</mo><mrow><mstyle displaystyle="true"><mfrac><mn>1</mn><mi>M</mi></mfrac></mstyle><mo lspace="0em" rspace="0em">​</mo><mrow><msub><mo>∑</mo><mrow><mi>j</mi><mo>∈</mo><mrow><msub><mi class="ltx_font_mathcaligraphic">𝒩</mi><mi>M</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow></mrow></msub><msub><mi>d</mi><mrow><mi>i</mi><mo lspace="0em" rspace="0em">​</mo><mi>j</mi></mrow></msub></mrow></mrow></mrow><annotation encoding="application/x-tex">\text{nov}(i)\leftarrow\dfrac{1}{M}\sum_{j\in\mathcal{N}_{M}(i)}d_{ij}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l12" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l12.1.1.1" class="ltx_text" style="font-size:80%;">12:</span></span> <span id="alg1.l12.2" class="ltx_text ltx_font_bold">end</span> <span id="alg1.l12.3" class="ltx_text ltx_font_bold">for</span>
+</div>
+<div id="alg1.l13" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l13.1.1.1" class="ltx_text" style="font-size:80%;">13:</span></span> <span id="alg1.l13.2" class="ltx_text ltx_font_bold">/* Rank agents by Performance–Novelty score */</span>
+
+</div>
+<div id="alg1.l14" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l14.1.1.1" class="ltx_text" style="font-size:80%;">14:</span></span> <span id="alg1.l14.2" class="ltx_text ltx_font_bold">for</span> <math id="alg1.l14.m1" class="ltx_Math" alttext="i\in\mathcal{A}" display="inline" intent=":literal"><semantics><mrow><mi>i</mi><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow><annotation encoding="application/x-tex">i\in\mathcal{A}</annotation></semantics></math> <span id="alg1.l14.3" class="ltx_text ltx_font_bold">do</span>
+
+
+
+</div>
+<div id="alg1.l15" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l15.1.1.1" class="ltx_text" style="font-size:80%;">15:</span></span>  <math id="alg1.l15.m1" class="ltx_Math" alttext="\text{score}(i)\leftarrow\alpha_{i}\cdot\sqrt{\text{nov}(i)}" display="inline" intent=":literal"><semantics><mrow><mrow><mtext>score</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><mo stretchy="false">←</mo><mrow><msub><mi>α</mi><mi>i</mi></msub><mo lspace="0.222em" rspace="0.222em">⋅</mo><msqrt><mrow><mtext>nov</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow></msqrt></mrow></mrow><annotation encoding="application/x-tex">\text{score}(i)\leftarrow\alpha_{i}\cdot\sqrt{\text{nov}(i)}</annotation></semantics></math>
+
+</div>
+<div id="alg1.l16" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l16.1.1.1" class="ltx_text" style="font-size:80%;">16:</span></span> <span id="alg1.l16.2" class="ltx_text ltx_font_bold">end</span> <span id="alg1.l16.3" class="ltx_text ltx_font_bold">for</span>
+</div>
+<div id="alg1.l17" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l17.1.1.1" class="ltx_text" style="font-size:80%;">17:</span></span> <math id="alg1.l17.m1" class="ltx_Math" alttext="\mathcal{G}\leftarrow" display="inline" intent=":literal"><semantics><mrow><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\mathcal{G}\leftarrow</annotation></semantics></math> the top-<math id="alg1.l17.m2" class="ltx_Math" alttext="K" display="inline" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math> agents in <math id="alg1.l17.m3" class="ltx_Math" alttext="\mathcal{A}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math> ranked by <math id="alg1.l17.m4" class="ltx_Math" alttext="\text{score}(\cdot)" display="inline" intent=":literal"><semantics><mrow><mtext>score</mtext><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mo lspace="0em" rspace="0em">⋅</mo><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{score}(\cdot)</annotation></semantics></math>
+
+</div>
+<div id="alg1.l18" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg1.l18.1.1.1" class="ltx_text" style="font-size:80%;">18:</span></span> <span id="alg1.l18.2" class="ltx_text ltx_font_bold">return</span> <math id="alg1.l18.m1" class="ltx_Math" alttext="\mathcal{G}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒢</mi><annotation encoding="application/x-tex">\mathcal{G}</annotation></semantics></math>
+
+</div>
+</div>
+</figure>
+<section id="S3.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.1 </span>Parent Group Selection</h3>
+
+<div id="S3.SS1.p1" class="ltx_para">
+<p id="S3.SS1.p1.1" class="ltx_p">Inspired by <cite class="ltx_cite ltx_citemacro_citet"><span class="ltx_ref ltx_missing_citation ltx_ref_self">mouret2015illuminating</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">pugh2016quality</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">chatzilygeroudis2021quality</span></cite>, parent group selection in GEA balances two key principles: <em id="S3.SS1.p1.1.1" class="ltx_emph ltx_font_italic">performance</em> and <em id="S3.SS1.p1.1.2" class="ltx_emph ltx_font_italic">novelty</em>.
+We prioritize agents with strong task performance, as performance reflects an agent’s immediate competence and its likelihood of producing effective offspring, since evolution in GEA proceeds through iterative modifications of the agent’s implementation, which itself constitutes a form of solving coding problems. At the same time, we also encourage exploration beyond currently well-optimized regions of the search space, as agents that exhibit novel evolutionary directions may contribute to long-term cumulative progress even when their current performance is not optimal.</p>
+</div>
+<div id="S3.SS1.p2" class="ltx_para">
+<p id="S3.SS1.p2.2" class="ltx_p">We represent each agent <math id="S3.SS1.p2.1.m1" class="ltx_Math" alttext="i" display="inline" intent=":literal"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math> using a task-success vector <math id="S3.SS1.p2.2.m2" class="ltx_Math" alttext="z_{i}\in\{0,1\}^{D}" display="inline" intent=":literal"><semantics><mrow><msub><mi>z</mi><mi>i</mi></msub><mo>∈</mo><msup><mrow><mo stretchy="false">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><mi>D</mi></msup></mrow><annotation encoding="application/x-tex">z_{i}\in\{0,1\}^{D}</annotation></semantics></math>, where each dimension indicates whether the agent successfully solves a corresponding probe task. Similar binary task–response representations of this form have been widely used to characterize an agent’s coding capabilities and to better understand how these capabilities are distributed across various tasks <cite class="ltx_cite ltx_citemacro_cite">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">polo2024tinybenchmarks</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">rodriguez2021evaluation</span>]</cite>. Using this representation, we measure the dissimilarity between two agents via cosine distance:</p>
+<table id="S3.E1" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E1.m1" class="ltx_Math" alttext="d(i,j)=1-\frac{z_{i}^{\top}z_{j}}{\lVert z_{i}\rVert_{2}\,\lVert z_{j}\rVert_{2}+\varepsilon}." display="block" intent=":literal"><semantics><mrow><mrow><mrow><mi>d</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo stretchy="false">)</mo></mrow></mrow><mo>=</mo><mrow><mn>1</mn><mo>−</mo><mfrac><mrow><msubsup><mi>z</mi><mi>i</mi><mo>⊤</mo></msubsup><mo lspace="0em" rspace="0em">​</mo><msub><mi>z</mi><mi>j</mi></msub></mrow><mrow><mrow><msub><mrow><mo fence="true" rspace="0em">∥</mo><msub><mi>z</mi><mi>i</mi></msub><mo fence="true" lspace="0em">∥</mo></mrow><mn>2</mn></msub><mo lspace="0.170em" rspace="0em">​</mo><msub><mrow><mo fence="true" rspace="0em">∥</mo><msub><mi>z</mi><mi>j</mi></msub><mo fence="true" lspace="0em" rspace="0em">∥</mo></mrow><mn>2</mn></msub></mrow><mo>+</mo><mi>ε</mi></mrow></mfrac></mrow></mrow><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">d(i,j)=1-\frac{z_{i}^{\top}z_{j}}{\lVert z_{i}\rVert_{2}\,\lVert z_{j}\rVert_{2}+\varepsilon}.</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(1)</span></td>
+</tr></tbody>
+</table>
+</div>
+<div id="S3.SS1.p3" class="ltx_para">
+<p id="S3.SS1.p3.2" class="ltx_p">We define the novelty of agent <math id="S3.SS1.p3.1.m1" class="ltx_Math" alttext="i" display="inline" intent=":literal"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math> as the average cosine distance to its <math id="S3.SS1.p3.2.m2" class="ltx_Math" alttext="M" display="inline" intent=":literal"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math> most similar neighbors:</p>
+<table id="S3.E2" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E2.m1" class="ltx_Math" alttext="\mathrm{nov}(i)=\frac{1}{M}\sum_{j\in\mathcal{N}_{M}(i)}d(i,j)," display="block" intent=":literal"><semantics><mrow><mrow><mrow><mi>nov</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><mo>=</mo><mrow><mfrac><mn>1</mn><mi>M</mi></mfrac><mo lspace="0em" rspace="0em">​</mo><mrow><munder><mo movablelimits="false">∑</mo><mrow><mi>j</mi><mo>∈</mo><mrow><msub><mi class="ltx_font_mathcaligraphic">𝒩</mi><mi>M</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow></mrow></munder><mrow><mi>d</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo>,</mo><mi>j</mi><mo stretchy="false">)</mo></mrow></mrow></mrow></mrow></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\mathrm{nov}(i)=\frac{1}{M}\sum_{j\in\mathcal{N}_{M}(i)}d(i,j),</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(2)</span></td>
+</tr></tbody>
+</table>
+<p id="S3.SS1.p3.5" class="ltx_p">where <math id="S3.SS1.p3.3.m1" class="ltx_Math" alttext="\mathcal{N}_{M}(i)" display="inline" intent=":literal"><semantics><mrow><msub><mi class="ltx_font_mathcaligraphic">𝒩</mi><mi>M</mi></msub><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{N}_{M}(i)</annotation></semantics></math> denotes the set of <math id="S3.SS1.p3.4.m2" class="ltx_Math" alttext="M" display="inline" intent=":literal"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math> agents with the smallest cosine distance to agent <math id="S3.SS1.p3.5.m3" class="ltx_Math" alttext="i" display="inline" intent=":literal"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>.</p>
+</div>
+<div id="S3.SS1.p4" class="ltx_para">
+<p id="S3.SS1.p4.5" class="ltx_p">To construct the parent group, we rank agents according to a combined score</p>
+<table id="S3.E3" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S3.E3.m1" class="ltx_Math" alttext="\mathrm{score}(i)=\alpha_{i}\cdot\sqrt{\mathrm{nov}(i)}," display="block" intent=":literal"><semantics><mrow><mrow><mrow><mi>score</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow><mo>=</mo><mrow><msub><mi>α</mi><mi>i</mi></msub><mo lspace="0.222em" rspace="0.222em">⋅</mo><msqrt><mrow><mi>nov</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow></msqrt></mrow></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\mathrm{score}(i)=\alpha_{i}\cdot\sqrt{\mathrm{nov}(i)},</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(3)</span></td>
+</tr></tbody>
+</table>
+<p id="S3.SS1.p4.4" class="ltx_p">where <math id="S3.SS1.p4.1.m1" class="ltx_Math" alttext="\alpha_{i}" display="inline" intent=":literal"><semantics><msub><mi>α</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\alpha_{i}</annotation></semantics></math> denotes the performance of agent <math id="S3.SS1.p4.2.m2" class="ltx_Math" alttext="i" display="inline" intent=":literal"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math> on downstream coding tasks, and <math id="S3.SS1.p4.3.m3" class="ltx_Math" alttext="\sqrt{\mathrm{nov}(i)}" display="inline" intent=":literal"><semantics><msqrt><mrow><mi>nov</mi><mo lspace="0em" rspace="0em">​</mo><mrow><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo></mrow></mrow></msqrt><annotation encoding="application/x-tex">\sqrt{\mathrm{nov}(i)}</annotation></semantics></math> moderates the influence of novelty.
+Finally, we select the top-<math id="S3.SS1.p4.4.m4" class="ltx_Math" alttext="K" display="inline" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math> agents according to this score to form the parent group. Performance serves as the primary selection criterion, while novelty is incorporated as a mild bias without dominating performance, enabling a balanced trade-off between exploitation and exploration. The full procedure is summarized in Algorithm <a href="#alg1" title="Algorithm 1 ‣ 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>.</p>
+</div>
+<figure id="alg2" class="ltx_float ltx_float_algorithm ltx_framed ltx_framed_top">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_float"><span id="alg2.2.1.1" class="ltx_text ltx_font_bold">Algorithm 2</span> </span> Open-Ended Group-Evolving</figcaption>
+<div id="alg2.3" class="ltx_listing ltx_listing">
+<div id="alg2.l1" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l1.1.1.1" class="ltx_text" style="font-size:80%;">1:</span></span> <span id="alg2.l1.2" class="ltx_text ltx_font_bold">Input:</span> Parent group <math id="alg2.l1.m1" class="ltx_Math" alttext="\mathcal{G}=\{a_{1},\dots,a_{K}\}" display="inline" intent=":literal"><semantics><mrow><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>=</mo><mrow><mo stretchy="false">{</mo><msub><mi>a</mi><mn>1</mn></msub><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><msub><mi>a</mi><mi>K</mi></msub><mo stretchy="false">}</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{G}=\{a_{1},\dots,a_{K}\}</annotation></semantics></math>; archive <math id="alg2.l1.m2" class="ltx_Math" alttext="\mathcal{A}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>; coding benchmark <math id="alg2.l1.m3" class="ltx_Math" alttext="\mathcal{T}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒯</mi><annotation encoding="application/x-tex">\mathcal{T}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l2" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l2.1.1.1" class="ltx_text" style="font-size:80%;">2:</span></span> <span id="alg2.l2.2" class="ltx_text ltx_font_bold">Output:</span> Offspring group <math id="alg2.l2.m1" class="ltx_Math" alttext="\mathcal{G}^{\prime}" display="inline" intent=":literal"><semantics><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><annotation encoding="application/x-tex">\mathcal{G}^{\prime}</annotation></semantics></math> with <math id="alg2.l2.m2" class="ltx_Math" alttext="|\mathcal{G}^{\prime}|=K" display="inline" intent=":literal"><semantics><mrow><mrow><mo stretchy="false">|</mo><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><mo stretchy="false">|</mo></mrow><mo>=</mo><mi>K</mi></mrow><annotation encoding="application/x-tex">|\mathcal{G}^{\prime}|=K</annotation></semantics></math>; updated archive <math id="alg2.l2.m3" class="ltx_Math" alttext="\mathcal{A}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l3" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l3.1.1.1" class="ltx_text" style="font-size:80%;">3:</span></span> Initialize offspring group <math id="alg2.l3.m1" class="ltx_Math" alttext="\mathcal{G}^{\prime}\leftarrow\emptyset" display="inline" intent=":literal"><semantics><mrow><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><mo stretchy="false">←</mo><mi mathvariant="normal">∅</mi></mrow><annotation encoding="application/x-tex">\mathcal{G}^{\prime}\leftarrow\emptyset</annotation></semantics></math>
+
+</div>
+<div id="alg2.l4" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l4.1.1.1" class="ltx_text" style="font-size:80%;">4:</span></span> <span id="alg2.l4.2" class="ltx_text ltx_font_bold">for</span> <math id="alg2.l4.m1" class="ltx_Math" alttext="a_{i}\in\mathcal{G}" display="inline" intent=":literal"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒢</mi></mrow><annotation encoding="application/x-tex">a_{i}\in\mathcal{G}</annotation></semantics></math> <span id="alg2.l4.3" class="ltx_text ltx_font_bold">do</span>
+
+
+
+</div>
+<div id="alg2.l5" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l5.1.1.1" class="ltx_text" style="font-size:80%;">5:</span></span>  <span id="alg2.l5.2" class="ltx_text ltx_font_bold">/* Collect evolutionary traces */</span>
+
+</div>
+<div id="alg2.l6" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l6.2.1.1" class="ltx_text" style="font-size:80%;">6:</span></span>  <math id="alg2.l6.m1" class="ltx_Math" alttext="\mathcal{P}_{i}^{\mathrm{Applied}}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msubsup><mi class="ltx_font_mathcaligraphic">𝒫</mi><mi>i</mi><mi>Applied</mi></msubsup><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\mathcal{P}_{i}^{\mathrm{Applied}}\leftarrow</annotation></semantics></math> <span id="alg2.l6.1" class="ltx_text ltx_font_smallcaps">GetAppliedPatches<math id="alg2.l6.1.m1" class="ltx_Math" alttext="(a_{i})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l7" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l7.2.1.1" class="ltx_text" style="font-size:80%;">7:</span></span>  <math id="alg2.l7.m1" class="ltx_Math" alttext="t_{i}^{\mathrm{fail}}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msubsup><mi>t</mi><mi>i</mi><mi>fail</mi></msubsup><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">t_{i}^{\mathrm{fail}}\leftarrow</annotation></semantics></math> <span id="alg2.l7.1" class="ltx_text ltx_font_smallcaps">SampleUnsolvedTask<math id="alg2.l7.1.m1" class="ltx_Math" alttext="(a_{i})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l8" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l8.2.1.1" class="ltx_text" style="font-size:80%;">8:</span></span>  <math id="alg2.l8.m1" class="ltx_Math" alttext="\mathcal{P}_{i}^{\mathrm{pred}}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msubsup><mi class="ltx_font_mathcaligraphic">𝒫</mi><mi>i</mi><mi>pred</mi></msubsup><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\mathcal{P}_{i}^{\mathrm{pred}}\leftarrow</annotation></semantics></math> <span id="alg2.l8.1" class="ltx_text ltx_font_smallcaps">GetPredictedTaskPatch<math id="alg2.l8.1.m1" class="ltx_Math" alttext="(a_{i},t_{i}^{\mathrm{fail}})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msubsup><mi>t</mi><mi>i</mi><mi>fail</mi></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i},t_{i}^{\mathrm{fail}})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l9" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l9.2.1.1" class="ltx_text" style="font-size:80%;">9:</span></span>  <math id="alg2.l9.m1" class="ltx_Math" alttext="\mathcal{L}_{i}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msub><mi class="ltx_font_mathcaligraphic">ℒ</mi><mi>i</mi></msub><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\mathcal{L}_{i}\leftarrow</annotation></semantics></math> <span id="alg2.l9.1" class="ltx_text ltx_font_smallcaps">GetExecutionLogs<math id="alg2.l9.1.m1" class="ltx_Math" alttext="(a_{i},t_{i}^{\mathrm{fail}})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msubsup><mi>t</mi><mi>i</mi><mi>fail</mi></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i},t_{i}^{\mathrm{fail}})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l10" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l10.2.1.1" class="ltx_text" style="font-size:80%;">10:</span></span>  <math id="alg2.l10.m1" class="ltx_Math" alttext="\mathcal{O}_{i}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msub><mi class="ltx_font_mathcaligraphic">𝒪</mi><mi>i</mi></msub><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\mathcal{O}_{i}\leftarrow</annotation></semantics></math> <span id="alg2.l10.1" class="ltx_text ltx_font_smallcaps">GetOutcomeLog<math id="alg2.l10.1.m1" class="ltx_Math" alttext="(a_{i},t_{i}^{\mathrm{fail}})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msubsup><mi>t</mi><mi>i</mi><mi>fail</mi></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i},t_{i}^{\mathrm{fail}})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l11" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l11.1.1.1" class="ltx_text" style="font-size:80%;">11:</span></span>  <math id="alg2.l11.m1" class="ltx_Math" alttext="T_{i}\leftarrow\{\mathcal{P}_{i}^{\mathrm{Applied}},\mathcal{P}_{i}^{\mathrm{pred}},\mathcal{L}_{i},\mathcal{O}_{i}\}" display="inline" intent=":literal"><semantics><mrow><msub><mi>T</mi><mi>i</mi></msub><mo stretchy="false">←</mo><mrow><mo stretchy="false">{</mo><msubsup><mi class="ltx_font_mathcaligraphic">𝒫</mi><mi>i</mi><mi>Applied</mi></msubsup><mo>,</mo><msubsup><mi class="ltx_font_mathcaligraphic">𝒫</mi><mi>i</mi><mi>pred</mi></msubsup><mo>,</mo><msub><mi class="ltx_font_mathcaligraphic">ℒ</mi><mi>i</mi></msub><mo>,</mo><msub><mi class="ltx_font_mathcaligraphic">𝒪</mi><mi>i</mi></msub><mo stretchy="false">}</mo></mrow></mrow><annotation encoding="application/x-tex">T_{i}\leftarrow\{\mathcal{P}_{i}^{\mathrm{Applied}},\mathcal{P}_{i}^{\mathrm{pred}},\mathcal{L}_{i},\mathcal{O}_{i}\}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l12" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l12.1.1.1" class="ltx_text" style="font-size:80%;">12:</span></span> <span id="alg2.l12.2" class="ltx_text ltx_font_bold">end</span> <span id="alg2.l12.3" class="ltx_text ltx_font_bold">for</span>
+</div>
+<div id="alg2.l13" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l13.1.1.1" class="ltx_text" style="font-size:80%;">13:</span></span> <span id="alg2.l13.2" class="ltx_text ltx_font_bold">/* Aggregate and share group-level experience */</span>
+
+</div>
+<div id="alg2.l14" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l14.1.1.1" class="ltx_text" style="font-size:80%;">14:</span></span> <math id="alg2.l14.m1" class="ltx_Math" alttext="S\leftarrow\bigcup_{a_{j}\in\mathcal{G}}T_{j}" display="inline" intent=":literal"><semantics><mrow><mi>S</mi><mo rspace="0.111em" stretchy="false">←</mo><mrow><msub><mo>⋃</mo><mrow><msub><mi>a</mi><mi>j</mi></msub><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒢</mi></mrow></msub><msub><mi>T</mi><mi>j</mi></msub></mrow></mrow><annotation encoding="application/x-tex">S\leftarrow\bigcup_{a_{j}\in\mathcal{G}}T_{j}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l15" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l15.1.1.1" class="ltx_text" style="font-size:80%;">15:</span></span> <span id="alg2.l15.2" class="ltx_text ltx_font_bold">for</span> <math id="alg2.l15.m1" class="ltx_Math" alttext="a_{i}\in\mathcal{G}" display="inline" intent=":literal"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒢</mi></mrow><annotation encoding="application/x-tex">a_{i}\in\mathcal{G}</annotation></semantics></math> <span id="alg2.l15.3" class="ltx_text ltx_font_bold">do</span>
+
+
+
+</div>
+<div id="alg2.l16" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l16.1.1.1" class="ltx_text" style="font-size:80%;">16:</span></span>  <span id="alg2.l16.2" class="ltx_text ltx_font_bold">/* Reflection: analyze shared experience */</span>
+
+</div>
+<div id="alg2.l17" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l17.2.1.1" class="ltx_text" style="font-size:80%;">17:</span></span>  <math id="alg2.l17.m1" class="ltx_Math" alttext="\Delta_{i}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msub><mi mathvariant="normal">Δ</mi><mi>i</mi></msub><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\Delta_{i}\leftarrow</annotation></semantics></math> <span id="alg2.l17.1" class="ltx_text ltx_font_smallcaps">Reflect<math id="alg2.l17.1.m1" class="ltx_Math" alttext="(a_{i};\,S)" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo rspace="0.337em">;</mo><mi>S</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i};\,S)</annotation></semantics></math></span>
+<span id="alg2.l17.3" class="ltx_text" style="float:right;">// evolution directives
+</span>
+</div>
+<div id="alg2.l18" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l18.1.1.1" class="ltx_text" style="font-size:80%;">18:</span></span>  <span id="alg2.l18.2" class="ltx_text ltx_font_bold">/* Evolution: generate framework-level patches */</span>
+
+</div>
+<div id="alg2.l19" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l19.2.1.1" class="ltx_text" style="font-size:80%;">19:</span></span>  <math id="alg2.l19.m1" class="ltx_Math" alttext="\pi_{i}^{\prime}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msubsup><mi>π</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">\pi_{i}^{\prime}\leftarrow</annotation></semantics></math> <span id="alg2.l19.1" class="ltx_text ltx_font_smallcaps">Evolve<math id="alg2.l19.1.m1" class="ltx_Math" alttext="(a_{i};\,\Delta_{i})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo rspace="0.337em">;</mo><msub><mi mathvariant="normal">Δ</mi><mi>i</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i};\,\Delta_{i})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l20" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l20.1.1.1" class="ltx_text" style="font-size:80%;">20:</span></span>  <span id="alg2.l20.2" class="ltx_text ltx_font_bold">/* Acting: evaluate updated agent */</span>
+
+</div>
+<div id="alg2.l21" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l21.2.1.1" class="ltx_text" style="font-size:80%;">21:</span></span>  <math id="alg2.l21.m1" class="ltx_Math" alttext="a_{i}^{\prime}\leftarrow" display="inline" intent=":literal"><semantics><mrow><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">←</mo><mi></mi></mrow><annotation encoding="application/x-tex">a_{i}^{\prime}\leftarrow</annotation></semantics></math> <span id="alg2.l21.1" class="ltx_text ltx_font_smallcaps">ApplyPatch<math id="alg2.l21.1.m1" class="ltx_Math" alttext="(a_{i},\pi_{i}^{\prime})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>a</mi><mi>i</mi></msub><mo>,</mo><msubsup><mi>π</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i},\pi_{i}^{\prime})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l22" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l22.2.1.1" class="ltx_text" style="font-size:80%;">22:</span></span>  <span id="alg2.l22.1" class="ltx_text ltx_font_smallcaps">ActAndEvaluate<math id="alg2.l22.1.m1" class="ltx_Math" alttext="(a_{i}^{\prime};\,\mathcal{T})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo rspace="0.337em">;</mo><mi class="ltx_font_mathcaligraphic">𝒯</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i}^{\prime};\,\mathcal{T})</annotation></semantics></math></span>
+
+</div>
+<div id="alg2.l23" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l23.1.1.1" class="ltx_text" style="font-size:80%;">23:</span></span>  <math id="alg2.l23.m1" class="ltx_Math" alttext="\mathcal{G}^{\prime}\leftarrow\mathcal{G}^{\prime}\cup\{a_{i}^{\prime}\}" display="inline" intent=":literal"><semantics><mrow><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><mo stretchy="false">←</mo><mrow><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><mo>∪</mo><mrow><mo stretchy="false">{</mo><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">}</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\mathcal{G}^{\prime}\leftarrow\mathcal{G}^{\prime}\cup\{a_{i}^{\prime}\}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l24" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l24.1.1.1" class="ltx_text" style="font-size:80%;">24:</span></span>  <span id="alg2.l24.2" class="ltx_text ltx_font_bold">/* Archive update */</span>
+
+</div>
+<div id="alg2.l25" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l25.3.1.1" class="ltx_text" style="font-size:80%;">25:</span></span>  <span id="alg2.l25.4" class="ltx_text ltx_font_bold">if</span> <span id="alg2.l25.1" class="ltx_text ltx_font_smallcaps">Compiles<math id="alg2.l25.1.m1" class="ltx_Math" alttext="(a_{i}^{\prime})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i}^{\prime})</annotation></semantics></math></span>  and <span id="alg2.l25.2" class="ltx_text ltx_font_smallcaps">BasicCodingFunc<math id="alg2.l25.2.m1" class="ltx_Math" alttext="(a_{i}^{\prime})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">(</mo><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(a_{i}^{\prime})</annotation></semantics></math></span> <span id="alg2.l25.5" class="ltx_text ltx_font_bold">then</span>
+
+
+
+</div>
+<div id="alg2.l26" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l26.1.1.1" class="ltx_text" style="font-size:80%;">26:</span></span>   <math id="alg2.l26.m1" class="ltx_Math" alttext="\mathcal{A}\leftarrow\mathcal{A}\cup\{a_{i}^{\prime}\}" display="inline" intent=":literal"><semantics><mrow><mi class="ltx_font_mathcaligraphic">𝒜</mi><mo stretchy="false">←</mo><mrow><mi class="ltx_font_mathcaligraphic">𝒜</mi><mo>∪</mo><mrow><mo stretchy="false">{</mo><msubsup><mi>a</mi><mi>i</mi><mo>′</mo></msubsup><mo stretchy="false">}</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">\mathcal{A}\leftarrow\mathcal{A}\cup\{a_{i}^{\prime}\}</annotation></semantics></math>
+
+</div>
+<div id="alg2.l27" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l27.1.1.1" class="ltx_text" style="font-size:80%;">27:</span></span>  <span id="alg2.l27.2" class="ltx_text ltx_font_bold">end</span> <span id="alg2.l27.3" class="ltx_text ltx_font_bold">if</span>
+</div>
+<div id="alg2.l28" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l28.1.1.1" class="ltx_text" style="font-size:80%;">28:</span></span> <span id="alg2.l28.2" class="ltx_text ltx_font_bold">end</span> <span id="alg2.l28.3" class="ltx_text ltx_font_bold">for</span>
+</div>
+<div id="alg2.l29" class="ltx_listingline">
+<span class="ltx_tag ltx_tag_listingline"><span id="alg2.l29.1.1.1" class="ltx_text" style="font-size:80%;">29:</span></span> <span id="alg2.l29.2" class="ltx_text ltx_font_bold">return</span> <math id="alg2.l29.m1" class="ltx_Math" alttext="\mathcal{G}^{\prime},\mathcal{A}" display="inline" intent=":literal"><semantics><mrow><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><mo>,</mo><mi class="ltx_font_mathcaligraphic">𝒜</mi></mrow><annotation encoding="application/x-tex">\mathcal{G}^{\prime},\mathcal{A}</annotation></semantics></math>
+
+</div>
+</div>
+</figure>
+</section>
+<section id="S3.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.2 </span>Open-Ended Group Evolution</h3>
+
+<div id="S3.SS2.p1" class="ltx_para">
+<p id="S3.SS2.p1.1" class="ltx_p">Unlike conventional approaches where parent agents evolve independently without information and experience exchange, GEA explicitly enables experience sharing and reuse among agents during evolution. This group-level experience sharing allows agents to integrate complementary evolutionary directions explored by different agents while maintaining open-ended exploration. Diversity generated during exploration is thus transformed from transient variations into long-term useful experience, effectively contributing to sustained evolutionary progress.</p>
+</div>
+<div id="S3.SS2.p2" class="ltx_para">
+<p id="S3.SS2.p2.2" class="ltx_p">Given a selected parent group <math id="S3.SS2.p2.1.m1" class="ltx_Math" alttext="\mathcal{G}=\{a_{1},a_{2},\ldots,a_{K}\}" display="inline" intent=":literal"><semantics><mrow><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>=</mo><mrow><mo stretchy="false">{</mo><msub><mi>a</mi><mn>1</mn></msub><mo>,</mo><msub><mi>a</mi><mn>2</mn></msub><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><msub><mi>a</mi><mi>K</mi></msub><mo stretchy="false">}</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal{G}=\{a_{1},a_{2},\ldots,a_{K}\}</annotation></semantics></math>, GEA generates a new group <math id="S3.SS2.p2.2.m2" class="ltx_Math" alttext="\mathcal{G}^{\prime}" display="inline" intent=":literal"><semantics><msup><mi class="ltx_font_mathcaligraphic">𝒢</mi><mo>′</mo></msup><annotation encoding="application/x-tex">\mathcal{G}^{\prime}</annotation></semantics></math> of the same size, where each agent evolves by leveraging both its own evolutionary history and experience aggregated from other members of the parent group, as demonstrated in Figure <a href="#S3.F2" title="Figure 2 ‣ 3.2 Open-Ended Group Evolution ‣ 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>.</p>
+</div>
+<div id="S3.SS2.p3" class="ltx_para">
+<p id="S3.SS2.p3.1" class="ltx_p">For each agent <math id="S3.SS2.p3.1.m1" class="ltx_Math" alttext="a_{i}\in\mathcal{G}" display="inline" intent=":literal"><semantics><mrow><msub><mi>a</mi><mi>i</mi></msub><mo>∈</mo><mi class="ltx_font_mathcaligraphic">𝒢</mi></mrow><annotation encoding="application/x-tex">a_{i}\in\mathcal{G}</annotation></semantics></math>, we collect a set of evolutionary traces consisting of:</p>
+<ol id="S3.I1" class="ltx_enumerate">
+<li id="S3.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">1.</span> 
+<div id="S3.I1.i1.p1" class="ltx_para">
+<p id="S3.I1.i1.p1.1" class="ltx_p">the code modification patches applied to the agent’s framework;</p>
+</div>
+</li>
+<li id="S3.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">2.</span> 
+<div id="S3.I1.i2.p1" class="ltx_para">
+<p id="S3.I1.i2.p1.1" class="ltx_p">a predicted task patch generated by <math id="S3.I1.i2.p1.1.m1" class="ltx_Math" alttext="a_{i}" display="inline" intent=":literal"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_{i}</annotation></semantics></math> for a randomly sampled unsolved task during evaluation;</p>
+</div>
+</li>
+<li id="S3.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">3.</span> 
+<div id="S3.I1.i3.p1" class="ltx_para">
+<p id="S3.I1.i3.p1.1" class="ltx_p">the corresponding task execution logs, including the complete tool invocation history and execution workflow;</p>
+</div>
+</li>
+<li id="S3.I1.i4" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">4.</span> 
+<div id="S3.I1.i4.p1" class="ltx_para">
+<p id="S3.I1.i4.p1.1" class="ltx_p">the evaluation outcome of the same task, which exposes failure modes and potential directions for framework-level improvement.</p>
+</div>
+</li>
+</ol>
+</div>
+<figure id="S3.SS2.1" class="ltx_figure">
+<div id="S3.SS2.1.1" class="ltx_block">
+<img src="2602.04837v1/x2.png" id="S3.SS2.1.g1" class="ltx_graphics ltx_centering ltx_img_square" width="830" height="770" alt="[Uncaptioned image]">
+<figure id="S3.F2" class="ltx_figure ltx_align_center">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S3.F2.3.1.1" class="ltx_text" style="font-size:90%;">Figure 2</span>: </span><span id="S3.F2.4.2" class="ltx_text ltx_font_bold" style="font-size:90%;">Detailed illustration of group-level evolution in GEA.<span id="S3.F2.4.2.1" class="ltx_text ltx_font_medium"> Aggregated evolutionary traces from the parent group are shared across all agents to generate evolution directives and framework-level patches.</span></span></figcaption>
+</figure>
+</div>
+</figure>
+<div id="S3.SS2.p4" class="ltx_para">
+<p id="S3.SS2.p4.1" class="ltx_p">The aggregated traces from all agents in the parent group are provided as shared input to every agent. Each agent evolves from this shared pool of group-level experience while diverging through complementary adaptations to its own codebase, enabling the group to explore diverse evolutionary directions while leveraging experiences from one another.</p>
+</div>
+<div id="S3.SS2.p5" class="ltx_para">
+<p id="S3.SS2.p5.1" class="ltx_p">For each agent <math id="S3.SS2.p5.1.m1" class="ltx_Math" alttext="a_{i}" display="inline" intent=":literal"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_{i}</annotation></semantics></math>, the shared group-level experience is fed into its reflection module, which analyzes these traces and produces evolution directives targeting the agent’s workflow, tool usage, or prompting strategies. These directives are then passed to the evolution module to generate framework-level patches. Finally, the updated agent is evaluated on downstream programming tasks via the action module. Agents that compile successfully and exhibit basic coding functionality are retained and added to the archive for future evolution.</p>
+</div>
+<div id="S3.SS2.p6" class="ltx_para">
+<p id="S3.SS2.p6.1" class="ltx_p">Applying this process to each agent in the parent group yields an offspring group of size <math id="S3.SS2.p6.1.m1" class="ltx_Math" alttext="K" display="inline" intent=":literal"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>. This group-level evolution iterates in an open-ended manner, as summarized in Algorithm <a href="#alg2" title="Algorithm 2 ‣ 3.1 Parent Group Selection ‣ 3 Method ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>.</p>
+</div>
+</section>
+</section>
+<section id="S4" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">4 </span>Experiments</h2>
+
+<section id="S4.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.1 </span>Benchmarks</h3>
+
+<div id="S4.SS1.p1" class="ltx_para">
+<p id="S4.SS1.p1.1" class="ltx_p">Following the evaluation protocol established by the state-of-the-art open-ended self-evolving system, Darwin Gödel Machine (DGM) <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>]</cite>, we evaluate GEA on two structurally distinct benchmarks to assess its coding capabilities in both repository-level software engineering and multi-language code synthesis settings. To mitigate the substantial cost of evaluating every evolved agent on the full benchmarks, we adopt a staged evaluation strategy where agents must pass smaller subsets before advancing.</p>
+</div>
+<section id="S4.SS1.SSS0.Px1" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">SWE-bench.</h4>
+
+<div id="S4.SS1.SSS0.Px1.p1" class="ltx_para">
+<p id="S4.SS1.SSS0.Px1.p1.1" class="ltx_p">We evaluate on <span id="S4.SS1.SSS0.Px1.p1.1.1" class="ltx_text ltx_font_bold">SWE-bench Verified</span> <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swe-bench-verified</span>]</cite>, a curated, human-validated subset of SWE-bench in which every task is confirmed to be solvable. We employ a three-stage evaluation process. First, agents undergo a sanity check on a small set of 10 tasks to discard those with framework-level failures (i.e., cannot compile or solve 0 out of 10 tasks). Agents that demonstrate basic coding functionality are then evaluated on the 50-task <span id="S4.SS1.SSS0.Px1.p1.1.2" class="ltx_text ltx_font_italic">Verified-Mini</span> set <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swebench-verified-mini</span>]</cite>, which is designed to preserve a similar difficulty and pass-rate distribution as the full benchmark with fewer samples. Finally, the top-2 performing agents from this stage are evaluated on the full SWE-bench Verified dataset.</p>
+</div>
+</section>
+<section id="S4.SS1.SSS0.Px2" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">Polyglot.</h4>
+
+<div id="S4.SS1.SSS0.Px2.p1" class="ltx_para">
+<p id="S4.SS1.SSS0.Px2.p1.1" class="ltx_p">Polyglot <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>]</cite> assesses algorithmic code generation across diverse languages (C++, Rust, Java, etc.) and serves as an out-of-domain generalization test, since it is rarely used for training or fine-tuning coding models <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>]</cite>. We report pass@1 performance. Unlike SWE-bench Verified <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swe-bench-verified</span>]</cite>, group-level evolution is conducted exclusively on a 10-task small set. Agents achieving a success rate above 40% are subsequently evaluated on a separate, unseen 50-task medium set, ensuring that the larger set remains a strict out-of-distribution test for generalization.</p>
+</div>
+</section>
+</section>
+<section id="S4.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.2 </span>Experimental Settings</h3>
+
+<div id="S4.SS2.p1" class="ltx_para">
+<p id="S4.SS2.p1.2" class="ltx_p">For both SWE-bench Verified and Polyglot, we set the group size to <math id="S4.SS2.p1.1.m1" class="ltx_Math" alttext="K=2" display="inline" intent=":literal"><semantics><mrow><mi>K</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">K=2</annotation></semantics></math>
+and use <math id="S4.SS2.p1.2.m2" class="ltx_Math" alttext="M=4" display="inline" intent=":literal"><semantics><mrow><mi>M</mi><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">M=4</annotation></semantics></math> nearest neighbors in the KNN-based parent group selection.
+At each iteration, a parent group of size 2 produces an offspring group of the same size.</p>
+</div>
+<div id="S4.SS2.p2" class="ltx_para">
+<p id="S4.SS2.p2.1" class="ltx_p">For SWE-bench Verified, we run group-evolution for 30 iterations.
+Due to computational budget constraints, during the first 20 iterations,
+the evolving and acting modules are powered by Claude Haiku 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-haiku-4-5</span>]</cite>,
+while the final 10 iterations use Claude Sonnet 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-sonnet-4-5</span>]</cite>.
+The reflection module is consistently powered by GPT-o1 across all iterations <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">jaech2024openai</span>]</cite>. For Polyglot, we run group-evolution for 20 iterations.
+The first 10 iterations use Claude Haiku 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-haiku-4-5</span>]</cite> for evolving and acting module, and the remaining 10 iterations use Claude Sonnet 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-sonnet-4-5</span>]</cite>.
+The reflection module is again consistently powered by GPT-o1 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">jaech2024openai</span>]</cite>.</p>
+</div>
+</section>
+<section id="S4.SS3" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.3 </span>Baselines</h3>
+
+<div id="S4.SS3.p1" class="ltx_para">
+<p id="S4.SS3.p1.1" class="ltx_p">We use state-of-the-art open-ended self-evolving agents as our primary baseline for comprehensive comparison, to systematically examine how experience sharing affects diversity utilization and performance improvement during open-ended evolution, as well as robustness to framework-level perturbations. Additionally, we compare the final performance of GEA, which uses a meta-learning approach without any human intervention, against state-of-the-art human-designed coding agents.</p>
+</div>
+<section id="S4.SS3.SSS0.Px1" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">Open-Ended Self-Evolving Baseline.</h4>
+
+<div id="S4.SS3.SSS0.Px1.p1" class="ltx_para">
+<p id="S4.SS3.SSS0.Px1.p1.2" class="ltx_p">We compare against the current state-of-the-art open-ended self-evolving framework, implemented following DGM <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>]</cite>. Unlike GEA, this baseline enforces a strict tree-structured evolution, where only a single agent <math id="S4.SS3.SSS0.Px1.p1.1.m1" class="ltx_Math" alttext="a_{i}" display="inline" intent=":literal"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_{i}</annotation></semantics></math> is selected as the parent and independently evolves into one child agent at each iteration. Evolutionary experience is not shared across different evolutionary branches. Specifically, the reflection module of agent <math id="S4.SS3.SSS0.Px1.p1.2.m2" class="ltx_Math" alttext="a_{i}" display="inline" intent=":literal"><semantics><msub><mi>a</mi><mi>i</mi></msub><annotation encoding="application/x-tex">a_{i}</annotation></semantics></math> receives only its own evolutionary traces, including:</p>
+<ol id="S4.I1" class="ltx_enumerate">
+<li id="S4.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">(i)</span> 
+<div id="S4.I1.i1.p1" class="ltx_para">
+<p id="S4.I1.i1.p1.1" class="ltx_p">code modification patches applied to the agent’s framework;</p>
+</div>
+</li>
+<li id="S4.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">(ii)</span> 
+<div id="S4.I1.i2.p1" class="ltx_para">
+<p id="S4.I1.i2.p1.1" class="ltx_p">a predicted task patch for a randomly sampled unsolved task;</p>
+</div>
+</li>
+<li id="S4.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">(iii)</span> 
+<div id="S4.I1.i3.p1" class="ltx_para">
+<p id="S4.I1.i3.p1.1" class="ltx_p">the corresponding execution log, including tool invocation history and workflow; and</p>
+</div>
+</li>
+<li id="S4.I1.i4" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">(iv)</span> 
+<div id="S4.I1.i4.p1" class="ltx_para">
+<p id="S4.I1.i4.p1.1" class="ltx_p">the evaluation outcome, exposing failure modes and improvement directions.</p>
+</div>
+</li>
+</ol>
+<p id="S4.SS3.SSS0.Px1.p1.3" class="ltx_p">This design prevents experience reuse across evolutionary branches, resulting in a strictly individual-centric evolutionary process.</p>
+</div>
+<div id="S4.SS3.SSS0.Px1.p2" class="ltx_para">
+<p id="S4.SS3.SSS0.Px1.p2.1" class="ltx_p">For SWE-bench Verified <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swe-bench-verified</span>]</cite>, we run this baseline for 60 iterations in total: the evolution and coding modules are powered by Claude Haiku 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-haiku-4-5</span>]</cite> for the first 40 iterations and Claude Sonnet 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-sonnet-4-5</span>]</cite> for the final 20 iterations. For Polyglot, we run the baseline for 40 iterations: Claude Haiku 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-haiku-4-5</span>]</cite> for the first 20 iterations and Claude Sonnet 4.5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">anthropic-claude-sonnet-4-5</span>]</cite> for the remaining 20. In all baseline experiments, the reflection module is consistently powered by GPT-o1 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">jaech2024openai</span>]</cite>. To ensure fair comparison, we intentionally run the baseline for twice as many iterations as GEA so that the total number of evolved agents is comparable across methods, ensuring all comparisons are conducted under matched model schedules.</p>
+</div>
+</section>
+<section id="S4.SS3.SSS0.Px2" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">Human-Designed Frameworks.</h4>
+
+<div id="S4.SS3.SSS0.Px2.p1" class="ltx_para">
+<p id="S4.SS3.SSS0.Px2.p1.1" class="ltx_p">We additionally compare against state-of-the-art human-designed frameworks on both benchmarks. The top-performing, open-scaffold, checked entry on SWE-bench Verified is OpenHands + GPT-5 <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">wangopenhands</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">singh2025openai</span>]</cite>, achieving 71.8%, where “checked” indicates that the SWE-bench team successfully reproduced the reported patch generations <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">jimenez2024swe</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>]</cite>. For Polyglot, which was originally used to evaluate Aider <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>]</cite> by its developers, we compare against Aider, a widely adopted coding agent under continuous development and testing by human developers. The state-of-the-art performance is Aider + GPT-5 (high) <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">singh2025openai</span>]</cite>, achieving a 52.0% pass@1 success rate.</p>
+</div>
+</section>
+</section>
+</section>
+<section id="S5" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">5 </span>Results and Analysis</h2>
+
+<section id="S5.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.1 </span>Main Results</h3>
+
+<section id="S5.SS1.SSS0.Px1" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">GEA vs. State-of-the-Art Open-Ended Self-Evolving Systems.</h4>
+
+<div id="S5.SS1.SSS0.Px1.p1" class="ltx_para">
+<p id="S5.SS1.SSS0.Px1.p1.1" class="ltx_p">As shown in Figure <a href="#S5.F3" title="Figure 3 ‣ GEA vs. State-of-the-Art Human-Designed Agents. ‣ 5.1 Main Results ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>, GEA demonstrates substantial performance improvements over the DGM (self-evolving baseline) on both SWE-bench Verified and Polyglot. On SWE-bench Verified, GEA improves performance from 20.0% to 71.0%, while under the same number of evolved agents, the DGM baseline achieves only 56.7%. On Polyglot, GEA boosts performance from 38.2% to 88.3%, significantly outperforming the DGM baseline (68.3%). Notably, GEA exhibits faster and more pronounced improvement in the mid-to-late stages of evolution compared to DGM <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span>]</cite>, one potential reason is that the archive has accumulated sufficient diverse evolutionary directions by this point, that can be progressively consolidated and reused, leading to more rapid and pronounced performance gain, aligning with Figure <a href="#S5.F4" title="Figure 4 ‣ 5.2 Evolution Analysis ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a>. We discuss this phenomenon in detail in Section <a href="#S5.SS2" title="5.2 Evolution Analysis ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5.2</span></a>.</p>
+</div>
+</section>
+<section id="S5.SS1.SSS0.Px2" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">GEA vs. State-of-the-Art Human-Designed Agents.</h4>
+
+<div id="S5.SS1.SSS0.Px2.p1" class="ltx_para">
+<p id="S5.SS1.SSS0.Px2.p1.1" class="ltx_p">GEA achieves performance comparable to or exceeding state-of-the-art human-designed agents on both benchmarks: 71.0% vs. 71.8% on SWE-bench Verified, and 88.3% vs. 52.0% on Polyglot. Using meta-learning without any human intervention, GEA automatically evolves agent frameworks that match or surpass carefully engineered human designs <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">singh2025openai</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">wangopenhands</span>]</cite>, demonstrating the potential and viability of fully autonomous agent improvement.</p>
+</div>
+<figure id="S5.F3" class="ltx_figure">
+<div class="ltx_flex_figure">
+<div class="ltx_flex_cell ltx_flex_size_2">
+<figure id="S5.F3.sf1" class="ltx_figure ltx_figure_panel ltx_align_center"><img src="2602.04837v1/x3.png" id="S5.F3.sf1.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="830" height="541" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S5.F3.sf1.2.1.1" class="ltx_text" style="font-size:90%;">(a)</span> </span><span id="S5.F3.sf1.3.2" class="ltx_text" style="font-size:90%;">GEA vs. DGM (Self-evolving Baseline) on SWE-bench</span></figcaption>
+</figure>
+</div>
+<div class="ltx_flex_cell ltx_flex_size_2">
+<figure id="S5.F3.sf2" class="ltx_figure ltx_figure_panel ltx_align_center"><img src="2602.04837v1/x4.png" id="S5.F3.sf2.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="830" height="539" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S5.F3.sf2.2.1.1" class="ltx_text" style="font-size:90%;">(b)</span> </span><span id="S5.F3.sf2.3.2" class="ltx_text" style="font-size:90%;">GEA vs. DGM (Self-evolving Baseline) on Polyglot</span></figcaption>
+</figure>
+</div>
+</div>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S5.F3.3.1.1" class="ltx_text" style="font-size:90%;">Figure 3</span>: </span><span id="S5.F3.4.2" class="ltx_text" style="font-size:90%;">
+<span id="S5.F3.4.2.1" class="ltx_text ltx_font_bold">Performance comparison between GEA and DGM (self-evolving baseline) on two coding benchmarks.</span> Under the same number of evolved agents, GEA exhibits substantially larger performance gains than DGM on both SWE-bench and Polyglot, demonstrating the improved efficiency of group-level evolution.
+</span></figcaption>
+</figure>
+</section>
+<section id="S5.SS1.SSS0.Px3" class="ltx_paragraph">
+<h4 class="ltx_title ltx_title_paragraph">Analysis of evolutionary patterns on two benchmarks.</h4>
+
+<div id="S5.SS1.SSS0.Px3.p1" class="ltx_para">
+<p id="S5.SS1.SSS0.Px3.p1.1" class="ltx_p">GEA achieves state-of-the-art open-ended self-improvement on both benchmarks, with particularly strong performance on Polyglot <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>]</cite>. We further analyze and observe that the two benchmarks differ in task complexity: Polyglot <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>]</cite> primarily requires agents to modify a single file from scratch to resolve tasks, involving lower editing complexity without multi-file coordination. In contrast, SWE-bench Verified <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swe-bench-verified</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">jimenez2024swe</span>]</cite> typically requires coordinated modifications across multiple files, demanding that agents understand inter-file dependencies and locate relevant files for coordinated edits.</p>
+</div>
+<div id="S5.SS1.SSS0.Px3.p2" class="ltx_para">
+<p id="S5.SS1.SSS0.Px3.p2.1" class="ltx_p">This difference in complexity leads to distinct evolutionary patterns. On Polyglot <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-github</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">aider-polyglot</span>]</cite>, meta-learning produces larger, more concentrated patches: each iteration yields substantial performance gains, reaching 88.3% in just 4 iterations with a total of 8,677 lines of code added. On SWE-bench Verified <cite class="ltx_cite ltx_citemacro_citep">[<span class="ltx_ref ltx_missing_citation ltx_ref_self">swe-bench-verified</span>, <span class="ltx_ref ltx_missing_citation ltx_ref_self">jimenez2024swe</span>]</cite>, the evolved patches are smaller and more distributed, requiring 8 iterations to reach 71.0% with 9,663 lines of code added. These observations suggest that GEA adapts its evolutionary behavior to varying task complexity, demonstrating the flexibility and generality of group-level meta-learning across different problem settings.</p>
+</div>
+</section>
+</section>
+<section id="S5.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.2 </span>Evolution Analysis</h3>
+
+<div id="S5.SS2.p1" class="ltx_para">
+<p id="S5.SS2.p1.1" class="ltx_p">Overall, our analysis shows that GEA can efficiently consolidate tool-level innovations discovered across the agents, rather than letting them remain isolated in separate evolutionary branches. Figure <a href="#S5.F4" title="Figure 4 ‣ 5.2 Evolution Analysis ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a> summarizes nine key tool-level modifications on agents’ framework that drove improvements. GEA integrated eight of these functionalities into its best agent, whereas the best DGM agent integrated only five. Crucially, the four tools missing from the DGM agent <span id="S5.SS2.p1.1.1" class="ltx_text ltx_font_italic">were</span> explored in isolated branches (e.g., <span id="S5.SS2.p1.1.2" class="ltx_text ltx_font_bold">T4</span> at iteration 9) but failed to propagate due to lineage isolation. In contrast, GEA systematically consolidated these dispersed capabilities; five of its integrated tools originated from different parent agents, confirming that explicit experience sharing prevents beneficial innovations from dying out.</p>
+</div>
+<figure id="S5.SS2.3" class="ltx_figure">
+<figure id="S5.F4" class="ltx_figure ltx_figure_panel ltx_align_center ltx_align_top" style="width:208.1pt;"><img src="2602.04837v1/x5.png" id="S5.SS2.1.1.g1" class="ltx_graphics ltx_centering ltx_figure_panel ltx_img_landscape" width="830" height="588" alt="Refer to caption">
+<br class="ltx_break ltx_break">
+<figcaption class="ltx_caption"><span class="ltx_tag ltx_tag_figure"><span id="S5.F4.3.1.1" class="ltx_text" style="font-size:90%;">Figure 4</span>: </span><span id="S5.F4.4.2" class="ltx_text ltx_font_bold" style="font-size:90%;">Evolution analysis of tool discovery and integration over iterations.<span id="S5.F4.4.2.1" class="ltx_text ltx_font_medium">
+Each row (T1–T9) corresponds to a key tool-level functionality.
+Blue markers indicate tools that have been discovered but not yet integrated into the current best agent,
+while red markers indicate tools integrated into the best-performing agent.</span></span></figcaption>
+</figure>
+<figure id="S5.SS2.3.3" class="ltx_figure ltx_minipage ltx_align_center ltx_align_top" style="width:208.1pt;">
+<div id="S5.SS2.3.3.3" class="ltx_block">
+<table id="S5.SS2.3.3.2" class="ltx_tabular ltx_centering ltx_align_middle">
+<tr id="S5.SS2.3.3.2.2" class="ltx_tr">
+<td id="S5.SS2.3.3.2.2.3" class="ltx_td ltx_border_tt" style="padding:0.7pt 4.0pt;"></td>
+<td id="S5.SS2.2.2.1.1.1" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.7pt 4.0pt;" colspan="2">
+<span id="S5.SS2.2.2.1.1.1.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Worst-Case Success</span><span id="S5.SS2.2.2.1.1.1.2" class="ltx_text" style="font-size:90%;"> </span><math id="S5.SS2.2.2.1.1.1.m1" class="ltx_Math" alttext="\uparrow" display="inline" intent=":literal"><semantics><mo mathsize="0.900em" stretchy="false">↑</mo><annotation encoding="application/x-tex">\uparrow</annotation></semantics></math>
+</td>
+<td id="S5.SS2.3.3.2.2.2" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.7pt 4.0pt;" colspan="2">
+<span id="S5.SS2.3.3.2.2.2.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Ancestor Count</span><span id="S5.SS2.3.3.2.2.2.2" class="ltx_text" style="font-size:90%;"> </span><math id="S5.SS2.3.3.2.2.2.m1" class="ltx_Math" alttext="\uparrow" display="inline" intent=":literal"><semantics><mo mathsize="0.900em" stretchy="false">↑</mo><annotation encoding="application/x-tex">\uparrow</annotation></semantics></math>
+</td>
+</tr>
+<tr id="S5.SS2.3.3.2.3" class="ltx_tr">
+<td id="S5.SS2.3.3.2.3.1" class="ltx_td ltx_align_left" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.3.1.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Rank</span></td>
+<td id="S5.SS2.3.3.2.3.2" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.3.2.1" class="ltx_text ltx_font_bold" style="font-size:90%;">DGM</span></td>
+<td id="S5.SS2.3.3.2.3.3" class="ltx_td ltx_align_center ltx_border_r ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.3.3.1" class="ltx_text ltx_font_bold" style="font-size:90%;">GEA</span></td>
+<td id="S5.SS2.3.3.2.3.4" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.3.4.1" class="ltx_text ltx_font_bold" style="font-size:90%;">DGM</span></td>
+<td id="S5.SS2.3.3.2.3.5" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.3.5.1" class="ltx_text ltx_font_bold" style="font-size:90%;">GEA</span></td>
+</tr>
+<tr id="S5.SS2.3.3.2.4" class="ltx_tr">
+<td id="S5.SS2.3.3.2.4.1" class="ltx_td ltx_align_left ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.4.1.1" class="ltx_text" style="font-size:90%;">Top-1</span></td>
+<td id="S5.SS2.3.3.2.4.2" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.4.2.1" class="ltx_text" style="font-size:90%;">56.7%</span></td>
+<td id="S5.SS2.3.3.2.4.3" class="ltx_td ltx_align_center ltx_border_r ltx_border_t" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.4.3.1" class="ltx_text ltx_font_bold" style="font-size:90%;">71.0%</span></td>
+<td id="S5.SS2.3.3.2.4.4" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.4.4.1" class="ltx_text" style="font-size:90%;">9 </span><span id="S5.SS2.3.3.2.4.4.2" class="ltx_text" style="font-size:70%;">(15.0%)</span>
+</td>
+<td id="S5.SS2.3.3.2.4.5" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.4.5.1" class="ltx_text ltx_font_bold" style="font-size:90%;">17</span><span id="S5.SS2.3.3.2.4.5.2" class="ltx_text" style="font-size:90%;"> </span><span id="S5.SS2.3.3.2.4.5.3" class="ltx_text" style="font-size:70%;">(28.3%)</span>
+</td>
+</tr>
+<tr id="S5.SS2.3.3.2.5" class="ltx_tr">
+<td id="S5.SS2.3.3.2.5.1" class="ltx_td ltx_align_left" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.5.1.1" class="ltx_text" style="font-size:90%;">Top-3</span></td>
+<td id="S5.SS2.3.3.2.5.2" class="ltx_td ltx_align_center" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.5.2.1" class="ltx_text" style="font-size:90%;">48.3%</span></td>
+<td id="S5.SS2.3.3.2.5.3" class="ltx_td ltx_align_center ltx_border_r" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.5.3.1" class="ltx_text ltx_font_bold" style="font-size:90%;">63.3%</span></td>
+<td id="S5.SS2.3.3.2.5.4" class="ltx_td ltx_align_center" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.5.4.1" class="ltx_text" style="font-size:90%;">13 </span><span id="S5.SS2.3.3.2.5.4.2" class="ltx_text" style="font-size:70%;">(21.7%)</span>
+</td>
+<td id="S5.SS2.3.3.2.5.5" class="ltx_td ltx_align_center" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.5.5.1" class="ltx_text ltx_font_bold" style="font-size:90%;">17</span><span id="S5.SS2.3.3.2.5.5.2" class="ltx_text" style="font-size:90%;"> </span><span id="S5.SS2.3.3.2.5.5.3" class="ltx_text" style="font-size:70%;">(28.3%)</span>
+</td>
+</tr>
+<tr id="S5.SS2.3.3.2.6" class="ltx_tr">
+<td id="S5.SS2.3.3.2.6.1" class="ltx_td ltx_align_left ltx_border_bb" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.6.1.1" class="ltx_text" style="font-size:90%;">Top-5</span></td>
+<td id="S5.SS2.3.3.2.6.2" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.6.2.1" class="ltx_text" style="font-size:90%;">45.0%</span></td>
+<td id="S5.SS2.3.3.2.6.3" class="ltx_td ltx_align_center ltx_border_bb ltx_border_r" style="padding:0.7pt 4.0pt;"><span id="S5.SS2.3.3.2.6.3.1" class="ltx_text ltx_font_bold" style="font-size:90%;">58.3%</span></td>
+<td id="S5.SS2.3.3.2.6.4" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.6.4.1" class="ltx_text" style="font-size:90%;">16 </span><span id="S5.SS2.3.3.2.6.4.2" class="ltx_text" style="font-size:70%;">(26.7%)</span>
+</td>
+<td id="S5.SS2.3.3.2.6.5" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.7pt 4.0pt;">
+<span id="S5.SS2.3.3.2.6.5.1" class="ltx_text ltx_font_bold" style="font-size:90%;">18</span><span id="S5.SS2.3.3.2.6.5.2" class="ltx_text" style="font-size:90%;"> </span><span id="S5.SS2.3.3.2.6.5.3" class="ltx_text" style="font-size:70%;">(30.0%)</span>
+</td>
+</tr>
+</table>
+<figure id="S5.T1" class="ltx_table ltx_align_center">
+<figcaption class="ltx_caption" style="font-size:90%;"><span class="ltx_tag ltx_tag_table">Table 1: </span><span id="S5.T1.12.1" class="ltx_text ltx_font_bold">Comparison of performance (Success Rate) and ancestor integration across the Top-k agents on SWE-bench Verified</span>. Performance is reported as the <em id="S5.T1.13.2" class="ltx_emph ltx_font_italic">worst-case (minimum) success rate</em> among the top-<math id="S5.T1.2.m1" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> agents. <em id="S5.T1.14.3" class="ltx_emph ltx_font_italic">Ancestor Count</em> denotes the count of unique historical agents integrated into the solution. Notably, the worst-case performance of GEA’s top-5 agents (58.3%) exceeds the single best agent from DGM (56.7%).</figcaption>
+</figure>
+</div>
+</figure>
+</figure>
+<div id="S5.SS2.p2" class="ltx_para">
+<p id="S5.SS2.p2.1" class="ltx_p">To quantify this consolidation, we track the number of unique <span id="S5.SS2.p2.1.1" class="ltx_text ltx_font_italic">ancestor agents</span> contributing to the final solutions (Table <a href="#S5.T1" title="Table 1 ‣ 5.2 Evolution Analysis ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>). The best GEA agent integrates experiences from 17 unique ancestors (28.3% of the population)—nearly double that of the best DGM agent (9 ancestors).</p>
+</div>
+<div id="S5.SS2.p3" class="ltx_para">
+<p id="S5.SS2.p3.1" class="ltx_p">This broader integration correlates directly with population-wide quality. As shown in Table <a href="#S5.T1" title="Table 1 ‣ 5.2 Evolution Analysis ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>, we report the <em id="S5.SS2.p3.1.1" class="ltx_emph ltx_font_italic">worst-case</em> performance among the top-<math id="S5.SS2.p3.1.m1" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> agents. Notably, the <span id="S5.SS2.p3.1.2" class="ltx_text ltx_font_bold">worst</span> of GEA’s top-5 agents achieves 58.3%, which strictly outperforms the <span id="S5.SS2.p3.1.3" class="ltx_text ltx_font_bold">single best</span> agent produced by DGM (56.7%). This confirms that GEA does not merely produce outliers, but systematically elevates the entire population by effectively consolidating complementary and diverse evolutionary paths. More broadly, this efficient experience consolidation suggests that GEA may exhibit stronger evolutionary capabilities in environments with greater diversity. Since open-ended evolution naturally leads to a monotonically growing diversity in the archive, GEA not only achieves stronger performance as evolution progresses but also gains enhanced self-improvement capabilities, consistent with the results shown in Figure <a href="#S5.F3" title="Figure 3 ‣ GEA vs. State-of-the-Art Human-Designed Agents. ‣ 5.1 Main Results ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>.</p>
+</div>
+</section>
+<section id="S5.SS3" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.3 </span>Transferability</h3>
+
+<div id="S5.SS3.p1" class="ltx_para">
+<p id="S5.SS3.p1.1" class="ltx_p">We evaluate the generalization and model transferability of the best-discovered agent produced by GEA.
+Specifically, we replace the coding model used in the acting module with different GPT-series and Claude-series models during benchmark evaluation.
+We then compare the performance of the initial(iteration–0) agent and the GEA best-discovered agent under each coding model.</p>
+</div>
+<div id="S5.SS3.p2" class="ltx_para">
+<p id="S5.SS3.p2.1" class="ltx_p">As illustrated in Figures <a href="#S5.F5" title="Figure 5 ‣ 5.3 Transferability ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5</span></a>, GEA’s best-discovered agent driven by GPT-series and Claude-series models consistently achieve higher performance than their corresponding initial agents on both SWE-bench and Polyglot benchmarks. This indicates that the improvements induced by group-evolving persist across different backbone models.</p>
+</div>
+<figure id="S5.F5" class="ltx_figure ltx_align_floatright">
+<div class="ltx_flex_figure">
+<div class="ltx_flex_cell ltx_flex_size_1"><img src="2602.04837v1/x6.png" id="S5.F5.g1" class="ltx_graphics ltx_centering ltx_figure_panel ltx_img_landscape" width="830" height="409" alt="Refer to caption"></div>
+<div class="ltx_flex_break"></div>
+<div class="ltx_flex_cell ltx_flex_size_1"><img src="2602.04837v1/x7.png" id="S5.F5.g2" class="ltx_graphics ltx_centering ltx_figure_panel ltx_img_landscape" width="830" height="409" alt="Refer to caption"></div>
+</div>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S5.F5.3.1.1" class="ltx_text" style="font-size:90%;">Figure 5</span>: </span><span id="S5.F5.4.2" class="ltx_text ltx_font_bold" style="font-size:90%;">Model transfer results on both benchmarks.<span id="S5.F5.4.2.1" class="ltx_text ltx_font_medium">
+Across all coding models, the GEA best agent consistently outperforms the corresponding initial (iteration–0) agent,
+demonstrating that the improvements induced by group-level evolution generalize across different underlying model backbones.</span></span></figcaption>
+</figure>
+<div id="S5.SS3.p3" class="ltx_para">
+<p id="S5.SS3.p3.1" class="ltx_p">Further analysis reveals that all performance-improving patches discovered during GEA evolution, including those from the best agent and the top-3 performing agents, primarily target the agent’s workflow and tool usage rather than model-specific prompting, details can be found in Table <a href="#A1.T3" title="Table 3 ‣ A.2 Case Study ‣ Appendix A Appendix ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a> in Appendix.</p>
+</div>
+<div id="S5.SS3.p4" class="ltx_para">
+<p id="S5.SS3.p4.1" class="ltx_p">These findings together with Figures <a href="#S5.F5" title="Figure 5 ‣ 5.3 Transferability ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5</span></a> demonstrate that although GEA leverages a specific backbone model to drive evolution, it discovers agent-level improvements that are largely model-agnostic and the evolved agents could generalize across different coding models.</p>
+</div>
+<figure id="S5.T2" class="ltx_table">
+<table id="S5.T2.1" class="ltx_tabular ltx_centering ltx_align_middle">
+<tr id="S5.T2.1.1" class="ltx_tr">
+<td id="S5.T2.1.1.2" class="ltx_td ltx_align_left ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.2.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Method</span></td>
+<td id="S5.T2.1.1.3" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.3.1" class="ltx_text" style="font-size:90%;">E1</span></td>
+<td id="S5.T2.1.1.4" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.4.1" class="ltx_text" style="font-size:90%;">E2</span></td>
+<td id="S5.T2.1.1.5" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.5.1" class="ltx_text" style="font-size:90%;">E3</span></td>
+<td id="S5.T2.1.1.6" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.6.1" class="ltx_text" style="font-size:90%;">E4</span></td>
+<td id="S5.T2.1.1.7" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.1.7.1" class="ltx_text" style="font-size:90%;">E5</span></td>
+<td id="S5.T2.1.1.1" class="ltx_td ltx_align_center ltx_border_tt" style="padding:0.9pt 8.0pt;">
+<span id="S5.T2.1.1.1.1" class="ltx_text ltx_font_bold" style="font-size:90%;">Avg.</span><span id="S5.T2.1.1.1.2" class="ltx_text" style="font-size:90%;"> </span><math id="S5.T2.1.1.1.m1" class="ltx_Math" alttext="\downarrow" display="inline" intent=":literal"><semantics><mo mathsize="0.900em" stretchy="false">↓</mo><annotation encoding="application/x-tex">\downarrow</annotation></semantics></math>
+</td>
+</tr>
+<tr id="S5.T2.1.2" class="ltx_tr">
+<td id="S5.T2.1.2.1" class="ltx_td ltx_align_left ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.1.1" class="ltx_text" style="font-size:90%;">DGM</span></td>
+<td id="S5.T2.1.2.2" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.2.1" class="ltx_text" style="font-size:90%;">5</span></td>
+<td id="S5.T2.1.2.3" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.3.1" class="ltx_text" style="font-size:90%;">4</span></td>
+<td id="S5.T2.1.2.4" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.4.1" class="ltx_text" style="font-size:90%;">5</span></td>
+<td id="S5.T2.1.2.5" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.5.1" class="ltx_text" style="font-size:90%;">6</span></td>
+<td id="S5.T2.1.2.6" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.6.1" class="ltx_text" style="font-size:90%;">5</span></td>
+<td id="S5.T2.1.2.7" class="ltx_td ltx_align_center ltx_border_t" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.2.7.1" class="ltx_text" style="font-size:90%;">5.0</span></td>
+</tr>
+<tr id="S5.T2.1.3" class="ltx_tr">
+<td id="S5.T2.1.3.1" class="ltx_td ltx_align_left ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.1.1" class="ltx_text" style="font-size:90%;">GEA (Ours)</span></td>
+<td id="S5.T2.1.3.2" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.2.1" class="ltx_text" style="font-size:90%;">1</span></td>
+<td id="S5.T2.1.3.3" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.3.1" class="ltx_text" style="font-size:90%;">1</span></td>
+<td id="S5.T2.1.3.4" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.4.1" class="ltx_text" style="font-size:90%;">2</span></td>
+<td id="S5.T2.1.3.5" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.5.1" class="ltx_text" style="font-size:90%;">1</span></td>
+<td id="S5.T2.1.3.6" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.6.1" class="ltx_text" style="font-size:90%;">2</span></td>
+<td id="S5.T2.1.3.7" class="ltx_td ltx_align_center ltx_border_bb" style="padding:0.9pt 8.0pt;"><span id="S5.T2.1.3.7.1" class="ltx_text ltx_font_bold" style="font-size:90%;">1.4</span></td>
+</tr>
+</table>
+<figcaption class="ltx_caption ltx_centering" style="font-size:90%;"><span class="ltx_tag ltx_tag_table">Table 2: </span>
+<span id="S5.T2.11.1" class="ltx_text ltx_font_bold">Robustness to framework-level bugs.</span>
+We report the number of evolution iterations required to repair injected bugs across five independent trials (E1–E5).
+Each entry denotes the number of iterations needed for the agent to successfully repair the injected framework-level bug in a given trial. <span id="S5.T2.12.2" class="ltx_text ltx_font_bold">Lower means</span> that
+GEA repairs bugs significantly <span id="S5.T2.13.3" class="ltx_text ltx_font_bold">faster</span> than DGM.
+</figcaption>
+</figure>
+</section>
+<section id="S5.SS4" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">5.4 </span>Robustness</h3>
+
+<div id="S5.SS4.p1" class="ltx_para">
+<p id="S5.SS4.p1.1" class="ltx_p">To evaluate the robustness of GEA, we introduce framework-level bugs by manually injecting errors into agent implementations. Specifically, we randomly select an agent from the GEA archive and manually inject framework-level bugs into its implementation. We then form a group consisting of this faulty agent and another bug-free agent from its original parent group, and perform group evolution to assess whether GEA can leverage experience from the better-performing agent (i.e., the one without framework-level bugs) to repair the faulty one. For comparison, under the self-evolution setting, the bugged agent evolves independently without access to external experience sharing. In both settings, we measure the number of iterations required to successfully repair the bug.</p>
+</div>
+<div id="S5.SS4.p2" class="ltx_para">
+<p id="S5.SS4.p2.1" class="ltx_p">As shown in Table <a href="#S5.T2" title="Table 2 ‣ 5.3 Transferability ‣ 5 Results and Analysis ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>, across five independent trials, GEA requires only 1.4 iterations on average to repair the injected bugs, whereas the self-evolving baseline (DGM) requires 5. This substantial gap demonstrates that group-evolving agents benefit from intra-group experience sharing, enabling successful framework-level experiences from better-performing agents to guide the repair of faulty ones, confirming the robustness of the group-evolving paradigm.</p>
+</div>
+</section>
+</section>
+<section id="S6" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">6 </span>Conclusion</h2>
+
+<div id="S6.p1" class="ltx_para">
+<p id="S6.p1.1" class="ltx_p">We introduce <span id="S6.p1.1.1" class="ltx_text ltx_font_bold">G</span>roup-<span id="S6.p1.1.2" class="ltx_text ltx_font_bold">E</span>volving <span id="S6.p1.1.3" class="ltx_text ltx_font_bold">A</span>gents (GEA), a new paradigm for open-ended self-improvement that treats a <em id="S6.p1.1.4" class="ltx_emph ltx_font_italic">group of agents</em>, rather than an individual agent, as the fundamental unit of evolution.
+By enabling explicit experience sharing and reuse within the group, agents can learn from each other’s evolutionary experiences and adaptively integrate complementary improvements throughout evolution.</p>
+</div>
+<div id="S6.p2" class="ltx_para">
+<p id="S6.p2.1" class="ltx_p">Compared to individual-centric self-evolving approaches, GEA more effectively consolidates valuable exploratory outcomes from early stages into the best-performing agents, efficiently transforming transient diversity into long-term useful experience.
+As a result, group-level evolution achieves substantially stronger performance given the same number of evolved agents.</p>
+</div>
+<div id="S6.p3" class="ltx_para">
+<p id="S6.p3.1" class="ltx_p">Further analysis shows that GEA’s improvements primarily stem from enhancements to agent workflows and tool usage, rather than overfitting to a specific coding model. Therefore, its gains transfer consistently across different models, including both GPT-series and Claude-series.</p>
+</div>
+<div id="S6.p4" class="ltx_para">
+<p id="S6.p4.1" class="ltx_p">In addition, GEA exhibits stronger robustness than individual-centric self-evolving approaches: through group-level experience reuse, better-performing agents can guide the repair of faulty ones, enabling GEA to recover from framework-level bugs with fewer evolution iterations.</p>
+</div>
+</section>
+<section id="Sx1" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">Impact Statement</h2>
+
+<div id="Sx1.p1" class="ltx_para">
+<p id="Sx1.p1.1" class="ltx_p">GEA demonstrates the potential and viability of group-evolving open-ended systems to autonomously modify their own implementation for continuous improvement. While this potential aligns with the goal of building AI that benefits humanity, open-ended exploration also carries inherent considerations worth noting. For instance, the evolutionary process may inadvertently introduce directions misaligned with human intent while consuming substantial computational resources, or produce patches that lack structural clarity, leading to increasingly complex systems that are difficult to fully understand. Therefore, it is essential to establish appropriate boundaries and guide the system to preserve exploratory diversity while ensuring alignment with human intent. Following <cite class="ltx_cite ltx_citemacro_citet"><span class="ltx_ref ltx_missing_citation ltx_ref_self">zhang2025darwin</span></cite>, all experiments in this work are conducted in isolated sandbox environments, thereby limiting potential impacts on host systems.</p>
+</div>
+<div id="Sx1.p2" class="ltx_para">
+<p id="Sx1.p2.1" class="ltx_p">On the other hand, although we focus on evolving agents’ coding capabilities in this work, this paradigm has broader potential applications, for example, enabling systems to mitigate biases through self-improvement, thereby becoming more trustworthy and beneficial for social good.</p>
+</div>
+</section>
+<section id="bib" class="ltx_bibliography">
+<h2 class="ltx_title ltx_title_bibliography">References</h2>
+
+<ul id="bib.L1" class="ltx_biblist">
+</ul>
+</section>
+<div class="ltx_pagination ltx_role_newpage"></div>
+<section id="A1" class="ltx_appendix">
+<h2 class="ltx_title ltx_title_appendix">
+<span class="ltx_tag ltx_tag_appendix">Appendix A </span>Appendix</h2>
+
+<section id="A1.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">A.1 </span>Cost Estimate</h3>
+
+<div id="A1.SS1.p1" class="ltx_para">
+<p id="A1.SS1.p1.1" class="ltx_p">The primary cost for both GEA and DGM arises from benchmark evaluation. Since we generate the same number of agents for both methods, their overall costs are very similar. Following the settings described in Sections <a href="#S4.SS2" title="4.2 Experimental Settings ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4.2</span></a> and <a href="#S4.SS3" title="4.3 Baselines ‣ 4 Experiments ‣ Group-Evolving Agents: Open-Ended Self-Improvement via Experience Sharing" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4.3</span></a>, the estimated cost of completing a full run is approximately USD 13,000 per method on SWE-bench and USD 1,500 on Polyglot. A more detailed estimated cost breakdown is provided below:</p>
+</div>
+<figure id="A1.SS1.tab1" class="ltx_table">
+<table id="A1.SS1.tab1.1" class="ltx_tabular ltx_centering ltx_align_middle">
+<tr id="A1.SS1.tab1.1.1" class="ltx_tr">
+<td id="A1.SS1.tab1.1.1.1" class="ltx_td ltx_align_center ltx_border_tt"><span id="A1.SS1.tab1.1.1.1.1" class="ltx_text ltx_font_bold">Coding Model</span></td>
+<td id="A1.SS1.tab1.1.1.2" class="ltx_td ltx_align_center ltx_border_tt"><span id="A1.SS1.tab1.1.1.2.1" class="ltx_text ltx_font_bold">Benchmark</span></td>
+<td id="A1.SS1.tab1.1.1.3" class="ltx_td ltx_align_center ltx_border_tt"><span id="A1.SS1.tab1.1.1.3.1" class="ltx_text ltx_font_bold">Number of Tasks</span></td>
+<td id="A1.SS1.tab1.1.1.4" class="ltx_td ltx_align_center ltx_border_tt"><span id="A1.SS1.tab1.1.1.4.1" class="ltx_text ltx_font_bold">Cost Estimate (USD)</span></td>
+</tr>
+<tr id="A1.SS1.tab1.1.2" class="ltx_tr">
+<td id="A1.SS1.tab1.1.2.1" class="ltx_td ltx_align_center ltx_border_t">Claude Sonnet 4.5</td>
+<td id="A1.SS1.tab1.1.2.2" class="ltx_td ltx_align_center ltx_border_t">SWE-bench</td>
+<td id="A1.SS1.tab1.1.2.3" class="ltx_td ltx_align_center ltx_border_t">60</td>
+<td id="A1.SS1.tab1.1.2.4" class="ltx_td ltx_align_center ltx_border_t">$370</td>
+</tr>
+<tr id="A1.SS1.tab1.1.3" class="ltx_tr">
+<td id="A1.SS1.tab1.1.3.1" class="ltx_td ltx_align_center">Claude Sonnet 4.5</td>
+<td id="A1.SS1.tab1.1.3.2" class="ltx_td ltx_align_center">Polyglot</td>
+<td id="A1.SS1.tab1.1.3.3" class="ltx_td ltx_align_center">60</td>
+<td id="A1.SS1.tab1.1.3.4" class="ltx_td ltx_align_center">$60</td>
+</tr>
+<tr id="A1.SS1.tab1.1.4" class="ltx_tr">
+<td id="A1.SS1.tab1.1.4.1" class="ltx_td ltx_align_center">Claude Haiku 4.5</td>
+<td id="A1.SS1.tab1.1.4.2" class="ltx_td ltx_align_center">SWE-bench</td>
+<td id="A1.SS1.tab1.1.4.3" class="ltx_td ltx_align_center">60</td>
+<td id="A1.SS1.tab1.1.4.4" class="ltx_td ltx_align_center">$120</td>
+</tr>
+<tr id="A1.SS1.tab1.1.5" class="ltx_tr">
+<td id="A1.SS1.tab1.1.5.1" class="ltx_td ltx_align_center ltx_border_bb">Claude Haiku 4.5</td>
+<td id="A1.SS1.tab1.1.5.2" class="ltx_td ltx_align_center ltx_border_bb">Polyglot</td>
+<td id="A1.SS1.tab1.1.5.3" class="ltx_td ltx_align_center ltx_border_bb">60</td>
+<td id="A1.SS1.tab1.1.5.4" class="ltx_td ltx_align_center ltx_border_bb">$20</td>
+</tr>
+</table>
+</figure>
+</section>
+<section id="A1.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">A.2 </span>Case Study</h3>
+
+<figure id="A1.T3" class="ltx_table">
+<table id="A1.T3.1" class="ltx_tabular ltx_centering ltx_align_middle">
+<tr id="A1.T3.1.1" class="ltx_tr">
+<td id="A1.T3.1.1.2" class="ltx_td ltx_align_left ltx_border_tt"><span id="A1.T3.1.1.2.1" class="ltx_text ltx_font_bold">Agent</span></td>
+<td id="A1.T3.1.1.3" class="ltx_td ltx_align_left ltx_border_tt"><span id="A1.T3.1.1.3.1" class="ltx_text ltx_font_bold">Patch Description</span></td>
+<td id="A1.T3.1.1.1" class="ltx_td ltx_nopad_r ltx_align_center ltx_border_tt">
+<math id="A1.T3.1.1.1.m1" class="ltx_Math" alttext="\Delta" display="inline" intent=":literal"><semantics><mi mathvariant="normal">Δ</mi><annotation encoding="application/x-tex">\Delta</annotation></semantics></math><span id="A1.T3.1.1.1.1" class="ltx_text ltx_font_bold"> Score</span>
+</td>
+</tr>
+<tr id="A1.T3.1.2" class="ltx_tr">
+<td id="A1.T3.1.2.1" class="ltx_td ltx_align_left ltx_border_t" rowspan="7"><span id="A1.T3.1.2.1.1" class="ltx_text">Top-1</span></td>
+<td id="A1.T3.1.2.2" class="ltx_td ltx_align_left ltx_border_t">docutils_debug</td>
+<td id="A1.T3.1.2.3" class="ltx_td ltx_nopad_r ltx_align_center ltx_border_t">+0.10</td>
+</tr>
+<tr id="A1.T3.1.3" class="ltx_tr">
+<td id="A1.T3.1.3.1" class="ltx_td ltx_align_left">Modified core agent logic</td>
+<td id="A1.T3.1.3.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.10</td>
+</tr>
+<tr id="A1.T3.1.4" class="ltx_tr">
+<td id="A1.T3.1.4.1" class="ltx_td ltx_align_left">Updated tests logic</td>
+<td id="A1.T3.1.4.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.22</td>
+</tr>
+<tr id="A1.T3.1.5" class="ltx_tr">
+<td id="A1.T3.1.5.1" class="ltx_td ltx_align_left">Add snippet_extract tool</td>
+<td id="A1.T3.1.5.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.10</td>
+</tr>
+<tr id="A1.T3.1.6" class="ltx_tr">
+<td id="A1.T3.1.6.1" class="ltx_td ltx_align_left">Updating edit tools (v1)</td>
+<td id="A1.T3.1.6.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.01</td>
+</tr>
+<tr id="A1.T3.1.7" class="ltx_tr">
+<td id="A1.T3.1.7.1" class="ltx_td ltx_align_left">Updating edit tools (v2)</td>
+<td id="A1.T3.1.7.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.05</td>
+</tr>
+<tr id="A1.T3.1.8" class="ltx_tr">
+<td id="A1.T3.1.8.1" class="ltx_td ltx_align_left">Updating edit tools (v3)</td>
+<td id="A1.T3.1.8.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.02</td>
+</tr>
+<tr id="A1.T3.1.9" class="ltx_tr">
+<td id="A1.T3.1.9.1" class="ltx_td ltx_align_left ltx_border_t" rowspan="6"><span id="A1.T3.1.9.1.1" class="ltx_text">Top-2</span></td>
+<td id="A1.T3.1.9.2" class="ltx_td ltx_align_left ltx_border_t">docutils_debug</td>
+<td id="A1.T3.1.9.3" class="ltx_td ltx_nopad_r ltx_align_center ltx_border_t">+0.10</td>
+</tr>
+<tr id="A1.T3.1.10" class="ltx_tr">
+<td id="A1.T3.1.10.1" class="ltx_td ltx_align_left">Modified core agent logic</td>
+<td id="A1.T3.1.10.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.10</td>
+</tr>
+<tr id="A1.T3.1.11" class="ltx_tr">
+<td id="A1.T3.1.11.1" class="ltx_td ltx_align_left">Updated tests logic</td>
+<td id="A1.T3.1.11.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.22</td>
+</tr>
+<tr id="A1.T3.1.12" class="ltx_tr">
+<td id="A1.T3.1.12.1" class="ltx_td ltx_align_left">Add snippet_extract tool</td>
+<td id="A1.T3.1.12.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.10</td>
+</tr>
+<tr id="A1.T3.1.13" class="ltx_tr">
+<td id="A1.T3.1.13.1" class="ltx_td ltx_align_left">Add bash tools</td>
+<td id="A1.T3.1.13.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.01</td>
+</tr>
+<tr id="A1.T3.1.14" class="ltx_tr">
+<td id="A1.T3.1.14.1" class="ltx_td ltx_align_left">Updating edit tools</td>
+<td id="A1.T3.1.14.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.07</td>
+</tr>
+<tr id="A1.T3.1.15" class="ltx_tr">
+<td id="A1.T3.1.15.1" class="ltx_td ltx_align_left ltx_border_bb ltx_border_t" rowspan="5"><span id="A1.T3.1.15.1.1" class="ltx_text">Top-3</span></td>
+<td id="A1.T3.1.15.2" class="ltx_td ltx_align_left ltx_border_t">docutils_debug</td>
+<td id="A1.T3.1.15.3" class="ltx_td ltx_nopad_r ltx_align_center ltx_border_t">+0.10</td>
+</tr>
+<tr id="A1.T3.1.16" class="ltx_tr">
+<td id="A1.T3.1.16.1" class="ltx_td ltx_align_left">Modified core agent logic</td>
+<td id="A1.T3.1.16.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.10</td>
+</tr>
+<tr id="A1.T3.1.17" class="ltx_tr">
+<td id="A1.T3.1.17.1" class="ltx_td ltx_align_left">Updated tests logic</td>
+<td id="A1.T3.1.17.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.22</td>
+</tr>
+<tr id="A1.T3.1.18" class="ltx_tr">
+<td id="A1.T3.1.18.1" class="ltx_td ltx_align_left">Add multi-file tools (v1)</td>
+<td id="A1.T3.1.18.2" class="ltx_td ltx_nopad_r ltx_align_center">+0.01</td>
+</tr>
+<tr id="A1.T3.1.19" class="ltx_tr">
+<td id="A1.T3.1.19.1" class="ltx_td ltx_align_left ltx_border_bb">Add multi-file tools (v2)</td>
+<td id="A1.T3.1.19.2" class="ltx_td ltx_nopad_r ltx_align_center ltx_border_bb">+0.07</td>
+</tr>
+</table>
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_table"><span id="A1.T3.4.1.1" class="ltx_text" style="font-size:90%;">Table 3</span>: </span><span id="A1.T3.5.2" class="ltx_text ltx_font_bold" style="font-size:90%;">Evolutionary trajectories of the top-3 performing agents discovered by GEA on SWE-bench Verified.<span id="A1.T3.5.2.1" class="ltx_text ltx_font_medium">
+Across all three agents, the performance-improving patches primarily focus on enhancing the agents’ workflows and tool usage, rather than relying on model-specific prompting strategies.</span></span></figcaption>
+</figure>
+</section>
+</section>
+</article>
+</div>
+</div>
+<footer class="arxiv-html-footer">
+  <div class="ltx_page_logo">
+    Experimental support, please
+    <a href="./2602.04837v1/__stdout.txt" class="ltx_ref"
+    target="_blank" rel="nofollow">view the build logs</a>
+    for errors. Generated by
+    <a href="https://math.nist.gov/~BMiller/LaTeXML/" target="_blank" class="ltx_ref ltx_LaTeXML_logo">
+      <span style="letter-spacing: -0.2em; margin-right: 0.1em;">
+        L
+        <span style="font-size: 70%; position: relative; bottom: 2.2pt;">A</span>
+        T
+        <span style="position: relative; bottom: -0.4ex;">E</span>
+      </span>
+      <span class="ltx_font_smallcaps">xml</span>
+      <img alt="[LOGO]"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAOCAYAAAD5YeaVAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wKExQZLWTEaOUAAAAddEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIFRoZSBHSU1Q72QlbgAAAdpJREFUKM9tkL+L2nAARz9fPZNCKFapUn8kyI0e4iRHSR1Kb8ng0lJw6FYHFwv2LwhOpcWxTjeUunYqOmqd6hEoRDhtDWdA8ApRYsSUCDHNt5ul13vz4w0vWCgUnnEc975arX6ORqN3VqtVZbfbTQC4uEHANM3jSqXymFI6yWazP2KxWAXAL9zCUa1Wy2tXVxheKA9YNoR8Pt+aTqe4FVVVvz05O6MBhqUIBGk8Hn8HAOVy+T+XLJfLS4ZhTiRJgqIoVBRFIoric47jPnmeB1mW/9rr9ZpSSn3Lsmir1fJZlqWlUonKsvwWwD8ymc/nXwVBeLjf7xEKhdBut9Hr9WgmkyGEkJwsy5eHG5vN5g0AKIoCAEgkEkin0wQAfN9/cXPdheu6P33fBwB4ngcAcByHJpPJl+fn54mD3Gg0NrquXxeLRQAAwzAYj8cwTZPwPH9/sVg8PXweDAauqqr2cDjEer1GJBLBZDJBs9mE4zjwfZ85lAGg2+06hmGgXq+j3+/DsixYlgVN03a9Xu8jgCNCyIegIAgx13Vfd7vdu+FweG8YRkjXdWy329+dTgeSJD3ieZ7RNO0VAXAPwDEAO5VKndi2fWrb9jWl9Esul6PZbDY9Go1OZ7PZ9z/lyuD3OozU2wAAAABJRU5ErkJggg==">
+    </a>.
+  </div>
+  <div class="keyboard-glossary">
+    <h2>Instructions for reporting errors</h2>
+    <p>We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:</p>
+    <ul>
+      <li>Click the "Report Issue" <span class="mobile-only">(<svg role="presentation"
+            style="display: inline-block; vertical-align: middle; fill: var(--text-color);" aria-hidden="true"
+            height="1em" viewBox="0 0 640 640">
+            <path
+              d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+          </svg>)</span> button, located in the page header.</li>
+    </ul>
+    <p><strong>Tip:</strong> You can select the relevant text first, to include it in your report.</p>
+    <p>Our team has already identified <a class="ltx_ref" href="https://github.com/arXiv/html_feedback/issues"
+        target="_blank">the following issues</a>. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.</p>
+    <p>Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a <a
+        class="ltx_ref" href="https://github.com/brucemiller/LaTeXML/wiki/Porting-LaTeX-packages-for-LaTeXML"
+        target="_blank">list of packages that need conversion</a>, and welcome <a class="ltx_ref"
+        href="https://github.com/brucemiller/LaTeXML/issues" target="_blank">developer contributions</a>.</p>
+  </div>
+</footer><footer class="ds-site-footer">
+  <div class="ds-site-footer-grid">
+    <div class="ds-site-footer-main">
+      <div class="ds-site-footer-ack">
+        We gratefully acknowledge support from
+        our <strong>major funders</strong>,
+        <a href="https://info.arxiv.org/about/ourmembers.html"><strong>member institutions</strong></a><span class="ack-member-inline" hidden>, <strong></strong></span>,
+        and all contributors.
+      </div>
+      <nav class="ds-site-footer-links" aria-label="Site navigation">
+        <a href="https://info.arxiv.org/about">About</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help">Help</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/contact.html">Contact</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/subscribe">Subscribe</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/license/index.html">Copyright</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/policies/privacy_policy.html">Privacy</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/web_accessibility.html">Accessibility</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://status.arxiv.org" target="_blank" rel="noopener noreferrer">Operational Status<span class="is-sr-only"> (opens in new tab)</span></a>
+      </nav>
+    </div>
+
+    <div class="ds-site-footer-funders" aria-label="Major funders">
+      <div class="ds-site-footer-funders-label">Major funding support from</div>
+      <div class="ds-site-footer-funders-logos">
+        <a class="ds-funder-link" href="https://www.simonsfoundation.org/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/simons-foundation.png" alt="Simons Foundation">
+        </a>
+        <a class="ds-funder-link" href="https://www.sfi.org.bm/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/simons-foundation-international.png" alt="Simons Foundation International">
+        </a>
+        <a class="ds-funder-link" href="https://www.schmidtsciences.org/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/schmidt-sciences.png" alt="Schmidt Sciences">
+        </a>
+      </div>
+    </div>
+  </div>
+</footer><div id="fixed-buttons-container">
+  <a id="disable-reading-mode-btn" class="header-button" href="javascript:toggleReadingMode();"
+    title="Disable reading mode, show header and footer">
+    <svg role="presentation" height="1.25rem"
+      viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+      <path
+        d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" />
+    </svg>
+  </a>
+</div></body>
+</html>
