@@ -1,5 +1,25 @@
 # Changelog
 
+### M377 extraction-stage PipelineCache under `da load`
+
+- `RuleBasedExtractor` now owns `ExtractionCacheIdentity`: explicit implementation
+  contract, SHA256 of the **actual loaded** `ExtractionConfig` values, and
+  serialized `Vec<ExtractedEntity>` output-schema contract.
+- Equivalent bundled/file configs fingerprint identically; mutating one rule
+  changes only configuration identity. CLI has no YAML path or rule knowledge.
+- `da load --stages ingest+extract` now caches only pure extractor output under
+  distinct `stage_id=extract`, dependent on parse payload SHA; graph writes stay
+  outside the cache boundary and always run through `materialize_extracted_with_context`.
+- Corrupt cache payloads fail visibly: FilePipelineCache checksum verification
+  rejects tampering before JSON decode; no silent recomputation/fallback.
+- Real exact-v1 proof on a fresh cache: cold parse/embed/extract all **miss**;
+  offline no-key replay all **hit** with stable payload SHAs; `extract_ok`
+  remains `entities=3 found_in=3` and `revision_graph_ok` proves fresh writes.
+- `--no-cache` reports three **bypass** records while producing the same graph
+  outcomes. `--stages ingest` emits no extract cache record or extract finding.
+- Added integration test covering extract miss/hit/bypass/stable payload and
+  corrupted-payload failure; existing load tests and clippy remain green.
+
 ### M376 revision-aware snapshot query operator
 
 - Added typed read-only `RevisionQueryUseCase` over injected `DirectGraphStore`

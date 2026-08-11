@@ -25,7 +25,7 @@ use da_ports::extractor::{ExtractResult, ExtractedEntity, Extractor};
 // ============================================================================
 
 /// Declarative extraction config (Wave 3: JSON-driven whitelists).
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ExtractionConfig {
     pub methods: MethodConfig,
     pub models: Vec<String>,
@@ -34,13 +34,13 @@ pub struct ExtractionConfig {
     pub tasks: TaskConfig,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct MethodConfig {
     pub acronyms: Vec<String>,
     pub phrases: Vec<String>,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct TaskConfig {
     pub phrases: Vec<String>,
     pub acronyms: Vec<String>,
@@ -88,6 +88,13 @@ const BUNDLED_EXTRACTION_YAML: &str = include_str!("../../../data/extraction_pat
 /// Performance: pre-computes lowercase versions of config lists once
 /// at construction time to avoid repeated `.to_lowercase()` allocations
 /// in the extraction hot path (Rust 2026 best practice: reuse allocations).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct ExtractionCacheIdentity {
+    pub implementation_fingerprint: String,
+    pub configuration_fingerprint: String,
+    pub output_schema_fingerprint: String,
+}
+
 pub struct RuleBasedExtractor {
     config: ExtractionConfig,
     /// Pre-lowercased config data for O(1) hot-path lookups.
@@ -148,6 +155,22 @@ impl RuleBasedExtractor {
     /// Access the loaded config.
     pub fn config(&self) -> &ExtractionConfig {
         &self.config
+    }
+
+    /// Cache identity for the actual loaded extraction contract.
+    ///
+    /// Hashes canonical serialized values rather than a filename, so bundled
+    /// and filesystem configurations with identical DATA share a key while any
+    /// rule mutation invalidates stale extraction output.
+    pub fn cache_identity(&self) -> ExtractionCacheIdentity {
+        use sha2::{Digest, Sha256};
+        let config_bytes =
+            serde_json::to_vec(&self.config).expect("ExtractionConfig serialization is infallible");
+        ExtractionCacheIdentity {
+            implementation_fingerprint: "da_adapters::RuleBasedExtractor@extract-v2".into(),
+            configuration_fingerprint: hex::encode(Sha256::digest(config_bytes)),
+            output_schema_fingerprint: "Vec<ExtractedEntity>.json.v1".into(),
+        }
     }
 
     /// Classify a section title to an entity type.
@@ -1287,6 +1310,66 @@ fn test_extraction_config_from_yaml_file() {
     assert!(!config.methods.acronyms.is_empty());
     assert!(config.methods.acronyms.iter().any(|m| m == "GEPA"));
     assert!(config.models.iter().any(|m| m == "GPT-4"));
+}
+
+#[test]
+fn cache_identity_is_stable_and_matches_equivalent_config() {
+    let bundled = RuleBasedExtractor::with_config(ExtractionConfig::bundled());
+    let equivalent = RuleBasedExtractor::with_config(bundled.config().clone());
+    let first = bundled.cache_identity();
+    let second = bundled.cache_identity();
+    assert_eq!(first, second);
+    assert_eq!(first, equivalent.cache_identity());
+    assert_eq!(first.configuration_fingerprint.len(), 64);
+    assert_eq!(
+        first.implementation_fingerprint,
+        "da_adapters::RuleBasedExtractor@extract-v2"
+    );
+    assert_eq!(
+        first.output_schema_fingerprint,
+        "Vec<ExtractedEntity>.json.v1"
+    );
+}
+
+#[test]
+fn cache_identity_changes_when_actual_rule_data_changes() {
+    let original = ExtractionConfig::bundled();
+    let mut changed = original.clone();
+    changed.methods.phrases.push("new scientific method".into());
+    let original_id = RuleBasedExtractor::with_config(original).cache_identity();
+    let changed_id = RuleBasedExtractor::with_config(changed).cache_identity();
+    assert_ne!(
+        original_id.configuration_fingerprint,
+        changed_id.configuration_fingerprint
+    );
+    assert_eq!(
+        original_id.implementation_fingerprint,
+        changed_id.implementation_fingerprint
+    );
+    assert_eq!(
+        original_id.output_schema_fingerprint,
+        changed_id.output_schema_fingerprint
+    );
+}
+
+#[test]
+fn cache_identity_uses_loaded_values_not_path() {
+    let candidates = [
+        "../../../data/extraction_patterns.yaml",
+        "../../data/extraction_patterns.yaml",
+        "data/extraction_patterns.yaml",
+    ];
+    let path = candidates
+        .iter()
+        .find(|path| std::path::Path::new(path).exists())
+        .expect("extraction_patterns.yaml should exist");
+    let file = ExtractionConfig::from_yaml_file(path).unwrap();
+    let bundled = ExtractionConfig::bundled();
+    assert_eq!(file, bundled);
+    assert_eq!(
+        RuleBasedExtractor::with_config(file).cache_identity(),
+        RuleBasedExtractor::with_config(bundled).cache_identity()
+    );
 }
 
 #[test]

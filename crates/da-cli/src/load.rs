@@ -18,6 +18,7 @@ use da_domain::{
 };
 use da_ports::SourceAcquisitionPort;
 use da_ports::embedder::Embedder;
+use da_ports::extractor::{ExtractedEntity, Extractor};
 use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use da_ports::parser::{ParsedArticle, ParserPort};
 use da_ports::pipeline_cache::{
@@ -168,15 +169,25 @@ impl LoadContentPipeline for CliContentPipeline {
 
         let mut extract_out = None;
         if req.include_extract {
-            let extractor = Box::new(RuleBasedExtractor::new());
-            let extract_uc = ExtractionUseCase::from_shared(
-                extractor,
-                self.store.clone() as Arc<dyn DirectGraphStore>,
+            let extractor = RuleBasedExtractor::new();
+            let (extracted, extract_records) = extract_with_cache(
+                self.cache.as_deref(),
+                req.paper_id,
+                req.primary_path,
+                is_html,
+                &parse_payload_sha,
+                &parsed,
+                &extractor,
+            )
+            .await?;
+            cache_records.extend(extract_records);
+            let extract_uc = ExtractionUseCase::materializer_only(
+                self.store.clone() as Arc<dyn DirectGraphStore>
             );
             let er = extract_uc
-                .extract_from_parsed_with_context(&parsed, revision_context.as_ref())
+                .materialize_extracted_with_context(&parsed, extracted, revision_context.as_ref())
                 .await
-                .map_err(|e| format!("extract: {e:#}"))?;
+                .map_err(|e| format!("extract materialize: {e:#}"))?;
             extract_out = Some(LoadExtractOutcome {
                 entities_extracted: er.entities_extracted,
                 entities_created: er.entities_created,
@@ -514,6 +525,116 @@ async fn embed_with_cache(
             payload_sha256: Some(sha256_hex(&payload)),
         }],
     ))
+}
+
+async fn extract_with_cache(
+    cache: Option<&FilePipelineCache>,
+    paper_id: &str,
+    primary_path: &Path,
+    is_html: bool,
+    parse_payload_sha: &str,
+    parsed: &ParsedArticle,
+    extractor: &RuleBasedExtractor,
+) -> Result<(Vec<ExtractedEntity>, Vec<LoadCacheRecord>), String> {
+    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
+    let identity = extractor.cache_identity();
+    let mut dependencies = BTreeMap::new();
+    dependencies.insert("parse".into(), parse_payload_sha.to_string());
+    let key = StageCacheKey {
+        source,
+        stage_id: "extract".into(),
+        dependency_output_sha256: dependencies,
+        implementation_fingerprint: identity.implementation_fingerprint,
+        configuration_fingerprint: identity.configuration_fingerprint,
+        prompt_fingerprint: None,
+        model_fingerprint: None,
+        output_schema_fingerprint: identity.output_schema_fingerprint,
+    };
+    let key_sha = serde_json::to_vec(&key)
+        .map(|bytes| sha256_hex(&bytes))
+        .unwrap_or_default();
+
+    if let Some(cache) = cache {
+        let now = chrono::Utc::now().to_rfc3339();
+        match cache
+            .lookup(&key, &now)
+            .map_err(|error| format!("extract cache lookup: {error}"))?
+        {
+            CacheLookup::Hit(hit) => {
+                let extracted: Vec<ExtractedEntity> = serde_json::from_slice(&hit.payload)
+                    .map_err(|error| format!("extract cache payload decode: {error}"))?;
+                return Ok((
+                    extracted,
+                    vec![LoadCacheRecord {
+                        stage_id: "extract".into(),
+                        status: "hit".into(),
+                        key_sha256: Some(hit.manifest.key_sha256),
+                        payload_sha256: Some(sha256_hex(&hit.payload)),
+                    }],
+                ));
+            }
+            CacheLookup::RetryableFailure(manifest) => {
+                let extracted = compute_extraction(parsed, extractor).await?;
+                let payload = serde_json::to_vec(&extracted)
+                    .map_err(|error| format!("serialize extraction: {error}"))?;
+                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
+                return Ok((
+                    extracted,
+                    vec![LoadCacheRecord {
+                        stage_id: "extract".into(),
+                        status: "retryable_failure".into(),
+                        key_sha256: Some(manifest.key_sha256),
+                        payload_sha256: Some(sha256_hex(&payload)),
+                    }],
+                ));
+            }
+            CacheLookup::Miss => {
+                let extracted = compute_extraction(parsed, extractor).await?;
+                let payload = serde_json::to_vec(&extracted)
+                    .map_err(|error| format!("serialize extraction: {error}"))?;
+                let entry = cache
+                    .store_success(&key, &payload, BTreeMap::new(), &now)
+                    .map_err(|error| format!("extract cache store: {error}"))?;
+                return Ok((
+                    extracted,
+                    vec![LoadCacheRecord {
+                        stage_id: "extract".into(),
+                        status: "miss".into(),
+                        key_sha256: Some(entry.key_sha256),
+                        payload_sha256: Some(sha256_hex(&payload)),
+                    }],
+                ));
+            }
+        }
+    }
+
+    let extracted = compute_extraction(parsed, extractor).await?;
+    let payload =
+        serde_json::to_vec(&extracted).map_err(|error| format!("serialize extraction: {error}"))?;
+    Ok((
+        extracted,
+        vec![LoadCacheRecord {
+            stage_id: "extract".into(),
+            status: "bypass".into(),
+            key_sha256: Some(key_sha),
+            payload_sha256: Some(sha256_hex(&payload)),
+        }],
+    ))
+}
+
+async fn compute_extraction(
+    parsed: &ParsedArticle,
+    extractor: &RuleBasedExtractor,
+) -> Result<Vec<ExtractedEntity>, String> {
+    let sections = parsed
+        .sections
+        .iter()
+        .map(|section| (section.title.clone(), section.text.clone()))
+        .collect::<Vec<_>>();
+    extractor
+        .extract(&sections)
+        .await
+        .map_err(|error| format!("extract compute: {error}"))
 }
 
 fn encode_f32_le(v: &[f32]) -> Vec<u8> {
@@ -1053,6 +1174,118 @@ mod tests {
         );
         let nan = encode_f32_le(&[f32::NAN]);
         assert!(decode_f32_le(&nan, 1).unwrap_err().contains("non-finite"));
+    }
+
+    #[tokio::test]
+    async fn extract_cache_miss_hit_bypass_and_corrupt_payload() {
+        let root = std::env::temp_dir().join(format!(
+            "da-extract-cache-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let source = root.join("article.html");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&source, b"<!doctype html><title>cache fixture</title>").unwrap();
+        let parsed = ParsedArticle {
+            paper_id: "test.paper".into(),
+            title: "Cache fixture".into(),
+            abstract_text: String::new(),
+            body_text: "GEPA improves optimization".into(),
+            sections: vec![da_ports::parser::Section {
+                title: "Methods".into(),
+                text: "GEPA improves optimization".into(),
+                level: 1,
+                ..Default::default()
+            }],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let extractor = RuleBasedExtractor::with_config(
+            da_adapters::rule_extractor::ExtractionConfig::bundled(),
+        );
+        let cache = FilePipelineCache::new(root.join("cache"));
+        let (cold, cold_records) = extract_with_cache(
+            Some(&cache),
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap();
+        assert_eq!(cold_records[0].status, "miss");
+        assert!(!cold.is_empty());
+        let (hit, hit_records) = extract_with_cache(
+            Some(&cache),
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap();
+        assert_eq!(hit_records[0].status, "hit");
+        assert_eq!(hit, cold);
+        assert_eq!(
+            hit_records[0].payload_sha256,
+            cold_records[0].payload_sha256
+        );
+        let (_bypass, bypass_records) = extract_with_cache(
+            None,
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap();
+        assert_eq!(bypass_records[0].status, "bypass");
+
+        let payload = walk_files(cache.root())
+            .into_iter()
+            .find(|path| path.file_name().is_some_and(|name| name == "payload.bin"))
+            .unwrap();
+        std::fs::write(payload, b"not-json").unwrap();
+        let error = extract_with_cache(
+            Some(&cache),
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            error.contains("extract cache lookup")
+                && (error.contains("checksum mismatch") || error.contains("payload decode")),
+            "{error}"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    fn walk_files(root: &Path) -> Vec<PathBuf> {
+        let mut files = Vec::new();
+        let mut stack = vec![root.to_path_buf()];
+        while let Some(path) = stack.pop() {
+            if path.is_dir() {
+                if let Ok(entries) = std::fs::read_dir(path) {
+                    stack.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
+                }
+            } else {
+                files.push(path);
+            }
+        }
+        files
     }
 
     #[test]
