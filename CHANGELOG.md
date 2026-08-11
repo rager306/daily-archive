@@ -1,5 +1,17 @@
 # Changelog
 
+### M378 S03 remote read operational contract
+
+- Extended the real remote probe with a capability matrix, before/after revision
+  counts, eight concurrent bounded reads, duration, and explicit unsupported
+  index/snapshot evidence.
+- Two repeat runs against one snapshot-preloaded daemon returned count=2 before
+  and after every wave; all 16 concurrent reads returned count=2. Revision rows
+  were stable, CREATE remained locally rejected, and no server state changed.
+- Remote scope remains deliberately thin: scalar read-only QueryResult and
+  health only. HOT writes, vectors, indexes and snapshot transfer are not fake
+  implementations and return explicit capability errors.
+
 ### M378 S02 mode-aware scalar graph query
 
 - Added `da graph-query` as a separate read composition root instead of modifying
