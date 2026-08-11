@@ -1,5 +1,15 @@
 # Changelog
 
+### `da load` binds PipelineCache for parse stage (ADR-056 reuse)
+
+- Content path uses existing `FilePipelineCache` / `StageCacheKey` / `SourceIdentity`
+  for **parse** payloads only (not graph truth).
+- LoadReport stamps honest `cache[]` dispositions: `miss` | `hit` | `bypass` |
+  `retryable_failure` with key/payload sha256.
+- CLI: `--cache-root` (default `artifacts/pipeline_cache`), `--no-cache` bypass.
+- Live: `da load 2608.07067 --stages ingest` twice → first parse miss (~50s GROBID),
+  second parse **hit** (no GROBID re-call); same payload sha.
+
 ### M371 complete — pipeline architecture + semantic acceptance sealed
 
 - **M371-pr59ty complete** (validate pass): free-form product path for pipeline

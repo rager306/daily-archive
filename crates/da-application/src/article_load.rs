@@ -4,8 +4,9 @@
 //! Acquisition never calls network from this crate; content is injected.
 
 use da_domain::{
-    AcquisitionPolicy, ArticleLocator, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord, LoadFinding,
-    LoadQueueRecord, LoadReport, LoadStageName, LoadStageSet, StageStatus,
+    AcquisitionPolicy, ArticleLocator, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord,
+    LoadCacheRecord, LoadFinding, LoadQueueRecord, LoadReport, LoadStageName, LoadStageSet,
+    StageStatus,
 };
 use da_ports::{AcquisitionError, EnsuredAssets, SourceAcquisitionPort};
 use std::path::{Path, PathBuf};
@@ -48,6 +49,8 @@ pub struct LoadExtractOutcome {
 pub struct LoadContentOutcome {
     pub ingest: LoadIngestOutcome,
     pub extract: Option<LoadExtractOutcome>,
+    /// PipelineCache dispositions for LoadReport (ADR-056 §2.5.1).
+    pub cache_records: Vec<LoadCacheRecord>,
 }
 
 /// Request for the injected content pipeline.
@@ -276,6 +279,7 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                                 } else {
                                     report.import_eligible = ing.import_eligible;
                                 }
+                                report.cache.extend(out.cache_records);
                             }
                             Err(e) => {
                                 report.stages.push(StageStatus {
@@ -592,6 +596,12 @@ mod tests {
                 } else {
                     None
                 },
+                cache_records: vec![LoadCacheRecord {
+                    stage_id: "parse".into(),
+                    status: "miss".into(),
+                    key_sha256: Some("test-key".into()),
+                    payload_sha256: None,
+                }],
             })
         }
     }
@@ -697,6 +707,10 @@ mod tests {
         }));
         assert_eq!(report.snapshot_path.as_deref(), Some("/tmp/out.sgsnap"));
         assert!(!report.import_eligible);
+        assert!(
+            report.cache.iter().any(|c| c.stage_id == "parse"),
+            "content pipeline must stamp LoadReport.cache (ADR-056)"
+        );
     }
 
     #[tokio::test]

@@ -4,18 +4,26 @@
 
 use clap::Args;
 use da_adapters::{
-    ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, GrobidParser, HtmlParser,
-    RuleBasedExtractor, toc_unit_keys,
+    ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, GrobidParser,
+    HtmlParser, RuleBasedExtractor, toc_unit_keys,
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
     LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
 };
-use da_domain::{AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadStageSet, PrimaryContentKind};
+use da_domain::{
+    AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadCacheRecord, LoadStageSet,
+    PrimaryContentKind,
+};
 use da_ports::SourceAcquisitionPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use da_ports::parser::{ParsedArticle, ParserPort};
+use da_ports::pipeline_cache::{
+    CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageCacheKey,
+};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -71,6 +79,14 @@ pub struct LoadArgs {
     /// Directory for per-unit batch load reports
     #[arg(long, default_value = "artifacts/loads/batch")]
     pub batch_report_dir: PathBuf,
+
+    /// Pipeline cache root for parse-stage payloads (ADR-056 reuse of PipelineCache).
+    #[arg(long, default_value = "artifacts/pipeline_cache")]
+    pub cache_root: PathBuf,
+
+    /// Bypass PipelineCache for parse stage (always re-parse).
+    #[arg(long, default_value_t = false)]
+    pub no_cache: bool,
 }
 
 /// Content pipeline with optional shared process-local store (hub batch).
@@ -78,6 +94,8 @@ struct CliContentPipeline {
     store: Arc<da_adapters::SamyamaGraphStore>,
     /// When false, materialize/extract only — caller exports hub snap once.
     export_per_unit: bool,
+    /// Content-addressed parse cache (not graph truth).
+    cache: Option<Arc<FilePipelineCache>>,
 }
 
 #[async_trait::async_trait]
@@ -104,22 +122,13 @@ impl LoadContentPipeline for CliContentPipeline {
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
 
-        let parsed: ParsedArticle = if is_html {
-            let parser = HtmlParser::new();
-            parser
-                .parse_html(&primary_path, req.paper_id)
-                .await
-                .map_err(|e| format!("html parse: {e:#}"))?
-        } else {
-            let parser = GrobidParser::from_env();
-            if !parser.is_alive().await {
-                return Err("GROBID is not reachable (start sidecar on :8070)".into());
-            }
-            parser
-                .parse_pdf(&primary_path, req.paper_id)
-                .await
-                .map_err(|e| format!("pdf parse: {e:#}"))?
-        };
+        let (parsed, cache_records) = parse_with_cache(
+            self.cache.as_deref(),
+            req.paper_id,
+            req.primary_path,
+            is_html,
+        )
+        .await?;
 
         let embedder = FdApiEmbedder::from_env();
         let embed_text = if parsed.abstract_text.is_empty() {
@@ -195,7 +204,173 @@ impl LoadContentPipeline for CliContentPipeline {
                 import_eligible: result.import_eligible,
             },
             extract: extract_out,
+            cache_records,
         })
+    }
+}
+
+/// Parse primary content with optional PipelineCache (derived payload only).
+async fn parse_with_cache(
+    cache: Option<&FilePipelineCache>,
+    paper_id: &str,
+    primary_path: &Path,
+    is_html: bool,
+) -> Result<(ParsedArticle, Vec<LoadCacheRecord>), String> {
+    let primary_str = primary_path.display().to_string();
+    let bytes = std::fs::read(primary_path)
+        .map_err(|e| format!("read primary {}: {e}", primary_path.display()))?;
+    let content_sha = sha256_hex(&bytes);
+    let format = if is_html {
+        SourceFormat::Html
+    } else {
+        SourceFormat::Pdf
+    };
+    let source = SourceIdentity {
+        article_id: paper_id.to_string(),
+        selected_format: format,
+        pdf_sha256: if is_html {
+            None
+        } else {
+            Some(content_sha.clone())
+        },
+        html_sha256: if is_html {
+            Some(content_sha.clone())
+        } else {
+            None
+        },
+        acquisition_fingerprint: content_sha.clone(),
+        normalization_fingerprint: "identity-v1".into(),
+    };
+    let impl_fp = if is_html {
+        "da_adapters::HtmlParser@load-v1"
+    } else {
+        "da_adapters::GrobidParser@load-v1"
+    };
+    let key = StageCacheKey {
+        source,
+        stage_id: "parse".into(),
+        dependency_output_sha256: BTreeMap::new(),
+        implementation_fingerprint: impl_fp.into(),
+        configuration_fingerprint: if is_html {
+            "html-primary".into()
+        } else {
+            "pdf-grobid".into()
+        },
+        prompt_fingerprint: None,
+        model_fingerprint: None,
+        output_schema_fingerprint: "ParsedArticle.v1".into(),
+    };
+    let key_sha = serde_json::to_vec(&key)
+        .map(|v| sha256_hex(&v))
+        .unwrap_or_default();
+
+    let Some(cache) = cache else {
+        let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+        return Ok((
+            parsed,
+            vec![LoadCacheRecord {
+                stage_id: "parse".into(),
+                status: "bypass".into(),
+                key_sha256: Some(key_sha),
+                payload_sha256: None,
+            }],
+        ));
+    };
+
+    let now = chrono::Utc::now().to_rfc3339();
+    match cache
+        .lookup(&key, &now)
+        .map_err(|e| format!("cache lookup: {e}"))?
+    {
+        CacheLookup::Hit(hit) => {
+            let parsed: ParsedArticle = serde_json::from_slice(&hit.payload)
+                .map_err(|e| format!("cache payload decode: {e}"))?;
+            Ok((
+                parsed,
+                vec![LoadCacheRecord {
+                    stage_id: "parse".into(),
+                    status: "hit".into(),
+                    key_sha256: Some(hit.manifest.key_sha256),
+                    payload_sha256: Some(sha256_hex(&hit.payload)),
+                }],
+            ))
+        }
+        CacheLookup::RetryableFailure(m) => {
+            // Do not suppress re-parse forever; treat as miss for product path.
+            let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+            let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize: {e}"))?;
+            let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
+            Ok((
+                parsed,
+                vec![LoadCacheRecord {
+                    stage_id: "parse".into(),
+                    status: "retryable_failure".into(),
+                    key_sha256: Some(m.key_sha256),
+                    payload_sha256: Some(sha256_hex(&payload)),
+                }],
+            ))
+        }
+        CacheLookup::Miss => {
+            let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+            let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize: {e}"))?;
+            let entry = cache
+                .store_success(&key, &payload, BTreeMap::new(), &now)
+                .map_err(|e| format!("cache store: {e}"))?;
+            Ok((
+                parsed,
+                vec![LoadCacheRecord {
+                    stage_id: "parse".into(),
+                    status: "miss".into(),
+                    key_sha256: Some(entry.key_sha256),
+                    payload_sha256: Some(sha256_hex(&payload)),
+                }],
+            ))
+        }
+    }
+}
+
+async fn parse_primary(
+    primary_path: &str,
+    paper_id: &str,
+    is_html: bool,
+) -> Result<ParsedArticle, String> {
+    if is_html {
+        let parser = HtmlParser::new();
+        parser
+            .parse_html(primary_path, paper_id)
+            .await
+            .map_err(|e| format!("html parse: {e:#}"))
+    } else {
+        let parser = GrobidParser::from_env();
+        if !parser.is_alive().await {
+            return Err("GROBID is not reachable (start sidecar on :8070)".into());
+        }
+        parser
+            .parse_pdf(primary_path, paper_id)
+            .await
+            .map_err(|e| format!("pdf parse: {e:#}"))
+    }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
+}
+
+fn make_content_pipeline(
+    store: Arc<da_adapters::SamyamaGraphStore>,
+    export_per_unit: bool,
+    args: &LoadArgs,
+) -> CliContentPipeline {
+    let cache = if args.no_cache {
+        None
+    } else {
+        let _ = std::fs::create_dir_all(&args.cache_root);
+        Some(Arc::new(FilePipelineCache::new(&args.cache_root)))
+    };
+    CliContentPipeline {
+        store,
+        export_per_unit,
+        cache,
     }
 }
 
@@ -274,10 +449,7 @@ async fn run_batch_toc(args: &LoadArgs, toc: &Path) -> Result<(), String> {
 
     let content_mode = policy.stages.includes_ingest() && !policy.dry_run;
     let store = Arc::new(open_graph_store_for_load());
-    let pipe = CliContentPipeline {
-        store: store.clone(),
-        export_per_unit: false, // one hub snap at end
-    };
+    let pipe = make_content_pipeline(store.clone(), false, args);
     let _ = std::fs::create_dir_all(&args.batch_report_dir);
 
     let mut ok_n = 0usize;
@@ -403,10 +575,7 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         .or_else(|| default_snapshot_path(locator));
     let snap_ref = snap.as_deref();
     let store = Arc::new(open_graph_store_for_load());
-    let pipe = CliContentPipeline {
-        store,
-        export_per_unit: true,
-    };
+    let pipe = make_content_pipeline(store, true, args);
 
     let report = match provider.as_str() {
         "arxiv" => {
@@ -626,6 +795,8 @@ mod tests {
             output: None,
             batch_toc: Some(PathBuf::from("toc.yaml")),
             batch_report_dir: PathBuf::from("artifacts/loads/batch"),
+            cache_root: PathBuf::from("artifacts/pipeline_cache"),
+            no_cache: false,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(
