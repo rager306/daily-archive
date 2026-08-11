@@ -1,0 +1,1125 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs</title>
+<!--Generated on Fri Jun  5 19:02:19 2026 by LaTeXML (version 0.8.8) http://dlmf.nist.gov/LaTeXML/.-->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="/static/browse/0.3.4/css/arxiv-html-papers-20260131.css" type="text/css">
+<script src="/static/browse/0.3.4/js/arxiv-html-papers-20260131.js"></script>
+<script>
+  // Restore the saved color scheme preference, or
+  // enact the browser preference if "automatic", 
+  // without expecting DOM load to have completed.
+  //
+  // Also restore any saved readingmode and ToC display preferences.
+  function initializeReadingPreferences() {
+    let saved_theme = localStorage.getItem("ar5iv_theme") || "automatic";
+    if (saved_theme === "automatic") {
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        saved_theme = "dark";
+      }
+    }
+    if (saved_theme == "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+
+    const tocDisplay = localStorage.getItem('arxiv_html_paper_toc_display');
+    if (tocDisplay) {
+      document.documentElement.setAttribute("data-toc-display", tocDisplay);
+    }
+    const readingMode = localStorage.getItem('arxiv_html_paper_reading_mode');
+    if (readingMode) {
+      document.documentElement.setAttribute("data-reading-mode", readingMode);
+    }
+    // Pre-apply spinout-banner dismissal here, before the banner paints, so it
+    // never flashes in only to be hidden later by the deferred arxiv-header.js.
+    // Key matches arxiv-header.js: "arxiv-banner-dismissed:" + data-banner-name.
+    if (localStorage.getItem('arxiv-banner-dismissed:spinout-nonprofit')) {
+      document.documentElement.setAttribute("data-banner-dismissed", "");
+    }
+  }
+  // Run as soon as JS starts, to minimize repainting
+  initializeReadingPreferences();
+</script>
+<link rel="apple-touch-icon" sizes="180x180"
+  href="/static/browse/0.3.4/images/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32"
+  href="/static/browse/0.3.4/images/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16"
+  href="/static/browse/0.3.4/images/icons/favicon-16x16.png">
+<link rel="manifest" href="/static/browse/0.3.4/images/icons/site.webmanifest">
+<link rel="mask-icon" href="/static/browse/0.3.4/images/icons/safari-pinned-tab.svg" color="#5bbad5">
+<link rel="stylesheet" type="text/css" media="screen" href="https://use.typekit.net/utz6mli.css"><link rel="stylesheet" type="text/css" media="screen"
+  href="/static/base/1.0.1/css/arxiv-header-footer.css?v=20260626"><style>
+  /* Banner pre-dismissal (set above before paint -> no flash-then-hide) and
+     reading-mode chrome hiding. */
+  html[data-banner-dismissed] .ds-announcement { display: none; }
+  html[data-reading-mode="enabled"] .ds-announcement,
+  html[data-reading-mode="enabled"] .ds-site-footer { display: none; }
+  /* Keep the announcement text dark on the Open-Blue band in both colour themes
+     (otherwise it inherits the paper's warm-wash text in dark mode and washes out). */
+  .ds-announcement-text { color: var(--arxiv-ink, #1c1a17); }
+</style>
+<script defer src="/static/base/1.0.1/js/arxiv-header.js?v=20260626"></script>
+</head>
+<body>
+<dialog id="modal-form" aria-labelledby="modal-title" closedby="any">
+  <form id="modal-form-content" method="dialog" enctype="multipart/form-data">
+    <header class="modal-header">
+      <h5 id="modal-title" class="modal-title">Report GitHub Issue</h5>
+      <button type="submit" formnovalidate class="modal-close" aria-label="Close">×</button>
+    </header>
+
+    <div class="modal-body">
+      <label for="form_title">Title:</label>
+      <input class="form-control" id="form_title" name="form_title" required placeholder="Enter title">
+
+      <p id="selectedTextModalDescription" hidden>Content selection saved. Describe the issue below:</p>
+
+      <label for="description">Description:</label>
+      <textarea class="form-control" id="description" name="description" required maxlength="500"
+        placeholder="500 characters maximum"></textarea>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="submit" value="internal-report" class="sr-only modal-submit">Submit without GitHub</button>
+      <button type="submit" value="github-report" class="modal-submit">Submit in GitHub</button>
+    </footer>
+  </form>
+</dialog><div class="ds-announcement" id="announcement-banner" role="region" aria-label="Announcement"
+    data-banner-name="spinout-nonprofit">
+    <img class="ds-announcement-glyph" src="/static/base/1.0.1/images/icons/smileybones-small.svg" alt="" aria-hidden="true">
+    <span class="ds-announcement-text">arXiv is now an independent nonprofit!</span>
+    <a class="ds-announcement-link" href="https://info.arxiv.org/about">Learn more</a>
+    <button type="button" class="ds-announcement-close" aria-label="Dismiss announcement">&times;</button>
+  </div>
+
+<header class="arxiv-html-header">
+  <div class="html-header-logo">
+    <a href="/"><img alt="arXiv logo" class="logo desktop-only" width="100"
+        src="/static/base/1.0.1/images/arxiv-logo-primary-light.svg">
+      <span class="sr-only">Back to arXiv</span>
+    </a>
+  </div>
+  <!--TOC, dark mode, links-->
+  <nav class="html-header-nav">
+    <a class="header-button hover-effect desktop-only" href="https://info.arxiv.org/about/accessible_HTML.html"
+      target="_blank">Why HTML?</a>
+    <a class="header-button" title="Report an Issue" href="#" title="Report an issue"
+      onclick="event.preventDefault(); showModalForm();">
+      <svg role="presentation" class="mobile-only toggle-icon" aria-hidden="true" height="1.25rem"
+        viewBox="0 0 640 640">
+        <path
+          d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+      </svg>
+      <span class="desktop-only">Report Issue</span></a>
+    <!--back to abstract-->
+    <a class="header-button" title="Back to abstract page" aria-label="Back to abstract page"
+      href="/abs/2506.07853v5">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 512 512" fill="#ffffff"
+        aria-hidden="true">
+        <path
+          d="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 192 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l210.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128zM160 96c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 32C43 32 0 75 0 128L0 384c0 53 43 96 96 96l64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l64 0z">
+        </path>
+      </svg>
+      <span class="desktop-only">Back to Abstract</span>
+    </a>
+    <!-- PDF download link -->
+    <a class="header-button" title="Download PDF" href="/pdf/2506.07853v5"
+      target="_blank">
+      <svg class="mobile-only toggle-icon" role="presentation" height="1.25rem" viewBox="0 0 576 542">
+        <path
+          d="M208 48L96 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16l80 0 0 48-80 0c-35.3 0-64-28.7-64-64L32 64C32 28.7 60.7 0 96 0L229.5 0c17 0 33.3 6.7 45.3 18.7L397.3 141.3c12 12 18.7 28.3 18.7 45.3l0 149.5-48 0 0-128-88 0c-39.8 0-72-32.2-72-72l0-88zM348.1 160L256 67.9 256 136c0 13.3 10.7 24 24 24l68.1 0zM240 380l32 0c33.1 0 60 26.9 60 60s-26.9 60-60 60l-12 0 0 28c0 11-9 20-20 20s-20-9-20-20l0-128c0-11 9-20 20-20zm32 80c11 0 20-9 20-20s-9-20-20-20l-12 0 0 40 12 0zm96-80l32 0c28.7 0 52 23.3 52 52l0 64c0 28.7-23.3 52-52 52l-32 0c-11 0-20-9-20-20l0-128c0-11 9-20 20-20zm32 128c6.6 0 12-5.4 12-12l0-64c0-6.6-5.4-12-12-12l-12 0 0 88 12 0zm76-108c0-11 9-20 20-20l48 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 24 28 0c11 0 20 9 20 20s-9 20-20 20l-28 0 0 44c0 11-9 20-20 20s-20-9-20-20l0-128z" />
+      </svg>
+      <span class="desktop-only">Download PDF</span></a>
+    <!-- navigational table of contents toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleNavTOC();" title="Toggle navigation"
+      aria-label="Toggle navigation">
+      <svg height="1.25rem" role="presentation" viewBox="0 0 512 512">
+        <path
+          d="M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z">
+        </path>
+      </svg>
+    </a>
+    <!--- collapsable header / reading mode toggle -->
+    <a class="header-button toggle-icon" href="javascript:toggleReadingMode();"
+      title="Disable reading mode, show header and footer">
+      <svg role="presentation" height="1.25rem"
+        viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+        <path
+          d="M32 32C14.3 32 0 46.3 0 64l0 96c0 17.7 14.3 32 32 32s32-14.3 32-32l0-64 64 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L32 32zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 96c0 17.7 14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-64 0 0-64zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32l64 0 0 64c0 17.7 14.3 32 32 32s32-14.3 32-32l0-96c0-17.7-14.3-32-32-32l-96 0zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64-64 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32l0-96z" />
+      </svg>
+    </a>
+    <!--- colored theme toggle -->
+    <button type="button" class="header-button color-tog" onclick="toggleColorScheme();" title="Toggle dark/light mode" aria-label="Toggle color scheme">
+      <span class="toggle-icon automatic-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9h-1.9M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69m-9.15 3.96h2.3L12 9l-1.15 3.65Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon light-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+      <span class="toggle-icon dark-tog" aria-hidden="true">
+        <svg role="presentation" height="1.25rem" viewBox="0 0 24 24">
+          <path
+            d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12c0-2.42-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69Z">
+          </path>
+        </svg>
+      </span>
+    </button>
+  </nav>
+</header><nav class="ltx_page_navbar">
+<nav class="ltx_TOC">
+<ol class="ltx_toclist">
+<li class="ltx_tocentry ltx_tocentry_abstract"><a href="#abstract1" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">Abstract</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S1" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">1 </span>Introduction</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S2" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2 </span>Background and Related Work</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S2.SS1" title="In 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2.1 </span>LRMoo Overview</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_subsection"><a href="#S2.SS2" title="In 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">2.2 </span>Related Standards: Akoma Ntoso, LexML Brazil, and ELI</span></a></li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S3" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3 </span>LRMoo-Based Representation of Legal Norms</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection">
+<a href="#S3.SS1" title="In 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">3.1 </span>Practical Application: Brazilian Constitution</span></a>
+<ol class="ltx_toclist ltx_toclist_subsection">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S3.SS1.SSS0.Px1" title="In 3.1 Practical Application: Brazilian Constitution ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">The Concept (F1)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S3.SS1.SSS0.Px2" title="In 3.1 Practical Application: Brazilian Constitution ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">Initial State (1988)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S3.SS1.SSS0.Px3" title="In 3.1 Practical Application: Brazilian Constitution ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">Legislative Event (EC1-1992-03-31)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S3.SS1.SSS0.Px4" title="In 3.1 Practical Application: Brazilian Constitution ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">New State (Post-Amendment)</span></a></li>
+</ol>
+</li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section">
+<a href="#S4" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4 </span>Legal Norm’s Components Representation</span></a>
+<ol class="ltx_toclist ltx_toclist_section">
+<li class="ltx_tocentry ltx_tocentry_subsection">
+<a href="#S4.SS1" title="In 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.1 </span>Temporal Evolution and Event Granularity of Components</span></a>
+<ol class="ltx_toclist ltx_toclist_subsection">
+<li class="ltx_tocentry ltx_tocentry_subsubsection">
+<a href="#S4.SS1.SSS1" title="In 4.1 Temporal Evolution and Event Granularity of Components ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">4.1.1 </span>Practical Example: The Lifecycle of a Component</span></a>
+<ol class="ltx_toclist ltx_toclist_subsubsection">
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS1.Px1" title="In 4.1.1 Practical Example: The Lifecycle of a Component ‣ 4.1 Temporal Evolution and Event Granularity of Components ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">The Component Concept (CC)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS1.Px2" title="In 4.1.1 Practical Example: The Lifecycle of a Component ‣ 4.1 Temporal Evolution and Event Granularity of Components ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">The Initial State (1988)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS1.Px3" title="In 4.1.1 Practical Example: The Lifecycle of a Component ‣ 4.1 Temporal Evolution and Event Granularity of Components ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">The Component-Level Event (EC26-2000-02-14!art1_cpt_…)</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_paragraph"><a href="#S4.SS1.SSS1.Px4" title="In 4.1.1 Practical Example: The Lifecycle of a Component ‣ 4.1 Temporal Evolution and Event Granularity of Components ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">The New State (Post-Amendment)</span></a></li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+</li>
+<li class="ltx_tocentry ltx_tocentry_section"><a href="#S5" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title"><span class="ltx_tag ltx_tag_ref">5 </span>Conclusion and Future Work</span></a></li>
+<li class="ltx_tocentry ltx_tocentry_bibliography"><a href="#bib" title="In Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_title">References</span></a></li>
+</ol></nav>
+</nav>
+<div class="ltx_page_main">
+<div id="infobox" class="infobox">
+  <a id="license-tr" href="https://info.arxiv.org/help/license/index.html#licenses-available">
+    License: CC BY 4.0
+  </a>
+  <div id="watermark-tr">
+arXiv:2506.07853v5 [cs.AI] 05 Jun 2026</div>
+</div><div class="ltx_page_content">
+<article class="ltx_document ltx_authors_1line">
+<h1 class="ltx_title ltx_title_document">Modeling the Diachronic Evolution of Legal Norms: 
+<br class="ltx_break">An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs</h1>
+<div class="ltx_authors">
+<span class="ltx_creator ltx_role_author">
+<span class="ltx_personname">Hudson de Martim
+</span><span class="ltx_author_notes">
+<span class="ltx_contact ltx_role_affiliation">Federal Senate of Brazil 
+<br class="ltx_break"><span id="id1.1.id1" class="ltx_text ltx_font_typewriter">hudsonm@senado.leg.br</span>
+</span></span></span>
+</div>
+
+<div id="abstract1" class="ltx_abstract">
+<h6 class="ltx_title ltx_title_abstract">Abstract</h6>
+<p class="ltx_p">Representing the temporal evolution of legal norms is a critical challenge for automated processing. While foundational frameworks exist, they lack a formal pattern for granular, component-level versioning, hindering the deterministic point-in-time reconstruction of legal texts required by reliable AI applications. This paper proposes a structured, temporal modeling pattern grounded in the LRMoo ontology. Our approach models a norm’s evolution as a diachronic chain of versioned F1 Works, distinguishing between language-agnostic Temporal Versions (TV) — each being a distinct Work — and their monolingual Language Versions (LV), modeled as F2 Expressions. The legislative amendment process is formalized through event-centric modeling, allowing changes to be traced precisely. Using the Brazilian Constitution as a case study, we demonstrate that our architecture enables the exact reconstruction of any part of a legal text as it existed on a specific date. This provides a verifiable semantic backbone for legal knowledge graphs, offering a deterministic foundation for trustworthy legal AI.</p>
+</div>
+<div id="p1" class="ltx_para ltx_noindent">
+<p id="p1.1" class="ltx_p"><span id="p1.1.1" class="ltx_text ltx_font_bold">Keywords:</span> LRMoo, Temporal Modeling, Event-Centric Modeling, Legal Knowledge Graph, Legal Text Evolution, Component-Level Versioning, Akoma Ntoso, LexML, ELI.</p>
+</div>
+<section id="S1" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">1 </span>Introduction</h2>
+
+<div id="S1.p1" class="ltx_para">
+<p id="S1.p1.1" class="ltx_p">The increasing demand for transparency, efficiency in legal research, and the proliferation of Legal Tech and Artificial Intelligence (AI) applications underscore the critical need for machine-readable representations of legal norms. In recent years, the development of robust Legal Knowledge Graphs (LKGs) has emerged as a key strategy to meet this need <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib11" title="Interpretable long-form legal question answering with retrieval-augmented large language models" class="ltx_ref">11</a>, <a href="#bib.bib12" title="Automatic detection of arguments in legal texts" class="ltx_ref">12</a>]</cite>. The challenge of formally modeling time and identifying legal resources through an event-centric ontology was a foundational topic in seminal early research <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib1" title="Moving in the time: an ontology for identifying legal resources" class="ltx_ref">4</a>]</cite>, and it continues to be an active area of investigation <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib2" title="Computational law: datasets, benchmarks, and ontologies" class="ltx_ref">9</a>, <a href="#bib.bib3" title="Temporal knowledge question answering via abstract reasoning induction" class="ltx_ref">3</a>, <a href="#bib.bib4" title="A survey on temporal knowledge graph: representation learning and applications" class="ltx_ref">2</a>]</cite>.</p>
+</div>
+<div id="S1.p2" class="ltx_para">
+<p id="S1.p2.1" class="ltx_p">While foundational conceptual frameworks like IFLA LRMoo <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib5" title="LRMoo: object-oriented definition and mapping from the ifla library reference model" class="ltx_ref">8</a>]</cite> and standards like Akoma Ntoso <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib7" title="Akoma-ntoso for legal documents" class="ltx_ref">16</a>]</cite> provide robust, general-purpose approaches, the specific challenge of tracking temporally discrete, component-level changes requires a dedicated modeling pattern. This challenge is particularly acute when considering current Generative AI. Brazil’s 1988 Federal Constitution, for instance, has been amended over one hundred times. Today’s large language models (LLMs) operate on a probabilistic basis, making them inherently unsuitable for tasks requiring absolute precision. Their lack of deterministic mechanisms makes them unreliable for the high-stakes legal domain, where correctness is not a probability but a requirement <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib13" title="To what extent have llms reshaped the legal domain so far? a scoping literature review" class="ltx_ref">14</a>, <a href="#bib.bib14" title="Large language models in law: a survey" class="ltx_ref">10</a>]</cite>. They frequently fail when asked to retrieve the exact text of the Constitution as it stood on a particular past date.</p>
+</div>
+<div id="S1.p3" class="ltx_para">
+<p id="S1.p3.1" class="ltx_p">Against this backdrop, the present paper proposes a structured model grounded in the <span id="S1.p3.1.1" class="ltx_text ltx_font_bold">IFLA LRMoo</span> ontology to deliver a semantically rich representation of legal norms and their diachronic evolution. We model this evolution as a chain of versioned <span id="S1.p3.1.2" class="ltx_text ltx_font_typewriter">F1 Works</span>, distinguishing between a language-agnostic <span id="S1.p3.1.3" class="ltx_text ltx_font_bold">Temporal Version (TV)</span>, each being a distinct F1 Work, and its concrete monolingual <span id="S1.p3.1.4" class="ltx_text ltx_font_bold">Language Versions (LV)</span>, modeled as F2 Expressions. This paradigm is extended to the component level by establishing parallel hierarchies for abstract Components and their Component Versions. Furthermore, we formalize the amendment process itself through a scalable hierarchy of creation and end-of-existence events (anchored in <span id="S1.p3.1.5" class="ltx_text ltx_font_typewriter">F27 Work Creation</span>), from which each version’s validity is deterministically derived. This fine-grained, event-centric architecture forms the basis for building deterministic pipelines capable of reconstructing any part of a legal text as it existed on any given date.</p>
+</div>
+<div id="S1.p4" class="ltx_para">
+<p id="S1.p4.1" class="ltx_p">This paper is structured as follows. Section <a href="#S2" title="2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a> reviews foundational concepts from LRMoo and related standards. Section <a href="#S3" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a> introduces our core proposal for norms, detailing the TV/LV distinction and the event-centric mechanism. Section <a href="#S4" title="4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a> details how this model is extended to represent internal hierarchical components. Section <a href="#S5" title="5 Conclusion and Future Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">5</span></a> concludes and outlines future research directions.</p>
+</div>
+</section>
+<section id="S2" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">2 </span>Background and Related Work</h2>
+
+<section id="S2.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">2.1 </span>LRMoo Overview</h3>
+
+<div id="S2.SS1.p1" class="ltx_para">
+<p id="S2.SS1.p1.1" class="ltx_p">The IFLA Library Reference Model (LRM), formalized as the LRMoo ontology <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib5" title="LRMoo: object-oriented definition and mapping from the ifla library reference model" class="ltx_ref">8</a>]</cite>, is an object-oriented model harmonized with the CIDOC Conceptual Reference Model (CIDOC CRM). It refines the Work, Expression, Manifestation, Item (WEMI) distinction:</p>
+<ul id="S2.I1" class="ltx_itemize">
+<li id="S2.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S2.I1.i1.p1" class="ltx_para">
+<p id="S2.I1.i1.p1.1" class="ltx_p"><span id="S2.I1.i1.p1.1.1" class="ltx_text ltx_font_bold">F1 Work</span>, representing a distinct abstract intellectual creation (e.g., the normative intent of a law).</p>
+</div>
+</li>
+<li id="S2.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S2.I1.i2.p1" class="ltx_para">
+<p id="S2.I1.i2.p1.1" class="ltx_p"><span id="S2.I1.i2.p1.1.1" class="ltx_text ltx_font_bold">F2 Expression</span>, representing a specific intellectual realization of a <em id="S2.I1.i2.p1.1.2" class="ltx_emph ltx_font_italic">Work</em>. Differences in form imply different Expressions (e.g., from text to spoken word, a transcript of a recording). Similarly, differences in language imply different Expressions.</p>
+</div>
+</li>
+<li id="S2.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S2.I1.i3.p1" class="ltx_para">
+<p id="S2.I1.i3.p1.1" class="ltx_p"><span id="S2.I1.i3.p1.1.1" class="ltx_text ltx_font_bold">F3 Manifestation</span>, representing the embodiment of an <em id="S2.I1.i3.p1.1.2" class="ltx_emph ltx_font_italic">Expression</em> in a product (e.g., a PDF file published in the Official Gazette).</p>
+</div>
+</li>
+<li id="S2.I1.i4" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S2.I1.i4.p1" class="ltx_para">
+<p id="S2.I1.i4.p1.1" class="ltx_p"><span id="S2.I1.i4.p1.1.1" class="ltx_text ltx_font_bold">F5 Item</span>, representing a single exemplar of a <em id="S2.I1.i4.p1.1.2" class="ltx_emph ltx_font_italic">Manifestation</em> (e.g., a specific printed copy).</p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S2.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">2.2 </span>Related Standards: Akoma Ntoso, LexML Brazil, and ELI</h3>
+
+<div id="S2.SS2.p1" class="ltx_para">
+<p id="S2.SS2.p1.1" class="ltx_p"><span id="S2.SS2.p1.1.1" class="ltx_text ltx_font_bold">Akoma Ntoso (AKN)</span> <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib7" title="Akoma-ntoso for legal documents" class="ltx_ref">16</a>]</cite> is an XML vocabulary for legal documents aligned with the WEMI model. AKN does offer rich amendment constructs—<span id="S2.SS2.p1.1.2" class="ltx_text ltx_font_typewriter">activeModifications</span> and <span id="S2.SS2.p1.1.3" class="ltx_text ltx_font_typewriter">passiveModifications</span>, whose <span id="S2.SS2.p1.1.4" class="ltx_text ltx_font_typewriter">textualMod</span> elements reference the affected provisions (by <span id="S2.SS2.p1.1.5" class="ltx_text ltx_font_typewriter">eId</span>) and the amending source—so a textual change can be linked to the component it affects. These are, however, document-embedded XML annotations rather than first-class, reified entities: AKN does not model each component as an independently versioned work with an explicit derivative lineage, nor the amendment as a shared causal node, and point-in-time states are typically materialized as separate consolidated documents, leaving the per-component diachronic history implicit.</p>
+</div>
+<div id="S2.SS2.p2" class="ltx_para">
+<p id="S2.SS2.p2.1" class="ltx_p">The <span id="S2.SS2.p2.1.1" class="ltx_text ltx_font_bold">LexML Brazil</span> project <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib17" title="Modelo de referência lexml" class="ltx_ref">17</a>]</cite> provides a URN standard (<span id="S2.SS2.p2.1.2" class="ltx_text ltx_font_typewriter">norm@version~language!part</span>, implementing the URN Lex namespace) able to name a specific provision within a specific version of a norm—an addressing scheme we reuse to identify our entities. Its XML layer additionally records legislative events (e.g., amendments and partial revocations) as document metadata, and its FRBRoo-based ontology <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib1" title="Moving in the time: an ontology for identifying legal resources" class="ltx_ref">4</a>]</cite> pioneered the time-aware modeling of the normative act’s life cycle. A URN, however, <em id="S2.SS2.p2.1.3" class="ltx_emph ltx_font_italic">identifies</em> a versioned provision as a locator within a consolidated document snapshot; it does not <em id="S2.SS2.p2.1.4" class="ltx_emph ltx_font_italic">model</em> it as a first-class Work bearing explicit derivative lineage and conceptual membership, nor does it reify the legislative event as a queryable causal entity<span id="footnote1" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">1</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">1</sup><span class="ltx_tag ltx_tag_note">1</span>In LexML the same amendment is recorded redundantly—actively in the amending norm’s <span id="footnote1.1" class="ltx_text ltx_font_typewriter">EventosGerados</span> and passively in the amended norm’s <span id="footnote1.2" class="ltx_text ltx_font_typewriter">CicloDeVida</span>. The two records are document-scoped: an <span id="footnote1.3" class="ltx_text ltx_font_typewriter">Evento</span>’s identifier is an <span id="footnote1.4" class="ltx_text ltx_font_typewriter">xsd:ID</span>, unique and resolvable only within its own file, whereas LexML reserves global identifiers (URN-LEX) for norms and provisions, not for events. Reusing the same id string across both documents is therefore a naming convention, not a resolvable co-reference, and a processor still correlates the two views heuristically (by matching source, target, type, and date). Reifying the event as a single first-class node gives it one global identity referenced from both sides, making the correlation deterministic.</span></span></span>. Our model supplies exactly this formal, relational layer, elevating each component and each event to a first-class entity.</p>
+</div>
+<div id="S2.SS2.p3" class="ltx_para">
+<p id="S2.SS2.p3.1" class="ltx_p">The <span id="S2.SS2.p3.1.1" class="ltx_text ltx_font_bold">European Legislation Identifier (ELI)</span> <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib18" title="European legislation identifier (ELI): technical specification for legal documents" class="ltx_ref">5</a>]</cite> also builds upon FRBR principles and supports both temporal versioning (through point-in-time URI components) and language version differentiation (via language codes in the URI). Its metadata model further captures relevant temporal dimensions, such as validity and applicability dates, on which we build in Section <a href="#S3" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>. However, ELI is fundamentally a URI identification and metadata scheme. While its accompanying formal ontology is based on FRBR principles, its semantics are document-centric, designed to describe relationships between laws (e.g., eli:amends). It does not provide the built-in constructs to model the legislative event as a first-class entity, which is essential for tracing the precise provenance of a legal change.</p>
+</div>
+<div id="S2.SS2.p4" class="ltx_para">
+<p id="S2.SS2.p4.1" class="ltx_p">Grounding our model in <span id="S2.SS2.p4.1.1" class="ltx_text ltx_font_bold">IFLA LRMoo</span> supplies the formal ontology these schemes lack: a recursive, component-level versioning pattern coupled with reified, event-centric provenance that traces each modification to its source legislative instrument.</p>
+</div>
+<div id="S2.SS2.p5" class="ltx_para">
+<p id="S2.SS2.p5.1" class="ltx_p">While recent studies emphasize the need for LKGs to act as a verifiable backbone
+for computational law <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib15" title="Legal knowledge extraction for knowledge graph based question-answering" class="ltx_ref">1</a>, <a href="#bib.bib16" title="A constructive framework for legal ontologies" class="ltx_ref">6</a>]</cite>, they often presuppose the existence of a stable, versioned representation of the legal text itself. Our model provides exactly this versioned textual ground truth, a necessary prerequisite for any subsequent semantic modeling or logical reasoning.</p>
+</div>
+</section>
+</section>
+<section id="S3" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">3 </span>LRMoo-Based Representation of Legal Norms</h2>
+
+<div id="S3.p1" class="ltx_para">
+<p id="S3.p1.1" class="ltx_p">Building on LRMoo, our model maps each stage of a norm’s existence:</p>
+<ul id="S3.I1" class="ltx_itemize">
+<li id="S3.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I1.i1.p1" class="ltx_para">
+<p id="S3.I1.i1.p1.1" class="ltx_p"><span id="S3.I1.i1.p1.1.1" class="ltx_text ltx_font_bold">Concept (C):</span> A single, immutable <span id="S3.I1.i1.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Work</span> represents the abstract legal norm in its entirety, persisting through time. For example, "The Brazilian Federal Constitution of 1988" as an overarching concept is one such entity. It serves as the permanent anchor for all its historical versions.</p>
+</div>
+</li>
+<li id="S3.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I1.i2.p1" class="ltx_para">
+<p id="S3.I1.i2.p1.1" class="ltx_p"><span id="S3.I1.i2.p1.1.1" class="ltx_text ltx_font_bold">Temporal Version (TV):</span> An <span id="S3.I1.i2.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Work</span> representing the norm’s complete and distinct normative identity at a specific point in time—a “semantic snapshot.” Each TV is a separate Work because legislative amendments alter the norm’s legal force, creating a new normative entity. All TVs are linked to the overarching concept via <span id="S3.I1.i2.p1.1.3" class="ltx_text ltx_font_typewriter">R10 is member of</span>—related works that are considered to share a common concept. Their temporal lineage is captured via <span id="S3.I1.i2.p1.1.4" class="ltx_text ltx_font_typewriter">R2 is derivative of</span>, which can be precisely qualified using <span id="S3.I1.i2.p1.1.5" class="ltx_text ltx_font_typewriter">R2.1 has type</span> to denote a “Temporal Succession”.</p>
+</div>
+</li>
+<li id="S3.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I1.i3.p1" class="ltx_para">
+<p id="S3.I1.i3.p1.1" class="ltx_p"><span id="S3.I1.i3.p1.1.1" class="ltx_text ltx_font_bold">Language Version (LV):</span> An <span id="S3.I1.i3.p1.1.2" class="ltx_text ltx_font_typewriter">F2 Expression</span> representing the concrete monolingual textual realization of a Temporal Version. By being multiply instantiated as an <span id="S3.I1.i3.p1.1.3" class="ltx_text ltx_font_typewriter">E33 Linguistic Object</span>, an LV is formally described by its language (<span id="S3.I1.i3.p1.1.4" class="ltx_text ltx_font_typewriter">P72 has language</span>) and its complete textual content (<span id="S3.I1.i3.p1.1.5" class="ltx_text ltx_font_typewriter">P190 has symbolic content</span>). An LV <span id="S3.I1.i3.p1.1.6" class="ltx_text ltx_font_typewriter">R3i realises</span> its parent Temporal Version.</p>
+</div>
+</li>
+<li id="S3.I1.i4" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I1.i4.p1" class="ltx_para">
+<p id="S3.I1.i4.p1.1" class="ltx_p"><span id="S3.I1.i4.p1.1.1" class="ltx_text ltx_font_bold">Manifestation (<span id="S3.I1.i4.p1.1.1.1" class="ltx_text ltx_font_typewriter">F3 Manifestation</span>):</span> Embodies a Language Version on a specific carrier, such as an HTML page on a government website. The detailed modeling of manifestations is considered out of scope for this work.</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="S3.p2" class="ltx_para">
+<p id="S3.p2.1" class="ltx_p">This results in a clear structure, illustrated in Figure <a href="#S3.F1" title="Figure 1 ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>.</p>
+</div>
+<figure id="S3.F1" class="ltx_figure"><img src="2506.07853v5/Figure4.jpg" id="S3.F1.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="333" height="122" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure">Figure 1: </span>Relationship among the <span id="S3.F1.2.1" class="ltx_text ltx_font_typewriter">Concept</span>, a chain of Temporal Versions (TVs) and their Language Versions (LVs).</figcaption>
+</figure>
+<div id="S3.p3" class="ltx_para">
+<p id="S3.p3.1" class="ltx_p">The legislative enactment of an amending norm (e.g., through promulgation
+or signing into law) has a creative effect resulting in at least two distinct
+<span id="S3.p3.1.1" class="ltx_text ltx_font_typewriter">F1 Works</span>: the original version of the amending norm itself and the new version(s) of the amended norm(s). While the creation of the modifying instrument is a necessary outcome, the primary focus of this paper is the second, transformative effect: the creation of the new <span id="S3.p3.1.2" class="ltx_text ltx_font_bold">Temporal Version (TV)</span> of an amended norm.</p>
+</div>
+<div id="S3.p4" class="ltx_para">
+<p id="S3.p4.1" class="ltx_p">A legislative change is an inherently n-ary fact—it binds an author, a target norm, a resulting text, a date, and a legal effect—so collapsing it into a single binary relation (e.g., <span id="S3.p4.1.1" class="ltx_text ltx_font_typewriter">amends</span>) would discard most of this structure <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib23" title="Defining n-ary relations on the semantic web" class="ltx_ref">13</a>]</cite>. We therefore reify the change as a first-class event, following event-centric knowledge graph approaches <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib24" title="Building event-centric knowledge graphs from news" class="ltx_ref">18</a>, <a href="#bib.bib25" title="EventKG: a multilingual event-centric temporal knowledge graph" class="ltx_ref">7</a>]</cite>.</p>
+</div>
+<div id="S3.p5" class="ltx_para">
+<p id="S3.p5.1" class="ltx_p">This transformative effect is modeled through a single event whose ontological typing depends on the nature of the legislative operation. For a textual amendment—the most common case—the event is multiply instantiated as both an <span id="S3.p5.1.1" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> and an <span id="S3.p5.1.2" class="ltx_text ltx_font_typewriter">E64 End of Existence</span>, reflecting that a constitutive legal change simultaneously terminates one normative entity and inaugurates another.<span id="footnote2" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">2</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">2</sup><span class="ltx_tag ltx_tag_note">2</span>We deliberately avoid modeling the change as an <span id="footnote2.1" class="ltx_text ltx_font_typewriter">E11 Modification</span>: the property <span id="footnote2.2" class="ltx_text ltx_font_typewriter">P31 has modified</span> ranges over physical things (<span id="footnote2.3" class="ltx_text ltx_font_typewriter">E24</span>/<span id="footnote2.4" class="ltx_text ltx_font_typewriter">E18</span>), whereas a Temporal Version is a conceptual <span id="footnote2.5" class="ltx_text ltx_font_typewriter">F1 Work</span> (<span id="footnote2.6" class="ltx_text ltx_font_typewriter">E28</span>). Modeling the transition at the level of the entity’s <em id="footnote2.7" class="ltx_emph ltx_font_italic">existence</em> (<span id="footnote2.8" class="ltx_text ltx_font_typewriter">E63</span>/<span id="footnote2.9" class="ltx_text ltx_font_typewriter">E64</span>), rather than as a physical modification, keeps the pattern ontologically consistent. The combined <span id="footnote2.10" class="ltx_text ltx_font_typewriter">F27</span> <math id="footnote2.m1" class="ltx_Math" alttext="\cap" display="inline" intent=":literal"><semantics><mo>∩</mo><annotation encoding="application/x-tex">\cap</annotation></semantics></math> <span id="footnote2.11" class="ltx_text ltx_font_typewriter">E64</span> typing follows the CIDOC CRM precedent for state-transition events (e.g., a death jointly typed as <span id="footnote2.12" class="ltx_text ltx_font_typewriter">E64</span> and <span id="footnote2.13" class="ltx_text ltx_font_typewriter">E7</span>).</span></span></span> This event explicitly models the legal change by documenting that it:</p>
+<ul id="S3.I2" class="ltx_itemize">
+<li id="S3.I2.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I2.i1.p1" class="ltx_para">
+<p id="S3.I2.i1.p1.1" class="ltx_p"><span id="S3.I2.i1.p1.1.1" class="ltx_text ltx_font_bold">uses</span> (<span id="S3.I2.i1.p1.1.2" class="ltx_text ltx_font_typewriter">P16 used specific object</span>) the specific provision of the amending instrument that prescribes the change, recording the authoritative source of the modification;</p>
+</div>
+</li>
+<li id="S3.I2.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I2.i2.p1" class="ltx_para">
+<p id="S3.I2.i2.p1.1" class="ltx_p"><span id="S3.I2.i2.p1.1.1" class="ltx_text ltx_font_bold">takes out of existence</span> (<span id="S3.I2.i2.p1.1.2" class="ltx_text ltx_font_typewriter">P93 took out of existence</span>) the preceding Temporal Version (<span id="S3.I2.i2.p1.1.3" class="ltx_text ltx_font_typewriter">TV<sub id="S3.I2.i2.p1.1.3.1" class="ltx_sub">n-1</sub></span>) of the norm being changed, thereby terminating its validity period; and</p>
+</div>
+</li>
+<li id="S3.I2.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I2.i3.p1" class="ltx_para">
+<p id="S3.I2.i3.p1.1" class="ltx_p"><span id="S3.I2.i3.p1.1.1" class="ltx_text ltx_font_bold">creates</span> (<span id="S3.I2.i3.p1.1.2" class="ltx_text ltx_font_typewriter">R16 created</span>) the new, resulting Temporal Version (<span id="S3.I2.i3.p1.1.3" class="ltx_text ltx_font_typewriter">TV<sub id="S3.I2.i3.p1.1.3.1" class="ltx_sub">n</sub></span>) that incorporates the normative changes.</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="S3.p6" class="ltx_para">
+<p id="S3.p6.1" class="ltx_p">The typing is operation-dependent: a pure insertion is typed only as <span id="S3.p6.1.1" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> (asserting <span id="S3.p6.1.2" class="ltx_text ltx_font_typewriter">R16 created</span>); a pure repeal only as <span id="S3.p6.1.3" class="ltx_text ltx_font_typewriter">E64 End of Existence</span> (asserting <span id="S3.p6.1.4" class="ltx_text ltx_font_typewriter">P93 took out of existence</span>); and a wording amendment combines both, as above. This event-centric view allows us to precisely trace the provenance of each version of a legal norm, as shown in Figure <a href="#S3.F2" title="Figure 2 ‣ 3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2</span></a>.</p>
+</div>
+<figure id="S3.F2" class="ltx_figure"><img src="2506.07853v5/Figure7.jpg" id="S3.F2.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="286" height="158" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure">Figure 2: </span>An amendment event, jointly typed as <span id="S3.F2.6.1" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> and <span id="S3.F2.7.2" class="ltx_text ltx_font_typewriter">E64 End of Existence</span>: it <span id="S3.F2.8.3" class="ltx_text ltx_font_typewriter">P16 used</span> the amending provision as source, <span id="S3.F2.9.4" class="ltx_text ltx_font_typewriter">P93 took out of existence</span> the prior Temporal Version, and <span id="S3.F2.10.5" class="ltx_text ltx_font_typewriter">R16 created</span> the new one.</figcaption>
+</figure>
+<div id="S3.p7" class="ltx_para">
+<p id="S3.p7.3" class="ltx_p">Essentially, a Temporal Version does not store its validity interval as a static attribute. Following an <em id="S3.p7.3.1" class="ltx_emph ltx_font_italic">event-sourcing</em> approach, the interval <math id="S3.p7.1.m1" class="ltx_Math" alttext="[t_{\text{start}},t_{\text{end}})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">[</mo><msub><mi>t</mi><mtext>start</mtext></msub><mo>,</mo><msub><mi>t</mi><mtext>end</mtext></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">[t_{\text{start}},t_{\text{end}})</annotation></semantics></math> is <em id="S3.p7.3.2" class="ltx_emph ltx_font_italic">derived</em> from the events bounding the version’s life cycle: <math id="S3.p7.2.m2" class="ltx_Math" alttext="t_{\text{start}}" display="inline" intent=":literal"><semantics><msub><mi>t</mi><mtext>start</mtext></msub><annotation encoding="application/x-tex">t_{\text{start}}</annotation></semantics></math> from the event that <span id="S3.p7.3.3" class="ltx_text ltx_font_typewriter">R16 created</span> it, and <math id="S3.p7.3.m3" class="ltx_Math" alttext="t_{\text{end}}" display="inline" intent=":literal"><semantics><msub><mi>t</mi><mtext>end</mtext></msub><annotation encoding="application/x-tex">t_{\text{end}}</annotation></semantics></math> from the event that <span id="S3.p7.3.4" class="ltx_text ltx_font_typewriter">P93</span> took it out of existence—remaining open-ended while no such terminating event exists.</p>
+</div>
+<div id="S3.p8" class="ltx_para">
+<p id="S3.p8.1" class="ltx_p">The event can be further described by its <span id="S3.p8.1.1" class="ltx_text ltx_font_bold">Nature (<span id="S3.p8.1.1.1" class="ltx_text ltx_font_typewriter">P2 has type</span>)</span>,
+<span id="S3.p8.1.2" class="ltx_text ltx_font_bold">Actors (<span id="S3.p8.1.2.1" class="ltx_text ltx_font_typewriter">P14 carried out by</span>)</span>, and
+<span id="S3.p8.1.3" class="ltx_text ltx_font_bold">Time-span (<span id="S3.p8.1.3.1" class="ltx_text ltx_font_typewriter">P4 has time-span</span>)</span>.</p>
+</div>
+<div id="S3.p9" class="ltx_para">
+<p id="S3.p9.1" class="ltx_p">The temporal dimension of legal knowledge is <span id="S3.p9.1.1" class="ltx_text ltx_font_bold">bitemporal</span> in the strict technical sense <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib26" title="Developing time-oriented database applications in SQL" class="ltx_ref">19</a>]</cite>: it requires distinguishing <em id="S3.p9.1.2" class="ltx_emph ltx_font_italic">valid time</em>—when a norm produces legal effect—from <em id="S3.p9.1.3" class="ltx_emph ltx_font_italic">transaction time</em>—when the norm was recorded in the official system. In our model, <span id="S3.p9.1.4" class="ltx_text ltx_font_typewriter">P4 has time-span</span> captures transaction time (the publication/recording date), while valid time is carried by a <span id="S3.p9.1.5" class="ltx_text ltx_font_bold">validity interval</span> attached to the event (an extension beyond those native to LRMoo). For legal corpora, valid time decomposes further: following the ELI ontology <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib18" title="European legislation identifier (ELI): technical specification for legal documents" class="ltx_ref">5</a>]</cite> and the legal time model of Palmirani and Brighi <cite class="ltx_cite ltx_citemacro_cite">[<a href="#bib.bib22" title="Time model for managing the dynamic of normative system" class="ltx_ref">15</a>]</cite>, we distinguish the date a norm <em id="S3.p9.1.6" class="ltx_emph ltx_font_italic">enters the legal order</em> from its <span id="S3.p9.1.7" class="ltx_text ltx_font_bold">applicability</span>—the temporal scope of the facts it may govern—because the two diverge under <em id="S3.p9.1.8" class="ltx_emph ltx_font_italic">vacatio legis</em> (deferred onset), retroactive (<em id="S3.p9.1.9" class="ltx_emph ltx_font_italic">ex tunc</em>) effect, and tax-anteriority or <em id="S3.p9.1.10" class="ltx_emph ltx_font_italic">lex mitior</em> rules. A tax statute, for instance, may be published and in force in October yet only applicable to taxable events from the following January; conversely, a more lenient criminal law (<em id="S3.p9.1.11" class="ltx_emph ltx_font_italic">lex mitior</em>) applies retroactively to facts predating its enactment. Modeling these as explicit properties on valid time renders such asymmetries computable rather than leaving them buried in unstructured text. The life-cycle interval <math id="S3.p9.1.m1" class="ltx_Math" alttext="[t_{\text{start}},t_{\text{end}})" display="inline" intent=":literal"><semantics><mrow><mo stretchy="false">[</mo><msub><mi>t</mi><mtext>start</mtext></msub><mo>,</mo><msub><mi>t</mi><mtext>end</mtext></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">[t_{\text{start}},t_{\text{end}})</annotation></semantics></math> derived above is the valid-time projection; transaction time is recorded independently via <span id="S3.p9.1.12" class="ltx_text ltx_font_typewriter">P4</span>.</p>
+</div>
+<div id="S3.p10" class="ltx_para">
+<p id="S3.p10.1" class="ltx_p">The property <span id="S3.p10.1.1" class="ltx_text ltx_font_typewriter">R2 is derivative of</span> is a semantic "shortcut" for this detailed event-based model, allowing for both simple version traversal and deep contextual analysis.</p>
+</div>
+<div id="S3.p11" class="ltx_para">
+<p id="S3.p11.1" class="ltx_p">This architecture is designed to robustly handle both multilingual and
+monolingual scenarios. In jurisdictions like Canada or the European Union,
+a single language-agnostic <em id="S3.p11.1.1" class="ltx_emph ltx_font_italic">Temporal Version</em> can be realized in
+multiple <em id="S3.p11.1.2" class="ltx_emph ltx_font_italic">Language Versions</em>, one for each official language. In
+predominantly monolingual jurisdictions like Brazil, each TV will typically
+have one primary LV that realizes it. Even in this one-to-one case,
+the conceptual distinction remains essential: the TV defines <span id="S3.p11.1.3" class="ltx_text ltx_font_bold">what the
+law says</span> (its semantic content and structure), while the LV defines
+<span id="S3.p11.1.4" class="ltx_text ltx_font_bold">how it is expressed</span> (its specific linguistic form).</p>
+</div>
+<section id="S3.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">3.1 </span>Practical Application: Brazilian Constitution</h3>
+
+<div id="S3.SS1.p1" class="ltx_para">
+<p id="S3.SS1.p1.1" class="ltx_p">We trace the Constitution’s lifecycle, using the LexML URN format (<span id="S3.SS1.p1.1.1" class="ltx_text ltx_font_typewriter">norm@version ~language</span> syntax)<span id="footnote3" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">3</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">3</sup><span class="ltx_tag ltx_tag_note">3</span>LexML URN syntax follows the standard proposed by the Brazilian LexML project. Available at: <a href="https://projeto.lexml.gov.br" title="" class="ltx_ref ltx_url ltx_font_typewriter">https://projeto.lexml.gov.br</a></span></span></span> to identify the entities.</p>
+</div>
+<section id="S3.SS1.SSS0.Px1" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">The Concept (F1)</h5>
+
+<div id="S3.SS1.SSS0.Px1.p1" class="ltx_para">
+<p id="S3.SS1.SSS0.Px1.p1.1" class="ltx_p">The abstract concept of the Constitution is a single <span id="S3.SS1.SSS0.Px1.p1.1.1" class="ltx_text ltx_font_typewriter">F1 Work</span>:</p>
+<ul id="S3.I3" class="ltx_itemize">
+<li id="S3.I3.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I3.i1.p1" class="ltx_para">
+<p id="S3.I3.i1.p1.1" class="ltx_p"><a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988</a></p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S3.SS1.SSS0.Px2" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">Initial State (1988)</h5>
+
+<div id="S3.SS1.SSS0.Px2.p1" class="ltx_para">
+<p id="S3.SS1.SSS0.Px2.p1.1" class="ltx_p">Its promulgation created the initial <span id="S3.SS1.SSS0.Px2.p1.1.1" class="ltx_text ltx_font_typewriter">TV<sub id="S3.SS1.SSS0.Px2.p1.1.1.1" class="ltx_sub">0</sub></span> and its Portuguese <span id="S3.SS1.SSS0.Px2.p1.1.2" class="ltx_text ltx_font_typewriter">LV<sub id="S3.SS1.SSS0.Px2.p1.1.2.1" class="ltx_sub">0</sub></span>.</p>
+<ul id="S3.I4" class="ltx_itemize">
+<li id="S3.I4.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I4.i1.p1" class="ltx_para">
+<p id="S3.I4.i1.p1.1" class="ltx_p"><span id="S3.I4.i1.p1.1.1" class="ltx_text ltx_font_bold">TV<sub id="S3.I4.i1.p1.1.1.1" class="ltx_sub">0</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05</a></p>
+</div>
+</li>
+<li id="S3.I4.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I4.i2.p1" class="ltx_para">
+<p id="S3.I4.i2.p1.1" class="ltx_p"><span id="S3.I4.i2.p1.1.1" class="ltx_text ltx_font_bold">LV<sub id="S3.I4.i2.p1.1.1.1" class="ltx_sub">0</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~texto;pt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05˜texto;pt</a></p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S3.SS1.SSS0.Px3" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">Legislative Event (EC1-1992-03-31)</h5>
+
+<div id="S3.SS1.SSS0.Px3.p1" class="ltx_para">
+<p id="S3.SS1.SSS0.Px3.p1.1" class="ltx_p">Constitutional Amendment No. 1, promulgated on March 31, 1992, is modeled
+as a complex legislative event that creates <span id="S3.SS1.SSS0.Px3.p1.1.1" class="ltx_text ltx_font_bold">two</span> <span id="S3.SS1.SSS0.Px3.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Works</span>:</p>
+</div>
+<div id="S3.SS1.SSS0.Px3.p2" class="ltx_para">
+<ul id="S3.I5" class="ltx_itemize">
+<li id="S3.I5.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I5.i1.p1" class="ltx_para">
+<p id="S3.I5.i1.p1.1" class="ltx_p"><span id="S3.I5.i1.p1.1.1" class="ltx_text ltx_font_bold">Work 1 – The Amendment Instrument</span>: The normative act
+EC No. 1/1992 itself, which legally prescribes specific modifications
+to the constitutional text. This work has its own <span id="S3.I5.i1.p1.1.2" class="ltx_text ltx_font_typewriter">F2 Expression</span>
+containing the amendment’s official text.</p>
+</div>
+</li>
+<li id="S3.I5.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I5.i2.p1" class="ltx_para">
+<p id="S3.I5.i2.p1.1" class="ltx_p"><span id="S3.I5.i2.p1.1.1" class="ltx_text ltx_font_bold">Work 2 – The Amended Constitution</span>: The new
+<span id="S3.I5.i2.p1.1.2" class="ltx_text ltx_font_typewriter">TV<sub id="S3.I5.i2.p1.1.2.1" class="ltx_sub">1</sub></span> (1992-03-31), which represents the
+constitutional framework incorporating the changes. This work is created
+via an event jointly typed as <span id="S3.I5.i2.p1.1.3" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> and
+<span id="S3.I5.i2.p1.1.4" class="ltx_text ltx_font_typewriter">E64 End of Existence</span> that <span id="S3.I5.i2.p1.1.5" class="ltx_text ltx_font_bold">uses</span> (<span id="S3.I5.i2.p1.1.6" class="ltx_text ltx_font_typewriter">P16</span>) the relevant
+provision of EC No. 1/1992 as its authoritative source, <span id="S3.I5.i2.p1.1.7" class="ltx_text ltx_font_bold">takes out of
+existence</span> (<span id="S3.I5.i2.p1.1.8" class="ltx_text ltx_font_typewriter">P93</span>) the prior <span id="S3.I5.i2.p1.1.9" class="ltx_text ltx_font_typewriter">TV<sub id="S3.I5.i2.p1.1.9.1" class="ltx_sub">0</sub></span>, and
+<span id="S3.I5.i2.p1.1.10" class="ltx_text ltx_font_bold">creates</span> (<span id="S3.I5.i2.p1.1.11" class="ltx_text ltx_font_typewriter">R16</span>) the new <span id="S3.I5.i2.p1.1.12" class="ltx_text ltx_font_typewriter">TV<sub id="S3.I5.i2.p1.1.12.1" class="ltx_sub">1</sub></span>.</p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S3.SS1.SSS0.Px4" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">New State (Post-Amendment)</h5>
+
+<div id="S3.SS1.SSS0.Px4.p1" class="ltx_para">
+<p id="S3.SS1.SSS0.Px4.p1.1" class="ltx_p">The event’s result was a new Temporal Version, <span id="S3.SS1.SSS0.Px4.p1.1.1" class="ltx_text ltx_font_typewriter">TV<sub id="S3.SS1.SSS0.Px4.p1.1.1.1" class="ltx_sub">1</sub></span>, with its Language Version <span id="S3.SS1.SSS0.Px4.p1.1.2" class="ltx_text ltx_font_typewriter">LV<sub id="S3.SS1.SSS0.Px4.p1.1.2.1" class="ltx_sub">1</sub></span>.</p>
+<ul id="S3.I6" class="ltx_itemize">
+<li id="S3.I6.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I6.i1.p1" class="ltx_para">
+<p id="S3.I6.i1.p1.1" class="ltx_p"><span id="S3.I6.i1.p1.1.1" class="ltx_text ltx_font_bold">TV<sub id="S3.I6.i1.p1.1.1.1" class="ltx_sub">1</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31</a></p>
+</div>
+</li>
+<li id="S3.I6.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S3.I6.i2.p1" class="ltx_para">
+<p id="S3.I6.i2.p1.1" class="ltx_p"><span id="S3.I6.i2.p1.1.1" class="ltx_text ltx_font_bold">LV<sub id="S3.I6.i2.p1.1.1.1" class="ltx_sub">1</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31~texto;pt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1992-03-31˜texto;pt</a></p>
+</div>
+</li>
+</ul>
+<p id="S3.SS1.SSS0.Px4.p1.2" class="ltx_p">This establishes an auditable version chain: <span id="S3.SS1.SSS0.Px4.p1.2.1" class="ltx_text ltx_font_typewriter">TV<sub id="S3.SS1.SSS0.Px4.p1.2.1.1" class="ltx_sub">1</sub> R2 is derivative of TV<sub id="S3.SS1.SSS0.Px4.p1.2.1.2" class="ltx_sub">0</sub></span>.</p>
+</div>
+</section>
+</section>
+</section>
+<section id="S4" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">4 </span>Legal Norm’s Components Representation</h2>
+
+<div id="S4.p1" class="ltx_para">
+<p id="S4.p1.1" class="ltx_p">Legal norms have a hierarchy of components (articles, paragraphs, etc.). Our model applies the same LRMoo pattern recursively to each component.</p>
+</div>
+<div id="S4.p2" class="ltx_para">
+<ul id="S4.I1" class="ltx_itemize">
+<li id="S4.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I1.i1.p1" class="ltx_para">
+<p id="S4.I1.i1.p1.1" class="ltx_p"><span id="S4.I1.i1.p1.1.1" class="ltx_text ltx_font_bold">Component Concept (CC):</span> An <span id="S4.I1.i1.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Work</span>
+representing the abstract identity of a structural component of a legal norm
+(e.g., "Article 5"). The hierarchy of CCs is structured using
+<span id="S4.I1.i1.p1.1.3" class="ltx_text ltx_font_typewriter">R67 has part</span>.</p>
+</div>
+</li>
+<li id="S4.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I1.i2.p1" class="ltx_para">
+<p id="S4.I1.i2.p1.1" class="ltx_p"><span id="S4.I1.i2.p1.1.1" class="ltx_text ltx_font_bold">Component Temporal Version (CTV):</span> An <span id="S4.I1.i2.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Work</span>
+representing the semantic content of a component at a specific point in time.
+A CTV <span id="S4.I1.i2.p1.1.3" class="ltx_text ltx_font_typewriter">R10 is member of</span> its corresponding CC. Amendments create new
+CTVs, linked via <span id="S4.I1.i2.p1.1.4" class="ltx_text ltx_font_typewriter">R2 is derivative of</span>.</p>
+</div>
+</li>
+<li id="S4.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I1.i3.p1" class="ltx_para">
+<p id="S4.I1.i3.p1.1" class="ltx_p"><span id="S4.I1.i3.p1.1.1" class="ltx_text ltx_font_bold">Component Language Version (CLV):</span> An <span id="S4.I1.i3.p1.1.2" class="ltx_text ltx_font_typewriter">F2 Expression</span>
+representing the monolingual realization of a CTV. A CLV <span id="S4.I1.i3.p1.1.3" class="ltx_text ltx_font_typewriter">R3i realises</span>
+its corresponding CTV. Translations are linked via <span id="S4.I1.i3.p1.1.4" class="ltx_text ltx_font_typewriter">R76 is derivative of</span>.</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="S4.p3" class="ltx_para">
+<p id="S4.p3.1" class="ltx_p">The formal distinction between properties at each level, as showed in Figure <a href="#S4.F3" title="Figure 3 ‣ 4 Legal Norm’s Components Representation ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>—<span id="S4.p3.1.1" class="ltx_text ltx_font_typewriter">R10</span>
+(conceptual membership), <span id="S4.p3.1.2" class="ltx_text ltx_font_typewriter">R67</span> (work composition), <span id="S4.p3.1.3" class="ltx_text ltx_font_typewriter">R3</span>
+(work realization), and <span id="S4.p3.1.4" class="ltx_text ltx_font_typewriter">R5</span> (textual incorporation)—is key to
+maintaining the model’s semantic integrity and enabling precise querying
+across abstraction levels.</p>
+</div>
+<figure id="S4.F3" class="ltx_figure"><img src="2506.07853v5/Figure8.jpg" id="S4.F3.g1" class="ltx_graphics ltx_centering ltx_img_landscape" width="381" height="181" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure">Figure 3: </span>Parallel hierarchies of Works (structured by <span id="S4.F3.3.1" class="ltx_text ltx_font_typewriter">R67 has part</span>) and Expressions (structured by <span id="S4.F3.4.2" class="ltx_text ltx_font_typewriter">R5 has component</span>).</figcaption>
+</figure>
+<section id="S4.SS1" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection">
+<span class="ltx_tag ltx_tag_subsection">4.1 </span>Temporal Evolution and Event Granularity of Components</h3>
+
+<div id="S4.SS1.p1" class="ltx_para">
+<p id="S4.SS1.p1.1" class="ltx_p">Amendments are modeled with a scalable event hierarchy that leverages CIDOC CRM’s mechanism for process decomposition. A single <span id="S4.SS1.p1.1.1" class="ltx_text ltx_font_bold">macro-event</span> (e.g., "Enactment of an Amending Norm") captures the overall change and is formally composed of multiple <span id="S4.SS1.p1.1.2" class="ltx_text ltx_font_bold">micro-events</span> using the <span id="S4.SS1.p1.1.3" class="ltx_text ltx_font_typewriter">P9 consists of</span> property<span id="footnote4" class="ltx_note ltx_role_footnote"><sup class="ltx_note_mark">4</sup><span class="ltx_note_outer"><span class="ltx_note_content"><sup class="ltx_note_mark">4</sup><span class="ltx_tag ltx_tag_note">4</span>Although the property <span id="footnote4.1" class="ltx_text ltx_font_typewriter">P9 consists of</span> is formally defined in CIDOC CRM for <span id="footnote4.2" class="ltx_text ltx_font_typewriter">E4 Period</span>, its extension, LRMOO, explicitly recommends its use for hierarchical relationships among activities. As <span id="footnote4.3" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> is a subclass of <span id="footnote4.4" class="ltx_text ltx_font_typewriter">E7 Activity</span>, it inherits this applicability. The LRMOO documentation considers this use “more specific (and appropriate)” for decomposing an <span id="footnote4.5" class="ltx_text ltx_font_typewriter">F27</span> into component events (e.g., <span id="footnote4.6" class="ltx_text ltx_font_typewriter">F31 Performance</span> sub-activities), thus providing the rationale for its analogical application to decompose a macro-level creation event into its micro-level constituent parts.</span></span></span>. Each micro-event happens concurrently, representing a single, granular modification to a component’s version.</p>
+</div>
+<div id="S4.SS1.p2" class="ltx_para">
+<p id="S4.SS1.p2.1" class="ltx_p">Since the direct outcome of this granular action is a new semantic version of the component, each micro-event is typed dynamically according to its dogmatic operation, mirroring the pattern introduced in Section <a href="#S3" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">3</span></a>: a pure insertion is an <span id="S4.SS1.p2.1.1" class="ltx_text ltx_font_typewriter">F27 Work Creation</span>, a pure repeal an <span id="S4.SS1.p2.1.2" class="ltx_text ltx_font_typewriter">E64 End of Existence</span>, and a wording amendment is jointly typed as both. This creates an explicit, auditable link between the cause and effect of the change. Taking a wording amendment as the general case, the micro-event documents that it:</p>
+</div>
+<div id="S4.SS1.p3" class="ltx_para">
+<ul id="S4.I2" class="ltx_itemize">
+<li id="S4.I2.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I2.i1.p1" class="ltx_para">
+<p id="S4.I2.i1.p1.1" class="ltx_p"><span id="S4.I2.i1.p1.1.1" class="ltx_text ltx_font_bold">uses</span> (<span id="S4.I2.i1.p1.1.2" class="ltx_text ltx_font_typewriter">P16 used specific object</span>) the original Component Temporal Version (<span id="S4.I2.i1.p1.1.3" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.I2.i1.p1.1.3.1" class="ltx_sub">0</sub></span>) of the specific provision of the amending instrument that prescribes the change, recording its authoritative source;</p>
+</div>
+</li>
+<li id="S4.I2.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I2.i2.p1" class="ltx_para">
+<p id="S4.I2.i2.p1.1" class="ltx_p"><span id="S4.I2.i2.p1.1.1" class="ltx_text ltx_font_bold">takes out of existence</span> (<span id="S4.I2.i2.p1.1.2" class="ltx_text ltx_font_typewriter">P93 took out of existence</span>) the preceding Component Temporal Version (<span id="S4.I2.i2.p1.1.3" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.I2.i2.p1.1.3.1" class="ltx_sub">n-1</sub></span>) of the component being changed, thereby terminating its validity period; and</p>
+</div>
+</li>
+<li id="S4.I2.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I2.i3.p1" class="ltx_para">
+<p id="S4.I2.i3.p1.1" class="ltx_p"><span id="S4.I2.i3.p1.1.1" class="ltx_text ltx_font_bold">creates</span> (<span id="S4.I2.i3.p1.1.2" class="ltx_text ltx_font_typewriter">R16 created</span>) the new, resulting Component Temporal Version (<span id="S4.I2.i3.p1.1.3" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.I2.i3.p1.1.3.1" class="ltx_sub">n</sub></span>) that incorporates the normative changes.</p>
+</div>
+</li>
+</ul>
+<p id="S4.SS1.p3.1" class="ltx_p">This hierarchical event structure is essential for establishing a complete auditable trail and data provenance. Its power is twofold. On one hand, the detailed record of the micro-event—as part of an overarching macro-legislative act—answers precisely <span id="S4.SS1.p3.1.1" class="ltx_text ltx_font_italic">how</span>, <span id="S4.SS1.p3.1.2" class="ltx_text ltx_font_italic">when</span>, and <span id="S4.SS1.p3.1.3" class="ltx_text ltx_font_italic">why</span> a component changed, tracing a specific instruction in an amending act to its precise effect on the amended norm. On the other hand, the outcome of this event creates a new Component Temporal Version (CTV) linked to its predecessor via <span id="S4.SS1.p3.1.4" class="ltx_text ltx_font_typewriter">R2 is derivative of</span>. This property efficiently answers <span id="S4.SS1.p3.1.5" class="ltx_text ltx_font_italic">what</span> changed by forming a simple, traversable version history, while unaffected components simply retain their existing CTVs.</p>
+</div>
+<div id="S4.SS1.p4" class="ltx_para">
+<p id="S4.SS1.p4.1" class="ltx_p">While this hierarchical event structure provides a precise target for establishing a complete auditable trail, its instantiation at scale represents a significant practical challenge. The parsing of unstructured legislative texts to reliably extract the inputs and outputs for each micro-event is a non-trivial task, underscoring the importance of developing dedicated processing pipelines as part of future work.</p>
+</div>
+<section id="S4.SS1.SSS1" class="ltx_subsubsection">
+<h4 class="ltx_title ltx_title_subsubsection">
+<span class="ltx_tag ltx_tag_subsubsection">4.1.1 </span>Practical Example: The Lifecycle of a Component</h4>
+
+<div id="S4.SS1.SSS1.p1" class="ltx_para">
+<p id="S4.SS1.SSS1.p1.1" class="ltx_p">We trace the caput of Article 6 of the Brazilian Constitution, which enumerates social rights.</p>
+</div>
+<section id="S4.SS1.SSS1.Px1" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">The Component Concept (CC)</h5>
+
+<div id="S4.SS1.SSS1.Px1.p1" class="ltx_para">
+<p id="S4.SS1.SSS1.Px1.p1.1" class="ltx_p">The abstract concept of "the caput of Article 6" is a single <span id="S4.SS1.SSS1.Px1.p1.1.1" class="ltx_text ltx_font_typewriter">F1 Work</span>.</p>
+<ul id="S4.I3" class="ltx_itemize">
+<li id="S4.I3.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I3.i1.p1" class="ltx_para">
+<p id="S4.I3.i1.p1.1" class="ltx_p"><span id="S4.I3.i1.p1.1.1" class="ltx_text ltx_font_bold">CC</span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988!art6_cpt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988!art6_cpt</a></p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S4.SS1.SSS1.Px2" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">The Initial State (1988)</h5>
+
+<div id="S4.SS1.SSS1.Px2.p1" class="ltx_para">
+<p id="S4.SS1.SSS1.Px2.p1.1" class="ltx_p">Its original 1988 text is captured in its first <span id="S4.SS1.SSS1.Px2.p1.1.1" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px2.p1.1.1.1" class="ltx_sub">0</sub></span> and Portuguese <span id="S4.SS1.SSS1.Px2.p1.1.2" class="ltx_text ltx_font_typewriter">CLV<sub id="S4.SS1.SSS1.Px2.p1.1.2.1" class="ltx_sub">0</sub></span>.</p>
+<ul id="S4.I4" class="ltx_itemize">
+<li id="S4.I4.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I4.i1.p1" class="ltx_para">
+<p id="S4.I4.i1.p1.1" class="ltx_p"><span id="S4.I4.i1.p1.1.1" class="ltx_text ltx_font_bold">CTV<sub id="S4.I4.i1.p1.1.1.1" class="ltx_sub">0</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05!art6_cpt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05!art6_cpt</a></p>
+</div>
+</li>
+<li id="S4.I4.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I4.i2.p1" class="ltx_para">
+<p id="S4.I4.i2.p1.1" class="ltx_p"><span id="S4.I4.i2.p1.1.1" class="ltx_text ltx_font_bold">CLV<sub id="S4.I4.i2.p1.1.1.1" class="ltx_sub">0</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05~texto;pt!art6_cpt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@1988-10-05˜texto;pt!art6_cpt</a></p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="S4.SS1.SSS1.Px3" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">The Component-Level Event (EC26-2000-02-14!art1_cpt_…)</h5>
+
+<div id="S4.SS1.SSS1.Px3.p1" class="ltx_para">
+<p id="S4.SS1.SSS1.Px3.p1.1" class="ltx_p">On Feb 14, 2000, the caput of Article 1 of Constitutional Amendment No. 26 added the word “housing” (“moradia”) to the caput of Article 6 of the Constitution. This specific instruction (action) is a micro-event. Being a wording amendment, it is jointly typed as an <span id="S4.SS1.SSS1.Px3.p1.1.1" class="ltx_text ltx_font_typewriter">F27 Work Creation</span> and an <span id="S4.SS1.SSS1.Px3.p1.1.2" class="ltx_text ltx_font_typewriter">E64 End of Existence</span>: it <span id="S4.SS1.SSS1.Px3.p1.1.3" class="ltx_text ltx_font_bold">uses</span> (<span id="S4.SS1.SSS1.Px3.p1.1.4" class="ltx_text ltx_font_typewriter">P16</span>) the <span id="S4.SS1.SSS1.Px3.p1.1.5" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px3.p1.1.5.1" class="ltx_sub">0</sub></span> of the amending provision (<a href="2506.07853v5/urn:lex:br:federal:emenda.constitucional:2000-02-14;26@2000-02-14!art1_cpt_alt1_art6" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:emenda.constitucional:2000-02-14;26@2000-02-14!art1_cpt_alt1_art6</a>) as its authoritative source, <span id="S4.SS1.SSS1.Px3.p1.1.6" class="ltx_text ltx_font_bold">takes out of existence</span> (<span id="S4.SS1.SSS1.Px3.p1.1.7" class="ltx_text ltx_font_typewriter">P93</span>) the preceding <span id="S4.SS1.SSS1.Px3.p1.1.8" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px3.p1.1.8.1" class="ltx_sub">0</sub></span> of the Art. 6 caput, and <span id="S4.SS1.SSS1.Px3.p1.1.9" class="ltx_text ltx_font_bold">creates</span> (<span id="S4.SS1.SSS1.Px3.p1.1.10" class="ltx_text ltx_font_typewriter">R16</span>) the new version, <span id="S4.SS1.SSS1.Px3.p1.1.11" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px3.p1.1.11.1" class="ltx_sub">1</sub></span>.</p>
+</div>
+</section>
+<section id="S4.SS1.SSS1.Px4" class="ltx_paragraph">
+<h5 class="ltx_title ltx_title_paragraph">The New State (Post-Amendment)</h5>
+
+<div id="S4.SS1.SSS1.Px4.p1" class="ltx_para">
+<ul id="S4.I5" class="ltx_itemize">
+<li id="S4.I5.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I5.i1.p1" class="ltx_para">
+<p id="S4.I5.i1.p1.1" class="ltx_p"><span id="S4.I5.i1.p1.1.1" class="ltx_text ltx_font_bold">CTV<sub id="S4.I5.i1.p1.1.1.1" class="ltx_sub">1</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14!art6_cpt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14!art6_cpt</a></p>
+</div>
+</li>
+<li id="S4.I5.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S4.I5.i2.p1" class="ltx_para">
+<p id="S4.I5.i2.p1.1" class="ltx_p"><span id="S4.I5.i2.p1.1.1" class="ltx_text ltx_font_bold">CLV<sub id="S4.I5.i2.p1.1.1.1" class="ltx_sub">1</sub></span>: <a href="2506.07853v5/urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14~texto;pt!art6_cpt" title="" class="ltx_ref ltx_url ltx_font_typewriter">urn:lex:br:federal:constituicao:1988-10-05;1988@2000-02-14˜texto;pt!art6_cpt</a></p>
+</div>
+</li>
+</ul>
+<p id="S4.SS1.SSS1.Px4.p1.1" class="ltx_p">The new Portuguese <span id="S4.SS1.SSS1.Px4.p1.1.1" class="ltx_text ltx_font_typewriter">CLV<sub id="S4.SS1.SSS1.Px4.p1.1.1.1" class="ltx_sub">1</sub></span> realises <span id="S4.SS1.SSS1.Px4.p1.1.2" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px4.p1.1.2.1" class="ltx_sub">1</sub></span>, containing the updated text. The lineage <span id="S4.SS1.SSS1.Px4.p1.1.3" class="ltx_text ltx_font_typewriter">CTV<sub id="S4.SS1.SSS1.Px4.p1.1.3.1" class="ltx_sub">1</sub> R2 is derivative of CTV<sub id="S4.SS1.SSS1.Px4.p1.1.3.2" class="ltx_sub">0</sub></span> preserves the full, auditable history of this single component.</p>
+</div>
+</section>
+</section>
+</section>
+</section>
+<section id="S5" class="ltx_section">
+<h2 class="ltx_title ltx_title_section">
+<span class="ltx_tag ltx_tag_section">5 </span>Conclusion and Future Work</h2>
+
+<div id="S5.p1" class="ltx_para">
+<p id="S5.p1.1" class="ltx_p">This paper has proposed a structured, temporal model for representing legal norms and their hierarchical components, grounded in <span id="S5.p1.1.1" class="ltx_text ltx_font_bold">IFLA LRMoo</span>. By representing temporal states as a chain of versioned <span id="S5.p1.1.2" class="ltx_text ltx_font_typewriter">F1 Works</span>, our proposal offers a robust, standards-compliant solution for deterministic point-in-time reconstruction of legal texts. The key contributions are:</p>
+<ul id="S5.I1" class="ltx_itemize">
+<li id="S5.I1.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I1.i1.p1" class="ltx_para">
+<p id="S5.I1.i1.p1.1" class="ltx_p"><span id="S5.I1.i1.p1.1.1" class="ltx_text ltx_font_bold">A Two-Tier Expression Model:</span> A clear distinction between a language-agnostic <em id="S5.I1.i1.p1.1.2" class="ltx_emph ltx_font_italic">Temporal Version (TV)</em> and its monolingual realizations, the <em id="S5.I1.i1.p1.1.3" class="ltx_emph ltx_font_italic">Language Versions (LV)</em>, providing a precise mechanism for managing multilingual content.</p>
+</div>
+</li>
+<li id="S5.I1.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I1.i2.p1" class="ltx_para">
+<p id="S5.I1.i2.p1.1" class="ltx_p"><span id="S5.I1.i2.p1.1.1" class="ltx_text ltx_font_bold">Granular Component Versioning:</span> A recursive application of this model to internal components using parallel hierarchies for <em id="S5.I1.i2.p1.1.2" class="ltx_emph ltx_font_italic">Component Concepts</em> and <em id="S5.I1.i2.p1.1.3" class="ltx_emph ltx_font_italic">Component Versions</em>.</p>
+</div>
+</li>
+<li id="S5.I1.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I1.i3.p1" class="ltx_para">
+<p id="S5.I1.i3.p1.1" class="ltx_p"><span id="S5.I1.i3.p1.1.1" class="ltx_text ltx_font_bold">Event-Centric Change Modeling:</span> A scalable event hierarchy that traces an amendment from its precise provision in an amending norm to its exact effect on an amended norm, with each version’s validity and applicability derived from these events.</p>
+</div>
+</li>
+<li id="S5.I1.i4" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I1.i4.p1" class="ltx_para">
+<p id="S5.I1.i4.p1.1" class="ltx_p"><span id="S5.I1.i4.p1.1.1" class="ltx_text ltx_font_bold">Deterministic Reconstruction:</span> A formal structure that provides the unambiguous, verifiable ground truth essential for high-stakes legal applications, in direct contrast to probabilistic generative AI.</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="S5.p2" class="ltx_para">
+<p id="S5.p2.1" class="ltx_p">Future work will focus on three main areas:</p>
+<ul id="S5.I2" class="ltx_itemize">
+<li id="S5.I2.i1" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I2.i1.p1" class="ltx_para">
+<p id="S5.I2.i1.p1.1" class="ltx_p"><span id="S5.I2.i1.p1.1.1" class="ltx_text ltx_font_bold">Full Ontological Implementation:</span> Develop and publish a comprehensive OWL ontology that formally specifies all entities and relationships, ensuring alignment with CIDOC CRM and LRMoo.</p>
+</div>
+</li>
+<li id="S5.I2.i2" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I2.i2.p1" class="ltx_para">
+<p id="S5.I2.i2.p1.1" class="ltx_p"><span id="S5.I2.i2.p1.1.1" class="ltx_text ltx_font_bold">Knowledge Graph Population and Tooling:</span> Implement the model as a large-scale LKG. This involves developing automated pipelines to parse historical legislation and instantiate version and event entities, and creating tools for deterministic point-in-time reconstruction.</p>
+</div>
+</li>
+<li id="S5.I2.i3" class="ltx_item" style="list-style-type:none;">
+<span class="ltx_tag ltx_tag_item">•</span> 
+<div id="S5.I2.i3.p1" class="ltx_para">
+<p id="S5.I2.i3.p1.1" class="ltx_p"><span id="S5.I2.i3.p1.1.1" class="ltx_text ltx_font_bold">Advanced Reasoning and Benchmarks:</span> Build upon the LKG to develop advanced reasoning. A critical step will be creating benchmarks to rigorously test the model’s ability to perform flawless, deterministic reconstruction.</p>
+</div>
+</li>
+</ul>
+</div>
+<div id="S5.p3" class="ltx_para">
+<p id="S5.p3.1" class="ltx_p">In an era dominated by probabilistic models, a robust descriptive model such as this provides the precise, versioned textual facts—the <span id="S5.p3.1.1" class="ltx_text ltx_font_bold">verifiable ground truth</span>—that are essential for building reliable Legal Knowledge Graphs. We frame this model as a foundational prerequisite for effective computational law, providing the deterministic and auditable factual layer required for trustworthy legal AI systems.</p>
+</div>
+</section>
+<section id="bib" class="ltx_bibliography">
+<h2 class="ltx_title ltx_title_bibliography">References</h2>
+
+<ul id="bib.L1" class="ltx_biblist">
+<li id="bib.bib15" class="ltx_bibitem ltx_bib_inproceedings">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[1]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">A. Boer, R. Winkels, and F. Vitali</span><span class="ltx_text ltx_bib_year"> (2020)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Legal knowledge extraction for knowledge graph based question-answering</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Legal Knowledge and Information Systems: JURIX 2020: The Thirty-third Annual Conference</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_series">Frontiers in Artificial Intelligence and Applications</span>, Vol. <span class="ltx_text ltx_bib_volume">334</span>, <span class="ltx_text ltx_bib_place">Amsterdam, The Netherlands</span>, <span class="ltx_text ltx_bib_pages"> pp. 143–147</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.3233/FAIA200859" title="" class="ltx_ref doi ltx_bib_external">Document</a>,
+<span class="ltx_text isbn ltx_bib_external">ISBN 978-1-64368-150-6</span></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S2.SS2.p5.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>.
+</span>
+</li>
+<li id="bib.bib4" class="ltx_bibitem ltx_bib_misc">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[2]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">L. Cai <span class="ltx_text ltx_bib_etal">et al.</span></span><span class="ltx_text ltx_bib_year"> (2024)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">A survey on temporal knowledge graph: representation learning and applications</span>.
+</span>
+<span class="ltx_bibblock">Note: <span class="ltx_text ltx_bib_note">[preprint]arXiv:2403.04782</span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib3" class="ltx_bibitem ltx_bib_misc">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[3]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">Z. Chen, D. Li, X. Zhao, B. Hu, and M. Zhang</span><span class="ltx_text ltx_bib_year"> (2023)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Temporal knowledge question answering via abstract reasoning induction</span>.
+</span>
+<span class="ltx_bibblock">Note: <span class="ltx_text ltx_bib_note">[Preprint]arXiv preprint arXiv:2311.09149v2. Available from: <a href="https://arxiv.org/abs/2311.09149v2" title="" class="ltx_ref ltx_url ltx_font_typewriter">https://arxiv.org/abs/2311.09149v2</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib1" class="ltx_bibitem ltx_bib_incollection">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[4]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">J. A. De Oliveira Lima, M. Palmirani, and F. Vitali</span><span class="ltx_text ltx_bib_year"> (2008)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Moving in the time: an ontology for identifying legal resources</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Legal Knowledge and Information Systems</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_pages"> pp. 15–24</span>.
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>,
+<a href="#S2.SS2.p2.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>.
+</span>
+</li>
+<li id="bib.bib18" class="ltx_bibitem ltx_bib_report">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[5]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">European Commission</span><span class="ltx_text ltx_bib_year"> (2014)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">European legislation identifier (ELI): technical specification for legal documents</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_type">Technical report</span>
+</span>
+<span class="ltx_bibblock"> <span class="ltx_text ltx_bib_publisher">ISA² Programme</span>.
+</span>
+<span class="ltx_bibblock">Note: <span class="ltx_text ltx_bib_note">Accessed: 2025-11-11</span>
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://op.europa.eu/en/web/eli" title="" class="ltx_ref ltx_bib_external">Link</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S2.SS2.p3.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>,
+<a href="#S3.p9.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+<li id="bib.bib16" class="ltx_bibitem ltx_bib_incollection">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[6]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">A. Gangemi, M. T. Sagri, and D. Tiscornia</span><span class="ltx_text ltx_bib_year"> (2003)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">A constructive framework for legal ontologies</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Law and the Semantic Web</span>,  <span class="ltx_text ltx_bib_editor">V. R. Benjamins, P. Casanovas, J. Breuker, and A. Gangemi (Eds.)</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_series">Lecture Notes in Computer Science</span>, Vol. <span class="ltx_text ltx_bib_volume">3369</span>, <span class="ltx_text ltx_bib_pages"> pp. 97–124</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1007/978-3-540-32253-5%5F7" title="" class="ltx_ref doi ltx_bib_external">Document</a>,
+<span class="ltx_text isbn ltx_bib_external">ISBN 978-3-540-25063-0</span></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S2.SS2.p5.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>.
+</span>
+</li>
+<li id="bib.bib25" class="ltx_bibitem ltx_bib_inproceedings">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[7]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">S. Gottschalk and E. Demidova</span><span class="ltx_text ltx_bib_year"> (2018)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">EventKG: a multilingual event-centric temporal knowledge graph</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">The Semantic Web — ESWC 2018</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_series">Lecture Notes in Computer Science</span>, Vol. <span class="ltx_text ltx_bib_volume">10843</span>, <span class="ltx_text ltx_bib_place">Cham</span>, <span class="ltx_text ltx_bib_pages"> pp. 272–287</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1007/978-3-319-93417-4%5F18" title="" class="ltx_ref doi ltx_bib_external">Document</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S3.p4.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+<li id="bib.bib5" class="ltx_bibitem ltx_bib_report">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[8]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">IFLA LRMoo Working Group and CIDOC CRM Special Interest Group</span><span class="ltx_text ltx_bib_year"> (2024-04)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">LRMoo: object-oriented definition and mapping from the ifla library reference model</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_type">Technical report</span>
+</span>
+<span class="ltx_bibblock">Technical Report <span class="ltx_text ltx_bib_number">Version 1.0</span>,  <span class="ltx_text ltx_bib_publisher">IFLA</span>.
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p2.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>,
+<a href="#S2.SS1.p1.1" title="2.1 LRMoo Overview ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.1</span></a>.
+</span>
+</li>
+<li id="bib.bib2" class="ltx_bibitem ltx_bib_misc">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[9]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">D. Küçük and F. Can</span><span class="ltx_text ltx_bib_year"> (2025)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Computational law: datasets, benchmarks, and ontologies</span>.
+</span>
+<span class="ltx_bibblock">Note: <span class="ltx_text ltx_bib_note">[preprint]arXiv:2503.04305</span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib14" class="ltx_bibitem ltx_bib_misc">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[10]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">J. Lai, W. Gan, J. Wu, Z. Qi, and P. S. Yu</span><span class="ltx_text ltx_bib_year"> (2024)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Large language models in law: a survey</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><span class="ltx_text ltx_bib_external">2312.03718</span>,
+<a href="https://arxiv.org/abs/2312.03718" title="" class="ltx_ref ltx_bib_external">Link</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p2.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib11" class="ltx_bibitem ltx_bib_inproceedings">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[11]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">A. Louis, G. van Dijck, and G. Spanakis</span><span class="ltx_text ltx_bib_year"> (2024)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Interpretable long-form legal question answering with retrieval-augmented large language models</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Proceedings of the AAAI Conference on Artificial Intelligence</span>,
+</span>
+<span class="ltx_bibblock">Vol. <span class="ltx_text ltx_bib_volume">38</span>, <span class="ltx_text ltx_bib_pages"> pp. 22266–22275</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1609/aaai.v38i20.30223" title="" class="ltx_ref doi ltx_bib_external">Document</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib12" class="ltx_bibitem ltx_bib_inproceedings">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[12]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">M. Moens, E. Boiy, R. M. Palau, and C. Reed</span><span class="ltx_text ltx_bib_year"> (2007)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Automatic detection of arguments in legal texts</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Proceedings of the 11th International Conference on Artificial Intelligence and Law</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_series">ICAIL ’07</span>, <span class="ltx_text ltx_bib_place">New York, NY, USA</span>, <span class="ltx_text ltx_bib_pages"> pp. 225–230</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1145/1276318.1276362" title="" class="ltx_ref doi ltx_bib_external">Document</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p1.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib23" class="ltx_bibitem ltx_bib_report">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[13]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">N. Noy, A. Rector, P. Hayes, and C. Welty</span><span class="ltx_text ltx_bib_year"> (2006-04)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Defining n-ary relations on the semantic web</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_type">Technical report</span>
+</span>
+<span class="ltx_bibblock"> <span class="ltx_text ltx_bib_publisher">W3C Working Group Note</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://www.w3.org/TR/swbp-n-aryRelations/" title="" class="ltx_ref ltx_bib_external">Link</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S3.p4.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+<li id="bib.bib13" class="ltx_bibitem ltx_bib_article">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[14]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">B. Padiu, R. Iacob, T. Rebedea, and M. Dascalu</span><span class="ltx_text ltx_bib_year"> (2024)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">To what extent have llms reshaped the legal domain so far? a scoping literature review</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_journal">Information</span> <span class="ltx_text ltx_bib_volume">15</span> (<span class="ltx_text ltx_bib_number">11</span>), <span class="ltx_text ltx_bib_pages"> pp. 662</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.3390/info15110662" title="" class="ltx_ref doi ltx_bib_external">Document</a>,
+<a href="https://www.mdpi.com/2078-2489/15/11/662" title="" class="ltx_ref ltx_bib_external">Link</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p2.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>.
+</span>
+</li>
+<li id="bib.bib22" class="ltx_bibitem ltx_bib_inproceedings">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[15]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">M. Palmirani and R. Brighi</span><span class="ltx_text ltx_bib_year"> (2006)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Time model for managing the dynamic of normative system</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Electronic Government (EGOV 2006)</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_series">Lecture Notes in Computer Science</span>, Vol. <span class="ltx_text ltx_bib_volume">4084</span>, <span class="ltx_text ltx_bib_pages"> pp. 207–218</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1007/11823100%5F19" title="" class="ltx_ref doi ltx_bib_external">Document</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S3.p9.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+<li id="bib.bib7" class="ltx_bibitem ltx_bib_incollection">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[16]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">M. Palmirani and F. Vitali</span><span class="ltx_text ltx_bib_year"> (2011)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Akoma-ntoso for legal documents</span>.
+</span>
+<span class="ltx_bibblock">In <span class="ltx_text ltx_bib_inbook">Legislative XML for the Semantic Web: Principles, Models, Standards for Document Management</span>,
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_pages"> pp. 75–100</span>.
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S1.p2.1" title="1 Introduction ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§1</span></a>,
+<a href="#S2.SS2.p1.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>.
+</span>
+</li>
+<li id="bib.bib17" class="ltx_bibitem ltx_bib_report">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[17]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">Projeto LexML Brasil</span><span class="ltx_text ltx_bib_year"> (2008)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Modelo de referência lexml</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_type">Technical report</span>
+</span>
+<span class="ltx_bibblock"> <span class="ltx_text ltx_bib_publisher">Senado Federal</span>,  <span class="ltx_text ltx_bib_place">Brasília</span>.
+</span>
+<span class="ltx_bibblock">Note: <span class="ltx_text ltx_bib_note">Parte 1</span>
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://projeto.lexml.gov.br/documentacao/Parte-1-Modelo-de-Referencia.pdf" title="" class="ltx_ref ltx_bib_external">Link</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S2.SS2.p2.1" title="2.2 Related Standards: Akoma Ntoso, LexML Brazil, and ELI ‣ 2 Background and Related Work ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§2.2</span></a>.
+</span>
+</li>
+<li id="bib.bib24" class="ltx_bibitem ltx_bib_article">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[18]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">M. Rospocher, M. Van Erp, P. Vossen, A. Fokkens, I. Aldabe, G. Rigau, A. Soroa, T. Plowman, and J. Lambert</span><span class="ltx_text ltx_bib_year"> (2016)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Building event-centric knowledge graphs from news</span>.
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_journal">Journal of Web Semantics</span> <span class="ltx_text ltx_bib_volume">37</span>, <span class="ltx_text ltx_bib_pages"> pp. 132–151</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><a href="https://dx.doi.org/10.1016/j.websem.2015.12.004" title="" class="ltx_ref doi ltx_bib_external">Document</a></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S3.p4.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+<li id="bib.bib26" class="ltx_bibitem ltx_bib_book">
+<span class="ltx_tag ltx_bib_key ltx_role_refnum ltx_tag_bibitem">[19]</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_author">R. T. Snodgrass</span><span class="ltx_text ltx_bib_year"> (1999)</span>
+</span>
+<span class="ltx_bibblock"><span class="ltx_text ltx_bib_title">Developing time-oriented database applications in SQL</span>.
+</span>
+<span class="ltx_bibblock"> <span class="ltx_text ltx_bib_publisher">Morgan Kaufmann</span>, <span class="ltx_text ltx_bib_place">San Francisco</span>.
+</span>
+<span class="ltx_bibblock">External Links: <span class="ltx_text ltx_bib_links"><span class="ltx_text isbn ltx_bib_external">ISBN 978-1-55860-436-0</span></span>
+</span>
+<span class="ltx_bibblock ltx_bib_cited">Cited by: <a href="#S3.p9.1" title="3 LRMoo-Based Representation of Legal Norms ‣ Modeling the Diachronic Evolution of Legal Norms: An LRMoo-Based, Component-Level, Event-Centric Approach to Legal Knowledge Graphs" class="ltx_ref"><span class="ltx_text ltx_ref_tag">§3</span></a>.
+</span>
+</li>
+</ul>
+</section>
+</article>
+</div>
+</div>
+<footer class="arxiv-html-footer">
+  <div class="ltx_page_logo">
+    Experimental support, please
+    <a href="./2506.07853v5/__stdout.txt" class="ltx_ref"
+    target="_blank" rel="nofollow">view the build logs</a>
+    for errors. Generated by
+    <a href="https://math.nist.gov/~BMiller/LaTeXML/" target="_blank" class="ltx_ref ltx_LaTeXML_logo">
+      <span style="letter-spacing: -0.2em; margin-right: 0.1em;">
+        L
+        <span style="font-size: 70%; position: relative; bottom: 2.2pt;">A</span>
+        T
+        <span style="position: relative; bottom: -0.4ex;">E</span>
+      </span>
+      <span class="ltx_font_smallcaps">xml</span>
+      <img alt="[LOGO]"
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAAOCAYAAAD5YeaVAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9wKExQZLWTEaOUAAAAddEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIFRoZSBHSU1Q72QlbgAAAdpJREFUKM9tkL+L2nAARz9fPZNCKFapUn8kyI0e4iRHSR1Kb8ng0lJw6FYHFwv2LwhOpcWxTjeUunYqOmqd6hEoRDhtDWdA8ApRYsSUCDHNt5ul13vz4w0vWCgUnnEc975arX6ORqN3VqtVZbfbTQC4uEHANM3jSqXymFI6yWazP2KxWAXAL9zCUa1Wy2tXVxheKA9YNoR8Pt+aTqe4FVVVvz05O6MBhqUIBGk8Hn8HAOVy+T+XLJfLS4ZhTiRJgqIoVBRFIoric47jPnmeB1mW/9rr9ZpSSn3Lsmir1fJZlqWlUonKsvwWwD8ymc/nXwVBeLjf7xEKhdBut9Hr9WgmkyGEkJwsy5eHG5vN5g0AKIoCAEgkEkin0wQAfN9/cXPdheu6P33fBwB4ngcAcByHJpPJl+fn54mD3Gg0NrquXxeLRQAAwzAYj8cwTZPwPH9/sVg8PXweDAauqqr2cDjEer1GJBLBZDJBs9mE4zjwfZ85lAGg2+06hmGgXq+j3+/DsixYlgVN03a9Xu8jgCNCyIegIAgx13Vfd7vdu+FweG8YRkjXdWy329+dTgeSJD3ieZ7RNO0VAXAPwDEAO5VKndi2fWrb9jWl9Esul6PZbDY9Go1OZ7PZ9z/lyuD3OozU2wAAAABJRU5ErkJggg==">
+    </a>.
+  </div>
+  <div class="keyboard-glossary">
+    <h2>Instructions for reporting errors</h2>
+    <p>We are continuing to improve HTML versions of papers, and your feedback helps enhance accessibility and mobile
+      support. To report errors in the HTML that will help us improve conversion and rendering, choose any of the
+      methods listed below:</p>
+    <ul>
+      <li>Click the "Report Issue" <span class="mobile-only">(<svg role="presentation"
+            style="display: inline-block; vertical-align: middle; fill: var(--text-color);" aria-hidden="true"
+            height="1em" viewBox="0 0 640 640">
+            <path
+              d="M224 160C224 107 267 64 320 64C373 64 416 107 416 160L416 163.6C416 179.3 403.3 192 387.6 192L252.5 192C236.8 192 224.1 179.3 224.1 163.6L224.1 160zM569.6 172.8C580.2 186.9 577.3 207 563.2 217.6L465.4 290.9C470.7 299.8 474.7 309.6 477.2 320L576 320C593.7 320 608 334.3 608 352C608 369.7 593.7 384 576 384L480 384L480 416C480 418.6 479.9 421.3 479.8 423.9L563.2 486.4C577.3 497 580.2 517.1 569.6 531.2C559 545.3 538.9 548.2 524.8 537.6L461.7 490.3C438.5 534.5 395.2 566.5 344 574.2L344 344C344 330.7 333.3 320 320 320C306.7 320 296 330.7 296 344L296 574.2C244.8 566.5 201.5 534.5 178.3 490.3L115.2 537.6C101.1 548.2 81 545.3 70.4 531.2C59.8 517.1 62.7 497 76.8 486.4L160.2 423.9C160.1 421.3 160 418.7 160 416L160 384L64 384C46.3 384 32 369.7 32 352C32 334.3 46.3 320 64 320L162.8 320C165.3 309.6 169.3 299.8 174.6 290.9L76.8 217.6C62.7 207 59.8 186.9 70.4 172.8C81 158.7 101.1 155.8 115.2 166.4L224 248C236.3 242.9 249.8 240 264 240L376 240C390.2 240 403.7 242.8 416 248L524.8 166.4C538.9 155.8 559 158.7 569.6 172.8z" />
+          </svg>)</span> button, located in the page header.</li>
+    </ul>
+    <p><strong>Tip:</strong> You can select the relevant text first, to include it in your report.</p>
+    <p>Our team has already identified <a class="ltx_ref" href="https://github.com/arXiv/html_feedback/issues"
+        target="_blank">the following issues</a>. We appreciate your time reviewing and reporting rendering errors we
+      may not have found yet. Your efforts will help us improve the HTML versions for all readers, because disability
+      should not be a barrier to accessing research. Thank you for your continued support in championing open access for
+      all.</p>
+    <p>Have a free development cycle? Help support accessibility at arXiv! Our collaborators at LaTeXML maintain a <a
+        class="ltx_ref" href="https://github.com/brucemiller/LaTeXML/wiki/Porting-LaTeX-packages-for-LaTeXML"
+        target="_blank">list of packages that need conversion</a>, and welcome <a class="ltx_ref"
+        href="https://github.com/brucemiller/LaTeXML/issues" target="_blank">developer contributions</a>.</p>
+  </div>
+</footer><footer class="ds-site-footer">
+  <div class="ds-site-footer-grid">
+    <div class="ds-site-footer-main">
+      <div class="ds-site-footer-ack">
+        We gratefully acknowledge support from
+        our <strong>major funders</strong>,
+        <a href="https://info.arxiv.org/about/ourmembers.html"><strong>member institutions</strong></a><span class="ack-member-inline" hidden>, <strong></strong></span>,
+        and all contributors.
+      </div>
+      <nav class="ds-site-footer-links" aria-label="Site navigation">
+        <a href="https://info.arxiv.org/about">About</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help">Help</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/contact.html">Contact</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/subscribe">Subscribe</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/license/index.html">Copyright</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/policies/privacy_policy.html">Privacy</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://info.arxiv.org/help/web_accessibility.html">Accessibility</a>
+        <span class="ds-site-footer-sep" aria-hidden="true">&middot;</span>
+        <a href="https://status.arxiv.org" target="_blank" rel="noopener noreferrer">Operational Status<span class="is-sr-only"> (opens in new tab)</span></a>
+      </nav>
+    </div>
+
+    <div class="ds-site-footer-funders" aria-label="Major funders">
+      <div class="ds-site-footer-funders-label">Major funding support from</div>
+      <div class="ds-site-footer-funders-logos">
+        <a class="ds-funder-link" href="https://www.simonsfoundation.org/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/simons-foundation.png" alt="Simons Foundation">
+        </a>
+        <a class="ds-funder-link" href="https://www.sfi.org.bm/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/simons-foundation-international.png" alt="Simons Foundation International">
+        </a>
+        <a class="ds-funder-link" href="https://www.schmidtsciences.org/" target="_blank" rel="noopener noreferrer">
+          <img class="ds-funder-logo" src="/static/base/1.0.1/images/funders/schmidt-sciences.png" alt="Schmidt Sciences">
+        </a>
+      </div>
+    </div>
+  </div>
+</footer><div id="fixed-buttons-container">
+  <a id="disable-reading-mode-btn" class="header-button" href="javascript:toggleReadingMode();"
+    title="Disable reading mode, show header and footer">
+    <svg role="presentation" height="1.25rem"
+      viewBox="0 0 448 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.-->
+      <path
+        d="M0 96C0 78.3 14.3 64 32 64l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 128C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32l384 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 288c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32L32 448c-17.7 0-32-14.3-32-32s14.3-32 32-32l384 0c17.7 0 32 14.3 32 32z" />
+    </svg>
+  </a>
+</div></body>
+</html>

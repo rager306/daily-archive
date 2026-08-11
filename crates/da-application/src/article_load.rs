@@ -628,6 +628,26 @@ mod tests {
     }
 
     #[test]
+    fn versioned_locator_report_preserves_revision_but_unit_key_is_canonical() {
+        let mock = MockSourceAcquisition::catalog_hit_pdf(
+            "2506.07853",
+            "article_catalog/arxiv/cs-ai/2506.07853/source/2506.07853v1.pdf",
+            "v1-sha",
+        );
+        let uc = ArticleLoadUseCase::new(&mock);
+        let report = uc.run(
+            "https://arxiv.org/html/2506.07853v1",
+            &AcquisitionPolicy::ensure_only(),
+        );
+        assert!(report.ok, "errors={:?}", report.errors);
+        assert_eq!(report.unit_key.as_deref(), Some("2506.07853"));
+        assert_eq!(report.locator.canonical_key(), "2506.07853");
+        assert_eq!(report.locator.source_key(), "2506.07853v1");
+        assert_eq!(report.locator.arxiv_revision(), Some(1));
+        assert!(!report.import_eligible);
+    }
+
+    #[test]
     fn textbook_ensure_stamps_container_not_graph_edges() {
         let mock = MockSourceAcquisition::catalog_hit_html_textbook(
             "gnn-ch-chapters__01-intro-to-graphs",

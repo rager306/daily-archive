@@ -104,7 +104,7 @@ pub use load::{
     AcquisitionPolicy, ArticleLocator, AssetDisposition, LOAD_REPORT_SCHEMA_VERSION,
     LoadAssetRecord, LoadCacheRecord, LoadDomainError, LoadFinding, LoadQueueRecord,
     LoadQueueTaskRef, LoadReport, LoadRunMode, LoadStageName, LoadStageSet, PrimaryContentKind,
-    StageStatus, try_normalize_arxiv_id,
+    StageStatus, try_normalize_arxiv_id, try_parse_arxiv_locator,
 };
 pub use pdf_classification::{
     OCR_REASON_NO_TEXT, OCR_REASON_SCANNED, OCR_REASON_SUSPECTED_GARBLED_TEXT,

@@ -82,6 +82,10 @@ cargo build -p da-cli
 ./target/debug/da load 'https://arxiv.org/abs/2608.07067' --allow-network --stages ingest+extract \
   --output artifacts/article_context/paper_2608.07067.sgsnap \
   --report artifacts/loads/2608.07067.json
+# Exact arXiv revision: canonical Paper id stays versionless, source bytes/cache do not.
+./target/debug/da load 'https://arxiv.org/html/2506.07853v1' --allow-network \
+  --stages ingest+extract --cache-root artifacts/pipeline_cache/2506.07853v1 \
+  --output artifacts/article_context/paper_2506.07853v1.sgsnap
 # Optional TeX source sidecar (+ inventory) under catalog:
 ./target/debug/da load 2608.07067 --allow-network --stages ensure --include-tex-source
 

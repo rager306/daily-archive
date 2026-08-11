@@ -20,8 +20,13 @@ pub const LOAD_REPORT_SCHEMA_VERSION: &str = "load-report.v1";
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum ArticleLocator {
-    /// Versionless arXiv id (modern `YYMM.NNNNN` or legacy `cat/NNNNNNN`).
-    Arxiv { id: String },
+    /// Versionless canonical arXiv id plus an optional requested source revision.
+    /// Revision selects bytes/provenance only; it must never fork Paper identity.
+    Arxiv {
+        id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        revision: Option<u32>,
+    },
     /// Offline catalog pin: `catalog:<source_code>/.../<unit_key>`.
     Catalog {
         source_code: String,
@@ -50,8 +55,8 @@ impl ArticleLocator {
 
         // Prefer arXiv normalize before local-path heuristics: URLs ending in
         // `.pdf` must not be misclassified as Local (ADR-056 locator honesty).
-        if let Some(id) = try_normalize_arxiv_id(trimmed) {
-            return Ok(Self::Arxiv { id });
+        if let Some((id, revision)) = try_parse_arxiv_locator(trimmed) {
+            return Ok(Self::Arxiv { id, revision });
         }
 
         if looks_like_local_path(trimmed) && !looks_like_url(trimmed) {
@@ -74,10 +79,30 @@ impl ArticleLocator {
         }
     }
 
-    /// Stable id-like key for reports (not always a paper id).
+    /// Requested arXiv source revision, separate from canonical graph identity.
+    pub fn arxiv_revision(&self) -> Option<u32> {
+        match self {
+            Self::Arxiv { revision, .. } => *revision,
+            _ => None,
+        }
+    }
+
+    /// Source-selection key. For arXiv this includes `vN` when explicitly
+    /// requested; other locator families use their canonical key unchanged.
+    pub fn source_key(&self) -> String {
+        match self {
+            Self::Arxiv {
+                id,
+                revision: Some(revision),
+            } => format!("{id}v{revision}"),
+            _ => self.canonical_key().to_string(),
+        }
+    }
+
+    /// Stable id-like key for reports and canonical Paper identity.
     pub fn canonical_key(&self) -> &str {
         match self {
-            Self::Arxiv { id } => id.as_str(),
+            Self::Arxiv { id, .. } => id.as_str(),
             Self::Catalog { catalog_path, .. } => catalog_path.as_str(),
             Self::Local { path } => path.as_str(),
             Self::Raw { value } => value.as_str(),
@@ -122,9 +147,10 @@ fn looks_like_local_path(s: &str) -> bool {
         || s.ends_with(".md")
 }
 
-/// Normalize arXiv abs/pdf/html URLs and bare ids to versionless modern/legacy id.
-/// Returns `None` if the string is not an arXiv locator.
-pub fn try_normalize_arxiv_id(raw: &str) -> Option<String> {
+/// Parse arXiv abs/pdf/html URLs and bare ids into a versionless canonical id
+/// plus an optional requested revision. Revision zero and malformed suffixes
+/// are rejected rather than silently treated as latest.
+pub fn try_parse_arxiv_locator(raw: &str) -> Option<(String, Option<u32>)> {
     let mut candidate = raw.trim().to_string();
     if candidate.is_empty() {
         return None;
@@ -167,21 +193,31 @@ pub fn try_normalize_arxiv_id(raw: &str) -> Option<String> {
         candidate = head.to_string();
     }
 
-    // Strip version suffix vN
-    if let Some(pos) = candidate.rfind('v') {
-        let (base, ver) = candidate.split_at(pos);
-        if ver.len() > 1 && ver[1..].chars().all(|c| c.is_ascii_digit()) && !base.is_empty() {
-            candidate = base.to_string();
-        }
-    }
-
     candidate = candidate.trim().trim_end_matches('/').to_string();
 
-    if is_modern_arxiv_id(&candidate) || is_legacy_arxiv_id(&candidate) {
-        Some(candidate)
+    let (canonical, revision) = if let Some(pos) = candidate.rfind('v') {
+        let (base, suffix) = candidate.split_at(pos);
+        if suffix.len() <= 1 || !suffix[1..].chars().all(|c| c.is_ascii_digit()) || base.is_empty()
+        {
+            return None;
+        }
+        let revision = suffix[1..].parse::<u32>().ok().filter(|value| *value > 0)?;
+        (base.to_string(), Some(revision))
+    } else {
+        (candidate, None)
+    };
+
+    if is_modern_arxiv_id(&canonical) || is_legacy_arxiv_id(&canonical) {
+        Some((canonical, revision))
     } else {
         None
     }
+}
+
+/// Backward-compatible canonical identity helper. Source-selection callers that
+/// need revision fidelity must use [`try_parse_arxiv_locator`].
+pub fn try_normalize_arxiv_id(raw: &str) -> Option<String> {
+    try_parse_arxiv_locator(raw).map(|(id, _revision)| id)
 }
 
 fn is_modern_arxiv_id(s: &str) -> bool {
@@ -532,20 +568,55 @@ mod tests {
     #[test]
     fn normalize_arxiv_bare_and_url() {
         let cases = [
-            ("2602.04837", "2602.04837"),
-            ("arxiv:2602.04837", "2602.04837"),
-            ("https://arxiv.org/abs/2602.04837", "2602.04837"),
-            ("https://arxiv.org/pdf/2602.04837.pdf", "2602.04837"),
-            ("https://arxiv.org/html/2602.04837v1", "2602.04837"),
-            ("https://export.arxiv.org/pdf/2602.04837v2", "2602.04837"),
-            ("2507.19457v3", "2507.19457"),
+            ("2602.04837", "2602.04837", None),
+            ("arxiv:2602.04837", "2602.04837", None),
+            ("https://arxiv.org/abs/2602.04837", "2602.04837", None),
+            ("https://arxiv.org/pdf/2602.04837.pdf", "2602.04837", None),
+            ("https://arxiv.org/html/2602.04837v1", "2602.04837", Some(1)),
+            (
+                "https://export.arxiv.org/pdf/2602.04837v2",
+                "2602.04837",
+                Some(2),
+            ),
+            ("2507.19457v3", "2507.19457", Some(3)),
         ];
-        for (raw, want) in cases {
+        for (raw, want_id, want_revision) in cases {
             let loc = ArticleLocator::parse(raw).expect(raw);
             match loc {
-                ArticleLocator::Arxiv { id } => assert_eq!(id, want, "raw={raw}"),
+                ArticleLocator::Arxiv { id, revision } => {
+                    assert_eq!(id, want_id, "raw={raw}");
+                    assert_eq!(revision, want_revision, "raw={raw}");
+                }
                 other => panic!("expected Arxiv for {raw}, got {other:?}"),
             }
+        }
+    }
+
+    #[test]
+    fn versioned_locator_keeps_canonical_key_and_roundtrips() {
+        let loc = ArticleLocator::parse("https://arxiv.org/html/2506.07853v1").unwrap();
+        assert_eq!(loc.canonical_key(), "2506.07853");
+        assert_eq!(loc.source_key(), "2506.07853v1");
+        assert_eq!(loc.arxiv_revision(), Some(1));
+        let json = serde_json::to_value(&loc).unwrap();
+        assert_eq!(json["kind"], "arxiv");
+        assert_eq!(json["id"], "2506.07853");
+        assert_eq!(json["revision"], 1);
+        let decoded: ArticleLocator = serde_json::from_value(json).unwrap();
+        assert_eq!(decoded, loc);
+
+        let bare = serde_json::to_value(ArticleLocator::parse("2506.07853").unwrap()).unwrap();
+        assert!(bare.get("revision").is_none());
+    }
+
+    #[test]
+    fn malformed_or_zero_revision_is_not_normalized_as_latest() {
+        for raw in ["2506.07853v0", "2506.07853v", "2506.07853vabc"] {
+            assert!(try_parse_arxiv_locator(raw).is_none(), "raw={raw}");
+            assert!(matches!(
+                ArticleLocator::parse(raw).unwrap(),
+                ArticleLocator::Raw { .. }
+            ));
         }
     }
 
@@ -553,9 +624,21 @@ mod tests {
     fn normalize_legacy_arxiv() {
         let loc = ArticleLocator::parse("hep-th/9901001").unwrap();
         match loc {
-            ArticleLocator::Arxiv { id } => assert_eq!(id, "hep-th/9901001"),
+            ArticleLocator::Arxiv { id, revision } => {
+                assert_eq!(id, "hep-th/9901001");
+                assert_eq!(revision, None);
+            }
             other => panic!("{other:?}"),
         }
+
+        let versioned = ArticleLocator::parse("hep-th/9901001v2").unwrap();
+        assert!(matches!(
+            versioned,
+            ArticleLocator::Arxiv {
+                ref id,
+                revision: Some(2)
+            } if id == "hep-th/9901001"
+        ));
     }
 
     #[test]

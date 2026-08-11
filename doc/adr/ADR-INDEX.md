@@ -27,6 +27,7 @@ listed here — see `legacy/doc/adr/`.
 | [055](ADR-055-article-context-assurance-plane.md) | Article Context Assurance Plane | Accepted | 2026-08-09 |
 | [056](ADR-056-universal-article-acquisition-load-plane.md) | Universal Article Acquisition and Load Plane | Accepted | 2026-08-10 |
 | [057](ADR-057-non-article-knowledge-unit-ontology.md) | Non-Article Knowledge Unit Ontology (Textbook / Chapter) | Proposed | 2026-08-11 |
+| [058](ADR-058-article-revision-expression-ontology.md) | Article Revision Expression Ontology | Proposed | 2026-08-11 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
@@ -70,6 +71,8 @@ ADR-045 (validator)          ──replaced──► ADR-050 (da-ontology crate)
 ADR-040 (Samyama schemaless) ──layered──► ADR-050 (ontology as data)
 ADR-044 (schema lifecycle)   ──hosted──► ADR-050 (ontology crate)
 ADR-046/047/048/049 (data)   ──moved──► ADR-050 (YAML ontology files)
+ADR-037 (paper versions)      ──specified──► ADR-058 (revision expressions)
+ADR-056 (source revision)     ──projected──► ADR-058 (revision-aware graph)
 ```
 
 ## Template

@@ -1,5 +1,27 @@
 # Changelog
 
+### M374 exact arXiv revision acquisition and ontology boundary
+
+- Fixed a live revision-fidelity bug: `https://arxiv.org/html/2506.07853v1`
+  previously stripped `v1` before acquisition and processed latest/v5 bytes.
+- `ArticleLocator::Arxiv` now carries versionless canonical `id` plus optional
+  numeric `revision`; malformed/zero revisions do not silently normalize to latest.
+- arXiv acquisition selects exact `<id>vN` PDF/HTML/TeX URLs and catalog assets,
+  never reuses bare latest for a versioned request, and stores separate
+  `article.vN.{json,html}` provenance with both PDF and HTML source variants.
+- Default snapshot paths use source identity (`paper_<id>vN.sgsnap`) while Paper
+  identity and load `unit_key` remain versionless.
+- Real v1 proof: PDF `bd601ac0…`, HTML `0e11dbd…`, 20 sections, 3 entities;
+  exact hashes match independent fetch and differ from v5/latest.
+- Real v5 proof: PDF `aa6e247b…`, HTML `4dc4abdd…`, 13 sections, 2 entities;
+  v1 and v5 coexist under one canonical catalog unit without overwrite.
+- Cold/replay cache is revision-separated; offline hits require neither network
+  nor `FD_API_KEY`; D127 remains false.
+- Added Proposed ADR-058 + draft DATA for `PaperRevision`/`SourceManifestation`.
+  No production ontology node or edge is materialized before explicit acceptance.
+- Governor now blocks ADR-058 draft labels/edges leaking into production ontology;
+  negative fixture passes with the full 32-test governor suite.
+
 ### M373 reliable cached 28-unit textbook hub
 
 - Batch `LoadReport` persistence is atomic and fail-closed; serialization, directory,

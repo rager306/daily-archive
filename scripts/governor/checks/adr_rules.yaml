@@ -474,3 +474,34 @@ rules:
     rationale: "da load CLI must not materialize non-article structure graph nodes/edges."
     suffix_allowlist:
       - .rs
+
+  # --- ADR-058 Proposed: article revision ontology remains draft-only ---
+  - id: production_node_schemas_must_not_list_paper_revision
+    anchor: "ADR-058 Proposed (article revision expression ontology not Accepted)"
+    severity: high
+    scan: data/ontology/node_schemas.yaml
+    pattern: "label:\\s*PaperRevision"
+    rationale: "PaperRevision must remain under data/ontology/drafts until ADR-058 acceptance and runtime ontology proof."
+
+  - id: production_node_schemas_must_not_list_source_manifestation
+    anchor: "ADR-058 Proposed (source manifestation ontology not Accepted)"
+    severity: high
+    scan: data/ontology/node_schemas.yaml
+    pattern: "label:\\s*SourceManifestation"
+    rationale: "SourceManifestation must remain draft-only until ADR-058 acceptance."
+
+  - id: production_edge_contracts_must_not_list_revision_edges
+    anchor: "ADR-058 Proposed (revision graph edges not Accepted)"
+    severity: high
+    scan: data/ontology/edge_contracts.yaml
+    pattern: "edge_type:\\s*(HAS_REVISION|HAS_MANIFESTATION)"
+    rationale: "Revision-expression edges are draft-only until ADR-058 acceptance."
+
+  - id: load_plane_must_not_materialize_revision_ontology
+    anchor: "ADR-056 + ADR-058 (acquisition revision is provenance, not accepted graph truth)"
+    severity: high
+    scan: crates/da-application/src/article_load.rs
+    pattern: "create_node\\(\\\"(PaperRevision|SourceManifestation)\\\"\\)|HAS_REVISION|HAS_MANIFESTATION"
+    rationale: "ArticleLoadUseCase may preserve requested revision but must not materialize Proposed ADR-058 ontology."
+    suffix_allowlist:
+      - .rs

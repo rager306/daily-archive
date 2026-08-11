@@ -53,6 +53,34 @@ def test_clean_workspace_has_zero_violations():
     assert report.violations_count == 0, f"Expected 0 violations, got {report.violations_count}"
 
 
+def test_proposed_article_revision_ontology_leak_is_caught():
+    """ADR-058 labels may exist in drafts but not production ontology YAML."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "data" / "ontology" / "node_schemas.yaml",
+        "- label: PaperRevision\n  required_fields: []\n",
+    )
+    _write(
+        root / "data" / "ontology" / "drafts" / "article_revision_contracts.yaml",
+        "- label: PaperRevision\n",
+    )
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
+    audit = AuditService(scanner=scanner, rule_repo=rule_repo)
+    report = audit.run_audit()
+
+    violations = [
+        v
+        for result in report.results
+        if result.rule.id == "production_node_schemas_must_not_list_paper_revision"
+        for v in result.violations
+    ]
+    assert len(violations) == 1
+    assert violations[0].file.endswith("data/ontology/node_schemas.yaml")
+
+
 def test_kg_crate_da_dependency_caught():
     """Governor should catch kg-* crate depending on da-*."""
     root = _make_root()

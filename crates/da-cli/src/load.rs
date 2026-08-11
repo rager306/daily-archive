@@ -893,12 +893,10 @@ async fn run_with_acq<A: SourceAcquisitionPort + ?Sized>(
 }
 
 fn default_snapshot_path(locator: &str) -> Option<PathBuf> {
-    let id = da_domain::try_normalize_arxiv_id(locator).or_else(|| {
-        da_domain::ArticleLocator::parse(locator)
-            .ok()
-            .map(|l| l.canonical_key().to_string())
-    })?;
-    let safe = id.replace('/', "_");
+    let source_key = da_domain::ArticleLocator::parse(locator)
+        .ok()
+        .map(|locator| locator.source_key())?;
+    let safe = source_key.replace('/', "_");
     Some(PathBuf::from(format!(
         "artifacts/article_context/paper_{safe}.sgsnap"
     )))
@@ -998,6 +996,22 @@ mod tests {
         );
         let nan = encode_f32_le(&[f32::NAN]);
         assert!(decode_f32_le(&nan, 1).unwrap_err().contains("non-finite"));
+    }
+
+    #[test]
+    fn default_snapshot_path_keeps_requested_arxiv_revision() {
+        assert_eq!(
+            default_snapshot_path("https://arxiv.org/html/2506.07853v1"),
+            Some(PathBuf::from(
+                "artifacts/article_context/paper_2506.07853v1.sgsnap"
+            ))
+        );
+        assert_eq!(
+            default_snapshot_path("2506.07853"),
+            Some(PathBuf::from(
+                "artifacts/article_context/paper_2506.07853.sgsnap"
+            ))
+        );
     }
 
     #[test]

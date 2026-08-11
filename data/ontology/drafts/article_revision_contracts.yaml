@@ -1,0 +1,58 @@
+# DRAFT ONLY — ADR-058 Proposed. OntologyRegistry ignores data/ontology/drafts/.
+schema_version: article-revision-contracts.draft.v1
+status: proposed
+adr: ADR-058
+
+node_schemas:
+  - label: PaperRevision
+    required_fields:
+      - {name: vid, field_type: String}
+      - {name: paper_vid, field_type: String}
+      - {name: source_code, field_type: String}
+      - {name: source_key, field_type: String}
+      - {name: revision, field_type: Integer}
+      - {name: content_identity_sha256, field_type: String}
+      - {name: is_current, field_type: Boolean}
+      - {name: import_eligible, field_type: Boolean}
+      - {name: schema_version, field_type: Integer}
+    optional_fields:
+      - {name: published_at, field_type: DateTime}
+      - {name: retrieval_eligible, field_type: Boolean}
+
+  - label: SourceManifestation
+    required_fields:
+      - {name: vid, field_type: String}
+      - {name: revision_vid, field_type: String}
+      - {name: format, field_type: String}
+      - {name: sha256, field_type: String}
+      - {name: bytes, field_type: Integer}
+      - {name: uri, field_type: String}
+      - {name: path, field_type: String}
+      - {name: capture_status, field_type: String}
+      - {name: import_eligible, field_type: Boolean}
+      - {name: schema_version, field_type: Integer}
+    optional_fields:
+      - {name: media_type, field_type: String}
+      - {name: captured_at, field_type: DateTime}
+      - {name: retrieval_eligible, field_type: Boolean}
+
+edge_contracts:
+  - edge_type: HAS_REVISION
+    source_label: Paper
+    target_labels: [PaperRevision]
+    rationale: Canonical scholarly work has this immutable source expression.
+
+  - edge_type: HAS_MANIFESTATION
+    source_label: PaperRevision
+    target_labels: [SourceManifestation]
+    rationale: Revision expression is represented by this captured PDF HTML TEI or TeX manifestation.
+
+  - edge_type: SUPERSEDES
+    source_label: PaperRevision
+    target_labels: [PaperRevision]
+    rationale: Newer observed revision supersedes the previous observed revision without deleting history.
+
+  - edge_type: hasPart
+    source_label: PaperRevision
+    target_labels: [Section]
+    rationale: Section structure belongs to one immutable revision expression, not directly to all versions of the work.

@@ -5,7 +5,10 @@
 //! layout — **no Python process boundary**.
 
 use crate::http_fetch::{http_get_bytes, http_get_first_valid};
-use da_domain::{AcquisitionPolicy, ArticleLocator, AssetDisposition, PrimaryContentKind};
+use da_domain::{
+    AcquisitionPolicy, ArticleLocator, AssetDisposition, PrimaryContentKind,
+    try_parse_arxiv_locator,
+};
 use da_ports::{
     AcquisitionError, EnsuredAsset, EnsuredAssets, EnsuredPrimary, ResolvedArticleRef,
     SourceAcquisitionPort,
@@ -38,8 +41,8 @@ impl ArxivSourceAcquisition {
         self
     }
 
-    fn find_pdf(&self, arxiv_id: &str) -> Option<PathBuf> {
-        let name = format!("{arxiv_id}.pdf");
+    fn find_pdf(&self, source_key: &str) -> Option<PathBuf> {
+        let name = format!("{source_key}.pdf");
         find_named_file(&self.catalog_root, &name)
     }
 
@@ -101,6 +104,8 @@ impl ArxivSourceAcquisition {
     fn fetch_native(
         &self,
         arxiv_id: &str,
+        source_key: &str,
+        revision: Option<u32>,
         include_html: bool,
         include_tex: bool,
     ) -> Result<(PathBuf, Vec<EnsuredAsset>), AcquisitionError> {
@@ -119,18 +124,19 @@ impl ArxivSourceAcquisition {
             AcquisitionError::Infrastructure(format!("mkdir {}: {e}", source_dir.display()))
         })?;
 
-        let pdf_path = source_dir.join(format!("{arxiv_id}.pdf"));
-        if !pdf_path.is_file() {
+        let pdf_path = source_dir.join(format!("{source_key}.pdf"));
+        let requested_pdf_url = format!("https://arxiv.org/pdf/{source_key}");
+        let pdf_resolved_url = if !pdf_path.is_file() {
             let urls = [
-                format!("https://arxiv.org/pdf/{arxiv_id}.pdf"),
-                format!("https://arxiv.org/pdf/{arxiv_id}"),
-                format!("https://export.arxiv.org/pdf/{arxiv_id}"),
+                format!("https://arxiv.org/pdf/{source_key}"),
+                format!("https://arxiv.org/pdf/{source_key}.pdf"),
+                format!("https://export.arxiv.org/pdf/{source_key}"),
             ];
             let url_refs: Vec<&str> = urls.iter().map(String::as_str).collect();
             let (src_url, bytes) =
                 http_get_first_valid(&url_refs, Some(&self.user_agent), validate_pdf)?;
             atomic_write(&pdf_path, &bytes)?;
-            let _ = src_url;
+            src_url
         } else {
             // Validate existing
             let existing = fs::read(&pdf_path).map_err(|e| {
@@ -139,28 +145,39 @@ impl ArxivSourceAcquisition {
             validate_pdf(&existing).map_err(|e| {
                 AcquisitionError::Infrastructure(format!("existing PDF invalid: {e}"))
             })?;
-        }
+            requested_pdf_url.clone()
+        };
 
-        let html_path = unit_root.join("article.html");
+        let html_name = revision
+            .map(|value| format!("article.v{value}.html"))
+            .unwrap_or_else(|| "article.html".into());
+        let html_path = unit_root.join(html_name);
+        let requested_html_url = format!("https://arxiv.org/html/{source_key}");
+        let mut html_resolved_url = None;
         if include_html && !html_path.is_file() {
             let html_urls = [
-                format!("https://arxiv.org/html/{arxiv_id}"),
-                format!("https://ar5iv.labs.arxiv.org/html/{arxiv_id}"),
+                requested_html_url.clone(),
+                format!("https://ar5iv.labs.arxiv.org/html/{source_key}"),
             ];
             let hrefs: Vec<&str> = html_urls.iter().map(String::as_str).collect();
-            if let Ok((_url, bytes)) =
-                http_get_first_valid(&hrefs, Some(&self.user_agent), validate_html)
-            {
-                let _ = atomic_write(&html_path, &bytes);
+            match http_get_first_valid(&hrefs, Some(&self.user_agent), validate_html) {
+                Ok((url, bytes)) => {
+                    atomic_write(&html_path, &bytes)?;
+                    html_resolved_url = Some(url);
+                }
+                Err(error) => {
+                    tracing::warn!(%arxiv_id, %source_key, %error, "optional versioned HTML sidecar unavailable");
+                }
             }
-            // HTML is optional sidecar — ignore fetch failure.
+        } else if html_path.is_file() {
+            html_resolved_url = Some(requested_html_url.clone());
         }
 
         let mut extra = Vec::new();
         if include_tex {
             match ensure_tex_source(
                 &unit_root,
-                arxiv_id,
+                source_key,
                 &self.catalog_root,
                 &self.user_agent,
                 true,
@@ -177,13 +194,36 @@ impl ArxivSourceAcquisition {
             AcquisitionError::Infrastructure(format!("read {}: {e}", pdf_path.display()))
         })?;
         let sha = sha256_bytes(&pdf_bytes);
+        let html_capture = if html_path.is_file() {
+            let bytes = fs::read(&html_path).map_err(|e| {
+                AcquisitionError::Infrastructure(format!("read {}: {e}", html_path.display()))
+            })?;
+            Some(CapturedHtml {
+                path: html_path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("article.html")
+                    .to_string(),
+                sha256: sha256_bytes(&bytes),
+                bytes: bytes.len() as u64,
+                requested_url: requested_html_url,
+                fetched_from_url: html_resolved_url,
+            })
+        } else {
+            None
+        };
         write_article_json(
             &unit_root,
             arxiv_id,
+            source_key,
+            revision,
             &category,
             &title,
             &sha,
             pdf_bytes.len() as u64,
+            &requested_pdf_url,
+            &pdf_resolved_url,
+            html_capture.as_ref(),
         )?;
 
         Ok((pdf_path, extra))
@@ -236,7 +276,7 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
         }
 
         let (unit_key, catalog_path) = match locator {
-            ArticleLocator::Arxiv { id } => (id.clone(), None),
+            ArticleLocator::Arxiv { id, .. } => (id.clone(), None),
             ArticleLocator::Catalog {
                 catalog_path,
                 source_code,
@@ -278,9 +318,11 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
         resolved: &ResolvedArticleRef,
         policy: &AcquisitionPolicy,
     ) -> Result<EnsuredAssets, AcquisitionError> {
-        if let Some(pdf) = self.find_pdf(&resolved.unit_key) {
+        let source_key = resolved.locator.source_key();
+        let revision = resolved.locator.arxiv_revision();
+        if let Some(pdf) = self.find_pdf(&source_key) {
             let extra = if policy.include_tex_source && !policy.dry_run {
-                self.ensure_tex_sidecars(&pdf, &resolved.unit_key, policy.allow_network)
+                self.ensure_tex_sidecars(&pdf, &source_key, policy.allow_network)
             } else {
                 Vec::new()
             };
@@ -289,21 +331,23 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
 
         if !policy.allow_network {
             return Err(AcquisitionError::NetworkDenied(format!(
-                "PDF for {} not under {}; pass --allow-network to fetch",
-                resolved.unit_key,
+                "PDF for exact source {} not under {}; pass --allow-network to fetch",
+                source_key,
                 self.catalog_root.display()
             )));
         }
 
         if policy.dry_run {
             return Err(AcquisitionError::MissingAsset(format!(
-                "dry_run: would fetch {} via network",
-                resolved.unit_key
+                "dry_run: would fetch exact source {} via network",
+                source_key
             )));
         }
 
         let (pdf, extra) = self.fetch_native(
             &resolved.unit_key,
+            &source_key,
+            revision,
             policy.include_html,
             policy.include_tex_source,
         )?;
@@ -663,13 +707,27 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), AcquisitionError> {
     Ok(())
 }
 
+struct CapturedHtml {
+    path: String,
+    sha256: String,
+    bytes: u64,
+    requested_url: String,
+    fetched_from_url: Option<String>,
+}
+
+#[allow(clippy::too_many_arguments)]
 fn write_article_json(
     unit_root: &Path,
     arxiv_id: &str,
+    source_key: &str,
+    revision: Option<u32>,
     category: &str,
     title: &str,
     pdf_sha: &str,
     pdf_bytes: u64,
+    requested_pdf_url: &str,
+    resolved_pdf_url: &str,
+    html: Option<&CapturedHtml>,
 ) -> Result<(), AcquisitionError> {
     let catalog_path = format!("arxiv/{category}/{arxiv_id}");
     let title = if title.is_empty() {
@@ -677,6 +735,40 @@ fn write_article_json(
     } else {
         title.to_string()
     };
+    let variant_suffix = revision
+        .map(|value| format!("v{value}"))
+        .unwrap_or_else(|| "latest".into());
+    let pdf_variant_id = format!("{arxiv_id}:source:{variant_suffix}:pdf");
+    let mut source_variants = vec![serde_json::json!({
+        "variant_id": pdf_variant_id,
+        "source_role": "primary_pdf",
+        "source_format": "pdf",
+        "is_primary": true,
+        "path": format!("source/{source_key}.pdf"),
+        "sha256": pdf_sha,
+        "byte_size": pdf_bytes,
+        "capture_status": "captured_local",
+        "network_fetch_attempted": true,
+        "requested_url": requested_pdf_url,
+        "fetched_from_url": resolved_pdf_url,
+        "requested_revision": revision
+    })];
+    if let Some(html) = html {
+        source_variants.push(serde_json::json!({
+            "variant_id": format!("{arxiv_id}:source:{variant_suffix}:html"),
+            "source_role": "alternate_html",
+            "source_format": "html",
+            "is_primary": false,
+            "path": html.path,
+            "sha256": html.sha256,
+            "byte_size": html.bytes,
+            "capture_status": "captured_local",
+            "network_fetch_attempted": true,
+            "requested_url": html.requested_url,
+            "fetched_from_url": html.fetched_from_url,
+            "requested_revision": revision
+        }));
+    }
     let article = serde_json::json!({
         "schema_version": "article.v00.01",
         "article_key": arxiv_id,
@@ -691,40 +783,43 @@ fn write_article_json(
             "canonical_url": format!("https://arxiv.org/abs/{arxiv_id}"),
             "citation_key": arxiv_id.replace('.', "_")
         },
+        "requested_source": {
+            "source_key": source_key,
+            "revision": revision,
+            "versioned": revision.is_some()
+        },
         "domain_profile": "scientific_paper",
         "source_strategy": {
-            "primary_source_variant_id": format!("{arxiv_id}:source:pdf"),
+            "primary_source_variant_id": pdf_variant_id,
             "preferred_content_order": ["pdf", "html"],
             "pdf_policy": "primary",
             "parser_readiness": "grobid_pdf",
             "graph_readiness": "not_claimed"
         },
-        "source_variants": [{
-            "variant_id": format!("{arxiv_id}:source:pdf"),
-            "source_role": "primary_pdf",
-            "source_format": "pdf",
-            "is_primary": true,
-            "path": format!("source/{arxiv_id}.pdf"),
-            "sha256": pdf_sha,
-            "byte_size": pdf_bytes,
-            "capture_status": "captured_local",
-            "network_fetch_attempted": true
-        }],
+        "source_variants": source_variants,
         "safety_flags": {
             "trusted_kg_import_allowed": false,
             "production_ladybugdb_write_allowed": false
         }
     });
-    let path = unit_root.join("article.json");
+    let metadata_name = revision
+        .map(|value| format!("article.v{value}.json"))
+        .unwrap_or_else(|| "article.json".into());
+    let path = unit_root.join(&metadata_name);
     let bytes = serde_json::to_vec_pretty(&article)
-        .map_err(|e| AcquisitionError::Infrastructure(format!("serialize article.json: {e}")))?;
+        .map_err(|e| AcquisitionError::Infrastructure(format!("serialize {metadata_name}: {e}")))?;
     atomic_write(&path, &bytes)
 }
 
 fn sibling_html(pdf: &Path) -> Option<PathBuf> {
     let unit_root = pdf.parent()?.parent()?;
-    let html = unit_root.join("article.html");
-    if html.is_file() { Some(html) } else { None }
+    let source_stem = pdf.file_stem()?.to_str()?;
+    let revision = try_parse_arxiv_locator(source_stem)?.1;
+    let name = revision
+        .map(|value| format!("article.v{value}.html"))
+        .unwrap_or_else(|| "article.html".into());
+    let html = unit_root.join(name);
+    html.is_file().then_some(html)
 }
 
 fn sha256_file(path: &Path) -> std::io::Result<String> {
@@ -784,6 +879,15 @@ mod tests {
     use std::io::Write;
 
     fn write_fixture(root: &Path, arxiv_id: &str, pdf_bytes: &[u8]) -> PathBuf {
+        write_source_fixture(root, arxiv_id, arxiv_id, pdf_bytes)
+    }
+
+    fn write_source_fixture(
+        root: &Path,
+        arxiv_id: &str,
+        source_key: &str,
+        pdf_bytes: &[u8],
+    ) -> PathBuf {
         let dir = root
             .join("article_catalog")
             .join("arxiv")
@@ -791,7 +895,7 @@ mod tests {
             .join(arxiv_id)
             .join("source");
         fs::create_dir_all(&dir).unwrap();
-        let pdf = dir.join(format!("{arxiv_id}.pdf"));
+        let pdf = dir.join(format!("{source_key}.pdf"));
         let mut f = fs::File::create(&pdf).unwrap();
         f.write_all(pdf_bytes).unwrap();
         pdf
@@ -814,6 +918,112 @@ mod tests {
         assert!(assets.catalog_hit);
         assert_eq!(assets.primary.kind, PrimaryContentKind::Pdf);
         assert!(!assets.assets.iter().any(|a| a.kind == "tex_tar"));
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn versioned_request_never_reuses_bare_latest_pdf() {
+        let root = std::env::temp_dir().join(format!(
+            "da-arxiv-acq-version-isolation-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        write_fixture(&root, "2506.07853", b"%PDF-1.4 bare latest");
+
+        let acq = ArxivSourceAcquisition::new(&root);
+        let loc = ArticleLocator::parse("https://arxiv.org/html/2506.07853v1").unwrap();
+        let resolved = acq.resolve(&loc).unwrap();
+        assert_eq!(resolved.unit_key, "2506.07853");
+        assert_eq!(resolved.locator.source_key(), "2506.07853v1");
+        let err = acq
+            .ensure_assets(&resolved, &AcquisitionPolicy::ensure_only())
+            .unwrap_err();
+        assert!(matches!(err, AcquisitionError::NetworkDenied(_)));
+        assert!(err.to_string().contains("2506.07853v1"));
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn versioned_catalog_hit_reports_versioned_pdf_and_html() {
+        let root =
+            std::env::temp_dir().join(format!("da-arxiv-acq-version-hit-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let pdf = write_source_fixture(
+            &root,
+            "2506.07853",
+            "2506.07853v1",
+            b"%PDF-1.4 requested v1",
+        );
+        let html = pdf
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("article.v1.html");
+        fs::write(&html, b"<!doctype html><title>v1</title>").unwrap();
+
+        let acq = ArxivSourceAcquisition::new(&root);
+        let loc = ArticleLocator::parse("2506.07853v1").unwrap();
+        let resolved = acq.resolve(&loc).unwrap();
+        let assets = acq
+            .ensure_assets(&resolved, &AcquisitionPolicy::ensure_only())
+            .unwrap();
+        assert!(assets.catalog_hit);
+        assert!(assets.primary.path.ends_with("source/2506.07853v1.pdf"));
+        assert!(
+            assets
+                .assets
+                .iter()
+                .any(|asset| asset.path.ends_with("article.v1.html"))
+        );
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn versioned_metadata_is_separate_and_lists_captured_variants() {
+        let root =
+            std::env::temp_dir().join(format!("da-arxiv-acq-version-meta-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("article.json"), b"{\"latest\":true}").unwrap();
+        let html = CapturedHtml {
+            path: "article.v1.html".into(),
+            sha256: "html-sha".into(),
+            bytes: 42,
+            requested_url: "https://arxiv.org/html/2506.07853v1".into(),
+            fetched_from_url: Some("https://arxiv.org/html/2506.07853v1".into()),
+        };
+        write_article_json(
+            &root,
+            "2506.07853",
+            "2506.07853v1",
+            Some(1),
+            "cs-ai",
+            "Example",
+            "pdf-sha",
+            100,
+            "https://arxiv.org/pdf/2506.07853v1",
+            "https://arxiv.org/pdf/2506.07853v1",
+            Some(&html),
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(root.join("article.json")).unwrap(),
+            b"{\"latest\":true}"
+        );
+        let value: serde_json::Value =
+            serde_json::from_slice(&fs::read(root.join("article.v1.json")).unwrap()).unwrap();
+        assert_eq!(value["article_key"], "2506.07853");
+        assert_eq!(value["requested_source"]["revision"], 1);
+        assert_eq!(value["requested_source"]["source_key"], "2506.07853v1");
+        assert_eq!(value["source_variants"].as_array().unwrap().len(), 2);
+        assert_eq!(value["source_variants"][0]["source_format"], "pdf");
+        assert_eq!(value["source_variants"][1]["source_format"], "html");
 
         let _ = fs::remove_dir_all(&root);
     }

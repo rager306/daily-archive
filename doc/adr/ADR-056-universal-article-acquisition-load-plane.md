@@ -220,8 +220,11 @@ later implementation waves. Omitting them from the ADR is how rework happens.
 #### A. Identity & locator
 
 1. **Normalized external identity** per provider (versionless arXiv id; stable
-   catalog key; content digest for anonymous local PDF).
-2. **Raw locator preserved** on the report for audit (URL as typed, user input).
+   catalog key; content digest for anonymous local PDF). A requested arXiv `vN`
+   is a typed **source selector**, not part of Paper identity; it must survive
+   resolve/acquisition/cache and must never silently fall back to latest.
+2. **Raw locator preserved** on the report for audit (URL as typed, user input),
+   together with the normalized id and optional requested revision.
 3. **Provider discrimination** without stringly-typed `if arxiv` in application.
 4. **Collision policy:** two locators resolving to the same canonical id are the
    same load target; conflicting checksums at the same id are **hard fail**
@@ -476,16 +479,22 @@ For source_code `arxiv`:
 
 ```text
 data/article_catalog/article_catalog/arxiv/<fs_category>/<versionless_id>/
-  article.json
-  article.html                  # optional
+  article.json                  # bare/latest metadata
+  article.html                  # bare/latest optional HTML
+  article.vN.json               # exact requested revision provenance
+  article.vN.html               # exact revision optional HTML
   source/
-    <versionless_id>.pdf        # primary
-    <versionless_id>.tar.gz     # optional TeX
-    <versionless_id>.tex-inventory.json
+    <versionless_id>.pdf        # bare/latest primary
+    <versionless_id>vN.pdf      # exact requested revision primary
+    <source_key>.tar.gz         # optional TeX
+    <source_key>.tex-inventory.json
 ```
 
 - `fs_category` = arXiv category with `.` → `-` (existing convention).
-- Lookup is **versionless id**; accepting `vN` in locators strips version.
+- Catalog unit/Paper lookup is **versionless id**. Asset lookup is exact:
+  accepting `vN` preserves it as `revision: N` and selects `<id>vN` assets.
+- A versioned request must not reuse `<id>.pdf`, overwrite bare/latest assets,
+  or silently fall back to latest. Checksums remain authoritative evidence.
 - HTML/PDF discovery must not require the operator to pass filesystem paths
   when a locator is sufficient.
 
