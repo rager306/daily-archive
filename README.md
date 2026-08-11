@@ -210,6 +210,11 @@ cargo test -p kg-ontology --lib proptest   # TemporalEdge (8)
 cargo test -p da-domain --lib proptest     # EntityType/RelationType/VID/confidence (19)
 cargo test -p da-cli --lib proptest        # graph_tasks parser (6)
 
+# Long corpus materialization progress is on by default (5s heartbeat, 30s stall):
+# PROGRESS phase=first_write wave=1/20 papers=... current=... eta=... mutations=...
+# Override with --progress-interval-seconds N --progress-stall-seconds N.
+# --no-progress disables terminal ticks only; final progress metrics remain in report.
+
 # ADR-051 §8.1 semantic graph task suite (M336–M338)
 cargo run -p da-cli --example graph_task_suite -- \
   --snapshot artifacts/gepa_hub_production/hub.sgsnap \

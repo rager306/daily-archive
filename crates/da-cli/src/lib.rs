@@ -7,6 +7,7 @@ pub mod graph_tasks;
 pub mod health_report;
 pub mod load;
 pub mod logging;
+pub mod materialization_progress;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;
 

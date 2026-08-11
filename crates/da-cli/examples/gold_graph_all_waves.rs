@@ -8,6 +8,9 @@ use da_cli::gold_graph::{
     MaterializationRuntime, atomic_write, catalog_metadata_index, ensure_identity_indexes,
     load_identity_indexes, load_wave_report, materialize_waves, sha256,
 };
+use da_cli::materialization_progress::{
+    MaterializationPhase, MaterializationProgress, ProgressReporter,
+};
 use da_domain::ContentDigest;
 use da_ports::clock::FixedClock;
 use da_ports::graph_store::{DirectGraphStore, GraphStore};
@@ -48,6 +51,15 @@ struct Args {
     identity_indexes: PathBuf,
     #[arg(long, default_value = "data/ontology/node_schemas.yaml")]
     node_schemas: PathBuf,
+    /// Human/structured progress heartbeat interval in seconds.
+    #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u64).range(1..=300))]
+    progress_interval_seconds: u64,
+    /// Emit STALL when no paper/stage boundary advances for this many seconds.
+    #[arg(long, default_value_t = 30, value_parser = clap::value_parser!(u64).range(2..=3600))]
+    progress_stall_seconds: u64,
+    /// Disable heartbeat rendering (structured stage events remain available).
+    #[arg(long, default_value_t = false)]
+    no_progress: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -63,6 +75,7 @@ struct AllWavesReport {
     output_snapshot_sha256: String,
     same_process: bool,
     prepare_workers: usize,
+    progress: da_cli::materialization_progress::MaterializationProgressSnapshot,
     import_eligible: bool,
     materialization: da_cli::gold_graph::MultiWaveMaterialization,
 }
@@ -124,11 +137,21 @@ async fn main() -> Result<()> {
             .cloned()
             .with_context(|| format!("canonical metadata missing for {paper_id}"))
     };
+    let total_papers = reports.iter().map(|report| report.papers.len()).sum();
+    let progress = MaterializationProgress::new(reports.len(), total_papers);
+    let reporter = (!args.no_progress).then(|| {
+        ProgressReporter::spawn(
+            progress.clone(),
+            std::time::Duration::from_secs(args.progress_interval_seconds),
+            std::time::Duration::from_secs(args.progress_stall_seconds),
+        )
+    });
     let runtime = MaterializationRuntime {
         policy_sha256: ContentDigest::of_bytes(&policy_bytes),
         clock,
         prepare_workers,
         metadata: &metadata_lookup,
+        progress: Some(progress.clone()),
     };
     let store: Arc<dyn DirectGraphStore> = concrete.clone();
     let materialization = materialize_waves(
@@ -140,11 +163,18 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    progress.phase(MaterializationPhase::Export, reports.len());
     let snapshot = concrete.export_snapshot().await?;
     let output_snapshot_sha256 = sha256(&snapshot);
     atomic_write(&args.output_snapshot, &snapshot)?;
+    progress.complete();
+    let progress_snapshot =
+        progress.snapshot(std::time::Duration::from_secs(args.progress_stall_seconds));
+    if let Some(reporter) = reporter {
+        reporter.stop();
+    }
     let report = AllWavesReport {
-        schema_version: "gold-graph-all-waves.v1",
+        schema_version: "gold-graph-all-waves.v2",
         manifest_sha256,
         policy_sha256,
         identity_indexes_sha256,
@@ -155,6 +185,7 @@ async fn main() -> Result<()> {
         output_snapshot_sha256,
         same_process: true,
         prepare_workers,
+        progress: progress_snapshot,
         import_eligible: materialization.import_eligible,
         materialization,
     };

@@ -115,6 +115,7 @@ async fn main() -> Result<()> {
         clock,
         prepare_workers,
         metadata: &metadata_lookup,
+        progress: None,
     };
     let store: Arc<dyn DirectGraphStore> = concrete.clone();
     let materialization = materialize_wave(

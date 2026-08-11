@@ -1,5 +1,23 @@
 # Changelog
 
+### M384 S01 observable corpus materialization
+
+- `gold_graph_all_waves` now emits a concise stderr heartbeat every 5 seconds
+  by default and structured tracing events for phase, wave, current paper,
+  completed papers/work units, elapsed/idle time, rolling throughput, ETA,
+  physical mutation counters and stalls. Intervals are bounded CLI options;
+  `--no-progress` disables only rendering, not internal measurement.
+- Materialization progress covers prepare, first write, replay, assurance and
+  export without changing graph order or semantics. The all-waves report is v2
+  and embeds its final progress snapshot.
+- A real 10-paper canary emitted five useful ticks, completed 30/30 work units
+  in 6.8s with 14,857 attempted mutations and D127=false. ABAB runs measured
+  -0.48% apparent overhead (within noise), and progress on/off snapshots had
+  identical strict semantic SHA, graph counts and mutation aggregates.
+- The canary used about one CPU and scaled non-linearly versus the 57-minute
+  200-paper run, reinforcing that serialized fine-grained writes and O(n)
+  identity lookup—not missing worker flags alone—are the next measured targets.
+
 ### M382 S01-S02 typed checkpoint identity evidence
 
 - Bumped corpus checkpoint package to `corpus-required-layer-checkpoint.v2` and

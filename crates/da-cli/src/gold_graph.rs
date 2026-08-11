@@ -127,6 +127,7 @@ pub struct MaterializationRuntime<'a> {
     pub clock: Arc<dyn Clock>,
     pub prepare_workers: usize,
     pub metadata: &'a MetadataLookup<'a>,
+    pub progress: Option<crate::materialization_progress::MaterializationProgress>,
 }
 
 const MAX_INDEX_POLICY_BYTES: u64 = 4 * 1024 * 1024;
@@ -487,6 +488,12 @@ pub async fn materialize_waves(
     let valid_at = runtime.clock.now().to_rfc3339();
     let mut waves: Vec<BatchGraphMaterialization> = Vec::with_capacity(reports.len());
     for report in reports {
+        if let Some(progress) = &runtime.progress {
+            progress.phase(
+                crate::materialization_progress::MaterializationPhase::WaveStart,
+                report.batch,
+            );
+        }
         let wave = materialize_wave(Arc::clone(&store), cache, report, runtime).await?;
         anyhow::ensure!(wave.passed(), "batch {} materialization failed", wave.batch);
         if let Some(previous) = waves.last() {
@@ -603,10 +610,23 @@ pub async fn materialize_wave(
     );
     let assurance = MaterializationAssuranceUseCase::new();
     let graph_before = ingest.graph_stats().await;
+    if let Some(progress) = &runtime.progress {
+        progress.phase(
+            crate::materialization_progress::MaterializationPhase::Prepare,
+            report.batch,
+        );
+    }
     let prepared = prepare_wave(cache, report, runtime.metadata, runtime.prepare_workers)?;
 
     let mut papers = Vec::with_capacity(prepared.len());
     for (paper, artifacts, (primary_domain, source_code)) in &prepared {
+        if let Some(progress) = &runtime.progress {
+            progress.paper_started(
+                crate::materialization_progress::MaterializationPhase::FirstWrite,
+                report.batch,
+                &paper.paper_id,
+            );
+        }
         instrumented.reset().await;
         let first_ingest = ingest
             .materialize_parsed(
@@ -620,13 +640,17 @@ pub async fn materialize_wave(
         let first_extract = extraction
             .materialize_extracted(&artifacts.parsed, artifacts.entities.clone())
             .await?;
+        let first_mutations = instrumented.snapshot().await;
+        if let Some(progress) = &runtime.progress {
+            progress.work_unit_completed(first_mutations);
+        }
         papers.push(PaperGraphMaterialization {
             paper_id: paper.paper_id.clone(),
             source_sha256: paper.source_sha256.clone(),
             artifacts: artifacts.hashes.clone(),
             first: net_writes(&first_ingest, &first_extract),
             replay: NetWrites::default(),
-            first_mutations: instrumented.snapshot().await,
+            first_mutations,
             replay_mutations: MutationCounters::default(),
             assurance: ArticleAssuranceReport::new(
                 paper.paper_id.clone(),
@@ -639,9 +663,16 @@ pub async fn materialize_wave(
     let graph_after_first = ingest.graph_stats().await;
 
     let mut replay_contexts = Vec::with_capacity(prepared.len());
-    for ((_, artifacts, (primary_domain, source_code)), paper_report) in
+    for ((paper, artifacts, (primary_domain, source_code)), paper_report) in
         prepared.into_iter().zip(&mut papers)
     {
+        if let Some(progress) = &runtime.progress {
+            progress.paper_started(
+                crate::materialization_progress::MaterializationPhase::Replay,
+                report.batch,
+                &paper.paper_id,
+            );
+        }
         instrumented.reset().await;
         let replay_ingest = ingest
             .materialize_parsed(
@@ -657,11 +688,21 @@ pub async fn materialize_wave(
             .await?;
         paper_report.replay = net_writes(&replay_ingest, &replay_extract);
         paper_report.replay_mutations = instrumented.snapshot().await;
+        if let Some(progress) = &runtime.progress {
+            progress.work_unit_completed(paper_report.replay_mutations);
+        }
         replay_contexts.push((artifacts.parsed, replay_ingest));
     }
     let d127_unlock_count =
         MaterializationAssuranceUseCase::count_d127_unlocks(&instrumented).await;
     for ((parsed, replay_ingest), paper_report) in replay_contexts.into_iter().zip(&mut papers) {
+        if let Some(progress) = &runtime.progress {
+            progress.paper_started(
+                crate::materialization_progress::MaterializationPhase::Assurance,
+                report.batch,
+                &paper_report.paper_id,
+            );
+        }
         paper_report.assurance = assurance
             .evaluate_graph_with_d127(
                 &instrumented,
@@ -672,6 +713,9 @@ pub async fn materialize_wave(
                 d127_unlock_count,
             )
             .await?;
+        if let Some(progress) = &runtime.progress {
+            progress.paper_completed();
+        }
     }
     let graph_after_replay = ingest.graph_stats().await;
     let replay_zero_writes = papers
