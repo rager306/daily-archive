@@ -26,6 +26,26 @@ pub struct RevisionManifestationInput {
     pub capture_status: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RevisionContentContext {
+    pub source_code: String,
+    pub canonical_id: String,
+    pub revision: u32,
+    pub manifestations: Vec<RevisionManifestationInput>,
+}
+
+impl RevisionContentContext {
+    pub fn revision_vid(&self) -> Result<String, RevisionMaterializationError> {
+        paper_revision_vid(&self.source_code, &self.canonical_id, self.revision)
+            .map_err(RevisionMaterializationError::Invalid)
+    }
+
+    pub fn section_vid(&self, ordinal: usize) -> Result<String, RevisionMaterializationError> {
+        revision_section_vid(&self.revision_vid()?, ordinal)
+            .map_err(RevisionMaterializationError::Invalid)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RevisionMaterializationRequest {
     pub source_code: String,
@@ -449,6 +469,17 @@ impl RevisionMaterializationUseCase {
     }
 }
 
+impl RevisionMaterializationRequest {
+    pub fn context(&self) -> RevisionContentContext {
+        RevisionContentContext {
+            source_code: self.source_code.clone(),
+            canonical_id: self.canonical_id.clone(),
+            revision: self.revision,
+            manifestations: self.manifestations.clone(),
+        }
+    }
+}
+
 fn validate_request(
     request: &RevisionMaterializationRequest,
 ) -> Result<(), RevisionMaterializationError> {
@@ -630,6 +661,127 @@ mod tests {
                 .await
                 .len(),
             1
+        );
+    }
+
+    #[tokio::test]
+    async fn ingest_context_owns_mutable_content_and_sections_on_revision() {
+        let store = MockGraphStore::new();
+        let ingest = crate::ingest::IngestUseCase::materializer_only_with_clock(
+            Arc::new(store.clone()),
+            Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+        );
+        let r1 = request(1, 2);
+        let c1 = r1.context();
+        let out1 = ingest
+            .materialize_parsed_with_context(
+                &r1.parsed,
+                vec![0.1, 0.2],
+                None,
+                Some("arxiv".into()),
+                None,
+                Some(&c1),
+            )
+            .await
+            .unwrap();
+        let r5 = request(5, 3);
+        let c5 = r5.context();
+        let out5 = ingest
+            .materialize_parsed_with_context(
+                &r5.parsed,
+                vec![0.3, 0.4],
+                None,
+                Some("arxiv".into()),
+                None,
+                Some(&c5),
+            )
+            .await
+            .unwrap();
+        assert_eq!(out1.sections_written, 2);
+        assert_eq!(out5.sections_written, 3);
+        assert!(out1.revision_vid.is_some() && out5.revision_vid.is_some());
+        assert_eq!(store.get_nodes_by_label("Paper").await.len(), 1);
+        assert_eq!(store.get_nodes_by_label("PaperRevision").await.len(), 2);
+        assert_eq!(store.get_nodes_by_label("Section").await.len(), 5);
+        let paper = store.get_nodes_by_label("Paper").await[0];
+        assert!(
+            store
+                .get_node_property_string(paper, "embedding_sha256")
+                .await
+                .is_none()
+        );
+        for revision in store.get_nodes_by_label("PaperRevision").await {
+            assert!(
+                store
+                    .get_node_property_string(revision, "embedding_sha256")
+                    .await
+                    .is_some()
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn extraction_found_in_uses_revision_scoped_section() {
+        use da_domain::entity::EntityType;
+        use da_ports::extractor::ExtractedEntity;
+
+        let store = MockGraphStore::new();
+        let ingest = crate::ingest::IngestUseCase::materializer_only_with_clock(
+            Arc::new(store.clone()),
+            Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+        );
+        let req = request(5, 2);
+        let context = req.context();
+        ingest
+            .materialize_parsed_with_context(
+                &req.parsed,
+                vec![0.3, 0.4],
+                None,
+                Some("arxiv".into()),
+                None,
+                Some(&context),
+            )
+            .await
+            .unwrap();
+        let extraction = crate::extraction::ExtractionUseCase::materializer_only_with_clock(
+            Arc::new(store.clone()),
+            Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+        );
+        let out = extraction
+            .materialize_extracted_with_context(
+                &req.parsed,
+                vec![ExtractedEntity {
+                    label: "GEPA".into(),
+                    entity_type: EntityType::Method,
+                    section_title: "Section 1".into(),
+                    section_ordinal: Some(1),
+                    char_start: 0,
+                    char_end: 4,
+                    surface: "GEPA".into(),
+                }],
+                Some(&context),
+            )
+            .await
+            .unwrap();
+        assert_eq!(out.found_in_edges, 1);
+        let section_vid = context.section_vid(1).unwrap();
+        let section = store
+            .find_node_by_string_property("Section", "vid", &section_vid)
+            .await
+            .unwrap();
+        let entity = store.get_nodes_by_label("Entity").await[0];
+        assert_eq!(
+            store
+                .get_edges_between(entity, section, "foundIn")
+                .await
+                .len(),
+            1
+        );
+        assert!(
+            store
+                .find_node_by_string_property("Section", "vid", "vid:section:2506.07853:1")
+                .await
+                .is_none()
         );
     }
 

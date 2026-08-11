@@ -29,8 +29,8 @@ pub use pipeline::{
     StageRunRecord,
 };
 pub use revision_materialization::{
-    RevisionManifestationInput, RevisionMaterializationError, RevisionMaterializationRequest,
-    RevisionMaterializationResult, RevisionMaterializationUseCase,
+    RevisionContentContext, RevisionManifestationInput, RevisionMaterializationError,
+    RevisionMaterializationRequest, RevisionMaterializationResult, RevisionMaterializationUseCase,
 };
 pub use tex_inspect::TexInspectUseCase;
 pub mod batch_ingest;
@@ -139,6 +139,7 @@ mod serde_roundtrip_tests {
             cites_resolved: 35,
             vector_dimensions: 1024,
             graph_node_id: Some(123),
+            revision_vid: None,
             import_eligible: false,
             pdf_classification: None,
         });
@@ -154,6 +155,7 @@ mod serde_roundtrip_tests {
             cites_resolved: 35,
             vector_dimensions: 1024,
             graph_node_id: Some(123),
+            revision_vid: None,
             import_eligible: false,
             pdf_classification: Some(da_domain::PdfClassification {
                 pdf_type: da_domain::PdfType::Text,

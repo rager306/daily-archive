@@ -32,6 +32,7 @@ pub struct LoadIngestOutcome {
     pub section_count: usize,
     pub citation_count: usize,
     pub snapshot_path: Option<String>,
+    pub revision_vid: Option<String>,
     pub import_eligible: bool,
 }
 
@@ -58,6 +59,11 @@ pub struct LoadContentOutcome {
 pub struct LoadContentRequest<'a> {
     pub paper_id: &'a str,
     pub primary_path: &'a Path,
+    /// Typed locator and source identity; avoids reparsing provider/path strings in CLI.
+    pub locator: &'a ArticleLocator,
+    pub source_code: &'a str,
+    /// Exact ensured asset evidence already normalized into load-report records.
+    pub assets: &'a [LoadAssetRecord],
     pub enable_import: bool,
     pub include_extract: bool,
     pub snapshot_output: Option<&'a Path>,
@@ -208,6 +214,9 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                         let req = LoadContentRequest {
                             paper_id: &paper_id,
                             primary_path: &primary_path,
+                            locator: &report.locator,
+                            source_code: &report.source_code,
+                            assets: &report.assets,
                             enable_import: policy.enable_import,
                             include_extract: policy.stages.includes_extract(),
                             snapshot_output,
@@ -231,6 +240,14 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                                         ing.title, ing.citation_count, ing.section_count
                                     ),
                                 });
+                                if let Some(revision_vid) = &ing.revision_vid {
+                                    report.findings.push(LoadFinding {
+                                        code: "revision_graph_ok".into(),
+                                        message: format!(
+                                            "revision_vid={revision_vid} import_eligible=false"
+                                        ),
+                                    });
+                                }
                                 if let Some(ex) = &out.extract {
                                     report.stages.push(StageStatus {
                                         stage: LoadStageName::Extract,
@@ -584,6 +601,10 @@ mod tests {
                     section_count: 2,
                     citation_count: 1,
                     snapshot_path: req.snapshot_output.map(|p| p.display().to_string()),
+                    revision_vid: req
+                        .locator
+                        .arxiv_revision()
+                        .map(|revision| format!("test-revision-{revision}")),
                     import_eligible: false,
                 },
                 extract: if req.include_extract && self.with_extract {

@@ -129,6 +129,14 @@ impl ExtractionUseCase {
         &self,
         parsed: &ParsedArticle,
     ) -> anyhow::Result<ExtractionResult> {
+        self.extract_from_parsed_with_context(parsed, None).await
+    }
+
+    pub async fn extract_from_parsed_with_context(
+        &self,
+        parsed: &ParsedArticle,
+        revision_context: Option<&crate::revision_materialization::RevisionContentContext>,
+    ) -> anyhow::Result<ExtractionResult> {
         // 1. Build (title, text) pairs from parsed sections
         let sections: Vec<(String, String)> = parsed
             .sections
@@ -149,7 +157,8 @@ impl ExtractionUseCase {
             count = extracted.len(),
             "Entities extracted"
         );
-        self.materialize_extracted(parsed, extracted).await
+        self.materialize_extracted_with_context(parsed, extracted, revision_context)
+            .await
     }
 
     /// Materialize already-computed extraction artifacts without invoking the
@@ -160,6 +169,16 @@ impl ExtractionUseCase {
         &self,
         parsed: &ParsedArticle,
         extracted: Vec<ExtractedEntity>,
+    ) -> anyhow::Result<ExtractionResult> {
+        self.materialize_extracted_with_context(parsed, extracted, None)
+            .await
+    }
+
+    pub async fn materialize_extracted_with_context(
+        &self,
+        parsed: &ParsedArticle,
+        extracted: Vec<ExtractedEntity>,
+        revision_context: Option<&crate::revision_materialization::RevisionContentContext>,
     ) -> anyhow::Result<ExtractionResult> {
         // 3. Find the Paper node by arxiv_id (to link entities via MENTIONS)
         let paper_node_id = self
@@ -309,7 +328,10 @@ impl ExtractionUseCase {
                         ordinals[0]
                     }
                 };
-                let section_vid = format!("vid:section:{}:{}", parsed.paper_id, ordinal);
+                let section_vid = match revision_context {
+                    Some(context) => context.section_vid(ordinal)?,
+                    None => format!("vid:section:{}:{}", parsed.paper_id, ordinal),
+                };
                 let Some(section_node) = self
                     .graph_store
                     .find_node_by_string_property("Section", "vid", &section_vid)

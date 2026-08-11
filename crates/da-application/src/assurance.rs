@@ -361,6 +361,7 @@ mod tests {
             cites_resolved: 0,
             vector_dimensions: 3,
             graph_node_id: Some(1),
+            revision_vid: None,
             import_eligible: false,
             pdf_classification: None::<PdfClassification>,
         }

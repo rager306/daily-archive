@@ -9,7 +9,8 @@ use da_adapters::{
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
-    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
+    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome, RevisionContentContext,
+    RevisionManifestationInput,
 };
 use da_domain::{
     AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadCacheRecord, LoadStageSet,
@@ -150,9 +151,18 @@ impl LoadContentPipeline for CliContentPipeline {
             materializer
         };
 
-        let source_code = infer_source_code(&primary_path);
+        let source_code =
+            infer_source_code(&primary_path).or_else(|| Some(req.source_code.to_string()));
+        let revision_context = revision_context_from_load(&req)?;
         let result = materializer
-            .materialize_parsed(&parsed, vector, None, source_code, None)
+            .materialize_parsed_with_context(
+                &parsed,
+                vector,
+                None,
+                source_code,
+                None,
+                revision_context.as_ref(),
+            )
             .await
             .map_err(|e| format!("materialize: {e:#}"))?;
 
@@ -164,7 +174,7 @@ impl LoadContentPipeline for CliContentPipeline {
                 self.store.clone() as Arc<dyn DirectGraphStore>,
             );
             let er = extract_uc
-                .extract_from_parsed(&parsed)
+                .extract_from_parsed_with_context(&parsed, revision_context.as_ref())
                 .await
                 .map_err(|e| format!("extract: {e:#}"))?;
             extract_out = Some(LoadExtractOutcome {
@@ -202,12 +212,59 @@ impl LoadContentPipeline for CliContentPipeline {
                 section_count: result.section_count,
                 citation_count: result.citation_count,
                 snapshot_path,
+                revision_vid: result.revision_vid,
                 import_eligible: result.import_eligible,
             },
             extract: extract_out,
             cache_records,
         })
     }
+}
+
+fn revision_context_from_load(
+    req: &LoadContentRequest<'_>,
+) -> Result<Option<RevisionContentContext>, String> {
+    let Some(revision) = req.locator.arxiv_revision() else {
+        return Ok(None);
+    };
+    let mut manifestations = Vec::new();
+    for asset in req.assets {
+        if asset.kind != "pdf" && asset.kind != "html" {
+            continue;
+        }
+        let sha256 = asset.sha256.clone().ok_or_else(|| {
+            format!(
+                "versioned {} asset lacks sha256: {}",
+                asset.kind, asset.path
+            )
+        })?;
+        let bytes = asset.bytes.ok_or_else(|| {
+            format!(
+                "versioned {} asset lacks byte size: {}",
+                asset.kind, asset.path
+            )
+        })?;
+        manifestations.push(RevisionManifestationInput {
+            format: asset.kind.clone(),
+            sha256,
+            bytes,
+            uri: format!("catalog:{}", asset.path),
+            path: asset.path.clone(),
+            capture_status: "captured_local".into(),
+        });
+    }
+    if manifestations.is_empty() {
+        return Err(format!(
+            "versioned source {} has no checksum-bound PDF/HTML manifestations",
+            req.locator.source_key()
+        ));
+    }
+    Ok(Some(RevisionContentContext {
+        source_code: req.source_code.to_string(),
+        canonical_id: req.paper_id.to_string(),
+        revision,
+        manifestations,
+    }))
 }
 
 fn source_identity_for_primary(

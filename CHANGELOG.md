@@ -1,5 +1,23 @@
 # Changelog
 
+### M375 Wave 3 unified revision content context
+
+- Added typed `RevisionContentContext` across load, ingest, extraction, and
+  revision materialization. Versioned loads now use the same revision VID for
+  mutable content, embeddings, Sections, and extracted `FOUND_IN` provenance.
+- Existing unversioned APIs remain wrappers with `None` context and retain
+  legacy Paper/Section behavior.
+- `LoadContentRequest` carries typed locator/source plus normalized ensured
+  asset evidence; CLI no longer reparses provider strings or metadata files.
+- Versioned ingest stores abstract/hash/counts/vector on PaperRevision, not the
+  canonical Paper work, and avoids duplicate Section creation after the
+  dedicated revision materializer runs.
+- LoadReport now emits `revision_graph_ok` with revision VID and D127 false.
+- Live v1 smoke: parse/embed hit, 20 revision Sections, 3/3 FOUND_IN, 43 nodes,
+  68 edges, no errors, import_eligible=false.
+- Regression matrix: 9 revision-context tests, all 126 da-application tests,
+  7 da-cli load tests, and cross-crate clippy pass.
+
 ### M375 Wave 2 revision-scoped application materializer
 
 - Added dedicated hexagonal `RevisionMaterializationUseCase` over injected

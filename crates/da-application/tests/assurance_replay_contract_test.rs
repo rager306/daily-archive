@@ -56,6 +56,7 @@ fn ingest() -> da_application::ingest::IngestResult {
         cites_resolved: 0,
         vector_dimensions: 0,
         graph_node_id: Some(1),
+        revision_vid: None,
         import_eligible: false,
         pdf_classification: None,
     }

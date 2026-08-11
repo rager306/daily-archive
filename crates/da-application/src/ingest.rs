@@ -46,6 +46,9 @@ pub struct IngestResult {
     pub cites_resolved: usize,     // citations with a resolvable arxiv_id
     pub vector_dimensions: usize,
     pub graph_node_id: Option<u64>,
+    /// Present for versioned content; canonical Paper identity remains unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revision_vid: Option<String>,
     pub import_eligible: bool, // always false (D127)
     /// Pre-GROBID PDF triage when classifier was attached and succeeded (M350).
     /// `None` if no classifier, classify failed, or PDF unreadable for classify.
@@ -248,6 +251,29 @@ impl IngestUseCase {
         source_code: Option<String>,
         pdf_classification: Option<PdfClassification>,
     ) -> anyhow::Result<IngestResult> {
+        self.materialize_parsed_with_context(
+            parsed,
+            vector,
+            primary_domain,
+            source_code,
+            pdf_classification,
+            None,
+        )
+        .await
+    }
+
+    /// Revision-aware materialization boundary. When context is present,
+    /// mutable content properties, embeddings, and Sections belong to the
+    /// immutable PaperRevision rather than the canonical Paper work.
+    pub async fn materialize_parsed_with_context(
+        &self,
+        parsed: &da_ports::parser::ParsedArticle,
+        vector: Vec<f32>,
+        primary_domain: Option<String>,
+        source_code: Option<String>,
+        pdf_classification: Option<PdfClassification>,
+        revision_context: Option<&crate::revision_materialization::RevisionContentContext>,
+    ) -> anyhow::Result<IngestResult> {
         let paper_id = parsed.paper_id.as_str();
         let eligible = self.eligibility.is_eligible();
 
@@ -289,19 +315,7 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_string(node_id, "title", paper.title.clone())
             .await?;
-        self.graph_store
-            .set_node_property_string(node_id, "pdf_hash", parsed.pdf_hash.clone())
-            .await?;
-        self.graph_store
-            .set_node_property_string(node_id, "abstract_text", parsed.abstract_text.clone())
-            .await?;
-        self.graph_store
-            .set_node_property_string(
-                node_id,
-                "abstract_sha256",
-                hex::encode(Sha256::digest(parsed.abstract_text.as_bytes())),
-            )
-            .await?;
+
         if paper_created
             || self
                 .graph_store
@@ -324,6 +338,60 @@ impl IngestUseCase {
             .await?;
         self.graph_store
             .set_node_property_bool(node_id, "retrieval_eligible", true) // D134: live for retrieval
+            .await?;
+
+        let (content_node_id, content_label, revision_vid_value, revision_sections_created) =
+            if let Some(context) = revision_context {
+                anyhow::ensure!(
+                    context.canonical_id == paper_id,
+                    "revision context canonical id '{}' does not match parsed paper '{}'",
+                    context.canonical_id,
+                    paper_id
+                );
+                let request = crate::revision_materialization::RevisionMaterializationRequest {
+                    source_code: context.source_code.clone(),
+                    canonical_id: context.canonical_id.clone(),
+                    revision: context.revision,
+                    parsed: parsed.clone(),
+                    manifestations: context.manifestations.clone(),
+                };
+                let result = crate::revision_materialization::RevisionMaterializationUseCase::new(
+                    self.graph_store.clone(),
+                    self.clock.clone(),
+                )
+                .materialize(&request)
+                .await?;
+                let revision_node = self
+                    .graph_store
+                    .find_node_by_string_property("PaperRevision", "vid", &result.revision_vid)
+                    .await
+                    .context("revision materializer did not expose created PaperRevision")?;
+                (
+                    revision_node,
+                    "PaperRevision",
+                    Some(result.revision_vid),
+                    result.sections_created,
+                )
+            } else {
+                (node_id, "Paper", None, 0)
+            };
+
+        self.graph_store
+            .set_node_property_string(content_node_id, "pdf_hash", parsed.pdf_hash.clone())
+            .await?;
+        self.graph_store
+            .set_node_property_string(
+                content_node_id,
+                "abstract_text",
+                parsed.abstract_text.clone(),
+            )
+            .await?;
+        self.graph_store
+            .set_node_property_string(
+                content_node_id,
+                "abstract_sha256",
+                hex::encode(Sha256::digest(parsed.abstract_text.as_bytes())),
+            )
             .await?;
 
         // ADR-044: create Source node + FROM_SOURCE edge (Layer 0 provenance)
@@ -460,23 +528,26 @@ impl IngestUseCase {
         let section_count = parsed.sections.len();
         let citation_count = parsed.citations.len();
         self.graph_store
-            .set_node_property_int(node_id, "section_count", section_count as i64)
+            .set_node_property_int(content_node_id, "section_count", section_count as i64)
             .await?;
         self.graph_store
-            .set_node_property_int(node_id, "citation_count", citation_count as i64)
+            .set_node_property_int(content_node_id, "citation_count", citation_count as i64)
             .await?;
 
         // 4b. Create Section nodes (Layer 2 Structure — ONTOLOGY-DESIGN)
         // Each section gets a node with title, level, order, text.
         // Linked to Paper via hasPart edge (FaBiO frbr:part).
-        let mut section_nodes = 0usize;
+        let mut section_nodes = revision_sections_created;
         // Map: section_id (stable hash) -> graph node id. Used by ADR-053 Layer A
         // T04 to wire next_sibling / first_child / parent_section edges after
         // all Section nodes are created.
         let mut section_id_map: std::collections::HashMap<String, u64> =
             std::collections::HashMap::new();
         for (i, section) in parsed.sections.iter().enumerate() {
-            let section_vid = format!("vid:section:{}:{}", paper_id, i);
+            let section_vid = match revision_context {
+                Some(context) => context.section_vid(i)?,
+                None => format!("vid:section:{}:{}", paper_id, i),
+            };
             let section_node = match self
                 .graph_store
                 .find_node_by_string_property("Section", "vid", &section_vid)
@@ -524,7 +595,14 @@ impl IngestUseCase {
                 .set_node_property_int(section_node, "order", i as i64)
                 .await?;
             self.graph_store
-                .set_node_property_string(section_node, "work_vid", vid_str.clone())
+                .set_node_property_string(
+                    section_node,
+                    "work_vid",
+                    revision_vid_value
+                        .as_deref()
+                        .unwrap_or(vid_str.as_str())
+                        .to_string(),
+                )
                 .await?;
             self.graph_store
                 .set_node_property_bool(section_node, "retrieval_eligible", true)
@@ -557,14 +635,14 @@ impl IngestUseCase {
             let edge_type = da_domain::relation::structure::HAS_PART;
             if self
                 .graph_store
-                .get_edges_between(node_id, section_node, edge_type)
+                .get_edges_between(content_node_id, section_node, edge_type)
                 .await
                 .is_empty()
             {
                 let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
                 crate::temporal_stamp::create_edge_with_temporal(
                     self.graph_store.as_ref(),
-                    node_id,
+                    content_node_id,
                     section_node,
                     edge_type,
                     &temporal,
@@ -601,7 +679,7 @@ impl IngestUseCase {
         let embedding_sha256 = embedding_fingerprint(&vector);
         match self
             .graph_store
-            .get_node_property_string(node_id, "embedding_sha256")
+            .get_node_property_string(content_node_id, "embedding_sha256")
             .await
         {
             Some(existing) if existing == embedding_sha256 => {}
@@ -610,10 +688,10 @@ impl IngestUseCase {
             ),
             None => {
                 self.graph_store
-                    .add_vector("Paper", "embedding", node_id, vector.clone())
+                    .add_vector(content_label, "embedding", content_node_id, vector.clone())
                     .await?;
                 self.graph_store
-                    .set_node_property_string(node_id, "embedding_sha256", embedding_sha256)
+                    .set_node_property_string(content_node_id, "embedding_sha256", embedding_sha256)
                     .await?;
             }
         }
@@ -794,6 +872,7 @@ impl IngestUseCase {
             cites_resolved,
             vector_dimensions: vector.len(),
             graph_node_id: Some(node_id),
+            revision_vid: revision_vid_value,
             import_eligible: eligible,
             pdf_classification,
         })
