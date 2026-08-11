@@ -779,6 +779,28 @@ def test_forbidden_graph_store_in_cargo_caught():
     assert forbidden[0].severity == "high"
 
 
+def test_boolean_derived_snapshot_waiver_caught():
+    """D229: warning-only derived snapshot bypass must not return."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-cli" / "src" / "checkpoint.rs",
+        "let allow_derived_snapshot = true;",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    violations = [
+        violation
+        for result in report.results
+        if result.rule.id == "no_boolean_derived_snapshot_waiver"
+        for violation in result.violations
+    ]
+    assert len(violations) == 1
+    assert violations[0].severity == "high"
+
+
 def test_kg_crate_da_domain_rust_import_caught():
     """ADR-050: kg-* crate importing da_domain types in Rust source should be caught."""
     root = _make_root()
@@ -847,6 +869,7 @@ def _run_all_tests() -> int:
         test_yaml_rules_load_successfully,
         test_artifact_reader_finds_json_files,
         test_forbidden_graph_store_in_cargo_caught,
+        test_boolean_derived_snapshot_waiver_caught,
         test_kg_crate_da_domain_rust_import_caught,
         test_stale_precommit_package_caught,
     ]

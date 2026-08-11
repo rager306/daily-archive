@@ -53,10 +53,11 @@ struct Args {
     tasks_report: PathBuf,
     #[arg(long, default_value = "daily_archive")]
     graph: String,
-    /// Allow sealing a derived snapshot whose bytes differ from materialization
-    /// output_snapshot_sha256 (e.g. summary/cluster/resolution enriched snaps).
-    #[arg(long, default_value_t = false)]
-    allow_derived_snapshot: bool,
+    /// Ordered producer reports proving exact-byte derivation from materialization.
+    #[arg(long = "derivation-report", value_delimiter = ',')]
+    derivation_reports: Vec<PathBuf>,
+    #[arg(long, default_value = "data/ontology/snapshot_derivation_policy.yaml")]
+    derivation_policy: PathBuf,
 }
 
 #[tokio::main]
@@ -90,19 +91,27 @@ async fn main() -> Result<()> {
         .get("output_snapshot_sha256")
         .and_then(|v| v.as_str())
         .ok_or_else(|| anyhow!("materialization report missing output_snapshot_sha256"))?;
-    if declared_snap_sha != snapshot_sha.as_str() {
-        if args.allow_derived_snapshot {
-            eprintln!(
-                "warning: using derived snapshot (materialization output_snapshot_sha256={} actual={})",
-                declared_snap_sha,
-                snapshot_sha.as_str()
-            );
-        } else {
-            anyhow::bail!(
-                "snapshot bytes diverge from materialization output_snapshot_sha256 (pass --allow-derived-snapshot for enriched snaps)"
-            );
-        }
-    }
+    let checkpoint_snapshot = da_domain::corpus_checkpoint::SnapshotArtifactIdentity {
+        path: display_path(&repo_root, &snapshot_path),
+        physical_sha256: snapshot_sha,
+        semantic_sha256: ContentDigest::try_from(snapshot_identity.semantic_sha256)
+            .map_err(|e| anyhow!("semantic snapshot digest: {e}"))?,
+        semantic_algorithm: snapshot_identity.semantic_algorithm,
+        nodes: snapshot_identity.node_count,
+        edges: snapshot_identity.edge_count,
+    };
+    let derivation_paths = args
+        .derivation_reports
+        .iter()
+        .map(|path| resolve(&repo_root, path))
+        .collect::<Vec<_>>();
+    let snapshot_lineage = da_cli::snapshot_lineage::load_lineage(
+        ContentDigest::try_from(declared_snap_sha.to_string())
+            .map_err(|e| anyhow!("materialization snapshot digest: {e}"))?,
+        &resolve(&repo_root, &args.derivation_policy),
+        &derivation_paths,
+    )?;
+    snapshot_lineage.validate_for(&checkpoint_snapshot)?;
     let import_eligible = mat_json
         .get("import_eligible")
         .and_then(|v| v.as_bool())
@@ -162,15 +171,8 @@ async fn main() -> Result<()> {
         materialization_manifest_sha256: ContentDigest::try_from(manifest_sha.to_string())
             .map_err(|e| anyhow!("manifest digest: {e}"))?,
         materialization_report_sha256: mat_report_sha,
-        snapshot: da_domain::corpus_checkpoint::SnapshotArtifactIdentity {
-            path: display_path(&repo_root, &snapshot_path),
-            physical_sha256: snapshot_sha,
-            semantic_sha256: ContentDigest::try_from(snapshot_identity.semantic_sha256)
-                .map_err(|e| anyhow!("semantic snapshot digest: {e}"))?,
-            semantic_algorithm: snapshot_identity.semantic_algorithm,
-            nodes,
-            edges,
-        },
+        snapshot: checkpoint_snapshot,
+        snapshot_lineage,
         acap_report_path: display_path(&repo_root, &acap_path),
         acap,
         suite_path: display_path(&repo_root, &tasks_path),

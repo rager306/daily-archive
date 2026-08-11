@@ -581,6 +581,34 @@ async fn test_ingest_citation_dedup_shared_reference() {
         "expected dedup: 2 Paper + 2 Section + 1 Citation + 1 Reference = 6 nodes, got {}",
         store.node_count_total()
     );
+    let citation = store.get_nodes_by_label("Citation").await[0];
+    let citation_vid = store
+        .get_node_property_string(citation, "vid")
+        .await
+        .unwrap();
+    assert_eq!(
+        citation_vid,
+        da_domain::vid::citation_arxiv_vid("2301.09999").unwrap()
+    );
+    assert_ne!(citation_vid, da_domain::vid::paper_vid("2301.09999"));
+}
+
+#[tokio::test]
+async fn invalid_arxiv_citation_remains_reference_only() {
+    use da_ports::parser::CitationEntry;
+    let malformed = CitationEntry {
+        raw_text: "Malformed but retained bibliography entry".into(),
+        doi: None,
+        arxiv_id: Some("1410.3916.[Yahyaetal.2012".into()),
+        title: None,
+    };
+    let (ingest, store) = make_ingest_with_citations(vec![], vec![malformed]);
+    let result = batch_ingest_pdfs(&ingest, &[("paper.pdf".into(), "2401.00001".into())], None)
+        .await
+        .unwrap();
+    assert_eq!(result.total_cites_resolved, 0);
+    assert_eq!(store.get_nodes_by_label("Reference").await.len(), 1);
+    assert!(store.get_nodes_by_label("Citation").await.is_empty());
 }
 
 #[tokio::test]

@@ -11,8 +11,21 @@
   and decompressed bounds, emits atomic self-digested evidence, keeps D127
   false, and preserves an existing report when malformed input fails.
 - Migrated both corpus checkpoint compositions to the typed identity contract.
-  Derived lineage is not yet accepted: D229 requires ordered producer-report
-  continuity before the unsafe waiver can be removed in S03.
+- Replaced the historical `--allow-derived-snapshot` warning bypass with a
+  bounded DATA-governed producer-report chain. Domain validation requires exact
+  materialization→stage→actual-byte continuity, unique ordered stages, report
+  hashes, D127=false, and binds the lineage into checkpoint v3 digests.
+- Strict real-corpus fingerprinting exposed 173 global Paper/Citation VID
+  collisions. Added normalized source-qualified `citation_arxiv_vid`; malformed
+  parser claims now remain observable Reference-only evidence instead of
+  becoming false Citation nodes. Rebuilt the 200-paper base/cluster/resolution
+  chain through real producers: 0 duplicate VIDs, 23,836→24,527 nodes and
+  39,295→40,623 edges. Direct and 2-link derived checkpoints PASS; reordered or
+  final-mismatch chains fail before package replacement.
+- Added governor rule `no_boolean_derived_snapshot_waiver` only after executable
+  negative fixtures proved the old bypass. The old corpus summary producer is
+  no longer compatible with revision-owned summary contracts; full summary
+  acceptance remains a separate revision-migration gap rather than being faked.
 
 ### M381 S01-S02 strict semantic snapshot identity
 

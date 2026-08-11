@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use crate::graph_tasks::{GraphTaskClass, TaskClassStatus};
 use crate::{AssuranceVerdict, ContentDigest};
 
-pub const CORPUS_CHECKPOINT_SCHEMA_VERSION: &str = "corpus-required-layer-checkpoint.v2";
+pub const CORPUS_CHECKPOINT_SCHEMA_VERSION: &str = "corpus-required-layer-checkpoint.v3";
 pub const STRICT_SEMANTIC_SNAPSHOT_ALGORITHM: &str = "sgsnap-vid-canonical-json.v1";
 pub const SNAPSHOT_IDENTITY_REPORT_SCHEMA_VERSION: &str = "snapshot-identity-evidence.v1";
 
@@ -66,6 +66,59 @@ impl SnapshotArtifactIdentity {
         if self.nodes == 0 {
             return Err(CorpusCheckpointError::InvalidInput(
                 "snapshot node count must be > 0".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotDerivationLink {
+    pub stage_id: String,
+    pub report_path: String,
+    pub report_sha256: ContentDigest,
+    pub input_physical_sha256: ContentDigest,
+    pub output_physical_sha256: ContentDigest,
+    pub import_eligible: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SnapshotDerivationLineage {
+    pub materialization_physical_sha256: ContentDigest,
+    pub links: Vec<SnapshotDerivationLink>,
+}
+
+impl SnapshotDerivationLineage {
+    pub fn validate_for(
+        &self,
+        actual: &SnapshotArtifactIdentity,
+    ) -> Result<(), CorpusCheckpointError> {
+        let mut expected = &self.materialization_physical_sha256;
+        let mut seen = std::collections::BTreeSet::new();
+        for (index, link) in self.links.iter().enumerate() {
+            if link.stage_id.trim().is_empty() || !seen.insert(link.stage_id.as_str()) {
+                return Err(CorpusCheckpointError::InvalidInput(format!(
+                    "snapshot lineage stage {} is empty or duplicated",
+                    link.stage_id
+                )));
+            }
+            if link.report_path.trim().is_empty() || link.import_eligible {
+                return Err(CorpusCheckpointError::InvalidInput(format!(
+                    "snapshot lineage stage {} has invalid report path or D127 state",
+                    link.stage_id
+                )));
+            }
+            if &link.input_physical_sha256 != expected {
+                return Err(CorpusCheckpointError::InvalidInput(format!(
+                    "snapshot lineage link {index} ({}) input does not match previous output",
+                    link.stage_id
+                )));
+            }
+            expected = &link.output_physical_sha256;
+        }
+        if expected != &actual.physical_sha256 {
+            return Err(CorpusCheckpointError::InvalidInput(
+                "snapshot lineage final output does not match actual physical bytes".into(),
             ));
         }
         Ok(())
@@ -176,6 +229,7 @@ pub struct CorpusCheckpointPackage {
     pub materialization_manifest_sha256: ContentDigest,
     pub materialization_report_sha256: ContentDigest,
     pub snapshot: SnapshotArtifactIdentity,
+    pub snapshot_lineage: SnapshotDerivationLineage,
     pub acap: AcapIdentity,
     pub structural_tasks: StructuralTaskEvidence,
     pub required_acap_layers: Vec<String>,
@@ -211,6 +265,9 @@ impl CorpusCheckpointPackage {
         self.snapshot.validate().map_err(|error| {
             CorpusCheckpointError::InvalidPackage(format!("snapshot identity: {error}"))
         })?;
+        self.snapshot_lineage
+            .validate_for(&self.snapshot)
+            .map_err(|error| CorpusCheckpointError::InvalidPackage(error.to_string()))?;
         if self.package_sha256 != package_digest(self) {
             return Err(CorpusCheckpointError::InvalidPackage(
                 "package digest mismatch".into(),
@@ -234,6 +291,7 @@ pub struct SealCorpusCheckpointInput {
     pub materialization_manifest_sha256: ContentDigest,
     pub materialization_report_sha256: ContentDigest,
     pub snapshot: SnapshotArtifactIdentity,
+    pub snapshot_lineage: SnapshotDerivationLineage,
     pub acap: AcapIdentity,
     pub structural_tasks: StructuralTaskEvidence,
     /// When empty, defaults to REQUIRED_STRUCTURAL_TASK_CLASSES.
@@ -252,6 +310,7 @@ pub fn seal_corpus_checkpoint(
         materialization_manifest_sha256,
         materialization_report_sha256,
         snapshot,
+        snapshot_lineage,
         acap,
         structural_tasks,
         required_task_classes: requested_classes,
@@ -265,6 +324,7 @@ pub fn seal_corpus_checkpoint(
         ));
     }
     snapshot.validate()?;
+    snapshot_lineage.validate_for(&snapshot)?;
     if acap.article_count == 0 {
         return Err(CorpusCheckpointError::InvalidInput(
             "article_count must be > 0".into(),
@@ -346,6 +406,7 @@ pub fn seal_corpus_checkpoint(
         materialization_manifest_sha256,
         materialization_report_sha256,
         snapshot,
+        snapshot_lineage,
         acap,
         structural_tasks,
         required_acap_layers: REQUIRED_ACAP_LAYERS
@@ -490,6 +551,10 @@ mod tests {
                 nodes: 23928,
                 edges: 39387,
             },
+            snapshot_lineage: SnapshotDerivationLineage {
+                materialization_physical_sha256: digest("snap-physical"),
+                links: vec![],
+            },
             acap,
             structural_tasks,
             required_task_classes: vec![],
@@ -557,6 +622,61 @@ mod tests {
     }
 
     #[test]
+    fn derivation_lineage_requires_continuous_exact_bytes_and_d127_lock() {
+        let actual = SnapshotArtifactIdentity {
+            path: "derived.sgsnap".into(),
+            physical_sha256: digest("final"),
+            semantic_sha256: digest("semantic"),
+            semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
+            nodes: 2,
+            edges: 1,
+        };
+        let link = |stage: &str, input: &str, output: &str| SnapshotDerivationLink {
+            stage_id: stage.into(),
+            report_path: format!("{stage}.json"),
+            report_sha256: digest(&format!("{stage}-report")),
+            input_physical_sha256: digest(input),
+            output_physical_sha256: digest(output),
+            import_eligible: false,
+        };
+        let lineage = SnapshotDerivationLineage {
+            materialization_physical_sha256: digest("base"),
+            links: vec![
+                link("summary", "base", "middle"),
+                link("cluster", "middle", "final"),
+            ],
+        };
+        assert!(lineage.validate_for(&actual).is_ok());
+        let mut broken = lineage.clone();
+        broken.links[1].input_physical_sha256 = digest("other");
+        assert!(
+            broken
+                .validate_for(&actual)
+                .unwrap_err()
+                .to_string()
+                .contains("previous output")
+        );
+        let mut unlocked = lineage.clone();
+        unlocked.links[0].import_eligible = "true".parse::<bool>().unwrap();
+        assert!(
+            unlocked
+                .validate_for(&actual)
+                .unwrap_err()
+                .to_string()
+                .contains("D127")
+        );
+        let mut duplicate = lineage;
+        duplicate.links[1].stage_id = "summary".into();
+        assert!(
+            duplicate
+                .validate_for(&actual)
+                .unwrap_err()
+                .to_string()
+                .contains("duplicated")
+        );
+    }
+
+    #[test]
     fn snapshot_identity_evidence_roundtrips_and_rejects_mutation() {
         let identity = SnapshotArtifactIdentity {
             path: "artifact.sgsnap".into(),
@@ -614,6 +734,10 @@ mod tests {
                 semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
                 nodes: 10,
                 edges: 20,
+            },
+            snapshot_lineage: SnapshotDerivationLineage {
+                materialization_physical_sha256: digest("snap-physical"),
+                links: vec![],
             },
             acap: acap_pass(),
             structural_tasks: structural_pass_with_bootstrap_empty(),

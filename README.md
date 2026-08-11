@@ -256,6 +256,11 @@ pre-commit run --all-files
 | `da load --batch-toc data/source_catalogs/….yaml [--stages …] [--cache-root …] [--batch-report-dir …] [--output hub.sgsnap]` | DATA-driven batch ensure or hub content; atomic per-unit reports and one process-local snapshot |
 | `da snapshot-identity --input f.sgsnap --report identity.json` | Emit atomic self-digested physical + strict-semantic snapshot identity evidence; read-only, D127 locked |
 | `da load-snapshot --input f.sgsnap` | Restore snapshot (same process; non-persistent) |
+
+Derived checkpoint artifacts are accepted only with ordered producer reports
+allowed by `data/ontology/snapshot_derivation_policy.yaml`. Every physical
+output must equal the next input and the final output must equal the actual
+snapshot bytes. There is no boolean derived-snapshot waiver.
 | `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
 | `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph; M378 scalar remote query adapter is separate from HOT writes |
 | `da graph-stats` | Node/edge counts |

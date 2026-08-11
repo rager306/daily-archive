@@ -67,6 +67,19 @@ rules:
     pattern: '"graph_writes_any"\s*:\s*true'
     rationale: "graph_writes_any must remain false. Any graph write signal locked behind D127."
 
+  # --- M382/D229 exact snapshot lineage: no warning-only derivation waiver ---
+  - id: no_boolean_derived_snapshot_waiver
+    anchor: "D229 (exact physical derivation continuity)"
+    severity: high
+    scan: crates/
+    pattern: 'allow[-_]derived[-_]snapshot'
+    rationale: "Derived snapshots require DATA-governed producer-report continuity; a boolean waiver admits unrelated task-passing graphs."
+    suffix_allowlist:
+      - .rs
+    path_contains_exclude:
+      - /tests/
+      - /test/
+
   # --- ADR-050 universal-crate invariant (Rust workspace) ---
   - id: kg_crates_must_not_depend_on_da
     anchor: "ADR-050 (kg-* crate family — universal, no da-* deps)"

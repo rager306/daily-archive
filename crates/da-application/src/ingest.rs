@@ -786,7 +786,15 @@ impl IngestUseCase {
             }
 
             if let Some(ref arxiv_id) = citation.arxiv_id {
-                let cited_vid = vid::paper_vid(arxiv_id);
+                let Ok(cited_vid) = vid::citation_arxiv_vid(arxiv_id) else {
+                    tracing::warn!(
+                        event = "citation_arxiv_id_rejected",
+                        paper_id,
+                        arxiv_id,
+                        "Citation remains Reference-only because arXiv identity is invalid"
+                    );
+                    continue;
+                };
                 // Check if Citation node already exists (idempotent)
                 let cited_node = match self
                     .graph_store

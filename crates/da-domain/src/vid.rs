@@ -138,6 +138,16 @@ pub fn citation_vid(external_id: &str) -> Result<Vid, String> {
     canonical_openalex_work_id(external_id).map(|canonical| sha256_vid("citation", &canonical))
 }
 
+/// Compute a Citation stub VID from a canonical, versionless arXiv identifier.
+///
+/// Citation identity is graph-global and therefore must not reuse [`paper_vid`]
+/// even when both nodes refer to the same scholarly work.
+pub fn citation_arxiv_vid(external_id: &str) -> Result<Vid, String> {
+    let (canonical_id, _) = crate::load::try_parse_arxiv_locator(external_id)
+        .ok_or_else(|| format!("invalid arXiv citation ID: {external_id:?}"))?;
+    Ok(sha256_vid("citation_arxiv", &canonical_id))
+}
+
 /// Compute a replay-safe EvidenceBundle VID from document, section and members.
 /// Member VIDs are sorted so extractor output ordering cannot change identity.
 pub fn evidence_bundle_vid(paper_id: &str, section_title: &str, member_vids: &[Vid]) -> Vid {
@@ -179,6 +189,15 @@ mod tests {
     #[test]
     fn test_paper_vid_strips_prefix() {
         assert_eq!(paper_vid("arxiv:1206.6423"), paper_vid("1206.6423"));
+    }
+
+    #[test]
+    fn citation_arxiv_vid_is_normalized_and_disjoint_from_paper() {
+        let citation = citation_arxiv_vid("arXiv:1206.6423v2").unwrap();
+        assert_eq!(citation, citation_arxiv_vid("1206.6423").unwrap());
+        assert_ne!(citation, paper_vid("1206.6423"));
+        assert_ne!(citation, citation_vid("W12066423").unwrap());
+        assert!(citation_arxiv_vid("not-an-arxiv-id").is_err());
     }
 
     #[test]

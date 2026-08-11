@@ -14,6 +14,7 @@ use da_application::pipeline_stage_assurance::{
 };
 use da_domain::corpus_checkpoint::{
     CorpusCheckpointVerdict, STRICT_SEMANTIC_SNAPSHOT_ALGORITHM, SnapshotArtifactIdentity,
+    SnapshotDerivationLineage,
 };
 use da_domain::graph_tasks::{GraphTaskClass, TaskClassStatus};
 use da_domain::{ContentDigest, ReplayObservation};
@@ -30,6 +31,13 @@ fn snapshot_identity() -> SnapshotArtifactIdentity {
         semantic_algorithm: STRICT_SEMANTIC_SNAPSHOT_ALGORITHM.into(),
         nodes: 10,
         edges: 20,
+    }
+}
+
+fn direct_lineage() -> SnapshotDerivationLineage {
+    SnapshotDerivationLineage {
+        materialization_physical_sha256: digest("snap-physical"),
+        links: vec![],
     }
 }
 
@@ -140,6 +148,7 @@ fn seals_pass_with_bootstrap_summary_empty_visible() {
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
         snapshot: snapshot_identity(),
+        snapshot_lineage: direct_lineage(),
         acap_report_path: "assurance_report.json".into(),
         acap,
         suite_path: "tasks.cypher".into(),
@@ -172,6 +181,7 @@ fn missing_fact_class_fails_checkpoint() {
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
         snapshot: snapshot_identity(),
+        snapshot_lineage: direct_lineage(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
@@ -195,6 +205,7 @@ fn d127_import_eligible_rejected() {
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
         snapshot: snapshot_identity(),
+        snapshot_lineage: direct_lineage(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
@@ -221,6 +232,7 @@ fn deterministic_digest() {
         materialization_manifest_sha256: digest("manifest"),
         materialization_report_sha256: digest("mat-report"),
         snapshot: snapshot_identity(),
+        snapshot_lineage: direct_lineage(),
         acap_report_path: "assurance_report.json".into(),
         acap: acap_report(),
         suite_path: "tasks.cypher".into(),
