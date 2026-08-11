@@ -2,7 +2,7 @@
 //!
 //! Scans da-application/src/*.rs for `create_node("Label")` call sites
 //! and asserts:
-//!   1. Every referenced label is in `da_domain::schema::all_node_schemas()`.
+//!   1. Every referenced label is in ADR-050 production ontology DATA.
 //!   2. (Wave D) For materialized labels, the pipeline's actual set of
 //!      `set_node_property_*` calls eventually covers all required fields.
 //!
@@ -58,10 +58,9 @@ fn test_all_pipeline_node_labels_have_registered_schemas() {
     let src_dir = manifest_dir.join("src");
     let used_labels = collect_create_node_labels(&src_dir);
 
-    let registered: HashSet<String> = da_domain::schema::all_node_schemas()
-        .into_iter()
-        .map(|s| s.label().to_string())
-        .collect();
+    let registry = kg_ontology::registry::OntologyRegistry::load_project_meta_ontology()
+        .expect("load ADR-050 production ontology DATA");
+    let registered: HashSet<String> = registry.labels().into_iter().map(str::to_string).collect();
 
     let unregistered: Vec<&String> = used_labels
         .iter()
@@ -70,7 +69,7 @@ fn test_all_pipeline_node_labels_have_registered_schemas() {
     assert!(
         unregistered.is_empty(),
         "Pipeline create_node labels not in schema registry: {:?}. \
-         Add a Schema struct and register it in all_node_schemas().",
+         Add the accepted schema to data/ontology/node_schemas.yaml.",
         unregistered
     );
 }

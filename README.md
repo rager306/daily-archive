@@ -96,6 +96,9 @@ cargo build -p da-cli
 cargo run -p da-cli --example revision_graph_canary
 cargo run -p da-cli -- graph-stats --snapshot \
   artifacts/article_context/revision_graph_2506.07853.sgsnap
+# Read-only revision queries: selector is current, history, or exact vN.
+cargo run -p da-cli -- revision-query --id 2506.07853 --selector history \
+  --snapshot artifacts/article_context/revision_graph_2506.07853.sgsnap --json
 
 # GNN textbook: DATA-driven full catalog ensure / content hub
 ./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml --allow-network

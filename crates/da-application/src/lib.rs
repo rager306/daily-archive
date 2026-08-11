@@ -11,6 +11,7 @@ pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
 pub mod revision_materialization;
+pub mod revision_query;
 pub mod tex_inspect;
 
 pub use article_load::{
@@ -31,6 +32,10 @@ pub use pipeline::{
 pub use revision_materialization::{
     RevisionContentContext, RevisionManifestationInput, RevisionMaterializationError,
     RevisionMaterializationRequest, RevisionMaterializationResult, RevisionMaterializationUseCase,
+};
+pub use revision_query::{
+    ArticleRevisionView, RevisionManifestationView, RevisionQueryError, RevisionQueryResponse,
+    RevisionQueryUseCase, RevisionSelector,
 };
 pub use tex_inspect::TexInspectUseCase;
 pub mod batch_ingest;

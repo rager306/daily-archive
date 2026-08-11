@@ -1,5 +1,28 @@
 # Changelog
 
+### M376 revision-aware snapshot query operator
+
+- Added typed read-only `RevisionQueryUseCase` over injected `DirectGraphStore`
+  with `current`, exact `vN`, and numeric `history` selectors.
+- Application semantics require exactly one current revision, resolve active
+  SUPERSEDES only, return PDF/HTML manifestations + Section counts, enforce
+  D127 false, and fail explicitly for missing Paper/revision/current ambiguity.
+- Added dedicated `da revision-query --id … --selector current|history|vN
+  --snapshot … [--json]`; CLI delegates selector policy to application.
+- Real M375 snapshot: history `[v1,v5]`, current `v5`, explicit v1/v5,
+  Sections `14/11`, two manifestations each, v5 predecessor v1.
+- Negative proof: missing v3 exits 3; unsupported `latest` exits 2. Neither
+  silently falls back to current.
+- Fixed a machine-interface bug found at runtime: snapshot preload banners no
+  longer contaminate `--json` stdout; quiet mode emits valid JSON only.
+- Read-only proof: snapshot SHA remains `9e5c2b8a…` before/after all queries;
+  mock query also preserves node/edge totals.
+- Full gate exposed a stale architecture audit that checked only hardcoded Rust
+  schemas. It now loads ADR-050 production ontology DATA workspace-aware, so
+  accepted YAML-only labels are authoritative without duplicate Schema structs.
+- Governor caught a direct temporal `SUPERSEDES` edge in the query fixture; the
+  fixture now uses the mandatory temporal stamp helper. Closeout returns 0 violations.
+
 ### M375 Wave 4 real two-revision Samyama proof
 
 - Added `revision_graph_canary`: one-process real Samyama composition over

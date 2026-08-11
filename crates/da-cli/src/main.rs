@@ -50,6 +50,13 @@ fn maybe_attach_pdf_classifier(
 async fn open_graph_store_with_optional_snapshot(
     snapshot: Option<&std::path::Path>,
 ) -> da_adapters::SamyamaGraphStore {
+    open_graph_store_with_optional_snapshot_mode(snapshot, true).await
+}
+
+async fn open_graph_store_with_optional_snapshot_mode(
+    snapshot: Option<&std::path::Path>,
+    verbose: bool,
+) -> da_adapters::SamyamaGraphStore {
     use da_ports::graph_store::GraphStore;
     let store = open_graph_store();
     if let Some(path) = snapshot {
@@ -60,20 +67,24 @@ async fn open_graph_store_with_optional_snapshot(
                 std::process::exit(1);
             }
         };
-        println!(
-            "Snapshot preload: {} ({} bytes) into this process...",
-            path.display(),
-            data.len()
-        );
+        if verbose {
+            println!(
+                "Snapshot preload: {} ({} bytes) into this process...",
+                path.display(),
+                data.len()
+            );
+        }
         if let Err(e) = store.import_snapshot(&data).await {
             eprintln!("❌ Snapshot import failed: {e}");
             std::process::exit(1);
         }
-        let nodes = store.node_count().await;
-        let edges = store.edge_count().await;
-        println!("  loaded: {nodes} nodes, {edges} edges (this process only)");
-        println!("  ⚠  NON-PERSISTENT — dies when this process exits");
-        println!("  D127: import_eligible default Locked; use --enable-import to unlock");
+        if verbose {
+            let nodes = store.node_count().await;
+            let edges = store.edge_count().await;
+            println!("  loaded: {nodes} nodes, {edges} edges (this process only)");
+            println!("  ⚠  NON-PERSISTENT — dies when this process exits");
+            println!("  D127: import_eligible default Locked; use --enable-import to unlock");
+        }
     }
     store
 }
@@ -174,6 +185,22 @@ enum Commands {
         /// NON-PERSISTENT: required for disk→query chain (load-snapshot alone does not persist).
         #[arg(long)]
         snapshot: Option<PathBuf>,
+    },
+
+    /// Query accepted ADR-058 article revision history from a snapshot.
+    RevisionQuery {
+        /// Versionless canonical article id (for example 2506.07853).
+        #[arg(long)]
+        id: String,
+        /// Selector: current, history, or exact vN (for example v1).
+        #[arg(long)]
+        selector: String,
+        /// Snapshot imported into this process before query.
+        #[arg(long)]
+        snapshot: PathBuf,
+        /// Emit stable JSON instead of human-readable output.
+        #[arg(long, default_value_t = false)]
+        json: bool,
     },
 
     /// Extract entities from an ingested paper (Phase 3 rule-based)
@@ -435,6 +462,16 @@ fn main() {
         } => {
             rt.block_on(async {
                 query_graph(&kind, id.as_deref(), hops, snapshot.as_deref()).await;
+            });
+        }
+        Commands::RevisionQuery {
+            id,
+            selector,
+            snapshot,
+            json,
+        } => {
+            rt.block_on(async {
+                revision_query(&id, &selector, &snapshot, json).await;
             });
         }
         Commands::Extract {
@@ -1126,6 +1163,59 @@ async fn query_graph(
         Err(e) => {
             eprintln!("❌ Query failed: {e}");
             std::process::exit(1);
+        }
+    }
+}
+
+async fn revision_query(
+    canonical_id: &str,
+    selector: &str,
+    snapshot: &std::path::Path,
+    json: bool,
+) {
+    use da_application::{RevisionQueryUseCase, RevisionSelector};
+    use std::str::FromStr;
+    use std::sync::Arc;
+
+    let selector = match RevisionSelector::from_str(selector) {
+        Ok(selector) => selector,
+        Err(error) => {
+            eprintln!("❌ {error}");
+            std::process::exit(2);
+        }
+    };
+    let store = open_graph_store_with_optional_snapshot_mode(Some(snapshot), !json).await;
+    let use_case = RevisionQueryUseCase::new(Arc::new(store));
+    match use_case.query(canonical_id, selector).await {
+        Ok(response) => {
+            if json {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&response)
+                        .expect("RevisionQueryResponse is serializable")
+                );
+            } else {
+                println!("Article {} revisions ({selector:?})", response.canonical_id);
+                println!("  Paper VID: {}", response.paper_vid);
+                for revision in response.revisions {
+                    println!(
+                        "  v{} current={} sections={} manifestations={} predecessor={}",
+                        revision.revision,
+                        revision.is_current,
+                        revision.section_count,
+                        revision.manifestations.len(),
+                        revision
+                            .predecessor_revision
+                            .map(|value| format!("v{value}"))
+                            .unwrap_or_else(|| "none".into())
+                    );
+                }
+                println!("  import_eligible: {}", response.import_eligible);
+            }
+        }
+        Err(error) => {
+            eprintln!("❌ Revision query failed: {error}");
+            std::process::exit(3);
         }
     }
 }
