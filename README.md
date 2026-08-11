@@ -92,6 +92,11 @@ cargo build -p da-cli
 # Optional TeX source sidecar (+ inventory) under catalog:
 ./target/debug/da load 2608.07067 --allow-network --stages ensure --include-tex-source
 
+# ADR-058 real-store acceptance: one Paper, v1+v5 revisions, replay + snapshot
+cargo run -p da-cli --example revision_graph_canary
+cargo run -p da-cli -- graph-stats --snapshot \
+  artifacts/article_context/revision_graph_2506.07853.sgsnap
+
 # GNN textbook: DATA-driven full catalog ensure / content hub
 ./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml --allow-network
 ./target/debug/da load --batch-toc data/source_catalogs/gnn_textbook_toc.yaml \

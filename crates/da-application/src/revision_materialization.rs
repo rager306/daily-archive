@@ -124,10 +124,15 @@ impl RevisionMaterializationUseCase {
         self.set_string(paper_node, "vid", &paper_vid_value).await?;
         self.set_string(paper_node, "arxiv_id", &request.canonical_id)
             .await?;
-        self.set_string(paper_node, "title", &request.parsed.title)
-            .await?;
-        self.set_string(paper_node, "valid_from", &self.clock.now().to_rfc3339())
-            .await?;
+        if self
+            .graph_store
+            .get_node_property_int(paper_node, "valid_from")
+            .await
+            .is_none()
+        {
+            self.set_int(paper_node, "valid_from", self.clock.now().timestamp())
+                .await?;
+        }
         self.set_bool(paper_node, "import_eligible", false).await?;
 
         let revision_node = self
@@ -255,6 +260,12 @@ impl RevisionMaterializationUseCase {
                 *revision == result.current_revision,
             )
             .await?;
+        }
+        // Canonical work-level display title projects only the highest observed
+        // revision. Replaying an older revision must not roll the Paper back.
+        if request.revision == result.current_revision {
+            self.set_string(paper_node, "title", &request.parsed.title)
+                .await?;
         }
         result.predecessor_revision = observed
             .iter()

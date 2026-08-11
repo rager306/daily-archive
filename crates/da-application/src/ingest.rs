@@ -312,9 +312,11 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_string(node_id, "arxiv_id", paper.arxiv_id.clone())
             .await?;
-        self.graph_store
-            .set_node_property_string(node_id, "title", paper.title.clone())
-            .await?;
+        if revision_context.is_none() {
+            self.graph_store
+                .set_node_property_string(node_id, "title", paper.title.clone())
+                .await?;
+        }
 
         if paper_created
             || self

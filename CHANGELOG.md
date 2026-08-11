@@ -1,5 +1,22 @@
 # Changelog
 
+### M375 Wave 4 real two-revision Samyama proof
+
+- Added `revision_graph_canary`: one-process real Samyama composition over
+  exact local v1/v5 HTML + `article.vN.json`, `HtmlParser`, revision-aware
+  `IngestUseCase`, and `InstrumentedGraphStore` physical mutation evidence.
+- Runtime PASS: one Paper, two PaperRevisions, 14 v1 Sections, 11 v5 Sections,
+  two PDF/HTML manifestations each, current=v5, and one v5 SUPERSEDES v1 edge.
+- Exact provider SHA values match the M374 acquisition evidence for both formats.
+- Physical replay PASS: 560 unchanged property attempts, **0 applied**, 0
+  rejected, 0 unobserved operations; nodes/edges/vectors required no writes.
+- Exported 29,554-byte Samyama snapshot (`9e5c2b8a…`) and independently reloaded
+  it as 33 nodes / 33 edges with D127 still Locked.
+- The canary initially caught two real defects: parser-count hardcoding (20/13
+  cached contract vs current 14/11 HTML parser) and competing `valid_from` types
+  causing four replay writes. Both were corrected at the product boundary;
+  replay gates were not weakened.
+
 ### M375 Wave 3 unified revision content context
 
 - Added typed `RevisionContentContext` across load, ingest, extraction, and
