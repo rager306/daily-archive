@@ -1,91 +1,80 @@
-# Handoff — 2026-08-11 (M381 semantic snapshot identity delivered)
+# Handoff — 2026-08-11 (M382 closed; M383 planned)
 
-## Delivered milestone
+## Closed milestone
 
-**M381-fociaz Semantic Snapshot Identity**
+**M382-8j6eiq Checkpoint Snapshot Lineage**
 
-### Strict identity utility — `0963d5e4`
+Commits:
+- `34f56f3f` — typed checkpoint identity + production identity evidence;
+- `126d5183` — exact DATA-governed lineage, Citation VID repair, honest 200-paper rebuild.
 
-New `kg_storage::fingerprint_snapshot`:
-- physical SHA256 of exact compressed `.sgsnap` bytes;
-- strict semantic SHA `sgsnap-vid-canonical-json.v1`;
-- bounded gzip decompression/record count;
-- validates sgsnap v1/v2 header and counts;
-- requires unique string VID on every node;
-- resolves edge src/tgt physical IDs through VIDs;
-- hashes labels, every node/edge property and topology;
-- ignores only gzip/header time, record/map order and physical IDs;
-- missing/duplicate VID, dangling endpoint, malformed/type/version/count/limit failures are explicit.
+### Product changes
 
-Real accepted snapshot:
-- nodes=33, edges=33;
-- repeated unchanged exports physical SHA differ;
-- strict semantic SHA stable across exports/reload;
-- one property mutation invalidates strict semantic SHA.
+- Corpus checkpoint wire schema is now v3.
+- Snapshot evidence carries exact physical SHA, strict semantic SHA, algorithm, path and counts.
+- `da snapshot-identity --input ... --report ...` emits bounded atomic self-digested evidence.
+- Derived snapshots require `data/ontology/snapshot_derivation_policy.yaml` and exact physical producer continuity.
+- Removed `--allow-derived-snapshot`; reordered/final-mismatch chains fail before import/tasks/package replacement.
+- Governor rule `no_boolean_derived_snapshot_waiver` prevents the bypass returning; negative fixture included.
 
-### LoadReport dual identity — `0963d5e4`
+### Real ontology defect repaired
 
-Universal da load now populates:
-- legacy `snapshot_sha256` = physical compressed bytes;
-- `snapshot_semantic_sha256`;
-- `snapshot_semantic_algorithm`;
-- snapshot node/edge counts;
-- `snapshot_identity_ok` finding.
+M381 strict fingerprint exposed 173 global VID collisions in the accepted 200-paper graph:
+- every collision was a Paper/Citation pair sharing `paper_vid`;
+- added `citation_arxiv_vid` namespace (D230);
+- malformed arXiv claims remain observable Reference-only and do not create Citation nodes/edges;
+- 188 malformed claims observed during rebuild;
+- durable base/cluster/resolution artifacts rebuilt through real producers, not rewritten.
 
-Identity is computed before report digest reseal. Invalid/VID-incomplete export makes report fail visibly. Previously `snapshot_sha256` existed but was never populated in universal load.
-
-### Explicit replay Clock — `863f17df`
-
-D227: strict semantic identity includes ADR-046 `created_at`/`valid_at`; never normalize temporal truth.
-
-Real independent loads initially differed only by:
-- 23 edge `created_at`;
-- 9 fact `valid_at`;
-- VIDs/topology/node properties identical.
-
-D228 fix:
-- `da load --materialization-time <RFC3339>`;
-- parsed once at CLI boundary;
-- one `Clock` injected into both ingest and extraction;
-- default remains honest SystemClock;
-- report records `materialization_time_explicit`.
-
-Three-run exact-v1 proof:
-- same explicit time, two fresh processes: strict semantic SHA equal;
-- physical SHAs differ;
-- one-second different explicit time: strict semantic SHA differs;
+Current durable graph:
+- base: 23,836 nodes / 39,295 edges;
+- resolution: 24,527 nodes / 40,623 edges;
+- duplicate VID: 0;
+- direct checkpoint: PASS, 0 derivation links;
+- derived checkpoint: PASS, 2 exact links;
 - D127 false.
 
-## Verification
+Verification:
+- domain checkpoint tests 9;
+- application checkpoint tests 4;
+- batch ingest tests 17;
+- strict durable identity PASS;
+- full architecture guardrail PASS (`/tmp/m382-arch2.out`);
+- governor violations 0 (resource/STATE warnings remain);
+- application errors 0; recent GSD failed exec 0;
+- UAT: `cd48aa9a-90b5-4407-8893-5ef61669a936`, `d5d4bc2e-cddd-4348-b83f-1165e919b3e8`, `60e1eb96-d335-4c2a-811c-a5f16c0772e4`.
 
-- snapshot identity: 3 unit/negative/permutation tests;
-- real identity probe PASS;
-- da-domain load report: PASS;
-- da-cli snapshot identity: 2;
-- da-cli load: 10;
-- explicit clock unit/invalid test PASS;
-- all-target clippy: zero project errors;
-- full architecture guardrail: PASS;
-- governor: zero violations; logs clean.
+Operational lesson: real 200-paper materialization rebuild took ~60 minutes even with cache. Do not run it before focused fixtures; do not run concurrent Cargo jobs (one accidental concurrent pair only waited on target lock).
 
-UAT:
-- S01 `ef9a06f8-41a7-4624-9ff0-83e43a5325bd`
-- S02 `00648101-9e7c-4d1e-b1ac-5e8050d4c768`
-- S03 `d0f93cf6-9f04-4e80-bcd9-78e8bc43f1cb`
+Codebase Memory MCP timed out on all narrow calls this session; GitNexus authoritative. Reindex: 23,536 nodes / 39,084 edges / 550 clusters / 300 flows.
 
-GitNexus detect rated load clock change HIGH (6 affected run_content processes); expanded load/full gate passed. Reindexed. Codebase Memory MCP timed out.
+## Active milestone
 
-## Governor assessment
+**M383-uber46 Revision Owned Corpus Acceptance** planned with four slices:
+1. S01 Revision Migration Contract
+2. S02 Revision Aware Materialization
+3. S03 Corpus Grounded Summaries
+4. S04 Full Corpus Acceptance
 
-No regex. Strict semantic identity tests plus real temporal-difference diagnostics and injected Clock prove the product contract. A useful future governor enhancement would require a negative fixture showing a replay/equality report compares only physical SHA; then add a DATA rule requiring explicit identity class.
+### Exact next action
 
-## Next product gaps
+Plan and execute M383/S01:
+- inventory all 200 gold materialization records against canonical catalog provenance;
+- classify explicit version/source evidence;
+- do NOT assume version 1 for versionless assets;
+- policy for versionless handling belongs in ontology DATA;
+- output bounded per-paper evidence/digest and fail closed on ambiguity.
 
-1. Audit remaining reports that call raw `snapshot_sha256` semantic replay evidence; migrate high-value assurance/checkpoint consumers to typed identity class.
-2. Add a weaker structural digest only if explicitly needed; never substitute it for strict semantic equality.
-3. Isolate dirty vendor Samyama tree before canonical byte serialization/server protocol work.
-4. Consider source-policy default materialization time only as explicit ontology/config DATA, not hidden derivation.
+Then focused fixture before touching central HOT materializer.
+
+### Why M383 exists
+
+After honest M382 rebuild, `ontology_acceptance` now fails only:
+- required class `summary`: EMPTY/Failed;
+- structural/fact/cluster/resolution remain available.
+
+The old corpus summary producer (`extractive-summary-canary.v1`) was lost when summaries became revision-owned. Git history version no longer compiles because current `ExtractiveSummaryUseCase` requires `PaperRevision` and source VIDs. Do not restore Paper-owned summaries. M383 must migrate corpus content to revisions, create a current revision-owned corpus summary process, rebind ACAP exactly, then pass all five classes.
 
 ## Locks
 
-D127 false; D227 strict includes temporal truth; D228 explicit replay Clock; Samyama sole store; ADR-057 Proposed; ADR-058 Accepted; DSPy disabled.
+D127 false; D227 strict identity includes temporal truth; D228 explicit replay Clock; D229 semantic equality never replaces physical provenance; D230 Citation namespaces are source-qualified. Samyama sole store. No legacy Paper summaries. No implicit revision hardcode. DSPy disabled.
