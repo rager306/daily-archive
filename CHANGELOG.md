@@ -16,6 +16,10 @@
   unreachable with endpoint redacted; remote reachable against live daemon.
   Every remote state says HOT writes unsupported and D127 false; no auto-start
   or embedded fallback occurs.
+- Fixed the operational shutdown gap exposed by background alerts: serve-graph
+  now handles SIGINT/SIGTERM as expected lifecycle events, prints an explicit
+  shutdown line and exits 0. Real PING then SIGTERM proof passes; no daemon is
+  left running.
 
 ### M378 S03 remote read operational contract
 

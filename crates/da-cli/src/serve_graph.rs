@@ -75,7 +75,7 @@ pub fn operator_banners(
         None => lines.push("  snapshot:        none (empty in-memory store)".to_string()),
     }
     lines.push("  health:          RESP PING → PONG".to_string());
-    lines.push("  stop:            Ctrl-C".to_string());
+    lines.push("  stop:            Ctrl-C or SIGTERM (graceful exit 0)".to_string());
     lines
 }
 
@@ -108,7 +108,26 @@ pub fn load_sgsnap_into_store(
     Ok((store, info))
 }
 
-/// Run blocking accept loop until process killed. Caller owns the Tokio runtime.
+/// Wait for an operator shutdown signal. Signal termination is a normal server
+/// lifecycle transition, not a crash.
+#[cfg(unix)]
+async fn shutdown_signal() -> Result<&'static str, std::io::Error> {
+    use tokio::signal::unix::{SignalKind, signal};
+    let mut terminate = signal(SignalKind::terminate())?;
+    let mut interrupt = signal(SignalKind::interrupt())?;
+    tokio::select! {
+        _ = terminate.recv() => Ok("SIGTERM"),
+        _ = interrupt.recv() => Ok("SIGINT"),
+    }
+}
+
+#[cfg(not(unix))]
+async fn shutdown_signal() -> Result<&'static str, std::io::Error> {
+    tokio::signal::ctrl_c().await?;
+    Ok("Ctrl-C")
+}
+
+/// Run the accept loop until a normal operator shutdown signal or server error.
 pub async fn run_in_memory_server(args: &ServeGraphArgs) -> Result<(), Box<dyn std::error::Error>> {
     let (store, preload) = match &args.snapshot {
         Some(path) => {
@@ -129,7 +148,14 @@ pub async fn run_in_memory_server(args: &ServeGraphArgs) -> Result<(), Box<dyn s
     );
     let store = Arc::new(RwLock::new(store));
     let server = RespServer::new(config, store);
-    server.start().await
+    tokio::select! {
+        result = server.start() => result,
+        signal = shutdown_signal() => {
+            let signal = signal?;
+            println!("serve-graph shutdown: {signal} (expected operator stop)");
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
