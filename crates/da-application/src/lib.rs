@@ -104,7 +104,9 @@ pub mod ontology_contract_audit;
 pub mod ontology_endpoint_evidence;
 pub mod ontology_v2_convergence;
 pub mod ordered_mutation;
+pub mod pipeline_cache_audit;
 pub mod pipeline_ledger_audit;
+pub mod pipeline_metrics;
 pub mod pipeline_stage_assurance;
 pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{

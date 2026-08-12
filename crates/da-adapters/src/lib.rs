@@ -15,6 +15,7 @@ pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;
 pub mod http_fetch;
+pub mod memory_pipeline_cache;
 pub mod openalex_adapter;
 pub mod pdffigures2;
 pub mod pipeline_cache;

@@ -38,13 +38,6 @@ impl FilePipelineCache {
         hex::encode(Sha256::digest(bytes))
     }
 
-    fn key_sha256(key: &StageCacheKey) -> PipelineCacheResult<String> {
-        let canonical = serde_json::to_vec(key).map_err(|error| {
-            PipelineCacheError::Contract(format!("cannot serialize stage cache key: {error}"))
-        })?;
-        Ok(Self::sha256(&canonical))
-    }
-
     fn safe_component(value: &str, field: &str) -> PipelineCacheResult<String> {
         if value.is_empty()
             || value == "."
@@ -62,11 +55,7 @@ impl FilePipelineCache {
     fn entry_dir(&self, key: &StageCacheKey) -> PipelineCacheResult<PathBuf> {
         let article = Self::safe_component(&key.source.article_id, "article_id")?;
         let stage = Self::safe_component(&key.stage_id, "stage_id")?;
-        Ok(self
-            .root
-            .join(article)
-            .join(stage)
-            .join(Self::key_sha256(key)?))
+        Ok(self.root.join(article).join(stage).join(key.key_sha256()?))
     }
 
     fn io(path: &Path, error: impl std::fmt::Display) -> PipelineCacheError {
@@ -131,7 +120,7 @@ impl PipelineCache for FilePipelineCache {
         }
 
         let manifest = Self::read_manifest(&manifest_path)?;
-        if manifest.key != *key || manifest.key_sha256 != Self::key_sha256(key)? {
+        if manifest.key != *key || manifest.key_sha256 != key.key_sha256()? {
             return Err(PipelineCacheError::InvalidManifest {
                 path: manifest_path.display().to_string(),
                 message: "manifest key does not match requested effective inputs".into(),
@@ -181,7 +170,7 @@ impl PipelineCache for FilePipelineCache {
         Self::write_atomic(&dir.join(PAYLOAD_FILE), payload)?;
         let entry = StageManifestEntry {
             key: key.clone(),
-            key_sha256: Self::key_sha256(key)?,
+            key_sha256: key.key_sha256()?,
             recorded_at: recorded_at.into(),
             outcome: StageOutcome::Success {
                 payload_sha256,
@@ -210,7 +199,7 @@ impl PipelineCache for FilePipelineCache {
         }
         let entry = StageManifestEntry {
             key: key.clone(),
-            key_sha256: Self::key_sha256(key)?,
+            key_sha256: key.key_sha256()?,
             recorded_at: recorded_at.into(),
             outcome: StageOutcome::RetryableFailure {
                 error_class: error_class.into(),

@@ -1,5 +1,30 @@
 # Changelog
 
+### M387 S03 cache lineage and whole-pipeline metrics foundation
+
+- Centralized canonical `StageCacheKey::key_sha256` at the port contract and
+  added strict effective-input validation. Added a production-safe in-memory
+  cache implementation plus one shared contract suite for memory/filesystem:
+  cold/hit, configuration drift, retry expiry, concurrent same-key publication,
+  manifest enumeration and visible corruption.
+- Added dual cache lineage evidence: full effective key SHA and payload SHA are
+  both mandatory. Identical output bytes under different config/prompt/model
+  keys remain distinct computations; compute cache is forbidden from claiming
+  that graph materialization was skipped.
+- Added optimizer-ready `pipeline-metrics.v1`: every one of the 14 ledger stages
+  has runtime/FSM, wall/CPU/RSS/I/O, queue/worker, cache, context, token/model,
+  cost, backend and failure fields. Unavailable observations are typed
+  `no_claim`; no backend is inferred from stage names; optimizer admission is
+  absent and D127 is false.
+- Durable bootstrap report `artifacts/runtime/pipeline_metrics_m387.json` has 14
+  ordered rows, two evidence-backed parse/extract rows and 12 honest no-claim
+  rows. Metrics will be filled by later stage execution rather than copied from
+  incomparable aggregate timings.
+- Closed rolling JSON logging debt in pipeline ledger and both materialization
+  profile composition roots. D238 requires every active generative model call
+  to pass through a future provider-neutral PromptExecutionPort/FSM before
+  GEPA/DSPy candidates can be evaluated; optimizers remain disabled.
+
 ### M387 S02 ACAP context conservation diagnostics
 
 - Added ACAP-aligned stage context snapshots and transitions: every ratio carries

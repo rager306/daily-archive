@@ -38,6 +38,7 @@ struct Resource {
 }
 
 fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("materialization_profile");
     let args = Args::parse();
     let cases = args
         .cases

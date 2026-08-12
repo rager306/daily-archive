@@ -28,6 +28,7 @@ struct Report {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("materialization_hot_path_profile");
     let classifications = 1_000;
     let temporal_started = Instant::now();
     let mut facts = 0usize;

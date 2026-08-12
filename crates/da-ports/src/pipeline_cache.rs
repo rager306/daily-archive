@@ -6,6 +6,7 @@
 //! explicit and expire; they never masquerade as successful output.
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use thiserror::Error;
 
@@ -41,6 +42,73 @@ pub struct StageCacheKey {
     pub prompt_fingerprint: Option<String>,
     pub model_fingerprint: Option<String>,
     pub output_schema_fingerprint: String,
+}
+
+impl StageCacheKey {
+    /// Canonical identity of the complete effective-input contract. This is
+    /// intentionally distinct from the output payload digest.
+    pub fn key_sha256(&self) -> PipelineCacheResult<String> {
+        self.validate()?;
+        let canonical = serde_json::to_vec(self).map_err(|error| {
+            PipelineCacheError::Contract(format!("cannot serialize stage cache key: {error}"))
+        })?;
+        Ok(hex::encode(Sha256::digest(canonical)))
+    }
+
+    pub fn validate(&self) -> PipelineCacheResult<()> {
+        let required = [
+            ("article_id", self.source.article_id.as_str()),
+            ("stage_id", self.stage_id.as_str()),
+            (
+                "acquisition_fingerprint",
+                self.source.acquisition_fingerprint.as_str(),
+            ),
+            (
+                "normalization_fingerprint",
+                self.source.normalization_fingerprint.as_str(),
+            ),
+            (
+                "implementation_fingerprint",
+                self.implementation_fingerprint.as_str(),
+            ),
+            (
+                "configuration_fingerprint",
+                self.configuration_fingerprint.as_str(),
+            ),
+            (
+                "output_schema_fingerprint",
+                self.output_schema_fingerprint.as_str(),
+            ),
+        ];
+        if let Some((field, _)) = required
+            .into_iter()
+            .find(|(_, value)| value.trim().is_empty())
+        {
+            return Err(PipelineCacheError::Contract(format!(
+                "{field} must not be empty"
+            )));
+        }
+        let selected_identity_missing = match self.source.selected_format {
+            SourceFormat::Pdf => self.source.pdf_sha256.is_none(),
+            SourceFormat::Html => self.source.html_sha256.is_none(),
+            SourceFormat::MetadataOnly => false,
+        };
+        if selected_identity_missing {
+            return Err(PipelineCacheError::Contract(
+                "selected source format requires its exact source identity".into(),
+            ));
+        }
+        if self
+            .dependency_output_sha256
+            .keys()
+            .any(|stage| stage.trim().is_empty())
+        {
+            return Err(PipelineCacheError::Contract(
+                "dependency stage ID must not be empty".into(),
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

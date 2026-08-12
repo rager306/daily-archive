@@ -91,8 +91,22 @@ DA_PIPELINE_CACHE_ROOT=artifacts/gold_corpus \
 The profile emits one row per ledger stage. Unobserved stages are explicit
 `no_claim`, candidates are separated from authoritative retention, token counts
 are absent unless exact tokenizer lineage exists, and the report never issues an
-independent admission verdict. RuVector tuning remains deferred until
-retrieval-quality ablations show an active benefit.
+independent admission verdict.
+
+Whole-process optimizer-ready telemetry joins those observations into the same
+14-stage order:
+
+```bash
+cargo run -p da-cli --example pipeline_metrics_profile -- \
+  --report artifacts/runtime/pipeline_metrics_m387.json
+```
+
+`pipeline-metrics.v1` reserves explicit fields for wall/CPU/RSS/I/O, queue and
+worker utilization, cache key plus payload identity, context, tokens/model
+latency/cost, backend applicability and visible failures. Missing measurements
+remain typed no-claim; a backend is never inferred merely from the stage name.
+GEPA/DSPy remain candidate-only and disabled. RuVector tuning remains deferred
+until independent retrieval-quality ablations prove an active benefit.
 
 ## Corpus expansion waves
 

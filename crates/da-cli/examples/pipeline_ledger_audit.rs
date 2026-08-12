@@ -22,6 +22,7 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    let _log_guard = da_cli::logging::init_pipeline_logging("pipeline_ledger_audit");
     let args = Args::parse();
     let bytes = std::fs::read(&args.ledger)?;
     let ledger = load_pipeline_stage_ledger(&args.ledger).map_err(|e| anyhow!(e))?;
