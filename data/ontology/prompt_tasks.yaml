@@ -1,0 +1,30 @@
+schema_version: prompt-task-registry.v1
+optimizer_enabled: false
+max_validation_gap_basis_points: 500
+tasks:
+  - task_id: article_summary
+    version: summary.v1
+    system_template: >-
+      You are a scientific paper summarizer. Return only JSON conforming to the declared output schema. Ground every claim in the supplied article text and do not invent facts.
+    user_template: >-
+      Summarize article {paper_id}. Title: {title}. Abstract: {abstract}. Full text: {full_text}.
+    output_schema_id: article-summary.v1
+    route_policy_id: anthropic-text
+    model_env: ANTHROPIC_MODEL
+    temperature_milli: 300
+    max_output_tokens: 4096
+    eval_suite_id: article-summary-eval.v1
+    optimizer_enabled: false
+  - task_id: figure_analysis
+    version: figure-analysis.v1
+    system_template: >-
+      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority.
+    user_template: >-
+      Analyze figure {figure_id} for paper {paper_id}. Caption: {caption}.
+    output_schema_id: figure-analysis-candidate.v1
+    route_policy_id: anthropic-multimodal
+    model_env: ANTHROPIC_MODEL
+    temperature_milli: 0
+    max_output_tokens: 4096
+    eval_suite_id: figure-analysis-eval.v1
+    optimizer_enabled: false

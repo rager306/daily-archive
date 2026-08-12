@@ -19,6 +19,7 @@ pub mod openalex;
 pub mod parser;
 pub mod pipeline_cache;
 pub mod pipeline_stage;
+pub mod prompt_execution;
 pub mod tex_source;
 
 pub use acquisition::{

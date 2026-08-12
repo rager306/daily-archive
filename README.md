@@ -122,6 +122,13 @@ and binds physical graph replay evidence. A valid replay has `applied=0`,
 `rejected=0`, `unobserved=0`, and `unchanged>0`; cache hits never substitute for
 revision/extraction graph materialization.
 
+Generative task policy is DATA-driven in `data/ontology/prompt_tasks.yaml`.
+Article summary and figure analysis have versioned templates, schema/route/eval
+identities and bounded generation settings. Provider model selection remains
+`.env` (`ANTHROPIC_MODEL`, registry path `DA_PROMPT_TASK_REGISTRY`). ADR-059's
+candidate FSM stops at `eligible`; GEPA/DSPy cannot auto-promote or authorize
+graph import.
+
 ## Corpus expansion waves
 
 The Awesome Agentic Reasoning source wave is pinned at

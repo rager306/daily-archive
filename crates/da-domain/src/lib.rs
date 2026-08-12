@@ -37,6 +37,7 @@ pub mod pipeline_cache_lineage;
 pub mod pipeline_ledger;
 pub mod pipeline_metrics;
 pub mod process;
+pub mod prompt_optimization;
 pub mod relation;
 pub mod revision_readiness;
 pub mod scheduler;
