@@ -114,6 +114,67 @@ def test_artifact_optimizer_unlock_is_caught():
     assert "no_optimizer_or_auto_promote_true_in_artifacts" in ids
 
 
+def test_no_new_product_python_scripts_is_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "scripts" / "download_something.py",
+        "import sys\nprint('product script')\n",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "no_new_product_python_scripts" in ids
+
+
+def test_governance_python_is_not_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "scripts" / "governor" / "__init__.py",
+        "# governance package\n",
+    )
+    _write(
+        root / "scripts" / "tests" / "test_something.py",
+        "def test_x(): pass\n",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "no_new_product_python_scripts" not in ids
+
+
+def test_rust_python_subprocess_is_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-test" / "src" / "lib.rs",
+        'use std::process::Command;\nfn main() { Command::new("python3"); }\n',
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "no_rust_python_subprocess" in ids
+
+
 def test_cli_direct_generative_provider_bypass_is_caught():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"

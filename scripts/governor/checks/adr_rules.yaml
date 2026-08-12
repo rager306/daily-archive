@@ -543,3 +543,28 @@ rules:
     rationale: "Use the dedicated revision materializer; universal load orchestration must not inline accepted ontology graph policy."
     suffix_allowlist:
       - .rs
+
+  # --- M386 S05 / D237: Rust-only production pipeline guardrail ---
+  # No new product-runtime Python scripts in scripts/ (governance/test excluded).
+  - id: no_new_product_python_scripts
+    anchor: "D237 (Rust-only production pipeline), M386 S05"
+    severity: high
+    scan: scripts/
+    pattern: '.+'
+    rationale: "Product acquisition/download scripts must be Rust commands (da acquire-arxiv), not Python. Governance and tests are excluded."
+    suffix_allowlist: [.py]
+    path_contains_exclude:
+      - scripts/governor/
+      - scripts/check_project_trajectory.py
+      - scripts/tests/
+      - scripts/README.md
+      - scripts/run_in_env.sh
+
+  # No Rust product code may spawn a Python subprocess (D237).
+  - id: no_rust_python_subprocess
+    anchor: "D237 (Rust-only production pipeline), M386 S05"
+    severity: high
+    scan: crates/
+    pattern: 'Command::new\s*\(\s*"python[23]?"\)'
+    rationale: "Rust product code must not invoke Python subprocesses. Use native Rust ports."
+    suffix_allowlist: [.rs]
