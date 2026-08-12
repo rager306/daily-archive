@@ -174,9 +174,51 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
             .ok_or_else(|| {
                 PromptExecutionError::Schema("9router response has no text content".into())
             })?;
-        let output = text.into_bytes();
-        let instance: serde_json::Value = serde_json::from_slice(&output)
-            .map_err(|e| PromptExecutionError::Schema(format!("figure output is not JSON: {e}")))?;
+        let response_chars = text.chars().count();
+        let output_sha256 = ContentDigest::of_text(&text);
+        let instance: serde_json::Value = match serde_json::from_str(&text) {
+            Ok(value) => value,
+            Err(direct_error) => match crate::prompt_execution::extract_json_object(&text) {
+                Some(json_text) => match serde_json::from_str(&json_text) {
+                    Ok(value) => {
+                        tracing::warn!(
+                            event = "multimodal_prompt_output_json_extracted",
+                            response_chars,
+                            extracted_chars = json_text.len(),
+                            "Multimodal provider output required JSON extraction from wrapper text"
+                        );
+                        value
+                    }
+                    Err(extract_error) => {
+                        tracing::error!(
+                            event = "multimodal_prompt_output_invalid_json",
+                            response_chars,
+                            response_sha256 = output_sha256.as_str(),
+                            direct_error = %direct_error,
+                            extract_error = %extract_error,
+                            response_prefix = %text.chars().take(200).collect::<String>(),
+                            "Multimodal provider output failed JSON parsing and extraction"
+                        );
+                        return Err(PromptExecutionError::Schema(format!(
+                            "figure output is not JSON: {direct_error}"
+                        )));
+                    }
+                },
+                None => {
+                    tracing::error!(
+                        event = "multimodal_prompt_output_invalid_json",
+                        response_chars,
+                        response_sha256 = output_sha256.as_str(),
+                        error = %direct_error,
+                        response_prefix = %text.chars().take(200).collect::<String>(),
+                        "Multimodal provider output failed JSON parsing"
+                    );
+                    return Err(PromptExecutionError::Schema(format!(
+                        "figure output is not JSON: {direct_error}"
+                    )));
+                }
+            },
+        };
         let validator = jsonschema::validator_for(&request.output_schema.schema)
             .map_err(|e| PromptExecutionError::Contract(e.to_string()))?;
         if let Err(error) = validator.validate(&instance) {
@@ -185,6 +227,8 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
                 error.instance_path()
             )));
         }
+        let output_bytes = serde_json::to_vec(&instance)
+            .map_err(|e| PromptExecutionError::Contract(e.to_string()))?;
         let input_identity = serde_json::to_vec(&(
             request.variables.clone(),
             request.input_bytes.clone(),
@@ -219,7 +263,7 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
             provider: request.resolved_model.provider,
             model: request.resolved_model.model_name,
             input_sha256: ContentDigest::of_bytes(&input_identity),
-            output_sha256: ContentDigest::of_bytes(&output),
+            output_sha256: ContentDigest::of_bytes(&output_bytes),
             input_tokens: parsed.usage.prompt_tokens.unwrap_or(0),
             output_tokens: parsed.usage.completion_tokens.unwrap_or(0),
             latency_ms: started.elapsed().as_millis() as u64,
@@ -232,7 +276,7 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
         lineage.validate().map_err(PromptExecutionError::Contract)?;
         tracing::info!(event="multimodal_prompt_execution_complete",run_id=%lineage.run_id,task_id=%lineage.task_id,model=%lineage.model,image_sha256=%request.media[0].sha256,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Multimodal prompt execution completed");
         Ok(PromptExecutionResponse {
-            output_bytes: output,
+            output_bytes,
             lineage,
         })
     }

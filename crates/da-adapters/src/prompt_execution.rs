@@ -318,7 +318,7 @@ fn render_once(
 /// Returns the substring of the first balanced `{...}` block, or None if no valid JSON object is found.
 /// Handles reasoning model tags (<think>...</think>) by trying post-reasoning text first,
 /// then falling back to the full text.
-fn extract_json_object(text: &str) -> Option<String> {
+pub(crate) fn extract_json_object(text: &str) -> Option<String> {
     let after_think = text.find("</think>").map_or(text, |pos| &text[pos + 8..]);
     find_balanced_json(after_think).or_else(|| find_balanced_json(text))
 }
