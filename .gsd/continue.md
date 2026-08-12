@@ -23,26 +23,23 @@ Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02,
   - Summary: 4/4 executions via agnes-2.0-flash, valid JSON, schema-valid.
   - Figure: 2/4 executions via qwen3-vl, 2 schema quality-signals, full lineage.
   - Durable ledger: `artifacts/runtime/prompt_eval_inference_m387.json`.
+- **Adapter bug fixed (e260a0b1)**: provider wrapper text now yields canonical
+  JSON bytes (not raw wrapper), with regression test.
 - **Scoring works**: `prompt_eval_scored.rs` maps real outputs back into
   frozen source-bound fixtures, extracts canonical facts (structured + prose
-  keyword evidence), produces honest metrics:
-  - article_summary: grounding=1960, faithfulness=1960, coverage=7692,
-    gap=4286, hard=false, eligible=false.
-  - figure_analysis: grounding=10000, faithfulness=10000, coverage=4545,
-    gap=10000, schema_failures=2/4, eligible=false.
-- **FSM gates corrected**: `PromptEvaluation.validate` checks structural
-  invariants only; `gates_passed()` holds execution gates and `mark_eligible`
-  requires them. Gate failure yields `evaluated` with `eligible=false`.
-- **Config data-driven**: per-task model bindings in `models.yaml`
-  (prompt-eval-summary-agnes, prompt-eval-figure-qwen-vl), inference policy
-  in `data/prompt_eval/inference.yaml`, latency/cost in `policy.yaml`.
-- MiniMax-M3 remains unusable for JSON (prose-only through 9router);
-  agnes-2.0-flash and qwen3-vl work with JSON extraction.
+  keyword evidence, no sentence noise), produces honest metrics.
+- **Summary now routes to MiniMax-M2.7-highspeed** (non-vision, per user):
+  - grounding 1960/2777 (agnes) → **2558** (M2.7)
+  - coverage 7692 (agnes) → **8461** (M2.7)
+  - gap 4286 (agnes) → **2858** (M2.7)
+- Figure unchanged: qwen3-vl grounding=10000, faithfulness=10000, coverage=4545,
+  schema_failures=2/4, eligible=false.
+- Both tasks remain eligible=false (hard gate requires all metrics >= 10000),
+  deployed=false, D127=false. Honest first-pass quality evidence.
 
 ### Current blocker (honest status)
 
-Neither task is eligible. Summary has low grounding/coverage vs oracle
-(candidate prompt did not reproduce exact canonical facts); figure has schema
+Neither task is eligible. Summary coverage=8461 (needs 10000); figure has schema
 failures on 2/4 fixtures. Expected first-pass quality evidence, not a process
 defect. GEPA/DSPy disabled; no auto-promotion; D127 locked.
 

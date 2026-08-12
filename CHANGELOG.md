@@ -1,5 +1,21 @@
 # Changelog
 
+### M387 S04 real same-n inference scoring
+
+- Fixed adapter contract bug: provider responses that wrap JSON in conversational
+  text (preamble/code fences) now yield canonical, directly parseable
+  `output_bytes` (serialized validated instance), not the raw wrapper; lineage
+  `output_sha256` binds the canonical bytes. Regression test covers wrapper text.
+- Added evaluation-only binding `prompt-eval-summary-minimax-m27`
+  (minimax/MiniMax-M2.7-highspeed, non-vision) and routed summary evaluation to it.
+- `prompt_eval_scored` now extracts canonical claims from structured fields plus
+  keyword evidence from prose (no sentence noise), with unit tests for fact
+  extraction, noise suppression and reasoning-model budget case.
+- Real same-n scoring evidence (e260a0b1): summary grounding=2558,
+  faithfulness=2558, coverage=8461, gap=2858 via MiniMax-M2.7; figure
+  grounding=10000, faithfulness=10000, coverage=4545 via qwen3-vl with 2/4
+  schema quality-signals. Both eligible=false, deployed=false, D127=false.
+
 ### M387 S04 typed-media figure prompt migration
 
 - Extended `PromptExecutionPort` with typed, checksum-bound, bounded image media
