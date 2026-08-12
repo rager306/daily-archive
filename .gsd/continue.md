@@ -35,6 +35,16 @@
 
 ## M387 all slices delivered (S04-S07) — next: validate + close M387
 
+## M387/S08 delivered (2c398405) — M387 COMPLETE
+
+- Pipeline acceptance: 14-stage ledger contracts all pass, cache replay proof
+  (168239 unchanged), readiness gates (2 tasks evaluated-not-eligible),
+  verdict=accepted, D127=false. Governor ratchet
+  no_optimizer_or_auto_promote_true_in_artifacts added.
+- Artifact: pipeline_acceptance_m387.json.
+
+## M387 all slices delivered (S01-S08) — ready for validate + close
+
 ## M386-57ae9l still active
 
 Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and Rust-only acceptance. D127 false.
