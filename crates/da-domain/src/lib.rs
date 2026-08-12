@@ -462,4 +462,39 @@ mod serde_roundtrip_tests {
             schema_version: 1,
         });
     }
+
+    // ─── ADR-051 §4.4: serde roundtrip for M386/M387 types ───
+
+    #[test]
+    fn roundtrip_prompt_candidate() {
+        use crate::prompt_optimization::{PromptCandidate, PromptCandidateState};
+        roundtrip_json(&PromptCandidate {
+            candidate_id: "c1".into(),
+            task_id: "summary".into(),
+            state: PromptCandidateState::Evaluated,
+            baseline_spec_sha256: ContentDigest::of_text("base"),
+            candidate_spec_sha256: Some(ContentDigest::of_text("candidate")),
+            evaluation: None,
+            human_decision_ref: None,
+            deployed: false,
+            import_eligible: false,
+        });
+    }
+
+    #[test]
+    fn roundtrip_prompt_candidate_state_all_variants() {
+        use crate::prompt_optimization::PromptCandidateState;
+        let states = [
+            PromptCandidateState::BaselineRegistered,
+            PromptCandidateState::CandidateProposed,
+            PromptCandidateState::Evaluated,
+            PromptCandidateState::Eligible,
+            PromptCandidateState::Rejected,
+        ];
+        for state in &states {
+            let json = serde_json::to_string(state).unwrap();
+            let back: PromptCandidateState = serde_json::from_str(&json).unwrap();
+            assert_eq!(*state, back);
+        }
+    }
 }
