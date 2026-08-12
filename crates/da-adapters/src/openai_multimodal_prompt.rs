@@ -113,7 +113,7 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
         let user = render(&request.task.user_template, &request.variables)?;
         let encoded = base64::engine::general_purpose::STANDARD.encode(&request.media[0].bytes);
         let data_url = format!("data:{};base64,{encoded}", request.media[0].media_type);
-        let body = serde_json::json!({"model":request.resolved_model.model_name,"messages":[{"role":"system","content":system},{"role":"user","content":[{"type":"text","text":user},{"type":"image_url","image_url":{"url":data_url}}]}],"temperature":f32::from(request.task.temperature_milli)/1000.0,"max_tokens":request.task.max_output_tokens,"response_format":{"type":"json_object"},"stream":false});
+        let body = serde_json::json!({"model":request.resolved_model.model_name,"messages":[{"role":"system","content":system},{"role":"user","content":[{"type":"text","text":user},{"type":"image_url","image_url":{"url":data_url}}]}],"temperature":f32::from(request.task.temperature_milli)/1000.0,"max_tokens":request.task.max_output_tokens,"response_format":{"type":"json_object"},"stream":false,"enable_thinking":false});
         let mut builder = self
             .client
             .post(&request.resolved_model.endpoint)
