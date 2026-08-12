@@ -22,6 +22,19 @@
 
 ## Next: S07 RuVector/SONA retrieval quality
 
+## M387/S07 delivered (b7ee0d5d)
+
+- RuVectorBridge stub replaced with functional bridge: RRF hybrid fusion
+  (ruvector-hybrid) + feature-gated PPR (ruvector-solver forward-push on plain
+  CSR); 13 ppr tests + 9 base tests PASS.
+- Retrieval quality benchmark (3 queries, golden judgments, tenant filter):
+  dense/lexical/rrf-hybrid recall@k=1.0 filter=true admit; ppr filter=false
+  → benchmark-only (honest: fixed topology ignores tenant). Quality decides
+  admission via data/retrieval/policy.yaml (min recall@k=0.6).
+- Artifact: retrieval_benchmark_m387.json. D127=false, optimizer=false.
+
+## M387 all slices delivered (S04-S07) — next: validate + close M387
+
 ## M386-57ae9l still active
 
 Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and Rust-only acceptance. D127 false.
