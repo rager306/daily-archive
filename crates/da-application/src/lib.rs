@@ -108,6 +108,7 @@ pub mod pipeline_cache_audit;
 pub mod pipeline_ledger_audit;
 pub mod pipeline_metrics;
 pub mod pipeline_stage_assurance;
+pub mod prompt_evaluation;
 pub use graph_finalize::GraphFinalizeUseCase;
 pub use graph_inventory::{
     GraphInventory, collect_graph_inventory, collect_graph_inventory_for_registry,

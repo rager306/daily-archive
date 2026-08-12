@@ -1,0 +1,112 @@
+schema_version: prompt-eval-fixtures.v1
+review_status: synthetic-contract-fixture
+reviewed_by: agent-contract-review
+production_acceptance_eligible: false
+fixtures:
+- fixture_id: summary-train-1
+  task_id: article_summary
+  split: train
+  source_text: The study reports 89 percent accuracy and names ARC as the evaluation
+    dataset.
+  source_sha256: 9fb31e694b00f8c61615a3da080834cfe92ba9c29b85ab5e0e9068f37408414b
+  required_facts: &id001
+  - accuracy=89%
+  - dataset=ARC
+  forbidden_facts:
+  - unsupported-fact
+  baseline:
+    schema_valid: true
+    claims: *id001
+    paraphrase_invariant_pass: true
+    latency_ms: 120
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+  candidate:
+    schema_valid: true
+    claims: *id001
+    paraphrase_invariant_pass: true
+    latency_ms: 100
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+- fixture_id: summary-validation-1
+  task_id: article_summary
+  split: validation
+  source_text: The paper identifies limited multilingual evaluation as its primary
+    limitation.
+  source_sha256: 3cade6d7520707b3e949602f55831f0a2e57d5bf06a807a7c5a27b815c4db245
+  required_facts: &id002
+  - limitation=limited multilingual evaluation
+  forbidden_facts:
+  - unsupported-fact
+  baseline:
+    schema_valid: true
+    claims: *id002
+    paraphrase_invariant_pass: true
+    latency_ms: 130
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+  candidate:
+    schema_valid: true
+    claims: *id002
+    paraphrase_invariant_pass: true
+    latency_ms: 110
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+- fixture_id: figure-train-1
+  task_id: figure_analysis
+  split: train
+  source_text: Figure evidence labels encoder and decoder components and an arrow
+    from encoder to decoder.
+  source_sha256: 31d14126709ad2f1279d9a2db65f2cf55ada6aa8301d3f959beaaab1693feaad
+  required_facts: &id003
+  - component=encoder
+  - component=decoder
+  - relation=encoder->decoder
+  forbidden_facts:
+  - unsupported-fact
+  baseline:
+    schema_valid: true
+    claims: *id003
+    paraphrase_invariant_pass: true
+    latency_ms: 140
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+  candidate:
+    schema_valid: true
+    claims: *id003
+    paraphrase_invariant_pass: true
+    latency_ms: 120
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+- fixture_id: figure-validation-1
+  task_id: figure_analysis
+  split: validation
+  source_text: The plot caption states accuracy rises from 83 percent to 89 percent.
+  source_sha256: cf920a2642a0960d92e09502b96f6cbda1d4316859e3787ea831ff92d70bd555
+  required_facts: &id004
+  - baseline=83%
+  - result=89%
+  forbidden_facts:
+  - unsupported-fact
+  baseline:
+    schema_valid: true
+    claims: *id004
+    paraphrase_invariant_pass: true
+    latency_ms: 150
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10
+  candidate:
+    schema_valid: true
+    claims: *id004
+    paraphrase_invariant_pass: true
+    latency_ms: 130
+    input_tokens: 100
+    output_tokens: 50
+    estimated_cost_microunits: 10

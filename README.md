@@ -148,8 +148,9 @@ cargo run -p da-cli --example prompt_optimizer_readiness
 `artifacts/runtime/prompt_optimizer_readiness_m387.json` binds both prompt tasks
 to exact prompt/route/schema/model registry identities and enumerates required
 schema, grounding, faithfulness, coverage, paraphrase, latency, token and cost
-metrics. Until frozen same-n fixtures exist, evaluation remains typed no-claim,
-`eligible=false`, `deployed=false`, and `optimizer_enabled=false`.
+metrics. Synthetic contract fixtures now exercise the FSM through `evaluated`
+with same-n=2 per task, but are explicitly not production-acceptance evidence;
+`eligible=false`, `deployed=false`, and `optimizer_enabled=false` remain binding.
 
 ## Corpus expansion waves
 

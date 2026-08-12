@@ -20,9 +20,12 @@
   checksum negatives. No paid inference or external provider action was issued.
 - Added durable `prompt-optimizer-readiness.v1` across summary and figure tasks:
   exact prompt/route/schema/model binding identities and complete lineage fields
-  are present, while absent frozen baseline/candidate evaluations remain typed
-  no-claim. Optimizer, auto-promote, eligibility, deployment and D127 all remain
-  false until independent same-n fixtures and budget/contamination gates pass.
+  are present. Synthetic independent contract fixtures exercise both tasks with
+  same-n=2 through FSM state `evaluated`; source digests, required/forbidden facts,
+  train/validation separation, schema/grounding/faithfulness/coverage/paraphrase,
+  latency/token/cost metrics and contamination/budget gates are executable. These
+  fixtures are explicitly not production-acceptance evidence; optimizer,
+  auto-promote, eligibility, deployment and D127 remain false.
 
 ### M387 S04 9router model binding correction
 

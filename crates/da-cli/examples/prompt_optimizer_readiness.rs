@@ -7,7 +7,7 @@ use da_adapters::{
     prompt_task_registry::load_prompt_task_registry,
 };
 use da_domain::assurance::{ContentDigest, MissingnessReason};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 #[derive(Parser)]
 struct Args {
@@ -15,6 +15,8 @@ struct Args {
     prompt_registry: PathBuf,
     #[arg(long, default_value = "models.yaml")]
     model_registry: PathBuf,
+    #[arg(long, default_value = "artifacts/runtime/prompt_eval_m387.json")]
+    evaluation_report: PathBuf,
     #[arg(
         long,
         default_value = "artifacts/runtime/prompt_optimizer_readiness_m387.json"
@@ -36,11 +38,35 @@ struct TaskReadiness {
     lineage_fields: Vec<&'static str>,
     baseline_n: Option<u64>,
     candidate_n: Option<u64>,
-    evaluation_missingness: MissingnessReason,
+    evaluation_missingness: Option<MissingnessReason>,
+    evaluation_review_status: Option<String>,
+    production_acceptance_eligible: bool,
     fsm_state: &'static str,
     eligible: bool,
     deployed: bool,
 }
+#[derive(Deserialize)]
+struct EvaluationArtifact {
+    review_status: String,
+    production_acceptance_eligible: bool,
+    evaluations: Vec<EvaluationItem>,
+}
+#[derive(Deserialize)]
+struct EvaluationItem {
+    candidate: EvaluationCandidate,
+    report: EvaluationTask,
+}
+#[derive(Deserialize)]
+struct EvaluationCandidate {
+    state: String,
+}
+#[derive(Deserialize)]
+struct EvaluationTask {
+    task_id: String,
+    baseline_n: u64,
+    candidate_n: u64,
+}
+
 #[derive(Serialize)]
 struct Report {
     schema_version: String,
@@ -66,6 +92,9 @@ fn main() -> Result<()> {
     let models = load_model_registry(&args.model_registry).map_err(anyhow::Error::msg)?;
     validate_prompt_model_bindings(&models, &prompt).map_err(anyhow::Error::msg)?;
     let model_bytes = std::fs::read(&args.model_registry)?;
+    let evaluation = std::fs::read(&args.evaluation_report)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<EvaluationArtifact>(&bytes).ok());
     let mut tasks = vec![];
     for task in &prompt.tasks {
         let route = prompt
@@ -77,6 +106,12 @@ fn main() -> Result<()> {
         let model = models
             .resolve(&route.model_binding_id, None)
             .map_err(anyhow::Error::msg)?;
+        let observed = evaluation.as_ref().and_then(|artifact| {
+            artifact
+                .evaluations
+                .iter()
+                .find(|item| item.report.task_id == task.task_id)
+        });
         tasks.push(TaskReadiness {
             task_id: task.task_id.clone(),
             eval_suite_id: task.eval_suite_id.clone(),
@@ -104,10 +139,22 @@ fn main() -> Result<()> {
                 "temperature_milli",
                 "max_output_tokens",
             ],
-            baseline_n: None,
-            candidate_n: None,
-            evaluation_missingness: MissingnessReason::NotMaterialized,
-            fsm_state: "baseline_registered",
+            baseline_n: observed.map(|item| item.report.baseline_n),
+            candidate_n: observed.map(|item| item.report.candidate_n),
+            evaluation_missingness: observed
+                .is_none()
+                .then_some(MissingnessReason::NotMaterialized),
+            evaluation_review_status: evaluation
+                .as_ref()
+                .map(|artifact| artifact.review_status.clone()),
+            production_acceptance_eligible: evaluation
+                .as_ref()
+                .is_some_and(|artifact| artifact.production_acceptance_eligible),
+            fsm_state: if observed.is_some_and(|item| item.candidate.state == "evaluated") {
+                "evaluated"
+            } else {
+                "baseline_registered"
+            },
             eligible: false,
             deployed: false,
         });
