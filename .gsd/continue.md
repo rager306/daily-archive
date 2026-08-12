@@ -15,31 +15,44 @@ Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02,
 - Source-bound fixtures `bda7f260`: independently reviewed GEPA abstract/section/Figure3/Figure5 SHA-bound evidence, fail-closed validation.
 - Adapter hardening `8424e028`: reasoning-model compatibility, bounded inference runner.
 
-## M387/S04 active — current blocker
+## M387/S04 active — real same-n inference achieved (e74293a6)
 
-### What works
+### Progress
 
-- Offline evaluator: source-digest fixtures, required/forbidden facts, train/validation contamination, budget gates, same-n metrics, FSM `evaluated`.
-- Source-bound fixtures: independently reviewed, SHA-bound, fail-closed (self-oracle, path escape, digest drift, unbound excerpt).
-- Adapter hardening: `stream:false`, empty-body detection, `<think>` handling, JSON extraction, `finish_reason` logging, `enable_thinking:false`, `response_format:json_object`.
-- Bounded inference runner: `data/prompt_eval/inference.yaml` strict policy (DATA-driven), model binding `minimax/MiniMax-M3`, durable attempt/failure ledger, no retry/fallback/promotion.
-- Governor ratchets: prompt-eval DATA cannot claim production acceptance or enable optimization.
+- **Real same-n inference works end-to-end**:
+  - Summary: 4/4 executions via agnes-2.0-flash, valid JSON, schema-valid.
+  - Figure: 2/4 executions via qwen3-vl, 2 schema quality-signals, full lineage.
+  - Durable ledger: `artifacts/runtime/prompt_eval_inference_m387.json`.
+- **Scoring works**: `prompt_eval_scored.rs` maps real outputs back into
+  frozen source-bound fixtures, extracts canonical facts (structured + prose
+  keyword evidence), produces honest metrics:
+  - article_summary: grounding=1960, faithfulness=1960, coverage=7692,
+    gap=4286, hard=false, eligible=false.
+  - figure_analysis: grounding=10000, faithfulness=10000, coverage=4545,
+    gap=10000, schema_failures=2/4, eligible=false.
+- **FSM gates corrected**: `PromptEvaluation.validate` checks structural
+  invariants only; `gates_passed()` holds execution gates and `mark_eligible`
+  requires them. Gate failure yields `evaluated` with `eligible=false`.
+- **Config data-driven**: per-task model bindings in `models.yaml`
+  (prompt-eval-summary-agnes, prompt-eval-figure-qwen-vl), inference policy
+  in `data/prompt_eval/inference.yaml`, latency/cost in `policy.yaml`.
+- MiniMax-M3 remains unusable for JSON (prose-only through 9router);
+  agnes-2.0-flash and qwen3-vl work with JSON extraction.
 
-### What does not work (model/proxy incompatibility)
+### Current blocker (honest status)
 
-MiniMax-M3 through 9router does NOT produce structured JSON output:
-- `response_format: {"type": "json_object"}` is silently ignored by the proxy.
-- `enable_thinking: false` disables `<think>` reasoning but model still returns markdown prose.
-- Model produces valid, grounded summaries in prose — but NOT in JSON format.
-- `finish_reason: "stop"` confirms model chooses to stop (not truncated).
-- Durable evidence: `artifacts/runtime/prompt_eval_inference_m387.json` records attempted=1, completed=0, error_class=provider/schema.
+Neither task is eligible. Summary has low grounding/coverage vs oracle
+(candidate prompt did not reproduce exact canonical facts); figure has schema
+failures on 2/4 fixtures. Expected first-pass quality evidence, not a process
+defect. GEPA/DSPy disabled; no auto-promotion; D127 locked.
 
-### Options for next session
+### Next session options
 
-1. **Try different model**: `agnes-ai/agnes-2.0-flash` is already bound and might follow JSON instructions through the same proxy.
-2. **Fix proxy**: 9router needs to pass through `response_format` to the upstream model API.
-3. **Prose-to-JSON converter**: Add a structured-extraction adapter that parses prose into JSON schema (fragile, not recommended).
-4. **Accept current state**: Adapter hardening is production-ready; model/proxy JSON compatibility is an external dependency.
+1. Improve candidate prompt suffix in `data/prompt_eval/inference.yaml` and
+   re-run bounded matrix to raise summary grounding/coverage.
+2. Fix figure JSON emission (stronger JSON instruction or different model).
+3. Accept current evidence and close S04 as "harness proven, quality
+   ineligible" — honest fail-closed state.
 
 ## LLM audit current
 
@@ -47,6 +60,18 @@ MiniMax-M3 through 9router does NOT produce structured JSON output:
 - GEPA/DSPy disabled. D127 locked. D238/ADR-059 PromptExecutionPort/FSM.
 - models.yaml owns provider/model/protocol; .env owns host/key/timeout overrides.
 - No hardcoded config: max_calls, timeout, variants, task routes in inference.yaml.
+
+## Session findings
+
+- Codebase Memory MCP timed out repeatedly; GitNexus authoritative and reindexed.
+- MiniMax-M3 through 9router does not honor `response_format`; agnes-2.0-flash
+  and qwen3-vl produce JSON after `stream:false` + `<think>` stripping + balanced
+  brace extraction.
+- Empty success responses, JSON preamble, code fences, and reasoning blocks are
+  all handled by adapter hardening; durable failure ledgers record typed errors.
+- No raw provider body/secret persisted; no paid inference beyond authorized
+  bounded matrix (8 calls max, per-task same-n).
+- GSD journal no S04 stuck-loop. Generated trajectory report remains unstaged.
 
 ## Locks
 
