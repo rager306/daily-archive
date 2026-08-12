@@ -33,6 +33,19 @@
   differ from baseline/candidate producers. Added fail-closed tests for self-oracle,
   path escape, digest drift and unbound excerpts, plus Governor ratchets forbidding
   prompt-eval DATA from claiming production acceptance or enabling optimization.
+- Hardened OpenAI-compatible LLM adapter for production reasoning-model compatibility:
+  added `stream:false`, `enable_thinking:false`, `response_format:json_object`,
+  empty-success-response detection with typed error, `finish_reason` metadata logging,
+  `<think>` tag stripping, and balanced-brace JSON extraction from wrapper text
+  (preamble, markdown code fences, and reasoning blocks). Added model binding
+  `ninerouter-minimax-m3-openai` (`minimax/MiniMax-M3`) with evaluation-only
+  `prompt-eval-{summary,figure}-minimax-m3` bindings. Added
+  `data/prompt_eval/inference.yaml` strict policy (DATA-driven: maximum calls,
+  request timeout, variants, task routes, proxy env, safety locks) and
+  `prompt_eval_inference` CLI example with durable attempt/failure ledger.
+  Bounded MiniMax-M3 same-n matrix was authorized and executed: the model returns
+  valid prose summaries but 9router ignores `response_format` and the model does
+  not emit JSON; durable evidence records attempted=1 completed=0.
 
 ### M387 S04 9router model binding correction
 
