@@ -12,6 +12,16 @@
 
 ## Next: S06 measured Samyama hot path
 
+## M387/S06 delivered (afccb77b)
+
+- Samyama hot path: write/identity/traversal/vector at 100/1k/3k, FROZEN parity
+  (hub.sgsnap 252/342, frozen lookup faster, readonly 1008us), import/replay
+  idempotent (32ms→31ms). Honest: edge create write amplification ~34x for 30x
+  data; identity/traversal/vector sub-linear; vector search 7-20us.
+- Artifact: samyama_hot_path_profile_m387.json. D127=false, optimizer=false.
+
+## Next: S07 RuVector/SONA retrieval quality
+
 ## M386-57ae9l still active
 
 Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and Rust-only acceptance. D127 false.
