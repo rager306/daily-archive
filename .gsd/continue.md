@@ -1,94 +1,65 @@
-# Handoff — 2026-08-12 (M385 closed; resume M383)
+# Handoff — 2026-08-12 (M386 Rust migration + M387 semantic pipeline active)
 
-## Closed milestone
+## Active milestone M386-57ae9l
 
-**M385-n601t6 Awesome Agentic Reasoning Corpus Expansion**
+Goal: Rust-only production pipeline (D237). Python remains only governor/tests/migration analysis/frozen evidence.
 
-Commits:
-- `9f061c12` — pinned source manifest;
-- `9ba8c30d` — downloader metadata fix, 550 new article metadata records, final reports/index/docs.
+Delivered commit `791f7c7b`:
+- typed `batch-acquisition-report.v1`;
+- `BatchAcquisitionUseCase` over `SourceAcquisitionPort`;
+- production `da acquire-arxiv` command (IDs/file, progress, pacing, atomic report, D127 false);
+- README and GEPA reproduction use Rust command;
+- boundary audit `artifacts/runtime/rust_pipeline_boundary_m386.json`;
+- real M385 no-network replay: 580 total, 579 catalog hits, one withdrawn failure `2507.23261`, zero Python subprocesses.
 
-## Source extraction
+Remaining M386:
+- S03 centralize article.v00.02 metadata in typed Rust builder and delete Python duplicate;
+- S04 migrate/archive remaining active product script;
+- S05 evidence-backed governor guardrail;
+- S06 Rust-only end-to-end acceptance.
 
-Supplied repository: `https://github.com/weitianxin/Awesome-Agentic-Reasoning`
+One product Python script remains: `scripts/download_arxiv_to_catalog.py`; do not delete until Rust network/metadata parity and M385 checksum replay pass.
 
-Pinned raw README:
-- SHA256 `20c5aa9e3cc8ba518d3739bf973735362f967d725c869a5321c9317489ae0318`;
-- 118,320 bytes / 1,415 lines;
-- 740 arXiv abs/pdf links;
-- 580 unique versionless IDs;
-- 160 duplicates removed;
-- baseline overlap 29; missing 551.
+## Active milestone M387-jkpnfh
 
-Manifest: `artifacts/source_recovery/awesome_agentic_reasoning_manifest.json`.
+Goal: deep stage semantics/context/cache/scheduler/profile/SMP/Samyama/ruvector optimization.
 
-## Acquisition result
+### S01 delivered `ccb27e08`
 
-Primary 551-item wave:
-- 550 ok;
-- 1 fail: `2507.23261`.
+Canonical stage ledger:
+- DATA: `data/ontology/pipeline_stage_contracts.yaml`;
+- 14 stages: acquisition, catalog, parse, revision materialization, extraction compute/materialization, embedding, summary, readiness, cluster, resolution, assurance, checkpoint, query;
+- each stage names owner, semantic input/output, context additions/losses, deps, hard invariants, consumers, cache mode, failure class, conditionality and graph truth boundary;
+- domain rejects duplicate IDs, missing deps, cycles, incomplete semantics, graph/cache mismatch and D127;
+- strict YAML loader rejects unknown fields/oversize;
+- application runtime audit checks observed order, context digests/counts and failure visibility;
+- durable report `artifacts/runtime/pipeline_stage_ledger_m387.json`: 14 stages, zero findings, D127 false;
+- UAT `6a431853-f9bf-4cd0-9e6a-5d71ea5eabe4`;
+- full architecture PASS; GitNexus reindexed.
 
-Failure-only retry confirmed all PDF endpoints return 404. Search/abstract evidence says the submitter withdrew it. Do not retry indefinitely or create a fake PDF.
+### Exact next action: M387/S02
 
-Existing-gap wave:
-- 29/29 ok;
-- filled HTML and normalized bare-root metadata visibility for previously present IDs.
+Implement context conservation:
+1. typed context metrics contract (bytes/text/sections/tables/figures/citations/spans/VID grounding/duplicates/navigation/entities/evidence/summaries/readiness/missingness);
+2. pure observers for ParsedArticle, RevisionContentContext, ExtractedEntity, materialization, summaries/readiness;
+3. strict DATA policy `context_conservation_policy.yaml` for quality thresholds (not hard invariants);
+4. exact-v1 and 30-paper profiles correlated with graph tasks/readiness;
+5. expose context gained/lost/duplicated/missing per stage.
 
-Final source-specific assurance:
-- source IDs: 580;
-- available articles: 579;
-- valid PDF IDs: 579;
-- valid substantive HTML IDs: 579;
-- valid metadata IDs: 579;
-- missing PDF/HTML/metadata: only `2507.23261`;
-- invalid assets: 0;
-- `.part` files: 0;
-- D127 violations: 0;
-- import_eligible=false.
+Then M387/S03 cache lineage, S04 bounded DAG scheduler/SMP, S05 profiles/ablations, S06 Samyama active-path profile, S07 ruvector applicability/retrieval quality, S08 acceptance/governor.
 
-Assurance: `artifacts/source_recovery/awesome_agentic_reasoning_assurance.json`.
+## Deep audit conclusions
 
-Local canonical catalog now occupies about 3.3 GB. New PDFs/HTML remain local and gitignored; 568 compact `article.json` records and canonical indexes are committed.
-
-## Product gap fixed
-
-`scripts/download_arxiv_to_catalog.py` previously wrote PDF/HTML but no `article.json`, so catalog reconcile/index could not see new acquisitions.
-
-Now it:
-- publishes `article.v00.02` metadata only from checksum-verified representations;
-- never overwrites existing metadata;
-- atomically writes temporary metadata then renames;
-- sets parser/chunk/graph/import readiness false;
-- supports offline `--backfill-metadata-from-report`;
-- replay is skip-only;
-- has 21 passing tests including checksum rejection and idempotency.
-
-Catalog reconcile/index was rebuilt. Global catalog findings still include historical duplicate/conflicting roots and missing variants; no medium/high plan action was auto-applied. Treat those as a separate cleanup milestone, not M385 failure.
-
-## GSD evidence
-
-UAT:
-- S01 `4b486242-a647-4fc7-ba40-7df6feb226a6`;
-- S02 `d6d82abd-e52d-42bd-9d46-ad256267ddd9`;
-- S03 `2f414e47-6041-4899-8571-1c10b3bea428`.
-
-Validation PASS; gates empty; consistency PASS; milestone complete.
-
-## Active milestone
-
-**M383-uber46 Revision Owned Corpus Acceptance** remains active.
-
-### Exact next action
-
-Execute M383/S01 against the exact 579 available Awesome Agentic Reasoning IDs plus existing accepted corpus:
-1. inventory explicit revision/source evidence from article.json and paths;
-2. classify versioned versus versionless inputs without assuming v1;
-3. put versionless policy in ontology DATA;
-4. emit bounded per-paper decision/digest;
-5. fail closed on ambiguous revision.
-
-Then use the M384 18.59s observable materializer for revision-owned rebuild, grounded summaries and five-class ontology acceptance.
+- Canonical Rust flow: acquisition→catalog→parse(cacheable)→revision materialization(always graph)→extraction compute(cacheable)→extraction materialization(always graph)→conditional embedding/summary/readiness/cluster/resolution→assurance→checkpoint→query.
+- Graph materialization must never be skipped by compute cache.
+- Current scheduling is stage-serial; only gold prepare uses scoped workers and unbounded mpsc, then deterministic single writer.
+- No cooperative cancellation or bounded backpressure in general pipeline yet.
+- M384 current 200-paper graph materialization: 18.59s, 229MB, strict semantic equal, replay applied=0, D127 false.
+- Samyama is active in-memory HOT path; RocksDB inactive; global writer RwLock remains but measured throughput accepted.
+- ruvector active only in da-mcp RRF hybrid and feature-gated PPR. `RuVectorBridge` is stub. Do not tune/promote ruvector before S07 quality/latency benchmark.
+- Missing ADR-051 priority: shared PipelineCache contract, ParserPort contract, acquisition wiremock/mixed failures, Samyama revision/extraction replay outcomes, scheduler race/fairness, vector recall/ties/filters/no-NaN/temporal/provenance.
+- Codebase Memory MCP timed out; GitNexus and direct code are authoritative.
 
 ## Locks
 
-D127 false. No graph import from acquisition. `2507.23261` explicitly unavailable. PDFs/HTML are candidate source evidence, not graph truth. D227 temporal strict identity; D229 exact lineage; D230 Citation namespace; D232 cached immutable ontology DATA; D235 no pseudo-atomic bulk; D236 no inactive RocksDB tuning. Samyama sole store; no implicit revision default; no legacy Paper summaries; DSPy disabled.
+D127 false. D237 Rust-only product pipeline. No Rust→Python fallback. Samyama sole store. No implicit revision default. No legacy Paper summaries. Cache only pure compute; graph truth always materialized. Vendor trees require clean isolation before edits. RocksDB/ruvector tuning only after active-path evidence. DSPy disabled.
