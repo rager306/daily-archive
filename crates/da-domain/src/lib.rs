@@ -12,6 +12,7 @@ pub mod article;
 pub mod assurance;
 pub mod catalog;
 pub mod cluster;
+pub mod context_conservation;
 pub mod corpus_checkpoint;
 pub mod domain;
 pub mod edge_contract;

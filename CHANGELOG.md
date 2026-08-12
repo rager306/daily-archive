@@ -1,5 +1,26 @@
 # Changelog
 
+### M387 S02 ACAP context conservation diagnostics
+
+- Added ACAP-aligned stage context snapshots and transitions: every ratio carries
+  a full eligible denominator and `BoundaryMode`; zero-denominator evidence is
+  typed `no_claim`, never perfect retention. Token counts require exact tokenizer
+  lineage, D127 is fail-closed, and S02 has no independent admission verdict.
+- Added pure parse, revision-materialization, extraction and summary/readiness
+  observers. Candidate entities remain partitioned from authoritative context;
+  repeated headings/navigation noise and missing/invalid ordinal-span grounding
+  are visible without graph writes.
+- Added strict diagnostic DATA policy with policy identity and digest binding.
+  Hard ACAP invariants cannot be weakened by YAML thresholds; unknown, oversized
+  and out-of-range policies fail closed.
+- Real 30-article cache profile read 30 parse and 30 extract payloads: 927
+  sections, 1,192 citations and 1,337,968 text characters; 140 extraction
+  candidates, 117 valid document-scoped spans. Twelve unobserved ledger stages
+  are explicit `no_claim`. Exact revision report remains D127=false. Durable
+  deterministic evidence: `artifacts/runtime/context_conservation_m387.json`.
+- Governor follow-up is intentionally deferred to S08: ratchet the proven report
+  schema only after later cache/scheduler/backend slices fill additional stages.
+
 ### M387 S01 executable semantic stage ledger
 
 - Added strict DATA contract `data/ontology/pipeline_stage_contracts.yaml` for

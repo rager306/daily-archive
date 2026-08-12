@@ -94,6 +94,7 @@ pub use decision_recorder::{
 };
 pub mod acap_contract_audit;
 pub mod acquisition_batch;
+pub mod context_conservation;
 pub mod corpus_assurance;
 pub mod corpus_checkpoint;
 pub mod graph_finalize;

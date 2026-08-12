@@ -10,6 +10,7 @@ pub mod assurance_store;
 pub mod catalog_html_acquisition;
 pub mod catalog_inventory;
 pub mod catalog_mutation;
+pub mod context_conservation_policy;
 pub mod fd_embedder;
 pub mod grobid_parser;
 pub mod html_parser;

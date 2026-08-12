@@ -78,9 +78,21 @@ cargo run -p da-cli --example pipeline_ledger_audit -- \
   --report artifacts/runtime/pipeline_stage_ledger_m387.json
 ```
 
-This is the contract/control plane; later M387 slices attach real per-stage
-context conservation, cache, scheduler and backend profiles. RuVector tuning is
-intentionally deferred until retrieval-quality ablations show an active benefit.
+This is the contract/control plane. The ACAP-aligned diagnostic context profile
+reads real parse/extract cache payloads without writing graph truth:
+
+```bash
+DA_PIPELINE_CACHE_ROOT=artifacts/gold_corpus \
+  cargo run -p da-cli --example context_conservation_profile -- \
+  --max-articles 30 \
+  --report artifacts/runtime/context_conservation_m387.json
+```
+
+The profile emits one row per ledger stage. Unobserved stages are explicit
+`no_claim`, candidates are separated from authoritative retention, token counts
+are absent unless exact tokenizer lineage exists, and the report never issues an
+independent admission verdict. RuVector tuning remains deferred until
+retrieval-quality ablations show an active benefit.
 
 ## Corpus expansion waves
 
