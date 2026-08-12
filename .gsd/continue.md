@@ -14,29 +14,30 @@ Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02,
 
 Foundation `3c2162ca`: ADR-059/D238 PromptExecution/FSM, optimizer disabled.
 Summary authority `02761fe0`: summary PromptExecution + candidate-only graph writes.
-9router correction `7b27ec55`: models.yaml canonical, summary via paper-summary-generate-default, typed registry/OpenAI client/live 592-model inventory.
+9router correction `7b27ec55`: models.yaml canonical; summary uses paper-summary-generate-default; typed registry/OpenAI client/live 592-model inventory.
+Figure migration `153691c4`: typed-media PromptExecution/9router, figure-qa-primary binding, no direct-provider fallback, lineage-gated candidates, cache identity fixed.
 
-### Figure PromptExecution migration delivered `153691c4`
+### Frozen offline evaluation loop delivered `667de01e`
 
-- PromptExecutionPort now carries typed bounded `PromptMedia` with MIME, bytes and exact SHA; text adapter rejects media.
-- Added OpenAI-compatible 9router multimodal adapter: exactly one supported image, data-URL request, strict prompt variable set, real JSON Schema validation, token/latency/error mapping and full task/route/model/media/input/output lineage.
-- Added compatibility `PromptMultimodalBridge` so existing cache-aware FigureAnalysisStage remains reusable while product composition is PromptExecution-only.
-- FigureAnalysisUseCase now rejects any model response without valid PromptExecution lineage and binds prompt task, route, model binding, input and output hashes in candidate provenance.
-- Figure cache configuration now uses registry task/schema SHA, image SHA and resolved model binding rather than legacy prompt/schema constants.
-- `analyze_figure` no longer guesses routes, probes `/models/image-to-text`, accepts inline model/URL flags or silently falls back to direct MiniMax. It resolves `figure-qa-primary` from models.yaml.
-- Added real models.yaml binding `figure-qa-primary` → `novita/qwen/qwen3-vl-235b-a22b-instruct`, verified present in live 9router inventory. Two previously remembered Qwen IDs were absent and not used.
-- Added durable `artifacts/runtime/prompt_optimizer_readiness_m387.json`: summary+figure exact prompt/route/schema/model identities and 13 lineage fields. Frozen baseline/candidate evaluation is still no_claim; FSM baseline_registered; eligible/deployed/optimizer/auto-promote/D127 false.
-- Added Governor high rule preventing CLI generative paths from composing Anthropic provider clients/routes directly; 36 Governor tests PASS.
-- Local ephemeral OpenAI-compatible multimodal roundtrip verifies actual image data URL and token lineage; media missing/checksum/type failures happen before network. No external inference was issued.
+- Added application evaluator with source-digest fixtures, required/forbidden fact oracles, train/validation partitions and deterministic metrics: schema validity, grounding, faithfulness, coverage and paraphrase stability plus latency/token/cost observations.
+- Enforces nonzero same-n, contamination separation, validation gap, hard-invariant, latency and cost budgets through PromptEvaluation FSM contracts.
+- Added `data/prompt_eval/{fixtures,policy}.yaml`, `prompt_eval` CLI and durable `artifacts/runtime/prompt_eval_m387.json`.
+- Both article_summary and figure_analysis run through FSM state evaluated with baseline_n=candidate_n=2 and executable perfect synthetic contract metrics. Candidate remains eligible=false, deployed=false, import_eligible=false.
+- Added readiness projection ingestion: `prompt_optimizer_readiness_m387.json` now reports evaluated/same-n=2 for both tasks, review_status=synthetic-contract-fixture, production_acceptance_eligible=false, optimizer=false, auto_promote=false, D127=false.
+- No model inference was requested. This proves evaluator mechanics only, not production quality.
 
-Verification for 153691c4: 19 focused domain/port/adapter/application tests, CLI all-target check, per-crate Clippy, full architecture PASS, Governor drift_risk/0 violations, GitNexus reindexed. GitNexus risk CRITICAL expected due media/cache/usecase/CLI boundary change. Structured readiness log has task_count=2, optimizer=false, auto_promote=false, D127=false and no WARN/ERROR.
+S04-F03 remains blocking: current fixtures are synthetic contract fixtures, explicitly not production acceptance. Commit 667de01e intentionally does not close S04 or enable GEPA/DSPy.
 
-### Exact next action S04/T04
+Verification for latest wave: prompt_evaluation unit/negative tests PASS, both CLIs compile/run, deterministic report digests validated, per-crate Clippy PASS, full architecture PASS, Governor 36 PASS/0 violations, GitNexus reindexed. Structured logs: prompt_eval/readiness task_count=2, no WARN/ERROR, optimizer/auto_promote/D127 false.
 
-1. Create frozen reviewed summary and figure fixtures with independent expected grounding/schema facts. Do not use the candidate implementation as oracle.
-2. Implement `prompt_eval` harness for baseline/candidate same-n evaluation: schema validity, grounding, faithfulness, coverage, paraphrase stability, latency, tokens, estimated cost; contamination, val_gap, latency/cost budget negatives.
-3. Run only candidate evaluation (no deploy, no graph authority); update readiness report from no_claim to evaluated only with durable evidence.
-4. Full UAT and close S04. Then proceed to S05 stage profiles/ablations, S06 Samyama active path and S07 RuVector/SONA retrieval quality.
+### Exact next action S04/F03
+
+1. Promote real source-bound reviewed fixtures, not synthetic assertions:
+   - summary fixtures from canonical article/revision text with independently reviewed facts;
+   - figure fixtures from `2507.19457/Figure3.context.json`, its exact image SHA and independently reviewed evidence facts.
+2. Preserve contamination-separated train/validation sources; record reviewer/evidence refs and fixture approval artifact.
+3. Re-run prompt_eval/readiness. Keep eligible/deployed false even after review; acceptance only proves evaluation corpus quality.
+4. Runtime UAT/full gate and close S04. Then S05 stage profiles/ablations, S06 Samyama active path, S07 RuVector/SONA retrieval quality.
 
 ## LLM audit current
 
@@ -48,10 +49,9 @@ Verification for 153691c4: 19 focused domain/port/adapter/application tests, CLI
 ## Session findings
 
 - Codebase Memory MCP timed out; GitNexus authoritative and reindexed.
-- Figure CLI contained a real hidden direct-provider fallback and stale model discovery route; both removed.
-- Live 9router inventory was used to repair figure binding to an actually present visual model.
-- No raw provider body/secret persisted; no paid inference was issued.
-- GSD journal has no S04 stuck-loop events. Generated trajectory report remains unstaged.
+- Real Figure3 context/analysis assets exist and are the best reviewed-fixture seed, but existing analysis is historical provider output and cannot be used as its own oracle without independent review.
+- No raw provider body/secret persisted; no paid inference issued.
+- GSD journal no S04 stuck-loop. Generated trajectory report remains unstaged.
 
 ## Locks
 
