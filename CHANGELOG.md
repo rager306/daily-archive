@@ -1,5 +1,23 @@
 # Changelog
 
+### M386 S01-S02 Rust-only acquisition boundary
+
+- D237 makes the production data pipeline Rust-only. Python remains permitted
+  for governor, tests, migration analysis and frozen evidence, but Rust must
+  never shell out to Python for product work.
+- Added typed `batch-acquisition-report.v1`, provider-neutral application batch
+  orchestration and production `da acquire-arxiv`. The command reuses
+  `SourceAcquisitionPort` / `ArxivSourceAcquisition`, accepts IDs/files, renders
+  `[n/total]` progress, supports bounded pacing, writes an atomic self-digested
+  report and keeps D127 false.
+- Real no-network replay over all 580 M385 IDs completed in Rust: 579 catalog
+  hits, one explicit withdrawn/missing `2507.23261`, zero Python processes and
+  `import_eligible=false`. README and GEPA reproduction now use the Rust command.
+- Machine-readable boundary audit at
+  `artifacts/runtime/rust_pipeline_boundary_m386.json` reports zero product
+  Python command references, one remaining product script pending deletion after
+  metadata/network parity closeout, and zero Rust→Python subprocess calls.
+
 ### M385 Awesome Agentic Reasoning corpus expansion
 
 - Pinned the supplied `Awesome-Agentic-Reasoning` README by SHA256 and

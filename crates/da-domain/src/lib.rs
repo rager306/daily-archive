@@ -7,6 +7,7 @@
 //! ADR-038 §2: 5-module schema (A-E), 18 relation types.
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
+pub mod acquisition_batch;
 pub mod article;
 pub mod assurance;
 pub mod catalog;

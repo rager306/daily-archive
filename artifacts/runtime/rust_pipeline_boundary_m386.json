@@ -1,0 +1,122 @@
+{
+  "active_python_scripts": [
+    {
+      "class": "product_runtime",
+      "delete_after": "S03",
+      "path": "scripts/download_arxiv_to_catalog.py",
+      "replacement": "da acquire-arxiv"
+    },
+    {
+      "class": "governance",
+      "delete_after": null,
+      "path": "scripts/check_project_trajectory.py",
+      "replacement": null
+    },
+    {
+      "class": "governance",
+      "delete_after": null,
+      "path": "scripts/governor/__init__.py",
+      "replacement": null
+    },
+    {
+      "class": "governance",
+      "delete_after": null,
+      "path": "scripts/governor/__main__.py",
+      "replacement": null
+    }
+  ],
+  "anti_features": [
+    "Rust code must not invoke Python subprocess for product work",
+    "README and Rust examples must not recommend Python product commands",
+    "Do not delete product script before parity",
+    "Do not block Python governor/tests/archive"
+  ],
+  "classes": [
+    "product_runtime",
+    "governance",
+    "test",
+    "migration_analysis",
+    "frozen_evidence"
+  ],
+  "decision": "D237",
+  "import_eligible": false,
+  "migration_order": [
+    "S02 Rust arXiv batch acquisition",
+    "S03 catalog metadata ownership and Python downloader deletion",
+    "S04 active product script/reference migration",
+    "S05 governor negative/current guardrail",
+    "S06 Rust-only end-to-end acceptance"
+  ],
+  "references": [
+    {
+      "capability": "trajectory_governor",
+      "class": "governance",
+      "line": 32,
+      "parity": [
+        "explicit_allowed_exception"
+      ],
+      "path": ".pre-commit-config.yaml",
+      "reference": "python3 -m governor",
+      "rust_owner": [],
+      "surface": "pre_commit"
+    },
+    {
+      "capability": "trajectory_governor",
+      "class": "governance",
+      "line": 145,
+      "parity": [
+        "explicit_allowed_exception"
+      ],
+      "path": ".github/workflows/architecture-guardrail.yml",
+      "reference": "python3 scripts/check_project_trajectory.py",
+      "rust_owner": [],
+      "surface": "ci"
+    },
+    {
+      "capability": "tex_archive_safety",
+      "class": "migration_analysis",
+      "line": 360,
+      "parity": [
+        "replace_comment_with_Rust_contract_reference"
+      ],
+      "path": "crates/da-adapters/src/arxiv_acquisition.rs",
+      "reference": "caps mirrored from Python downloader",
+      "rust_owner": [
+        "da-adapters ArxivSourceAcquisition"
+      ],
+      "surface": "source_comment"
+    },
+    {
+      "capability": "trajectory_governor_evidence",
+      "class": "governance",
+      "line": 283,
+      "parity": [
+        "reference_not_execution"
+      ],
+      "path": "crates/da-cli/examples/acap_contract_audit.rs",
+      "reference": "governor/application/trajectory_service.py",
+      "rust_owner": [],
+      "surface": "evidence_reference"
+    }
+  ],
+  "report_sha256": "87d562a291c37ab278e491b641119ec7435574f5cffe685e4a3d80bc958f63e1",
+  "rust_acquisition_parity": {
+    "fail": 1,
+    "failed_id": "2507.23261",
+    "import_eligible": false,
+    "network_authorized": false,
+    "python_processes": 0,
+    "report": "/tmp/m386-rust-m385-replay.json",
+    "skip": 579,
+    "total": 580
+  },
+  "schema_version": "rust-pipeline-boundary-audit.v1",
+  "source_revision": "f18d0776f3f06b8f6659e49ebdc0ec2cdd2fcfb2",
+  "summary": {
+    "product_runtime_references": 0,
+    "product_runtime_scripts": 1,
+    "references": 4,
+    "rust_subprocess_python_calls": 0,
+    "unknown": 0
+  }
+}

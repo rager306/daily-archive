@@ -448,7 +448,7 @@ async fn main() -> anyhow::Result<()> {
 ## Reproduce
 
 ```bash
-python3 scripts/download_arxiv_to_catalog.py --ids-file artifacts/gepa_hub_research/missing_arxiv.txt --skip-meta
+da acquire-arxiv --ids-file artifacts/gepa_hub_research/missing_arxiv.txt --report artifacts/gepa_hub_research/acquisition.json --allow-network
 cargo test -p da-adapters --lib real_tei -- --test-threads=1
 cargo test -p da-domain --lib relation -- --test-threads=1
 cargo run -p da-cli --example gepa_hub_research

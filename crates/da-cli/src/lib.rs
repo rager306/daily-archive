@@ -1,5 +1,6 @@
 //! Library surface for pure CLI helpers (tests without binary entry).
 
+pub mod acquire_arxiv;
 pub mod batch_ids;
 pub mod gold_corpus;
 pub mod gold_graph;

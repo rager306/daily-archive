@@ -81,9 +81,10 @@ artifact is `artifacts/source_recovery/awesome_agentic_reasoning_assurance.json`
 Metadata-only recovery from a completed report is offline and idempotent:
 
 ```bash
-python3 scripts/download_arxiv_to_catalog.py \
-  --catalog data/article_catalog/article_catalog/arxiv \
-  --backfill-metadata-from-report artifacts/source_recovery/awesome_agentic_reasoning_download.json
+da acquire-arxiv \
+  --ids-file artifacts/source_recovery/awesome_agentic_reasoning.ids.txt \
+  --report artifacts/source_recovery/awesome_agentic_reasoning_rust_replay.json \
+  --sleep-seconds 0
 ```
 
 ## Quick start

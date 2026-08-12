@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+mod acquire_arxiv;
 mod analyze;
 mod batch_ids;
 mod graph_ping;
@@ -130,6 +131,9 @@ enum Commands {
         #[arg(long, default_value = "false")]
         enable_import: bool,
     },
+
+    /// Acquire arXiv PDF/HTML/metadata into the canonical catalog (Rust-only).
+    AcquireArxiv(acquire_arxiv::AcquireArxivArgs),
 
     /// Batch ingest multiple PDFs in one process (HOT path + snapshot export)
     BatchIngest {
@@ -434,6 +438,13 @@ fn main() {
                 ingest_pdf(&pdf, &id, enable_import).await;
             });
         }
+        Commands::AcquireArxiv(args) => match acquire_arxiv::run(&args) {
+            Ok(code) => std::process::exit(code),
+            Err(error) => {
+                eprintln!("acquire-arxiv failed: {error:#}");
+                std::process::exit(2);
+            }
+        },
         Commands::BatchIngest {
             ids,
             ids_file,
