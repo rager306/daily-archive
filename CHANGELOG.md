@@ -1,5 +1,24 @@
 # Changelog
 
+### M387 S01 executable semantic stage ledger
+
+- Added strict DATA contract `data/ontology/pipeline_stage_contracts.yaml` for
+  14 production stages from acquisition through query. Every stage names owner,
+  semantic inputs/outputs, context added/lost, dependencies, hard invariants,
+  consumers, cache/materialization mode, failure class and conditionality.
+- Added provider-neutral domain validation for duplicate IDs, missing deps,
+  cycles, incomplete semantics and cache/graph-truth boundary mismatch; strict
+  YAML loading rejects unknown fields and oversized input.
+- Added application runtime ledger audit with observed order, input/output
+  context digests/counts and failure visibility. Missing, duplicate, unknown,
+  out-of-order and invisible-failure boundaries fail closed. Durable current
+  audit: 14 stages, zero findings, D127=false at
+  `artifacts/runtime/pipeline_stage_ledger_m387.json`.
+- Pipeline audit found Samyama active for scalar graph/vector paths, while
+  RocksDB remains inactive. RuVector is active only in MCP hybrid retrieval and
+  feature-gated PPR; `RuVectorBridge` is a stub. No ruvector parameter/default
+  will change before S07 recall/quality/latency ablations prove value.
+
 ### M386 S01-S02 Rust-only acquisition boundary
 
 - D237 makes the production data pipeline Rust-only. Python remains permitted

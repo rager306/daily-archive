@@ -64,6 +64,24 @@ kg-*          ──►  universal only (never da-*)
 
 ---
 
+## Semantic pipeline stage ledger
+
+The canonical Rust article pipeline is DATA-driven at
+`data/ontology/pipeline_stage_contracts.yaml`. It currently defines 14 stages:
+acquisition, catalog, parse, revision materialization, extraction compute and
+materialization, embedding, summary, readiness, cluster, resolution, assurance,
+checkpoint and query. The ledger records what context each stage adds and loses,
+its hard invariants, cache mode, failure class and downstream consumers.
+
+```bash
+cargo run -p da-cli --example pipeline_ledger_audit -- \
+  --report artifacts/runtime/pipeline_stage_ledger_m387.json
+```
+
+This is the contract/control plane; later M387 slices attach real per-stage
+context conservation, cache, scheduler and backend profiles. RuVector tuning is
+intentionally deferred until retrieval-quality ablations show an active benefit.
+
 ## Corpus expansion waves
 
 The Awesome Agentic Reasoning source wave is pinned at

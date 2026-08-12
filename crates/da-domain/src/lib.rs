@@ -32,6 +32,7 @@ pub mod load;
 pub mod materialization_profile;
 pub mod ordered_mutation;
 pub mod paper;
+pub mod pipeline_ledger;
 pub mod process;
 pub mod relation;
 pub mod revision_readiness;

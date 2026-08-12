@@ -1,0 +1,185 @@
+schema_version: pipeline-stage-contracts.v1
+import_eligible: false
+stages:
+  - id: acquisition
+    owner: adapter
+    input_semantics: [article_locator]
+    output_semantics: [checksum_bound_source_assets]
+    depends_on: []
+    context_adds: [durable_pdf_html_tex_bytes, source_checksums, canonical_source_identity]
+    context_losses: [remote_transport_headers]
+    hard_invariants: [network_requires_explicit_authorization, atomic_publication, import_eligible_false]
+    consumers: [catalog, parse]
+    cache_mode: durable_artifact
+    failure_class: retryable_or_terminal_source_error
+    conditional: false
+    graph_truth_boundary: false
+  - id: catalog
+    owner: adapter
+    input_semantics: [checksum_bound_source_assets]
+    output_semantics: [canonical_article_metadata]
+    depends_on: [acquisition]
+    context_adds: [source_variant_roles, catalog_provenance, topic_category]
+    context_losses: [none]
+    hard_invariants: [versionless_lookup_preserves_versioned_provenance, readiness_not_claimed, import_eligible_false]
+    consumers: [parse, assurance]
+    cache_mode: durable_artifact
+    failure_class: terminal_checksum_or_identity_conflict
+    conditional: false
+    graph_truth_boundary: false
+  - id: parse
+    owner: adapter
+    input_semantics: [canonical_source_asset]
+    output_semantics: [parsed_article]
+    depends_on: [catalog]
+    context_adds: [title, abstract, ordered_sections, citations, structural_spans]
+    context_losses: [pixels, unselected_layout_signals]
+    hard_invariants: [source_checksum_in_cache_key, parser_profile_in_config_fingerprint, output_schema_bound]
+    consumers: [revision_materialization, extraction_compute, embedding]
+    cache_mode: pure_compute
+    failure_class: retryable_sidecar_or_terminal_parse_error
+    conditional: false
+    graph_truth_boundary: false
+  - id: revision_materialization
+    owner: application
+    input_semantics: [parsed_article, revision_content_context]
+    output_semantics: [revision_scoped_graph_content]
+    depends_on: [parse]
+    context_adds: [paper_revision_identity, source_manifestations, ordinal_sections, content_identity]
+    context_losses: [none]
+    hard_invariants: [paper_is_versionless_work, mutable_content_owned_by_revision, exact_source_vids, replay_idempotent, import_eligible_false]
+    consumers: [extraction_materialization, summary, readiness, query]
+    cache_mode: graph_materialize
+    failure_class: terminal_identity_or_graph_error
+    conditional: false
+    graph_truth_boundary: true
+  - id: extraction_compute
+    owner: adapter
+    input_semantics: [parsed_article]
+    output_semantics: [extracted_entity_candidates]
+    depends_on: [parse]
+    context_adds: [typed_mentions, spans, section_ordinals, confidence]
+    context_losses: [unmentioned_prose]
+    hard_invariants: [candidate_not_authoritative, implementation_and_config_in_cache_key, output_schema_bound]
+    consumers: [extraction_materialization, evaluation]
+    cache_mode: pure_compute
+    failure_class: terminal_extractor_error
+    conditional: false
+    graph_truth_boundary: false
+  - id: extraction_materialization
+    owner: application
+    input_semantics: [extracted_entity_candidates, revision_scoped_graph_content]
+    output_semantics: [grounded_entity_evidence_graph]
+    depends_on: [revision_materialization, extraction_compute]
+    context_adds: [entity_nodes, mentions_edges, found_in_revision_sections, evidence]
+    context_losses: [none]
+    hard_invariants: [section_ordinal_grounding, graph_materialization_never_skipped_by_compute_cache, replay_idempotent, import_eligible_false]
+    consumers: [cluster, resolution, assurance, query]
+    cache_mode: graph_materialize
+    failure_class: terminal_graph_error
+    conditional: false
+    graph_truth_boundary: true
+  - id: embedding
+    owner: adapter
+    input_semantics: [parsed_article_or_entity_text]
+    output_semantics: [typed_dense_vector]
+    depends_on: [parse]
+    context_adds: [semantic_similarity_signal]
+    context_losses: [lexical_explainability]
+    hard_invariants: [model_and_dimensions_bound, no_nan, batch_equals_single, candidate_signal_only]
+    consumers: [vector_index, retrieval]
+    cache_mode: pure_compute
+    failure_class: retryable_embedder_or_terminal_dimension_error
+    conditional: true
+    graph_truth_boundary: false
+  - id: summary
+    owner: application
+    input_semantics: [revision_scoped_graph_content]
+    output_semantics: [grounded_revision_summary]
+    depends_on: [revision_materialization]
+    context_adds: [role_selected_extracts, evidence_section_vids]
+    context_losses: [nonselected_prose]
+    hard_invariants: [revision_owned, data_driven_roles, evidence_required, no_llm_authority]
+    consumers: [readiness, query, assurance]
+    cache_mode: graph_materialize
+    failure_class: terminal_grounding_or_policy_error
+    conditional: true
+    graph_truth_boundary: true
+  - id: readiness
+    owner: application
+    input_semantics: [revision_scoped_graph_content, grounded_revision_summary]
+    output_semantics: [derived_revision_readiness]
+    depends_on: [revision_materialization, summary]
+    context_adds: [deterministic_missingness_and_policy_evidence]
+    context_losses: [none]
+    hard_invariants: [derived_not_authoritative, revision_scoped, policy_digest_bound]
+    consumers: [assurance, query]
+    cache_mode: graph_materialize
+    failure_class: terminal_policy_or_evidence_error
+    conditional: true
+    graph_truth_boundary: true
+  - id: cluster
+    owner: application
+    input_semantics: [grounded_entity_evidence_graph]
+    output_semantics: [concept_cluster_assignments]
+    depends_on: [extraction_materialization]
+    context_adds: [cross_article_concept_structure]
+    context_losses: [within_cluster_distinctions]
+    hard_invariants: [deterministic_configuration, candidate_only_until_verified, report_lineage_bound]
+    consumers: [resolution, assurance, retrieval]
+    cache_mode: durable_artifact
+    failure_class: terminal_configuration_or_evidence_error
+    conditional: true
+    graph_truth_boundary: false
+  - id: resolution
+    owner: application
+    input_semantics: [grounded_entity_evidence_graph, concept_cluster_assignments]
+    output_semantics: [identity_resolution_decisions]
+    depends_on: [extraction_materialization, cluster]
+    context_adds: [cross_document_identity_links, ambiguity_evidence]
+    context_losses: [candidate_alias_surface_forms]
+    hard_invariants: [no_self_confirm, atomic_evidence, data_policy_bound]
+    consumers: [assurance, retrieval, query]
+    cache_mode: durable_artifact
+    failure_class: terminal_policy_or_identity_conflict
+    conditional: true
+    graph_truth_boundary: false
+  - id: assurance
+    owner: application
+    input_semantics: [pipeline_stage_evidence]
+    output_semantics: [article_and_corpus_assurance]
+    depends_on: [catalog, revision_materialization, extraction_materialization]
+    context_adds: [hard_invariant_results, missingness, lineage, replay_evidence]
+    context_losses: [none]
+    hard_invariants: [hard_failures_separate_from_scores, exact_lineage, no_claim_for_missing_evidence, D127_false]
+    consumers: [checkpoint, support]
+    cache_mode: none
+    failure_class: terminal_assurance_block
+    conditional: false
+    graph_truth_boundary: false
+  - id: checkpoint
+    owner: application
+    input_semantics: [article_and_corpus_assurance]
+    output_semantics: [sealed_checkpoint_package]
+    depends_on: [assurance]
+    context_adds: [exact_physical_and_semantic_snapshot_lineage]
+    context_losses: [none]
+    hard_invariants: [package_digest_bound, exact_derivation_continuity, D127_false]
+    consumers: [acceptance, query]
+    cache_mode: durable_artifact
+    failure_class: terminal_lineage_or_gate_error
+    conditional: false
+    graph_truth_boundary: false
+  - id: query
+    owner: application
+    input_semantics: [sealed_checkpoint_package, revision_scoped_graph_content]
+    output_semantics: [grounded_article_or_corpus_answer]
+    depends_on: [checkpoint]
+    context_adds: [selected_grounded_context, retrieval_diagnostics]
+    context_losses: [unselected_candidates]
+    hard_invariants: [readonly_policy, revision_selection_explicit, evidence_vids_returned, no_hidden_fallback]
+    consumers: [cli, mcp]
+    cache_mode: none
+    failure_class: terminal_policy_or_not_found
+    conditional: false
+    graph_truth_boundary: false
