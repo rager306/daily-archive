@@ -318,6 +318,7 @@ impl PromptCandidate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     fn base() -> PromptCandidate {
         PromptCandidate {
             candidate_id: "c1".into(),
@@ -388,5 +389,108 @@ mod tests {
         let mut bad = task.clone();
         bad.optimizer_enabled = true;
         assert!(bad.validate().is_err());
+    }
+
+    proptest! {
+        /// ADR-051 P1: no-skip transitions — propose requires BaselineRegistered.
+        #[test]
+        fn prop_propose_requires_baseline(state in 0u8..=4) {
+            let s = match state {
+                0 => PromptCandidateState::BaselineRegistered,
+                1 => PromptCandidateState::CandidateProposed,
+                2 => PromptCandidateState::Evaluated,
+                3 => PromptCandidateState::Eligible,
+                _ => PromptCandidateState::Rejected,
+            };
+            let mut c = base();
+            c.state = s;
+            let result = c.propose(ContentDigest::of_text("x"));
+            if s == PromptCandidateState::BaselineRegistered {
+                prop_assert!(result.is_ok());
+            } else {
+                prop_assert!(result.is_err());
+            }
+        }
+
+        /// ADR-051 P1: no-skip — evaluate requires CandidateProposed.
+        #[test]
+        fn prop_evaluate_requires_proposed(state in 0u8..=4) {
+            let s = match state {
+                0 => PromptCandidateState::BaselineRegistered,
+                1 => PromptCandidateState::CandidateProposed,
+                2 => PromptCandidateState::Evaluated,
+                3 => PromptCandidateState::Eligible,
+                _ => PromptCandidateState::Rejected,
+            };
+            let mut c = base();
+            c.state = s;
+            c.candidate_spec_sha256 = Some(ContentDigest::of_text("c"));
+            let result = c.evaluate(eval(), 500);
+            if s == PromptCandidateState::CandidateProposed {
+                prop_assert!(result.is_ok());
+            } else {
+                prop_assert!(result.is_err());
+            }
+        }
+
+        /// ADR-051 P1: terminal states are frozen — mark_eligible only from Evaluated.
+        #[test]
+        fn prop_mark_eligible_requires_evaluated(state in 0u8..=4) {
+            let s = match state {
+                0 => PromptCandidateState::BaselineRegistered,
+                1 => PromptCandidateState::CandidateProposed,
+                2 => PromptCandidateState::Evaluated,
+                3 => PromptCandidateState::Eligible,
+                _ => PromptCandidateState::Rejected,
+            };
+            let mut c = base();
+            c.state = s;
+            c.candidate_spec_sha256 = Some(ContentDigest::of_text("c"));
+            c.evaluation = Some(eval());
+            let result = c.mark_eligible();
+            if s == PromptCandidateState::Evaluated {
+                prop_assert!(result.is_ok());
+            } else {
+                prop_assert!(result.is_err());
+            }
+        }
+
+        /// ADR-051 P1: D127 and deployed stay false through every valid path.
+        #[test]
+        fn prop_d127_and_deployed_always_false(path in 0u8..=3) {
+            let c = base();
+            let result = match path {
+                0 => Some(c.clone()),
+                1 => Some(c.propose(ContentDigest::of_text("c")).unwrap()),
+                2 => Some(c.propose(ContentDigest::of_text("c")).unwrap().evaluate(eval(), 500).unwrap()),
+                _ => Some(c.propose(ContentDigest::of_text("c")).unwrap().evaluate(eval(), 500).unwrap().mark_eligible().unwrap()),
+            };
+            if let Some(r) = result {
+                prop_assert!(!r.deployed, "deployed leaked true");
+                prop_assert!(!r.import_eligible, "import_eligible leaked true");
+            }
+        }
+
+        /// ADR-051 P1: mark_eligible fails when execution gates are not passed.
+        #[test]
+        fn prop_eligible_requires_passed_gates(hard_pass in any::<bool>(), contam in any::<bool>(), lat in any::<bool>(), cost in any::<bool>()) {
+            let mut e = eval();
+            e.hard_invariants_pass = hard_pass;
+            e.contamination_detected = contam;
+            e.latency_budget_pass = lat;
+            e.cost_budget_pass = cost;
+            let gates_ok = hard_pass && !contam && lat && cost;
+            let c = base()
+                .propose(ContentDigest::of_text("c"))
+                .unwrap()
+                .evaluate(e, 500)
+                .unwrap();
+            let result = c.mark_eligible();
+            if gates_ok {
+                prop_assert!(result.is_ok());
+            } else {
+                prop_assert!(result.is_err());
+            }
+        }
     }
 }
