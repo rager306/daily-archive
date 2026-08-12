@@ -1,6 +1,18 @@
 # Changelog
 
-### M387 S04 real same-n inference scoring
+### M387 S05 stage ablation profiling
+
+- Extended pipeline cache profile to 1/10/30/100/200 article scales with cold
+  vs warm (pre-warmed) memory-cache lookups, per-scale key/payload SHA lineage
+  and drift probes. Honest finding: memory warm hits are 100% but warm_us >= cold_us
+  at scale (store+hit overhead); file-cache hits remain the dominant win
+  (hit_us 5958 vs cold_us 191 at 1 article).
+- Added `stage_ablation_report` example binding cache ablation, materialization
+  scaling (exponent 0.968, projected_200 18.59s), replay proof (168239 unchanged)
+  and optimizer readiness deltas into one report; import_eligible=false,
+  optimizer_enabled=false, auto_promote=false, D127=false.
+- Durable: `artifacts/runtime/pipeline_cache_profile_m387.json` (5 scales),
+  `artifacts/runtime/stage_ablation_profile_m387.json`.
 
 - Fixed adapter contract bug: provider responses that wrap JSON in conversational
   text (preamble/code fences) now yield canonical, directly parseable

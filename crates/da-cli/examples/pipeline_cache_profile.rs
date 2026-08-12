@@ -38,6 +38,8 @@ struct ScaleProfile {
     cold_us: u64,
     hits: usize,
     hit_us: u64,
+    warm_hits: usize,
+    warm_us: u64,
     drift_misses: usize,
     drift_us: u64,
     key_sha256: Vec<String>,
@@ -70,7 +72,7 @@ fn main() -> Result<()> {
     let file = FilePipelineCache::new(&a.cache_root);
     let ids = article_ids(&a.cache_root)?;
     let mut scales = vec![];
-    for n in [1, 10, 30] {
+    for n in [1, 10, 30, 100, 200] {
         let selected = ids.iter().take(n).collect::<Vec<_>>();
         let manifests = selected
             .iter()
@@ -89,6 +91,22 @@ fn main() -> Result<()> {
             ));
         }
         let cold_us = t.elapsed().as_micros() as u64;
+        // Pre-warm the memory cache with all manifests, then measure warm hits.
+        let t = Instant::now();
+        for m in &manifests {
+            memory.store_success(&m.key, b"warm", BTreeMap::new(), "2026-08-12T00:00:00Z")?;
+        }
+        let warm_priming_us = t.elapsed().as_micros() as u64;
+        let t = Instant::now();
+        let mut warm_hits = 0;
+        for m in &manifests {
+            warm_hits += usize::from(matches!(
+                memory.lookup(&m.key, "2026-08-12T00:00:00Z")?,
+                CacheLookup::Hit(_)
+            ));
+        }
+        let warm_us = t.elapsed().as_micros() as u64;
+        let _ = warm_priming_us;
         let t = Instant::now();
         let mut hits = 0;
         for m in &manifests {
@@ -116,6 +134,8 @@ fn main() -> Result<()> {
             cold_us,
             hits,
             hit_us,
+            warm_hits,
+            warm_us,
             drift_misses: drift,
             drift_us,
             key_sha256: manifests.iter().map(|x| x.key_sha256.clone()).collect(),
@@ -142,9 +162,9 @@ fn main() -> Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&a.report, serde_json::to_vec_pretty(&r)?)?;
-    tracing::info!(event="pipeline_cache_profile_complete",scales=3,corruption_visible=r.corruption_visible,replay_unchanged=r.replay.unchanged,report=%a.report.display(),import_eligible=false,"Pipeline cache profile completed");
+    tracing::info!(event="pipeline_cache_profile_complete",scales=5,corruption_visible=r.corruption_visible,replay_unchanged=r.replay.unchanged,report=%a.report.display(),import_eligible=false,"Pipeline cache profile completed");
     println!(
-        "cache-profile scales=1/10/30 corruption_visible={} replay_unchanged={} D127=false report={}",
+        "cache-profile scales=1/10/30/100/200 corruption_visible={} replay_unchanged={} D127=false report={}",
         r.corruption_visible,
         r.replay.unchanged,
         a.report.display()
