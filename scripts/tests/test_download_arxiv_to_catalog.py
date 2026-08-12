@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import tarfile
 from pathlib import Path
 
@@ -166,6 +167,51 @@ def test_download_tex_source_existing_archive_is_network_free_and_atomic(tmp_pat
     assert result["status"] == "skip"
     assert inventory.is_file()
     assert result["inventory_sha256"] == MODULE.sha256_file(inventory)
+
+
+def test_metadata_backfill_is_checksum_bound_and_idempotent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    catalog = Path("data/article_catalog/article_catalog/arxiv")
+    root = catalog / "cs-ai" / "2501.00001"
+    pdf = root / "source" / "2501.00001.pdf"
+    html = root / "article.html"
+    pdf.parent.mkdir(parents=True, exist_ok=True)
+    pdf.write_bytes(b"%PDF-1.7\n" + b"x" * 1200)
+    html.parent.mkdir(parents=True, exist_ok=True)
+    html.write_text("<html><body>" + "content " * 100 + "</body></html>")
+    result = {
+        "id": "2501.00001", "category": "cs-ai", "title": "An Agent Paper", "status": "ok",
+        "representations": {
+            "pdf": {"status": "ok", "path": str(pdf), "sha256": MODULE.sha256_file(pdf), "byte_size": pdf.stat().st_size, "source_url": "https://arxiv.org/pdf/2501.00001"},
+            "html": {"status": "ok", "path": str(html), "sha256": MODULE.sha256_file(html), "byte_size": html.stat().st_size, "source_url": "https://ar5iv.labs.arxiv.org/html/2501.00001"},
+        },
+    }
+    report = Path("download.json")
+    report.write_text(json.dumps({"results": [result]}))
+    assert MODULE.backfill_metadata(report, catalog) == {"ok": 1, "skip": 0, "fail": 0}
+    metadata = json.loads((root / "article.json").read_text())
+    assert metadata["article_key"] == "2501.00001"
+    assert metadata["safety_defaults"]["production_import_authorized"] is False
+    assert metadata["acquisition"]["import_eligible"] is False
+    assert [item["source_role"] for item in metadata["source_variants"]] == ["arxiv_pdf", "arxiv_html"]
+    assert MODULE.backfill_metadata(report, catalog) == {"ok": 0, "skip": 1, "fail": 0}
+
+
+def test_metadata_backfill_rejects_checksum_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    catalog = Path("catalog")
+    pdf = catalog / "cs-ai" / "2501.00002" / "source" / "2501.00002.pdf"
+    pdf.parent.mkdir(parents=True, exist_ok=True)
+    pdf.write_bytes(b"%PDF-1.7\n" + b"x" * 1200)
+    result = {"id": "2501.00002", "category": "cs-ai", "status": "ok", "representations": {"pdf": {"status": "ok", "path": str(pdf), "sha256": "0" * 64}}}
+    report = Path("download.json")
+    report.write_text(json.dumps({"results": [result]}))
+    assert MODULE.backfill_metadata(report, catalog) == {"ok": 0, "skip": 0, "fail": 1}
+    assert not (catalog / "cs-ai" / "2501.00002" / "article.json").exists()
 
 
 def test_normalize_category_is_filesystem_canonical() -> None:

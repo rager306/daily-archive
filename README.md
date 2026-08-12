@@ -64,6 +64,28 @@ kg-*          ──►  universal only (never da-*)
 
 ---
 
+## Corpus expansion waves
+
+The Awesome Agentic Reasoning source wave is pinned at
+`artifacts/source_recovery/awesome_agentic_reasoning_manifest.json`:
+
+- 580 unique versionless arXiv IDs from 740 links;
+- 579 checksum-verified PDF + HTML + `article.json` catalog entries;
+- `2507.23261` is explicitly unavailable because the submitter withdrew it and
+  every PDF endpoint returns 404;
+- acquisition does **not** authorize graph import (`import_eligible=false`).
+
+Source assets live under
+`data/article_catalog/article_catalog/arxiv/<category>/<id>/`. The assurance
+artifact is `artifacts/source_recovery/awesome_agentic_reasoning_assurance.json`.
+Metadata-only recovery from a completed report is offline and idempotent:
+
+```bash
+python3 scripts/download_arxiv_to_catalog.py \
+  --catalog data/article_catalog/article_catalog/arxiv \
+  --backfill-metadata-from-report artifacts/source_recovery/awesome_agentic_reasoning_download.json
+```
+
 ## Quick start
 
 ```bash

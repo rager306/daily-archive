@@ -1,5 +1,28 @@
 # Changelog
 
+### M385 Awesome Agentic Reasoning corpus expansion
+
+- Pinned the supplied `Awesome-Agentic-Reasoning` README by SHA256 and
+  deterministically extracted 740 arXiv links into 580 versionless unique IDs
+  (160 duplicates removed). At baseline 29 were already in the catalog and 551
+  were queued for acquisition.
+- Existing resumable source recovery downloaded 550/551 missing IDs with visible
+  `[n/551]` progress, checksum-bound atomic PDF+HTML publication and no `.part`
+  residue. Failure-only retry confirmed `2507.23261` is withdrawn: its abstract
+  exists but all PDF endpoints return HTTP 404.
+- Recovered HTML for 29 pre-existing source roots. Final source-specific
+  assurance: **579/580** IDs have valid PDF, substantive HTML and canonical
+  `article.json`; invalid assets, partial files and D127 violations are all zero.
+- Fixed a real acquisition/catalog process gap: `download_arxiv_to_catalog.py`
+  now publishes fail-closed `article.v00.02` metadata from verified checksums and
+  supports offline `--backfill-metadata-from-report`. Existing metadata is never
+  overwritten; replay is skip-only; parser/chunk/graph/import readiness remains
+  false. Downloader tests: 21 pass.
+- Rebuilt catalog indexes after metadata publication. Global reconciliation debt
+  remains separately visible (duplicates/conflicting historical roots and
+  missing variants); no medium/high action was auto-applied and no graph import
+  occurred.
+
 ### M384 S02 measured hot-path optimization
 
 - Added typed, self-digested `materialization-scaling-profile.v1` evidence and

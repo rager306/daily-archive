@@ -404,6 +404,131 @@ def download_tex_source(
     }
 
 
+def build_article_metadata(
+    result: dict[str, object],
+    catalog: Path,
+) -> tuple[Path, dict[str, object]]:
+    """Build fail-closed canonical metadata from checksum-verified representations."""
+    arxiv_id = normalize_arxiv_id(str(result["id"]))
+    category = str(result.get("category") or "unknown")
+    article_root = catalog / category / arxiv_id
+    representations = result.get("representations")
+    if not isinstance(representations, dict) or not representations:
+        raise ValueError(f"{arxiv_id}: no representations for metadata")
+    variants: list[dict[str, object]] = []
+    preferred: list[str] = []
+    for key in ("pdf", "html", "tex_source"):
+        raw = representations.get(key)
+        if not isinstance(raw, dict) or raw.get("status") not in {"ok", "skip"}:
+            continue
+        path = Path(str(raw.get("path", "")))
+        if not path.is_file():
+            raise ValueError(f"{arxiv_id}: representation missing: {path}")
+        expected = str(raw.get("sha256", ""))
+        if len(expected) != 64 or sha256_file(path) != expected:
+            raise ValueError(f"{arxiv_id}: representation checksum mismatch: {path}")
+        role = {"pdf": "arxiv_pdf", "html": "arxiv_html", "tex_source": "arxiv_tex_source"}[key]
+        preferred.append(role)
+        variants.append({
+            "variant_id": f"{arxiv_id}:source:{key}",
+            "source_role": role,
+            "source_format": "tar_gz" if key == "tex_source" else key,
+            "source_origin": "arxiv_network_acquisition",
+            "is_primary": key == "pdf",
+            "is_content_bearing": True,
+            "is_metadata_only": False,
+            "path": report_path(path),
+            "url": raw.get("source_url"),
+            "sha256": expected,
+            "byte_size": int(raw.get("byte_size", path.stat().st_size)),
+            "capture_status": "captured_local",
+            "capture_policy": "checksum_bound_source_recovery",
+            "loader_outcome": "not_loaded",
+            "parser_readiness_claimed": False,
+            "chunk_readiness_claimed": False,
+            "graph_readiness_claimed": False,
+        })
+    if not variants or not any(v["source_role"] == "arxiv_pdf" for v in variants):
+        raise ValueError(f"{arxiv_id}: verified PDF required for canonical metadata")
+    metadata = {
+        "schema_version": "article.v00.02",
+        "article_key": arxiv_id,
+        "catalog_path": f"arxiv/{category}/{arxiv_id}",
+        "source_code": "arxiv",
+        "source_type": "preprint_server",
+        "publisher": "arxiv",
+        "coarse_topic_code": category,
+        "topic_tags": [category, "awesome-agentic-reasoning", "catalog-acquisition"],
+        "identity": {
+            "arxiv_id": arxiv_id,
+            "title": str(result.get("title") or f"arXiv {arxiv_id}"),
+            "canonical_url": f"https://arxiv.org/abs/{arxiv_id}",
+            "abs_url": f"https://arxiv.org/abs/{arxiv_id}",
+            "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}",
+            "normalized_identity": f"arxiv:{arxiv_id}",
+            "source_kind": "awesome_agentic_reasoning_network_acquisition",
+        },
+        "source_strategy": {
+            "primary_source_variant_id": f"{arxiv_id}:source:pdf",
+            "preferred_content_order": preferred,
+            "metadata_order": ["arxiv_api_metadata"],
+            "pdf_policy": "checksum_bound_source_recovery",
+            "fallback_policy": "no graph writes; D127 remains locked",
+            "parser_readiness": "not_claimed",
+            "chunk_readiness": "not_claimed",
+            "graph_readiness": "not_claimed",
+        },
+        "source_variants": variants,
+        "safety_flags": {
+            "graph_import_allowed": False,
+            "production_import_attempted": False,
+            "raw_binary_embedded_in_metadata": False,
+            "raw_text_embedded_in_metadata": False,
+        },
+        "safety_defaults": {
+            "external_network_authorized": False,
+            "fact_promotion_authorized": False,
+            "graph_writes_authorized": False,
+            "llm_calls_authorized": False,
+            "production_import_authorized": False,
+        },
+        "acquisition": {
+            "manifest": "artifacts/source_recovery/awesome_agentic_reasoning_manifest.json",
+            "network_used": True,
+            "import_eligible": False,
+        },
+    }
+    return article_root / "article.json", metadata
+
+
+def publish_article_metadata(result: dict[str, object], catalog: Path) -> str:
+    destination, metadata = build_article_metadata(result, catalog)
+    if destination.exists():
+        return "skip"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix(destination.suffix + ".tmp")
+    temporary.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
+    temporary.replace(destination)
+    return "ok"
+
+
+def backfill_metadata(report: Path, catalog: Path) -> dict[str, int]:
+    payload = json.loads(report.read_text())
+    results = payload.get("results")
+    if not isinstance(results, list):
+        raise ValueError("download report missing results")
+    counts = {"ok": 0, "skip": 0, "fail": 0}
+    for result in results:
+        if not isinstance(result, dict) or result.get("status") not in {"ok", "skip"}:
+            continue
+        try:
+            disposition = publish_article_metadata(result, catalog)
+            counts[disposition] += 1
+        except (OSError, ValueError, KeyError):
+            counts["fail"] += 1
+    return counts
+
+
 def parse_ids(values: list[str], ids_file: Path | None) -> list[str]:
     candidates = list(values)
     if ids_file:
@@ -424,10 +549,26 @@ def main() -> int:
     parser.add_argument("--skip-meta", action="store_true", help="store under category=unknown")
     parser.add_argument("--allow-network", action="store_true", help="authorize external fetches")
     parser.add_argument(
+        "--backfill-metadata-from-report", type=Path,
+        help="publish missing checksum-verified article.json records without network",
+    )
+    parser.add_argument(
         "--include-tex-source", action="store_true",
         help="download and safely inventory the official arXiv source archive",
     )
     args = parser.parse_args()
+
+    if args.backfill_metadata_from_report:
+        try:
+            counts = backfill_metadata(args.backfill_metadata_from_report, args.catalog)
+        except (OSError, ValueError, json.JSONDecodeError) as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        print(
+            f"metadata-backfill ok={counts['ok']} skip={counts['skip']} "
+            f"fail={counts['fail']}"
+        )
+        return 0 if counts["fail"] == 0 else 1
 
     try:
         arxiv_ids = parse_ids(args.ids, args.ids_file)
@@ -474,6 +615,7 @@ def main() -> int:
                 "status": "ok" if "ok" in (pdf["status"], html["status"]) else "skip",
                 "representations": representations,
             }
+            result["metadata_disposition"] = publish_article_metadata(result, args.catalog)
         except Exception as error:
             result = {
                 "id": arxiv_id, **metadata, "status": "fail", "representations": {},
