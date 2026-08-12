@@ -372,7 +372,7 @@ impl SourceAcquisitionPort for ArxivSourceAcquisition {
 
 // ─── TeX source sidecar (optional; never blocks PDF primary) ─────────────────
 
-// Caps mirrored from scripts/download_arxiv_to_catalog.py (safe inventory).
+// Caps mirrored from the archived Python downloader (archive/python-era-cold-s04/).
 const MAX_TEX_ARCHIVE_BYTES: u64 = 100 << 20;
 const MAX_TEX_MEMBERS: usize = 1000;
 /// Per-member and expanded-total caps enforced when full member streams are hashed

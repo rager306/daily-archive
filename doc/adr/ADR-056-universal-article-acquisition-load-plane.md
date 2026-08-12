@@ -63,7 +63,7 @@ What exists instead:
 |---------|------------|-----|
 | `da ingest --pdf PATH --id ID` | single PDF path | no acquisition, no catalog ensure |
 | `da batch-ingest --ids …` | multi-PDF HOT path | discovers PDF by ad-hoc `find`, not via port |
-| `scripts/download_arxiv_to_catalog.py` | arXiv → catalog | outside onion; not a port; not composable from application |
+| ~~`scripts/download_arxiv_to_catalog.py`~~ (archived M386 S04) | ~~arXiv → catalog~~ | **Replaced** by `da acquire-arxiv` (Rust); archived to `archive/python-era-cold-s04/` (D237) |
 | `CatalogInventoryPort` / `CatalogMutationPort` | inventory + atomic write | no “ensure missing assets” use case |
 | `EnrichUseCase` (OpenAlex) | post-materialization metadata | not acquisition of primary content |
 | draft `load_arxiv.rs` | CLI-shaped arXiv script wrapper | **anti-pattern** — provider-rooted CLI, not a plane |
@@ -617,7 +617,7 @@ with `provider=arxiv`.
 | `PipelineCache` / `StageCacheKey` / `SourceIdentity` | **Reused** for derived stage payloads; load **fills** `SourceIdentity` from acquisition |
 | `PipelineStageExecutor` | Optional wiring for cacheable stages under same loader |
 | `GraphScheduler` / `TaskType` / `SchedulerTask` | **Reused** graph work queue; load enqueues or runs inline — no second queue product |
-| `scripts/download_arxiv_to_catalog.py` | Temporary **adapter backend** allowed behind `ArxivSourceAcquisition` until Rust fetch is `[validated]`; never called from `da-application` |
+| ~~`scripts/download_arxiv_to_catalog.py`~~ | ~~Temporary adapter backend~~ — **Replaced** by `da acquire-arxiv` (Rust) in M386 S04; archived to `archive/python-era-cold-s04/` (D237). Rust `ArxivSourceAcquisition` is now the validated sole acquisition port. |
 | draft `crates/da-cli/src/load_arxiv.rs` | **Non-binding**; delete or reduce to thin alias after `da load` lands |
 
 ### 2.9 Failure model
