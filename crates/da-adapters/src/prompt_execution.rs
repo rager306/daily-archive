@@ -39,6 +39,11 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
             .output_schema
             .validate()
             .map_err(PromptExecutionError::Contract)?;
+        if !request.media.is_empty() {
+            return Err(PromptExecutionError::Contract(
+                "text prompt adapter does not accept media".into(),
+            ));
+        }
         if request.run_id.trim().is_empty() {
             return Err(PromptExecutionError::Contract("run_id is empty".into()));
         }
@@ -361,6 +366,7 @@ mod tests {
                 ("text".into(), "X {not_recursive}".into()),
             ]),
             input_bytes: b"input".to_vec(),
+            media: vec![],
         }
     }
     #[tokio::test]

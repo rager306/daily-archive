@@ -4,6 +4,7 @@
 //! binding application code to MiniMax, Anthropic, OpenAI, or 9router.
 
 use async_trait::async_trait;
+use da_domain::prompt_optimization::PromptExecutionLineage;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -125,6 +126,7 @@ pub struct MultimodalLlmResponse {
     pub input_tokens: Option<u32>,
     pub output_tokens: Option<u32>,
     pub latency_ms: u64,
+    pub prompt_lineage: Option<PromptExecutionLineage>,
 }
 
 #[derive(Debug, Error)]

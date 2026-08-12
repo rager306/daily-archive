@@ -134,6 +134,19 @@ impl FigureAnalysisUseCase {
                 temperature: 0.0,
             })
             .await?;
+        let prompt_lineage = response.prompt_lineage.as_ref().ok_or_else(|| {
+            FigureAnalysisUseCaseError::RouteCapability(
+                "figure analysis requires PromptExecution lineage".into(),
+            )
+        })?;
+        prompt_lineage
+            .validate()
+            .map_err(FigureAnalysisUseCaseError::RouteCapability)?;
+        if prompt_lineage.task_id != "figure_analysis" {
+            return Err(FigureAnalysisUseCaseError::RouteCapability(
+                "figure prompt lineage task mismatch".into(),
+            ));
+        }
         let structured_output = response.structured_output;
         let draft: FigureAnalysisDraft = serde_json::from_value(structured_output.clone())
             .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
@@ -179,7 +192,12 @@ impl FigureAnalysisUseCase {
                 requested_model: route.model,
                 resolved_model: response.resolved_model,
                 prompt_sha256: Self::prompt_sha256(),
-                output_schema_sha256: Self::output_schema_sha256(),
+                output_schema_sha256: prompt_lineage.output_schema_sha256.as_str().into(),
+                prompt_task_sha256: prompt_lineage.task_spec_sha256.as_str().into(),
+                route_policy_sha256: prompt_lineage.route_policy_sha256.as_str().into(),
+                model_binding_sha256: prompt_lineage.model_binding_sha256.as_str().into(),
+                input_sha256: prompt_lineage.input_sha256.as_str().into(),
+                output_sha256: prompt_lineage.output_sha256.as_str().into(),
                 input_tokens: response.input_tokens,
                 output_tokens: response.output_tokens,
                 latency_ms: response.latency_ms,
@@ -293,7 +311,7 @@ mod tests {
     use async_trait::async_trait;
     use da_domain::{
         BoundingBox72Dpi, FigureReferenceExcerpt, FigureSectionContext, FigureSectionRelation,
-        VisualArtifactKind,
+        VisualArtifactKind, assurance::ContentDigest, prompt_optimization::PromptExecutionLineage,
     };
     use da_ports::multimodal_llm::{
         ImageMediaType, ModelRouteDescriptor, MultimodalLlmResponse, MultimodalLlmResult,
@@ -321,6 +339,28 @@ mod tests {
                 input_tokens: Some(100),
                 output_tokens: Some(40),
                 latency_ms: 12,
+                prompt_lineage: Some(PromptExecutionLineage {
+                    run_id: "figure-test".into(),
+                    task_id: "figure_analysis".into(),
+                    task_spec_sha256: ContentDigest::of_text("task"),
+                    rendered_prompt_sha256: ContentDigest::of_text("prompt"),
+                    output_schema_sha256: ContentDigest::of_text("schema"),
+                    route_policy_sha256: ContentDigest::of_text("route"),
+                    endpoint_sha256: ContentDigest::of_text("endpoint"),
+                    model_binding_sha256: ContentDigest::of_text("binding"),
+                    provider: "fixed".into(),
+                    model: "resolved-vision".into(),
+                    input_sha256: ContentDigest::of_text("input"),
+                    output_sha256: ContentDigest::of_text("output"),
+                    input_tokens: 100,
+                    output_tokens: 40,
+                    latency_ms: 12,
+                    temperature_milli: 0,
+                    max_output_tokens: 4096,
+                    estimated_cost_microunits: None,
+                    authoritative: false,
+                    import_eligible: false,
+                }),
             })
         }
     }

@@ -1,9 +1,6 @@
 //! Cache-aware pipeline stage for non-authoritative figure analysis.
 
-use crate::{
-    FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
-    FigureAnalysisUseCaseError,
-};
+use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
 use da_domain::FigureSemanticContext;
 use da_ports::multimodal_llm::{
@@ -143,8 +140,10 @@ impl PipelineStageExecutor for FigureAnalysisStage {
     fn contract(&self) -> StageContract {
         let mut contract = self.contract.clone();
         contract.configuration_fingerprint = format!(
-            "image_sha256={};prompt={};schema={}",
-            self.image.sha256, FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION
+            "image_sha256={};prompt_sha256={};schema_sha256={}",
+            self.image.sha256,
+            contract.prompt_fingerprint.as_deref().unwrap_or("missing"),
+            contract.output_schema_fingerprint
         );
         contract
     }
@@ -228,7 +227,7 @@ mod tests {
     use async_trait::async_trait;
     use da_domain::{
         BoundingBox72Dpi, FigureReferenceExcerpt, FigureSectionContext, FigureSectionRelation,
-        VisualArtifactKind,
+        VisualArtifactKind, assurance::ContentDigest, prompt_optimization::PromptExecutionLineage,
     };
     use da_ports::multimodal_llm::{
         ImageMediaType, ModelRouteDescriptor, MultimodalLlmRequest, MultimodalLlmResponse,
@@ -276,6 +275,28 @@ mod tests {
                 input_tokens: Some(10),
                 output_tokens: Some(5),
                 latency_ms: 1,
+                prompt_lineage: Some(PromptExecutionLineage {
+                    run_id: "figure-stage-test".into(),
+                    task_id: "figure_analysis".into(),
+                    task_spec_sha256: ContentDigest::of_text("task"),
+                    rendered_prompt_sha256: ContentDigest::of_text("prompt"),
+                    output_schema_sha256: ContentDigest::of_text("schema"),
+                    route_policy_sha256: ContentDigest::of_text("route"),
+                    endpoint_sha256: ContentDigest::of_text("endpoint"),
+                    model_binding_sha256: ContentDigest::of_text("binding"),
+                    provider: "fixed".into(),
+                    model: "vision-model".into(),
+                    input_sha256: ContentDigest::of_text("input"),
+                    output_sha256: ContentDigest::of_text("output"),
+                    input_tokens: 10,
+                    output_tokens: 5,
+                    latency_ms: 1,
+                    temperature_milli: 0,
+                    max_output_tokens: 4096,
+                    estimated_cost_microunits: None,
+                    authoritative: false,
+                    import_eligible: false,
+                }),
             })
         }
     }

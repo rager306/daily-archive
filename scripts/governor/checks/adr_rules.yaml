@@ -235,6 +235,15 @@ rules:
     suffix_allowlist:
       - .yaml
 
+  - id: cli_generative_paths_must_not_bypass_prompt_execution
+    anchor: "ADR-059 + D238 (all generative composition uses PromptExecutionPort)"
+    severity: high
+    scan: crates/da-cli
+    pattern: 'Anthropic(?:LlmClient|MultimodalClient|MultimodalRoute)'
+    rationale: "CLI generative composition must resolve PromptExecution tasks and models.yaml bindings; direct provider adapters bypass lineage, FSM and evaluation gates."
+    suffix_allowlist:
+      - .rs
+
   # --- DSPy / LLM deploy lock (D136) ---
   # --- M329: fact edges must use temporal_stamp (pair with cargo audit test) ---
   # Line-level catch for same-line patterns; multi-line sites covered by

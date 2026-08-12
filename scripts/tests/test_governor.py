@@ -75,6 +75,27 @@ def test_prompt_task_direct_provider_env_bypass_is_caught():
     assert all(violation.severity == "high" for violation in violations)
 
 
+def test_cli_direct_generative_provider_bypass_is_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-cli" / "src" / "main.rs",
+        "let client = AnthropicLlmClient::from_env();\n",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    violations = [
+        violation
+        for result in report.results
+        if result.rule.id == "cli_generative_paths_must_not_bypass_prompt_execution"
+        for violation in result.violations
+    ]
+    assert len(violations) == 1
+    assert violations[0].severity == "high"
+
+
 def test_accepted_article_revision_ontology_is_in_production_data():
     """D223 promotes ADR-058 labels/edges while the draft is superseded."""
     repo = Path(__file__).resolve().parents[2]

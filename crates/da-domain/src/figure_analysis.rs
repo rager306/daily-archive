@@ -47,6 +47,11 @@ pub struct FigureAnalysisProvenance {
     pub resolved_model: String,
     pub prompt_sha256: String,
     pub output_schema_sha256: String,
+    pub prompt_task_sha256: String,
+    pub route_policy_sha256: String,
+    pub model_binding_sha256: String,
+    pub input_sha256: String,
+    pub output_sha256: String,
     pub input_tokens: Option<u32>,
     pub output_tokens: Option<u32>,
     pub latency_ms: u64,
@@ -143,6 +148,14 @@ impl FigureAnalysis {
                 "output_schema_sha256",
                 &self.provenance.output_schema_sha256,
             ),
+            ("prompt_task_sha256", &self.provenance.prompt_task_sha256),
+            ("route_policy_sha256", &self.provenance.route_policy_sha256),
+            (
+                "model_binding_sha256",
+                &self.provenance.model_binding_sha256,
+            ),
+            ("input_sha256", &self.provenance.input_sha256),
+            ("output_sha256", &self.provenance.output_sha256),
         ] {
             if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
                 return Err(FigureAnalysisError::Invalid(format!(
@@ -201,6 +214,11 @@ mod tests {
                 resolved_model: "MiniMax-M3".into(),
                 prompt_sha256: "c".repeat(64),
                 output_schema_sha256: "d".repeat(64),
+                prompt_task_sha256: "e".repeat(64),
+                route_policy_sha256: "f".repeat(64),
+                model_binding_sha256: "1".repeat(64),
+                input_sha256: "2".repeat(64),
+                output_sha256: "3".repeat(64),
                 input_tokens: Some(100),
                 output_tokens: Some(30),
                 latency_ms: 500,

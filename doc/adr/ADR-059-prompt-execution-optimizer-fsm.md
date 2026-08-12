@@ -20,7 +20,9 @@ All active generative calls must execute through a provider-neutral
 `PromptExecutionPort`. Application use cases receive a typed `PromptTaskSpec`;
 adapters render templates, resolve provider/model routes from strict DATA plus
 environment configuration, execute providers and return complete
-`PromptExecutionLineage`.
+`PromptExecutionLineage`. Multimodal requests carry typed, bounded media with
+exact checksum identity; text adapters reject media and image adapters require a
+route that explicitly advertises image support.
 
 Prompt task policy lives in `data/ontology/prompt_tasks.yaml` and binds:
 

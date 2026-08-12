@@ -70,10 +70,39 @@ output_schemas:
       properties:
         visual_type: {type: string, enum: [flowchart, plot, diagram, table, screenshot, photograph, other]}
         description: {type: string}
-        components: {type: array, minItems: 1}
-        relationships: {type: array}
+        components:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, role, visual_evidence]
+            properties:
+              name: {type: string, minLength: 1}
+              role: {type: string, minLength: 1}
+              visual_evidence: {type: string, minLength: 1}
+        relationships:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [source_component, relation, target_component]
+            properties:
+              source_component: {type: string}
+              relation: {type: string}
+              target_component: {type: string}
         findings: {type: array, items: {type: string}}
-        citations: {type: array, minItems: 1}
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [section_id, path_id, quote]
+            properties:
+              section_id: {type: string, minLength: 1}
+              path_id: {type: string, minLength: 1}
+              quote: {type: string, minLength: 1, maxLength: 160}
         confidence: {type: number, minimum: 0.0, maximum: 1.0}
 tasks:
   - task_id: article_summary
@@ -93,7 +122,7 @@ tasks:
     system_template: >-
       Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority.
     user_template: >-
-      Analyze figure {figure_id} for paper {paper_id}. Caption: {caption}.
+      Analyze the attached scientific figure using this canonical grounded context: {grounded_context}
     output_schema_id: figure-analysis-candidate.v1
     route_policy_id: ninerouter-figure-primary
     temperature_milli: 0

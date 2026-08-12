@@ -248,6 +248,7 @@ impl MultimodalLlmPort for AnthropicMultimodalClient {
             input_tokens: decoded.usage.input_tokens,
             output_tokens: decoded.usage.output_tokens,
             latency_ms,
+            prompt_lineage: None,
         })
     }
 }

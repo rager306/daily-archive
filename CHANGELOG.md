@@ -1,5 +1,29 @@
 # Changelog
 
+### M387 S04 typed-media figure prompt migration
+
+- Extended `PromptExecutionPort` with typed, checksum-bound, bounded image media
+  and explicit timeout/rate-limit/unavailable errors. The text adapter rejects
+  media; the new OpenAI-compatible multimodal adapter requires exactly one
+  supported image, emits an `image_url` data URL to 9router, validates the real
+  figure JSON Schema and returns full prompt/model/media lineage.
+- Added `PromptMultimodalBridge` so the existing cache-aware figure stage reuses
+  PromptExecution without duplicating orchestration. Figure candidates now fail
+  closed without PromptExecution lineage and bind task, route, resolved model,
+  input and output hashes in provenance. Cache configuration uses registry task
+  and schema digests instead of legacy constants.
+- Removed CLI route guessing, direct MiniMax fallback, inline model/default URL
+  and runtime `/models/image-to-text` probing from `analyze_figure`. It now
+  resolves `figure-qa-primary` from `models.yaml`; the binding points to the
+  live-inventory model `novita/qwen/qwen3-vl-235b-a22b-instruct` through 9router.
+- Added local ephemeral OpenAI-compatible image roundtrip plus media type/size/
+  checksum negatives. No paid inference or external provider action was issued.
+- Added durable `prompt-optimizer-readiness.v1` across summary and figure tasks:
+  exact prompt/route/schema/model binding identities and complete lineage fields
+  are present, while absent frozen baseline/candidate evaluations remain typed
+  no-claim. Optimizer, auto-promote, eligibility, deployment and D127 all remain
+  false until independent same-n fixtures and budget/contamination gates pass.
+
 ### M387 S04 9router model binding correction
 
 - Removed the incorrect Anthropic endpoint/model binding from the production

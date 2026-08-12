@@ -2,11 +2,16 @@
 
 use anyhow::{Context, Result, bail};
 use chrono::{Duration, Utc};
-use clap::{Parser, ValueEnum};
-use da_adapters::{AnthropicMultimodalClient, AnthropicMultimodalRoute, FilePipelineCache};
+use clap::Parser;
+use da_adapters::{
+    FilePipelineCache,
+    model_registry::{load_model_registry, validate_prompt_model_bindings},
+    openai_multimodal_prompt::OpenAiMultimodalPromptAdapter,
+    prompt_multimodal_bridge::PromptMultimodalBridge,
+    prompt_task_registry::load_prompt_task_registry,
+};
 use da_application::{
-    FigureAnalysisStage, FigureAnalysisUseCase, FigureContextArtifactStage, PipelineOrchestrator,
-    StageDisposition,
+    FigureAnalysisStage, FigureContextArtifactStage, PipelineOrchestrator, StageDisposition,
 };
 use da_domain::{FigureAnalysis, FigureSemanticContext, VisualAnalysisType};
 use da_ports::clock::SystemClock;
@@ -16,14 +21,7 @@ use kg_pipeline::PipelineBuilder;
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Duration as StdDuration, Instant};
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum RouteChoice {
-    Auto,
-    NineRouter,
-    DirectMinimax,
-}
+use std::time::Instant;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -33,31 +31,10 @@ struct Args {
     article_dir: PathBuf,
     #[arg(long)]
     article_id: String,
-    #[arg(long, value_enum, default_value = "auto")]
-    route: RouteChoice,
-    #[arg(long, default_value = "http://127.0.0.1:20128/v1")]
-    router_url: String,
-    #[arg(long)]
-    model: Option<String>,
-    #[arg(long, default_value = "MiniMax-M3-512k")]
-    direct_model: String,
-    #[arg(long, default_value_t = 300)]
-    timeout_seconds: u64,
     #[arg(long)]
     cache_schema_fingerprint: Option<String>,
     #[arg(long)]
     output: Option<PathBuf>,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct ModelList {
-    #[serde(default)]
-    data: Vec<ModelEntry>,
-}
-
-#[derive(Debug, serde::Deserialize)]
-struct ModelEntry {
-    id: String,
 }
 
 #[tokio::main]
@@ -75,12 +52,56 @@ async fn main() -> Result<()> {
     if image_sha256 != context.asset_sha256 {
         bail!("canonical image checksum differs from FigureSemanticContext");
     }
-    let (route, selection_reason) = select_route(&args).await?;
-    let route_descriptor = route.clone();
-    let model: Arc<dyn MultimodalLlmPort> = Arc::new(AnthropicMultimodalClient::with_timeout(
-        route,
-        StdDuration::from_secs(args.timeout_seconds),
-    )?);
+    let prompt_registry_path = std::env::var("DA_PROMPT_TASK_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_tasks.yaml".into());
+    let model_registry_path =
+        std::env::var("DA_MODEL_REGISTRY").unwrap_or_else(|_| "models.yaml".into());
+    let prompt_registry =
+        load_prompt_task_registry(Path::new(&prompt_registry_path)).map_err(anyhow::Error::msg)?;
+    let model_registry =
+        load_model_registry(Path::new(&model_registry_path)).map_err(anyhow::Error::msg)?;
+    validate_prompt_model_bindings(&model_registry, &prompt_registry)
+        .map_err(anyhow::Error::msg)?;
+    let task = prompt_registry
+        .task("figure_analysis")
+        .map_err(anyhow::Error::msg)?
+        .clone();
+    let route = prompt_registry
+        .route(&task.route_policy_id)
+        .map_err(anyhow::Error::msg)?
+        .clone();
+    let schema = prompt_registry
+        .output_schema(&task.output_schema_id)
+        .map_err(anyhow::Error::msg)?
+        .clone();
+    let endpoint_override = route
+        .endpoint_override_env
+        .as_deref()
+        .and_then(|key| std::env::var(key).ok())
+        .filter(|value| !value.trim().is_empty());
+    let resolved_model = model_registry
+        .resolve(&route.model_binding_id, endpoint_override.as_deref())
+        .map_err(anyhow::Error::msg)?;
+    let credential = std::env::var(&route.credential_env).ok();
+    let timeout_seconds = std::env::var("DA_LLM_TIMEOUT_SECONDS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(300);
+    let prompt_executor = Arc::new(
+        OpenAiMultimodalPromptAdapter::new(credential, timeout_seconds)
+            .map_err(anyhow::Error::msg)?,
+    );
+    let bridge = PromptMultimodalBridge::new(
+        prompt_executor,
+        task.clone(),
+        route.clone(),
+        resolved_model.clone(),
+        schema.clone(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    let route_descriptor = bridge.route();
+    let model: Arc<dyn MultimodalLlmPort> = Arc::new(bridge);
+    let selection_reason = "models_yaml:figure-qa-primary".to_string();
     let context_stage = Arc::new(FigureContextArtifactStage::new(context.clone())?);
     let image = MultimodalImage {
         media_type: media_type(&image_path)?,
@@ -90,14 +111,22 @@ async fn main() -> Result<()> {
     let retry_after = (Utc::now() + Duration::minutes(10)).to_rfc3339();
     let mut analysis_stage = FigureAnalysisStage::new(model, image, retry_after)
         .with_context_dependency("analysis_context");
+    let registry_schema = schema
+        .sha256()
+        .map_err(anyhow::Error::msg)?
+        .as_str()
+        .to_string();
     let cache_schema = args
         .cache_schema_fingerprint
         .clone()
-        .unwrap_or_else(FigureAnalysisUseCase::output_schema_sha256);
-    if args.cache_schema_fingerprint.is_some() {
-        analysis_stage = analysis_stage
-            .with_contract_versions(FigureAnalysisUseCase::prompt_sha256(), cache_schema.clone());
-    }
+        .unwrap_or(registry_schema);
+    analysis_stage = analysis_stage.with_contract_versions(
+        task.spec_sha256()
+            .map_err(anyhow::Error::msg)?
+            .as_str()
+            .to_string(),
+        cache_schema.clone(),
+    );
     let analysis_stage = Arc::new(analysis_stage);
     let cache_root = args.article_dir.join("pipeline_cache");
     let cache = Arc::new(FilePipelineCache::new(&cache_root));
@@ -175,7 +204,7 @@ async fn main() -> Result<()> {
         serde_json::to_string_pretty(&serde_json::json!({
             "article_id": args.article_id,
             "artifact_id": context.artifact_id,
-            "route_choice": format!("{:?}", args.route).to_lowercase(),
+            "model_binding_id": resolved_model.binding_id,
             "selection_reason": selection_reason,
             "route_id": analysis.provenance.route_id,
             "requested_model": analysis.provenance.requested_model,
@@ -194,68 +223,6 @@ async fn main() -> Result<()> {
         }))?
     );
     Ok(())
-}
-
-async fn select_route(args: &Args) -> Result<(AnthropicMultimodalRoute, String)> {
-    match args.route {
-        RouteChoice::DirectMinimax => Ok((direct_route(args)?, "explicit_direct_minimax".into())),
-        RouteChoice::NineRouter => {
-            let model = args
-                .model
-                .clone()
-                .context("--model is required for explicit nine-router route")?;
-            Ok((router_route(args, model), "explicit_nine_router".into()))
-        }
-        RouteChoice::Auto => {
-            let endpoint = format!(
-                "{}/models/image-to-text",
-                args.router_url.trim_end_matches('/')
-            );
-            let discovered = reqwest::Client::builder()
-                .timeout(StdDuration::from_secs(5))
-                .build()?
-                .get(endpoint)
-                .send()
-                .await
-                .ok()
-                .and_then(|response| response.error_for_status().ok());
-            if let Some(response) = discovered
-                && let Ok(list) = response.json::<ModelList>().await
-                && let Some(model) = args
-                    .model
-                    .clone()
-                    .or_else(|| list.data.into_iter().next().map(|entry| entry.id))
-            {
-                let reason = if args.model.is_some() {
-                    "auto_9router_explicit_model_probe"
-                } else {
-                    "auto_9router_discovered_vision_model"
-                };
-                return Ok((router_route(args, model), reason.into()));
-            }
-            Ok((
-                direct_route(args)?,
-                "auto_fallback_direct_minimax_no_router_vision_model".into(),
-            ))
-        }
-    }
-}
-
-fn router_route(args: &Args, model: String) -> AnthropicMultimodalRoute {
-    AnthropicMultimodalRoute::nine_router(
-        &args.router_url,
-        std::env::var("NINE_ROUTER_API_KEY").ok(),
-        model,
-    )
-}
-
-fn direct_route(args: &Args) -> Result<AnthropicMultimodalRoute> {
-    let key = std::env::var("MINIMAX_API_KEY")
-        .context("MINIMAX_API_KEY is required for direct MiniMax route")?;
-    Ok(AnthropicMultimodalRoute::minimax_direct(
-        key,
-        &args.direct_model,
-    ))
 }
 
 fn semantic_acceptance(analysis: &FigureAnalysis, context: &FigureSemanticContext) -> Result<()> {

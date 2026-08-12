@@ -132,10 +132,24 @@ OpenAI-compatible 9router proxy. Environment configuration supplies only
 and registry paths (`DA_PROMPT_TASK_REGISTRY`, `DA_MODEL_REGISTRY`). `da summarize` executes through
 `PromptExecutionPort`: strict template variables, output-schema validation and
 complete prompt/model/input/output lineage are mandatory before graph writes.
-Generative output writes only non-retrieval Summary candidates; canonical
-Method/Dataset/Metric/QualitySignal facts remain owned by deterministic or
-independently verified stages. ADR-059's FSM stops at `eligible`; GEPA/DSPy
-cannot auto-promote or authorize graph import.
+Generative output writes only non-retrieval Summary/Figure candidates;
+canonical Method/Dataset/Metric/QualitySignal facts remain owned by deterministic
+or independently verified stages. Figure analysis also uses PromptExecution with
+checksum-bound typed media and the `figure-qa-primary` models.yaml binding; the
+CLI has no direct-provider fallback or inline model selection. ADR-059's FSM
+stops at `eligible`; GEPA/DSPy cannot auto-promote or authorize graph import.
+
+Optimizer readiness is inspectable without running an optimizer or model:
+
+```bash
+cargo run -p da-cli --example prompt_optimizer_readiness
+```
+
+`artifacts/runtime/prompt_optimizer_readiness_m387.json` binds both prompt tasks
+to exact prompt/route/schema/model registry identities and enumerates required
+schema, grounding, faithfulness, coverage, paraphrase, latency, token and cost
+metrics. Until frozen same-n fixtures exist, evaluation remains typed no-claim,
+`eligible=false`, `deployed=false`, and `optimizer_enabled=false`.
 
 ## Corpus expansion waves
 

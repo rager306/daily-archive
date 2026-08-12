@@ -168,6 +168,7 @@ impl SummaryUseCase {
                 output_schema: self.output_schema.clone(),
                 variables,
                 input_bytes,
+                media: vec![],
             })
             .await?;
         response.lineage.validate().map_err(anyhow::Error::msg)?;
