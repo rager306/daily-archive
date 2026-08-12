@@ -31,6 +31,23 @@ rules:
     pattern: '"import_eligible"\s*:\s*true'
     rationale: "import_eligible must remain false until independent review and explicit user yes (D127)."
 
+  # --- ADR-059 frozen evaluation admission locks ---
+  - id: prompt_eval_data_must_not_claim_production_acceptance
+    anchor: "ADR-059 (independent frozen evaluation before optimizer admission)"
+    severity: high
+    scan: data/prompt_eval/
+    pattern: 'production_acceptance_eligible\s*:\s*true'
+    rationale: "Frozen source review and contract outputs do not prove production model quality; acceptance requires separately authorized real same-n baseline/candidate inference evidence."
+    suffix_allowlist: [.yaml, .yml]
+
+  - id: prompt_eval_data_must_not_enable_optimizer_or_promotion
+    anchor: "ADR-059, D136, D127"
+    severity: high
+    scan: data/prompt_eval/
+    pattern: '(?:optimizer_enabled|auto_promote)\s*:\s*true'
+    rationale: "Prompt evaluation DATA may evaluate candidates but must not enable optimization, promotion or import authority."
+    suffix_allowlist: [.yaml, .yml]
+
   # --- M333: D127 source lock — import_eligible must not be set true in crates ---
   # Artifacts already covered by no_import_eligible_true_in_artifacts.
   - id: no_import_eligible_true_in_crates

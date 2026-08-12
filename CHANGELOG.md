@@ -26,6 +26,13 @@
   latency/token/cost metrics and contamination/budget gates are executable. These
   fixtures are explicitly not production-acceptance evidence; optimizer,
   auto-promote, eligibility, deployment and D127 remain false.
+- Hardened frozen prompt evaluation provenance: synthetic source text was replaced
+  by independently reviewed canonical GEPA abstract/section excerpts and Figure 3/5
+  caption+image evidence. Repo-relative source/review/image refs carry exact SHA-256,
+  source excerpts must occur in bound artifacts, and oracle producer identity must
+  differ from baseline/candidate producers. Added fail-closed tests for self-oracle,
+  path escape, digest drift and unbound excerpts, plus Governor ratchets forbidding
+  prompt-eval DATA from claiming production acceptance or enabling optimization.
 
 ### M387 S04 9router model binding correction
 

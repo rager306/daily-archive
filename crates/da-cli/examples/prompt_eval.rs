@@ -4,7 +4,8 @@ use anyhow::{Result, anyhow};
 use clap::Parser;
 use da_adapters::prompt_task_registry::load_prompt_task_registry;
 use da_application::prompt_evaluation::{
-    FrozenPromptFixture, PromptEvalPolicy, TaskEvaluationReport, evaluate_task,
+    FrozenArtifactBinding, FrozenPromptFixture, PromptEvalPolicy, TaskEvaluationReport,
+    evaluate_task,
 };
 use da_domain::{
     assurance::ContentDigest,
@@ -69,6 +70,7 @@ fn main() -> Result<()> {
             "fixture set incomplete or incorrectly acceptance-eligible"
         ));
     }
+    validate_fixture_artifacts(&fixtures.fixtures)?;
     let policy_bytes = std::fs::read(&args.policy)?;
     let policy: PromptEvalPolicy = serde_yaml::from_slice(&policy_bytes)?;
     policy.validate().map_err(anyhow::Error::msg)?;
@@ -135,10 +137,84 @@ fn main() -> Result<()> {
     );
     Ok(())
 }
+fn validate_fixture_artifacts(fixtures: &[FrozenPromptFixture]) -> Result<()> {
+    for fixture in fixtures {
+        validate_source_artifact(
+            &fixture.source_artifact_ref,
+            &fixture.source_artifact_sha256,
+            &fixture.source_text,
+        )?;
+        validate_artifact(&fixture.oracle_review_ref, &fixture.oracle_review_sha256)?;
+        for artifact in &fixture.supporting_artifacts {
+            validate_supporting_artifact(artifact)?;
+        }
+    }
+    Ok(())
+}
+fn validate_source_artifact(path: &str, expected: &ContentDigest, source_text: &str) -> Result<()> {
+    let bytes = validate_artifact(path, expected)?;
+    let text = std::str::from_utf8(&bytes)
+        .map_err(|_| anyhow!("fixture source artifact must be UTF-8 text"))?;
+    if !text.contains(source_text) {
+        return Err(anyhow!("fixture source text is not contained in {}", path));
+    }
+    Ok(())
+}
+fn validate_supporting_artifact(artifact: &FrozenArtifactBinding) -> Result<()> {
+    validate_artifact(&artifact.artifact_ref, &artifact.artifact_sha256).map(|_| ())
+}
+fn validate_artifact(path: &str, expected: &ContentDigest) -> Result<Vec<u8>> {
+    let path = std::path::Path::new(path);
+    if path.is_absolute()
+        || path.components().any(|component| {
+            matches!(
+                component,
+                std::path::Component::ParentDir | std::path::Component::CurDir
+            )
+        })
+    {
+        return Err(anyhow!(
+            "fixture artifact path must be repo-relative and normalized"
+        ));
+    }
+    let bytes = std::fs::read(path)?;
+    let observed = ContentDigest::of_bytes(&bytes);
+    if &observed != expected {
+        return Err(anyhow!(
+            "fixture artifact digest mismatch for {}",
+            path.display()
+        ));
+    }
+    Ok(bytes)
+}
 fn digest<T: Serialize>(value: &T) -> Result<String> {
     let mut v = serde_json::to_value(value)?;
     v["report_sha256"] = serde_json::Value::String(String::new());
     Ok(ContentDigest::of_bytes(&serde_json::to_vec(&v)?)
         .as_str()
         .into())
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn artifact_digest_mismatch_fails_closed() {
+        assert!(validate_artifact("Cargo.toml", &ContentDigest::of_text("wrong")).is_err());
+    }
+    #[test]
+    fn artifact_path_escape_fails_closed_before_io() {
+        assert!(validate_artifact("../Cargo.toml", &ContentDigest::of_text("irrelevant")).is_err());
+    }
+    #[test]
+    fn source_text_must_be_contained_in_bound_artifact() {
+        let bytes = std::fs::read("Cargo.toml").unwrap();
+        assert!(
+            validate_source_artifact(
+                "Cargo.toml",
+                &ContentDigest::of_bytes(&bytes),
+                "not-present-in-workspace-manifest"
+            )
+            .is_err()
+        );
+    }
 }

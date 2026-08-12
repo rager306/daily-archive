@@ -14,12 +14,24 @@ pub enum EvalSplit {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct FrozenArtifactBinding {
+    pub artifact_ref: String,
+    pub artifact_sha256: ContentDigest,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct FrozenPromptFixture {
     pub fixture_id: String,
     pub task_id: String,
     pub split: EvalSplit,
     pub source_text: String,
     pub source_sha256: ContentDigest,
+    pub source_artifact_ref: String,
+    pub source_artifact_sha256: ContentDigest,
+    pub supporting_artifacts: Vec<FrozenArtifactBinding>,
+    pub oracle_review_ref: String,
+    pub oracle_review_sha256: ContentDigest,
+    pub oracle_producer_id: String,
     pub required_facts: BTreeSet<String>,
     pub forbidden_facts: BTreeSet<String>,
     pub baseline: FrozenPromptOutput,
@@ -28,6 +40,7 @@ pub struct FrozenPromptFixture {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FrozenPromptOutput {
+    pub producer_id: String,
     pub schema_valid: bool,
     pub claims: BTreeSet<String>,
     pub paraphrase_invariant_pass: bool,
@@ -105,9 +118,25 @@ pub fn evaluate_task(
         if f.fixture_id.trim().is_empty()
             || !ids.insert(f.fixture_id.as_str())
             || f.source_text.trim().is_empty()
+            || f.source_artifact_ref.trim().is_empty()
+            || f.oracle_review_ref.trim().is_empty()
+            || f.supporting_artifacts
+                .iter()
+                .any(|a| a.artifact_ref.trim().is_empty())
+            || f.oracle_producer_id.trim().is_empty()
+            || f.baseline.producer_id.trim().is_empty()
+            || f.candidate.producer_id.trim().is_empty()
             || f.required_facts.is_empty()
         {
-            return Err("fixture identity/source/required facts invalid".into());
+            return Err("fixture identity/source/review/producer/required facts invalid".into());
+        }
+        if f.oracle_producer_id == f.baseline.producer_id
+            || f.oracle_producer_id == f.candidate.producer_id
+        {
+            return Err(format!(
+                "fixture {} uses output producer as oracle",
+                f.fixture_id
+            ));
         }
         if ContentDigest::of_text(&f.source_text) != f.source_sha256 {
             return Err(format!("fixture {} source digest mismatch", f.fixture_id));
@@ -273,9 +302,16 @@ mod tests {
             split,
             source_text: source.into(),
             source_sha256: ContentDigest::of_text(source),
+            source_artifact_ref: format!("artifact:{id}"),
+            source_artifact_sha256: ContentDigest::of_text(&format!("artifact:{id}")),
+            supporting_artifacts: vec![],
+            oracle_review_ref: format!("review:{id}"),
+            oracle_review_sha256: ContentDigest::of_text(&format!("review:{id}")),
+            oracle_producer_id: "independent-reviewer".into(),
             required_facts: facts.clone(),
             forbidden_facts: BTreeSet::from(["false".into()]),
             baseline: FrozenPromptOutput {
+                producer_id: "baseline-run".into(),
                 schema_valid: true,
                 claims: facts.clone(),
                 paraphrase_invariant_pass: true,
@@ -285,6 +321,7 @@ mod tests {
                 estimated_cost_microunits: 1,
             },
             candidate: FrozenPromptOutput {
+                producer_id: "candidate-run".into(),
                 schema_valid: true,
                 claims: facts,
                 paraphrase_invariant_pass: true,
@@ -320,6 +357,16 @@ mod tests {
         assert_eq!(r.baseline_n, r.candidate_n);
         assert!(!r.eligible && !r.deployed && !r.import_eligible);
         assert_eq!(r.candidate_metrics["faithfulness"], 10_000);
+    }
+    #[test]
+    fn self_oracle_fails_closed() {
+        let fixtures = [
+            fixture("a", EvalSplit::Train, "a"),
+            fixture("b", EvalSplit::Validation, "b"),
+        ];
+        let mut fixtures = fixtures;
+        fixtures[0].oracle_producer_id = fixtures[0].candidate.producer_id.clone();
+        assert!(evaluate_task(&task(), &fixtures, &policy()).is_err());
     }
     #[test]
     fn contamination_and_budget_fail_closed() {

@@ -75,6 +75,26 @@ def test_prompt_task_direct_provider_env_bypass_is_caught():
     assert all(violation.severity == "high" for violation in violations)
 
 
+def test_prompt_eval_production_or_optimizer_unlock_is_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "data" / "prompt_eval" / "fixtures.yaml",
+        "production_acceptance_eligible: true\noptimizer_enabled: true\n",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "prompt_eval_data_must_not_claim_production_acceptance" in ids
+    assert "prompt_eval_data_must_not_enable_optimizer_or_promotion" in ids
+
+
 def test_cli_direct_generative_provider_bypass_is_caught():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"

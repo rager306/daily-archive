@@ -63,6 +63,13 @@ Evaluation must use independent frozen fixtures and require:
 - dual entity/relation F1 plus semantic graph tasks where extraction is involved.
 
 A candidate cannot score itself using the same implementation as its oracle.
+Frozen evaluation fixtures bind repo-relative source, review and media artifacts
+by exact SHA-256; the frozen excerpt must occur in its bound source artifact, and
+oracle producer identity must differ from baseline and candidate producers.
+Independent source review plus deterministic contract outputs proves harness
+correctness only. Production acceptance additionally requires separately
+recorded real same-n baseline/candidate executions under explicit inference
+authorization.
 
 ## Architectural boundaries
 

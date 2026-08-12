@@ -1,0 +1,31 @@
+schema_version: prompt-eval-source-review.v1
+review_status: independently-reviewed-source-package
+reviewed_by:
+  - reviewer-summary-crisp-vista
+  - reviewer-figure-swift-vector
+review_method: parallel-independent-artifact-review
+candidate_outputs_used_as_oracle: false
+model_inference_used_for_review: false
+production_acceptance_eligible: false
+sources:
+  - fixture_id: article-summary-train-2507.19457-abstract
+    evidence_pointer: $.article_summary.text
+    review_verdict: approved
+    rationale: Complete untruncated abstract with content-addressed headline claims.
+  - fixture_id: article-summary-validation-2507.19457-sec3-prefix
+    evidence_pointer: $.containing_section.text prefix through fixed-weights sentence
+    review_verdict: approved
+    rationale: Bounded pre-truncation method excerpt, disjoint from abstract source digest.
+  - fixture_id: figure-analysis-train-2507.19457-Figure3
+    evidence_pointer: pdffigures2 artifact_id=Figure3 caption and image asset_sha256
+    review_verdict: approved
+    rationale: Process-flow caption and image bind strategy, minibatch and Pareto facts.
+  - fixture_id: figure-analysis-validation-2507.19457-Figure5
+    evidence_pointer: pdffigures2 artifact_id=Figure5 caption and image asset_sha256
+    review_verdict: approved
+    rationale: Page-disjoint trajectory caption and image bind PUPA candidate progression.
+known_limits:
+  - Figure3 containing section is truncated; only bounded prefix facts are approved.
+  - Figure3 caption spells Paretobased; semantic fact key uses normalized Pareto wording.
+  - Figure5 has no context JSON; caption and image are bound through pdffigures2 manifest.
+  - Review approves source package, not baseline or candidate model quality.

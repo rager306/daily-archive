@@ -1,112 +1,208 @@
 schema_version: prompt-eval-fixtures.v1
-review_status: synthetic-contract-fixture
-reviewed_by: agent-contract-review
+review_status: independently-reviewed-source-package-contract-outputs
+reviewed_by: parallel-independent-artifact-review
 production_acceptance_eligible: false
 fixtures:
-- fixture_id: summary-train-1
+- fixture_id: article-summary-train-2507.19457-abstract
   task_id: article_summary
   split: train
-  source_text: The study reports 89 percent accuracy and names ARC as the evaluation
-    dataset.
-  source_sha256: 9fb31e694b00f8c61615a3da080834cfe92ba9c29b85ab5e0e9068f37408414b
+  source_text: Large language models (LLMs) are increasingly adapted to downstream
+    tasks via reinforcement learning (RL) methods like Group Relative Policy Optimization
+    (GRPO), which often require thousands of rollouts to learn new tasks. We argue
+    that the interpretable nature of language often provides a much richer learning
+    medium for LLMs, compared to policy gradients derived from sparse, scalar rewards.
+    To test this, we introduce GEPA (Genetic-Pareto), a prompt optimizer that thoroughly
+    incorporates natural language reflection to learn high-level rules from trial
+    and error. Given any AI system containing one or more LLM prompts, GEPA samples
+    trajectories (e.g., reasoning, tool calls, and tool outputs) and reflects on them
+    in natural language to diagnose problems, propose and test prompt updates, and
+    combine complementary lessons from the Pareto frontier of its own attempts. As
+    a result of GEPA's design, it can often turn even just a few rollouts into a large
+    quality gain. Across six tasks, GEPA outperforms GRPO by 6% on average and by
+    up to 20%, while using up to 35x fewer rollouts. GEPA also outperforms the leading
+    prompt optimizer, MIPROv2, by over 10% (e.g., +12% accuracy on AIME-2025), and
+    demonstrates promising results as an inference-time search strategy for code optimization.
+    We release our code at https://github.com/gepa-ai/gepa.
+  source_sha256: 5cc0f416ce2fa1e8f2fa586fe53fd394339d91b2b76fb827694640661a854115
+  source_artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/Figure3.context.json
+  source_artifact_sha256: 8419a00cb7cf79fbb2b5e772ee7641dda9c54ebb7d3b970d4c6a7cb0e5b6acde
+  supporting_artifacts: []
+  oracle_review_ref: data/prompt_eval/source_review_m387.yaml
+  oracle_review_sha256: 1b05b60fca5b729be350cb3391473945b018451b52330aaa8482226cb2828bf4
+  oracle_producer_id: parallel-independent-artifact-review
   required_facts: &id001
-  - accuracy=89%
-  - dataset=ARC
+  - method=GEPA (Genetic-Pareto)
+  - method_type=prompt optimizer
+  - learning_signal=natural language reflection
+  - baseline=GRPO
+  - result=outperforms GRPO by 6% on average
+  - efficiency=up to 35x fewer rollouts
   forbidden_facts:
-  - unsupported-fact
+  - strategy=System Aware Merge
+  - parameter_update=LLM weights
   baseline:
+    producer_id: frozen-contract-baseline-v1
     schema_valid: true
     claims: *id001
     paraphrase_invariant_pass: true
     latency_ms: 120
-    input_tokens: 100
-    output_tokens: 50
+    input_tokens: 300
+    output_tokens: 54
     estimated_cost_microunits: 10
   candidate:
+    producer_id: frozen-contract-candidate-v1
     schema_valid: true
     claims: *id001
     paraphrase_invariant_pass: true
     latency_ms: 100
-    input_tokens: 100
-    output_tokens: 50
+    input_tokens: 300
+    output_tokens: 54
     estimated_cost_microunits: 10
-- fixture_id: summary-validation-1
+- fixture_id: article-summary-validation-2507.19457-sec3-prefix
   task_id: article_summary
   split: validation
-  source_text: The paper identifies limited multilingual evaluation as its primary
-    limitation.
-  source_sha256: 3cade6d7520707b3e949602f55831f0a2e57d5bf06a807a7c5a27b815c4db245
+  source_text: 'We introduce GEPA (Genetic-Pareto), a sample-efficient optimizer for
+    compound AI systems motivated by three core principles: genetic prompt evolution
+    (Section 3), reflection using natural language feedback (Section 3), and Pareto-based
+    candidate selection (Section 3.1). Figure 3 gives an overview of GEPA and the
+    full GEPA algorithm is formalized in Figure 4. GEPA receives the following inputs:
+    A system Φ instantiated with simple prompts to be optimized, training dataset
+    D train (consisting of task instances (x, m) as described in Section 2), the standard
+    evaluation metric µ for the task, a feedback function µ f (introduced in Section
+    3) and the total rollout budget B. Note that GEPA evolves only the set of prompts,
+    denoted as Π Φ , whereas the underlying LLM weights, denoted by Θ Φ remains fixed.'
+  source_sha256: 3d9645b47d94af367cc6b7212f6f5548635f8597845e94f0eddfdd9ca4b4284e
+  source_artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/Figure3.context.json
+  source_artifact_sha256: 8419a00cb7cf79fbb2b5e772ee7641dda9c54ebb7d3b970d4c6a7cb0e5b6acde
+  supporting_artifacts: []
+  oracle_review_ref: data/prompt_eval/source_review_m387.yaml
+  oracle_review_sha256: 1b05b60fca5b729be350cb3391473945b018451b52330aaa8482226cb2828bf4
+  oracle_producer_id: parallel-independent-artifact-review
   required_facts: &id002
-  - limitation=limited multilingual evaluation
+  - method=GEPA (Genetic-Pareto)
+  - principle=genetic prompt evolution
+  - principle=reflection using natural language feedback
+  - principle=Pareto-based candidate selection
+  - optimized_parameter=prompts
+  - frozen_parameter=underlying LLM weights
+  - budget=total rollout budget B
   forbidden_facts:
-  - unsupported-fact
+  - result=outperforms GRPO by 6% on average
+  - parameter_update=LLM weights
   baseline:
+    producer_id: frozen-contract-baseline-v1
     schema_valid: true
     claims: *id002
     paraphrase_invariant_pass: true
-    latency_ms: 130
-    input_tokens: 100
-    output_tokens: 50
+    latency_ms: 120
+    input_tokens: 300
+    output_tokens: 63
     estimated_cost_microunits: 10
   candidate:
+    producer_id: frozen-contract-candidate-v1
     schema_valid: true
     claims: *id002
     paraphrase_invariant_pass: true
-    latency_ms: 110
-    input_tokens: 100
-    output_tokens: 50
+    latency_ms: 100
+    input_tokens: 300
+    output_tokens: 63
     estimated_cost_microunits: 10
-- fixture_id: figure-train-1
+- fixture_id: figure-analysis-train-2507.19457-Figure3
   task_id: figure_analysis
   split: train
-  source_text: Figure evidence labels encoder and decoder components and an arrow
-    from encoder to decoder.
-  source_sha256: 31d14126709ad2f1279d9a2db65f2cf55ada6aa8301d3f959beaaab1693feaad
+  source_text: 'Figure 3: GEPA proposes a new candidate in every iteration by improving
+    existing candidates using one of the two strategies (Reflective Prompt Mutation
+    (Section 3) or System Aware Merge (Appendix D.1)), first evaluating them on a
+    minibatch, and if improved, evaluating on a larger dataset. Instead of selecting
+    the best performing candidate to mutate always, which can lead to a local-optimum,
+    GEPA introduces Paretobased candidate sampling (Section 3.1), which filters and
+    samples from the list of best candidates per task, ensuring sufficient diversity.
+    Overall, these design decisions allow GEPA to be highly sample-efficient while
+    demonstrating strong generalization.'
+  source_sha256: f249a0e7745874dbc8f98c641e79afb7b384645b2ba39b5a3bed4c8456501b00
+  source_artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/pdffigures2.manifest.json
+  source_artifact_sha256: ae74a2fede07beeb96fd107f723e6e20ce65a8dff4618516fe27d1bd35ff4fc5
+  supporting_artifacts:
+  - artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/fig_2507.19457-Figure3-1-034b92eef1dd.png
+    artifact_sha256: 034b92eef1ddd19bff0ae4ef0a271e94eaf409b203dd0292dd2e251e5f47e1c5
+  oracle_review_ref: data/prompt_eval/source_review_m387.yaml
+  oracle_review_sha256: 1b05b60fca5b729be350cb3391473945b018451b52330aaa8482226cb2828bf4
+  oracle_producer_id: parallel-independent-artifact-review
   required_facts: &id003
-  - component=encoder
-  - component=decoder
-  - relation=encoder->decoder
+  - figure=GEPA candidate proposal loop
+  - strategy=Reflective Prompt Mutation
+  - strategy=System Aware Merge
+  - initial_evaluation=minibatch
+  - selection=Pareto-based candidate sampling
   forbidden_facts:
-  - unsupported-fact
+  - figure=PUPA candidate trajectory
+  - parameter_update=LLM weights
   baseline:
-    schema_valid: true
-    claims: *id003
-    paraphrase_invariant_pass: true
-    latency_ms: 140
-    input_tokens: 100
-    output_tokens: 50
-    estimated_cost_microunits: 10
-  candidate:
+    producer_id: frozen-contract-baseline-v1
     schema_valid: true
     claims: *id003
     paraphrase_invariant_pass: true
     latency_ms: 120
-    input_tokens: 100
-    output_tokens: 50
-    estimated_cost_microunits: 10
-- fixture_id: figure-validation-1
-  task_id: figure_analysis
-  split: validation
-  source_text: The plot caption states accuracy rises from 83 percent to 89 percent.
-  source_sha256: cf920a2642a0960d92e09502b96f6cbda1d4316859e3787ea831ff92d70bd555
-  required_facts: &id004
-  - baseline=83%
-  - result=89%
-  forbidden_facts:
-  - unsupported-fact
-  baseline:
-    schema_valid: true
-    claims: *id004
-    paraphrase_invariant_pass: true
-    latency_ms: 150
-    input_tokens: 100
-    output_tokens: 50
+    input_tokens: 300
+    output_tokens: 45
     estimated_cost_microunits: 10
   candidate:
+    producer_id: frozen-contract-candidate-v1
+    schema_valid: true
+    claims: *id003
+    paraphrase_invariant_pass: true
+    latency_ms: 100
+    input_tokens: 300
+    output_tokens: 45
+    estimated_cost_microunits: 10
+- fixture_id: figure-analysis-validation-2507.19457-Figure5
+  task_id: figure_analysis
+  split: validation
+  source_text: 'Figure 5: GEPA’s reflective prompt mutation systematically incorporates
+    task-specific nuances, leading to substantial improvements in performance. This
+    figure visualizes the optimization trajectory taken by GEPA, presenting an annotated
+    subtree from Figure 25d (for the privacy-preserving delegation task PUPA) to demonstrate
+    the iterative enhancements made to the prompts. The progression from the base
+    prompt (candidate 0) to the best performing prompt (candidate 11) is highlighted
+    with red arrows, and key prompt changes at each step are annotated beside the
+    corresponding nodes. Full-length instructions for these iterations are provided
+    in Appendix K.1. Each prompt refinement in this trajectory adds targeted nuances
+    informed by ongoing optimization, illustrating how GEPA’s process accumulates
+    lessons to continually boost task performance.'
+  source_sha256: 765c00be93720cf9acad79408ee96294a2b226d732e70c0c1ded8537bdc37574
+  source_artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/pdffigures2.manifest.json
+  source_artifact_sha256: ae74a2fede07beeb96fd107f723e6e20ce65a8dff4618516fe27d1bd35ff4fc5
+  supporting_artifacts:
+  - artifact_ref: data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/figures/fig_2507.19457-Figure5-1-b3dc02aa5d5a.png
+    artifact_sha256: b3dc02aa5d5ab2af2fec5c350204ab774c3a556c06949f087c950807f322fb49
+  oracle_review_ref: data/prompt_eval/source_review_m387.yaml
+  oracle_review_sha256: 1b05b60fca5b729be350cb3391473945b018451b52330aaa8482226cb2828bf4
+  oracle_producer_id: parallel-independent-artifact-review
+  required_facts: &id004
+  - figure=reflective prompt mutation trajectory
+  - task=PUPA
+  - source_subtree=Figure 25d
+  - progression=candidate 0 to candidate 11
+  - annotation=red arrows
+  - instructions=Appendix K.1
+  forbidden_facts:
+  - figure=GEPA candidate proposal loop
+  - strategy=System Aware Merge
+  baseline:
+    producer_id: frozen-contract-baseline-v1
     schema_valid: true
     claims: *id004
     paraphrase_invariant_pass: true
-    latency_ms: 130
-    input_tokens: 100
-    output_tokens: 50
+    latency_ms: 120
+    input_tokens: 300
+    output_tokens: 54
+    estimated_cost_microunits: 10
+  candidate:
+    producer_id: frozen-contract-candidate-v1
+    schema_valid: true
+    claims: *id004
+    paraphrase_invariant_pass: true
+    latency_ms: 100
+    input_tokens: 300
+    output_tokens: 54
     estimated_cost_microunits: 10

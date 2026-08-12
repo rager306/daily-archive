@@ -148,9 +148,12 @@ cargo run -p da-cli --example prompt_optimizer_readiness
 `artifacts/runtime/prompt_optimizer_readiness_m387.json` binds both prompt tasks
 to exact prompt/route/schema/model registry identities and enumerates required
 schema, grounding, faithfulness, coverage, paraphrase, latency, token and cost
-metrics. Synthetic contract fixtures now exercise the FSM through `evaluated`
-with same-n=2 per task, but are explicitly not production-acceptance evidence;
-`eligible=false`, `deployed=false`, and `optimizer_enabled=false` remain binding.
+metrics. Source-bound fixtures from canonical GEPA abstract/section text and Figure 3/5
+captions/images now exercise the FSM through `evaluated` with same-n=2 per task.
+Independent review, source files, image files, excerpts and producer separation are
+SHA-bound and fail closed on path escape, digest drift or self-oracle reuse. Outputs
+remain deterministic contract outputs, not real baseline/candidate inference, so
+production acceptance, `eligible`, `deployed`, and `optimizer_enabled` remain false.
 
 ## Corpus expansion waves
 
