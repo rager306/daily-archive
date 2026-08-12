@@ -347,7 +347,7 @@ fn build_article_json(
     let catalog_path = format!("{}/html/{}", toc.source_code, unit.unit_key);
     let citation_key = unit.unit_key.replace('-', "_");
     serde_json::json!({
-        "schema_version": "article.v00.01",
+        "schema_version": "article.v00.02",
         "article_key": unit.unit_key,
         "catalog_path": catalog_path,
         "source_code": toc.source_code,
@@ -409,9 +409,23 @@ fn build_article_json(
             ]
         },
         "safety_flags": {
+            "graph_import_allowed": false,
             "trusted_kg_import_allowed": false,
+            "production_import_attempted": false,
             "production_ladybugdb_write_allowed": false,
+            "raw_binary_embedded_in_metadata": false,
             "raw_text_embedded_in_metadata": false
+        },
+        "safety_defaults": {
+            "external_network_authorized": false,
+            "fact_promotion_authorized": false,
+            "graph_writes_authorized": false,
+            "llm_calls_authorized": false,
+            "production_import_authorized": false
+        },
+        "acquisition": {
+            "network_used": true,
+            "import_eligible": false
         }
     })
 }

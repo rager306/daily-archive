@@ -787,13 +787,14 @@ fn write_article_json(
         }));
     }
     let article = serde_json::json!({
-        "schema_version": "article.v00.01",
+        "schema_version": "article.v00.02",
         "article_key": arxiv_id,
         "catalog_path": catalog_path,
         "source_code": "arxiv",
         "source_type": "preprint",
         "publisher": "arXiv",
         "coarse_topic_code": category,
+        "topic_tags": [category, "catalog-acquisition"],
         "identity": {
             "title": title,
             "authors": [],
@@ -815,8 +816,23 @@ fn write_article_json(
         },
         "source_variants": source_variants,
         "safety_flags": {
+            "graph_import_allowed": false,
             "trusted_kg_import_allowed": false,
-            "production_ladybugdb_write_allowed": false
+            "production_import_attempted": false,
+            "production_ladybugdb_write_allowed": false,
+            "raw_binary_embedded_in_metadata": false,
+            "raw_text_embedded_in_metadata": false
+        },
+        "safety_defaults": {
+            "external_network_authorized": false,
+            "fact_promotion_authorized": false,
+            "graph_writes_authorized": false,
+            "llm_calls_authorized": false,
+            "production_import_authorized": false
+        },
+        "acquisition": {
+            "network_used": true,
+            "import_eligible": false
         }
     });
     let metadata_name = revision
