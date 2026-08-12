@@ -1,54 +1,60 @@
-# Handoff — 2026-08-12 (M386 Rust migration + M387 semantic pipeline active)
+# Handoff — 2026-08-12 (M386 Rust migration + M387 optimizer-ready pipeline active)
 
-## Active milestone M386-57ae9l
+## M386-57ae9l remains active
 
-Goal: Rust-only production pipeline (D237). Python remains only governor/tests/migration analysis/frozen evidence.
+Rust-only production boundary D237. Delivered `9d57d53e` (`da acquire-arxiv`, typed report/use case, 580-ID replay 579 hit + withdrawn 2507.23261, D127 false). Remaining: article.v00.02 typed metadata, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and end-to-end acceptance.
 
-Delivered commit `9d57d53e`: typed batch acquisition report/use case and production `da acquire-arxiv`; real 580-ID no-network replay had 579 catalog hits and one withdrawn `2507.23261`; D127 false and zero Rust→Python subprocesses.
+## M387-jkpnfh
 
-Remaining M386: typed article.v00.02 metadata builder; bounded network retry/backoff and partial/checksum conflict parity; archive Python downloader only after parity; governor ratchet; Rust-only end-to-end acceptance.
+### Delivered
 
-## Active milestone M387-jkpnfh
+- S01 `ccb27e08`: DATA-driven 14-stage acquisition→query ledger, strict DAG/cache/truth runtime audit.
+- S02 `aebb7bce`: ACAP diagnostic context conservation; real 30 parse/extract profile, 140 candidates/117 grounded, 12 honest no_claim, no independent PASS; MEM752.
+- S03 foundation `6bd13514`: canonical key SHA, shared memory/filesystem cache contract, dual key+payload lineage, whole-process metrics envelope and logging debt closure. S03 is NOT complete yet.
 
-### S01 delivered `ccb27e08`
+### Current S03 details
 
-DATA-driven 14-stage acquisition→query ledger, strict DAG/cache/truth validation, runtime order/digest/failure audit. Durable `artifacts/runtime/pipeline_stage_ledger_m387.json`; UAT `6a431853-f9bf-4cd0-9e6a-5d71ea5eabe4`; full architecture PASS.
+Added:
+- `StageCacheKey::validate/key_sha256` in da-ports;
+- `MemoryPipelineCache` and shared contract vs FilePipelineCache: cold/hit, config drift, retry expiry, manifest, concurrent same-key, visible corruption;
+- `CacheLineageEvidence` + application audit: key SHA and payload SHA both mandatory; same bytes/different keys distinct; cache cannot claim graph materialization skipped;
+- `pipeline-metrics.v1`: exact 14 stage rows and fields for runtime FSM, wall/CPU/RSS/I/O, queue/worker, cache, context, tokens/model latency/cost, backend applicability, failure, D127;
+- durable `artifacts/runtime/pipeline_metrics_m387.json`: 14 rows, parse/extract observed, 12 typed no_claim, optimizer_admission_verdict=null, D127 false, deterministic SHA;
+- rolling JSON logging initialized in pipeline ledger and both materialization profile roots. Event verified: `pipeline_metrics_profile_complete`, rows=14, observed=2, D127 false.
 
-### S02 delivered `aebb7bce`
+Verification: 17 focused tests, Clippy, full architecture PASS, Governor drift_risk/0 violations, GitNexus detect risk medium expected + reindex complete. Codebase Memory MCP timed out again.
 
-ACAP-aligned diagnostic context conservation:
-- domain `StageContextSnapshot`, denominator+BoundaryMode `RatioObservation`, candidate/authoritative partitions and typed `no_claim`;
-- no independent admission verdict; zero denominator is not perfect retention; tokens require tokenizer lineage; D127 fail-closed;
-- pure parse, revision, extraction and summary/readiness observers; no graph writes;
-- strict DATA `data/ontology/context_conservation_policy.yaml` with policy ID/digest; hard invariants cannot be weakened;
-- real deterministic 30-article profile `artifacts/runtime/context_conservation_m387.json`: 30 parse + 30 extract payloads, 927 sections, 1,192 citations, 1,337,968 chars, 140 candidates, 117 valid ordinal/span groundings; 12 stages explicit no_claim; exact revision report D127 false;
-- structured JSON lifecycle event verified in `/tmp/m387-logs/da.log.2026-08-12`;
-- 11 focused tests, Clippy and full architecture PASS;
-- UAT `17477aeb-a8f6-4340-b1bd-549059af799b` + `e947876c-cac9-49fa-abca-9af4c96ae428`;
-- MEM752 records ACAP projection rule.
+### Exact next action S03
 
-Reviewer blocked the first draft because it risked a second ACAP control plane/self-oracle. Reworked before commit. Do not reintroduce independent context PASS or tokenizer-free token counts.
+1. Add application end-to-end test proving two identical runs: compute executor called once, materialization fake called twice; prompt/config drift reruns only affected compute while materialization still runs.
+2. Bind real Samyama revision/extraction replay evidence: applied=0, rejected=0, unobserved=0, unchanged>0.
+3. Add `pipeline_cache_profile.rs` for 1/10/30 cold/hit/config-drift/corruption timing and structured events; bind key/output hashes and D127.
+4. Update docs, run full gate, atomic commit, UAT, close S03.
 
-### Exact next action: M387/S03 Cache Lineage Contracts and Logging Debt
+### Planned S04 Prompt Execution FSM
 
-Plan exists with four tasks:
-1. shared PipelineCache contract suite against in-memory/filesystem implementations: cold/hit, key identity, payload hash, corruption, atomic publication, concurrent same-key and replay;
-2. typed lineage report binds full key plus output SHA and every invalidation dimension; identical bytes under different keys remain distinct;
-3. prove cache skips only compute, never revision/extraction graph materialization; Samyama replay applied=0/rejected=0/unobserved=0/unchanged>0;
-4. close existing composition logging flag in `pipeline_ledger_audit.rs`, `materialization_profile.rs`, `materialization_hot_path_profile.rs`, then run 1/10/30 cache profile.
+User requested full-process metrics and future GEPA/RuVector/DSPy readiness. Audit found exactly two active generative paths:
+- production text `SummaryUseCase::generate_summaries` (`da summarize`) — HIGH gap: inline prompt, no prompt/model lineage/cache/FSM/eval, temperature 0.3, graph writes;
+- candidate-only multimodal `FigureAnalysisUseCase` — good existing prompt/schema/route/model/tokens/latency/cache lineage pattern.
 
-Then S04 bounded DAG scheduler/SMP, S05 profiles/ablations, S06 Samyama active path, S07 retrieval/RuVector applicability, S08 acceptance/governor.
+Not generative LLM: RuleBasedExtractor, GROBID, extractive summary, FD_API embeddings, MCP prompt templates.
 
-## Session operational findings
+D238 recorded: all generative calls must use future provider-neutral `PromptExecutionPort` and candidate FSM. S04 tasks:
+1. domain/port PromptSpec/Lineage/Metrics/Candidate FSM baseline_registered→candidate_proposed→evaluated→eligible/rejected; illegal/auto promotion forbidden;
+2. strict DATA `prompt_tasks.yaml`: prompt versions/schema/model route policy/bounds/eval suite; runtime endpoints/secrets in .env; optimizer disabled;
+3. wrap summary+figure; require valid lineage before summary graph write; emit complete metrics; no hidden fallback;
+4. frozen independent prompt eval: schema/grounding/faithfulness/coverage/paraphrase/latency/tokens/cost, same-n+val_gap; candidate reports only.
 
-- Governor initially BLOCKED the inline negative test literal `import_eligible=true`; moved it to `crates/da-domain/tests/` where explicit negative fixtures are allowed. Final active verdict drift_risk, 0 violations.
-- Governor found `.env` rolling JSON logging missing in four profile roots. S02 root fixed; remaining three are explicit S03 debt.
-- `target/` was 73.4GB. Ran `cargo clean`: removed 73.6GiB/142,634 files; post-clean target 132MB and `cargo check -p da-domain` passed. Preserve sccache.
-- GSD journal query for M387 returned no stuck-loop/timeout events.
-- Codebase Memory MCP search, architecture and fast reindex each timed out; GitNexus query/impact/detect_changes/reindex completed. Keep Codebase Memory supplemental, GitNexus authoritative.
-- GitNexus HIGH impact on `ExtractedEntity`; S02 did not mutate it, observers are additive/read-only.
-- Generated `artifacts/project-trajectory/trajectory-report.json` remains unstaged by policy.
+GEPA/DSPy remain disabled/candidate-only; D136 and no-auto-promote stay binding. RuVector is retrieval, not prompt optimization, and remains S07 benchmark-gated.
+
+## Operational findings
+
+- Whole-pipeline optimizer readiness is bootstrap/partial (~4.5/10): stage taxonomy/cache types strong; 12/14 stages lack live context/performance observations; scheduler/retrieval quality missing.
+- Never infer backend from stage ID. `backend=unobserved` until runtime evidence; S06/S07 establish Samyama/RuVector hot paths.
+- No aggregate M384 timing copied into revision/extraction rows because it cannot be partitioned honestly.
+- GSD journal has no M387 S03 stuck-loop/timeout entries.
+- `artifacts/project-trajectory/trajectory-report.json` remains unstaged.
 
 ## Locks
 
-D127 false. D237 Rust-only product pipeline. No Rust→Python fallback. Samyama sole store. No implicit revision default. No legacy Paper summaries. Cache only pure compute; graph truth always materialized. Vendor edits only in isolated clean worktree. RocksDB/RuVector tuning only after active-path evidence. DSPy disabled.
+D127 false. D237 Rust-only product. D238 PromptExecutionPort/FSM. D136 DSPy closed. GEPA candidate-only/no auto-promote/dual F1+same-n+val_gap. Samyama sole store. Cache only pure compute; graph truth always materialized. No implicit revision. Vendor edits isolated. RocksDB/RuVector tuning only after active-path evidence.
