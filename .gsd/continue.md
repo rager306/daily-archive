@@ -16,16 +16,18 @@ Semantic context pipeline optimizer-ready: PromptExecution FSM, frozen same-n
 evaluation, measured hot path, retrieval quality, pipeline acceptance — all
 candidate-only, D127 locked. 8 slices delivered and validated.
 
-## Both milestones complete — next frontier
+## Post-close fixes (current session)
 
-GEPA/DSPy candidate optimization cannot start until frozen same-n fixtures
-pass quality gates (M387 evidence shows eligible=false honestly).
-RuVector/SONA retrieval quality benchmarked (S07, admit where recall@k met).
+- `f7a65ae8`: FSM transition invariant proptests (5 new, ADR-051 P1 state-machine model ✅)
+- `8621ca2e`: serde roundtrip for PromptCandidate FSM types (ADR-051 §4.4)
+- `9f8f4d1f`: **Bug fix** — multimodal adapter now has same JSON extraction + canonical
+  output bytes as text adapter. This was the root cause of 2/4 figure schema failures.
+  Re-running bounded figure inference should improve success rate.
 
 ## Next priorities
 
-1. Improve prompt candidate quality (raise summary coverage beyond 8461).
-2. Fix figure JSON emission (qwen-vl schema failures 2/4).
+1. Re-run bounded figure inference with fixed multimodal adapter (should fix 2/4 schema failures).
+2. Improve prompt candidate quality (raise summary coverage beyond 8461).
 3. New milestone when user directs.
 
 ## Locks
