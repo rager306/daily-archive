@@ -207,6 +207,18 @@ mod tests {
             .model_name,
             "minimax/MiniMax-M3"
         );
+        assert_eq!(
+            r.resolve("prompt-eval-summary-agnes", Some("http://127.0.0.1:20128"))
+                .unwrap()
+                .model_name,
+            "agnes-ai/agnes-2.0-flash"
+        );
+        assert_eq!(
+            r.resolve("prompt-eval-figure-qwen-vl", Some("http://127.0.0.1:20128"))
+                .unwrap()
+                .model_name,
+            "novita/qwen/qwen3-vl-235b-a22b-instruct"
+        );
         for id in [
             "paper-summary-generate-quality",
             "paper-summary-generate-fallback",

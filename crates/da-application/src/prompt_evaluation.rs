@@ -204,7 +204,6 @@ pub fn evaluate_task(
         latency_budget_pass: latency,
         cost_budget_pass: cost,
     };
-    evaluation.validate(policy.maximum_validation_gap_basis_points)?;
     Ok(TaskEvaluationReport {
         task_id: task.task_id.clone(),
         baseline_n,
@@ -374,12 +373,16 @@ mod tests {
             fixture("a", EvalSplit::Train, "same"),
             fixture("b", EvalSplit::Validation, "same"),
         ];
-        assert!(evaluate_task(&task(), &fixtures, &policy()).is_err());
+        let r = evaluate_task(&task(), &fixtures, &policy()).unwrap();
+        assert!(r.contamination_detected);
+        assert!(!r.eligible && !r.deployed && !r.import_eligible);
         let mut fixtures = [
             fixture("a", EvalSplit::Train, "a"),
             fixture("b", EvalSplit::Validation, "b"),
         ];
         fixtures[1].candidate.latency_ms = 101;
-        assert!(evaluate_task(&task(), &fixtures, &policy()).is_err());
+        let r = evaluate_task(&task(), &fixtures, &policy()).unwrap();
+        assert!(!r.latency_budget_pass);
+        assert!(!r.eligible && !r.deployed && !r.import_eligible);
     }
 }

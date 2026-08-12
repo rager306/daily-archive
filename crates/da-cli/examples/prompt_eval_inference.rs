@@ -9,7 +9,9 @@ use da_adapters::{
 };
 use da_application::prompt_evaluation::FrozenPromptFixture;
 use da_domain::prompt_optimization::{PromptExecutionLineage, PromptRoutePolicy};
-use da_ports::prompt_execution::{PromptExecutionPort, PromptExecutionRequest, PromptMedia};
+use da_ports::prompt_execution::{
+    PromptExecutionError, PromptExecutionPort, PromptExecutionRequest, PromptMedia,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -93,7 +95,7 @@ struct Failure {
 #[derive(Serialize)]
 struct Report {
     schema_version: String,
-    authorized_model: String,
+    authorized_models: BTreeMap<String, String>,
     maximum_calls: usize,
     attempted_calls: usize,
     completed_calls: usize,
@@ -129,27 +131,13 @@ async fn main() -> Result<()> {
     let mut executions = vec![];
     let mut failures = vec![];
     let mut attempted_calls = 0;
-    let expected_models = policy
-        .tasks
-        .iter()
-        .map(|p| {
-            models
-                .resolve(&p.model_binding_id, Some(&base))
-                .map(|m| m.model_name)
-        })
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(anyhow::Error::msg)?;
-    if expected_models
-        .iter()
-        .collect::<std::collections::BTreeSet<_>>()
-        .len()
-        != 1
-    {
-        return Err(anyhow!(
-            "same-n policy requires one exact model across tasks"
-        ));
+    let mut authorized_models = BTreeMap::new();
+    for tp in &policy.tasks {
+        let model = models
+            .resolve(&tp.model_binding_id, Some(&base))
+            .map_err(anyhow::Error::msg)?;
+        authorized_models.insert(tp.task_id.clone(), model.model_name.clone());
     }
-    let authorized_model = expected_models[0].clone();
     for fixture in &set.fixtures {
         let task_policy = policy
             .tasks
@@ -215,6 +203,7 @@ async fn main() -> Result<()> {
             let response = match response {
                 Ok(response) => response,
                 Err(error) => {
+                    let is_quality_signal = matches!(error, PromptExecutionError::Schema(_));
                     failures.push(Failure {
                         fixture_id: fixture.fixture_id.clone(),
                         variant: variant.id.clone(),
@@ -227,8 +216,12 @@ async fn main() -> Result<()> {
                         &failures,
                         attempted_calls,
                         &policy,
-                        &authorized_model,
+                        &authorized_models,
                     )?;
+                    if is_quality_signal {
+                        tracing::warn!(event="prompt_eval_quality_signal",fixture=%fixture.fixture_id,variant=%variant.id,class=%prompt_error_class(&error),"Schema violation recorded as quality signal, continuing matrix");
+                        continue;
+                    }
                     return Err(anyhow!(
                         "bounded inference stopped at {}/{}: {}",
                         fixture.fixture_id,
@@ -254,11 +247,11 @@ async fn main() -> Result<()> {
                 &failures,
                 attempted_calls,
                 &policy,
-                &authorized_model,
+                &authorized_models,
             )?;
         }
     }
-    tracing::info!(event="prompt_eval_inference_complete",completed_calls=executions.len(),maximum_calls=policy.maximum_calls,model=%authorized_model,retry_enabled=policy.retry_enabled,fallback_enabled=policy.fallback_enabled,optimizer_enabled=policy.optimizer_enabled,auto_promote=policy.auto_promote,import_eligible=false,"Bounded prompt evaluation inference completed");
+    tracing::info!(event="prompt_eval_inference_complete",completed_calls=executions.len(),maximum_calls=policy.maximum_calls,models=?authorized_models,retry_enabled=policy.retry_enabled,fallback_enabled=policy.fallback_enabled,optimizer_enabled=policy.optimizer_enabled,auto_promote=policy.auto_promote,import_eligible=false,"Bounded prompt evaluation inference completed");
     Ok(())
 }
 fn request_inputs(
@@ -344,14 +337,14 @@ fn persist(
     failures: &[Failure],
     attempted_calls: usize,
     p: &InferencePolicy,
-    model: &str,
+    models: &BTreeMap<String, String>,
 ) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let r = Report {
         schema_version: "prompt-eval-inference.v1".into(),
-        authorized_model: model.into(),
+        authorized_models: models.clone(),
         maximum_calls: p.maximum_calls,
         attempted_calls,
         completed_calls: executions.len(),

@@ -213,6 +213,8 @@ pub struct PromptEvaluation {
     pub cost_budget_pass: bool,
 }
 impl PromptEvaluation {
+    /// Structural FSM invariants. Execution gates (hard invariants, contamination,
+    /// latency, cost) are NOT part of FSM state validity; they gate eligibility only.
     pub fn validate(&self, max_validation_gap_basis_points: u32) -> Result<(), String> {
         if self.baseline_n == 0 || self.baseline_n != self.candidate_n {
             return Err("prompt evaluation requires nonzero same-n baseline/candidate".into());
@@ -225,14 +227,14 @@ impl PromptEvaluation {
         if self.validation_gap_basis_points > max_validation_gap_basis_points {
             return Err("prompt evaluation validation gap exceeds policy".into());
         }
-        if !self.hard_invariants_pass
-            || self.contamination_detected
-            || !self.latency_budget_pass
-            || !self.cost_budget_pass
-        {
-            return Err("prompt evaluation hard/budget/contamination gate failed".into());
-        }
         Ok(())
+    }
+    /// Execution quality gates; false means fail-closed and never eligible.
+    pub fn gates_passed(&self) -> bool {
+        self.hard_invariants_pass
+            && !self.contamination_detected
+            && self.latency_budget_pass
+            && self.cost_budget_pass
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -300,6 +302,13 @@ impl PromptCandidate {
     pub fn mark_eligible(mut self) -> Result<Self, String> {
         if self.state != PromptCandidateState::Evaluated {
             return Err("eligibility requires evaluated".into());
+        }
+        if !self
+            .evaluation
+            .as_ref()
+            .is_some_and(|evaluation| evaluation.gates_passed())
+        {
+            return Err("eligibility requires passed execution gates".into());
         }
         self.state = PromptCandidateState::Eligible;
         self.validate()?;
