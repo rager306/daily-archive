@@ -1,5 +1,17 @@
 # Handoff — 2026-08-12 (M387 optimizer-ready pipeline)
 
+## M387/S05 delivered (878a895c)
+
+- Cache cold/warm ablation 1/10/30/100/200 (warm hits 100%, honest warm_us >= cold_us
+  at scale), key/payload SHA lineage, drift probes.
+- Stage ablation report binds cache ablation + materialization scaling
+  (exponent 0.968, projected_200 18.59s) + replay proof (168239 unchanged) +
+  readiness deltas. D127=false, optimizer=false, auto_promote=false.
+- Artifacts: pipeline_cache_profile_m387.json (5 scales),
+  stage_ablation_profile_m387.json. S04+S05 closed via skip (free-form delivery).
+
+## Next: S06 measured Samyama hot path
+
 ## M386-57ae9l still active
 
 Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and Rust-only acceptance. D127 false.
