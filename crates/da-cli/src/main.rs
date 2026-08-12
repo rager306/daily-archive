@@ -1290,7 +1290,10 @@ async fn summarize_paper(
     output_snapshot: Option<&std::path::Path>,
 ) {
     use da_adapters::GrobidParser;
-    use da_adapters::anthropic_llm::AnthropicLlmClient;
+    use da_adapters::{
+        anthropic_llm::AnthropicLlmClient, prompt_execution::TextPromptExecutionAdapter,
+        prompt_task_registry::load_prompt_task_registry,
+    };
     use da_application::SummaryUseCase;
     use da_ports::graph_store::DirectGraphStore;
     use da_ports::parser::ParserPort;
@@ -1354,9 +1357,32 @@ async fn summarize_paper(
     }
     println!("LLM ready: {}", llm.provider_id());
 
-    // Generate summaries
+    // Generate lineage-bound, candidate-only summaries through ADR-059.
+    let registry_path = std::env::var("DA_PROMPT_TASK_REGISTRY")
+        .unwrap_or_else(|_| "data/ontology/prompt_tasks.yaml".into());
+    let registry = match load_prompt_task_registry(std::path::Path::new(&registry_path)) {
+        Ok(registry) => registry,
+        Err(error) => {
+            eprintln!("❌ prompt registry failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let task = registry.task("article_summary").unwrap().clone();
+    let route = registry.route(&task.route_policy_id).unwrap().clone();
+    let output_schema = registry
+        .output_schema(&task.output_schema_id)
+        .unwrap()
+        .clone();
+    let prompt_executor = Arc::new(TextPromptExecutionAdapter::from_env(llm));
     let store_arc: Arc<dyn DirectGraphStore> = Arc::new(store);
-    let use_case = SummaryUseCase::new(store_arc.clone(), llm);
+    let use_case = SummaryUseCase::new(
+        store_arc.clone(),
+        prompt_executor,
+        task,
+        route,
+        output_schema,
+    )
+    .expect("summary prompt composition failed");
     let result = use_case
         .generate_summaries(paper_id, paper_node_id, &parsed)
         .await

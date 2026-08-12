@@ -1,6 +1,82 @@
 schema_version: prompt-task-registry.v1
 optimizer_enabled: false
 max_validation_gap_basis_points: 500
+routes:
+  - route_policy_id: anthropic-text
+    protocol: anthropic_messages
+    provider_id: anthropic-compatible
+    endpoint_env: ANTHROPIC_BASE_URL
+    model_env: ANTHROPIC_MODEL
+    supports_images: false
+    maximum_temperature_milli: 1000
+  - route_policy_id: anthropic-multimodal
+    protocol: anthropic_messages
+    provider_id: anthropic-compatible
+    endpoint_env: ANTHROPIC_BASE_URL
+    model_env: ANTHROPIC_MODEL
+    supports_images: true
+    maximum_temperature_milli: 1000
+output_schemas:
+  - output_schema_id: article-summary.v1
+    schema:
+      type: object
+      additionalProperties: false
+      required: [abstract_summary, section_summaries, methods, datasets, metrics, quantitative_results, limitations, reproducibility, tags]
+      properties:
+        abstract_summary: {type: string, minLength: 1}
+        key_contributions: {type: array, items: {type: string}}
+        section_summaries:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [path_id, summary]
+            properties:
+              path_id: {type: string, minLength: 1}
+              summary: {type: string, minLength: 1}
+        methods: {type: array, items: {type: object, additionalProperties: false, required: [name, description], properties: {name: {type: string}, description: {type: string}}}}
+        datasets: {type: array, items: {type: object, additionalProperties: false, required: [name, description], properties: {name: {type: string}, description: {type: string}}}}
+        metrics: {type: array, items: {type: object, additionalProperties: false, required: [name, value, baseline], properties: {name: {type: string}, value: {type: string}, baseline: {type: string}}}}
+        quantitative_results: {type: string}
+        limitations: {type: string}
+        future_work: {type: array, items: {type: string}}
+        glossary:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [term, definition]
+            properties:
+              term: {type: string}
+              definition: {type: string}
+        reproducibility:
+          type: object
+          additionalProperties: false
+          required: [score, justification]
+          properties:
+            score: {type: integer, minimum: 0, maximum: 5}
+            justification: {type: string}
+        reading_difficulty:
+          type: object
+          additionalProperties: false
+          required: [score, target_audience]
+          properties:
+            score: {type: integer, minimum: 0, maximum: 5}
+            target_audience: {type: string}
+        tags: {type: array, items: {type: string}}
+  - output_schema_id: figure-analysis-candidate.v1
+    schema:
+      type: object
+      additionalProperties: false
+      required: [visual_type, description, components, relationships, findings, citations, confidence]
+      properties:
+        visual_type: {type: string, enum: [flowchart, plot, diagram, table, screenshot, photograph, other]}
+        description: {type: string}
+        components: {type: array, minItems: 1}
+        relationships: {type: array}
+        findings: {type: array, items: {type: string}}
+        citations: {type: array, minItems: 1}
+        confidence: {type: number, minimum: 0.0, maximum: 1.0}
 tasks:
   - task_id: article_summary
     version: summary.v1
@@ -10,7 +86,6 @@ tasks:
       Summarize article {paper_id}. Title: {title}. Abstract: {abstract}. Full text: {full_text}.
     output_schema_id: article-summary.v1
     route_policy_id: anthropic-text
-    model_env: ANTHROPIC_MODEL
     temperature_milli: 300
     max_output_tokens: 4096
     eval_suite_id: article-summary-eval.v1
@@ -23,7 +98,6 @@ tasks:
       Analyze figure {figure_id} for paper {paper_id}. Caption: {caption}.
     output_schema_id: figure-analysis-candidate.v1
     route_policy_id: anthropic-multimodal
-    model_env: ANTHROPIC_MODEL
     temperature_milli: 0
     max_output_tokens: 4096
     eval_suite_id: figure-analysis-eval.v1

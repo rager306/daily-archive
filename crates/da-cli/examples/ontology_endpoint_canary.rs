@@ -20,14 +20,17 @@ use da_cli::graph_tasks::{parse_tasks_cypher, run_graph_task_suite};
 use da_domain::{
     ContentDigest,
     finalize::{FinalizePolicy, FinalizeVerdict},
+    prompt_optimization::{
+        PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+    },
     vid,
 };
 use da_ports::graph_store::DirectGraphStore;
-use da_ports::llm_client::{
-    ChatMessage, ChatOptions, ChatResponse, LLMClient, LLMError, LLMResult,
-};
 use da_ports::openalex::{OpenAlexClient, OpenAlexError, OpenAlexResult, OpenAlexWork};
 use da_ports::parser::ParsedArticle;
+use da_ports::prompt_execution::{
+    PromptExecutionError, PromptExecutionPort, PromptExecutionRequest, PromptExecutionResponse,
+};
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -70,47 +73,75 @@ impl OpenAlexClient for FixedOpenAlex {
 struct FixedSummary;
 
 #[async_trait]
-impl LLMClient for FixedSummary {
-    async fn chat(
+impl PromptExecutionPort for FixedSummary {
+    async fn execute(
         &self,
-        _messages: &[ChatMessage],
-        _opts: &ChatOptions,
-    ) -> LLMResult<ChatResponse> {
-        Ok(ChatResponse {
-            text: serde_json::json!({
-                "abstract_summary": "A bounded ontology endpoint canary.",
-                "section_summaries": [{"path_id":"1","title":"Introduction","summary":"Introduces the canary."}],
-                "methods": [],
-                "datasets": [],
-                "metrics": [],
-                "quantitative_results": "Two citation stubs are preserved.",
-                "limitations": "The canary is intentionally bounded and synthetic.",
-                "reproducibility": {"score": 5, "justification": "Deterministic fixtures and real Samyama."},
-                "tags": ["ontology-v2"]
-            })
-            .to_string(),
-            ok: true,
-            error: None,
-            tokens_in: Some(1),
-            tokens_out: Some(1),
+        request: PromptExecutionRequest,
+    ) -> Result<PromptExecutionResponse, PromptExecutionError> {
+        let output = serde_json::to_vec(&serde_json::json!({
+            "abstract_summary": "A bounded ontology endpoint canary.",
+            "section_summaries": [{"path_id":"1","title":"Introduction","summary":"Introduces the canary."}],
+            "methods": [], "datasets": [], "metrics": [],
+            "quantitative_results": "Two citation stubs are preserved.",
+            "limitations": "The canary is intentionally bounded and synthetic.",
+            "reproducibility": {"score": 5, "justification": "Deterministic fixtures and real Samyama."},
+            "tags": ["ontology-v2"]
+        })).unwrap();
+        Ok(PromptExecutionResponse {
+            lineage: PromptExecutionLineage {
+                run_id: request.run_id,
+                task_id: request.task.task_id.clone(),
+                task_spec_sha256: request.task.spec_sha256().unwrap(),
+                rendered_prompt_sha256: ContentDigest::of_text("canary-prompt"),
+                output_schema_sha256: request.output_schema.sha256().unwrap(),
+                route_policy_sha256: ContentDigest::of_text("canary-route"),
+                endpoint_sha256: ContentDigest::of_text("canary-endpoint"),
+                provider: "fixed-ontology-canary".into(),
+                model: "fixed".into(),
+                input_sha256: ContentDigest::of_bytes(&request.input_bytes),
+                output_sha256: ContentDigest::of_bytes(&output),
+                input_tokens: 1,
+                output_tokens: 1,
+                latency_ms: 0,
+                temperature_milli: request.task.temperature_milli,
+                max_output_tokens: request.task.max_output_tokens,
+                estimated_cost_microunits: None,
+                authoritative: false,
+                import_eligible: false,
+            },
+            output_bytes: output,
         })
     }
+}
 
-    async fn extract_structured(
-        &self,
-        _text: &str,
-        _schema: &serde_json::Value,
-    ) -> LLMResult<serde_json::Value> {
-        Err(LLMError::LLM("unused".into()))
-    }
-
-    fn can_make_request(&self) -> bool {
-        true
-    }
-
-    fn provider_id(&self) -> &str {
-        "fixed-ontology-canary"
-    }
+fn summary_contracts() -> (PromptTaskSpec, PromptRoutePolicy, PromptOutputSchema) {
+    (
+        PromptTaskSpec {
+            task_id: "article_summary".into(),
+            version: "canary.v1".into(),
+            system_template: "system".into(),
+            user_template: "{paper_id}{title}{abstract}{full_text}".into(),
+            output_schema_id: "summary".into(),
+            route_policy_id: "fixed".into(),
+            temperature_milli: 0,
+            max_output_tokens: 1000,
+            eval_suite_id: "canary".into(),
+            optimizer_enabled: false,
+        },
+        PromptRoutePolicy {
+            route_policy_id: "fixed".into(),
+            protocol: "fixed".into(),
+            provider_id: "fixed".into(),
+            endpoint_env: "CANARY_ENDPOINT".into(),
+            model_env: "CANARY_MODEL".into(),
+            supports_images: false,
+            maximum_temperature_milli: 0,
+        },
+        PromptOutputSchema {
+            output_schema_id: "summary".into(),
+            schema: serde_json::json!({"type":"object"}),
+        },
+    )
 }
 
 #[tokio::main]
@@ -163,10 +194,18 @@ async fn main() -> Result<()> {
 
     let enrich = EnrichUseCase::from_shared(Arc::new(FixedOpenAlex), direct_store.clone());
     let first = enrich.enrich_by_arxiv_id(paper_id).await?;
-    let summary = SummaryUseCase::new(direct_store.clone(), Arc::new(FixedSummary));
+    let (summary_task, summary_route, summary_schema) = summary_contracts();
+    let summary = SummaryUseCase::new(
+        direct_store.clone(),
+        Arc::new(FixedSummary),
+        summary_task,
+        summary_route,
+        summary_schema,
+    )?;
     summary
         .generate_summaries(paper_id, paper, &parsed(paper_id))
         .await?;
+    materialize_quality_signal_fixtures(direct_store.as_ref(), paper, paper_id).await?;
 
     let before = observe_runtime_graph(store.as_ref(), "process-local-samyama-canary").await;
     let before_target_edges = target_endpoint_projection(&before);
@@ -210,12 +249,15 @@ async fn main() -> Result<()> {
     let full_graph_replay_stable = before == after;
 
     anyhow::ensure!(citation_nodes.len() == 2, "expected two Citation nodes");
-    anyhow::ensure!(quality_nodes.len() == 2, "expected two QualitySignal nodes");
+    anyhow::ensure!(
+        quality_nodes.len() == 2,
+        "expected two independent QualitySignal fixtures"
+    );
     anyhow::ensure!(cites_edges == 2, "expected two CITES edges");
     anyhow::ensure!(quality_signal_edges == 2, "expected two quality edges");
     anyhow::ensure!(
         temporally_stamped_fact_edges == 4,
-        "fact edges lack temporal stamps"
+        "citation and independent quality fact edges lack temporal stamps"
     );
     anyhow::ensure!(
         forbidden_paper_to_paper_cites == 0,
@@ -420,6 +462,62 @@ async fn count_temporally_stamped_edges(
         }
     }
     count
+}
+
+async fn materialize_quality_signal_fixtures(
+    store: &(dyn DirectGraphStore + 'static),
+    paper: u64,
+    paper_id: &str,
+) -> Result<()> {
+    for (ordinal, signal_type, text) in [
+        (0, "reproducibility", "Deterministic fixture evidence."),
+        (1, "reading_difficulty", "Bounded fixture evidence."),
+    ] {
+        let vid = format!("vid:quality:{paper_id}:{signal_type}");
+        let node = match store
+            .find_node_by_string_property("QualitySignal", "vid", &vid)
+            .await
+        {
+            Some(node) => node,
+            None => store.create_node("QualitySignal").await?,
+        };
+        store.set_node_property_string(node, "vid", vid).await?;
+        store
+            .set_node_property_string(node, "text", text.into())
+            .await?;
+        store
+            .set_node_property_string(node, "signal_type", signal_type.into())
+            .await?;
+        store
+            .set_node_property_string(node, "method", "deterministic_canary_fixture".into())
+            .await?;
+        store
+            .set_node_property_bool(node, "retrieval_eligible", false)
+            .await?;
+        store
+            .set_node_property_bool(node, "import_eligible", false)
+            .await?;
+        store
+            .set_node_property_int(node, "schema_version", 1)
+            .await?;
+        store
+            .set_node_property_int(node, "valid_from", ordinal)
+            .await?;
+        if store
+            .get_edges_between(paper, node, "hasQualitySignal")
+            .await
+            .is_empty()
+        {
+            let edge = store.create_edge(paper, node, "hasQualitySignal").await?;
+            store
+                .set_edge_property_string(edge, "created_at", "2023-11-14T22:13:20Z")
+                .await?;
+            store
+                .set_edge_property_string(edge, "valid_at", "2023-11-14T22:13:20Z")
+                .await?;
+        }
+    }
+    Ok(())
 }
 
 async fn graph_import_eligible(store: &(dyn DirectGraphStore + 'static)) -> Result<bool> {

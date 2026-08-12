@@ -123,11 +123,16 @@ and binds physical graph replay evidence. A valid replay has `applied=0`,
 revision/extraction graph materialization.
 
 Generative task policy is DATA-driven in `data/ontology/prompt_tasks.yaml`.
-Article summary and figure analysis have versioned templates, schema/route/eval
-identities and bounded generation settings. Provider model selection remains
-`.env` (`ANTHROPIC_MODEL`, registry path `DA_PROMPT_TASK_REGISTRY`). ADR-059's
-candidate FSM stops at `eligible`; GEPA/DSPy cannot auto-promote or authorize
-graph import.
+Article summary and figure analysis have versioned templates, real JSON Schemas,
+route/eval identities and bounded generation settings. Provider endpoint/model
+selection remains `.env` (`ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`; registry path
+`DA_PROMPT_TASK_REGISTRY`). `da summarize` executes through
+`PromptExecutionPort`: strict template variables, output-schema validation and
+complete prompt/model/input/output lineage are mandatory before graph writes.
+Generative output writes only non-retrieval Summary candidates; canonical
+Method/Dataset/Metric/QualitySignal facts remain owned by deterministic or
+independently verified stages. ADR-059's FSM stops at `eligible`; GEPA/DSPy
+cannot auto-promote or authorize graph import.
 
 ## Corpus expansion waves
 

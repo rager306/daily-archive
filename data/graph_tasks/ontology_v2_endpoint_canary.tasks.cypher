@@ -7,7 +7,7 @@
 // @expect_value 2
 MATCH (p:Paper)-[:CITES]->(c:Citation) RETURN count(c) AS citations;
 
-// @query Quality evidence endpoints | QualitySignal has a dedicated fact wire
+// @query Independent quality endpoint | Deterministic QualitySignal evidence has a dedicated fact wire
 // @class ontology_endpoint
 // @expect_rows 1
 // @expect_value 2

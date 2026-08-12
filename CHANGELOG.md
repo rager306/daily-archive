@@ -9,11 +9,23 @@
   gates and FSM `baseline_registered → candidate_proposed → evaluated →
   eligible|rejected`. Same-n, validation gap, contamination, hard invariants,
   latency/cost, deployment and D127 fail closed.
-- Added strict `data/ontology/prompt_tasks.yaml` for article-summary and figure
-  analysis templates, output schemas, route policies, generation bounds and eval
-  suites. Model selection remains `.env` (`ANTHROPIC_MODEL`); registry path is
-  configurable through `DA_PROMPT_TASK_REGISTRY`; optimizer is false at both
-  registry and task levels.
+- Added strict, referentially complete `data/ontology/prompt_tasks.yaml` for
+  article-summary and figure analysis templates, real JSON Schemas, route
+  policies, generation bounds and eval suites. Model/endpoint selection remains
+  `.env` (`ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`); registry path is configurable
+  through `DA_PROMPT_TASK_REGISTRY`; optimizer is false at registry/task levels.
+- Migrated production `da summarize` from raw `LLMClient` and inline prompts to
+  `PromptExecutionPort`. The adapter enforces an exact variable set, appends the
+  resolved JSON Schema, resolves route/model/endpoint from DATA+.env, validates
+  provider output before returning, and binds task/prompt/schema/route/endpoint/
+  model/input/output hashes plus tokens, latency and effective generation bounds.
+- Closed a graph-authority bug: generative summary output no longer creates
+  canonical Method/Dataset/Metric/QualitySignal nodes or retrieval-eligible
+  summaries. Only lineage-bound `Summary` candidates are written with
+  `authoritative=false`, `retrieval_eligible=false`, `import_eligible=false`;
+  unresolved section evidence or provider/schema failure causes zero mutations.
+  Independent deterministic QualitySignal fixtures now preserve the ontology
+  endpoint canary without granting the LLM quality-fact authority.
 
 ### M387 S03 cache lineage and whole-pipeline metrics foundation
 

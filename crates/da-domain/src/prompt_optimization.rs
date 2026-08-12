@@ -13,7 +13,6 @@ pub struct PromptTaskSpec {
     pub user_template: String,
     pub output_schema_id: String,
     pub route_policy_id: String,
-    pub model_env: String,
     pub temperature_milli: u16,
     pub max_output_tokens: u32,
     pub eval_suite_id: String,
@@ -28,7 +27,6 @@ impl PromptTaskSpec {
             self.user_template.as_str(),
             self.output_schema_id.as_str(),
             self.route_policy_id.as_str(),
-            self.model_env.as_str(),
             self.eval_suite_id.as_str(),
         ];
         if required.into_iter().any(|x| x.trim().is_empty()) {
@@ -51,6 +49,61 @@ impl PromptTaskSpec {
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct PromptRoutePolicy {
+    pub route_policy_id: String,
+    pub protocol: String,
+    pub provider_id: String,
+    pub endpoint_env: String,
+    pub model_env: String,
+    pub supports_images: bool,
+    pub maximum_temperature_milli: u16,
+}
+
+impl PromptRoutePolicy {
+    pub fn validate(&self) -> Result<(), String> {
+        if [
+            self.route_policy_id.as_str(),
+            self.protocol.as_str(),
+            self.provider_id.as_str(),
+            self.endpoint_env.as_str(),
+            self.model_env.as_str(),
+        ]
+        .into_iter()
+        .any(|value| value.trim().is_empty())
+        {
+            return Err("prompt route policy is incomplete".into());
+        }
+        if self.maximum_temperature_milli > 2_000 {
+            return Err("route temperature bound invalid".into());
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PromptOutputSchema {
+    pub output_schema_id: String,
+    pub schema: serde_json::Value,
+}
+
+impl PromptOutputSchema {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.output_schema_id.trim().is_empty() || !self.schema.is_object() {
+            return Err("prompt output schema is invalid".into());
+        }
+        Ok(())
+    }
+    pub fn sha256(&self) -> Result<ContentDigest, String> {
+        self.validate()?;
+        serde_json::to_vec(&self.schema)
+            .map(|bytes| ContentDigest::of_bytes(&bytes))
+            .map_err(|error| error.to_string())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PromptExecutionLineage {
     pub run_id: String,
     pub task_id: String,
@@ -58,6 +111,7 @@ pub struct PromptExecutionLineage {
     pub rendered_prompt_sha256: ContentDigest,
     pub output_schema_sha256: ContentDigest,
     pub route_policy_sha256: ContentDigest,
+    pub endpoint_sha256: ContentDigest,
     pub provider: String,
     pub model: String,
     pub input_sha256: ContentDigest,
@@ -65,6 +119,8 @@ pub struct PromptExecutionLineage {
     pub input_tokens: u64,
     pub output_tokens: u64,
     pub latency_ms: u64,
+    pub temperature_milli: u16,
+    pub max_output_tokens: u32,
     pub estimated_cost_microunits: Option<u64>,
     pub authoritative: bool,
     pub import_eligible: bool,
@@ -269,7 +325,6 @@ mod tests {
             user_template: "{text}".into(),
             output_schema_id: "schema".into(),
             route_policy_id: "anthropic".into(),
-            model_env: "ANTHROPIC_MODEL".into(),
             temperature_milli: 300,
             max_output_tokens: 1000,
             eval_suite_id: "summary-v1".into(),

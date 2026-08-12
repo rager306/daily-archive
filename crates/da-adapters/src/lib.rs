@@ -21,6 +21,7 @@ pub mod pdffigures2;
 pub mod pipeline_cache;
 pub mod pipeline_ledger;
 pub mod pipeline_stages;
+pub mod prompt_execution;
 pub mod prompt_task_registry;
 pub mod revision_readiness_policy;
 pub mod rule_extractor;
