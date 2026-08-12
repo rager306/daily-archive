@@ -20,6 +20,18 @@ use std::path::{Path, PathBuf};
 const PROVIDER: &str = "arxiv";
 const UA: &str = "daily-archive/arxiv-acquisition (research bot)";
 
+/// Provider endpoint overrides (D239: provider roles in env, not code).
+/// Defaults match production arXiv; tests override via env + wiremock.
+fn export_base() -> String {
+    std::env::var("DA_ARXIV_EXPORT_BASE_URL").unwrap_or_else(|_| "https://export.arxiv.org".into())
+}
+fn abs_base() -> String {
+    std::env::var("DA_ARXIV_ABS_BASE_URL").unwrap_or_else(|_| "https://arxiv.org".into())
+}
+fn ar5iv_base() -> String {
+    std::env::var("DA_AR5IV_BASE_URL").unwrap_or_else(|_| "https://ar5iv.labs.arxiv.org".into())
+}
+
 /// Filesystem-backed arXiv acquisition.
 #[derive(Debug, Clone)]
 pub struct ArxivSourceAcquisition {
@@ -125,12 +137,14 @@ impl ArxivSourceAcquisition {
         })?;
 
         let pdf_path = source_dir.join(format!("{source_key}.pdf"));
-        let requested_pdf_url = format!("https://arxiv.org/pdf/{source_key}");
+        let abs_base = abs_base();
+        let export_base = export_base();
+        let requested_pdf_url = format!("{abs_base}/pdf/{source_key}");
         let pdf_resolved_url = if !pdf_path.is_file() {
             let urls = [
-                format!("https://arxiv.org/pdf/{source_key}"),
-                format!("https://arxiv.org/pdf/{source_key}.pdf"),
-                format!("https://export.arxiv.org/pdf/{source_key}"),
+                format!("{abs_base}/pdf/{source_key}"),
+                format!("{abs_base}/pdf/{source_key}.pdf"),
+                format!("{export_base}/pdf/{source_key}"),
             ];
             let url_refs: Vec<&str> = urls.iter().map(String::as_str).collect();
             let (src_url, bytes) =
@@ -152,12 +166,13 @@ impl ArxivSourceAcquisition {
             .map(|value| format!("article.v{value}.html"))
             .unwrap_or_else(|| "article.html".into());
         let html_path = unit_root.join(html_name);
-        let requested_html_url = format!("https://arxiv.org/html/{source_key}");
+        let ar5iv_base = ar5iv_base();
+        let requested_html_url = format!("{abs_base}/html/{source_key}");
         let mut html_resolved_url = None;
         if include_html && !html_path.is_file() {
             let html_urls = [
                 requested_html_url.clone(),
-                format!("https://ar5iv.labs.arxiv.org/html/{source_key}"),
+                format!("{ar5iv_base}/html/{source_key}"),
             ];
             let hrefs: Vec<&str> = html_urls.iter().map(String::as_str).collect();
             match http_get_first_valid(&hrefs, Some(&self.user_agent), validate_html) {
@@ -389,7 +404,8 @@ fn ensure_tex_source(
                 "TeX archive for {arxiv_id} missing; pass --allow-network"
             )));
         }
-        let url = format!("https://arxiv.org/src/{arxiv_id}");
+        let abs_base = abs_base();
+        let url = format!("{abs_base}/src/{arxiv_id}");
         let bytes = http_get_bytes(&url, Some(user_agent))?;
         if bytes.len() as u64 > MAX_TEX_ARCHIVE_BYTES || bytes.is_empty() {
             return Err(AcquisitionError::Infrastructure(format!(
@@ -598,7 +614,8 @@ struct AtomMeta {
 }
 
 fn fetch_atom_meta(arxiv_id: &str, ua: &str) -> AtomMeta {
-    let url = format!("https://export.arxiv.org/api/query?id_list={arxiv_id}");
+    let export_base = export_base();
+    let url = format!("{export_base}/api/query?id_list={arxiv_id}");
     match http_get_bytes(&url, Some(ua)) {
         Ok(bytes) => parse_atom_meta(&String::from_utf8_lossy(&bytes)),
         Err(_) => AtomMeta {
