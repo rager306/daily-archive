@@ -1,5 +1,17 @@
 # Changelog
 
+### M386 S02 bounded acquisition retry/backoff
+
+- Added DATA-driven bounded HTTP retry/backoff in `http_fetch.rs`
+  (`DA_HTTP_RETRY_BACKOFF_SECONDS`, default 1,5,15,60,300; transient-only:
+  503/5xx/timeout/network; 4xx fail closed). 5 unit tests.
+- Provider URLs env-configured (D239, no hardcode): `DA_ARXIV_EXPORT_BASE_URL`,
+  `DA_ARXIV_ABS_BASE_URL`, `DA_AR5IV_BASE_URL` in `.env.example`.
+- Wiremock contract matrix `arxiv_acquisition_contract.rs` (4 tests: atom+pdf
+  happy, transient 503 first_valid fallback, partial pdf fail-closed, network
+  denied fail-closed).
+- Real network acquire verified: 2507.19458 cs-ai PDF+HTML checksum-bound.
+
 ### M387 S08 pipeline acceptance
 
 - Added `pipeline_acceptance` example aggregating 14-stage pipeline ledger

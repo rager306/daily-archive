@@ -20,7 +20,15 @@
   data; identity/traversal/vector sub-linear; vector search 7-20us.
 - Artifact: samyama_hot_path_profile_m387.json. D127=false, optimizer=false.
 
-## Next: S07 RuVector/SONA retrieval quality
+## M386/S02 delivered (d8e420a7+67a1a8ac) — retry/backoff parity
+
+- Bounded HTTP retry/backoff in http_fetch.rs (DATA-driven
+  DA_HTTP_RETRY_BACKOFF_SECONDS, transient-only, 5 unit tests).
+- Provider URLs env-configured (D239 no hardcode).
+- Wiremock contract matrix: 4 tests (happy/503/partial/denied).
+- Real acquire verified: 2507.19458 PDF+HTML checksum-bound.
+
+## Next: M386 S01 closeout (boundary audit already delivered) + Python downloader archive
 
 ## M387/S07 delivered (b7ee0d5d)
 
