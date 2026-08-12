@@ -1,6 +1,16 @@
 # Changelog
 
-### M387 S05 stage ablation profiling
+### M387 S06 Samyama hot path profile
+
+- Added `samyama_hot_path_profile` example measuring write paths
+  (create_node/edge, property set, identity lookup, traversal, vector insert/search)
+  at 100/1k/3k scales, FROZEN snapshot parity (hub.sgsnap: 252 nodes/342 edges,
+  FROZEN lookup faster than HOT by column store), and import/replay idempotency
+  (import 43ms → warm replay 31ms, identical counts).
+- Honest findings: edge create scales ~34x for 30x data (write amplification);
+  identity/traversal/vector are sub-linear; vector search is 7-20us (fast).
+- Durable: `artifacts/runtime/samyama_hot_path_profile_m387.json`.
+  import_eligible=false, optimizer_enabled=false, auto_promote=false, D127=false.
 
 - Extended pipeline cache profile to 1/10/30/100/200 article scales with cold
   vs warm (pre-warmed) memory-cache lookups, per-scale key/payload SHA lineage
