@@ -95,6 +95,25 @@ def test_prompt_eval_production_or_optimizer_unlock_is_caught():
     assert "prompt_eval_data_must_not_enable_optimizer_or_promotion" in ids
 
 
+def test_artifact_optimizer_unlock_is_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "artifacts" / "runtime" / "bad.json",
+        '{"optimizer_enabled": true, "auto_promote": true, "import_eligible": false}',
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "no_optimizer_or_auto_promote_true_in_artifacts" in ids
+
+
 def test_cli_direct_generative_provider_bypass_is_caught():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"

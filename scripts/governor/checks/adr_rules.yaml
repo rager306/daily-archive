@@ -48,6 +48,13 @@ rules:
     rationale: "Prompt evaluation DATA may evaluate candidates but must not enable optimization, promotion or import authority."
     suffix_allowlist: [.yaml, .yml]
 
+  - id: no_optimizer_or_auto_promote_true_in_artifacts
+    anchor: "ADR-059 (no auto-promote), D136 (DSPy disabled), M387 optimizer FSM"
+    severity: high
+    scan: artifacts/
+    pattern: '"(?:optimizer_enabled|auto_promote)"\s*:\s*true'
+    rationale: "No runtime artifact may enable optimizer admission or automatic promotion; candidates stay evaluated until explicit human authorization. D127 import lock remains separate."
+
   # --- M333: D127 source lock — import_eligible must not be set true in crates ---
   # Artifacts already covered by no_import_eligible_true_in_artifacts.
   - id: no_import_eligible_true_in_crates
