@@ -108,6 +108,20 @@ remain typed no-claim; a backend is never inferred merely from the stage name.
 GEPA/DSPy remain candidate-only and disabled. RuVector tuning remains deferred
 until independent retrieval-quality ablations prove an active benefit.
 
+Cache correctness and warm-path timing can be checked separately:
+
+```bash
+DA_PIPELINE_CACHE_ROOT=artifacts/gold_corpus/pipeline_cache \
+  cargo run -p da-cli --example pipeline_cache_profile -- \
+  --materialization-report artifacts/article_context/materialization_all_200.json \
+  --report artifacts/runtime/pipeline_cache_profile_m387.json
+```
+
+The profile verifies cold/hit/config-drift/corruption paths for 1/10/30 articles
+and binds physical graph replay evidence. A valid replay has `applied=0`,
+`rejected=0`, `unobserved=0`, and `unchanged>0`; cache hits never substitute for
+revision/extraction graph materialization.
+
 ## Corpus expansion waves
 
 The Awesome Agentic Reasoning source wave is pinned at

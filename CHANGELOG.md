@@ -20,6 +20,12 @@
   ordered rows, two evidence-backed parse/extract rows and 12 honest no-claim
   rows. Metrics will be filled by later stage execution rather than copied from
   incomparable aggregate timings.
+- Added real 1/10/30 filesystem-cache profiling across parse/extract/embed: all
+  3/30/90 entries showed cold miss, verified hit and config-drift miss with exact
+  key+payload identities; corruption remained visible. The same report binds the
+  production 200-paper `materialize_wave` physical replay: applied=0, rejected=0,
+  unobserved=0, unchanged=168239. This proves cached compute does not replace the
+  always-run, replay-idempotent graph materialization path.
 - Closed rolling JSON logging debt in pipeline ledger and both materialization
   profile composition roots. D238 requires every active generative model call
   to pass through a future provider-neutral PromptExecutionPort/FSM before
