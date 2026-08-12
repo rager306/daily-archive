@@ -28,7 +28,7 @@
 - Wiremock contract matrix: 4 tests (happy/503/partial/denied).
 - Real acquire verified: 2507.19458 PDF+HTML checksum-bound.
 
-## Next: M386 S01 closeout (boundary audit already delivered) + Python downloader archive
+## Next: M386 S04+ (Python downloader archive after full Rust parity)
 
 ## M387/S07 delivered (b7ee0d5d)
 
