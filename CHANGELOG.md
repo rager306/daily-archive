@@ -1,5 +1,27 @@
 # Changelog
 
+### M387 S08 pipeline acceptance
+
+- Added `pipeline_acceptance` example aggregating 14-stage pipeline ledger
+  (all contract pass), cache replay proof (168239 unchanged, valid partition),
+  optimizer readiness gates (2 tasks evaluated-not-eligible) into one typed
+  acceptance report. Verdict=accepted, import_eligible=false, optimizer=false.
+- Governor gates: `no_optimizer_or_auto_promote_true_in_artifacts` ratchet
+  covers runtime artifacts; negative fixture tests cover production-acceptance
+  and optimizer unlocks via tempdir (no repo fixtures → trajectory clean).
+- Durable: `artifacts/runtime/pipeline_acceptance_m387.json`.
+
+### M387 S07 retrieval quality
+
+- Replaced RuVectorBridge stub with functional graph-aware bridge: RRF hybrid
+  fusion (ruvector-hybrid) + feature-gated PPR (ruvector-solver forward-push on
+  plain CSR); 13 ppr tests + 9 base tests PASS.
+- Retrieval quality benchmark (3 queries, golden judgments, tenant filter):
+  dense/lexical/rrf-hybrid recall@k=1.0 filter=true admit; ppr filter=false
+  → benchmark-only (honest: fixed topology ignores tenant). Quality decides
+  admission via data/retrieval/policy.yaml (min recall@k=0.6).
+- Artifact: retrieval_benchmark_m387.json. D127=false, optimizer=false.
+
 ### M387 S06 Samyama hot path profile
 
 - Added `samyama_hot_path_profile` example measuring write paths
