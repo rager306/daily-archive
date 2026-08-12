@@ -1,60 +1,55 @@
-# Handoff — 2026-08-12 (M386 Rust migration + M387 optimizer-ready pipeline active)
+# Handoff — 2026-08-12 (M387 optimizer-ready pipeline)
 
-## M386-57ae9l remains active
+## M386-57ae9l still active
 
-Rust-only production boundary D237. Delivered `9d57d53e` (`da acquire-arxiv`, typed report/use case, 580-ID replay 579 hit + withdrawn 2507.23261, D127 false). Remaining: article.v00.02 typed metadata, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and end-to-end acceptance.
+Rust-only D237 acquisition delivered `9d57d53e`. Remaining typed article.v00.02, bounded network retry/backoff + partial/checksum conflicts, then Python downloader archive and Rust-only acceptance. D127 false.
 
-## M387-jkpnfh
+## M387-jkpnfh delivered
 
-### Delivered
+- S01 `ccb27e08`: 14-stage DATA ledger/runtime audit.
+- S02 `aebb7bce`: ACAP context conservation; real 30 parse/extract profile, 140 candidates/117 grounded, 12 no_claim.
+- S03 `6bd13514` + `d9fbd418`: canonical cache key SHA, shared memory/filesystem contract, dual key+payload lineage, 14-stage optimizer-ready metrics, structured logging, real 1/10/30 cache profile and production 200-paper physical replay.
 
-- S01 `ccb27e08`: DATA-driven 14-stage acquisition→query ledger, strict DAG/cache/truth runtime audit.
-- S02 `aebb7bce`: ACAP diagnostic context conservation; real 30 parse/extract profile, 140 candidates/117 grounded, 12 honest no_claim, no independent PASS; MEM752.
-- S03 foundation `6bd13514`: canonical key SHA, shared memory/filesystem cache contract, dual key+payload lineage, whole-process metrics envelope and logging debt closure. S03 is NOT complete yet.
+S03 UAT PASS:
+- `9b0f6c56-ad1d-4828-809a-89423b3b7d75`: cold/hit/config-drift exact for 3/30/90 manifests; corruption visible; 200-paper replay applied=0 rejected=0 unobserved=0 unchanged=168239; D127 false.
+- `4e6531cf-66ee-4d45-8bb5-048515753b52`: 17 focused cache/lineage/metrics tests.
+- full architecture PASS, Governor drift_risk/0 violations, GitNexus reindexed.
 
-### Current S03 details
+## M387/S04 active, foundation delivered `3c2162ca`
 
-Added:
-- `StageCacheKey::validate/key_sha256` in da-ports;
-- `MemoryPipelineCache` and shared contract vs FilePipelineCache: cold/hit, config drift, retry expiry, manifest, concurrent same-key, visible corruption;
-- `CacheLineageEvidence` + application audit: key SHA and payload SHA both mandatory; same bytes/different keys distinct; cache cannot claim graph materialization skipped;
-- `pipeline-metrics.v1`: exact 14 stage rows and fields for runtime FSM, wall/CPU/RSS/I/O, queue/worker, cache, context, tokens/model latency/cost, backend applicability, failure, D127;
-- durable `artifacts/runtime/pipeline_metrics_m387.json`: 14 rows, parse/extract observed, 12 typed no_claim, optimizer_admission_verdict=null, D127 false, deterministic SHA;
-- rolling JSON logging initialized in pipeline ledger and both materialization profile roots. Event verified: `pipeline_metrics_profile_complete`, rows=14, observed=2, D127 false.
+Accepted ADR-059 + D238. Added:
+- domain `PromptTaskSpec`, `PromptExecutionLineage`, `PromptEvaluation`, `PromptCandidate` FSM;
+- FSM baseline_registered→candidate_proposed→evaluated→eligible|rejected; no deployed transition, no auto-promote, D127 false;
+- same-n, validation-gap, contamination, hard-invariant, latency/cost gates;
+- port `PromptExecutionPort` request/response;
+- strict DATA `data/ontology/prompt_tasks.yaml` for `article_summary` and `figure_analysis`;
+- model route selection remains `.env`: `ANTHROPIC_MODEL`, registry path `DA_PROMPT_TASK_REGISTRY`;
+- optimizer false at registry+task level; GEPA/DSPy candidate-only and disabled;
+- ADR-059 indexed; 5 focused tests, Clippy, full architecture PASS; Governor 0 violations; GitNexus reindex complete; Codebase Memory MCP timeout.
 
-Verification: 17 focused tests, Clippy, full architecture PASS, Governor drift_risk/0 violations, GitNexus detect risk medium expected + reindex complete. Codebase Memory MCP timed out again.
+### Exact next action S04/T03
 
-### Exact next action S03
+1. Implement adapter `PromptExecutionPort` wrappers over existing `LlmClient` and `MultimodalLlmPort` with strict template rendering, `.env` model resolution, prompt/schema/route/input/output hashes, tokens/latency/cost missingness and structured failure logs.
+2. TDD migrate `SummaryUseCase` first: inject `PromptTaskSpec`/PromptExecutionPort, remove inline prompt and `model:""`, require valid candidate lineage before Summary/Entity graph writes, preserve extractive summary path.
+3. Migrate FigureAnalysisUseCase using existing safe prompt/schema/model/cache lineage pattern; preserve authoritative=false/D127.
+4. Offline frozen prompt eval report, candidate only, same-n+val_gap; then full UAT and close S04.
 
-1. Add application end-to-end test proving two identical runs: compute executor called once, materialization fake called twice; prompt/config drift reruns only affected compute while materialization still runs.
-2. Bind real Samyama revision/extraction replay evidence: applied=0, rejected=0, unobserved=0, unchanged>0.
-3. Add `pipeline_cache_profile.rs` for 1/10/30 cold/hit/config-drift/corruption timing and structured events; bind key/output hashes and D127.
-4. Update docs, run full gate, atomic commit, UAT, close S03.
+## LLM audit
 
-### Planned S04 Prompt Execution FSM
+Active generative paths only:
+- `SummaryUseCase::generate_summaries` / `da summarize`: current HIGH gap until T03 migration (inline prompt, implicit adapter model, no full lineage/eval, graph writes).
+- `FigureAnalysisUseCase`: candidate-only multimodal; already has prompt/schema/route/model/tokens/latency/cache lineage and is reference pattern.
 
-User requested full-process metrics and future GEPA/RuVector/DSPy readiness. Audit found exactly two active generative paths:
-- production text `SummaryUseCase::generate_summaries` (`da summarize`) — HIGH gap: inline prompt, no prompt/model lineage/cache/FSM/eval, temperature 0.3, graph writes;
-- candidate-only multimodal `FigureAnalysisUseCase` — good existing prompt/schema/route/model/tokens/latency/cache lineage pattern.
+Not generative: RuleBasedExtractor, GROBID, extractive summary, FD_API embedding, MCP prompt templates. RuVector is retrieval/backend optimization, not prompt optimization; remains S07 recall/MRR/nDCG/filter/latency gated.
 
-Not generative LLM: RuleBasedExtractor, GROBID, extractive summary, FD_API embeddings, MCP prompt templates.
+## Session checks and Governor proposal
 
-D238 recorded: all generative calls must use future provider-neutral `PromptExecutionPort` and candidate FSM. S04 tasks:
-1. domain/port PromptSpec/Lineage/Metrics/Candidate FSM baseline_registered→candidate_proposed→evaluated→eligible/rejected; illegal/auto promotion forbidden;
-2. strict DATA `prompt_tasks.yaml`: prompt versions/schema/model route policy/bounds/eval suite; runtime endpoints/secrets in .env; optimizer disabled;
-3. wrap summary+figure; require valid lineage before summary graph write; emit complete metrics; no hidden fallback;
-4. frozen independent prompt eval: schema/grounding/faithfulness/coverage/paraphrase/latency/tokens/cost, same-n+val_gap; candidate reports only.
-
-GEPA/DSPy remain disabled/candidate-only; D136 and no-auto-promote stay binding. RuVector is retrieval, not prompt optimization, and remains S07 benchmark-gated.
-
-## Operational findings
-
-- Whole-pipeline optimizer readiness is bootstrap/partial (~4.5/10): stage taxonomy/cache types strong; 12/14 stages lack live context/performance observations; scheduler/retrieval quality missing.
-- Never infer backend from stage ID. `backend=unobserved` until runtime evidence; S06/S07 establish Samyama/RuVector hot paths.
-- No aggregate M384 timing copied into revision/extraction rows because it cannot be partitioned honestly.
-- GSD journal has no M387 S03 stuck-loop/timeout entries.
-- `artifacts/project-trajectory/trajectory-report.json` remains unstaged.
+- Application cache profile logs contained no WARN/ERROR; completion event rows and D127 verified.
+- GSD journal S03/S04: no stuck-loop/timeout entries.
+- Governor active: drift_risk, 0 violations; only large `.git` + missing CHANGELOG unreleased heading flags remain.
+- Future S08 ratchet: active generative call sites must reference PromptExecutionPort and a registered task; block inline provider model defaults, `optimizer_enabled=true`, deployed prompt candidates, or summary graph writes without lineage. Add only after product negative fixtures in S04.
+- Generated `artifacts/project-trajectory/trajectory-report.json` remains unstaged.
 
 ## Locks
 
-D127 false. D237 Rust-only product. D238 PromptExecutionPort/FSM. D136 DSPy closed. GEPA candidate-only/no auto-promote/dual F1+same-n+val_gap. Samyama sole store. Cache only pure compute; graph truth always materialized. No implicit revision. Vendor edits isolated. RocksDB/RuVector tuning only after active-path evidence.
+D127 false. D237 Rust-only. D238/ADR-059 PromptExecutionPort/FSM. D136 DSPy disabled. GEPA no auto-promote/dual F1+same-n+val_gap. Samyama sole store. Cache only pure compute; graph materialization always runs. No backend inference from stage ID. RuVector/RocksDB only after active-path evidence.
