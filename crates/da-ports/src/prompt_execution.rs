@@ -3,6 +3,7 @@
 use async_trait::async_trait;
 use da_domain::prompt_optimization::{
     PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+    ResolvedModelBinding,
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -12,6 +13,7 @@ pub struct PromptExecutionRequest {
     pub run_id: String,
     pub task: PromptTaskSpec,
     pub route: PromptRoutePolicy,
+    pub resolved_model: ResolvedModelBinding,
     pub output_schema: PromptOutputSchema,
     pub variables: std::collections::BTreeMap<String, String>,
     pub input_bytes: Vec<u8>,

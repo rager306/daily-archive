@@ -270,6 +270,7 @@ impl NodeSchemaDef for SummarySchema {
             ("prompt_sha256", FieldType::String),
             ("output_schema_sha256", FieldType::String),
             ("route_policy_sha256", FieldType::String),
+            ("model_binding_sha256", FieldType::String),
             ("model", FieldType::String),
             ("input_sha256", FieldType::String),
             ("output_sha256", FieldType::String),

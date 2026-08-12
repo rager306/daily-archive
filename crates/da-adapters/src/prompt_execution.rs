@@ -13,24 +13,12 @@ use std::{
     sync::Arc,
     time::Instant,
 };
-type EnvResolver = Arc<dyn Fn(&str) -> Option<String> + Send + Sync>;
 pub struct TextPromptExecutionAdapter {
     llm: Arc<dyn LLMClient>,
-    env: EnvResolver,
 }
 impl TextPromptExecutionAdapter {
-    pub fn from_env(llm: Arc<dyn LLMClient>) -> Self {
-        Self {
-            llm,
-            env: Arc::new(|key| std::env::var(key).ok().filter(|x| !x.trim().is_empty())),
-        }
-    }
-    #[cfg(test)]
-    fn with_env(llm: Arc<dyn LLMClient>, values: BTreeMap<String, String>) -> Self {
-        Self {
-            llm,
-            env: Arc::new(move |key| values.get(key).cloned()),
-        }
+    pub fn new(llm: Arc<dyn LLMClient>) -> Self {
+        Self { llm }
     }
 }
 #[async_trait]
@@ -71,10 +59,19 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
                 "text adapter cannot execute image route".into(),
             ));
         }
-        if self.llm.provider_id() != request.route.provider_id {
+        request
+            .resolved_model
+            .validate()
+            .map_err(PromptExecutionError::Contract)?;
+        if request.route.model_binding_id != request.resolved_model.binding_id {
+            return Err(PromptExecutionError::Contract(
+                "route/model binding identity mismatch".into(),
+            ));
+        }
+        if self.llm.provider_id() != request.resolved_model.provider {
             return Err(PromptExecutionError::Contract(format!(
                 "provider identity mismatch expected={} actual={}",
-                request.route.provider_id,
+                request.resolved_model.provider,
                 self.llm.provider_id()
             )));
         }
@@ -98,18 +95,8 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
             .map_err(|error| PromptExecutionError::Contract(error.to_string()))?;
         let system = format!("{system_template}\n\nOUTPUT JSON SCHEMA:\n{schema_json}");
         let user = render_once(&request.task.user_template, &request.variables)?;
-        let model = (self.env)(&request.route.model_env).ok_or_else(|| {
-            PromptExecutionError::Contract(format!(
-                "model environment {} is not configured",
-                request.route.model_env
-            ))
-        })?;
-        let endpoint = (self.env)(&request.route.endpoint_env).ok_or_else(|| {
-            PromptExecutionError::Contract(format!(
-                "endpoint environment {} is not configured",
-                request.route.endpoint_env
-            ))
-        })?;
+        let model = request.resolved_model.model_name.clone();
+        let endpoint = request.resolved_model.endpoint.clone();
         let rendered = format!("system\0{system}\0user\0{user}");
         let input_identity =
             serde_json::to_vec(&(request.variables.clone(), request.input_bytes.clone()))
@@ -192,6 +179,10 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
                 .map_err(PromptExecutionError::Contract)?,
             route_policy_sha256: route_sha,
             endpoint_sha256: ContentDigest::of_text(&endpoint),
+            model_binding_sha256: request
+                .resolved_model
+                .sha256()
+                .map_err(PromptExecutionError::Contract)?,
             provider: self.llm.provider_id().into(),
             model,
             input_sha256: ContentDigest::of_bytes(&input_identity),
@@ -277,7 +268,9 @@ fn render_once(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use da_domain::prompt_optimization::{PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec};
+    use da_domain::prompt_optimization::{
+        PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec, ResolvedModelBinding,
+    };
     use da_ports::llm_client::{ChatResponse, LLMError, LLMResult};
     struct Fake {
         ok: bool,
@@ -328,10 +321,9 @@ mod tests {
     fn route() -> PromptRoutePolicy {
         PromptRoutePolicy {
             route_policy_id: "route".into(),
-            protocol: "test".into(),
-            provider_id: "fake".into(),
-            endpoint_env: "ENDPOINT".into(),
-            model_env: "MODEL".into(),
+            model_binding_id: "binding".into(),
+            endpoint_override_env: Some("NINEROUTER_URL".into()),
+            credential_env: "NINEROUTER_KEY".into(),
             supports_images: false,
             maximum_temperature_milli: 1000,
         }
@@ -342,20 +334,27 @@ mod tests {
             schema: serde_json::json!({"type":"object","additionalProperties":false,"required":["ok"],"properties":{"ok":{"type":"boolean"}}}),
         }
     }
+    fn model() -> ResolvedModelBinding {
+        ResolvedModelBinding {
+            binding_id: "binding".into(),
+            model_id: "model-id".into(),
+            provider: "fake".into(),
+            protocol: "test".into(),
+            endpoint: "https://example.invalid/v1/chat/completions".into(),
+            model_name: "model-v1".into(),
+            tool_version: "1".into(),
+            policy_version: "1".into(),
+        }
+    }
     fn adapter(ok: bool) -> TextPromptExecutionAdapter {
-        TextPromptExecutionAdapter::with_env(
-            Arc::new(Fake { ok }),
-            BTreeMap::from([
-                ("MODEL".into(), "model-v1".into()),
-                ("ENDPOINT".into(), "https://example.invalid".into()),
-            ]),
-        )
+        TextPromptExecutionAdapter::new(Arc::new(Fake { ok }))
     }
     fn request() -> PromptExecutionRequest {
         PromptExecutionRequest {
             run_id: "r1".into(),
             task: task(),
             route: route(),
+            resolved_model: model(),
             output_schema: schema(),
             variables: BTreeMap::from([
                 ("title".into(), "T".into()),

@@ -51,10 +51,9 @@ impl PromptTaskSpec {
 #[serde(deny_unknown_fields)]
 pub struct PromptRoutePolicy {
     pub route_policy_id: String,
-    pub protocol: String,
-    pub provider_id: String,
-    pub endpoint_env: String,
-    pub model_env: String,
+    pub model_binding_id: String,
+    pub endpoint_override_env: Option<String>,
+    pub credential_env: String,
     pub supports_images: bool,
     pub maximum_temperature_milli: u16,
 }
@@ -63,20 +62,65 @@ impl PromptRoutePolicy {
     pub fn validate(&self) -> Result<(), String> {
         if [
             self.route_policy_id.as_str(),
-            self.protocol.as_str(),
-            self.provider_id.as_str(),
-            self.endpoint_env.as_str(),
-            self.model_env.as_str(),
+            self.model_binding_id.as_str(),
+            self.credential_env.as_str(),
         ]
         .into_iter()
         .any(|value| value.trim().is_empty())
         {
             return Err("prompt route policy is incomplete".into());
         }
+        if self
+            .endpoint_override_env
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        {
+            return Err("route endpoint override environment key is empty".into());
+        }
         if self.maximum_temperature_milli > 2_000 {
             return Err("route temperature bound invalid".into());
         }
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResolvedModelBinding {
+    pub binding_id: String,
+    pub model_id: String,
+    pub provider: String,
+    pub protocol: String,
+    pub endpoint: String,
+    pub model_name: String,
+    pub tool_version: String,
+    pub policy_version: String,
+}
+
+impl ResolvedModelBinding {
+    pub fn validate(&self) -> Result<(), String> {
+        if [
+            self.binding_id.as_str(),
+            self.model_id.as_str(),
+            self.provider.as_str(),
+            self.protocol.as_str(),
+            self.endpoint.as_str(),
+            self.model_name.as_str(),
+            self.tool_version.as_str(),
+            self.policy_version.as_str(),
+        ]
+        .into_iter()
+        .any(|value| value.trim().is_empty())
+        {
+            return Err("resolved model binding is incomplete".into());
+        }
+        Ok(())
+    }
+    pub fn sha256(&self) -> Result<ContentDigest, String> {
+        self.validate()?;
+        serde_json::to_vec(self)
+            .map(|bytes| ContentDigest::of_bytes(&bytes))
+            .map_err(|error| error.to_string())
     }
 }
 
@@ -112,6 +156,7 @@ pub struct PromptExecutionLineage {
     pub output_schema_sha256: ContentDigest,
     pub route_policy_sha256: ContentDigest,
     pub endpoint_sha256: ContentDigest,
+    pub model_binding_sha256: ContentDigest,
     pub provider: String,
     pub model: String,
     pub input_sha256: ContentDigest,

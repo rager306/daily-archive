@@ -124,9 +124,12 @@ revision/extraction graph materialization.
 
 Generative task policy is DATA-driven in `data/ontology/prompt_tasks.yaml`.
 Article summary and figure analysis have versioned templates, real JSON Schemas,
-route/eval identities and bounded generation settings. Provider endpoint/model
-selection remains `.env` (`ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`; registry path
-`DA_PROMPT_TASK_REGISTRY`). `da summarize` executes through
+route/eval identities and bounded generation settings. Model roles resolve from
+`models.yaml`; the default summary generator is
+`paper-summary-generate-default` → `agnes-ai/agnes-2.0-flash` through the local
+OpenAI-compatible 9router proxy. Environment configuration supplies only
+`NINEROUTER_URL`, optional `NINEROUTER_KEY`, bounded `DA_LLM_TIMEOUT_SECONDS`,
+and registry paths (`DA_PROMPT_TASK_REGISTRY`, `DA_MODEL_REGISTRY`). `da summarize` executes through
 `PromptExecutionPort`: strict template variables, output-schema validation and
 complete prompt/model/input/output lineage are mandatory before graph writes.
 Generative output writes only non-retrieval Summary candidates; canonical

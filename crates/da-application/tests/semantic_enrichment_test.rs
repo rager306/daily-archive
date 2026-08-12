@@ -6,6 +6,7 @@ use da_domain::{
     assurance::ContentDigest,
     prompt_optimization::{
         PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+        ResolvedModelBinding,
     },
     vid,
 };
@@ -43,6 +44,7 @@ impl PromptExecutionPort for FixedPrompt {
             output_schema_sha256: request.output_schema.sha256().unwrap(),
             route_policy_sha256: ContentDigest::of_text("route-bytes"),
             endpoint_sha256: ContentDigest::of_text("endpoint"),
+            model_binding_sha256: request.resolved_model.sha256().unwrap(),
             provider: "fixed".into(),
             model: "fixed-model".into(),
             input_sha256: ContentDigest::of_bytes(&request.input_bytes),
@@ -62,7 +64,12 @@ impl PromptExecutionPort for FixedPrompt {
         })
     }
 }
-fn contracts() -> (PromptTaskSpec, PromptRoutePolicy, PromptOutputSchema) {
+fn contracts() -> (
+    PromptTaskSpec,
+    PromptRoutePolicy,
+    ResolvedModelBinding,
+    PromptOutputSchema,
+) {
     (
         PromptTaskSpec {
             task_id: "article_summary".into(),
@@ -78,12 +85,21 @@ fn contracts() -> (PromptTaskSpec, PromptRoutePolicy, PromptOutputSchema) {
         },
         PromptRoutePolicy {
             route_policy_id: "route".into(),
-            protocol: "test".into(),
-            provider_id: "fixed".into(),
-            endpoint_env: "ENDPOINT".into(),
-            model_env: "MODEL".into(),
+            model_binding_id: "binding".into(),
+            endpoint_override_env: None,
+            credential_env: "TEST_KEY".into(),
             supports_images: false,
             maximum_temperature_milli: 1000,
+        },
+        ResolvedModelBinding {
+            binding_id: "binding".into(),
+            model_id: "fixed".into(),
+            provider: "fixed".into(),
+            protocol: "test".into(),
+            endpoint: "https://example.invalid".into(),
+            model_name: "fixed-model".into(),
+            tool_version: "1".into(),
+            policy_version: "1".into(),
         },
         PromptOutputSchema {
             output_schema_id: "summary".into(),
@@ -119,8 +135,8 @@ fn parsed() -> ParsedArticle {
     }
 }
 fn use_case(store: &MockGraphStore, prompt: FixedPrompt) -> SummaryUseCase {
-    let (t, r, s) = contracts();
-    SummaryUseCase::new(Arc::new(store.clone()), Arc::new(prompt), t, r, s)
+    let (t, r, m, s) = contracts();
+    SummaryUseCase::new(Arc::new(store.clone()), Arc::new(prompt), t, r, m, s)
         .unwrap()
         .with_clock(Arc::new(FixedClock::from_timestamp(1_700_000_000)))
 }
@@ -169,6 +185,7 @@ async fn lineage_bound_candidates_are_nonretrieval_and_never_create_semantic_ent
             Some("article_summary")
         );
         assert!(snap.contains_key("output_schema_sha256"));
+        assert!(snap.contains_key("model_binding_sha256"));
     }
 }
 #[tokio::test]

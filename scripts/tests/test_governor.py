@@ -53,6 +53,28 @@ def test_clean_workspace_has_zero_violations():
     assert report.violations_count == 0, f"Expected 0 violations, got {report.violations_count}"
 
 
+def test_prompt_task_direct_provider_env_bypass_is_caught():
+    """ADR-059/D239 requires models.yaml binding IDs, not direct provider env routing."""
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "data" / "ontology" / "prompt_tasks.yaml",
+        "route_policy_id: anthropic-text\nmodel_env: ANTHROPIC_MODEL\n",
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    violations = [
+        violation
+        for result in report.results
+        if result.rule.id == "prompt_tasks_must_use_models_registry_bindings"
+        for violation in result.violations
+    ]
+    assert len(violations) == 2
+    assert all(violation.severity == "high" for violation in violations)
+
+
 def test_accepted_article_revision_ontology_is_in_production_data():
     """D223 promotes ADR-058 labels/edges while the draft is superseded."""
     repo = Path(__file__).resolve().parents[2]

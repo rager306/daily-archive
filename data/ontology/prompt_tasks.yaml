@@ -2,18 +2,16 @@ schema_version: prompt-task-registry.v1
 optimizer_enabled: false
 max_validation_gap_basis_points: 500
 routes:
-  - route_policy_id: anthropic-text
-    protocol: anthropic_messages
-    provider_id: anthropic-compatible
-    endpoint_env: ANTHROPIC_BASE_URL
-    model_env: ANTHROPIC_MODEL
+  - route_policy_id: ninerouter-summary-default
+    model_binding_id: paper-summary-generate-default
+    endpoint_override_env: NINEROUTER_URL
+    credential_env: NINEROUTER_KEY
     supports_images: false
     maximum_temperature_milli: 1000
-  - route_policy_id: anthropic-multimodal
-    protocol: anthropic_messages
-    provider_id: anthropic-compatible
-    endpoint_env: ANTHROPIC_BASE_URL
-    model_env: ANTHROPIC_MODEL
+  - route_policy_id: ninerouter-figure-primary
+    model_binding_id: figure-qa-primary
+    endpoint_override_env: NINEROUTER_URL
+    credential_env: NINEROUTER_KEY
     supports_images: true
     maximum_temperature_milli: 1000
 output_schemas:
@@ -85,7 +83,7 @@ tasks:
     user_template: >-
       Summarize article {paper_id}. Title: {title}. Abstract: {abstract}. Full text: {full_text}.
     output_schema_id: article-summary.v1
-    route_policy_id: anthropic-text
+    route_policy_id: ninerouter-summary-default
     temperature_milli: 300
     max_output_tokens: 4096
     eval_suite_id: article-summary-eval.v1
@@ -97,7 +95,7 @@ tasks:
     user_template: >-
       Analyze figure {figure_id} for paper {paper_id}. Caption: {caption}.
     output_schema_id: figure-analysis-candidate.v1
-    route_policy_id: anthropic-multimodal
+    route_policy_id: ninerouter-figure-primary
     temperature_milli: 0
     max_output_tokens: 4096
     eval_suite_id: figure-analysis-eval.v1

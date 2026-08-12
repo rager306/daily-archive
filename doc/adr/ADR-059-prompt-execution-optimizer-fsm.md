@@ -26,11 +26,14 @@ Prompt task policy lives in `data/ontology/prompt_tasks.yaml` and binds:
 
 - task/version and system/user templates;
 - output schema and route policy identities;
-- model environment key, temperature/max-token bounds and eval suite;
+- canonical `models.yaml` binding ID, temperature/max-token bounds and eval suite;
 - `optimizer_enabled=false` until D136 evidence is current.
 
-Provider endpoints, model selections, credentials, timeouts and budgets remain
-environment configuration. Application code must not own provider defaults.
+Model/provider/protocol selection comes from `models.yaml` roles. For the default
+summary generator this is `paper-summary-generate-default` routed through the
+OpenAI-compatible 9router proxy. Environment configuration owns only host/key
+and operational timeout overrides (`NINEROUTER_URL`, `NINEROUTER_KEY`,
+`DA_LLM_TIMEOUT_SECONDS`). Application code must not own provider defaults.
 
 Optimizer candidates follow an explicit FSM:
 

@@ -43,8 +43,10 @@ impl PromptTaskRegistry {
         }
         for route in &self.routes {
             route.validate()?;
-            validate_env_key(&route.model_env)?;
-            validate_env_key(&route.endpoint_env)?;
+            if let Some(key) = &route.endpoint_override_env {
+                validate_env_key(key)?;
+            }
+            validate_env_key(&route.credential_env)?;
         }
         for schema in &self.output_schemas {
             schema.validate()?;

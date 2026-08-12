@@ -1,5 +1,24 @@
 # Changelog
 
+### M387 S04 9router model binding correction
+
+- Removed the incorrect Anthropic endpoint/model binding from the production
+  summary route. `models.yaml` is now the canonical typed model registry and
+  `paper-summary-generate-default` resolves to `agnes-ai/agnes-2.0-flash` through
+  the OpenAI-compatible local 9router proxy. Quality, fallback and judge roles
+  remain separate bindings for later same-n evaluation.
+- Added strict `models.yaml` loading with referential integrity, HTTPS/local-HTTP
+  endpoint policy, binding/model/tool/policy lineage and a bounded host override
+  only for 9router. `.env` now owns only `NINEROUTER_URL`, optional
+  `NINEROUTER_KEY`, `DA_LLM_TIMEOUT_SECONDS` and registry paths.
+- Added a functional OpenAI-compatible client with bounded timeout, optional
+  bearer authentication, token accounting, content/reasoning-content handling,
+  and hash-only provider-error diagnostics. Prompt lineage and Summary candidate
+  nodes now bind the resolved model-binding SHA in addition to the model name.
+- Runtime discovery against `http://127.0.0.1:20128/v1/models` returned HTTP 200,
+  592 models, and confirmed all configured summary generator/quality/fallback,
+  judge, and figure-primary model IDs are present. No inference request was issued.
+
 ### M387 S04 prompt execution FSM foundation
 
 - Accepted ADR-059/D238: every active generative call must pass through a
@@ -11,9 +30,9 @@
   latency/cost, deployment and D127 fail closed.
 - Added strict, referentially complete `data/ontology/prompt_tasks.yaml` for
   article-summary and figure analysis templates, real JSON Schemas, route
-  policies, generation bounds and eval suites. Model/endpoint selection remains
-  `.env` (`ANTHROPIC_MODEL`, `ANTHROPIC_BASE_URL`); registry path is configurable
-  through `DA_PROMPT_TASK_REGISTRY`; optimizer is false at registry/task levels.
+  policies, generation bounds and eval suites. Model/provider/protocol selection
+  comes from `models.yaml`; `.env` owns 9router host/key, bounded timeout and
+  registry paths. Optimizer is false at registry/task levels.
 - Migrated production `da summarize` from raw `LLMClient` and inline prompts to
   `PromptExecutionPort`. The adapter enforces an exact variable set, appends the
   resolved JSON Schema, resolves route/model/endpoint from DATA+.env, validates

@@ -22,6 +22,7 @@ use da_domain::{
     finalize::{FinalizePolicy, FinalizeVerdict},
     prompt_optimization::{
         PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+        ResolvedModelBinding,
     },
     vid,
 };
@@ -96,6 +97,7 @@ impl PromptExecutionPort for FixedSummary {
                 output_schema_sha256: request.output_schema.sha256().unwrap(),
                 route_policy_sha256: ContentDigest::of_text("canary-route"),
                 endpoint_sha256: ContentDigest::of_text("canary-endpoint"),
+                model_binding_sha256: request.resolved_model.sha256().unwrap(),
                 provider: "fixed-ontology-canary".into(),
                 model: "fixed".into(),
                 input_sha256: ContentDigest::of_bytes(&request.input_bytes),
@@ -114,7 +116,12 @@ impl PromptExecutionPort for FixedSummary {
     }
 }
 
-fn summary_contracts() -> (PromptTaskSpec, PromptRoutePolicy, PromptOutputSchema) {
+fn summary_contracts() -> (
+    PromptTaskSpec,
+    PromptRoutePolicy,
+    ResolvedModelBinding,
+    PromptOutputSchema,
+) {
     (
         PromptTaskSpec {
             task_id: "article_summary".into(),
@@ -130,12 +137,21 @@ fn summary_contracts() -> (PromptTaskSpec, PromptRoutePolicy, PromptOutputSchema
         },
         PromptRoutePolicy {
             route_policy_id: "fixed".into(),
-            protocol: "fixed".into(),
-            provider_id: "fixed".into(),
-            endpoint_env: "CANARY_ENDPOINT".into(),
-            model_env: "CANARY_MODEL".into(),
+            model_binding_id: "fixed-binding".into(),
+            endpoint_override_env: None,
+            credential_env: "CANARY_KEY".into(),
             supports_images: false,
             maximum_temperature_milli: 0,
+        },
+        ResolvedModelBinding {
+            binding_id: "fixed-binding".into(),
+            model_id: "fixed".into(),
+            provider: "fixed-ontology-canary".into(),
+            protocol: "fixed".into(),
+            endpoint: "https://example.invalid".into(),
+            model_name: "fixed".into(),
+            tool_version: "1".into(),
+            policy_version: "1".into(),
         },
         PromptOutputSchema {
             output_schema_id: "summary".into(),
@@ -194,12 +210,13 @@ async fn main() -> Result<()> {
 
     let enrich = EnrichUseCase::from_shared(Arc::new(FixedOpenAlex), direct_store.clone());
     let first = enrich.enrich_by_arxiv_id(paper_id).await?;
-    let (summary_task, summary_route, summary_schema) = summary_contracts();
+    let (summary_task, summary_route, summary_model, summary_schema) = summary_contracts();
     let summary = SummaryUseCase::new(
         direct_store.clone(),
         Arc::new(FixedSummary),
         summary_task,
         summary_route,
+        summary_model,
         summary_schema,
     )?;
     summary

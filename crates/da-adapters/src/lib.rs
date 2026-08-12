@@ -16,6 +16,8 @@ pub mod grobid_parser;
 pub mod html_parser;
 pub mod http_fetch;
 pub mod memory_pipeline_cache;
+pub mod model_registry;
+pub mod openai_compatible_llm;
 pub mod openalex_adapter;
 pub mod pdffigures2;
 pub mod pipeline_cache;

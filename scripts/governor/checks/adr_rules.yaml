@@ -225,6 +225,16 @@ rules:
     rationale: "Operational logs must carry semantic identity, state transitions, hashes and sizes — never raw LLM/provider payload text."
     suffix_allowlist: [.rs]
 
+  # --- ADR-059 / D239 model registry authority ---
+  - id: prompt_tasks_must_use_models_registry_bindings
+    anchor: "ADR-059 + D239 (models.yaml owns provider/model/protocol roles)"
+    severity: high
+    scan: data/ontology/prompt_tasks.yaml
+    pattern: 'ANTHROPIC_(?:BASE_URL|MODEL)|anthropic-(?:text|multimodal)'
+    rationale: "Prompt tasks must reference canonical models.yaml binding IDs. Provider endpoint/model env keys in prompt task DATA duplicate routing policy and bypass 9router role lineage."
+    suffix_allowlist:
+      - .yaml
+
   # --- DSPy / LLM deploy lock (D136) ---
   # --- M329: fact edges must use temporal_stamp (pair with cargo audit test) ---
   # Line-level catch for same-line patterns; multi-line sites covered by

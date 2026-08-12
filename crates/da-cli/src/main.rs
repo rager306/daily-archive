@@ -1291,7 +1291,9 @@ async fn summarize_paper(
 ) {
     use da_adapters::GrobidParser;
     use da_adapters::{
-        anthropic_llm::AnthropicLlmClient, prompt_execution::TextPromptExecutionAdapter,
+        model_registry::{load_model_registry, validate_prompt_model_bindings},
+        openai_compatible_llm::OpenAiCompatibleLlmClient,
+        prompt_execution::TextPromptExecutionAdapter,
         prompt_task_registry::load_prompt_task_registry,
     };
     use da_application::SummaryUseCase;
@@ -1349,14 +1351,6 @@ async fn summarize_paper(
     };
     println!("Paper node: {paper_node_id}");
 
-    // Create LLM client
-    let llm: Arc<dyn da_ports::LLMClient> = Arc::new(AnthropicLlmClient::from_env());
-    if !llm.can_make_request() {
-        eprintln!("\u{274c} ANTHROPIC_API_KEY not set");
-        std::process::exit(1);
-    }
-    println!("LLM ready: {}", llm.provider_id());
-
     // Generate lineage-bound, candidate-only summaries through ADR-059.
     let registry_path = std::env::var("DA_PROMPT_TASK_REGISTRY")
         .unwrap_or_else(|_| "data/ontology/prompt_tasks.yaml".into());
@@ -1373,13 +1367,49 @@ async fn summarize_paper(
         .output_schema(&task.output_schema_id)
         .unwrap()
         .clone();
-    let prompt_executor = Arc::new(TextPromptExecutionAdapter::from_env(llm));
+    let model_registry_path =
+        std::env::var("DA_MODEL_REGISTRY").unwrap_or_else(|_| "models.yaml".into());
+    let model_registry = load_model_registry(std::path::Path::new(&model_registry_path))
+        .unwrap_or_else(|error| {
+            eprintln!("❌ model registry failed: {error}");
+            std::process::exit(1);
+        });
+    validate_prompt_model_bindings(&model_registry, &registry).unwrap_or_else(|error| {
+        eprintln!("❌ prompt/model registry mismatch: {error}");
+        std::process::exit(1);
+    });
+    let endpoint_override = route
+        .endpoint_override_env
+        .as_deref()
+        .and_then(|key| std::env::var(key).ok())
+        .filter(|value| !value.trim().is_empty());
+    let resolved_model = model_registry
+        .resolve(&route.model_binding_id, endpoint_override.as_deref())
+        .unwrap_or_else(|error| {
+            eprintln!("❌ model binding failed: {error}");
+            std::process::exit(1);
+        });
+    let credential = std::env::var(&route.credential_env).ok();
+    let timeout_seconds = std::env::var("DA_LLM_TIMEOUT_SECONDS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(300);
+    let llm: Arc<dyn da_ports::LLMClient> = Arc::new(
+        OpenAiCompatibleLlmClient::new(resolved_model.clone(), credential, timeout_seconds)
+            .expect("summary LLM composition failed"),
+    );
+    println!(
+        "LLM ready: {} via {}",
+        resolved_model.model_name, resolved_model.binding_id
+    );
+    let prompt_executor = Arc::new(TextPromptExecutionAdapter::new(llm));
     let store_arc: Arc<dyn DirectGraphStore> = Arc::new(store);
     let use_case = SummaryUseCase::new(
         store_arc.clone(),
         prompt_executor,
         task,
         route,
+        resolved_model,
         output_schema,
     )
     .expect("summary prompt composition failed");

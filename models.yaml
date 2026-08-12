@@ -13,7 +13,7 @@
 #   tool_version:    semver of the tool/api contract; bump on protocol changes
 #   policy_version:  semver of the calling-side policy; bump on behavior changes
 #
-# Validation: scripts/validate_models_yaml.py (runs in pre-commit hook, M044 mandatory).
+# Validation: cargo test -p da-adapters --lib model_registry (strict typed Rust loader).
 # Last updated: summary-eval 10-paper roles (agnes default fast; M2.7 quality;
 #               grok fallback) via local 9router OpenAI-compatible path.
 
@@ -108,6 +108,13 @@ models:
     tool_version: 2026-07-22
     policy_version: summary-roles-v0.1
 
+  - id: ninerouter-qwen3-vl-235b-openai
+    provider: openai
+    endpoint: http://127.0.0.1:20128/v1/chat/completions
+    model_name: novita/qwen/qwen3-vl-235b-a22b-instruct
+    tool_version: 2026-08-12
+    policy_version: figure-roles-v0.1
+
 bindings:
   # bindings map a usage purpose to a model id
   # used by M050 worker pool and downstream helper code
@@ -122,6 +129,10 @@ bindings:
   - binding_id: rlm-trajectory-capture
     model_id: minimax-m3-512k-anthropic
     description: "RLM trajectory capture with deterministic work_id (M052)"
+
+  - binding_id: figure-qa-primary
+    model_id: ninerouter-qwen3-vl-235b-openai
+    description: "Primary figure analysis model via 9router OpenAI-compatible multimodal route"
 
   - binding_id: figure-qa-judge-fast
     model_id: minimax-m27-highspeed-anthropic

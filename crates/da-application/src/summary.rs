@@ -7,6 +7,7 @@ use std::{collections::BTreeMap, sync::Arc};
 
 use da_domain::prompt_optimization::{
     PromptExecutionLineage, PromptOutputSchema, PromptRoutePolicy, PromptTaskSpec,
+    ResolvedModelBinding,
 };
 use da_ports::{
     Clock, SystemClock,
@@ -22,6 +23,7 @@ pub struct SummaryUseCase {
     prompt_executor: Arc<dyn PromptExecutionPort>,
     prompt_task: PromptTaskSpec,
     prompt_route: PromptRoutePolicy,
+    resolved_model: ResolvedModelBinding,
     output_schema: PromptOutputSchema,
     clock: Arc<dyn Clock>,
 }
@@ -111,14 +113,17 @@ impl SummaryUseCase {
         prompt_executor: Arc<dyn PromptExecutionPort>,
         prompt_task: PromptTaskSpec,
         prompt_route: PromptRoutePolicy,
+        resolved_model: ResolvedModelBinding,
         output_schema: PromptOutputSchema,
     ) -> anyhow::Result<Self> {
         prompt_task.validate().map_err(anyhow::Error::msg)?;
         prompt_route.validate().map_err(anyhow::Error::msg)?;
+        resolved_model.validate().map_err(anyhow::Error::msg)?;
         output_schema.validate().map_err(anyhow::Error::msg)?;
         if prompt_task.task_id != "article_summary"
             || prompt_task.route_policy_id != prompt_route.route_policy_id
             || prompt_task.output_schema_id != output_schema.output_schema_id
+            || prompt_route.model_binding_id != resolved_model.binding_id
         {
             anyhow::bail!("summary prompt task route/schema contract mismatch");
         }
@@ -127,6 +132,7 @@ impl SummaryUseCase {
             prompt_executor,
             prompt_task,
             prompt_route,
+            resolved_model,
             output_schema,
             clock: Arc::new(SystemClock),
         })
@@ -158,6 +164,7 @@ impl SummaryUseCase {
                 run_id,
                 task: self.prompt_task.clone(),
                 route: self.prompt_route.clone(),
+                resolved_model: self.resolved_model.clone(),
                 output_schema: self.output_schema.clone(),
                 variables,
                 input_bytes,
@@ -293,6 +300,10 @@ impl SummaryUseCase {
             (
                 "route_policy_sha256",
                 lineage.route_policy_sha256.as_str().into(),
+            ),
+            (
+                "model_binding_sha256",
+                lineage.model_binding_sha256.as_str().into(),
             ),
             ("model", lineage.model.clone()),
             ("input_sha256", lineage.input_sha256.as_str().into()),
