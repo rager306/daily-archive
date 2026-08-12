@@ -4,62 +4,51 @@
 
 Goal: Rust-only production pipeline (D237). Python remains only governor/tests/migration analysis/frozen evidence.
 
-Delivered commit `791f7c7b`:
-- typed `batch-acquisition-report.v1`;
-- `BatchAcquisitionUseCase` over `SourceAcquisitionPort`;
-- production `da acquire-arxiv` command (IDs/file, progress, pacing, atomic report, D127 false);
-- README and GEPA reproduction use Rust command;
-- boundary audit `artifacts/runtime/rust_pipeline_boundary_m386.json`;
-- real M385 no-network replay: 580 total, 579 catalog hits, one withdrawn failure `2507.23261`, zero Python subprocesses.
+Delivered commit `9d57d53e`: typed batch acquisition report/use case and production `da acquire-arxiv`; real 580-ID no-network replay had 579 catalog hits and one withdrawn `2507.23261`; D127 false and zero Rust→Python subprocesses.
 
-Remaining M386:
-- S03 centralize article.v00.02 metadata in typed Rust builder and delete Python duplicate;
-- S04 migrate/archive remaining active product script;
-- S05 evidence-backed governor guardrail;
-- S06 Rust-only end-to-end acceptance.
-
-One product Python script remains: `scripts/download_arxiv_to_catalog.py`; do not delete until Rust network/metadata parity and M385 checksum replay pass.
+Remaining M386: typed article.v00.02 metadata builder; bounded network retry/backoff and partial/checksum conflict parity; archive Python downloader only after parity; governor ratchet; Rust-only end-to-end acceptance.
 
 ## Active milestone M387-jkpnfh
 
-Goal: deep stage semantics/context/cache/scheduler/profile/SMP/Samyama/ruvector optimization.
-
 ### S01 delivered `ccb27e08`
 
-Canonical stage ledger:
-- DATA: `data/ontology/pipeline_stage_contracts.yaml`;
-- 14 stages: acquisition, catalog, parse, revision materialization, extraction compute/materialization, embedding, summary, readiness, cluster, resolution, assurance, checkpoint, query;
-- each stage names owner, semantic input/output, context additions/losses, deps, hard invariants, consumers, cache mode, failure class, conditionality and graph truth boundary;
-- domain rejects duplicate IDs, missing deps, cycles, incomplete semantics, graph/cache mismatch and D127;
-- strict YAML loader rejects unknown fields/oversize;
-- application runtime audit checks observed order, context digests/counts and failure visibility;
-- durable report `artifacts/runtime/pipeline_stage_ledger_m387.json`: 14 stages, zero findings, D127 false;
-- UAT `6a431853-f9bf-4cd0-9e6a-5d71ea5eabe4`;
-- full architecture PASS; GitNexus reindexed.
+DATA-driven 14-stage acquisition→query ledger, strict DAG/cache/truth validation, runtime order/digest/failure audit. Durable `artifacts/runtime/pipeline_stage_ledger_m387.json`; UAT `6a431853-f9bf-4cd0-9e6a-5d71ea5eabe4`; full architecture PASS.
 
-### Exact next action: M387/S02
+### S02 delivered `aebb7bce`
 
-Implement context conservation:
-1. typed context metrics contract (bytes/text/sections/tables/figures/citations/spans/VID grounding/duplicates/navigation/entities/evidence/summaries/readiness/missingness);
-2. pure observers for ParsedArticle, RevisionContentContext, ExtractedEntity, materialization, summaries/readiness;
-3. strict DATA policy `context_conservation_policy.yaml` for quality thresholds (not hard invariants);
-4. exact-v1 and 30-paper profiles correlated with graph tasks/readiness;
-5. expose context gained/lost/duplicated/missing per stage.
+ACAP-aligned diagnostic context conservation:
+- domain `StageContextSnapshot`, denominator+BoundaryMode `RatioObservation`, candidate/authoritative partitions and typed `no_claim`;
+- no independent admission verdict; zero denominator is not perfect retention; tokens require tokenizer lineage; D127 fail-closed;
+- pure parse, revision, extraction and summary/readiness observers; no graph writes;
+- strict DATA `data/ontology/context_conservation_policy.yaml` with policy ID/digest; hard invariants cannot be weakened;
+- real deterministic 30-article profile `artifacts/runtime/context_conservation_m387.json`: 30 parse + 30 extract payloads, 927 sections, 1,192 citations, 1,337,968 chars, 140 candidates, 117 valid ordinal/span groundings; 12 stages explicit no_claim; exact revision report D127 false;
+- structured JSON lifecycle event verified in `/tmp/m387-logs/da.log.2026-08-12`;
+- 11 focused tests, Clippy and full architecture PASS;
+- UAT `17477aeb-a8f6-4340-b1bd-549059af799b` + `e947876c-cac9-49fa-abca-9af4c96ae428`;
+- MEM752 records ACAP projection rule.
 
-Then M387/S03 cache lineage, S04 bounded DAG scheduler/SMP, S05 profiles/ablations, S06 Samyama active-path profile, S07 ruvector applicability/retrieval quality, S08 acceptance/governor.
+Reviewer blocked the first draft because it risked a second ACAP control plane/self-oracle. Reworked before commit. Do not reintroduce independent context PASS or tokenizer-free token counts.
 
-## Deep audit conclusions
+### Exact next action: M387/S03 Cache Lineage Contracts and Logging Debt
 
-- Canonical Rust flow: acquisition→catalog→parse(cacheable)→revision materialization(always graph)→extraction compute(cacheable)→extraction materialization(always graph)→conditional embedding/summary/readiness/cluster/resolution→assurance→checkpoint→query.
-- Graph materialization must never be skipped by compute cache.
-- Current scheduling is stage-serial; only gold prepare uses scoped workers and unbounded mpsc, then deterministic single writer.
-- No cooperative cancellation or bounded backpressure in general pipeline yet.
-- M384 current 200-paper graph materialization: 18.59s, 229MB, strict semantic equal, replay applied=0, D127 false.
-- Samyama is active in-memory HOT path; RocksDB inactive; global writer RwLock remains but measured throughput accepted.
-- ruvector active only in da-mcp RRF hybrid and feature-gated PPR. `RuVectorBridge` is stub. Do not tune/promote ruvector before S07 quality/latency benchmark.
-- Missing ADR-051 priority: shared PipelineCache contract, ParserPort contract, acquisition wiremock/mixed failures, Samyama revision/extraction replay outcomes, scheduler race/fairness, vector recall/ties/filters/no-NaN/temporal/provenance.
-- Codebase Memory MCP timed out; GitNexus and direct code are authoritative.
+Plan exists with four tasks:
+1. shared PipelineCache contract suite against in-memory/filesystem implementations: cold/hit, key identity, payload hash, corruption, atomic publication, concurrent same-key and replay;
+2. typed lineage report binds full key plus output SHA and every invalidation dimension; identical bytes under different keys remain distinct;
+3. prove cache skips only compute, never revision/extraction graph materialization; Samyama replay applied=0/rejected=0/unobserved=0/unchanged>0;
+4. close existing composition logging flag in `pipeline_ledger_audit.rs`, `materialization_profile.rs`, `materialization_hot_path_profile.rs`, then run 1/10/30 cache profile.
+
+Then S04 bounded DAG scheduler/SMP, S05 profiles/ablations, S06 Samyama active path, S07 retrieval/RuVector applicability, S08 acceptance/governor.
+
+## Session operational findings
+
+- Governor initially BLOCKED the inline negative test literal `import_eligible=true`; moved it to `crates/da-domain/tests/` where explicit negative fixtures are allowed. Final active verdict drift_risk, 0 violations.
+- Governor found `.env` rolling JSON logging missing in four profile roots. S02 root fixed; remaining three are explicit S03 debt.
+- `target/` was 73.4GB. Ran `cargo clean`: removed 73.6GiB/142,634 files; post-clean target 132MB and `cargo check -p da-domain` passed. Preserve sccache.
+- GSD journal query for M387 returned no stuck-loop/timeout events.
+- Codebase Memory MCP search, architecture and fast reindex each timed out; GitNexus query/impact/detect_changes/reindex completed. Keep Codebase Memory supplemental, GitNexus authoritative.
+- GitNexus HIGH impact on `ExtractedEntity`; S02 did not mutate it, observers are additive/read-only.
+- Generated `artifacts/project-trajectory/trajectory-report.json` remains unstaged by policy.
 
 ## Locks
 
-D127 false. D237 Rust-only product pipeline. No Rust→Python fallback. Samyama sole store. No implicit revision default. No legacy Paper summaries. Cache only pure compute; graph truth always materialized. Vendor trees require clean isolation before edits. RocksDB/ruvector tuning only after active-path evidence. DSPy disabled.
+D127 false. D237 Rust-only product pipeline. No Rust→Python fallback. Samyama sole store. No implicit revision default. No legacy Paper summaries. Cache only pure compute; graph truth always materialized. Vendor edits only in isolated clean worktree. RocksDB/RuVector tuning only after active-path evidence. DSPy disabled.
