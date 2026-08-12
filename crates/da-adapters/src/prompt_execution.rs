@@ -207,6 +207,9 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
                 error.instance_path()
             )));
         }
+        let output_bytes = serde_json::to_vec(&instance)
+            .map_err(|e| PromptExecutionError::Contract(e.to_string()))?;
+        let output_sha256 = ContentDigest::of_bytes(&output_bytes);
         let route_sha = ContentDigest::of_bytes(
             &serde_json::to_vec(&request.route)
                 .map_err(|e| PromptExecutionError::Contract(e.to_string()))?,
@@ -245,7 +248,7 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
         lineage.validate().map_err(PromptExecutionError::Contract)?;
         tracing::info!(event="prompt_execution_complete",run_id=%lineage.run_id,task_id=%lineage.task_id,provider=%lineage.provider,model=%lineage.model,input_tokens=lineage.input_tokens,output_tokens=lineage.output_tokens,latency_ms=lineage.latency_ms,authoritative=false,import_eligible=false,"Prompt execution completed");
         Ok(PromptExecutionResponse {
-            output_bytes: output,
+            output_bytes,
             lineage,
         })
     }
@@ -357,13 +360,19 @@ mod tests {
     use da_ports::llm_client::{ChatResponse, LLMError, LLMResult};
     struct Fake {
         ok: bool,
+        wrapper: bool,
     }
     #[async_trait]
     impl LLMClient for Fake {
         async fn chat(&self, _: &[ChatMessage], _: &ChatOptions) -> LLMResult<ChatResponse> {
             if self.ok {
+                let text = if self.wrapper {
+                    "Here is your result:\n{\"ok\":true}\nHope this helps!".into()
+                } else {
+                    "{\"ok\":true}".into()
+                };
                 Ok(ChatResponse {
-                    text: "{\"ok\":true}".into(),
+                    text,
                     ok: true,
                     error: None,
                     tokens_in: Some(10),
@@ -430,7 +439,7 @@ mod tests {
         }
     }
     fn adapter(ok: bool) -> TextPromptExecutionAdapter {
-        TextPromptExecutionAdapter::new(Arc::new(Fake { ok }))
+        TextPromptExecutionAdapter::new(Arc::new(Fake { ok, wrapper: false }))
     }
     fn request() -> PromptExecutionRequest {
         PromptExecutionRequest {
@@ -479,6 +488,22 @@ mod tests {
             adapter(true).execute(x).await.unwrap_err(),
             PromptExecutionError::Schema(_)
         ));
+    }
+    #[tokio::test]
+    async fn wrapper_text_returns_canonical_json_bytes() {
+        // Models that wrap JSON in conversational text must still yield canonical,
+        // directly parseable output bytes (regression: raw wrapper leaked into output).
+        let adapter = TextPromptExecutionAdapter::new(Arc::new(Fake {
+            ok: true,
+            wrapper: true,
+        }));
+        let response = adapter.execute(request()).await.unwrap();
+        let parsed: serde_json::Value = serde_json::from_slice(&response.output_bytes).unwrap();
+        assert_eq!(parsed, serde_json::json!({ "ok": true }));
+        assert_eq!(
+            response.lineage.output_sha256,
+            ContentDigest::of_bytes(&response.output_bytes)
+        );
     }
     #[test]
     fn extract_json_handles_preamble_and_code_fences() {

@@ -6,12 +6,15 @@ variants:
     system_instruction_suffix: " Your entire response MUST be a single valid JSON object. Do not output any text before or after the JSON. Do not use markdown."
   - id: candidate
     system_instruction_suffix: >-
-      Prefer concise, explicitly source-grounded facts; omit every unsupported
-      claim and preserve exact quantitative values.
+      Your entire response MUST be a single valid JSON object. Do not output any
+      text before or after the JSON. Do not use markdown. Prefer concise,
+      explicitly source-grounded facts; omit every unsupported claim; preserve
+      exact quantitative values, variable names and symbols exactly as they
+      appear in the source.
 tasks:
   - task_id: article_summary
-    route_policy_id: prompt-eval-summary-agnes
-    model_binding_id: prompt-eval-summary-agnes
+    route_policy_id: prompt-eval-summary-minimax-m27
+    model_binding_id: prompt-eval-summary-minimax-m27
     supports_images: false
     endpoint_override_env: NINEROUTER_URL
     credential_env: NINEROUTER_KEY

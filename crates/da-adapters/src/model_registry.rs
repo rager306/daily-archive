@@ -214,6 +214,15 @@ mod tests {
             "agnes-ai/agnes-2.0-flash"
         );
         assert_eq!(
+            r.resolve(
+                "prompt-eval-summary-minimax-m27",
+                Some("http://127.0.0.1:20128")
+            )
+            .unwrap()
+            .model_name,
+            "minimax/MiniMax-M2.7-highspeed"
+        );
+        assert_eq!(
             r.resolve("prompt-eval-figure-qwen-vl", Some("http://127.0.0.1:20128"))
                 .unwrap()
                 .model_name,

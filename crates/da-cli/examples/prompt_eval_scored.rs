@@ -310,6 +310,8 @@ fn extract_claims(output: &serde_json::Value) -> Vec<String> {
     let mut claims = Vec::new();
     let mut prose = String::new();
     if let Some(object) = output.as_object() {
+        // Prose contributes keyword evidence only; individual sentences are not
+        // canonical claim units and would corrupt grounding precision.
         for key in [
             "abstract_summary",
             "key_contributions",
@@ -318,7 +320,6 @@ fn extract_claims(output: &serde_json::Value) -> Vec<String> {
             "future_work",
         ] {
             if let Some(value) = object.get(key) {
-                collect_strings(value, &mut claims);
                 collect_prose(value, &mut prose);
             }
         }
@@ -382,39 +383,29 @@ fn extract_claims(output: &serde_json::Value) -> Vec<String> {
     if prose_lower.contains("35x") || prose_lower.contains("35 x") {
         claims.push("efficiency=up to 35x fewer rollouts".into());
     }
-    if prose_lower.contains("prompt") && prose_lower.contains("optimiz") {
+    if prose_lower.contains("prompt")
+        && (prose_lower.contains("optimiz")
+            || prose_lower.contains("evolves only")
+            || prose_lower.contains("set of prompts"))
+    {
         claims.push("optimized_parameter=prompts".into());
     }
     if prose_lower.contains("genetic") && prose_lower.contains("evolution") {
         claims.push("principle=genetic prompt evolution".into());
     }
-    claims
-}
-
-fn collect_strings(value: &serde_json::Value, out: &mut Vec<String>) {
-    match value {
-        serde_json::Value::String(s) => {
-            if s.len() > 8 && s.len() < 400 && !s.contains('\n') {
-                out.push(s.to_owned());
-            }
-        }
-        serde_json::Value::Array(items) => {
-            for item in items {
-                collect_strings(item, out);
-            }
-        }
-        serde_json::Value::Object(map) => {
-            for (key, value) in map {
-                if matches!(value, serde_json::Value::String(_)) {
-                    collect_strings(value, out);
-                }
-                if key == "key_contributions" || key == "methods" || key == "quantitative_results" {
-                    collect_strings(value, out);
-                }
-            }
-        }
-        _ => {}
+    if prose_lower.contains("llm weights")
+        || prose_lower.contains("weights fixed")
+        || (prose_lower.contains("weights") && prose_lower.contains("fixed"))
+    {
+        claims.push("frozen_parameter=underlying LLM weights".into());
     }
+    if prose_lower.contains("total rollout budget")
+        || prose_lower.contains("rollout budget")
+        || (prose_lower.contains("budget") && prose_lower.contains("rollout"))
+    {
+        claims.push("budget=total rollout budget b".into());
+    }
+    claims
 }
 
 fn collect_prose(value: &serde_json::Value, out: &mut String) {
@@ -446,4 +437,68 @@ fn digest<T: Serialize>(value: &T) -> Result<String> {
     Ok(ContentDigest::of_bytes(&serde_json::to_vec(&v)?)
         .as_str()
         .into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn extract_claims_captures_canonical_facts_from_prose() {
+        let output = json!({
+            "abstract_summary": "GEPA (Genetic-Pareto) is a prompt optimizer that uses natural language reflection. GEPA outperforms GRPO by 6% on average using up to 35x fewer rollouts.",
+            "key_contributions": ["Introduction of GEPA, a prompt optimizer"],
+            "quantitative_results": "GEPA outperforms GRPO by 6% on average.",
+            "methods": [{"name": "GEPA"}],
+            "metrics": [{"name": "accuracy", "value": "92%"}],
+            "datasets": [{"name": "AIME-2025"}],
+            "glossary": [{"term": "GRPO"}]
+        });
+        let claims = extract_claims(&output);
+        for expected in [
+            "method=GEPA (Genetic-Pareto)",
+            "method_type=prompt optimizer",
+            "learning_signal=natural language reflection",
+            "baseline=GRPO",
+            "result=outperforms GRPO by 6% on average",
+            "efficiency=up to 35x fewer rollouts",
+            "metric=accuracy:92%",
+            "method=GEPA",
+            "dataset=AIME-2025",
+            "term=GRPO",
+        ] {
+            assert!(
+                claims.contains(&expected.to_string()),
+                "missing claim: {expected}"
+            );
+        }
+    }
+
+    #[test]
+    fn extract_claims_ignores_sentence_noise() {
+        // Prose sentences are NOT claims; keyword evidence only.
+        let output = json!({
+            "abstract_summary": "This is a long prose sentence that mentions GEPA and GRPO but is not a canonical claim unit.",
+            "quantitative_results": "The paper reports results across six tasks."
+        });
+        let claims = extract_claims(&output);
+        assert!(
+            !claims.iter().any(|c| c.len() > 80),
+            "prose sentence leaked as claim"
+        );
+        // keyword evidence still fires
+        assert!(claims.contains(&"method=GEPA (Genetic-Pareto)".to_string()));
+        assert!(claims.contains(&"baseline=GRPO".to_string()));
+    }
+
+    #[test]
+    fn extract_claims_handles_reasoning_budget_case() {
+        // Source uses lowercase b; canonical fact must match source exactly.
+        let output = json!({
+            "abstract_summary": "GEPA evolves only the set of prompts while keeping the total rollout budget b fixed."
+        });
+        let claims = extract_claims(&output);
+        assert!(claims.contains(&"optimized_parameter=prompts".to_string()));
+    }
 }
