@@ -20,6 +20,8 @@ struct Response {
 #[derive(Deserialize)]
 struct Choice {
     message: Message,
+    #[serde(default)]
+    finish_reason: Option<String>,
 }
 #[derive(Deserialize)]
 struct Message {
@@ -70,7 +72,7 @@ impl LLMClient for OpenAiCompatibleLlmClient {
                 "requested model differs from resolved binding".into(),
             ));
         }
-        let body = serde_json::json!({"model":self.binding.model_name,"messages":messages.iter().map(|x|serde_json::json!({"role":x.role,"content":x.content})).collect::<Vec<_>>(),"temperature":opts.temperature,"max_tokens":opts.max_tokens});
+        let body = serde_json::json!({"model":self.binding.model_name,"messages":messages.iter().map(|x|serde_json::json!({"role":x.role,"content":x.content})).collect::<Vec<_>>(),"temperature":opts.temperature,"max_tokens":opts.max_tokens,"stream":false,"response_format":{"type":"json_object"},"enable_thinking":false});
         let mut request = self
             .client
             .post(&self.binding.endpoint)
@@ -84,6 +86,13 @@ impl LLMClient for OpenAiCompatibleLlmClient {
             .await
             .map_err(|e| LLMError::LLM(format!("9router request failed: {e}")))?;
         let status = response.status();
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or("missing")
+            .to_owned();
+        let declared_content_length = response.content_length();
         let bytes = response
             .bytes()
             .await
@@ -97,17 +106,35 @@ impl LLMClient for OpenAiCompatibleLlmClient {
                 digest.as_str()
             )));
         }
-        let parsed:Response=serde_json::from_slice(&bytes).map_err(|e|{tracing::error!(event="openai_compatible_invalid_json",response_bytes=bytes.len(),response_sha256=digest.as_str(),error=%e,"OpenAI-compatible response parse failed");LLMError::LLM(format!("9router response JSON invalid; response_bytes={} response_sha256={}",bytes.len(),digest.as_str()))})?;
-        let message = parsed
+        if bytes.is_empty() {
+            tracing::error!(event="openai_compatible_empty_success",status=%status,content_type=%content_type,declared_content_length,response_bytes=0,response_sha256=digest.as_str(),"OpenAI-compatible provider returned an empty success response");
+            return Err(LLMError::LLM(format!(
+                "9router empty success response; status={status} content_type={content_type} declared_content_length={declared_content_length:?} response_sha256={}",
+                digest.as_str()
+            )));
+        }
+        let parsed:Response=serde_json::from_slice(&bytes).map_err(|e|{tracing::error!(event="openai_compatible_invalid_json",status=%status,content_type=%content_type,declared_content_length,response_bytes=bytes.len(),response_sha256=digest.as_str(),error=%e,"OpenAI-compatible response parse failed");LLMError::LLM(format!("9router response JSON invalid; status={status} content_type={content_type} declared_content_length={declared_content_length:?} response_bytes={} response_sha256={}",bytes.len(),digest.as_str()))})?;
+        let choice = parsed
             .choices
             .into_iter()
             .next()
-            .ok_or_else(|| LLMError::LLM("9router response has no choices".into()))?
-            .message;
+            .ok_or_else(|| LLMError::LLM("9router response has no choices".into()))?;
+        tracing::info!(
+            event="openai_compatible_response_meta",
+            finish_reason=?choice.finish_reason,
+            prompt_tokens=parsed.usage.prompt_tokens,
+            completion_tokens=parsed.usage.completion_tokens,
+            content_present=choice.message.content.is_some(),
+            reasoning_present=choice.message.reasoning_content.is_some(),
+            "9router response metadata"
+        );
+        let message = choice.message;
         let text = message
             .content
-            .filter(|x| !x.trim().is_empty())
-            .or(message.reasoning_content.filter(|x| !x.trim().is_empty()))
+            .clone()
+            .filter(|x| (x.contains("</think>") || !x.contains("<think>")) && !x.trim().is_empty())
+            .or_else(|| message.reasoning_content.filter(|x| !x.trim().is_empty()))
+            .or_else(|| message.content.filter(|x| !x.trim().is_empty()))
             .ok_or_else(|| LLMError::LLM("9router response has no text content".into()))?;
         Ok(ChatResponse {
             text,
@@ -209,6 +236,40 @@ mod tests {
         assert_eq!(response.text, "{\"ok\":true}");
         assert_eq!(response.tokens_in, Some(12));
         assert_eq!(response.tokens_out, Some(5));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn empty_success_response_fails_closed() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut buf = vec![0_u8; 16 * 1024];
+            let _ = stream.read(&mut buf).await.unwrap();
+            let response = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let mut resolved = binding();
+        resolved.endpoint = format!("http://{address}/v1/chat/completions");
+        let client = OpenAiCompatibleLlmClient::new(resolved, None, 5).unwrap();
+        let result = client
+            .chat(
+                &[ChatMessage {
+                    role: "user".into(),
+                    content: "hi".into(),
+                }],
+                &ChatOptions {
+                    model: "agnes-ai/agnes-2.0-flash".into(),
+                    max_tokens: 8,
+                    temperature: 0.0,
+                },
+            )
+            .await;
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("empty success"), "got: {err}");
         server.await.unwrap();
     }
 

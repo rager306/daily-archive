@@ -139,17 +139,58 @@ impl PromptExecutionPort for TextPromptExecutionAdapter {
         let output = response.text.into_bytes();
         let output_sha256 = ContentDigest::of_bytes(&output);
         let response_chars = String::from_utf8_lossy(&output).chars().count();
-        let instance: serde_json::Value = serde_json::from_slice(&output).map_err(|error| {
-            tracing::error!(
-                event = "prompt_output_invalid_json",
-                task_id = %request.task.task_id,
-                response_chars,
-                response_sha256 = output_sha256.as_str(),
-                error = %error,
-                "Prompt provider output failed JSON parsing"
-            );
-            PromptExecutionError::Schema(format!("output is not JSON: {error}"))
-        })?;
+        let instance: serde_json::Value = match serde_json::from_slice(&output) {
+            Ok(value) => value,
+            Err(direct_error) => {
+                let text = String::from_utf8_lossy(&output);
+                match extract_json_object(&text) {
+                    Some(json_text) => match serde_json::from_str(&json_text) {
+                        Ok(value) => {
+                            tracing::warn!(
+                                event = "prompt_output_json_extracted",
+                                task_id = %request.task.task_id,
+                                response_chars,
+                                extracted_chars = json_text.len(),
+                                "Provider output required JSON extraction from wrapper text"
+                            );
+                            value
+                        }
+                        Err(extract_error) => {
+                            tracing::error!(
+                                event = "prompt_output_invalid_json",
+                                task_id = %request.task.task_id,
+                                response_chars,
+                                response_sha256 = output_sha256.as_str(),
+                                direct_error = %direct_error,
+                                extract_error = %extract_error,
+                                "Prompt provider output failed JSON parsing and extraction"
+                            );
+                            return Err(PromptExecutionError::Schema(format!(
+                                "output is not JSON: {direct_error}"
+                            )));
+                        }
+                    },
+                    None => {
+                        let after_think = text
+                            .find("</think>")
+                            .map_or("NO_CLOSE_THINK", |_| "CLOSED_THINK");
+                        tracing::error!(
+                            event = "prompt_output_invalid_json",
+                            task_id = %request.task.task_id,
+                            response_chars,
+                            response_sha256 = output_sha256.as_str(),
+                            error = %direct_error,
+                            response_prefix = %text.chars().take(200).collect::<String>(),
+                            think_boundary = after_think,
+                            "Prompt provider output failed JSON parsing"
+                        );
+                        return Err(PromptExecutionError::Schema(format!(
+                            "output is not JSON: {direct_error}"
+                        )));
+                    }
+                }
+            }
+        };
         let validator = jsonschema::validator_for(&request.output_schema.schema)
             .map_err(|e| PromptExecutionError::Contract(format!("output schema invalid: {e}")))?;
         if let Err(error) = validator.validate(&instance) {
@@ -269,6 +310,43 @@ fn render_once(
     }
     out.push_str(&template[cursor..]);
     Ok(out)
+}
+/// Extract a JSON object from text that may contain markdown fences or conversational preamble.
+/// Returns the substring of the first balanced `{...}` block, or None if no valid JSON object is found.
+/// Handles reasoning model tags (<think>...</think>) by trying post-reasoning text first,
+/// then falling back to the full text.
+fn extract_json_object(text: &str) -> Option<String> {
+    let after_think = text.find("</think>").map_or(text, |pos| &text[pos + 8..]);
+    find_balanced_json(after_think).or_else(|| find_balanced_json(text))
+}
+fn find_balanced_json(text: &str) -> Option<String> {
+    let trimmed = text.trim();
+    if trimmed.starts_with('{') {
+        return Some(trimmed.to_owned());
+    }
+    let start = trimmed.find('{')?;
+    let mut depth = 0i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (i, c) in trimmed[start..].char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        match c {
+            '\\' if in_string => escaped = true,
+            '"' if !escaped => in_string = !in_string,
+            '{' if !in_string => depth += 1,
+            '}' if !in_string => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(trimmed[start..start + i + 1].to_owned());
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
 #[cfg(test)]
 mod tests {
@@ -401,5 +479,32 @@ mod tests {
             adapter(true).execute(x).await.unwrap_err(),
             PromptExecutionError::Schema(_)
         ));
+    }
+    #[test]
+    fn extract_json_handles_preamble_and_code_fences() {
+        assert_eq!(
+            extract_json_object("Here is the JSON:\n{\"a\":1}").unwrap(),
+            "{\"a\":1}"
+        );
+        assert_eq!(
+            extract_json_object("```json\n{\"b\":2}\n```").unwrap(),
+            "{\"b\":2}"
+        );
+        assert_eq!(
+            extract_json_object("{\"nested\":{\"x\":1}}").unwrap(),
+            "{\"nested\":{\"x\":1}}"
+        );
+        assert_eq!(
+            extract_json_object("Text {\"str\":\"contains } brace\"} trailing").unwrap(),
+            "{\"str\":\"contains } brace\"}"
+        );
+        assert!(extract_json_object("no json here").is_none());
+    }
+    #[test]
+    fn extract_json_strips_reasoning_think_blocks() {
+        assert_eq!(
+            extract_json_object("<think>Let me analyze...</think>{\"result\":42}").unwrap(),
+            "{\"result\":42}"
+        );
     }
 }

@@ -1,0 +1,29 @@
+schema_version: prompt-eval-inference-policy.v1
+maximum_calls: 8
+request_timeout_seconds: 300
+variants:
+  - id: baseline
+    system_instruction_suffix: " Your entire response MUST be a single valid JSON object. Do not output any text before or after the JSON. Do not use markdown."
+  - id: candidate
+    system_instruction_suffix: >-
+      Prefer concise, explicitly source-grounded facts; omit every unsupported
+      claim and preserve exact quantitative values.
+tasks:
+  - task_id: article_summary
+    route_policy_id: prompt-eval-summary-minimax-m3
+    model_binding_id: prompt-eval-summary-minimax-m3
+    supports_images: false
+    endpoint_override_env: NINEROUTER_URL
+    credential_env: NINEROUTER_KEY
+    maximum_temperature_milli: 1000
+  - task_id: figure_analysis
+    route_policy_id: prompt-eval-figure-minimax-m3
+    model_binding_id: prompt-eval-figure-minimax-m3
+    supports_images: true
+    endpoint_override_env: NINEROUTER_URL
+    credential_env: NINEROUTER_KEY
+    maximum_temperature_milli: 1000
+retry_enabled: false
+fallback_enabled: false
+optimizer_enabled: false
+auto_promote: false

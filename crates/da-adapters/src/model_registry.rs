@@ -189,6 +189,24 @@ mod tests {
         assert_eq!(d.protocol, "openai_chat_completions");
         assert_eq!(d.model_name, "agnes-ai/agnes-2.0-flash");
         assert_eq!(d.endpoint, "http://127.0.0.1:20128/v1/chat/completions");
+        assert_eq!(
+            r.resolve(
+                "prompt-eval-summary-minimax-m3",
+                Some("http://127.0.0.1:20128")
+            )
+            .unwrap()
+            .model_name,
+            "minimax/MiniMax-M3"
+        );
+        assert_eq!(
+            r.resolve(
+                "prompt-eval-figure-minimax-m3",
+                Some("http://127.0.0.1:20128")
+            )
+            .unwrap()
+            .model_name,
+            "minimax/MiniMax-M3"
+        );
         for id in [
             "paper-summary-generate-quality",
             "paper-summary-generate-fallback",
