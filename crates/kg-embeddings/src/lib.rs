@@ -1,8 +1,8 @@
 //! kg-embeddings — Universal vector embeddings.
 //!
 //! Text → vector embedding trait, an FdApi (TEI/bge-m3) adapter, and
-//! a RuVector bridge stub for graph-aware embeddings (PPR, GNN).
-//! Zero project-specific dependencies — works for any domain.
+//! a functional graph-aware retrieval bridge (RRF hybrid fusion +
+//! feature-gated PPR). Zero project-specific dependencies — works for any domain.
 
 pub mod contract;
 pub mod embedder;
