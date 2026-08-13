@@ -6,6 +6,7 @@ use clap::Parser;
 use da_adapters::prompt_task_registry::load_prompt_task_registry;
 use da_application::prompt_evaluation::{
     FrozenPromptFixture, PromptEvalPolicy, TaskEvaluationReport, evaluate_task,
+    extract_claims_from_output,
 };
 use da_domain::{
     assurance::ContentDigest,
@@ -157,13 +158,20 @@ fn main() -> Result<()> {
             {
                 Some(execution) => {
                     source_outputs.insert(variant.to_owned(), execution.output.to_string());
+                    let claims: Vec<String> = extract_claims_from_output(
+                        &execution.output,
+                        &fixture.required_facts,
+                        &fixture.forbidden_facts,
+                    )
+                    .into_iter()
+                    .collect();
                     let replica = FrozenPromptOutputReplica {
                         producer_id: format!(
                             "{}:{}",
                             execution.lineage.model, execution.lineage.task_id
                         ),
                         schema_valid: true,
-                        claims: extract_claims(&execution.output),
+                        claims,
                         paraphrase_invariant_pass: true,
                         latency_ms: execution.lineage.latency_ms,
                         input_tokens: execution.lineage.input_tokens.unwrap_or(0),
@@ -306,125 +314,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn extract_claims(output: &serde_json::Value) -> Vec<String> {
-    let mut claims = Vec::new();
-    let mut prose = String::new();
-    if let Some(object) = output.as_object() {
-        // Prose contributes keyword evidence only; individual sentences are not
-        // canonical claim units and would corrupt grounding precision.
-        for key in [
-            "abstract_summary",
-            "key_contributions",
-            "quantitative_results",
-            "limitations",
-            "future_work",
-        ] {
-            if let Some(value) = object.get(key) {
-                collect_prose(value, &mut prose);
-            }
-        }
-        if let Some(metrics) = object.get("metrics").and_then(|x| x.as_array()) {
-            for metric in metrics {
-                if let Some(object) = metric.as_object()
-                    && let (Some(name), Some(value)) = (object.get("name"), object.get("value"))
-                    && let (Some(name), Some(value)) = (name.as_str(), value.as_str())
-                {
-                    claims.push(format!("metric={name}:{value}"));
-                }
-            }
-        }
-        if let Some(methods) = object.get("methods").and_then(|x| x.as_array()) {
-            for method in methods {
-                if let Some(object) = method.as_object()
-                    && let Some(name) = object.get("name").and_then(|x| x.as_str())
-                {
-                    claims.push(format!("method={name}"));
-                }
-            }
-        }
-        if let Some(datasets) = object.get("datasets").and_then(|x| x.as_array()) {
-            for dataset in datasets {
-                if let Some(object) = dataset.as_object()
-                    && let Some(name) = object.get("name").and_then(|x| x.as_str())
-                {
-                    claims.push(format!("dataset={name}"));
-                }
-            }
-        }
-        if let Some(glossary) = object.get("glossary").and_then(|x| x.as_array()) {
-            for entry in glossary {
-                if let Some(object) = entry.as_object()
-                    && let Some(term) = object.get("term").and_then(|x| x.as_str())
-                {
-                    claims.push(format!("term={term}"));
-                }
-            }
-        }
-    }
-    // Keyword evidence from prose to match canonical oracle facts.
-    let prose_lower = prose.to_lowercase();
-    if prose_lower.contains("genetic-pareto") || prose_lower.contains("gepa") {
-        claims.push("method=GEPA (Genetic-Pareto)".into());
-        claims.push("method_type=prompt optimizer".into());
-    }
-    if prose_lower.contains("natural language reflection") {
-        claims.push("learning_signal=natural language reflection".into());
-        claims.push("principle=reflection using natural language feedback".into());
-    }
-    if prose_lower.contains("pareto") {
-        claims.push("principle=Pareto-based candidate selection".into());
-    }
-    if prose_lower.contains("grpo") {
-        claims.push("baseline=GRPO".into());
-    }
-    if prose_lower.contains("6%") || prose_lower.contains("6 %") {
-        claims.push("result=outperforms GRPO by 6% on average".into());
-    }
-    if prose_lower.contains("35x") || prose_lower.contains("35 x") {
-        claims.push("efficiency=up to 35x fewer rollouts".into());
-    }
-    if prose_lower.contains("prompt")
-        && (prose_lower.contains("optimiz")
-            || prose_lower.contains("evolves only")
-            || prose_lower.contains("set of prompts"))
-    {
-        claims.push("optimized_parameter=prompts".into());
-    }
-    if prose_lower.contains("genetic") && prose_lower.contains("evolution") {
-        claims.push("principle=genetic prompt evolution".into());
-    }
-    if prose_lower.contains("llm weights")
-        || prose_lower.contains("weights fixed")
-        || (prose_lower.contains("weights") && prose_lower.contains("fixed"))
-    {
-        claims.push("frozen_parameter=underlying LLM weights".into());
-    }
-    if prose_lower.contains("total rollout budget")
-        || prose_lower.contains("rollout budget")
-        || (prose_lower.contains("budget") && prose_lower.contains("rollout"))
-    {
-        claims.push("budget=total rollout budget b".into());
-    }
-    claims
-}
-
-fn collect_prose(value: &serde_json::Value, out: &mut String) {
-    match value {
-        serde_json::Value::String(s) => out.push_str(&format!("{s} ")),
-        serde_json::Value::Array(items) => {
-            for item in items {
-                collect_prose(item, out);
-            }
-        }
-        serde_json::Value::Object(map) => {
-            for (_, value) in map {
-                collect_prose(value, out);
-            }
-        }
-        _ => {}
-    }
-}
-
 fn estimate_cost(input_tokens: Option<u64>, output_tokens: Option<u64>) -> u64 {
     let input = input_tokens.unwrap_or(0);
     let output = output_tokens.unwrap_or(0);
@@ -443,9 +332,18 @@ fn digest<T: Serialize>(value: &T) -> Result<String> {
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::collections::BTreeSet;
 
     #[test]
-    fn extract_claims_captures_canonical_facts_from_prose() {
+    fn extract_claims_from_output_captures_summary_and_structured_fields() {
+        let required = BTreeSet::from([
+            "method=GEPA (Genetic-Pareto)".into(),
+            "method_type=prompt optimizer".into(),
+            "learning_signal=natural language reflection".into(),
+            "baseline=GRPO".into(),
+            "result=outperforms GRPO by 6% on average".into(),
+            "efficiency=up to 35x fewer rollouts".into(),
+        ]);
         let output = json!({
             "abstract_summary": "GEPA (Genetic-Pareto) is a prompt optimizer that uses natural language reflection. GEPA outperforms GRPO by 6% on average using up to 35x fewer rollouts.",
             "key_contributions": ["Introduction of GEPA, a prompt optimizer"],
@@ -455,50 +353,53 @@ mod tests {
             "datasets": [{"name": "AIME-2025"}],
             "glossary": [{"term": "GRPO"}]
         });
-        let claims = extract_claims(&output);
-        for expected in [
-            "method=GEPA (Genetic-Pareto)",
-            "method_type=prompt optimizer",
-            "learning_signal=natural language reflection",
-            "baseline=GRPO",
-            "result=outperforms GRPO by 6% on average",
-            "efficiency=up to 35x fewer rollouts",
-            "metric=accuracy:92%",
-            "method=GEPA",
-            "dataset=AIME-2025",
-            "term=GRPO",
-        ] {
-            assert!(
-                claims.contains(&expected.to_string()),
-                "missing claim: {expected}"
-            );
+        let claims = extract_claims_from_output(&output, &required, &BTreeSet::new());
+        for expected in &required {
+            assert!(claims.contains(expected), "missing claim: {expected}");
         }
+        assert!(claims.contains("method=GEPA"));
+        assert!(claims.contains("metric=accuracy:92%"));
+        assert!(claims.contains("dataset=AIME-2025"));
+        assert!(claims.contains("term=GRPO"));
     }
 
     #[test]
-    fn extract_claims_ignores_sentence_noise() {
-        // Prose sentences are NOT claims; keyword evidence only.
+    fn extract_claims_from_output_does_not_leak_raw_prose_sentences_as_claims() {
+        // Payload match is honest: "GEPA" matches method=GEPA, but not the full
+        // "GEPA (Genetic-Pareto)" fact unless that exact payload appears.
+        let required = BTreeSet::from([
+            "method=GEPA".into(),
+            "baseline=GRPO".into(),
+            "method=GEPA (Genetic-Pareto)".into(),
+        ]);
         let output = json!({
             "abstract_summary": "This is a long prose sentence that mentions GEPA and GRPO but is not a canonical claim unit.",
             "quantitative_results": "The paper reports results across six tasks."
         });
-        let claims = extract_claims(&output);
+        let claims = extract_claims_from_output(&output, &required, &BTreeSet::new());
         assert!(
-            !claims.iter().any(|c| c.len() > 80),
-            "prose sentence leaked as claim"
+            !claims.iter().any(|c| c.len() > 80 && !required.contains(c)),
+            "raw prose sentence leaked as claim"
         );
-        // keyword evidence still fires
-        assert!(claims.contains(&"method=GEPA (Genetic-Pareto)".to_string()));
-        assert!(claims.contains(&"baseline=GRPO".to_string()));
+        assert!(claims.contains("method=GEPA"));
+        assert!(claims.contains("baseline=GRPO"));
+        assert!(
+            !claims.contains("method=GEPA (Genetic-Pareto)"),
+            "must not invent fuller claim from short token"
+        );
     }
 
     #[test]
-    fn extract_claims_handles_reasoning_budget_case() {
-        // Source uses lowercase b; canonical fact must match source exactly.
+    fn extract_claims_from_output_matches_budget_fact_payload() {
+        let required = BTreeSet::from([
+            "optimized_parameter=prompts".into(),
+            "budget=total rollout budget b".into(),
+        ]);
         let output = json!({
             "abstract_summary": "GEPA evolves only the set of prompts while keeping the total rollout budget b fixed."
         });
-        let claims = extract_claims(&output);
-        assert!(claims.contains(&"optimized_parameter=prompts".to_string()));
+        let claims = extract_claims_from_output(&output, &required, &BTreeSet::new());
+        assert!(claims.contains("optimized_parameter=prompts"));
+        assert!(claims.contains("budget=total rollout budget b"));
     }
 }

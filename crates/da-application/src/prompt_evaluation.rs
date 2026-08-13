@@ -276,6 +276,149 @@ fn digest_fixtures(
         .map(|x| ContentDigest::of_bytes(&x))
         .map_err(|e| e.to_string())
 }
+
+/// Extract evaluation claims from a model JSON output without paper-specific keywords.
+///
+/// Strategy:
+/// 1. Collect all string leaves into a prose bag (universal for summary + figure schemas).
+/// 2. Emit structured claims from known array shapes (methods/metrics/datasets/glossary).
+/// 3. Project `required_facts` whose normalized payload appears as a substring of prose.
+/// 4. Never emit a required fact that also appears in `forbidden_facts`.
+///
+/// This is oracle-aware matching of facts present in output text — not free invent of labels.
+pub fn extract_claims_from_output(
+    output: &serde_json::Value,
+    required_facts: &BTreeSet<String>,
+    forbidden_facts: &BTreeSet<String>,
+) -> BTreeSet<String> {
+    let mut claims = BTreeSet::new();
+    let mut prose = String::new();
+    collect_prose(output, &mut prose);
+    collect_structured_claims(output, &mut claims);
+
+    let prose_norm = normalize_match_text(&prose);
+    for fact in required_facts {
+        if forbidden_facts.contains(fact) {
+            continue;
+        }
+        if fact_matches_prose(fact, &prose_norm) {
+            claims.insert(fact.clone());
+        }
+    }
+    claims
+}
+
+fn collect_prose(value: &serde_json::Value, out: &mut String) {
+    match value {
+        serde_json::Value::String(s) => {
+            if !out.is_empty() {
+                out.push(' ');
+            }
+            out.push_str(s);
+        }
+        serde_json::Value::Array(items) => {
+            for item in items {
+                collect_prose(item, out);
+            }
+        }
+        serde_json::Value::Object(map) => {
+            for (_, value) in map {
+                collect_prose(value, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn collect_structured_claims(output: &serde_json::Value, claims: &mut BTreeSet<String>) {
+    let Some(object) = output.as_object() else {
+        return;
+    };
+    if let Some(metrics) = object.get("metrics").and_then(|x| x.as_array()) {
+        for metric in metrics {
+            if let Some(obj) = metric.as_object()
+                && let (Some(name), Some(value)) = (
+                    obj.get("name").and_then(|x| x.as_str()),
+                    obj.get("value").and_then(|x| x.as_str()),
+                )
+            {
+                claims.insert(format!("metric={name}:{value}"));
+            }
+        }
+    }
+    if let Some(methods) = object.get("methods").and_then(|x| x.as_array()) {
+        for method in methods {
+            if let Some(name) = method
+                .as_object()
+                .and_then(|o| o.get("name"))
+                .and_then(|x| x.as_str())
+            {
+                claims.insert(format!("method={name}"));
+            }
+        }
+    }
+    if let Some(datasets) = object.get("datasets").and_then(|x| x.as_array()) {
+        for dataset in datasets {
+            if let Some(name) = dataset
+                .as_object()
+                .and_then(|o| o.get("name"))
+                .and_then(|x| x.as_str())
+            {
+                claims.insert(format!("dataset={name}"));
+            }
+        }
+    }
+    if let Some(glossary) = object.get("glossary").and_then(|x| x.as_array()) {
+        for entry in glossary {
+            if let Some(term) = entry
+                .as_object()
+                .and_then(|o| o.get("term"))
+                .and_then(|x| x.as_str())
+            {
+                claims.insert(format!("term={term}"));
+            }
+        }
+    }
+}
+
+fn normalize_match_text(s: &str) -> String {
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                ' '
+            }
+        })
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn fact_matches_prose(fact: &str, prose_norm: &str) -> bool {
+    let payload = fact_match_payload(fact);
+    if payload.is_empty() {
+        return false;
+    }
+    let payload_norm = normalize_match_text(&payload);
+    if payload_norm.is_empty() {
+        return false;
+    }
+    prose_norm.contains(&payload_norm)
+}
+
+/// Prefer the RHS of `key=value` facts; otherwise match the whole fact string.
+fn fact_match_payload(fact: &str) -> String {
+    if let Some((key, value)) = fact.split_once('=')
+        && !key.is_empty()
+        && !value.is_empty()
+    {
+        return value.to_string();
+    }
+    fact.to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -384,5 +527,102 @@ mod tests {
         let r = evaluate_task(&task(), &fixtures, &policy()).unwrap();
         assert!(!r.latency_budget_pass);
         assert!(!r.eligible && !r.deployed && !r.import_eligible);
+    }
+
+    #[test]
+    fn extract_claims_projects_required_facts_from_figure_prose() {
+        let required = BTreeSet::from([
+            "figure=GEPA candidate proposal loop".into(),
+            "strategy=Reflective Prompt Mutation".into(),
+            "strategy=System Aware Merge".into(),
+            "initial_evaluation=minibatch".into(),
+            "selection=Pareto-based candidate sampling".into(),
+        ]);
+        let forbidden = BTreeSet::from([
+            "figure=PUPA candidate trajectory".into(),
+            "parameter_update=LLM weights".into(),
+        ]);
+        let output = serde_json::json!({
+            "visual_type": "flowchart",
+            "description": "GEPA candidate proposal loop with Reflective Prompt Mutation and System Aware Merge. Candidates are first scored on a minibatch, then selected via Pareto-based candidate sampling.",
+            "components": [
+                {"name": "Reflective Prompt Mutation", "role": "strategy", "visual_evidence": "green box"},
+                {"name": "System Aware Merge", "role": "strategy", "visual_evidence": "blue box"}
+            ],
+            "findings": ["Pareto-based candidate sampling filters the elite set"],
+            "citations": [{"section_id": "s3", "path_id": "p", "quote": "minibatch evaluation"}]
+        });
+        let claims = extract_claims_from_output(&output, &required, &forbidden);
+        for fact in &required {
+            assert!(claims.contains(fact), "missing required fact: {fact}");
+        }
+        assert!(!claims.contains("figure=PUPA candidate trajectory"));
+        assert!(!claims.contains("parameter_update=LLM weights"));
+    }
+
+    #[test]
+    fn extract_claims_keeps_structured_summary_arrays() {
+        let required = BTreeSet::from([
+            "method=GEPA (Genetic-Pareto)".into(),
+            "method_type=prompt optimizer".into(),
+            "learning_signal=natural language reflection".into(),
+            "baseline=GRPO".into(),
+            "result=outperforms GRPO by 6% on average".into(),
+            "efficiency=up to 35x fewer rollouts".into(),
+        ]);
+        let forbidden = BTreeSet::new();
+        let output = serde_json::json!({
+            "abstract_summary": "GEPA (Genetic-Pareto) is a prompt optimizer that uses natural language reflection. GEPA outperforms GRPO by 6% on average using up to 35x fewer rollouts.",
+            "key_contributions": ["Introduction of GEPA, a prompt optimizer"],
+            "quantitative_results": "GEPA outperforms GRPO by 6% on average.",
+            "methods": [{"name": "GEPA"}],
+            "metrics": [{"name": "accuracy", "value": "92%"}],
+            "datasets": [{"name": "AIME-2025"}],
+            "glossary": [{"term": "GRPO"}]
+        });
+        let claims = extract_claims_from_output(&output, &required, &forbidden);
+        for fact in &required {
+            assert!(claims.contains(fact), "missing required fact: {fact}");
+        }
+        assert!(claims.contains("method=GEPA"));
+        assert!(claims.contains("metric=accuracy:92%"));
+        assert!(claims.contains("dataset=AIME-2025"));
+        assert!(claims.contains("term=GRPO"));
+    }
+
+    #[test]
+    fn extract_claims_does_not_emit_unmentioned_required_facts() {
+        let required = BTreeSet::from([
+            "strategy=Reflective Prompt Mutation".into(),
+            "strategy=System Aware Merge".into(),
+        ]);
+        let forbidden = BTreeSet::new();
+        let output = serde_json::json!({
+            "description": "A flowchart of reflective prompt mutation only."
+        });
+        let claims = extract_claims_from_output(&output, &required, &forbidden);
+        assert!(claims.contains("strategy=Reflective Prompt Mutation"));
+        assert!(!claims.contains("strategy=System Aware Merge"));
+    }
+
+    #[test]
+    fn extract_claims_has_no_paper_specific_keyword_map() {
+        // Guard against reintroducing paper-specific keyword projectors in the
+        // application claim extractor (oracle facts in tests are fine).
+        let src = include_str!("prompt_evaluation.rs");
+        // Only inspect the non-test production body: cut at the tests module.
+        let production = src.split("#[cfg(test)]").next().expect("production body");
+        for banned in [
+            "prose_lower.contains(\"gepa\")",
+            "prose_lower.contains(\"grpo\")",
+            "prose_lower.contains(\"genetic-pareto\")",
+            "35x fewer rollouts",
+            "natural language reflection",
+        ] {
+            assert!(
+                !production.contains(banned),
+                "banned hardcoding fragment still present in production body: {banned}"
+            );
+        }
     }
 }

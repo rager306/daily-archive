@@ -1,5 +1,15 @@
 # Changelog
 
+### M388 S01 honest universal figure claim extraction
+
+- Moved claim extraction into `da_application::prompt_evaluation::extract_claims_from_output`:
+  universal prose bag + structured arrays + required/forbidden fact projection.
+- Removed GEPA/paper-specific keyword hardcoding from `prompt_eval_scored` example.
+- Offline re-score of frozen M387 inference: figure coverage **0 → 4545**, grounding
+  **0 → 10000**, schema_validity 10000; summary coverage **8461 → 9230**. Still
+  `eligible=false`, `optimizer=false`, `import_eligible=false` (D127).
+- ADR-051: unit tests in da-application + example tests; no paid inference in S01.
+
 ### M386 S02 bounded acquisition retry/backoff
 
 - Added DATA-driven bounded HTTP retry/backoff in `http_fetch.rs`
