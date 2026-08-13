@@ -11,6 +11,7 @@ pub mod logging;
 pub mod materialization_progress;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;
+pub mod summarize_revisions;
 
 /// ADR-051 §4.4 — JSON roundtrip helper for Serialize+Deserialize types.
 #[cfg(test)]

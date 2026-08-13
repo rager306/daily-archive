@@ -10,7 +10,7 @@ use da_domain::extractive_summary::{
     EXTRACTIVE_SUMMARY_METHOD, ExtractiveSummaryBatch, ExtractiveSummaryError,
     ExtractiveSummaryUnit, compute_extractive_summaries,
 };
-use da_domain::relation::structure::HAS_SUMMARY;
+use da_domain::relation::structure::{HAS_PART, HAS_SUMMARY};
 use da_domain::section_summary_policy::SectionRolePolicy;
 use da_domain::vid::revision_summary_vid;
 use da_ports::DirectGraphStore;
@@ -312,4 +312,90 @@ impl ExtractiveSummaryUseCase {
         }
         Ok(node)
     }
+}
+
+/// Typed skip when a PaperRevision cannot be summarized without inventing identity.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RevisionSummaryWalkSkip {
+    pub node_id: u64,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RevisionSummaryWalk {
+    pub inputs: Vec<ExtractiveSummaryMaterializeInput>,
+    pub skipped: Vec<RevisionSummaryWalkSkip>,
+}
+
+/// Walk PaperRevision nodes already in the graph. Does not invent revision=1.
+pub async fn collect_revision_summary_inputs(
+    store: &dyn DirectGraphStore,
+    max_chars: usize,
+) -> RevisionSummaryWalk {
+    let mut inputs = Vec::new();
+    let mut skipped = Vec::new();
+    for revision_node in store.get_nodes_by_label("PaperRevision").await {
+        let Some(revision_vid) = store.get_node_property_string(revision_node, "vid").await else {
+            skipped.push(RevisionSummaryWalkSkip {
+                node_id: revision_node,
+                reason: "missing_vid".into(),
+            });
+            continue;
+        };
+        let Some(paper_id) = store
+            .get_node_property_string(revision_node, "canonical_id")
+            .await
+        else {
+            skipped.push(RevisionSummaryWalkSkip {
+                node_id: revision_node,
+                reason: "missing_canonical_id".into(),
+            });
+            continue;
+        };
+        let abstract_text = store
+            .get_node_property_string(revision_node, "abstract_text")
+            .await
+            .unwrap_or_default();
+        let mut sections = Vec::new();
+        for (section_node, edge_type) in store.get_outgoing_edges(revision_node).await {
+            if edge_type != HAS_PART {
+                continue;
+            }
+            let Some(source_vid) = store.get_node_property_string(section_node, "vid").await else {
+                continue;
+            };
+            let path_id = store
+                .get_node_property_int(section_node, "order")
+                .await
+                .map(|ordinal| ordinal.to_string())
+                .or(store
+                    .get_node_property_string(section_node, "path_id")
+                    .await)
+                .unwrap_or_else(|| source_vid.clone());
+            sections.push(SectionSource {
+                path_id,
+                source_vid,
+                title: store
+                    .get_node_property_string(section_node, "title")
+                    .await
+                    .unwrap_or_default(),
+                text: store
+                    .get_node_property_string(section_node, "text")
+                    .await
+                    .unwrap_or_default(),
+                node_id: section_node,
+            });
+        }
+        sections.sort_by(|left, right| left.path_id.cmp(&right.path_id));
+        inputs.push(ExtractiveSummaryMaterializeInput {
+            paper_id,
+            revision_node_id: revision_node,
+            revision_vid,
+            abstract_text,
+            sections,
+            max_chars,
+        });
+    }
+    inputs.sort_by(|a, b| a.revision_vid.cmp(&b.revision_vid));
+    RevisionSummaryWalk { inputs, skipped }
 }

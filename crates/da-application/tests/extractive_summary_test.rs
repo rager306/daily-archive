@@ -7,7 +7,7 @@ use da_application::extractive_summary::{
     SectionRolePolicyBinding, SectionSource,
 };
 use da_domain::extractive_summary::EXTRACTIVE_SUMMARY_METHOD;
-use da_domain::relation::structure::HAS_SUMMARY;
+use da_domain::relation::structure::{HAS_PART, HAS_SUMMARY};
 use da_domain::section_summary_policy::{SectionRolePolicy, SectionRoleRule, SummaryType};
 use da_domain::vid::{paper_revision_vid, revision_section_vid, revision_summary_vid};
 use da_ports::DirectGraphStore;
@@ -400,4 +400,85 @@ async fn missing_section_node_fails_closed_before_any_summary_write() {
         ExtractiveSummaryMaterializeError::MissingSectionNode(ref vid) if vid == &source_vid
     ));
     assert!(store.get_nodes_by_label("Summary").await.is_empty());
+}
+
+async fn seed_revision_with_parts(
+    store: &MockGraphStore,
+    paper_id: &str,
+    revision: u32,
+    method_text: &str,
+) -> (u64, String) {
+    let (revision_node, revision_vid, sections) = seed_revision(store, revision, method_text).await;
+    store
+        .set_node_property_string(revision_node, "canonical_id", paper_id.into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(
+            revision_node,
+            "abstract_text",
+            "GEPA evolves prompts.".into(),
+        )
+        .await
+        .unwrap();
+    for (ordinal, section) in sections.iter().enumerate() {
+        store
+            .set_node_property_int(section.node_id, "order", ordinal as i64)
+            .await
+            .unwrap();
+        store
+            .create_edge(revision_node, section.node_id, HAS_PART)
+            .await
+            .unwrap();
+    }
+    (revision_node, revision_vid)
+}
+
+#[tokio::test]
+async fn walker_collects_two_revisions_and_skips_identity_less_nodes() {
+    use da_application::extractive_summary::collect_revision_summary_inputs;
+    let store = Arc::new(MockGraphStore::new());
+    let (_, vid5) = seed_revision_with_parts(
+        &store,
+        "2507.19457",
+        5,
+        "GEPA mutates prompts with Pareto selection.",
+    )
+    .await;
+    let (_, vid2) =
+        seed_revision_with_parts(&store, "2506.07853", 2, "Second paper method text.").await;
+    let orphan = store.create_node("PaperRevision").await.unwrap();
+    store
+        .set_node_property_string(orphan, "canonical_id", "no-vid".into())
+        .await
+        .unwrap();
+    let walk = collect_revision_summary_inputs(store.as_ref() as &dyn DirectGraphStore, 160).await;
+    assert_eq!(walk.inputs.len(), 2);
+    assert_eq!(walk.inputs[0].revision_vid, vid2);
+    assert_eq!(walk.inputs[1].revision_vid, vid5);
+    assert_eq!(walk.inputs[1].paper_id, "2507.19457");
+    assert_eq!(walk.inputs[1].sections.len(), 3);
+    assert!(
+        walk.inputs[1]
+            .sections
+            .iter()
+            .any(|s| s.text.trim().is_empty())
+    );
+    assert_eq!(walk.skipped.len(), 1);
+    assert_eq!(walk.skipped[0].reason, "missing_vid");
+    assert_eq!(walk.skipped[0].node_id, orphan);
+}
+
+#[tokio::test]
+async fn walker_does_not_invent_revision_for_unrelated_labels() {
+    use da_application::extractive_summary::collect_revision_summary_inputs;
+    let store = Arc::new(MockGraphStore::new());
+    let paper = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(paper, "paper_id", "2507.19457".into())
+        .await
+        .unwrap();
+    let walk = collect_revision_summary_inputs(store.as_ref() as &dyn DirectGraphStore, 160).await;
+    assert!(walk.inputs.is_empty());
+    assert!(walk.skipped.is_empty());
 }

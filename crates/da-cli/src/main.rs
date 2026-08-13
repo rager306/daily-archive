@@ -10,6 +10,7 @@ mod health_report;
 mod load;
 mod serve_graph;
 mod snapshot_identity;
+mod summarize_revisions;
 
 /// Open graph store via DA_GRAPH_MODE (default embedded).
 /// Remote mode exits with a clear error — no fake success, no server auto-start.
@@ -229,6 +230,10 @@ enum Commands {
         #[arg(long)]
         output_snapshot: Option<PathBuf>,
     },
+
+    /// Grounded extractive summaries for every PaperRevision already in the graph (M383 S03).
+    /// No LLM. Does not invent revision=1 for versionless papers.
+    SummarizeRevisions(summarize_revisions::SummarizeRevisionsArgs),
 
     /// Generate LLM-based summaries for a paper (ADR-053 Layer B)
     Summarize {
@@ -515,6 +520,17 @@ fn main() {
             rt.block_on(async {
                 extract_entities(&id, snapshot.as_deref(), output_snapshot.as_deref()).await;
             });
+        }
+        Commands::SummarizeRevisions(args) => {
+            let code = rt.block_on(async { summarize_revisions::run(&args).await });
+            match code {
+                Ok(0) => {}
+                Ok(status) => std::process::exit(status),
+                Err(e) => {
+                    eprintln!("summarize-revisions failed: {e:#}");
+                    std::process::exit(1);
+                }
+            }
         }
         Commands::Summarize {
             id,

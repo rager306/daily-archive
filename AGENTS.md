@@ -498,6 +498,8 @@ da schema init
 da batch-ingest --pdf-dir data/article_catalog/article_catalog/arxiv/cs-cl/<id>/source
 da batch-enrich
 da extract --id <paper_id>
+# Grounded extractive summaries for PaperRevision nodes already in-process (no LLM):
+#   da summarize-revisions [--graph file.sgsnap]
 
 # Wave 3 multi-process RESP health (in-memory, no RocksDB; M307–M312)
 # Port 16379 — not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380

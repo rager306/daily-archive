@@ -1,5 +1,12 @@
 # Changelog
 
+### M383 S03 production revision extractive summaries
+
+- `collect_revision_summary_inputs` walks PaperRevision nodes; missing vid/canonical_id is a typed skip.
+- Does not invent revision=1. Empty section text stays for extractive skip.
+- `da summarize-revisions` reuses ExtractiveSummaryUseCase + DATA section roles; replay must match.
+- Tests: 8 extractive_summary + 80 da-cli lib. D127 false.
+
 ### M383 S02 revision context gated on classification
 
 - `revision_context_for_classified_load`: Exact+manifestation writes context; VersionlessPolicy
