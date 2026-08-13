@@ -84,9 +84,9 @@ pub use figure::{
 pub use figure_analysis::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
     FigureAnalysisProvenance, FigureAnalysisRelationship, FigureChartAxis, FigureChartDataPoint,
-    FigureChartPayload, FigureClassifyMethod, FigureSchemaRegistry, FigureSchemaSelection,
-    FigureTablePayload, FigureTypeClassification, FigureTypeLabelTable, FigureTypedPayload,
-    VisualAnalysisType,
+    FigureChartPayload, FigureClassifyMethod, FigurePhotoPayload, FigureScaleBar,
+    FigureSchemaRegistry, FigureSchemaSelection, FigureTablePayload, FigureTypeClassification,
+    FigureTypeLabelTable, FigureTypedPayload, VisualAnalysisType,
 };
 pub use figure_context::{
     ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,

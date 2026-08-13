@@ -1,5 +1,11 @@
 # Changelog
 
+### M391 S01 photo typed payload on FigureAnalysis
+
+- Added `FigureTypedPayload::Photo` / `FigurePhotoPayload` / `FigureScaleBar`.
+- `visible_objects` required non-empty; `scale_bar.value` required when `present=true`.
+- Photo candidates may have empty diagram components. D127 false.
+
 ### M390 S02/S03 analyze maps plot and table drafts to typed payloads
 
 - `map_structured_to_draft` builds `FigureTypedPayload::Chart` / `Table` from DATA schema fields.

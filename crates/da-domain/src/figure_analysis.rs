@@ -444,13 +444,14 @@ pub struct FigureAnalysisProvenance {
     pub latency_ms: u64,
 }
 
-/// Candidate-only typed Stage-2 payload (ADR-060 / M390).
-/// Chart and table drafts do not invent diagram components.
+/// Candidate-only typed Stage-2 payload (ADR-060 / M390–M391).
+/// Chart, table, and photo drafts do not invent diagram components.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum FigureTypedPayload {
     Chart(FigureChartPayload),
     Table(FigureTablePayload),
+    Photo(FigurePhotoPayload),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -487,6 +488,20 @@ pub struct FigureTablePayload {
     pub rows: Vec<Vec<String>>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureScaleBar {
+    pub present: bool,
+    #[serde(default)]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigurePhotoPayload {
+    pub visible_objects: Vec<String>,
+    #[serde(default)]
+    pub scale_bar: Option<FigureScaleBar>,
+}
+
 impl FigureTypedPayload {
     pub fn validate(&self) -> Result<(), FigureAnalysisError> {
         match self {
@@ -515,6 +530,25 @@ impl FigureTypedPayload {
                     return Err(FigureAnalysisError::Invalid(
                         "table headers must be non-empty".into(),
                     ));
+                }
+            }
+            Self::Photo(photo) => {
+                if photo.visible_objects.is_empty()
+                    || photo.visible_objects.iter().any(|o| o.trim().is_empty())
+                {
+                    return Err(FigureAnalysisError::Invalid(
+                        "photo visible_objects must be non-empty".into(),
+                    ));
+                }
+                if let Some(bar) = &photo.scale_bar
+                    && bar.present
+                {
+                    let empty = bar.value.as_deref().map(str::trim).unwrap_or("").is_empty();
+                    if empty {
+                        return Err(FigureAnalysisError::Invalid(
+                            "scale_bar.value required when present=true".into(),
+                        ));
+                    }
                 }
             }
         }
@@ -763,6 +797,54 @@ mod tests {
             rows: vec![vec!["GEPA".into(), "0.87".into()]],
         }));
         value.validate().unwrap();
+    }
+
+    #[test]
+    fn photo_payload_allows_empty_components() {
+        let mut value = candidate();
+        value.visual_type = VisualAnalysisType::Photograph;
+        value.components.clear();
+        value.relationships.clear();
+        value.provenance.schema_id = "photo_caption".into();
+        value.provenance.stage1_visual_type = "photograph".into();
+        value.typed_payload = Some(FigureTypedPayload::Photo(FigurePhotoPayload {
+            visible_objects: vec!["scale bar".into(), "cell monolayer".into()],
+            scale_bar: Some(FigureScaleBar {
+                present: true,
+                value: Some("10 um".into()),
+            }),
+        }));
+        value.validate().unwrap();
+    }
+
+    #[test]
+    fn photo_payload_rejects_empty_visible_objects() {
+        let mut value = candidate();
+        value.components.clear();
+        value.typed_payload = Some(FigureTypedPayload::Photo(FigurePhotoPayload {
+            visible_objects: vec![],
+            scale_bar: None,
+        }));
+        assert_eq!(
+            value.validate(),
+            Err(FigureAnalysisError::Invalid(
+                "photo visible_objects must be non-empty".into(),
+            ))
+        );
+    }
+
+    #[test]
+    fn photo_payload_requires_scale_bar_value_when_present() {
+        let mut value = candidate();
+        value.components.clear();
+        value.typed_payload = Some(FigureTypedPayload::Photo(FigurePhotoPayload {
+            visible_objects: vec!["colony".into()],
+            scale_bar: Some(FigureScaleBar {
+                present: true,
+                value: None,
+            }),
+        }));
+        assert!(value.validate().is_err());
     }
 
     #[test]
