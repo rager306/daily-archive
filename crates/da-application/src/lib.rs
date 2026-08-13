@@ -10,6 +10,7 @@ pub mod assurance;
 pub mod catalog_reconcile;
 pub mod ingest;
 pub mod pipeline;
+pub mod revision_classification;
 pub mod revision_materialization;
 pub mod revision_query;
 pub mod revision_readiness;
@@ -30,6 +31,7 @@ pub use pipeline::{
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
     StageRunRecord,
 };
+pub use revision_classification::{RevisionClassifyError, RevisionClassifyUseCase};
 pub use revision_materialization::{
     RevisionContentContext, RevisionManifestationInput, RevisionMaterializationError,
     RevisionMaterializationRequest, RevisionMaterializationResult, RevisionMaterializationUseCase,

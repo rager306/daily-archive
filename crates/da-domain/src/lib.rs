@@ -39,6 +39,7 @@ pub mod pipeline_metrics;
 pub mod process;
 pub mod prompt_optimization;
 pub mod relation;
+pub mod revision_classification;
 pub mod revision_readiness;
 pub mod scheduler;
 pub mod schema;
@@ -124,6 +125,9 @@ pub use pdf_classification::{
     PdfType,
 };
 pub use relation::{CitationSchema, RELATION_TYPES, Relation, RelationType, bibliographic};
+pub use revision_classification::{
+    RevisionClass, RevisionClassification, RevisionClassificationPolicy, classify_revision,
+};
 pub use scheduler::{
     PendingTask, RetryPolicy, SchedulerTaskSchema, TaskPriority, TaskStatus, TaskType,
 };
