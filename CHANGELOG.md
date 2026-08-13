@@ -1,5 +1,13 @@
 # Changelog
 
+### M389 S01 figure stage cache binds schema registry identity
+
+- `FigureAnalysisStage` configuration_fingerprint includes
+  `schema_registry=figure-schemas.v1`, `schema_id=diagram_analysis`, and schema sha.
+- Implementation fingerprint bumped to grounded-v3-schema-registry-identity so old
+  caches cannot silently reuse pre-registry keys.
+- Unit test `configuration_fingerprint_binds_schema_registry_identity` (5/5 stage tests).
+
 ### M388 S08 docs closeout (ADR-060 partial)
 
 - ADR-060 Status → Partially implemented (M388): Stage1 heuristic, DATA schemas,

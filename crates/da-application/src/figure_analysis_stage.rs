@@ -1,8 +1,10 @@
 //! Cache-aware pipeline stage for non-authoritative figure analysis.
+//! Stage contract binds DATA figure schema registry identity (M389 S01).
 
+use crate::figure_schema::FigureSchemaService;
 use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
-use da_domain::FigureSemanticContext;
+use da_domain::{FigureSemanticContext, VisualAnalysisType};
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
@@ -90,6 +92,23 @@ pub struct FigureAnalysisStage {
 }
 
 impl FigureAnalysisStage {
+    /// DATA schema identity for stage cache keys (registry version + default selection).
+    /// Live analyze may still select a per-type schema; default Flowchart/diagram is the
+    /// stage-contract fence so cache cannot ignore registry identity (M389).
+    pub fn schema_registry_fingerprint() -> String {
+        let svc = FigureSchemaService::bundled().expect("bundled figure schemas");
+        let selection = svc
+            .select_for_type(VisualAnalysisType::Flowchart)
+            .expect("diagram schema");
+        let sha = selection.schema_sha256_hex().expect("schema sha");
+        format!(
+            "schema_registry={};schema_id={};schema_sha256={}",
+            svc.registry_schema_version(),
+            selection.schema_id,
+            sha
+        )
+    }
+
     pub fn new(
         model: Arc<dyn MultimodalLlmPort>,
         image: MultimodalImage,
@@ -103,8 +122,8 @@ impl FigureAnalysisStage {
             retry_after: retry_after.into(),
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
-                implementation_fingerprint: "FigureAnalysisUseCase@grounded-v2-requested-model-id"
-                    .into(),
+                implementation_fingerprint:
+                    "FigureAnalysisUseCase@grounded-v3-schema-registry-identity".into(),
                 configuration_fingerprint: String::new(),
                 prompt_fingerprint: Some(FigureAnalysisUseCase::prompt_sha256()),
                 model_fingerprint: Some(format!(
@@ -140,10 +159,11 @@ impl PipelineStageExecutor for FigureAnalysisStage {
     fn contract(&self) -> StageContract {
         let mut contract = self.contract.clone();
         contract.configuration_fingerprint = format!(
-            "image_sha256={};prompt_sha256={};schema_sha256={}",
+            "image_sha256={};prompt_sha256={};schema_sha256={};{}",
             self.image.sha256,
             contract.prompt_fingerprint.as_deref().unwrap_or("missing"),
-            contract.output_schema_fingerprint
+            contract.output_schema_fingerprint,
+            Self::schema_registry_fingerprint()
         );
         contract
     }
@@ -434,6 +454,34 @@ mod tests {
                 .model_fingerprint
                 .unwrap()
                 .contains("test-route")
+        );
+    }
+
+    #[test]
+    fn configuration_fingerprint_binds_schema_registry_identity() {
+        let stage = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        );
+        let fp = stage.contract().configuration_fingerprint;
+        assert!(
+            fp.contains("schema_registry=figure-schemas.v1"),
+            "missing registry version in {fp}"
+        );
+        assert!(
+            fp.contains("schema_id=diagram_analysis"),
+            "missing schema_id in {fp}"
+        );
+        assert!(fp.contains("schema_sha256="), "missing schema sha in {fp}");
+        let registry_fp = FigureAnalysisStage::schema_registry_fingerprint();
+        assert!(fp.contains(&registry_fp));
+        // implementation fence bumped so old caches do not silently reuse
+        assert!(
+            stage
+                .contract()
+                .implementation_fingerprint
+                .contains("schema-registry-identity")
         );
     }
 }
