@@ -6,8 +6,9 @@ use crate::figure_schema::{FigureSchemaError, FigureSchemaService};
 use da_domain::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
     FigureAnalysisProvenance, FigureAnalysisRelationship, FigureChartAxis, FigureChartDataPoint,
-    FigureChartPayload, FigureSchemaSelection, FigureSemanticContext, FigureTablePayload,
-    FigureTypeClassification, FigureTypedPayload, VisualAnalysisType,
+    FigureChartPayload, FigurePhotoPayload, FigureScaleBar, FigureSchemaSelection,
+    FigureSemanticContext, FigureTablePayload, FigureTypeClassification, FigureTypedPayload,
+    VisualAnalysisType,
 };
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort, MultimodalLlmRequest,
@@ -417,6 +418,39 @@ fn typed_payload_from_draft(
                 rows,
             }))
         }
+        VisualAnalysisType::Photograph | VisualAnalysisType::Screenshot => {
+            let visible_objects = object
+                .get("visible_objects")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|o| o.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                        .map(str::to_string)
+                        .collect::<Vec<_>>()
+                })?;
+            if visible_objects.is_empty() {
+                return None;
+            }
+            let scale_bar = object
+                .get("scale_bar")
+                .and_then(|v| v.as_object())
+                .map(|bar| FigureScaleBar {
+                    present: bar
+                        .get("present")
+                        .and_then(|x| x.as_bool())
+                        .unwrap_or(false),
+                    value: bar
+                        .get("value")
+                        .and_then(|x| x.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                        .map(str::to_string),
+                });
+            Some(FigureTypedPayload::Photo(FigurePhotoPayload {
+                visible_objects,
+                scale_bar,
+            }))
+        }
         _ => None,
     }
 }
@@ -458,6 +492,21 @@ fn enrich_findings_from_typed_draft(
                 if !names.is_empty() {
                     let tag = format!("table_headers={}", names.join(","));
                     if !findings.iter().any(|f| f.starts_with("table_headers=")) {
+                        findings.insert(0, tag);
+                    }
+                }
+            }
+        }
+        VisualAnalysisType::Photograph | VisualAnalysisType::Screenshot => {
+            if let Some(objects) = object.get("visible_objects").and_then(|v| v.as_array()) {
+                let names: Vec<&str> = objects
+                    .iter()
+                    .filter_map(|o| o.as_str())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !names.is_empty() {
+                    let tag = format!("visible_objects={}", names.join(","));
+                    if !findings.iter().any(|f| f.starts_with("visible_objects=")) {
                         findings.insert(0, tag);
                     }
                 }
@@ -635,6 +684,12 @@ mod tests {
                 .is_some()
             {
                 Some("table_structure".into())
+            } else if request
+                .output_schema
+                .pointer("/properties/visible_objects")
+                .is_some()
+            {
+                Some("photo_caption".into())
             } else if request
                 .output_schema
                 .pointer("/properties/components")
@@ -871,6 +926,80 @@ mod tests {
             fake.last_schema_id_hint.lock().unwrap().as_deref(),
             Some("table_structure")
         );
+    }
+
+    #[tokio::test]
+    async fn stage1_photograph_caption_maps_photo_payload_without_synthetic_component() {
+        let mut ctx = context();
+        ctx.caption = "Figure 7: Micrograph photograph of the cell monolayer".into();
+        let photo_output = serde_json::json!({
+            "visual_type": "photograph",
+            "description": "Cell monolayer with scale bar",
+            "visible_objects": ["cell monolayer", "scale bar"],
+            "scale_bar": {"present": true, "value": "10 um"},
+            "findings": ["monolayer is confluent"],
+            "citations": [{"section_id":"sec-3","path_id":"3","quote":"mutates prompts"}],
+            "confidence": 0.75
+        });
+        let fake = Arc::new(FakeModel::new(photo_output, route()));
+        let analysis = FigureAnalysisUseCase::new(fake.clone())
+            .analyze(image(), &ctx)
+            .await
+            .unwrap();
+        assert_eq!(analysis.visual_type, VisualAnalysisType::Photograph);
+        assert!(
+            analysis.components.is_empty(),
+            "photo payload must not invent a visual component: {:?}",
+            analysis.components
+        );
+        match analysis.typed_payload.as_ref() {
+            Some(FigureTypedPayload::Photo(photo)) => {
+                assert_eq!(photo.visible_objects, vec!["cell monolayer", "scale bar"]);
+                assert_eq!(photo.scale_bar.as_ref().map(|b| b.present), Some(true));
+            }
+            other => panic!("expected Photo payload, got {other:?}"),
+        }
+        assert!(
+            analysis
+                .findings
+                .iter()
+                .any(|f| f.starts_with("visible_objects="))
+        );
+        assert_eq!(analysis.provenance.schema_id, "photo_caption");
+        assert_eq!(analysis.provenance.stage1_visual_type, "photograph");
+        assert_eq!(
+            fake.last_schema_id_hint.lock().unwrap().as_deref(),
+            Some("photo_caption")
+        );
+    }
+
+    #[tokio::test]
+    async fn stage1_screenshot_caption_maps_photo_payload() {
+        let mut ctx = context();
+        ctx.caption = "Figure 6: Screenshot of the user interface".into();
+        let shot_output = serde_json::json!({
+            "visual_type": "screenshot",
+            "description": "UI capture of the dashboard",
+            "visible_objects": ["sidebar", "chart pane"],
+            "findings": ["sidebar lists papers"],
+            "citations": [{"section_id":"sec-3","path_id":"3","quote":"mutates prompts"}],
+            "confidence": 0.6
+        });
+        let fake = Arc::new(FakeModel::new(shot_output, route()));
+        let analysis = FigureAnalysisUseCase::new(fake)
+            .analyze(image(), &ctx)
+            .await
+            .unwrap();
+        assert_eq!(analysis.visual_type, VisualAnalysisType::Screenshot);
+        assert!(analysis.components.is_empty());
+        match analysis.typed_payload.as_ref() {
+            Some(FigureTypedPayload::Photo(photo)) => {
+                assert_eq!(photo.visible_objects, vec!["sidebar", "chart pane"]);
+            }
+            other => panic!("expected Photo payload, got {other:?}"),
+        }
+        assert_eq!(analysis.provenance.schema_id, "photo_caption");
+        assert_eq!(analysis.provenance.stage1_visual_type, "screenshot");
     }
 
     #[tokio::test]

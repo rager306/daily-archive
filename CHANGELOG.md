@@ -1,5 +1,11 @@
 # Changelog
 
+### M391 S02 analyze maps photo and screenshot drafts to Photo payload
+
+- `typed_payload_from_draft` maps `visible_objects` + optional `scale_bar` for Photograph/Screenshot.
+- Synthetic `visual` component is skipped when Photo payload is present.
+- Findings surface `visible_objects=`; tests for micrograph and screenshot captions.
+
 ### M391 S01 photo typed payload on FigureAnalysis
 
 - Added `FigureTypedPayload::Photo` / `FigurePhotoPayload` / `FigureScaleBar`.
