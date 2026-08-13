@@ -1,5 +1,10 @@
 # Changelog
 
+### M395 S02 load_lineage accepts producer report serde
+
+- Three-report fixture: cluster + resolution + serialized `SummarizeRevisionsReport`.
+- Digests on the third link match the producer fields. No 200-paper run.
+
 ### M395 S01 lineage hashes on summarize-revisions report
 
 - Report now carries `input_snapshot_sha256` / `output_snapshot_sha256` (64-hex).

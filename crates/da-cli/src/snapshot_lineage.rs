@@ -217,4 +217,43 @@ mod tests {
         assert!(!full.links[2].import_eligible);
         std::fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn load_lineage_accepts_serialized_summarize_revisions_report() {
+        let policy = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/ontology/snapshot_derivation_policy.yaml");
+        let root = std::env::temp_dir().join(format!("da-lineage-s02-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let cluster = root.join("cluster.json");
+        let resolution = root.join("resolution.json");
+        let summary = root.join("summary.json");
+        write_report(&cluster, "concept-cluster-canary.v1");
+        write_report(&resolution, "entity-resolution-canary.v1");
+        let producer = crate::summarize_revisions::SummarizeRevisionsReport {
+            schema_version: "summarize-revisions.v1".into(),
+            method: "extractive_lead_v1".into(),
+            revisions_processed: 1,
+            revisions_skipped: 0,
+            summaries_written: 2,
+            skipped_empty_sections: 0,
+            replay_failures: vec![],
+            input_snapshot_sha256: digest(3),
+            output_snapshot_sha256: digest(4),
+            import_eligible: false,
+        };
+        assert!(producer.derivation_ready());
+        std::fs::write(&summary, serde_json::to_vec(&producer).unwrap()).unwrap();
+        let full = load_lineage(
+            ContentDigest::of_text("materialization"),
+            policy.as_path(),
+            &[cluster, resolution, summary],
+        )
+        .unwrap();
+        assert_eq!(full.links.len(), 3);
+        assert_eq!(full.links[2].stage_id, "extractive_summary");
+        assert_eq!(full.links[2].input_physical_sha256.as_str(), digest(3));
+        assert_eq!(full.links[2].output_physical_sha256.as_str(), digest(4));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
