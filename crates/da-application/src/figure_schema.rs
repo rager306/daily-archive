@@ -59,6 +59,26 @@ impl FigureSchemaService {
         let sha = selection.schema_sha256_hex()?;
         Ok((selection.schema_id, sha))
     }
+
+    /// Stable sorted (schema_id, sha256) rows for every bundled schema.
+    /// Used by stage cache fingerprints so YAML edits cannot silently reuse.
+    pub fn registry_identities(&self) -> Result<Vec<(String, String)>, FigureSchemaError> {
+        let mut rows = std::collections::BTreeMap::new();
+        for visual_type in [
+            VisualAnalysisType::Flowchart,
+            VisualAnalysisType::Plot,
+            VisualAnalysisType::Diagram,
+            VisualAnalysisType::Table,
+            VisualAnalysisType::Screenshot,
+            VisualAnalysisType::Photograph,
+            VisualAnalysisType::Other,
+        ] {
+            let selection = self.select_for_type(visual_type)?;
+            let sha = selection.schema_sha256_hex()?;
+            rows.insert(selection.schema_id, sha);
+        }
+        Ok(rows.into_iter().collect())
+    }
 }
 
 #[cfg(test)]
@@ -105,5 +125,31 @@ mod tests {
             .expect("select");
         assert_eq!(sel.schema_id, "diagram_analysis");
         assert!(sel.required_top_level.iter().any(|f| f == "citations"));
+    }
+
+    #[test]
+    fn registry_identities_cover_all_bundled_schema_ids() {
+        let svc = FigureSchemaService::bundled().expect("bundled");
+        let ids: Vec<String> = svc
+            .registry_identities()
+            .expect("identities")
+            .into_iter()
+            .map(|(id, sha)| {
+                assert_eq!(sha.len(), 64);
+                id
+            })
+            .collect();
+        for required in [
+            "diagram_analysis",
+            "chart_extraction",
+            "table_structure",
+            "photo_caption",
+            "other_description",
+        ] {
+            assert!(ids.contains(&required.to_string()), "missing {required}");
+        }
+        let mut sorted = ids.clone();
+        sorted.sort();
+        assert_eq!(ids, sorted);
     }
 }

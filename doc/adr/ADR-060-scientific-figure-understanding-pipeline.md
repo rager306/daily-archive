@@ -55,11 +55,14 @@ Scientific figure understanding — извлечение и семантичес
 1. Caption-driven compound panel detection (`figure_panel_markers.yaml`) sets `subpanel_count` + `panel_labels`
 2. Analyze findings surface `panel_count=` / `panel_labels=` when Stage1 count > 1. No pixel crop this wave.
 
+**Сделано дополнительно (M393):**
+1. Stage cache fingerprint lists every bundled schema_id+sha (`grounded-v4-all-schema-identities`)
+2. `with_planned_schema` binds Stage1 `selected_schema_id` + `stage1_type` so plot and flowchart cannot share a cache key
+
 **Ещё пробелы:**
 1. Pixel-level panel crop / per-panel extract (later)
-2. Stage cache uses default diagram selection as fence (live analyze still selects per-type)
-3. Pure-Rust chart-to-table quality / numeric domain not a full CharXiv suite
-4. CharXiv-style figure task suite (`data/figure_tasks/`) not built
+2. Pure-Rust chart-to-table quality / numeric domain not a full CharXiv suite
+3. CharXiv-style figure task suite (`data/figure_tasks/`) not built
 
 ## Decision
 

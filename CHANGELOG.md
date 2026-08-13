@@ -1,5 +1,13 @@
 # Changelog
 
+### M393 figure stage cache binds all schemas and planned schema_id
+
+- `FigureSchemaService::registry_identities` lists every bundled schema_id+sha.
+- Stage fingerprint `schema_registry=...;schemas=id:sha,...` so YAML edits invalidate cache.
+- `with_planned_schema` appends `selected_schema_id` + `stage1_type` when context is known.
+- CLI `analyze_figure` binds planned schema. Implementation fingerprint v4.
+- Tests: all schema ids present; plot vs flowchart fingerprints differ.
+
 ### M392 S03 docs residual after caption panel detection
 
 - ADR-060 residual: caption-driven panel count done; next CharXiv suite and later crop.

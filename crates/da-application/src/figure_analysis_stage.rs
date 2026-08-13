@@ -4,7 +4,7 @@
 use crate::figure_schema::FigureSchemaService;
 use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
-use da_domain::{FigureSemanticContext, VisualAnalysisType};
+use da_domain::FigureSemanticContext;
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
@@ -89,23 +89,25 @@ pub struct FigureAnalysisStage {
     context_dependency: String,
     retry_after: String,
     contract: StageContract,
+    /// Stage1 planned schema when context is known at construction (M393).
+    selected_schema: Option<(String, String)>,
 }
 
 impl FigureAnalysisStage {
-    /// DATA schema identity for stage cache keys (registry version + default selection).
-    /// Live analyze may still select a per-type schema; default Flowchart/diagram is the
-    /// stage-contract fence so cache cannot ignore registry identity (M389).
+    /// DATA schema identity for stage cache keys (registry version + every schema sha).
+    /// YAML edits to any per-type schema must invalidate the cache (M393).
     pub fn schema_registry_fingerprint() -> String {
         let svc = FigureSchemaService::bundled().expect("bundled figure schemas");
-        let selection = svc
-            .select_for_type(VisualAnalysisType::Flowchart)
-            .expect("diagram schema");
-        let sha = selection.schema_sha256_hex().expect("schema sha");
+        let rows = svc.registry_identities().expect("registry identities");
+        let joined = rows
+            .into_iter()
+            .map(|(id, sha)| format!("{id}:{sha}"))
+            .collect::<Vec<_>>()
+            .join(",");
         format!(
-            "schema_registry={};schema_id={};schema_sha256={}",
+            "schema_registry={};schemas={}",
             svc.registry_schema_version(),
-            selection.schema_id,
-            sha
+            joined
         )
     }
 
@@ -120,10 +122,11 @@ impl FigureAnalysisStage {
             image,
             context_dependency: "context".into(),
             retry_after: retry_after.into(),
+            selected_schema: None,
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
                 implementation_fingerprint:
-                    "FigureAnalysisUseCase@grounded-v3-schema-registry-identity".into(),
+                    "FigureAnalysisUseCase@grounded-v4-all-schema-identities".into(),
                 configuration_fingerprint: String::new(),
                 prompt_fingerprint: Some(FigureAnalysisUseCase::prompt_sha256()),
                 model_fingerprint: Some(format!(
@@ -152,19 +155,39 @@ impl FigureAnalysisStage {
         self.contract.output_schema_fingerprint = schema_fingerprint.into();
         self
     }
+
+    /// Bind Stage1 planned schema_id into the cache key when context is available.
+    pub fn with_planned_schema(
+        mut self,
+        context: &FigureSemanticContext,
+    ) -> Result<Self, FigureAnalysisUseCaseError> {
+        let use_case = FigureAnalysisUseCase::new(self.model.clone());
+        let (classification, selection) = use_case.plan_schema(context)?;
+        self.selected_schema = Some((
+            selection.schema_id,
+            classification.visual_type.as_wire().to_string(),
+        ));
+        Ok(self)
+    }
 }
 
 #[async_trait]
 impl PipelineStageExecutor for FigureAnalysisStage {
     fn contract(&self) -> StageContract {
         let mut contract = self.contract.clone();
-        contract.configuration_fingerprint = format!(
+        let mut fingerprint = format!(
             "image_sha256={};prompt_sha256={};schema_sha256={};{}",
             self.image.sha256,
             contract.prompt_fingerprint.as_deref().unwrap_or("missing"),
             contract.output_schema_fingerprint,
             Self::schema_registry_fingerprint()
         );
+        if let Some((schema_id, stage1_type)) = &self.selected_schema {
+            fingerprint.push_str(&format!(
+                ";selected_schema_id={schema_id};stage1_type={stage1_type}"
+            ));
+        }
+        contract.configuration_fingerprint = fingerprint;
         contract
     }
 
@@ -469,11 +492,18 @@ mod tests {
             fp.contains("schema_registry=figure-schemas.v1"),
             "missing registry version in {fp}"
         );
-        assert!(
-            fp.contains("schema_id=diagram_analysis"),
-            "missing schema_id in {fp}"
-        );
-        assert!(fp.contains("schema_sha256="), "missing schema sha in {fp}");
+        for schema_id in [
+            "diagram_analysis",
+            "chart_extraction",
+            "table_structure",
+            "photo_caption",
+            "other_description",
+        ] {
+            assert!(
+                fp.contains(&format!("{schema_id}:")),
+                "missing {schema_id} in {fp}"
+            );
+        }
         let registry_fp = FigureAnalysisStage::schema_registry_fingerprint();
         assert!(fp.contains(&registry_fp));
         // implementation fence bumped so old caches do not silently reuse
@@ -481,7 +511,40 @@ mod tests {
             stage
                 .contract()
                 .implementation_fingerprint
-                .contains("schema-registry-identity")
+                .contains("all-schema-identities")
         );
+        assert!(!fp.contains("selected_schema_id="));
+    }
+
+    #[test]
+    fn planned_schema_fingerprint_differs_for_plot_and_flowchart() {
+        let flowchart_ctx = context();
+        let mut plot_ctx = context();
+        plot_ctx.caption =
+            "Figure 2: Performance comparison scatter plot of accuracy vs rollouts".into();
+        let flowchart = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        )
+        .with_planned_schema(&flowchart_ctx)
+        .expect("plan flowchart");
+        let plot = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        )
+        .with_planned_schema(&plot_ctx)
+        .expect("plan plot");
+        let fp_flow = flowchart.contract().configuration_fingerprint;
+        let fp_plot = plot.contract().configuration_fingerprint;
+        assert!(fp_flow.contains("selected_schema_id=diagram_analysis"));
+        assert!(fp_flow.contains("stage1_type=flowchart"));
+        assert!(fp_plot.contains("selected_schema_id=chart_extraction"));
+        assert!(fp_plot.contains("stage1_type=plot"));
+        assert_ne!(fp_flow, fp_plot);
+        // Full registry binding remains even when a selected schema is present.
+        assert!(fp_plot.contains("schema_registry=figure-schemas.v1"));
+        assert!(fp_plot.contains("table_structure:"));
     }
 }

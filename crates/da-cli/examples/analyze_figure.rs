@@ -110,7 +110,9 @@ async fn main() -> Result<()> {
     };
     let retry_after = (Utc::now() + Duration::minutes(10)).to_rfc3339();
     let mut analysis_stage = FigureAnalysisStage::new(model, image, retry_after)
-        .with_context_dependency("analysis_context");
+        .with_context_dependency("analysis_context")
+        .with_planned_schema(&context)
+        .map_err(anyhow::Error::msg)?;
     let registry_schema = schema
         .sha256()
         .map_err(anyhow::Error::msg)?
