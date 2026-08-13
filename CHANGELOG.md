@@ -1,5 +1,12 @@
 # Changelog
 
+### M395 S01 lineage hashes on summarize-revisions report
+
+- Report now carries `input_snapshot_sha256` / `output_snapshot_sha256` (64-hex).
+- `--report` requires `--graph` so the input digest is exact file bytes.
+- `--output-graph` writes exported graph bytes after materialize.
+- `derivation_ready()` refuses empty/invalid digests or replay failures. D127 false.
+
 ### Governor: print target/debug bloat and classify incremental/deps
 
 - `check_target_dir` now buckets `debug/incremental`, `debug/deps`, `debug/examples`
