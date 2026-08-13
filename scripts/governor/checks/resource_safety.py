@@ -127,10 +127,21 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
                 pass
         total += dir_total
 
-        # Categorize by top-level subdir
+        # Categorize debug/release hot spots, not only the top-level profile dir.
         rel = os.path.relpath(dirpath, target)
-        top_subdir = rel.split(os.sep)[0] if rel != "." else "(root)"
-        subdir_sizes[top_subdir] = subdir_sizes.get(top_subdir, 0) + dir_total
+        parts = [] if rel == "." else rel.split(os.sep)
+        if not parts:
+            bucket = "(root)"
+        elif len(parts) >= 2 and parts[0] in {"debug", "release"} and parts[1] in {
+            "incremental",
+            "deps",
+            "examples",
+            "build",
+        }:
+            bucket = f"{parts[0]}/{parts[1]}"
+        else:
+            bucket = parts[0]
+        subdir_sizes[bucket] = subdir_sizes.get(bucket, 0) + dir_total
 
     size_gb = total / (1024**3)
 
@@ -144,15 +155,20 @@ def check_target_dir(workspace: str = ".", disk_free_gb: float | None = None) ->
 
     # Specific recommendations based on breakdown
     recommendations = []
-    incremental_gb = subdir_sizes.get("debug" + os.sep + "incremental", 0) / (1024**3)
-    deps_gb = subdir_sizes.get("debug" + os.sep + "deps", 0) / (1024**3)
-    release_exists = "release" in subdir_sizes
-    debug_gb = subdir_sizes.get("debug", 0) / (1024**3)
-    release_gb = subdir_sizes.get("release", 0) / (1024**3)
+    incremental_gb = subdir_sizes.get("debug/incremental", 0) / (1024**3)
+    deps_gb = subdir_sizes.get("debug/deps", 0) / (1024**3)
+    examples_gb = subdir_sizes.get("debug/examples", 0) / (1024**3)
+    release_exists = any(k == "release" or k.startswith("release/") for k in subdir_sizes)
+    debug_gb = sum(s for k, s in subdir_sizes.items() if k == "debug" or k.startswith("debug/")) / (1024**3)
+    release_gb = sum(s for k, s in subdir_sizes.items() if k == "release" or k.startswith("release/")) / (1024**3)
 
     if incremental_gb > 2:
         recommendations.append(
             f"Remove incremental cache: rm -rf target/debug/incremental ({incremental_gb:.1f}GB)"
+        )
+    if examples_gb > 2:
+        recommendations.append(
+            f"Remove example artifacts: rm -rf target/debug/examples ({examples_gb:.1f}GB)"
         )
     if release_exists and release_gb > 5:
         recommendations.append(

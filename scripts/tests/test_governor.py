@@ -409,6 +409,25 @@ def test_resource_safety_flags_use_canonical_drift_flag_contract(monkeypatch):
     assert all(flag.evidence for flag in flags)
 
 
+def test_target_dir_reports_debug_incremental_separately(tmp_path: Path) -> None:
+    from governor.checks.resource_safety import check_target_dir
+
+    incremental = tmp_path / "target" / "debug" / "incremental"
+    incremental.mkdir(parents=True)
+    (incremental / "blob.bin").write_bytes(b"x" * (120 * 1024 * 1024))
+    deps = tmp_path / "target" / "debug" / "deps"
+    deps.mkdir(parents=True)
+    (deps / "lib.rlib").write_bytes(b"y" * (110 * 1024 * 1024))
+
+    result = check_target_dir(str(tmp_path), disk_free_gb=80)
+    assert result["incremental_cache_gb"] > 0
+    assert result["deps_cache_gb"] > 0
+    assert result["debug_profile_gb"] > 0
+    dirs = {row["dir"] for row in result["top_consumers"]}
+    assert "debug/incremental" in dirs
+    assert "debug/deps" in dirs
+
+
 def _write_logging_contract(root: Path) -> None:
     for crate in ["da-domain", "da-ports", "kg-ontology", "kg-pipeline"]:
         _write(root / f"crates/{crate}/Cargo.toml", "[dependencies]\nserde = '1'\n")

@@ -787,6 +787,10 @@ class TrajectoryService:
         for flag in flags:
             if flag.flag == "missing_next_gate":
                 actions.append("Add 'Next gate' section to README.md.")
+            if flag.flag == "resource_target_bloat":
+                actions.append(
+                    "target/ bloated: prune debug incremental/examples before workspace cargo."
+                )
         if not actions:
             actions.append("No drift detected. Continue current milestone.")
         return actions

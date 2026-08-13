@@ -145,6 +145,11 @@ def main() -> int:
         f"phase={report.phase} flags={n_flags} violations={n_violations}"
     )
     print(f"  report: {json_path}")
+    for flag in report.drift_flags:
+        name = flag.get("flag") if isinstance(flag, dict) else getattr(flag, "flag", "?")
+        sev = flag.get("severity") if isinstance(flag, dict) else getattr(flag, "severity", "")
+        ev = flag.get("evidence") if isinstance(flag, dict) else getattr(flag, "evidence", "")
+        print(f"  - {name} [{sev}]: {ev}")
 
     # Exit code: 0 = on_track or drift_risk, 1 = blocked.
     # Handle both str and Enum(str) verdict values.
