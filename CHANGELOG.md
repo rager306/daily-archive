@@ -1,5 +1,12 @@
 # Changelog
 
+### M390 S02/S03 analyze maps plot and table drafts to typed payloads
+
+- `map_structured_to_draft` builds `FigureTypedPayload::Chart` / `Table` from DATA schema fields.
+- Synthetic diagram components are skipped when a typed payload is present.
+- Plot test: empty components + Chart{scatter, axes, GEPA point}.
+- Table test: empty components + Table headers/rows; schema_id=table_structure.
+
 ### M390 S01 chart/table typed payload on FigureAnalysis
 
 - Added `FigureTypedPayload::{Chart,Table}` with axis/point/header validation.

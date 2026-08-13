@@ -43,12 +43,16 @@ Scientific figure understanding — извлечение и семантичес
 2. Provenance carries `schema_id` and `stage1_visual_type` on every candidate
 3. Chart/table draft honesty: typed fields surface into findings (`chart_type=`, `key_data_points=`, `table_headers=`)
 
+**Сделано дополнительно (M390):**
+1. `FigureTypedPayload::{Chart,Table}` on the FigureAnalysis envelope — chart/table drafts no longer invent diagram components
+2. Analyze maps DATA schema fields (axes, key_data_points, headers/rows) into typed payload
+
 **Ещё пробелы:**
-1. Domain `FigureAnalysis` still diagram-shaped (chart drafts synthesize components) — full chart-native candidate type later
+1. Photo/screenshot still synthesize a single visual component (no photo-native payload yet)
 2. Compound figure decomposition
-3. Stage cache uses default diagram selection as fence (not per-call Stage1 type in stage contract — live analyze still selects per-type)
-4. Docling sidecar rejected for product (D237); pure-Rust chart-to-table not full numeric domain yet
-5. CharXiv-style figure task suite not built
+3. Stage cache uses default diagram selection as fence (live analyze still selects per-type)
+4. Pure-Rust chart-to-table quality / numeric domain not a full CharXiv suite
+5. CharXiv-style figure task suite (`data/figure_tasks/`) not built
 
 ## Decision
 
