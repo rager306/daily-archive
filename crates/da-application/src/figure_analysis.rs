@@ -135,7 +135,8 @@ impl FigureAnalysisUseCase {
             ));
         }
         let structured_output = response.structured_output;
-        let draft = map_structured_to_draft(&structured_output, &classification)?;
+        let mut draft = map_structured_to_draft(&structured_output, &classification)?;
+        surface_panel_count(&classification, &mut draft.findings);
         validate_citations(&draft.citations, context)?;
         let route = response.route;
         let candidate_id = format!(
@@ -452,6 +453,22 @@ fn typed_payload_from_draft(
             }))
         }
         _ => None,
+    }
+}
+
+fn surface_panel_count(classification: &FigureTypeClassification, findings: &mut Vec<String>) {
+    if classification.subpanel_count <= 1 {
+        return;
+    }
+    let count_tag = format!("panel_count={}", classification.subpanel_count);
+    if !findings.iter().any(|f| f.starts_with("panel_count=")) {
+        findings.insert(0, count_tag);
+    }
+    if !classification.panel_labels.is_empty() {
+        let labels_tag = format!("panel_labels={}", classification.panel_labels.join(","));
+        if !findings.iter().any(|f| f.starts_with("panel_labels=")) {
+            findings.insert(1.min(findings.len()), labels_tag);
+        }
     }
 }
 
@@ -1011,6 +1028,45 @@ mod tests {
         let (class, selection) = uc.plan_schema(&context()).unwrap();
         assert_eq!(class.visual_type, VisualAnalysisType::Flowchart);
         assert_eq!(selection.schema_id, "diagram_analysis");
+        assert_eq!(class.subpanel_count, 1);
+    }
+
+    #[tokio::test]
+    async fn compound_caption_analyze_surfaces_panel_count() {
+        let mut ctx = context();
+        ctx.caption = "Figure 3(a-c): Overview of the algorithm candidate proposal loop".into();
+        let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
+        let analysis = FigureAnalysisUseCase::new(fake)
+            .analyze(image(), &ctx)
+            .await
+            .unwrap();
+        assert!(
+            analysis.findings.iter().any(|f| f == "panel_count=3"),
+            "compound caption must surface panel_count: {:?}",
+            analysis.findings
+        );
+        assert!(
+            analysis.findings.iter().any(|f| f == "panel_labels=a,b,c"),
+            "compound caption must surface panel_labels: {:?}",
+            analysis.findings
+        );
+    }
+
+    #[tokio::test]
+    async fn single_panel_analyze_does_not_add_panel_count() {
+        let analysis = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+            output("mutates prompts"),
+            route(),
+        )))
+        .analyze(image(), &context())
+        .await
+        .unwrap();
+        assert!(
+            !analysis
+                .findings
+                .iter()
+                .any(|f| f.starts_with("panel_count="))
+        );
     }
 
     #[tokio::test]

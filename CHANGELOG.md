@@ -1,5 +1,19 @@
 # Changelog
 
+### M392 S02 analyze surfaces compound panel_count
+
+- When Stage1 `subpanel_count > 1`, analyze findings prepend `panel_count=N` and
+  `panel_labels=a,b,c`. Single-panel captions do not add these tags.
+- Tests: compound `Figure 3(a-c)` and single-panel negative.
+
+### M392 S01 caption-driven compound panel detection
+
+- Added DATA `data/ontology/figure_panel_markers.yaml` (letter range, sequential letters,
+  Figure-prefixed range). No paper-specific keywords, no pixel crop.
+- `FigurePanelMarkerTable` + `FigureTypeClassification.panel_labels`.
+- Stage1 `classify_from_text` sets `subpanel_count` from caption-first markers.
+- Tests: single panel stays 1; `(a-c)`, `(a)(b)(c)`, `Figure 3a-c` yield 3 labels.
+
 ### M391 S03 docs residual after photo payload
 
 - ADR-060 residual: photo/screenshot typed payload done; next compound panels + CharXiv suite.
