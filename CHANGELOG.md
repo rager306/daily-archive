@@ -1,5 +1,12 @@
 # Changelog
 
+### M383 S04 extractive summary in DATA derivation chain
+
+- `snapshot_derivation_policy.yaml` adds `extractive_summary` / `summarize-revisions.v1` after
+  cluster and resolution. Existing two-report prefix still loads.
+- Lineage test: wrong third schema fails; matching schema stays D127-locked.
+- No live 200-paper ontology_acceptance run in this slice.
+
 ### M383 S03 production revision extractive summaries
 
 - `collect_revision_summary_inputs` walks PaperRevision nodes; missing vid/canonical_id is a typed skip.

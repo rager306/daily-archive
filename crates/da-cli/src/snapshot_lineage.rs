@@ -156,4 +156,65 @@ mod tests {
         );
         std::fs::remove_dir_all(root).unwrap();
     }
+
+    fn digest(n: u8) -> String {
+        format!("{n:064x}")
+    }
+
+    fn write_report(path: &std::path::Path, schema: &str) {
+        let body = serde_json::json!({
+            "schema_version": schema,
+            "input_snapshot_sha256": digest(1),
+            "output_snapshot_sha256": digest(2),
+            "import_eligible": false,
+        });
+        std::fs::write(path, serde_json::to_vec(&body).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn bundled_policy_keeps_two_report_prefix_and_requires_extractive_schema() {
+        let policy = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/ontology/snapshot_derivation_policy.yaml");
+        let root = std::env::temp_dir().join(format!("da-lineage-s04-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        let cluster = root.join("cluster.json");
+        let resolution = root.join("resolution.json");
+        let summary = root.join("summary.json");
+        write_report(&cluster, "concept-cluster-canary.v1");
+        write_report(&resolution, "entity-resolution-canary.v1");
+        let prefix = load_lineage(
+            ContentDigest::of_text("materialization"),
+            policy.as_path(),
+            &[cluster.clone(), resolution.clone()],
+        )
+        .unwrap();
+        assert_eq!(prefix.links.len(), 2);
+        assert_eq!(prefix.links[0].stage_id, "concept_cluster");
+        assert_eq!(prefix.links[1].stage_id, "entity_resolution");
+
+        write_report(&summary, "wrong.v1");
+        let err = load_lineage(
+            ContentDigest::of_text("materialization"),
+            policy.as_path(),
+            &[cluster.clone(), resolution.clone(), summary.clone()],
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string().contains("summarize-revisions.v1"),
+            "{err:#}"
+        );
+
+        write_report(&summary, "summarize-revisions.v1");
+        let full = load_lineage(
+            ContentDigest::of_text("materialization"),
+            policy.as_path(),
+            &[cluster, resolution, summary],
+        )
+        .unwrap();
+        assert_eq!(full.links.len(), 3);
+        assert_eq!(full.links[2].stage_id, "extractive_summary");
+        assert!(!full.links[2].import_eligible);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
