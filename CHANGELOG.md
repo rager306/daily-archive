@@ -1,5 +1,11 @@
 # Changelog
 
+### M389 S04 docs and residual handoff
+
+- ADR-060 residual list updated with M389 stage-cache + provenance + findings honesty.
+- Handoff: M388 complete; M389 S01–S03 product code delivered; residual chart-native
+  domain type, compound panels, CharXiv suite, STATE projection lag.
+
 ### M389 S03 chart draft findings honesty
 
 - `map_structured_to_draft` surfaces `chart_type=` and `key_data_points=` into findings
