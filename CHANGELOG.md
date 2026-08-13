@@ -1,5 +1,12 @@
 # Changelog
 
+### Governor: print target/debug bloat and classify incremental/deps
+
+- `check_target_dir` now buckets `debug/incremental`, `debug/deps`, `debug/examples`
+  instead of lumping everything under `debug` (so 24GB incremental is visible).
+- CLI prints each drift flag on stdout (`flags=1` is no longer silent).
+- `next_actions` mentions prune incremental/examples before workspace cargo.
+
 ### M383 S04 extractive summary in DATA derivation chain
 
 - `snapshot_derivation_policy.yaml` adds `extractive_summary` / `summarize-revisions.v1` after
