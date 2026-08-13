@@ -1,0 +1,322 @@
+# Per-type Stage-2 figure output schemas (ADR-060). DATA-driven.
+# Candidate-only: never graph truth. import_eligible always false.
+schema_version: figure-schemas.v1
+import_eligible: false
+default_schema_id: diagram_analysis
+schemas:
+  - schema_id: diagram_analysis
+    description: "Components, relationships, grounded citations for flowcharts/diagrams"
+    applies_to:
+      - flowchart
+      - diagram
+    required_top_level:
+      - visual_type
+      - description
+      - components
+      - relationships
+      - findings
+      - citations
+      - confidence
+    json_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        visual_type:
+          type: string
+          enum: [flowchart, diagram]
+        description:
+          type: string
+        components:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              name: { type: string }
+              role: { type: string }
+              visual_evidence: { type: string }
+            required: [name, role, visual_evidence]
+        relationships:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              source_component: { type: string }
+              relation: { type: string }
+              target_component: { type: string }
+            required: [source_component, relation, target_component]
+        findings:
+          type: array
+          items: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              section_id: { type: string }
+              path_id: { type: string }
+              quote: { type: string, maxLength: 160 }
+            required: [section_id, path_id, quote]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+      required:
+        - visual_type
+        - description
+        - components
+        - relationships
+        - findings
+        - citations
+        - confidence
+
+  - schema_id: chart_extraction
+    description: "Axes, legend, key data points for plots/charts (chart-to-table oriented)"
+    applies_to:
+      - plot
+    required_top_level:
+      - visual_type
+      - chart_type
+      - description
+      - x_axis
+      - y_axis
+      - key_data_points
+      - findings
+      - citations
+      - confidence
+    json_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        visual_type:
+          type: string
+          enum: [plot]
+        chart_type:
+          type: string
+          enum: [bar, line, scatter, pie, box, heatmap, other]
+        description:
+          type: string
+        x_axis:
+          type: object
+          additionalProperties: false
+          properties:
+            label: { type: string }
+            unit: { type: string }
+          required: [label]
+        y_axis:
+          type: object
+          additionalProperties: false
+          properties:
+            label: { type: string }
+            unit: { type: string }
+          required: [label]
+        legend:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              label: { type: string }
+              color: { type: string }
+            required: [label]
+        key_data_points:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              label: { type: string }
+              x: { type: string }
+              y: { type: string }
+            required: [label]
+        trend:
+          type: string
+        findings:
+          type: array
+          items: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              section_id: { type: string }
+              path_id: { type: string }
+              quote: { type: string, maxLength: 160 }
+            required: [section_id, path_id, quote]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+      required:
+        - visual_type
+        - chart_type
+        - description
+        - x_axis
+        - y_axis
+        - key_data_points
+        - findings
+        - citations
+        - confidence
+
+  - schema_id: table_structure
+    description: "Headers and cell grid for table figures"
+    applies_to:
+      - table
+    required_top_level:
+      - visual_type
+      - description
+      - headers
+      - rows
+      - findings
+      - citations
+      - confidence
+    json_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        visual_type:
+          type: string
+          enum: [table]
+        description:
+          type: string
+        headers:
+          type: array
+          items: { type: string }
+        rows:
+          type: array
+          items:
+            type: array
+            items: { type: string }
+        findings:
+          type: array
+          items: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              section_id: { type: string }
+              path_id: { type: string }
+              quote: { type: string, maxLength: 160 }
+            required: [section_id, path_id, quote]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+      required:
+        - visual_type
+        - description
+        - headers
+        - rows
+        - findings
+        - citations
+        - confidence
+
+  - schema_id: photo_caption
+    description: "Caption-oriented description for photos and screenshots"
+    applies_to:
+      - photograph
+      - screenshot
+    required_top_level:
+      - visual_type
+      - description
+      - visible_objects
+      - findings
+      - citations
+      - confidence
+    json_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        visual_type:
+          type: string
+          enum: [photograph, screenshot]
+        description:
+          type: string
+        visible_objects:
+          type: array
+          items: { type: string }
+        scale_bar:
+          type: object
+          additionalProperties: false
+          properties:
+            present: { type: boolean }
+            value: { type: string }
+          required: [present]
+        findings:
+          type: array
+          items: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              section_id: { type: string }
+              path_id: { type: string }
+              quote: { type: string, maxLength: 160 }
+            required: [section_id, path_id, quote]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+      required:
+        - visual_type
+        - description
+        - visible_objects
+        - findings
+        - citations
+        - confidence
+
+  - schema_id: other_description
+    description: "Fallback grounded description for unclassified visuals"
+    applies_to:
+      - other
+    required_top_level:
+      - visual_type
+      - description
+      - findings
+      - citations
+      - confidence
+    json_schema:
+      type: object
+      additionalProperties: false
+      properties:
+        visual_type:
+          type: string
+          enum: [other]
+        description:
+          type: string
+        findings:
+          type: array
+          items: { type: string }
+        citations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              section_id: { type: string }
+              path_id: { type: string }
+              quote: { type: string, maxLength: 160 }
+            required: [section_id, path_id, quote]
+        confidence:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+      required:
+        - visual_type
+        - description
+        - findings
+        - citations
+        - confidence

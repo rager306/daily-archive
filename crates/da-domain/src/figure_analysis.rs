@@ -7,6 +7,7 @@ use thiserror::Error;
 
 const BUNDLED_FIGURE_TYPE_LABELS: &str =
     include_str!("../../../data/ontology/figure_type_labels.yaml");
+const BUNDLED_FIGURE_SCHEMAS: &str = include_str!("../../../data/ontology/figure_schemas.yaml");
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -228,6 +229,173 @@ impl FigureTypeLabelTable {
         };
         classification.validate()?;
         Ok(classification)
+    }
+}
+
+/// Selected Stage-2 output schema for a visual type (ADR-060).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureSchemaSelection {
+    pub schema_id: String,
+    pub description: String,
+    pub visual_type: VisualAnalysisType,
+    pub required_top_level: Vec<String>,
+    pub json_schema: serde_json::Value,
+    pub registry_schema_version: String,
+}
+
+impl FigureSchemaSelection {
+    pub fn validate(&self) -> Result<(), FigureAnalysisError> {
+        if self.schema_id.trim().is_empty() {
+            return Err(FigureAnalysisError::Missing("schema_id"));
+        }
+        if self.registry_schema_version.trim().is_empty() {
+            return Err(FigureAnalysisError::Missing("registry_schema_version"));
+        }
+        if !self.json_schema.is_object() {
+            return Err(FigureAnalysisError::Invalid(
+                "json_schema must be an object".into(),
+            ));
+        }
+        if self.required_top_level.is_empty() {
+            return Err(FigureAnalysisError::Invalid(
+                "required_top_level must be non-empty".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn schema_sha256_hex(&self) -> Result<String, FigureAnalysisError> {
+        let bytes = serde_json::to_vec(&self.json_schema)
+            .map_err(|e| FigureAnalysisError::Invalid(format!("schema serialize: {e}")))?;
+        use sha2::{Digest, Sha256};
+        Ok(hex::encode(Sha256::digest(bytes)))
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigureSchemasFile {
+    schema_version: String,
+    default_schema_id: String,
+    schemas: Vec<FigureSchemaEntryFile>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigureSchemaEntryFile {
+    schema_id: String,
+    description: String,
+    applies_to: Vec<String>,
+    required_top_level: Vec<String>,
+    json_schema: serde_json::Value,
+}
+
+/// DATA-driven registry of per-type Stage-2 figure schemas.
+#[derive(Debug, Clone)]
+pub struct FigureSchemaRegistry {
+    pub schema_version: String,
+    default_schema_id: String,
+    /// schema_id -> entry
+    by_id: std::collections::BTreeMap<String, FigureSchemaEntryFile>,
+    /// visual wire type -> schema_id
+    type_index: std::collections::BTreeMap<String, String>,
+}
+
+impl FigureSchemaRegistry {
+    pub fn bundled() -> Result<Self, FigureAnalysisError> {
+        Self::from_yaml(BUNDLED_FIGURE_SCHEMAS)
+    }
+
+    pub fn from_yaml(yaml: &str) -> Result<Self, FigureAnalysisError> {
+        let file: FigureSchemasFile = serde_yaml::from_str(yaml)
+            .map_err(|e| FigureAnalysisError::Invalid(format!("figure_schemas.yaml: {e}")))?;
+        if file.schema_version != "figure-schemas.v1" {
+            return Err(FigureAnalysisError::Invalid(format!(
+                "unsupported figure schemas version: {}",
+                file.schema_version
+            )));
+        }
+        if file.schemas.is_empty() {
+            return Err(FigureAnalysisError::Invalid(
+                "figure_schemas must declare at least one schema".into(),
+            ));
+        }
+        let mut by_id = std::collections::BTreeMap::new();
+        let mut type_index = std::collections::BTreeMap::new();
+        for entry in file.schemas {
+            if entry.schema_id.trim().is_empty() {
+                return Err(FigureAnalysisError::Invalid(
+                    "schema_id must be non-empty".into(),
+                ));
+            }
+            if !entry.json_schema.is_object() {
+                return Err(FigureAnalysisError::Invalid(format!(
+                    "schema {} json_schema must be object",
+                    entry.schema_id
+                )));
+            }
+            if entry.required_top_level.is_empty() {
+                return Err(FigureAnalysisError::Invalid(format!(
+                    "schema {} required_top_level empty",
+                    entry.schema_id
+                )));
+            }
+            for wire in &entry.applies_to {
+                let key = wire.trim().to_ascii_lowercase();
+                if VisualAnalysisType::from_wire(&key).is_none() {
+                    return Err(FigureAnalysisError::Invalid(format!(
+                        "schema {} applies_to unknown type {wire}",
+                        entry.schema_id
+                    )));
+                }
+                if let Some(prev) = type_index.insert(key, entry.schema_id.clone()) {
+                    return Err(FigureAnalysisError::Invalid(format!(
+                        "visual type {wire} mapped twice ({prev} and {})",
+                        entry.schema_id
+                    )));
+                }
+            }
+            by_id.insert(entry.schema_id.clone(), entry);
+        }
+        if !by_id.contains_key(&file.default_schema_id) {
+            return Err(FigureAnalysisError::Invalid(format!(
+                "default_schema_id {} missing",
+                file.default_schema_id
+            )));
+        }
+        Ok(Self {
+            schema_version: file.schema_version,
+            default_schema_id: file.default_schema_id,
+            by_id,
+            type_index,
+        })
+    }
+
+    pub fn select_for(
+        &self,
+        visual_type: VisualAnalysisType,
+    ) -> Result<FigureSchemaSelection, FigureAnalysisError> {
+        let wire = visual_type.as_wire();
+        let schema_id = self
+            .type_index
+            .get(wire)
+            .cloned()
+            .unwrap_or_else(|| self.default_schema_id.clone());
+        let entry = self.by_id.get(&schema_id).ok_or_else(|| {
+            FigureAnalysisError::Invalid(format!("schema_id {schema_id} missing"))
+        })?;
+        let selection = FigureSchemaSelection {
+            schema_id: entry.schema_id.clone(),
+            description: entry.description.clone(),
+            visual_type,
+            required_top_level: entry.required_top_level.clone(),
+            json_schema: entry.json_schema.clone(),
+            registry_schema_version: self.schema_version.clone(),
+        };
+        selection.validate()?;
+        Ok(selection)
+    }
+
+    pub fn schema_ids(&self) -> Vec<String> {
+        self.by_id.keys().cloned().collect()
     }
 }
 
@@ -553,5 +721,56 @@ mod tests {
         ] {
             assert_eq!(VisualAnalysisType::from_wire(t.as_wire()), Some(t));
         }
+    }
+
+    #[test]
+    fn bundled_figure_schemas_select_by_type() {
+        let reg = FigureSchemaRegistry::bundled().expect("bundled schemas");
+        assert!(reg.schema_ids().contains(&"diagram_analysis".into()));
+        assert!(reg.schema_ids().contains(&"chart_extraction".into()));
+        assert!(reg.schema_ids().contains(&"table_structure".into()));
+
+        let flowchart = reg
+            .select_for(VisualAnalysisType::Flowchart)
+            .expect("flowchart schema");
+        assert_eq!(flowchart.schema_id, "diagram_analysis");
+        assert!(
+            flowchart
+                .required_top_level
+                .iter()
+                .any(|f| f == "components")
+        );
+        flowchart.validate().unwrap();
+        assert_eq!(flowchart.schema_sha256_hex().unwrap().len(), 64);
+
+        let plot = reg.select_for(VisualAnalysisType::Plot).expect("plot");
+        assert_eq!(plot.schema_id, "chart_extraction");
+        assert!(
+            plot.required_top_level
+                .iter()
+                .any(|f| f == "key_data_points")
+        );
+
+        let table = reg.select_for(VisualAnalysisType::Table).expect("table");
+        assert_eq!(table.schema_id, "table_structure");
+
+        let photo = reg
+            .select_for(VisualAnalysisType::Photograph)
+            .expect("photo");
+        assert_eq!(photo.schema_id, "photo_caption");
+
+        let other = reg.select_for(VisualAnalysisType::Other).expect("other");
+        assert_eq!(other.schema_id, "other_description");
+    }
+
+    #[test]
+    fn figure_schemas_reject_bad_version() {
+        let yaml = r#"
+schema_version: figure-schemas.v999
+import_eligible: false
+default_schema_id: x
+schemas: []
+"#;
+        assert!(FigureSchemaRegistry::from_yaml(yaml).is_err());
     }
 }

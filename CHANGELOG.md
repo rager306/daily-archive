@@ -1,5 +1,15 @@
 # Changelog
 
+### M388 S03 per-type figure schemas (ADR-060 Stage2 seam)
+
+- Added DATA-driven `data/ontology/figure_schemas.yaml` with schemas:
+  diagram_analysis, chart_extraction, table_structure, photo_caption, other_description.
+- Domain `FigureSchemaRegistry` / `FigureSchemaSelection`: select_for(VisualAnalysisType),
+  schema_sha256 for provenance; bundled include_str; fail-closed schema_version.
+- Application `FigureSchemaService` selects by type or Stage1 classification.
+- Tests: domain registry selection + 2 application unit tests. No VLM, D127 false.
+- Seam only: FigureAnalysisUseCase still uses legacy single schema until wired next.
+
 ### M388 S02 ADR-060 Stage1 figure type classify (heuristic)
 
 - Added DATA-driven `data/ontology/figure_type_labels.yaml` and domain

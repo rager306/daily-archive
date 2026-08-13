@@ -57,6 +57,8 @@ pub use figure_analysis::{
 };
 pub mod figure_classify;
 pub use figure_classify::{FigureClassifyError, FigureClassifyUseCase};
+pub mod figure_schema;
+pub use figure_schema::{FigureSchemaError, FigureSchemaService};
 pub mod figure_analysis_stage;
 pub use figure_analysis_stage::{FigureAnalysisStage, FigureContextArtifactStage};
 pub mod figure_context;
