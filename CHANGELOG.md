@@ -1,5 +1,13 @@
 # Changelog
 
+### M383 S01 revision classification without implicit v1
+
+- DATA `revision_classification_policy.yaml`: allow_versionless, require_manifestation_for_exact.
+- Domain `classify_revision` → Exact | VersionlessPolicy | Blocked. Never invents revision=1.
+- Application `RevisionClassifyUseCase` over `ArticleLocator`.
+- Tests: 6 domain + 3 application. D127 false.
+- GSD hygiene: closed never-planned M364 so STATE Active Milestone is M383.
+
 ### M393 figure stage cache binds all schemas and planned schema_id
 
 - `FigureSchemaService::registry_identities` lists every bundled schema_id+sha.
