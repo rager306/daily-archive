@@ -1,5 +1,9 @@
 # Changelog
 
+### M392 S03 docs residual after caption panel detection
+
+- ADR-060 residual: caption-driven panel count done; next CharXiv suite and later crop.
+
 ### M392 S02 analyze surfaces compound panel_count
 
 - When Stage1 `subpanel_count > 1`, analyze findings prepend `panel_count=N` and
