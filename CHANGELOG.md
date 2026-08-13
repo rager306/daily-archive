@@ -1,5 +1,12 @@
 # Changelog
 
+### M389 S02 provenance schema_id and stage1_visual_type
+
+- `FigureAnalysisProvenance` adds required `schema_id` and `stage1_visual_type`
+  (wire string validated against VisualAnalysisType).
+- `FigureAnalysisUseCase::analyze` sets both from Stage1 classification + Stage2 selection.
+- Domain + application figure tests green (16 domain figure*, 24 application figure_*)
+
 ### M389 S01 figure stage cache binds schema registry identity
 
 - `FigureAnalysisStage` configuration_fingerprint includes

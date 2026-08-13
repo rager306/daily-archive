@@ -430,6 +430,10 @@ pub struct FigureAnalysisProvenance {
     pub resolved_model: String,
     pub prompt_sha256: String,
     pub output_schema_sha256: String,
+    /// DATA Stage-2 schema_id selected for this candidate (ADR-060 / M389).
+    pub schema_id: String,
+    /// Stage-1 visual type wire string used for schema routing (may differ from draft).
+    pub stage1_visual_type: String,
     pub prompt_task_sha256: String,
     pub route_policy_sha256: String,
     pub model_binding_sha256: String,
@@ -524,6 +528,23 @@ impl FigureAnalysis {
             ));
         }
         for (field, value) in [
+            ("schema_id", self.provenance.schema_id.as_str()),
+            (
+                "stage1_visual_type",
+                self.provenance.stage1_visual_type.as_str(),
+            ),
+        ] {
+            if value.trim().is_empty() {
+                return Err(FigureAnalysisError::Missing(field));
+            }
+        }
+        if VisualAnalysisType::from_wire(&self.provenance.stage1_visual_type).is_none() {
+            return Err(FigureAnalysisError::Invalid(format!(
+                "unknown stage1_visual_type: {}",
+                self.provenance.stage1_visual_type
+            )));
+        }
+        for (field, value) in [
             ("image_sha256", &self.provenance.image_sha256),
             ("context_sha256", &self.provenance.context_sha256),
             ("prompt_sha256", &self.provenance.prompt_sha256),
@@ -597,6 +618,8 @@ mod tests {
                 resolved_model: "MiniMax-M3".into(),
                 prompt_sha256: "c".repeat(64),
                 output_schema_sha256: "d".repeat(64),
+                schema_id: "diagram_analysis".into(),
+                stage1_visual_type: "flowchart".into(),
                 prompt_task_sha256: "e".repeat(64),
                 route_policy_sha256: "f".repeat(64),
                 model_binding_sha256: "1".repeat(64),

@@ -177,6 +177,8 @@ impl FigureAnalysisUseCase {
                 } else {
                     prompt_lineage.output_schema_sha256.as_str().into()
                 },
+                schema_id: selection.schema_id.clone(),
+                stage1_visual_type: classification.visual_type.as_wire().into(),
                 prompt_task_sha256: prompt_lineage.task_spec_sha256.as_str().into(),
                 route_policy_sha256: prompt_lineage.route_policy_sha256.as_str().into(),
                 model_binding_sha256: prompt_lineage.model_binding_sha256.as_str().into(),
@@ -601,6 +603,8 @@ mod tests {
         );
         // Provenance carries DATA schema digest (64 hex), not the fake lineage "schema" text.
         assert_eq!(analysis.provenance.output_schema_sha256.len(), 64);
+        assert_eq!(analysis.provenance.schema_id, "diagram_analysis");
+        assert_eq!(analysis.provenance.stage1_visual_type, "flowchart");
     }
 
     #[tokio::test]
