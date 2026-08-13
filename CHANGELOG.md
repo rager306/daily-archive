@@ -1,5 +1,14 @@
 # Changelog
 
+### M388 S06 governor planning projection preferred_active
+
+- When STATE Active Milestone is not in ROADMAP active set, diagnostic now includes
+  `preferred_active=` (highest M### among ROADMAP active, prefer suffixed ids).
+- Operator guidance: re-render STATE via GSD tools — no hand-edit of engine DB files.
+- Tests: `scripts/tests/test_gsd_planning_reader.py` (11 passed); live smoke for M388.
+- Trajectory still `drift_risk` (stale STATE M364, M383 empty PLAN, target bloat) with
+  violations=0; product path unchanged.
+
 ### M388 S05 wire Stage1+DATA schema into figure analyze path
 
 - Audit: `artifacts/m388/s05_hotpath_seam_audit.md` (hardcoded schema + unused Stage1/2).
