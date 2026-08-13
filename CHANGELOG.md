@@ -1,5 +1,16 @@
 # Changelog
 
+### M383 S02 revision context gated on classification
+
+- `revision_context_for_classified_load`: Exact+manifestation writes context; VersionlessPolicy
+  returns None (no implicit v1); Blocked errors.
+- CLI `da load` uses the classifier. 6 application + 79 da-cli lib tests green.
+
+### GSD governor: diagnose unplanned active slices
+
+- Planning reader flags ROADMAP `[ ] S##` with no `*-PLAN.md` so STATE cannot hide
+  execute-without-plan. Tests: 12 passed. Live smoke now M383-uber46.
+
 ### M394 S03 docs: Flower is local scoring not cmlab
 
 - Local 1/n influence over our CITES/authoredBy observations. CORE and InfluenceMap

@@ -9,8 +9,8 @@ use da_adapters::{
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
-    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome, RevisionContentContext,
-    RevisionManifestationInput,
+    LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome, RevisionClassifyUseCase,
+    RevisionContentContext, RevisionManifestationInput,
 };
 use da_domain::{
     AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadCacheRecord, LoadStageSet,
@@ -246,26 +246,31 @@ impl LoadContentPipeline for CliContentPipeline {
 fn revision_context_from_load(
     req: &LoadContentRequest<'_>,
 ) -> Result<Option<RevisionContentContext>, String> {
-    let Some(revision) = req.locator.arxiv_revision() else {
-        return Ok(None);
-    };
     let mut manifestations = Vec::new();
     for asset in req.assets {
         if asset.kind != "pdf" && asset.kind != "html" {
             continue;
         }
-        let sha256 = asset.sha256.clone().ok_or_else(|| {
-            format!(
-                "versioned {} asset lacks sha256: {}",
-                asset.kind, asset.path
-            )
-        })?;
-        let bytes = asset.bytes.ok_or_else(|| {
-            format!(
-                "versioned {} asset lacks byte size: {}",
-                asset.kind, asset.path
-            )
-        })?;
+        let sha256 = match asset.sha256.clone() {
+            Some(sha) => sha,
+            None if req.locator.arxiv_revision().is_some() => {
+                return Err(format!(
+                    "versioned {} asset lacks sha256: {}",
+                    asset.kind, asset.path
+                ));
+            }
+            None => continue,
+        };
+        let bytes = match asset.bytes {
+            Some(n) => n,
+            None if req.locator.arxiv_revision().is_some() => {
+                return Err(format!(
+                    "versioned {} asset lacks byte size: {}",
+                    asset.kind, asset.path
+                ));
+            }
+            None => continue,
+        };
         manifestations.push(RevisionManifestationInput {
             format: asset.kind.clone(),
             sha256,
@@ -275,18 +280,16 @@ fn revision_context_from_load(
             capture_status: "captured_local".into(),
         });
     }
-    if manifestations.is_empty() {
-        return Err(format!(
-            "versioned source {} has no checksum-bound PDF/HTML manifestations",
-            req.locator.source_key()
-        ));
-    }
-    Ok(Some(RevisionContentContext {
-        source_code: req.source_code.to_string(),
-        canonical_id: req.paper_id.to_string(),
-        revision,
-        manifestations,
-    }))
+    let classifier =
+        RevisionClassifyUseCase::bundled().map_err(|e| format!("revision classification: {e}"))?;
+    classifier
+        .revision_context_for_classified_load(
+            req.locator,
+            req.source_code,
+            req.paper_id,
+            manifestations,
+        )
+        .map_err(|e| e.to_string())
 }
 
 fn source_identity_for_primary(
