@@ -71,6 +71,10 @@ pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;
 pub use enrich::{EnrichResult, EnrichUseCase};
+pub mod influence_flower;
+pub use influence_flower::{
+    InfluenceFlower, InfluenceFlowerError, InfluencePetal, build_author_flower,
+};
 pub mod scheduler;
 pub mod scheduler_runner;
 pub use scheduler::GraphScheduler;

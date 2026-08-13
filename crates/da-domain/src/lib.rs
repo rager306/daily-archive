@@ -29,6 +29,7 @@ pub mod finalize;
 pub mod graph_tasks;
 pub mod healing;
 pub mod hypergraph;
+pub mod influence_flower;
 pub mod load;
 pub mod materialization_profile;
 pub mod ordered_mutation;
@@ -113,6 +114,9 @@ pub mod import_eligibility;
 pub use import_eligibility::ImportEligibility;
 
 pub mod pdf_classification;
+pub use influence_flower::{
+    CitationInfluenceEvent, InfluenceFlowerPolicy, accumulate_author_influence, influence_weight,
+};
 pub use load::{
     AcquisitionPolicy, ArticleLocator, AssetDisposition, LOAD_REPORT_SCHEMA_VERSION,
     LoadAssetRecord, LoadCacheRecord, LoadDomainError, LoadFinding, LoadQueueRecord,

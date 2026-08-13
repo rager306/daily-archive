@@ -1,5 +1,22 @@
 # Changelog
 
+### M394 S03 docs: Flower is local scoring not cmlab
+
+- Local 1/n influence over our CITES/authoredBy observations. CORE and InfluenceMap
+  services remain unused. Scores are candidate-only.
+
+### M394 S02 candidate flower petals from citation events
+
+- `build_author_flower` folds accumulated 1/n scores into incoming/outgoing petals.
+- No Samyama write. `import_eligible=false`. Tests: ego has both petal directions.
+
+### M394 S01 local Influence Flower 1/n scoring
+
+- DATA `influence_flower_policy.yaml`: skip_self_cite, reject empty cited authors.
+- Domain `influence_weight(n)=1/n` and `accumulate_author_influence`.
+- Paper example: Maria cites two-author paper → 0.5. No implicit n=1. D127 false.
+- Idea only (arxiv:1907.12748 §4.2). No cmlab service, no graph write.
+
 ### M383 S01 revision classification without implicit v1
 
 - DATA `revision_classification_policy.yaml`: allow_versionless, require_manifestation_for_exact.
