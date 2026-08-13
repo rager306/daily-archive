@@ -5,8 +5,9 @@ use crate::figure_classify::{FigureClassifyError, FigureClassifyUseCase};
 use crate::figure_schema::{FigureSchemaError, FigureSchemaService};
 use da_domain::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
-    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureSchemaSelection,
-    FigureSemanticContext, FigureTypeClassification, VisualAnalysisType,
+    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureChartAxis, FigureChartDataPoint,
+    FigureChartPayload, FigureSchemaSelection, FigureSemanticContext, FigureTablePayload,
+    FigureTypeClassification, FigureTypedPayload, VisualAnalysisType,
 };
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort, MultimodalLlmRequest,
@@ -188,7 +189,7 @@ impl FigureAnalysisUseCase {
                 output_tokens: response.output_tokens,
                 latency_ms: response.latency_ms,
             },
-            typed_payload: None,
+            typed_payload: draft.typed_payload,
             authoritative: false,
             import_eligible: false,
         };
@@ -210,6 +211,7 @@ struct FigureAnalysisDraft {
     findings: Vec<String>,
     citations: Vec<FigureAnalysisCitation>,
     confidence: f32,
+    typed_payload: Option<FigureTypedPayload>,
 }
 
 /// Map type-specific VLM JSON into the shared FigureAnalysis candidate shape.
@@ -288,9 +290,11 @@ fn map_structured_to_draft(
         })?
         .unwrap_or_default();
 
-    // Chart / table / photo drafts may omit diagram components — synthesize one
-    // so domain FigureAnalysis (still diagram-shaped) validates.
-    if components.is_empty() {
+    let typed_payload = typed_payload_from_draft(object, &visual_type);
+
+    // Photo/screenshot (and unknown) drafts still need a component when no payload.
+    // Chart/table use typed_payload and must not invent diagram components.
+    if components.is_empty() && typed_payload.is_none() {
         components.push(synthesize_component(value, &visual_type, &description));
     }
 
@@ -309,7 +313,112 @@ fn map_structured_to_draft(
         findings,
         citations,
         confidence,
+        typed_payload,
     })
+}
+
+fn typed_payload_from_draft(
+    object: &serde_json::Map<String, serde_json::Value>,
+    visual_type: &VisualAnalysisType,
+) -> Option<FigureTypedPayload> {
+    match visual_type {
+        VisualAnalysisType::Plot => {
+            let chart_type = object.get("chart_type").and_then(|v| v.as_str())?;
+            let x_label = object
+                .get("x_axis")
+                .and_then(|v| v.get("label"))
+                .and_then(|v| v.as_str())?;
+            let y_label = object
+                .get("y_axis")
+                .and_then(|v| v.get("label"))
+                .and_then(|v| v.as_str())?;
+            if chart_type.trim().is_empty()
+                || x_label.trim().is_empty()
+                || y_label.trim().is_empty()
+            {
+                return None;
+            }
+            let key_data_points = object
+                .get("key_data_points")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|p| {
+                            let label = p.get("label").and_then(|x| x.as_str())?;
+                            if label.trim().is_empty() {
+                                return None;
+                            }
+                            Some(FigureChartDataPoint {
+                                label: label.into(),
+                                x: p.get("x").and_then(|x| x.as_str()).map(str::to_string),
+                                y: p.get("y").and_then(|x| x.as_str()).map(str::to_string),
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            Some(FigureTypedPayload::Chart(FigureChartPayload {
+                chart_type: chart_type.into(),
+                x_axis: FigureChartAxis {
+                    label: x_label.into(),
+                    unit: object
+                        .get("x_axis")
+                        .and_then(|v| v.get("unit"))
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string),
+                },
+                y_axis: FigureChartAxis {
+                    label: y_label.into(),
+                    unit: object
+                        .get("y_axis")
+                        .and_then(|v| v.get("unit"))
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string),
+                },
+                key_data_points,
+                trend: object
+                    .get("trend")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string),
+            }))
+        }
+        VisualAnalysisType::Table => {
+            let headers = object
+                .get("headers")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|h| h.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                        .map(str::to_string)
+                        .collect::<Vec<_>>()
+                })?;
+            if headers.is_empty() {
+                return None;
+            }
+            let rows = object
+                .get("rows")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|row| {
+                            row.as_array().map(|cells| {
+                                cells
+                                    .iter()
+                                    .filter_map(|c| c.as_str().map(str::to_string))
+                                    .collect::<Vec<_>>()
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            Some(FigureTypedPayload::Table(FigureTablePayload {
+                headers,
+                rows,
+            }))
+        }
+        _ => None,
+    }
 }
 
 fn enrich_findings_from_typed_draft(
@@ -522,6 +631,12 @@ mod tests {
                 Some("chart_extraction".into())
             } else if request
                 .output_schema
+                .pointer("/properties/headers")
+                .is_some()
+            {
+                Some("table_structure".into())
+            } else if request
+                .output_schema
                 .pointer("/properties/components")
                 .is_some()
             {
@@ -679,7 +794,21 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(analysis.visual_type, VisualAnalysisType::Plot);
-        assert!(!analysis.components.is_empty());
+        assert!(
+            analysis.components.is_empty(),
+            "chart payload must not invent diagram components: {:?}",
+            analysis.components
+        );
+        match analysis.typed_payload.as_ref() {
+            Some(FigureTypedPayload::Chart(chart)) => {
+                assert_eq!(chart.chart_type, "scatter");
+                assert_eq!(chart.x_axis.label, "rollouts");
+                assert_eq!(chart.y_axis.label, "accuracy");
+                assert_eq!(chart.key_data_points.len(), 1);
+                assert_eq!(chart.key_data_points[0].label, "GEPA");
+            }
+            other => panic!("expected Chart payload, got {other:?}"),
+        }
         assert!(
             analysis.findings.iter().any(|f| f == "chart_type=scatter"),
             "chart_type must surface in findings: {:?}",
@@ -701,6 +830,47 @@ mod tests {
         );
         let (_, selection) = FigureAnalysisUseCase::new(fake).plan_schema(&ctx).unwrap();
         assert_eq!(selection.schema_id, "chart_extraction");
+    }
+
+    #[tokio::test]
+    async fn stage1_table_caption_maps_table_payload_without_synthetic_component() {
+        let mut ctx = context();
+        ctx.caption = "Figure 5: Comparison table of methods and F1 scores".into();
+        let table_output = serde_json::json!({
+            "visual_type": "table",
+            "description": "Method comparison table",
+            "headers": ["method", "f1"],
+            "rows": [["GEPA", "0.87"], ["GRPO", "0.81"]],
+            "findings": ["GEPA leads"],
+            "citations": [{"section_id":"sec-3","path_id":"3","quote":"mutates prompts"}],
+            "confidence": 0.7
+        });
+        let fake = Arc::new(FakeModel::new(table_output, route()));
+        let analysis = FigureAnalysisUseCase::new(fake.clone())
+            .analyze(image(), &ctx)
+            .await
+            .unwrap();
+        assert_eq!(analysis.visual_type, VisualAnalysisType::Table);
+        assert!(analysis.components.is_empty());
+        match analysis.typed_payload.as_ref() {
+            Some(FigureTypedPayload::Table(table)) => {
+                assert_eq!(table.headers, vec!["method", "f1"]);
+                assert_eq!(table.rows.len(), 2);
+            }
+            other => panic!("expected Table payload, got {other:?}"),
+        }
+        assert!(
+            analysis
+                .findings
+                .iter()
+                .any(|f| f == "table_headers=method,f1")
+        );
+        assert_eq!(analysis.provenance.schema_id, "table_structure");
+        assert_eq!(analysis.provenance.stage1_visual_type, "table");
+        assert_eq!(
+            fake.last_schema_id_hint.lock().unwrap().as_deref(),
+            Some("table_structure")
+        );
     }
 
     #[tokio::test]
