@@ -85,6 +85,11 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
                     task_ids = self._task_ids(phase_dir)
                     task_count = len(task_ids)
                     source = str(phase_dir.relative_to(self.root))
+                    for slice_id in self._unplanned_slices(phase_dir):
+                        diagnostics.append(
+                            f"active milestone {milestone_id} slice {slice_id} "
+                            "has no PLAN tasks — run gsd_plan_slice before execute"
+                        )
             projections.append(
                 MilestonePlanningProjection(
                     milestone_id=milestone_id,
@@ -187,6 +192,25 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
                     f"refusing suffixed phase merge: {shadowed}"
                 )
         return f"phase projection not found for {milestone_id}"
+
+    @staticmethod
+    def _unplanned_slices(phase_dir: Path) -> list[str]:
+        """ROADMAP pending slices that still have no phase PLAN file."""
+        roadmaps = sorted(phase_dir.glob("*-ROADMAP.md"))
+        roadmap = roadmaps[0] if roadmaps else None
+        if roadmap is None:
+            return []
+        pending: list[str] = []
+        for line in roadmap.read_text(encoding="utf-8", errors="replace").splitlines():
+            match = re.match(r"^-\s+\[ \]\s+\*\*(S\d+)\b", line)
+            if not match:
+                continue
+            slice_id = match.group(1)
+            num = slice_id[1:]
+            has_plan = any(phase_dir.glob(f"*-{num}-PLAN.md"))
+            if not has_plan:
+                pending.append(slice_id)
+        return pending
 
     @staticmethod
     def _task_ids(phase_dir: Path) -> set[tuple[str, str]]:

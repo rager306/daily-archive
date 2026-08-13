@@ -203,17 +203,25 @@ def test_trajectory_service_flags_empty_and_unavailable_projections() -> None:
     assert flags[0].severity == "high"
 
 
-def test_repository_projection_reports_active_m388() -> None:
-    """Live repo smoke: free-form wave M388 must appear active on ROADMAP."""
+def test_unplanned_active_slice_is_diagnosed(tmp_path: Path) -> None:
+    _roadmap(tmp_path, "- 🔄 **M383-uber46: Revision** (`depends:[—]`)")
+    phase = tmp_path / ".gsd" / "phases" / "383-uber46-revision"
+    _write(
+        phase / "383-ROADMAP.md",
+        "# M383\n\n- [x] **S01**: done\n- [ ] **S02**: Revision Aware Materialization\n",
+    )
+    _write(phase / "383-01-PLAN.md", "# S01\n\n- [x] **T01**: work\n")
+
+    result = FilesystemGsdPlanningReader(tmp_path).read()
+    assert any("slice S02 has no PLAN tasks" in item for item in result.diagnostics)
+
+
+def test_repository_projection_reports_active_m383() -> None:
+    """Live repo smoke: STATE/ROADMAP active unit is M383-uber46."""
     root = Path(__file__).resolve().parents[2]
     result = FilesystemGsdPlanningReader(root).read()
     milestones = {item.milestone_id: item for item in result.milestones}
 
     assert result.available is True
-    assert "M388-mhds9q" in milestones
-    assert milestones["M388-mhds9q"].status == "active"
-    # STATE may lag ROADMAP in free-form sessions; diagnostic must name preferred_active.
-    if result.diagnostics:
-        joined = " ".join(result.diagnostics)
-        if "planning projection divergence" in joined:
-            assert "preferred_active=M388-mhds9q" in joined or "preferred_active=" in joined
+    assert "M383-uber46" in milestones
+    assert milestones["M383-uber46"].status == "active"
