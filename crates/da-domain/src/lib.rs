@@ -83,8 +83,9 @@ pub use figure::{
 };
 pub use figure_analysis::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
-    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureClassifyMethod,
-    FigureSchemaRegistry, FigureSchemaSelection, FigureTypeClassification, FigureTypeLabelTable,
+    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureChartAxis, FigureChartDataPoint,
+    FigureChartPayload, FigureClassifyMethod, FigureSchemaRegistry, FigureSchemaSelection,
+    FigureTablePayload, FigureTypeClassification, FigureTypeLabelTable, FigureTypedPayload,
     VisualAnalysisType,
 };
 pub use figure_context::{

@@ -188,6 +188,7 @@ impl FigureAnalysisUseCase {
                 output_tokens: response.output_tokens,
                 latency_ms: response.latency_ms,
             },
+            typed_payload: None,
             authoritative: false,
             import_eligible: false,
         };

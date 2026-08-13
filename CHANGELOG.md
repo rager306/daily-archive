@@ -1,5 +1,12 @@
 # Changelog
 
+### M390 S01 chart/table typed payload on FigureAnalysis
+
+- Added `FigureTypedPayload::{Chart,Table}` with axis/point/header validation.
+- `FigureAnalysis.typed_payload` optional (serde default None) — old diagram JSON still valid.
+- `components` required only when typed_payload is absent. Chart/table may have empty components.
+- Domain tests: chart/table empty-components ok; diagram still fails; axis labels required.
+
 ### M389 S04 docs and residual handoff
 
 - ADR-060 residual list updated with M389 stage-cache + provenance + findings honesty.

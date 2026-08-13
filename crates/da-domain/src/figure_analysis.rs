@@ -444,6 +444,84 @@ pub struct FigureAnalysisProvenance {
     pub latency_ms: u64,
 }
 
+/// Candidate-only typed Stage-2 payload (ADR-060 / M390).
+/// Chart and table drafts do not invent diagram components.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum FigureTypedPayload {
+    Chart(FigureChartPayload),
+    Table(FigureTablePayload),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureChartAxis {
+    pub label: String,
+    #[serde(default)]
+    pub unit: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureChartDataPoint {
+    pub label: String,
+    #[serde(default)]
+    pub x: Option<String>,
+    #[serde(default)]
+    pub y: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureChartPayload {
+    pub chart_type: String,
+    pub x_axis: FigureChartAxis,
+    pub y_axis: FigureChartAxis,
+    #[serde(default)]
+    pub key_data_points: Vec<FigureChartDataPoint>,
+    #[serde(default)]
+    pub trend: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureTablePayload {
+    pub headers: Vec<String>,
+    #[serde(default)]
+    pub rows: Vec<Vec<String>>,
+}
+
+impl FigureTypedPayload {
+    pub fn validate(&self) -> Result<(), FigureAnalysisError> {
+        match self {
+            Self::Chart(chart) => {
+                if chart.chart_type.trim().is_empty() {
+                    return Err(FigureAnalysisError::Missing("chart_type"));
+                }
+                if chart.x_axis.label.trim().is_empty() {
+                    return Err(FigureAnalysisError::Missing("x_axis.label"));
+                }
+                if chart.y_axis.label.trim().is_empty() {
+                    return Err(FigureAnalysisError::Missing("y_axis.label"));
+                }
+                if chart
+                    .key_data_points
+                    .iter()
+                    .any(|p| p.label.trim().is_empty())
+                {
+                    return Err(FigureAnalysisError::Invalid(
+                        "key_data_points require a non-empty label".into(),
+                    ));
+                }
+            }
+            Self::Table(table) => {
+                if table.headers.is_empty() || table.headers.iter().any(|h| h.trim().is_empty()) {
+                    return Err(FigureAnalysisError::Invalid(
+                        "table headers must be non-empty".into(),
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FigureAnalysis {
     pub candidate_id: String,
@@ -456,6 +534,9 @@ pub struct FigureAnalysis {
     pub citations: Vec<FigureAnalysisCitation>,
     pub confidence: f32,
     pub provenance: FigureAnalysisProvenance,
+    /// Optional typed Stage-2 payload. When present, diagram components may be empty.
+    #[serde(default)]
+    pub typed_payload: Option<FigureTypedPayload>,
     pub authoritative: bool,
     pub import_eligible: bool,
 }
@@ -471,7 +552,10 @@ impl FigureAnalysis {
                 return Err(FigureAnalysisError::Missing(field));
             }
         }
-        if self.components.is_empty() {
+        if let Some(payload) = &self.typed_payload {
+            payload.validate()?;
+        }
+        if self.components.is_empty() && self.typed_payload.is_none() {
             return Err(FigureAnalysisError::Missing("components"));
         }
         if self.components.iter().any(|component| {
@@ -629,9 +713,89 @@ mod tests {
                 output_tokens: Some(30),
                 latency_ms: 500,
             },
+            typed_payload: None,
             authoritative: false,
             import_eligible: false,
         }
+    }
+
+    #[test]
+    fn chart_payload_allows_empty_components() {
+        let mut value = candidate();
+        value.visual_type = VisualAnalysisType::Plot;
+        value.components.clear();
+        value.relationships.clear();
+        value.provenance.schema_id = "chart_extraction".into();
+        value.provenance.stage1_visual_type = "plot".into();
+        value.typed_payload = Some(FigureTypedPayload::Chart(FigureChartPayload {
+            chart_type: "scatter".into(),
+            x_axis: FigureChartAxis {
+                label: "rollouts".into(),
+                unit: None,
+            },
+            y_axis: FigureChartAxis {
+                label: "accuracy".into(),
+                unit: Some("%".into()),
+            },
+            key_data_points: vec![FigureChartDataPoint {
+                label: "GEPA".into(),
+                x: Some("100".into()),
+                y: Some("0.9".into()),
+            }],
+            trend: None,
+        }));
+        value.validate().unwrap();
+        let decoded: FigureAnalysis =
+            serde_json::from_str(&serde_json::to_string(&value).unwrap()).unwrap();
+        assert_eq!(decoded, value);
+    }
+
+    #[test]
+    fn table_payload_allows_empty_components() {
+        let mut value = candidate();
+        value.visual_type = VisualAnalysisType::Table;
+        value.components.clear();
+        value.relationships.clear();
+        value.provenance.schema_id = "table_structure".into();
+        value.provenance.stage1_visual_type = "table".into();
+        value.typed_payload = Some(FigureTypedPayload::Table(FigureTablePayload {
+            headers: vec!["method".into(), "f1".into()],
+            rows: vec![vec!["GEPA".into(), "0.87".into()]],
+        }));
+        value.validate().unwrap();
+    }
+
+    #[test]
+    fn diagram_without_components_or_payload_still_fails() {
+        let mut value = candidate();
+        value.components.clear();
+        assert_eq!(
+            value.validate(),
+            Err(FigureAnalysisError::Missing("components"))
+        );
+    }
+
+    #[test]
+    fn chart_payload_requires_axis_labels() {
+        let mut value = candidate();
+        value.components.clear();
+        value.typed_payload = Some(FigureTypedPayload::Chart(FigureChartPayload {
+            chart_type: "bar".into(),
+            x_axis: FigureChartAxis {
+                label: "".into(),
+                unit: None,
+            },
+            y_axis: FigureChartAxis {
+                label: "score".into(),
+                unit: None,
+            },
+            key_data_points: vec![],
+            trend: None,
+        }));
+        assert_eq!(
+            value.validate(),
+            Err(FigureAnalysisError::Missing("x_axis.label"))
+        );
     }
 
     #[test]
