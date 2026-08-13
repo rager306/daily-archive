@@ -38,10 +38,15 @@ Scientific figure understanding — извлечение и семантичес
 4. **Vision route** — `cx/gpt-5.6-luna` (figure-qa-luna) stable JSON via 9router; multimodal `enable_thinking: false` + JSON extract
 5. **Honest eval claims** — universal claim extraction; summary metrics offline 10000 coverage/grounding (S07)
 
+**Сделано дополнительно (M389):**
+1. Stage cache configuration_fingerprint binds `schema_registry` + `schema_id` + schema sha
+2. Provenance carries `schema_id` and `stage1_visual_type` on every candidate
+3. Chart/table draft honesty: typed fields surface into findings (`chart_type=`, `key_data_points=`, `table_headers=`)
+
 **Ещё пробелы:**
-1. Domain `FigureAnalysis` still diagram-shaped (chart drafts synthesize components)
+1. Domain `FigureAnalysis` still diagram-shaped (chart drafts synthesize components) — full chart-native candidate type later
 2. Compound figure decomposition
-3. Stage cache fingerprint still uses default diagram schema sha (not per-call schema_id)
+3. Stage cache uses default diagram selection as fence (not per-call Stage1 type in stage contract — live analyze still selects per-type)
 4. Docling sidecar rejected for product (D237); pure-Rust chart-to-table not full numeric domain yet
 5. CharXiv-style figure task suite not built
 

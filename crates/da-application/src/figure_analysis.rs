@@ -235,7 +235,7 @@ fn map_structured_to_draft(
         .unwrap_or("")
         .to_string();
 
-    let findings = object
+    let mut findings = object
         .get("findings")
         .and_then(|v| v.as_array())
         .map(|arr| {
@@ -244,6 +244,9 @@ fn map_structured_to_draft(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+
+    // Chart honesty: surface typed draft fields into findings without inventing graph truth.
+    enrich_findings_from_typed_draft(object, &visual_type, &mut findings);
 
     let citations: Vec<FigureAnalysisCitation> = object
         .get("citations")
@@ -306,6 +309,52 @@ fn map_structured_to_draft(
         citations,
         confidence,
     })
+}
+
+fn enrich_findings_from_typed_draft(
+    object: &serde_json::Map<String, serde_json::Value>,
+    visual_type: &VisualAnalysisType,
+    findings: &mut Vec<String>,
+) {
+    match visual_type {
+        VisualAnalysisType::Plot => {
+            if let Some(chart_type) = object.get("chart_type").and_then(|v| v.as_str()) {
+                let tag = format!("chart_type={chart_type}");
+                if !findings.iter().any(|f| f == &tag) {
+                    findings.insert(0, tag);
+                }
+            }
+            if let Some(points) = object.get("key_data_points").and_then(|v| v.as_array()) {
+                let labels: Vec<&str> = points
+                    .iter()
+                    .filter_map(|p| p.get("label").and_then(|x| x.as_str()))
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !labels.is_empty() {
+                    let tag = format!("key_data_points={}", labels.join(","));
+                    if !findings.iter().any(|f| f.starts_with("key_data_points=")) {
+                        findings.insert(1.min(findings.len()), tag);
+                    }
+                }
+            }
+        }
+        VisualAnalysisType::Table => {
+            if let Some(headers) = object.get("headers").and_then(|v| v.as_array()) {
+                let names: Vec<&str> = headers
+                    .iter()
+                    .filter_map(|h| h.as_str())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !names.is_empty() {
+                    let tag = format!("table_headers={}", names.join(","));
+                    if !findings.iter().any(|f| f.starts_with("table_headers=")) {
+                        findings.insert(0, tag);
+                    }
+                }
+            }
+        }
+        _ => {}
+    }
 }
 
 fn synthesize_component(
@@ -630,6 +679,21 @@ mod tests {
             .unwrap();
         assert_eq!(analysis.visual_type, VisualAnalysisType::Plot);
         assert!(!analysis.components.is_empty());
+        assert!(
+            analysis.findings.iter().any(|f| f == "chart_type=scatter"),
+            "chart_type must surface in findings: {:?}",
+            analysis.findings
+        );
+        assert!(
+            analysis
+                .findings
+                .iter()
+                .any(|f| f.starts_with("key_data_points=") && f.contains("GEPA")),
+            "key_data_points labels must surface: {:?}",
+            analysis.findings
+        );
+        assert_eq!(analysis.provenance.schema_id, "chart_extraction");
+        assert_eq!(analysis.provenance.stage1_visual_type, "plot");
         assert_eq!(
             fake.last_schema_id_hint.lock().unwrap().as_deref(),
             Some("chart_extraction")

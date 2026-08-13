@@ -1,5 +1,11 @@
 # Changelog
 
+### M389 S03 chart draft findings honesty
+
+- `map_structured_to_draft` surfaces `chart_type=` and `key_data_points=` into findings
+  for Plot drafts; `table_headers=` for Table drafts. No graph import; no invented numbers.
+- Plot unit test asserts findings + provenance schema_id=chart_extraction.
+
 ### M389 S02 provenance schema_id and stage1_visual_type
 
 - `FigureAnalysisProvenance` adds required `schema_id` and `stage1_visual_type`
