@@ -357,10 +357,11 @@ mod tests {
         for expected in &required {
             assert!(claims.contains(expected), "missing claim: {expected}");
         }
-        assert!(claims.contains("method=GEPA"));
-        assert!(claims.contains("metric=accuracy:92%"));
-        assert!(claims.contains("dataset=AIME-2025"));
-        assert!(claims.contains("term=GRPO"));
+        // Free structured labels are not claims unless listed as required_facts.
+        assert!(!claims.contains("method=GEPA"));
+        assert!(!claims.contains("metric=accuracy:92%"));
+        assert!(!claims.contains("dataset=AIME-2025"));
+        assert!(!claims.contains("term=GRPO"));
     }
 
     #[test]

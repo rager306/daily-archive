@@ -1,5 +1,16 @@
 # Changelog
 
+### M388 S07 summary claim purity and soft match (honest metrics)
+
+- `extract_claims_from_output`: soft ordered-token match (stopword-aware) for required
+  fact payloads; free structured method/metric/dataset/term claims no longer dilute
+  grounding (only emitted if already a required_fact).
+- DATA prompt: article_summary system_template asks for near-verbatim metric/method phrasing.
+- Offline re-score frozen M387 inference: summary coverage **9230→10000**, grounding
+  **2926→10000**, gap **1429→0**; figure coverage **4545→6363**. Still eligible=false,
+  optimizer=false, import_eligible=false (D127).
+- Tests: 9 prompt_evaluation + 3 example tests green.
+
 ### M388 S06 governor planning projection preferred_active
 
 - When STATE Active Milestone is not in ROADMAP active set, diagnostic now includes

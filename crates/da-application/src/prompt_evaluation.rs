@@ -281,8 +281,10 @@ fn digest_fixtures(
 ///
 /// Strategy:
 /// 1. Collect all string leaves into a prose bag (universal for summary + figure schemas).
-/// 2. Emit structured claims from known array shapes (methods/metrics/datasets/glossary).
-/// 3. Project `required_facts` whose normalized payload appears as a substring of prose.
+/// 2. Project `required_facts` when the payload matches prose (substring or ordered
+///    significant-token match after stopword strip).
+/// 3. Structured method/metric/dataset/term fields contribute only when the exact
+///    claim string is already a required_fact (prevents grounding dilution).
 /// 4. Never emit a required fact that also appears in `forbidden_facts`.
 ///
 /// This is oracle-aware matching of facts present in output text — not free invent of labels.
@@ -294,7 +296,15 @@ pub fn extract_claims_from_output(
     let mut claims = BTreeSet::new();
     let mut prose = String::new();
     collect_prose(output, &mut prose);
-    collect_structured_claims(output, &mut claims);
+
+    // Structured arrays may only reinforce required facts — never inject free labels.
+    let mut structured = BTreeSet::new();
+    collect_structured_claims(output, &mut structured);
+    for claim in structured {
+        if required_facts.contains(&claim) && !forbidden_facts.contains(&claim) {
+            claims.insert(claim);
+        }
+    }
 
     let prose_norm = normalize_match_text(&prose);
     for fact in required_facts {
@@ -405,7 +415,12 @@ fn fact_matches_prose(fact: &str, prose_norm: &str) -> bool {
     if payload_norm.is_empty() {
         return false;
     }
-    prose_norm.contains(&payload_norm)
+    if prose_norm.contains(&payload_norm) {
+        return true;
+    }
+    // Soft match: significant tokens of the payload appear in order in prose.
+    // Handles minor stopword/phrasing drift without paper-specific keyword maps.
+    ordered_token_match(&payload_norm, prose_norm)
 }
 
 /// Prefer the RHS of `key=value` facts; otherwise match the whole fact string.
@@ -417,6 +432,52 @@ fn fact_match_payload(fact: &str) -> String {
         return value.to_string();
     }
     fact.to_string()
+}
+
+fn is_match_stopword(token: &str) -> bool {
+    matches!(
+        token,
+        "a" | "an"
+            | "and"
+            | "as"
+            | "at"
+            | "by"
+            | "for"
+            | "from"
+            | "in"
+            | "of"
+            | "on"
+            | "or"
+            | "the"
+            | "to"
+            | "up"
+            | "with"
+    )
+}
+
+fn significant_tokens(norm: &str) -> Vec<&str> {
+    norm.split_whitespace()
+        .filter(|t| !t.is_empty() && !is_match_stopword(t))
+        .collect()
+}
+
+fn ordered_token_match(payload_norm: &str, prose_norm: &str) -> bool {
+    let tokens = significant_tokens(payload_norm);
+    if tokens.is_empty() {
+        return false;
+    }
+    // Require at least one contentful token longer than 1 char (avoid bare "b" alone).
+    if tokens.iter().all(|t| t.len() <= 1) {
+        return false;
+    }
+    let prose_tokens: Vec<&str> = prose_norm.split_whitespace().collect();
+    let mut i = 0usize;
+    for pt in prose_tokens {
+        if i < tokens.len() && pt == tokens[i] {
+            i += 1;
+        }
+    }
+    i == tokens.len()
 }
 
 #[cfg(test)]
@@ -561,7 +622,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_claims_keeps_structured_summary_arrays() {
+    fn extract_claims_projects_summary_required_facts_and_soft_efficiency() {
         let required = BTreeSet::from([
             "method=GEPA (Genetic-Pareto)".into(),
             "method_type=prompt optimizer".into(),
@@ -571,11 +632,12 @@ mod tests {
             "efficiency=up to 35x fewer rollouts".into(),
         ]);
         let forbidden = BTreeSet::new();
+        // Soft match: prose omits "up to" but keeps significant tokens 35x/fewer/rollouts.
         let output = serde_json::json!({
-            "abstract_summary": "GEPA (Genetic-Pareto) is a prompt optimizer that uses natural language reflection. GEPA outperforms GRPO by 6% on average using up to 35x fewer rollouts.",
+            "abstract_summary": "GEPA (Genetic-Pareto) is a prompt optimizer that uses natural language reflection. GEPA outperforms GRPO by 6% on average using 35x fewer rollouts.",
             "key_contributions": ["Introduction of GEPA, a prompt optimizer"],
             "quantitative_results": "GEPA outperforms GRPO by 6% on average.",
-            "methods": [{"name": "GEPA"}],
+            "methods": [{"name": "Trajectory Sampling"}],
             "metrics": [{"name": "accuracy", "value": "92%"}],
             "datasets": [{"name": "AIME-2025"}],
             "glossary": [{"term": "GRPO"}]
@@ -584,10 +646,35 @@ mod tests {
         for fact in &required {
             assert!(claims.contains(fact), "missing required fact: {fact}");
         }
+        // Free structured labels must not dilute the claim set.
+        assert!(!claims.contains("method=Trajectory Sampling"));
+        assert!(!claims.contains("metric=accuracy:92%"));
+        assert!(!claims.contains("dataset=AIME-2025"));
+    }
+
+    #[test]
+    fn extract_claims_structured_only_when_required() {
+        let required = BTreeSet::from(["method=GEPA".into(), "term=GRPO".into()]);
+        let output = serde_json::json!({
+            "abstract_summary": "unrelated prose",
+            "methods": [{"name": "GEPA"}],
+            "glossary": [{"term": "GRPO"}],
+            "datasets": [{"name": "AIME-2025"}]
+        });
+        let claims = extract_claims_from_output(&output, &required, &BTreeSet::new());
         assert!(claims.contains("method=GEPA"));
-        assert!(claims.contains("metric=accuracy:92%"));
-        assert!(claims.contains("dataset=AIME-2025"));
         assert!(claims.contains("term=GRPO"));
+        assert!(!claims.contains("dataset=AIME-2025"));
+    }
+
+    #[test]
+    fn extract_claims_soft_matches_budget_token_order() {
+        let required = BTreeSet::from(["budget=total rollout budget B".into()]);
+        let output = serde_json::json!({
+            "abstract_summary": "Optimization stops when the total rollout budget B is exhausted."
+        });
+        let claims = extract_claims_from_output(&output, &required, &BTreeSet::new());
+        assert!(claims.contains("budget=total rollout budget B"));
     }
 
     #[test]

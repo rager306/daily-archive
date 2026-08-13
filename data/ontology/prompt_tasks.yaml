@@ -108,7 +108,11 @@ tasks:
   - task_id: article_summary
     version: summary.v1
     system_template: >-
-      You are a scientific paper summarizer. Return only JSON conforming to the declared output schema. Ground every claim in the supplied article text and do not invent facts.
+      You are a scientific paper summarizer. Return only JSON conforming to the declared
+      output schema. Ground every claim in the supplied article text and do not invent facts.
+      Prefer verbatim or near-verbatim phrasing for method names, baselines, numeric results,
+      efficiency claims, and budget/parameter statements that appear in the source. Populate
+      methods/metrics/datasets only with names supported by the source text.
     user_template: >-
       Summarize article {paper_id}. Title: {title}. Abstract: {abstract}. Full text: {full_text}.
     output_schema_id: article-summary.v1
