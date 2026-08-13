@@ -1,5 +1,14 @@
 # Changelog
 
+### M388 S04 pdf-inspector product triage policy (typed status)
+
+- Added DATA `data/ontology/pdf_triage_policy.yaml` (fail_open, feature_gate,
+  encoding_issues_block_grobid=false, import_eligible=false).
+- Domain `PdfTriagePolicy` + `PdfTriageStatus` {NotConfigured, Classified, FailedOpen}.
+- `IngestResult.pdf_triage` always set; classify failures record FailedOpen under
+  fail_open policy; feature gate unchanged (`--features pdf-classifier`).
+- Tests: domain policy + pdf_classifier_test triage status; authority under tests/.
+
 ### M388 S03 per-type figure schemas (ADR-060 Stage2 seam)
 
 - Added DATA-driven `data/ontology/figure_schemas.yaml` with schemas:

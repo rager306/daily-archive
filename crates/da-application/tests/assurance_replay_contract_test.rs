@@ -59,6 +59,7 @@ fn ingest() -> da_application::ingest::IngestResult {
         revision_vid: None,
         import_eligible: false,
         pdf_classification: None,
+        pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
     }
 }
 

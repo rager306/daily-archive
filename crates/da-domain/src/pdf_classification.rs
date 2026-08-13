@@ -3,8 +3,65 @@
 //! Result of pre-GROBID PDF inspection via pdf-inspector.
 //! Identifies scanned pages, garbled fonts, and vector-text pages
 //! so the ingest pipeline can route appropriately.
+//!
+//! Product triage policy is DATA-driven (`pdf_triage_policy.yaml`, M388 S04).
 
 use serde::{Deserialize, Serialize};
+
+const BUNDLED_PDF_TRIAGE_POLICY: &str =
+    include_str!("../../../data/ontology/pdf_triage_policy.yaml");
+
+/// Typed pre-GROBID triage outcome for operators and assurance (M388 S04).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum PdfTriageStatus {
+    /// No classifier injected (default CLI build without feature).
+    #[default]
+    NotConfigured,
+    /// Classifier ran and produced PdfClassification.
+    Classified,
+    /// Classifier/read failed; policy fail_open continued to GROBID.
+    FailedOpen,
+}
+
+/// DATA-driven PDF triage policy (bundled YAML).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PdfTriagePolicy {
+    pub schema_version: String,
+    pub import_eligible: bool,
+    pub fail_open: bool,
+    pub record_in_ingest_result: bool,
+    pub feature_gate: String,
+    pub encoding_issues_block_grobid: bool,
+}
+
+impl PdfTriagePolicy {
+    pub fn bundled() -> Result<Self, String> {
+        Self::from_yaml(BUNDLED_PDF_TRIAGE_POLICY)
+    }
+
+    pub fn from_yaml(yaml: &str) -> Result<Self, String> {
+        let policy: Self = serde_yaml::from_str(yaml).map_err(|e| e.to_string())?;
+        policy.validate()?;
+        Ok(policy)
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if self.schema_version != "pdf-triage-policy.v1" {
+            return Err(format!(
+                "unsupported pdf triage policy schema: {}",
+                self.schema_version
+            ));
+        }
+        if self.import_eligible {
+            return Err("pdf triage policy must keep import_eligible=false".into());
+        }
+        if self.feature_gate.trim().is_empty() {
+            return Err("feature_gate must be non-empty".into());
+        }
+        Ok(())
+    }
+}
 
 /// OCR reason identifiers (match pdf-inspector constants).
 pub const OCR_REASON_SCANNED: &str = "scanned";
@@ -224,5 +281,21 @@ mod tests {
         let back: PdfClassification = serde_json::from_str(&json).unwrap();
         let json2 = serde_json::to_string(&back).unwrap();
         assert_eq!(json, json2);
+    }
+
+    #[test]
+    fn bundled_pdf_triage_policy_loads_fail_open() {
+        let p = PdfTriagePolicy::bundled().expect("bundled policy");
+        assert_eq!(p.schema_version, "pdf-triage-policy.v1");
+        assert!(p.fail_open);
+        assert!(p.record_in_ingest_result);
+        assert!(!p.import_eligible);
+        assert!(!p.encoding_issues_block_grobid);
+        assert_eq!(p.feature_gate, "pdf-classifier");
+    }
+
+    #[test]
+    fn pdf_triage_status_default_is_not_configured() {
+        assert_eq!(PdfTriageStatus::default(), PdfTriageStatus::NotConfigured);
     }
 }

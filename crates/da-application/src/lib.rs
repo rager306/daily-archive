@@ -158,6 +158,7 @@ mod serde_roundtrip_tests {
             revision_vid: None,
             import_eligible: false,
             pdf_classification: None,
+            pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
         });
         // M350: with classification attached
         roundtrip_json(&IngestResult {
@@ -181,6 +182,7 @@ mod serde_roundtrip_tests {
                 confidence: 1.0,
                 has_encoding_issues: true,
             }),
+            pdf_triage: da_domain::PdfTriageStatus::Classified,
         });
     }
 

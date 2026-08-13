@@ -92,6 +92,7 @@ async fn main() -> anyhow::Result<()> {
                 None,
                 Some("arxiv".into()),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 Some(&context),
             )
             .await
@@ -189,6 +190,7 @@ async fn main() -> anyhow::Result<()> {
                 None,
                 Some("arxiv".into()),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 Some(context),
             )
             .await

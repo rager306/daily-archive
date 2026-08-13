@@ -715,6 +715,7 @@ mod tests {
                 None,
                 Some("arxiv".into()),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 Some(&c1),
             )
             .await
@@ -728,6 +729,7 @@ mod tests {
                 None,
                 Some("arxiv".into()),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 Some(&c5),
             )
             .await
@@ -774,6 +776,7 @@ mod tests {
                 None,
                 Some("arxiv".into()),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 Some(&context),
             )
             .await

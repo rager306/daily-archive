@@ -9,7 +9,7 @@ use anyhow::Context;
 use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
-use da_domain::{ImportEligibility, PdfClassification};
+use da_domain::{ImportEligibility, PdfClassification, PdfTriagePolicy, PdfTriageStatus};
 use da_ports::PdfClassificationPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
@@ -53,6 +53,9 @@ pub struct IngestResult {
     /// Pre-GROBID PDF triage when classifier was attached and succeeded (M350).
     /// `None` if no classifier, classify failed, or PDF unreadable for classify.
     pub pdf_classification: Option<PdfClassification>,
+    /// Typed triage outcome (M388 S04). Always set; default NotConfigured.
+    #[serde(default)]
+    pub pdf_triage: PdfTriageStatus,
 }
 
 impl IngestUseCase {
@@ -168,8 +171,17 @@ impl IngestUseCase {
             "Source detected"
         );
 
-        // M347/M350: Pre-GROBID PDF classification (optional); keep for IngestResult.
+        // M347/M350/M388: Pre-GROBID PDF classification (optional); typed triage status.
+        let triage_policy = PdfTriagePolicy::bundled().unwrap_or(PdfTriagePolicy {
+            schema_version: "pdf-triage-policy.v1".into(),
+            import_eligible: false,
+            fail_open: true,
+            record_in_ingest_result: true,
+            feature_gate: "pdf-classifier".into(),
+            encoding_issues_block_grobid: false,
+        });
         let mut pdf_classification: Option<PdfClassification> = None;
+        let mut pdf_triage = PdfTriageStatus::NotConfigured;
         if let Some(classifier) = &self.pdf_classifier {
             match std::fs::read(pdf_path) {
                 Ok(pdf_bytes) => match classifier.classify(&pdf_bytes).await {
@@ -181,6 +193,7 @@ impl IngestUseCase {
                             pages_needing_ocr = classification.pages_needing_ocr.len(),
                             has_encoding_issues = classification.has_encoding_issues,
                             confidence = classification.confidence,
+                            pdf_triage = "classified",
                             "PDF classified (pre-GROBID)"
                         );
                         if !classification.is_text_extractable() {
@@ -192,13 +205,28 @@ impl IngestUseCase {
                             );
                         }
                         pdf_classification = Some(classification);
+                        pdf_triage = PdfTriageStatus::Classified;
                     }
                     Err(e) => {
-                        tracing::warn!(paper_id, error = %e, "PDF classification failed; continuing to GROBID");
+                        if triage_policy.fail_open {
+                            tracing::warn!(paper_id, error = %e, pdf_triage = "failed_open", "PDF classification failed; continuing to GROBID");
+                            pdf_triage = PdfTriageStatus::FailedOpen;
+                        } else {
+                            return Err(anyhow::anyhow!(
+                                "PDF classification failed and fail_open=false: {e}"
+                            ));
+                        }
                     }
                 },
                 Err(e) => {
-                    tracing::warn!(paper_id, error = %e, "Cannot read PDF for classification; continuing to GROBID");
+                    if triage_policy.fail_open {
+                        tracing::warn!(paper_id, error = %e, pdf_triage = "failed_open", "Cannot read PDF for classification; continuing to GROBID");
+                        pdf_triage = PdfTriageStatus::FailedOpen;
+                    } else {
+                        return Err(anyhow::anyhow!(
+                            "Cannot read PDF for classification and fail_open=false: {e}"
+                        ));
+                    }
                 }
             }
         }
@@ -229,12 +257,13 @@ impl IngestUseCase {
             .context("ingest_pdf unavailable on materializer-only IngestUseCase")?;
         let vector = embedder.embed(embed_text).await?;
         tracing::info!(paper_id, dimensions = vector.len(), "Embedded");
-        self.materialize_parsed(
+        self.materialize_parsed_with_triage(
             &parsed,
             vector,
             primary_domain,
             source_code,
             pdf_classification,
+            pdf_triage,
         )
         .await
     }
@@ -251,12 +280,38 @@ impl IngestUseCase {
         source_code: Option<String>,
         pdf_classification: Option<PdfClassification>,
     ) -> anyhow::Result<IngestResult> {
+        let pdf_triage = if pdf_classification.is_some() {
+            PdfTriageStatus::Classified
+        } else {
+            PdfTriageStatus::NotConfigured
+        };
+        self.materialize_parsed_with_triage(
+            parsed,
+            vector,
+            primary_domain,
+            source_code,
+            pdf_classification,
+            pdf_triage,
+        )
+        .await
+    }
+
+    pub async fn materialize_parsed_with_triage(
+        &self,
+        parsed: &da_ports::parser::ParsedArticle,
+        vector: Vec<f32>,
+        primary_domain: Option<String>,
+        source_code: Option<String>,
+        pdf_classification: Option<PdfClassification>,
+        pdf_triage: PdfTriageStatus,
+    ) -> anyhow::Result<IngestResult> {
         self.materialize_parsed_with_context(
             parsed,
             vector,
             primary_domain,
             source_code,
             pdf_classification,
+            pdf_triage,
             None,
         )
         .await
@@ -265,6 +320,7 @@ impl IngestUseCase {
     /// Revision-aware materialization boundary. When context is present,
     /// mutable content properties, embeddings, and Sections belong to the
     /// immutable PaperRevision rather than the canonical Paper work.
+    #[allow(clippy::too_many_arguments)] // boundary keeps explicit typed args (pdf_triage M388)
     pub async fn materialize_parsed_with_context(
         &self,
         parsed: &da_ports::parser::ParsedArticle,
@@ -272,6 +328,7 @@ impl IngestUseCase {
         primary_domain: Option<String>,
         source_code: Option<String>,
         pdf_classification: Option<PdfClassification>,
+        pdf_triage: PdfTriageStatus,
         revision_context: Option<&crate::revision_materialization::RevisionContentContext>,
     ) -> anyhow::Result<IngestResult> {
         let paper_id = parsed.paper_id.as_str();
@@ -885,6 +942,7 @@ impl IngestUseCase {
             revision_vid: revision_vid_value,
             import_eligible: eligible,
             pdf_classification,
+            pdf_triage,
         })
     }
 

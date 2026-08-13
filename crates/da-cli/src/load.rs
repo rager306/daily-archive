@@ -171,6 +171,7 @@ impl LoadContentPipeline for CliContentPipeline {
                 None,
                 source_code,
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
                 revision_context.as_ref(),
             )
             .await
