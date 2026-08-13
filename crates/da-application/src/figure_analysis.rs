@@ -1,9 +1,12 @@
 //! Grounded figure-analysis use case over a provider-neutral multimodal port.
+//! Stage1 classify + Stage2 DATA schema selection (ADR-060, M388 S05).
 
+use crate::figure_classify::{FigureClassifyError, FigureClassifyUseCase};
+use crate::figure_schema::{FigureSchemaError, FigureSchemaService};
 use da_domain::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
-    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureSemanticContext,
-    VisualAnalysisType,
+    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureSchemaSelection,
+    FigureSemanticContext, FigureTypeClassification, VisualAnalysisType,
 };
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort, MultimodalLlmRequest,
@@ -18,75 +21,43 @@ pub const FIGURE_ANALYSIS_SCHEMA_VERSION: &str = "FigureAnalysisDraft@v1";
 
 pub struct FigureAnalysisUseCase {
     model: Arc<dyn MultimodalLlmPort>,
+    classifier: FigureClassifyUseCase,
+    schemas: FigureSchemaService,
 }
 
 impl FigureAnalysisUseCase {
     pub fn new(model: Arc<dyn MultimodalLlmPort>) -> Self {
-        Self { model }
+        Self {
+            model,
+            classifier: FigureClassifyUseCase::bundled().expect("bundled figure type labels"),
+            schemas: FigureSchemaService::bundled().expect("bundled figure schemas"),
+        }
+    }
+
+    pub fn with_routing(
+        model: Arc<dyn MultimodalLlmPort>,
+        classifier: FigureClassifyUseCase,
+        schemas: FigureSchemaService,
+    ) -> Self {
+        Self {
+            model,
+            classifier,
+            schemas,
+        }
     }
 
     pub fn prompt_sha256() -> String {
         sha256(Self::system_prompt().as_bytes())
     }
 
+    /// Default Stage-2 schema JSON (diagram/flowchart) for stage cache fingerprints.
+    /// Live `analyze` selects per-type DATA schema via Stage1.
     pub fn output_schema() -> serde_json::Value {
-        serde_json::json!({
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "visual_type": {"type": "string", "enum": ["flowchart", "plot", "diagram", "table", "screenshot", "photograph", "other"]},
-                "description": {"type": "string"},
-                "components": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "name": {"type": "string"},
-                            "role": {"type": "string"},
-                            "visual_evidence": {"type": "string"}
-                        },
-                        "required": ["name", "role", "visual_evidence"]
-                    },
-                    "minItems": 1
-                },
-                "relationships": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "source_component": {"type": "string"},
-                            "relation": {"type": "string"},
-                            "target_component": {"type": "string"}
-                        },
-                        "required": ["source_component", "relation", "target_component"]
-                    }
-                },
-                "findings": {"type": "array", "items": {"type": "string"}},
-                "citations": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "section_id": {"type": "string"},
-                            "path_id": {"type": "string"},
-                            "quote": {"type": "string", "maxLength": 160}
-                        },
-                        "required": ["section_id", "path_id", "quote"]
-                    },
-                    "minItems": 1
-                },
-                "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0}
-            },
-            "required": ["visual_type", "description", "components", "relationships", "findings", "citations", "confidence"],
-            "x-output-guidance": {
-                "visual_type": "Return exactly one enum string, never an array.",
-                "citations": "Return at least one object with a verbatim quote copied from supplied context, max 160 characters.",
-                "relationships": "source_component and target_component must exactly copy a declared components[].name string. Omit a relationship if either endpoint is uncertain."
-            }
-        })
+        FigureSchemaService::bundled()
+            .expect("bundled figure schemas")
+            .select_for_type(VisualAnalysisType::Flowchart)
+            .expect("diagram schema")
+            .json_schema
     }
 
     pub fn output_schema_sha256() -> String {
@@ -94,6 +65,16 @@ impl FigureAnalysisUseCase {
             &serde_json::to_vec(&Self::output_schema())
                 .expect("static figure analysis schema serializes"),
         )
+    }
+
+    /// Stage1 classify + Stage2 DATA schema selection (no VLM).
+    pub fn plan_schema(
+        &self,
+        context: &FigureSemanticContext,
+    ) -> Result<(FigureTypeClassification, FigureSchemaSelection), FigureAnalysisUseCaseError> {
+        let classification = self.classifier.classify(context)?;
+        let selection = self.schemas.select_for_classification(&classification)?;
+        Ok((classification, selection))
     }
 
     pub async fn analyze(
@@ -116,10 +97,14 @@ impl FigureAnalysisUseCase {
                 route.route_id
             )));
         }
+        let (classification, selection) = self.plan_schema(context)?;
+        let selected_schema_sha = selection.schema_sha256_hex()?;
         let context_bytes = serde_json::to_vec(context)?;
         let context_sha256 = sha256(&context_bytes);
         let user_context = format!(
-            "Analyze the attached scientific visual using only the grounded context below. Every citation quote MUST be a verbatim substring copied from the supplied section or reference excerpt, at most 160 characters, with its existing section_id and path_id. Never reconstruct or extend a quote from prior knowledge.\n\n{}",
+            "Analyze the attached scientific visual using only the grounded context below. Stage-1 type hint: {} (schema_id={}). Every citation quote MUST be a verbatim substring copied from the supplied section or reference excerpt, at most 160 characters, with its existing section_id and path_id. Never reconstruct or extend a quote from prior knowledge.\n\n{}",
+            classification.visual_type.as_wire(),
+            selection.schema_id,
             serde_json::to_string_pretty(context)?
         );
         let response = self
@@ -128,7 +113,7 @@ impl FigureAnalysisUseCase {
                 system_prompt: Self::system_prompt().into(),
                 user_context,
                 image,
-                output_schema: Self::output_schema(),
+                output_schema: selection.json_schema.clone(),
                 tool_name: "record_figure_analysis".into(),
                 max_tokens: 4_096,
                 temperature: 0.0,
@@ -148,14 +133,7 @@ impl FigureAnalysisUseCase {
             ));
         }
         let structured_output = response.structured_output;
-        let draft: FigureAnalysisDraft = serde_json::from_value(structured_output.clone())
-            .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
-                message: error.to_string(),
-                top_level_keys: structured_output
-                    .as_object()
-                    .map(|object| object.keys().cloned().collect())
-                    .unwrap_or_default(),
-            })?;
+        let draft = map_structured_to_draft(&structured_output, &classification)?;
         validate_citations(&draft.citations, context)?;
         let route = response.route;
         let candidate_id = format!(
@@ -163,13 +141,14 @@ impl FigureAnalysisUseCase {
             context.artifact_id,
             &sha256(
                 format!(
-                    "{}|{}|{}|{}|{}|{}",
+                    "{}|{}|{}|{}|{}|{}|{}",
                     context.asset_sha256,
                     context_sha256,
                     route.route_id,
                     route.model,
                     response.resolved_model,
-                    Self::output_schema_sha256()
+                    selection.schema_id,
+                    selected_schema_sha
                 )
                 .as_bytes()
             )[..16]
@@ -192,7 +171,12 @@ impl FigureAnalysisUseCase {
                 requested_model: route.model,
                 resolved_model: response.resolved_model,
                 prompt_sha256: Self::prompt_sha256(),
-                output_schema_sha256: prompt_lineage.output_schema_sha256.as_str().into(),
+                // Prefer DATA schema digest; fall back to lineage if empty.
+                output_schema_sha256: if selected_schema_sha.len() == 64 {
+                    selected_schema_sha
+                } else {
+                    prompt_lineage.output_schema_sha256.as_str().into()
+                },
                 prompt_task_sha256: prompt_lineage.task_spec_sha256.as_str().into(),
                 route_policy_sha256: prompt_lineage.route_policy_sha256.as_str().into(),
                 model_binding_sha256: prompt_lineage.model_binding_sha256.as_str().into(),
@@ -210,7 +194,7 @@ impl FigureAnalysisUseCase {
     }
 
     fn system_prompt() -> &'static str {
-        "You analyze scientific figures as non-authoritative candidate evidence. Describe only visible structure and claims supported by the supplied context. Do not invent components. Every analysis must cite short verbatim substrings from the supplied context using existing section_id and path_id. Relationship source_component and target_component values must exactly copy declared component names; omit uncertain relationships."
+        "You analyze scientific figures as non-authoritative candidate evidence. Describe only visible structure and claims supported by the supplied context. Do not invent components. Every analysis must cite short verbatim substrings from the supplied context using existing section_id and path_id. Relationship source_component and target_component values must exactly copy declared component names; omit uncertain relationships. Follow the provided JSON schema for this visual type."
     }
 }
 
@@ -223,6 +207,136 @@ struct FigureAnalysisDraft {
     findings: Vec<String>,
     citations: Vec<FigureAnalysisCitation>,
     confidence: f32,
+}
+
+/// Map type-specific VLM JSON into the shared FigureAnalysis candidate shape.
+fn map_structured_to_draft(
+    value: &serde_json::Value,
+    classification: &FigureTypeClassification,
+) -> Result<FigureAnalysisDraft, FigureAnalysisUseCaseError> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| FigureAnalysisUseCaseError::StructuredOutput {
+            message: "expected object".into(),
+            top_level_keys: vec![],
+        })?;
+
+    let visual_type = object
+        .get("visual_type")
+        .and_then(|v| v.as_str())
+        .and_then(VisualAnalysisType::from_wire)
+        .unwrap_or_else(|| classification.visual_type.clone());
+
+    let description = object
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let findings = object
+        .get("findings")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    let citations: Vec<FigureAnalysisCitation> = object
+        .get("citations")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
+            message: format!("citations: {error}"),
+            top_level_keys: object.keys().cloned().collect(),
+        })?
+        .unwrap_or_default();
+
+    let confidence = object
+        .get("confidence")
+        .and_then(|v| v.as_f64())
+        .map(|f| f as f32)
+        .unwrap_or(classification.confidence);
+
+    let mut components: Vec<FigureAnalysisComponent> = object
+        .get("components")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
+            message: format!("components: {error}"),
+            top_level_keys: object.keys().cloned().collect(),
+        })?
+        .unwrap_or_default();
+
+    let relationships: Vec<FigureAnalysisRelationship> = object
+        .get("relationships")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+        .map_err(|error| FigureAnalysisUseCaseError::StructuredOutput {
+            message: format!("relationships: {error}"),
+            top_level_keys: object.keys().cloned().collect(),
+        })?
+        .unwrap_or_default();
+
+    // Chart / table / photo drafts may omit diagram components — synthesize one
+    // so domain FigureAnalysis (still diagram-shaped) validates.
+    if components.is_empty() {
+        components.push(synthesize_component(value, &visual_type, &description));
+    }
+
+    if description.trim().is_empty() {
+        return Err(FigureAnalysisUseCaseError::StructuredOutput {
+            message: "description missing".into(),
+            top_level_keys: object.keys().cloned().collect(),
+        });
+    }
+
+    Ok(FigureAnalysisDraft {
+        visual_type,
+        description,
+        components,
+        relationships,
+        findings,
+        citations,
+        confidence,
+    })
+}
+
+fn synthesize_component(
+    value: &serde_json::Value,
+    visual_type: &VisualAnalysisType,
+    description: &str,
+) -> FigureAnalysisComponent {
+    let name = match visual_type {
+        VisualAnalysisType::Plot => value
+            .get("chart_type")
+            .and_then(|v| v.as_str())
+            .map(|c| format!("chart:{c}"))
+            .unwrap_or_else(|| "chart".into()),
+        VisualAnalysisType::Table => "table".into(),
+        VisualAnalysisType::Photograph | VisualAnalysisType::Screenshot => value
+            .get("visible_objects")
+            .and_then(|v| v.as_array())
+            .and_then(|a| a.first())
+            .and_then(|v| v.as_str())
+            .unwrap_or("visual")
+            .to_string(),
+        _ => visual_type.as_wire().to_string(),
+    };
+    let evidence = description.chars().take(120).collect::<String>();
+    FigureAnalysisComponent {
+        name,
+        role: format!("stage2:{}", visual_type.as_wire()),
+        visual_evidence: if evidence.is_empty() {
+            visual_type.as_wire().into()
+        } else {
+            evidence
+        },
+    }
 }
 
 fn validate_citations(
@@ -291,6 +405,10 @@ pub enum FigureAnalysisUseCaseError {
     #[error(transparent)]
     Domain(#[from] FigureAnalysisError),
     #[error(transparent)]
+    Classify(#[from] FigureClassifyError),
+    #[error(transparent)]
+    Schema(#[from] FigureSchemaError),
+    #[error(transparent)]
     Model(#[from] MultimodalLlmError),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
@@ -320,6 +438,17 @@ mod tests {
     struct FakeModel {
         output: serde_json::Value,
         route: ModelRouteDescriptor,
+        last_schema_id_hint: std::sync::Mutex<Option<String>>,
+    }
+
+    impl FakeModel {
+        fn new(output: serde_json::Value, route: ModelRouteDescriptor) -> Self {
+            Self {
+                output,
+                route,
+                last_schema_id_hint: std::sync::Mutex::new(None),
+            }
+        }
     }
 
     #[async_trait]
@@ -330,8 +459,25 @@ mod tests {
 
         async fn complete_structured(
             &self,
-            _request: MultimodalLlmRequest,
+            request: MultimodalLlmRequest,
         ) -> MultimodalLlmResult<MultimodalLlmResponse> {
+            // Capture whether chart-oriented fields were requested (DATA schema).
+            let hint = if request
+                .output_schema
+                .pointer("/properties/key_data_points")
+                .is_some()
+            {
+                Some("chart_extraction".into())
+            } else if request
+                .output_schema
+                .pointer("/properties/components")
+                .is_some()
+            {
+                Some("diagram_analysis".into())
+            } else {
+                Some("other".into())
+            };
+            *self.last_schema_id_hint.lock().unwrap() = hint;
             Ok(MultimodalLlmResponse {
                 structured_output: self.output.clone(),
                 route: self.route.clone(),
@@ -440,34 +586,80 @@ mod tests {
 
     #[tokio::test]
     async fn grounded_candidate_keeps_route_and_authority_provenance() {
-        let analysis = FigureAnalysisUseCase::new(Arc::new(FakeModel {
-            output: output("mutates prompts"),
-            route: route(),
-        }))
-        .analyze(image(), &context())
-        .await
-        .unwrap();
+        let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
+        let analysis = FigureAnalysisUseCase::new(fake.clone())
+            .analyze(image(), &context())
+            .await
+            .unwrap();
         assert_eq!(analysis.visual_type, VisualAnalysisType::Flowchart);
         assert_eq!(analysis.provenance.route_id, "test-route");
         assert_eq!(analysis.provenance.resolved_model, "resolved-vision");
         assert!(!analysis.authoritative && !analysis.import_eligible);
+        assert_eq!(
+            fake.last_schema_id_hint.lock().unwrap().as_deref(),
+            Some("diagram_analysis")
+        );
+        // Provenance carries DATA schema digest (64 hex), not the fake lineage "schema" text.
+        assert_eq!(analysis.provenance.output_schema_sha256.len(), 64);
+    }
+
+    #[tokio::test]
+    async fn stage1_plot_caption_selects_chart_extraction_schema() {
+        let mut ctx = context();
+        ctx.caption =
+            "Figure 2: Performance comparison scatter plot of accuracy vs rollouts".into();
+        let chart_output = serde_json::json!({
+            "visual_type": "plot",
+            "chart_type": "scatter",
+            "description": "Accuracy vs rollouts scatter",
+            "x_axis": {"label": "rollouts"},
+            "y_axis": {"label": "accuracy"},
+            "key_data_points": [{"label": "GEPA", "x": "100", "y": "0.9"}],
+            "findings": ["GEPA dominates"],
+            "citations": [{"section_id":"sec-3","path_id":"3","quote":"mutates prompts"}],
+            "confidence": 0.8
+        });
+        let fake = Arc::new(FakeModel::new(chart_output, route()));
+        let analysis = FigureAnalysisUseCase::new(fake.clone())
+            .analyze(image(), &ctx)
+            .await
+            .unwrap();
+        assert_eq!(analysis.visual_type, VisualAnalysisType::Plot);
+        assert!(!analysis.components.is_empty());
+        assert_eq!(
+            fake.last_schema_id_hint.lock().unwrap().as_deref(),
+            Some("chart_extraction")
+        );
+        let (_, selection) = FigureAnalysisUseCase::new(fake).plan_schema(&ctx).unwrap();
+        assert_eq!(selection.schema_id, "chart_extraction");
+    }
+
+    #[tokio::test]
+    async fn plan_schema_flowchart_caption_selects_diagram_analysis() {
+        let uc = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+            output("mutates prompts"),
+            route(),
+        )));
+        let (class, selection) = uc.plan_schema(&context()).unwrap();
+        assert_eq!(class.visual_type, VisualAnalysisType::Flowchart);
+        assert_eq!(selection.schema_id, "diagram_analysis");
     }
 
     #[tokio::test]
     async fn requested_model_aliases_get_distinct_candidate_ids() {
-        let first = FigureAnalysisUseCase::new(Arc::new(FakeModel {
-            output: output("mutates prompts"),
-            route: route(),
-        }))
+        let first = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+            output("mutates prompts"),
+            route(),
+        )))
         .analyze(image(), &context())
         .await
         .unwrap();
         let mut aliased_route = route();
         aliased_route.model = "another-requested-alias".into();
-        let second = FigureAnalysisUseCase::new(Arc::new(FakeModel {
-            output: output("mutates prompts"),
-            route: aliased_route,
-        }))
+        let second = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+            output("mutates prompts"),
+            aliased_route,
+        )))
         .analyze(image(), &context())
         .await
         .unwrap();
@@ -480,10 +672,10 @@ mod tests {
 
     #[tokio::test]
     async fn ungrounded_quote_and_image_mismatch_are_rejected() {
-        let use_case = FigureAnalysisUseCase::new(Arc::new(FakeModel {
-            output: output("invented unsupported quote"),
-            route: route(),
-        }));
+        let use_case = FigureAnalysisUseCase::new(Arc::new(FakeModel::new(
+            output("invented unsupported quote"),
+            route(),
+        )));
         assert!(matches!(
             use_case.analyze(image(), &context()).await,
             Err(FigureAnalysisUseCaseError::Domain(

@@ -1,5 +1,15 @@
 # Changelog
 
+### M388 S05 wire Stage1+DATA schema into figure analyze path
+
+- Audit: `artifacts/m388/s05_hotpath_seam_audit.md` (hardcoded schema + unused Stage1/2).
+- `FigureAnalysisUseCase` now runs Stage1 classify + Stage2 `FigureSchemaService`
+  selection; multimodal request uses DATA `json_schema` (not hardcoded object).
+- Flexible draft map synthesizes components for chart/table/photo shapes so domain
+  `FigureAnalysis` still validates; citations remain grounded.
+- Tests: flowchart→diagram_analysis, plot→chart_extraction schema hints; 23 figure_* tests green.
+- D127 false; no live VLM re-run in this slice.
+
 ### M388 S04 pdf-inspector product triage policy (typed status)
 
 - Added DATA `data/ontology/pdf_triage_policy.yaml` (fail_open, feature_gate,
