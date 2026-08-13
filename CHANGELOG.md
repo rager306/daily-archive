@@ -1,5 +1,10 @@
 # Changelog
 
+### M391 S03 docs residual after photo payload
+
+- ADR-060 residual: photo/screenshot typed payload done; next compound panels + CharXiv suite.
+- GitNexus: reindex started after Photo symbols (prior analyze finished before S01).
+
 ### M391 S02 analyze maps photo and screenshot drafts to Photo payload
 
 - `typed_payload_from_draft` maps `visible_objects` + optional `scale_bar` for Photograph/Screenshot.

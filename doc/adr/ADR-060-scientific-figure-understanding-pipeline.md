@@ -47,12 +47,15 @@ Scientific figure understanding — извлечение и семантичес
 1. `FigureTypedPayload::{Chart,Table}` on the FigureAnalysis envelope — chart/table drafts no longer invent diagram components
 2. Analyze maps DATA schema fields (axes, key_data_points, headers/rows) into typed payload
 
+**Сделано дополнительно (M391):**
+1. `FigureTypedPayload::Photo` / `FigurePhotoPayload` / `FigureScaleBar`
+2. Photograph and screenshot drafts map `visible_objects` + optional scale_bar; no synthetic visual component
+
 **Ещё пробелы:**
-1. Photo/screenshot still synthesize a single visual component (no photo-native payload yet)
-2. Compound figure decomposition
-3. Stage cache uses default diagram selection as fence (live analyze still selects per-type)
-4. Pure-Rust chart-to-table quality / numeric domain not a full CharXiv suite
-5. CharXiv-style figure task suite (`data/figure_tasks/`) not built
+1. Compound figure decomposition (multi-panel)
+2. Stage cache uses default diagram selection as fence (live analyze still selects per-type)
+3. Pure-Rust chart-to-table quality / numeric domain not a full CharXiv suite
+4. CharXiv-style figure task suite (`data/figure_tasks/`) not built
 
 ## Decision
 
