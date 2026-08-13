@@ -1,7 +1,8 @@
 # ADR-060: Scientific Figure Understanding Pipeline
 
 ## Status
-Proposed (2026-08-12)
+Partially implemented (M388-mhds9q, 2026-08-13) — Stage1 heuristic + DATA schemas + analyze wiring.
+Remaining: compound panels, chart-native domain type (not synthetic components), stage-cache schema_id fingerprint, CharXiv-style eval suite.
 
 ## Context
 
@@ -30,13 +31,19 @@ Scientific figure understanding — извлечение и семантичес
 - OpenAI-compatible multimodal adapter с JSON extraction + canonical output bytes
 - Qwen3-VL binding (figure-qa-primary → novita/qwen3-vl-235b-a22b-instruct)
 
-**Не хватает (конкретные пробелы):**
-1. **Single-shot**: классификация и extraction совмещены в одном вызове
-2. **Нет per-type schema**: диаграммная schema (components/relationships) применяется к charts, где нужны axes/data-points
-3. **Нет chart-to-table**: для Plot/Chart типов нужен structured numeric extraction
-4. **Нет compound decomposition**: много-панельные фигуры не разбиваются
-5. **Нет Docling sidecar**: DocumentFigureClassifier + picture_description как второй источник кандидатов
-6. **Multimodal adapter**: 9router нестабильно форвардит `enable_thinking` для reasoning моделей
+**Сделано (M388 S02–S05):**
+1. **Stage1 heuristic classify** — `FigureTypeLabelTable` + `FigureClassifyUseCase` (DATA `figure_type_labels.yaml`)
+2. **Per-type DATA schemas** — `data/ontology/figure_schemas.yaml` + `FigureSchemaRegistry` / `FigureSchemaService`
+3. **Analyze wiring** — Stage1 → schema select → multimodal request uses DATA `json_schema` (no hardcoded diagram object)
+4. **Vision route** — `cx/gpt-5.6-luna` (figure-qa-luna) stable JSON via 9router; multimodal `enable_thinking: false` + JSON extract
+5. **Honest eval claims** — universal claim extraction; summary metrics offline 10000 coverage/grounding (S07)
+
+**Ещё пробелы:**
+1. Domain `FigureAnalysis` still diagram-shaped (chart drafts synthesize components)
+2. Compound figure decomposition
+3. Stage cache fingerprint still uses default diagram schema sha (not per-call schema_id)
+4. Docling sidecar rejected for product (D237); pure-Rust chart-to-table not full numeric domain yet
+5. CharXiv-style figure task suite not built
 
 ## Decision
 
@@ -157,8 +164,9 @@ Multimodal adapter должен корректно форвардить этот
 
 ## Implementation priority
 
-1. Stage 1 classifier (per-type routing)
-2. Chart-to-table schema + extraction (highest value — structured numeric data)
-3. Compound figure decomposition
-4. Docling sidecar (optional, Python→API bridge as GROBID)
-5. CharXiv-style evaluation suite (data/figure_tasks/)
+1. ~~Stage 1 classifier (per-type routing)~~ **done M388 (heuristic; VLM Stage1 optional later)**
+2. ~~Per-type schema registry + analyze selection~~ **done M388**
+3. Chart-native domain candidate type (replace synthetic components) + numeric chart-to-table quality
+4. Compound figure decomposition
+5. Stage cache fingerprint includes selected schema_id/sha
+6. CharXiv-style evaluation suite (`data/figure_tasks/`) — **not** Docling product sidecar (D237)

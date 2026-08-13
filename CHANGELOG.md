@@ -1,5 +1,12 @@
 # Changelog
 
+### M388 S08 docs closeout (ADR-060 partial)
+
+- ADR-060 Status → Partially implemented (M388): Stage1 heuristic, DATA schemas,
+  analyze wiring, luna route; residual gaps listed.
+- ADR-INDEX row updated. Handoff points to next wave (chart-native domain, STATE
+  projection, S07 residual eligible gates still hard).
+
 ### M388 S07 summary claim purity and soft match (honest metrics)
 
 - `extract_claims_from_output`: soft ordered-token match (stopword-aware) for required
