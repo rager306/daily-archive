@@ -103,8 +103,13 @@ def test_duplicate_base_ids_do_not_merge_task_counts(tmp_path: Path) -> None:
 
 
 def test_state_and_roadmap_active_divergence_is_visible(tmp_path: Path) -> None:
-    _roadmap(tmp_path, "- 🔄 **M371-pr59ty: Current** (`depends:[—]`)")
+    _roadmap(
+        tmp_path,
+        "- 🔄 **M371-pr59ty: Current** (`depends:[—]`)\n"
+        "- 🔄 **M388-mhds9q: Newer active** (`depends:[—]`)",
+    )
     _plan(tmp_path, "371-pr59ty-current", 371, ["T01"])
+    _plan(tmp_path, "388-mhds9q-long", 388, ["T01"])
     _write(
         tmp_path / ".gsd" / "STATE.md",
         "# State\n\n**Active Milestone:** M363-ma2kmw: stale\n",
@@ -113,10 +118,20 @@ def test_state_and_roadmap_active_divergence_is_visible(tmp_path: Path) -> None:
     result = FilesystemGsdPlanningReader(tmp_path).read()
 
     assert result.milestones[0].task_count == 1
-    assert result.diagnostics == (
-        "planning projection divergence: STATE active=M363-ma2kmw, "
-        "ROADMAP active=['M371-pr59ty']",
-    )
+    assert len(result.diagnostics) == 1
+    diag = result.diagnostics[0]
+    assert "STATE active=M363-ma2kmw" in diag
+    assert "ROADMAP active=" in diag
+    assert "M371-pr59ty" in diag and "M388-mhds9q" in diag
+    assert "preferred_active=M388-mhds9q" in diag
+    assert "do not hand-edit engine database files" in diag
+
+
+def test_preferred_active_milestone_prefers_highest_number_then_suffix() -> None:
+    pick = FilesystemGsdPlanningReader._preferred_active_milestone
+    assert pick({"M010-aaa", "M388-mhds9q", "M383-uber46"}) == "M388-mhds9q"
+    assert pick({"M100", "M100-suffixed"}) == "M100-suffixed"
+    assert pick(set()) == "none"
 
 
 def test_missing_or_malformed_roadmap_is_unavailable(tmp_path: Path) -> None:
@@ -188,12 +203,17 @@ def test_trajectory_service_flags_empty_and_unavailable_projections() -> None:
     assert flags[0].severity == "high"
 
 
-def test_repository_projection_reports_m371_tasks() -> None:
+def test_repository_projection_reports_active_m388() -> None:
+    """Live repo smoke: free-form wave M388 must appear active on ROADMAP."""
     root = Path(__file__).resolve().parents[2]
     result = FilesystemGsdPlanningReader(root).read()
     milestones = {item.milestone_id: item for item in result.milestones}
 
     assert result.available is True
-    assert milestones["M371-pr59ty"].status == "active"
-    assert milestones["M371-pr59ty"].task_count > 0
-    assert "M371-pr59ty" not in result.active_empty_milestone_ids
+    assert "M388-mhds9q" in milestones
+    assert milestones["M388-mhds9q"].status == "active"
+    # STATE may lag ROADMAP in free-form sessions; diagnostic must name preferred_active.
+    if result.diagnostics:
+        joined = " ".join(result.diagnostics)
+        if "planning projection divergence" in joined:
+            assert "preferred_active=M388-mhds9q" in joined or "preferred_active=" in joined

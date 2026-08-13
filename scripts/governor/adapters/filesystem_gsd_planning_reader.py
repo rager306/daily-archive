@@ -58,9 +58,13 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
         roadmap_active = {row[0] for row in rows if row[2] == "active"}
         state_active = self._state_active_milestone()
         if state_active is not None and state_active not in roadmap_active:
+            preferred = self._preferred_active_milestone(roadmap_active)
             diagnostics.append(
                 "planning projection divergence: "
-                f"STATE active={state_active}, ROADMAP active={sorted(roadmap_active)}"
+                f"STATE active={state_active}, ROADMAP active={sorted(roadmap_active)}; "
+                f"preferred_active={preferred}; "
+                "do not hand-edit engine database files — re-render STATE via GSD tools / "
+                "complete or reopen milestones so Active Milestone matches ROADMAP"
             )
         projections: list[MilestonePlanningProjection] = []
         for milestone_id, title, status in rows:
@@ -106,6 +110,24 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
             if match:
                 return match.group("id")
         return None
+
+    @staticmethod
+    def _preferred_active_milestone(roadmap_active: set[str]) -> str:
+        """Newest ROADMAP-active id by numeric M###, then prefer suffixed ids."""
+        if not roadmap_active:
+            return "none"
+
+        def sort_key(mid: str) -> tuple[int, int, str]:
+            base = mid.split("-", 1)[0]
+            try:
+                num = int(base[1:])
+            except ValueError:
+                num = -1
+            # Prefer suffixed (unique) ids over bare M### when same number.
+            suffixed = 1 if "-" in mid else 0
+            return (num, suffixed, mid)
+
+        return max(roadmap_active, key=sort_key)
 
     @staticmethod
     def _parse_roadmap(path: Path) -> list[tuple[str, str, str]]:
