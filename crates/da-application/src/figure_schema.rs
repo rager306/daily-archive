@@ -80,6 +80,7 @@ mod tests {
             method: FigureClassifyMethod::Heuristic,
             matched_keywords: vec!["plot".into()],
             subpanel_count: 1,
+            panel_labels: vec![],
             labels_schema_version: "figure-type-labels.v1".into(),
             context_sha256: sha64(1),
             image_sha256: sha64(2),

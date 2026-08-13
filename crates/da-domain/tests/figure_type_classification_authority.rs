@@ -19,6 +19,7 @@ fn stage1_rejects_import_eligible_true() {
         method: FigureClassifyMethod::Heuristic,
         matched_keywords: vec![],
         subpanel_count: 1,
+        panel_labels: vec![],
         labels_schema_version: "figure-type-labels.v1".into(),
         context_sha256: sha64(5),
         image_sha256: sha64(6),

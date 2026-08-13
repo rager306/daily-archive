@@ -8,6 +8,8 @@ use thiserror::Error;
 const BUNDLED_FIGURE_TYPE_LABELS: &str =
     include_str!("../../../data/ontology/figure_type_labels.yaml");
 const BUNDLED_FIGURE_SCHEMAS: &str = include_str!("../../../data/ontology/figure_schemas.yaml");
+const BUNDLED_FIGURE_PANEL_MARKERS: &str =
+    include_str!("../../../data/ontology/figure_panel_markers.yaml");
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -65,6 +67,9 @@ pub struct FigureTypeClassification {
     pub method: FigureClassifyMethod,
     pub matched_keywords: Vec<String>,
     pub subpanel_count: u32,
+    /// Detected panel letters (a, b, c). Empty means single undivided panel.
+    #[serde(default)]
+    pub panel_labels: Vec<String>,
     pub labels_schema_version: String,
     pub context_sha256: String,
     pub image_sha256: String,
@@ -85,6 +90,12 @@ impl FigureTypeClassification {
         if self.subpanel_count == 0 {
             return Err(FigureAnalysisError::Invalid(
                 "subpanel_count must be >= 1".into(),
+            ));
+        }
+        if !self.panel_labels.is_empty() && self.panel_labels.len() != self.subpanel_count as usize
+        {
+            return Err(FigureAnalysisError::Invalid(
+                "panel_labels length must match subpanel_count".into(),
             ));
         }
         if self.labels_schema_version.trim().is_empty() {
@@ -214,13 +225,23 @@ impl FigureTypeLabelTable {
             raw.min(0.95)
         };
 
+        let panels = FigurePanelMarkerTable::bundled()
+            .unwrap_or_else(|_| FigurePanelMarkerTable::disabled())
+            .detect_panels(text);
+        let (subpanel_count, panel_labels) = if panels.is_empty() {
+            (1, Vec::new())
+        } else {
+            (panels.len() as u32, panels)
+        };
+
         let classification = FigureTypeClassification {
             artifact_id: artifact_id.to_string(),
             visual_type: best_type,
             confidence,
             method: FigureClassifyMethod::Heuristic,
             matched_keywords: matched,
-            subpanel_count: 1,
+            subpanel_count,
+            panel_labels,
             labels_schema_version: self.schema_version.clone(),
             context_sha256: context_sha256.to_string(),
             image_sha256: image_sha256.to_string(),
@@ -230,6 +251,215 @@ impl FigureTypeLabelTable {
         classification.validate()?;
         Ok(classification)
     }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigurePanelMarkersFile {
+    schema_version: String,
+    caption_first: bool,
+    max_panels: u32,
+    detectors: Vec<FigurePanelDetectorFile>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigurePanelDetectorFile {
+    id: String,
+    enabled: bool,
+}
+
+/// DATA-driven caption panel markers (ADR-060 / M392).
+#[derive(Debug, Clone)]
+pub struct FigurePanelMarkerTable {
+    pub schema_version: String,
+    caption_first: bool,
+    max_panels: usize,
+    letter_range_parens: bool,
+    sequential_letter_parens: bool,
+    figure_letter_range: bool,
+}
+
+impl FigurePanelMarkerTable {
+    pub fn bundled() -> Result<Self, FigureAnalysisError> {
+        Self::from_yaml(BUNDLED_FIGURE_PANEL_MARKERS)
+    }
+
+    pub fn disabled() -> Self {
+        Self {
+            schema_version: "figure-panel-markers.v1".into(),
+            caption_first: true,
+            max_panels: 12,
+            letter_range_parens: false,
+            sequential_letter_parens: false,
+            figure_letter_range: false,
+        }
+    }
+
+    pub fn from_yaml(yaml: &str) -> Result<Self, FigureAnalysisError> {
+        let file: FigurePanelMarkersFile = serde_yaml::from_str(yaml)
+            .map_err(|e| FigureAnalysisError::Invalid(format!("figure_panel_markers.yaml: {e}")))?;
+        if file.schema_version != "figure-panel-markers.v1" {
+            return Err(FigureAnalysisError::Invalid(format!(
+                "unsupported figure panel markers schema: {}",
+                file.schema_version
+            )));
+        }
+        if file.max_panels == 0 {
+            return Err(FigureAnalysisError::Invalid(
+                "max_panels must be >= 1".into(),
+            ));
+        }
+        let mut table = Self {
+            schema_version: file.schema_version,
+            caption_first: file.caption_first,
+            max_panels: file.max_panels as usize,
+            letter_range_parens: false,
+            sequential_letter_parens: false,
+            figure_letter_range: false,
+        };
+        for detector in file.detectors {
+            match detector.id.as_str() {
+                "letter_range_parens" => table.letter_range_parens = detector.enabled,
+                "sequential_letter_parens" => table.sequential_letter_parens = detector.enabled,
+                "figure_letter_range" => table.figure_letter_range = detector.enabled,
+                other => {
+                    return Err(FigureAnalysisError::Invalid(format!(
+                        "unknown panel detector: {other}"
+                    )));
+                }
+            }
+        }
+        Ok(table)
+    }
+
+    /// Detect ordered unique panel letters from caption-first text.
+    pub fn detect_panels(&self, text: &str) -> Vec<String> {
+        let hay = caption_head(text, self.caption_first).to_ascii_lowercase();
+        let mut labels = Vec::new();
+        if self.letter_range_parens
+            && let Some(found) = detect_letter_range_parens(&hay)
+        {
+            extend_unique(&mut labels, found);
+        }
+        if self.figure_letter_range
+            && let Some(found) = detect_figure_letter_range(&hay)
+        {
+            extend_unique(&mut labels, found);
+        }
+        if self.sequential_letter_parens {
+            extend_unique(&mut labels, detect_sequential_letter_parens(&hay));
+        }
+        if labels.len() > self.max_panels {
+            labels.truncate(self.max_panels);
+        }
+        if labels.len() < 2 {
+            return Vec::new();
+        }
+        labels
+    }
+}
+
+fn caption_head(text: &str, caption_first: bool) -> &str {
+    if !caption_first {
+        return text;
+    }
+    text.split_once('.').map(|(head, _)| head).unwrap_or(text)
+}
+
+fn extend_unique(dst: &mut Vec<String>, src: Vec<String>) {
+    for label in src {
+        if !dst.iter().any(|existing| existing == &label) {
+            dst.push(label);
+        }
+    }
+}
+
+fn letter_range(start: u8, end: u8) -> Option<Vec<String>> {
+    if !start.is_ascii_lowercase() || !end.is_ascii_lowercase() || end < start {
+        return None;
+    }
+    let count = (end - start) as usize + 1;
+    if !(2..=12).contains(&count) {
+        return None;
+    }
+    Some((start..=end).map(|c| (c as char).to_string()).collect())
+}
+
+fn detect_letter_range_parens(hay: &str) -> Option<Vec<String>> {
+    let bytes = hay.as_bytes();
+    let mut i = 0;
+    while i + 4 < bytes.len() {
+        if bytes[i] == b'('
+            && bytes[i + 1].is_ascii_lowercase()
+            && (bytes[i + 2] == b'-' || bytes[i + 2] == 0xe2)
+        {
+            // ASCII hyphen or start of en-dash UTF-8 (e2 80 93).
+            let (dash_len, end_idx) = if bytes[i + 2] == b'-' {
+                (1usize, i + 3)
+            } else if i + 5 < bytes.len() && bytes[i + 3] == 0x80 && bytes[i + 4] == 0x93 {
+                (3usize, i + 5)
+            } else {
+                i += 1;
+                continue;
+            };
+            if end_idx < bytes.len()
+                && bytes[end_idx].is_ascii_lowercase()
+                && end_idx + 1 < bytes.len()
+                && bytes[end_idx + 1] == b')'
+            {
+                let _ = dash_len;
+                return letter_range(bytes[i + 1], bytes[end_idx]);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+fn detect_figure_letter_range(hay: &str) -> Option<Vec<String>> {
+    let lowered = hay;
+    let pos = lowered.find("figure").or_else(|| lowered.find("fig."))?;
+    let tail = &lowered[pos..];
+    let bytes = tail.as_bytes();
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if bytes[i].is_ascii_lowercase()
+            && (bytes[i + 1] == b'-' || bytes[i + 1] == 0xe2)
+            && i > 0
+            && bytes[i - 1].is_ascii_digit()
+        {
+            let end_idx = if bytes[i + 1] == b'-' {
+                i + 2
+            } else if i + 4 < bytes.len() && bytes[i + 2] == 0x80 && bytes[i + 3] == 0x93 {
+                i + 4
+            } else {
+                i += 1;
+                continue;
+            };
+            if end_idx < bytes.len() && bytes[end_idx].is_ascii_lowercase() {
+                return letter_range(bytes[i], bytes[end_idx]);
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+fn detect_sequential_letter_parens(hay: &str) -> Vec<String> {
+    let bytes = hay.as_bytes();
+    let mut labels = Vec::new();
+    let mut i = 0;
+    while i + 2 < bytes.len() {
+        if bytes[i] == b'(' && bytes[i + 1].is_ascii_lowercase() && bytes[i + 2] == b')' {
+            let label = (bytes[i + 1] as char).to_string();
+            if !labels.iter().any(|existing| existing == &label) {
+                labels.push(label);
+            }
+            i += 3;
+            continue;
+        }
+        i += 1;
+    }
+    labels
 }
 
 /// Selected Stage-2 output schema for a visual type (ADR-060).
@@ -955,6 +1185,62 @@ mod tests {
             .expect("classify");
         assert_eq!(c.visual_type, VisualAnalysisType::Plot);
         assert_eq!(c.method, FigureClassifyMethod::Heuristic);
+        assert_eq!(c.subpanel_count, 1);
+        assert!(c.panel_labels.is_empty());
+    }
+
+    #[test]
+    fn compound_caption_letter_range_sets_panel_count() {
+        let table = FigureTypeLabelTable::bundled().expect("bundled labels");
+        let c = table
+            .classify_from_text(
+                "Figure3",
+                "Figure 3(a-c): Overview of the algorithm candidate proposal loop.",
+                &sha64(7),
+                &sha64(8),
+            )
+            .expect("classify");
+        assert_eq!(c.subpanel_count, 3);
+        assert_eq!(c.panel_labels, vec!["a", "b", "c"]);
+        c.validate().unwrap();
+    }
+
+    #[test]
+    fn compound_caption_sequential_letters_sets_panel_count() {
+        let table = FigureTypeLabelTable::bundled().expect("bundled labels");
+        let c = table
+            .classify_from_text(
+                "Figure4",
+                "Figure 4: (a) train (b) validate (c) test accuracy vs rollouts plot.",
+                &sha64(9),
+                &sha64(10),
+            )
+            .expect("classify");
+        assert_eq!(c.visual_type, VisualAnalysisType::Plot);
+        assert_eq!(c.subpanel_count, 3);
+        assert_eq!(c.panel_labels, vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn figure_letter_range_after_number_sets_panel_count() {
+        let markers = FigurePanelMarkerTable::bundled().expect("markers");
+        let labels = markers.detect_panels("Figure 3a-c shows the pipeline overview.");
+        assert_eq!(labels, vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn single_panel_caption_does_not_invent_panels() {
+        let markers = FigurePanelMarkerTable::bundled().expect("markers");
+        assert!(
+            markers
+                .detect_panels("Figure 3: Overview of the GEPA algorithm.")
+                .is_empty()
+        );
+        assert!(
+            markers
+                .detect_panels("Results in section 3a are discussed.")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -966,6 +1252,7 @@ mod tests {
             method: FigureClassifyMethod::Heuristic,
             matched_keywords: vec![],
             subpanel_count: 1,
+            panel_labels: vec![],
             labels_schema_version: "figure-type-labels.v1".into(),
             context_sha256: sha64(5),
             image_sha256: sha64(6),
