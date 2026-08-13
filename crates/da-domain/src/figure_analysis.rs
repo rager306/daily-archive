@@ -1,8 +1,12 @@
 //! Non-authoritative visual analysis candidate (M371 S03, ADR-053).
+//! Stage-1 figure type classification (ADR-060) is candidate-only and DATA-driven.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use thiserror::Error;
+
+const BUNDLED_FIGURE_TYPE_LABELS: &str =
+    include_str!("../../../data/ontology/figure_type_labels.yaml");
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -14,6 +18,217 @@ pub enum VisualAnalysisType {
     Screenshot,
     Photograph,
     Other,
+}
+
+impl VisualAnalysisType {
+    pub fn as_wire(&self) -> &'static str {
+        match self {
+            Self::Flowchart => "flowchart",
+            Self::Plot => "plot",
+            Self::Diagram => "diagram",
+            Self::Table => "table",
+            Self::Screenshot => "screenshot",
+            Self::Photograph => "photograph",
+            Self::Other => "other",
+        }
+    }
+
+    pub fn from_wire(wire: &str) -> Option<Self> {
+        match wire.trim().to_ascii_lowercase().as_str() {
+            "flowchart" => Some(Self::Flowchart),
+            "plot" | "chart" => Some(Self::Plot),
+            "diagram" => Some(Self::Diagram),
+            "table" => Some(Self::Table),
+            "screenshot" => Some(Self::Screenshot),
+            "photograph" | "photo" => Some(Self::Photograph),
+            "other" => Some(Self::Other),
+            _ => None,
+        }
+    }
+}
+
+/// How Stage-1 decided the type (heuristic is free; vlm is optional later).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FigureClassifyMethod {
+    Heuristic,
+    Vlm,
+}
+
+/// Stage-1 output: typed route for Stage-2 schemas. Never graph truth.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FigureTypeClassification {
+    pub artifact_id: String,
+    pub visual_type: VisualAnalysisType,
+    pub confidence: f32,
+    pub method: FigureClassifyMethod,
+    pub matched_keywords: Vec<String>,
+    pub subpanel_count: u32,
+    pub labels_schema_version: String,
+    pub context_sha256: String,
+    pub image_sha256: String,
+    pub authoritative: bool,
+    pub import_eligible: bool,
+}
+
+impl FigureTypeClassification {
+    pub fn validate(&self) -> Result<(), FigureAnalysisError> {
+        if self.artifact_id.trim().is_empty() {
+            return Err(FigureAnalysisError::Missing("artifact_id"));
+        }
+        if !self.confidence.is_finite() || !(0.0..=1.0).contains(&self.confidence) {
+            return Err(FigureAnalysisError::Invalid(
+                "confidence must be finite and between 0 and 1".into(),
+            ));
+        }
+        if self.subpanel_count == 0 {
+            return Err(FigureAnalysisError::Invalid(
+                "subpanel_count must be >= 1".into(),
+            ));
+        }
+        if self.labels_schema_version.trim().is_empty() {
+            return Err(FigureAnalysisError::Missing("labels_schema_version"));
+        }
+        for (field, value) in [
+            ("context_sha256", self.context_sha256.as_str()),
+            ("image_sha256", self.image_sha256.as_str()),
+        ] {
+            if value.len() != 64 || !value.bytes().all(|b| b.is_ascii_hexdigit()) {
+                return Err(FigureAnalysisError::Invalid(format!(
+                    "{field} must be a SHA-256 digest"
+                )));
+            }
+        }
+        if self.authoritative || self.import_eligible {
+            return Err(FigureAnalysisError::AuthorityViolation);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigureTypeLabelsFile {
+    schema_version: String,
+    default_type: String,
+    types: Vec<FigureTypeLabelEntry>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FigureTypeLabelEntry {
+    id: String,
+    wire: String,
+    weight: u32,
+    caption_keywords: Vec<String>,
+}
+
+/// DATA-driven Stage-1 label table (bundled YAML or loaded string).
+#[derive(Debug, Clone)]
+pub struct FigureTypeLabelTable {
+    pub schema_version: String,
+    default_type: VisualAnalysisType,
+    entries: Vec<(VisualAnalysisType, u32, Vec<String>)>,
+}
+
+impl FigureTypeLabelTable {
+    pub fn bundled() -> Result<Self, FigureAnalysisError> {
+        Self::from_yaml(BUNDLED_FIGURE_TYPE_LABELS)
+    }
+
+    pub fn from_yaml(yaml: &str) -> Result<Self, FigureAnalysisError> {
+        let file: FigureTypeLabelsFile = serde_yaml::from_str(yaml)
+            .map_err(|e| FigureAnalysisError::Invalid(format!("figure_type_labels.yaml: {e}")))?;
+        if file.schema_version != "figure-type-labels.v1" {
+            return Err(FigureAnalysisError::Invalid(format!(
+                "unsupported figure type labels schema: {}",
+                file.schema_version
+            )));
+        }
+        let default_type = VisualAnalysisType::from_wire(&file.default_type).ok_or_else(|| {
+            FigureAnalysisError::Invalid(format!("unknown default_type: {}", file.default_type))
+        })?;
+        let mut entries = Vec::new();
+        for entry in file.types {
+            let visual = VisualAnalysisType::from_wire(&entry.wire)
+                .or_else(|| VisualAnalysisType::from_wire(&entry.id))
+                .ok_or_else(|| {
+                    FigureAnalysisError::Invalid(format!(
+                        "unknown figure type label: {} / {}",
+                        entry.id, entry.wire
+                    ))
+                })?;
+            let keywords = entry
+                .caption_keywords
+                .into_iter()
+                .map(|k| k.trim().to_ascii_lowercase())
+                .filter(|k| !k.is_empty())
+                .collect::<Vec<_>>();
+            entries.push((visual, entry.weight, keywords));
+        }
+        if entries.is_empty() {
+            return Err(FigureAnalysisError::Invalid(
+                "figure type labels must declare at least one type".into(),
+            ));
+        }
+        Ok(Self {
+            schema_version: file.schema_version,
+            default_type,
+            entries,
+        })
+    }
+
+    /// Heuristic Stage-1 classify from caption + citing / section prose.
+    pub fn classify_from_text(
+        &self,
+        artifact_id: &str,
+        text: &str,
+        context_sha256: &str,
+        image_sha256: &str,
+    ) -> Result<FigureTypeClassification, FigureAnalysisError> {
+        let hay = text.to_ascii_lowercase();
+        let mut best_type = self.default_type.clone();
+        let mut best_score = 0u32;
+        let mut matched = Vec::new();
+
+        for (visual, weight, keywords) in &self.entries {
+            let mut hits = Vec::new();
+            let mut score = 0u32;
+            for kw in keywords {
+                if hay.contains(kw.as_str()) {
+                    score = score.saturating_add(*weight);
+                    hits.push(kw.clone());
+                }
+            }
+            if score > best_score {
+                best_score = score;
+                best_type = visual.clone();
+                matched = hits;
+            }
+        }
+
+        let confidence = if best_score == 0 {
+            0.25
+        } else {
+            // Soft saturate: 1 hit@weight3 ≈ 0.55, multi-hits approach 0.95.
+            let raw = 0.35 + (best_score as f32) * 0.08;
+            raw.min(0.95)
+        };
+
+        let classification = FigureTypeClassification {
+            artifact_id: artifact_id.to_string(),
+            visual_type: best_type,
+            confidence,
+            method: FigureClassifyMethod::Heuristic,
+            matched_keywords: matched,
+            subpanel_count: 1,
+            labels_schema_version: self.schema_version.clone(),
+            context_sha256: context_sha256.to_string(),
+            image_sha256: image_sha256.to_string(),
+            authoritative: false,
+            import_eligible: false,
+        };
+        classification.validate()?;
+        Ok(classification)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -265,5 +480,78 @@ mod tests {
             value.validate(),
             Err(FigureAnalysisError::Invalid(_))
         ));
+    }
+
+    fn sha64(seed: u8) -> String {
+        format!("{:064x}", seed as u128)
+    }
+
+    #[test]
+    fn bundled_labels_load_and_classify_flowchart_caption() {
+        let table = FigureTypeLabelTable::bundled().expect("bundled labels");
+        let c = table
+            .classify_from_text(
+                "Figure3",
+                "Figure 3: Overview of the GEPA algorithm candidate proposal loop with reflective prompt mutation and system aware merge",
+                &sha64(1),
+                &sha64(2),
+            )
+            .expect("classify");
+        assert_eq!(c.visual_type, VisualAnalysisType::Flowchart);
+        assert!(c.confidence >= 0.5);
+        assert_eq!(c.method, FigureClassifyMethod::Heuristic);
+        assert!(!c.matched_keywords.is_empty());
+        assert!(!c.authoritative && !c.import_eligible);
+        c.validate().unwrap();
+    }
+
+    #[test]
+    fn bundled_labels_classify_plot_caption() {
+        let table = FigureTypeLabelTable::bundled().expect("bundled labels");
+        let c = table
+            .classify_from_text(
+                "Figure2",
+                "Figure 2: Performance comparison scatter plot of accuracy vs rollouts",
+                &sha64(3),
+                &sha64(4),
+            )
+            .expect("classify");
+        assert_eq!(c.visual_type, VisualAnalysisType::Plot);
+        assert_eq!(c.method, FigureClassifyMethod::Heuristic);
+    }
+
+    #[test]
+    fn stage1_classification_rejects_authoritative_flag() {
+        let mut c = FigureTypeClassification {
+            artifact_id: "Figure1".into(),
+            visual_type: VisualAnalysisType::Other,
+            confidence: 0.25,
+            method: FigureClassifyMethod::Heuristic,
+            matched_keywords: vec![],
+            subpanel_count: 1,
+            labels_schema_version: "figure-type-labels.v1".into(),
+            context_sha256: sha64(5),
+            image_sha256: sha64(6),
+            authoritative: false,
+            import_eligible: false,
+        };
+        c.validate().unwrap();
+        c.authoritative = true;
+        assert_eq!(c.validate(), Err(FigureAnalysisError::AuthorityViolation));
+    }
+
+    #[test]
+    fn visual_type_wire_roundtrip() {
+        for t in [
+            VisualAnalysisType::Flowchart,
+            VisualAnalysisType::Plot,
+            VisualAnalysisType::Diagram,
+            VisualAnalysisType::Table,
+            VisualAnalysisType::Screenshot,
+            VisualAnalysisType::Photograph,
+            VisualAnalysisType::Other,
+        ] {
+            assert_eq!(VisualAnalysisType::from_wire(t.as_wire()), Some(t));
+        }
     }
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+### M388 S02 ADR-060 Stage1 figure type classify (heuristic)
+
+- Added DATA-driven `data/ontology/figure_type_labels.yaml` and domain
+  `FigureTypeLabelTable` / `FigureTypeClassification` (candidate-only, D127).
+- Heuristic Stage-1 `classify_from_text` from caption/citing prose; no paper-specific
+  hardcoding beyond YAML keywords.
+- Application `FigureClassifyUseCase` over `FigureSemanticContext` (bundled labels).
+- Tests: da-domain figure suite + 3 figure_classify unit tests. No VLM call, no import.
+
 ### M388 S01 honest universal figure claim extraction
 
 - Moved claim extraction into `da_application::prompt_evaluation::extract_claims_from_output`:

@@ -55,6 +55,8 @@ pub use figure_analysis::{
     FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
     FigureAnalysisUseCaseError,
 };
+pub mod figure_classify;
+pub use figure_classify::{FigureClassifyError, FigureClassifyUseCase};
 pub mod figure_analysis_stage;
 pub use figure_analysis_stage::{FigureAnalysisStage, FigureContextArtifactStage};
 pub mod figure_context;

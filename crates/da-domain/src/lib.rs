@@ -83,7 +83,8 @@ pub use figure::{
 };
 pub use figure_analysis::{
     FigureAnalysis, FigureAnalysisCitation, FigureAnalysisComponent, FigureAnalysisError,
-    FigureAnalysisProvenance, FigureAnalysisRelationship, VisualAnalysisType,
+    FigureAnalysisProvenance, FigureAnalysisRelationship, FigureClassifyMethod,
+    FigureTypeClassification, FigureTypeLabelTable, VisualAnalysisType,
 };
 pub use figure_context::{
     ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,
