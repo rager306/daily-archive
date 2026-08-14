@@ -1,17 +1,17 @@
-# Continue — M396-ng8zb0 / S01 / T01
+# Continue — M398-cz4pzx / S01 / planning complete
 
 ## Last action
 
-Headless auto unblocked: `gsd headless next M396-ng8zb0` exit 0. T01 not executed. Slice handoff: `.gsd/phases/396-ng8zb0-bounded-then-chained-extractive-derivati/S01-CONTINUE.md`.
+M397-a3bxv7 completed and closed through GSD (validation pass, gates closed, consistency ok). M398-cz4pzx "Temporal AST correctness" planned with five slices. S01 has no task plan yet.
 
 ## Next action
 
-Run `da summarize-revisions` on `artifacts/article_context/revision_graph_2506.07853.sgsnap` and persist `artifacts/article_context/summarize_revisions_2506.07853.json`. Verify input digest equals file sha256. Restart TUI before `/gsd auto M396-ng8zb0`.
+Run scout/impact analysis for M398 S01, then `gsd_plan_slice` for deep-tree sibling navigation. Focus file: `crates/da-application/src/ingest.rs` `build_section_navigation_edges`; known bug: current sibling finder can select a descendant before the actual sibling.
 
 ## Why
 
-Producer is lineage-ready (M395). This task is the first real derivation report file.
+M397 resolved PIR-001..PIR-005, PIR-013 and PIR-022. M398 owns R092 and PIR-006..PIR-012: navigation, summary path/temporal history, revision AST/citations, DateTime wire format, HTML honesty and conservation.
 
 ## Do not
 
-Reuse `extractive_summary_canary.json`. Invent hashes. Claim 200-paper seal. Start TUI auto without process restart.
+Hand-edit `.gsd` planning artifacts. Rebuild or seal the 200-paper corpus without a new operator decision. Unlock D127. Claim summary/citation conservation until M398 slices pass. Run workspace-wide cargo tests (rocksdb trap).
