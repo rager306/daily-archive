@@ -5,6 +5,7 @@
 //!
 //! Reuses the same ingest logic as IngestUseCase — no duplication.
 
+use crate::revision_materialization::RevisionContentContext;
 use da_domain::{PdfClassification, PdfType};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -78,16 +79,32 @@ pub struct BatchIngestResult {
     pub pdf_triage: BatchPdfTriageSummary,
 }
 
-#[tracing::instrument(
-    skip(ingest, pdfs),
-    fields(batch_size = pdfs.len()),
-    name = "batch_ingest"
-)]
 pub async fn batch_ingest_pdfs(
     ingest: &super::ingest::IngestUseCase,
     pdfs: &[(String, String)], // (pdf_path, paper_id)
     snapshot_output: Option<&Path>,
 ) -> anyhow::Result<BatchIngestResult> {
+    let contexts = vec![None; pdfs.len()];
+    batch_ingest_pdfs_with_context(ingest, pdfs, &contexts, snapshot_output).await
+}
+
+#[tracing::instrument(
+    skip(ingest, pdfs, revision_contexts),
+    fields(batch_size = pdfs.len()),
+    name = "batch_ingest"
+)]
+pub async fn batch_ingest_pdfs_with_context(
+    ingest: &super::ingest::IngestUseCase,
+    pdfs: &[(String, String)], // (pdf_path, paper_id)
+    revision_contexts: &[Option<RevisionContentContext>],
+    snapshot_output: Option<&Path>,
+) -> anyhow::Result<BatchIngestResult> {
+    anyhow::ensure!(
+        revision_contexts.len() == pdfs.len(),
+        "revision context denominator mismatch: pdfs={}, contexts={}",
+        pdfs.len(),
+        revision_contexts.len()
+    );
     let start = std::time::Instant::now();
     let mut ok = 0;
     let mut fail = 0;
@@ -99,8 +116,11 @@ pub async fn batch_ingest_pdfs(
     let mut errors = Vec::new();
     let mut pdf_triage = BatchPdfTriageSummary::default();
 
-    for (pdf_path, paper_id) in pdfs {
-        match ingest.ingest_pdf(pdf_path, paper_id).await {
+    for ((pdf_path, paper_id), revision_context) in pdfs.iter().zip(revision_contexts) {
+        match ingest
+            .ingest_pdf_with_context(pdf_path, paper_id, revision_context.as_ref())
+            .await
+        {
             Ok(result) => {
                 ok += 1;
                 total_body_chars += result.body_chars;

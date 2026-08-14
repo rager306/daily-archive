@@ -1597,6 +1597,30 @@ mod tests {
     }
 
     #[test]
+    fn load_corpus_and_legacy_revision_adapters_agree_on_identity() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+        let pdf = root.join("source/2506.07853v5.pdf");
+        let digest = sha256(&std::fs::read(&pdf).unwrap());
+        let corpus = revision_binding_from_catalog("2506.07853", &digest, &root)
+            .unwrap()
+            .context;
+        let legacy = crate::production::revision_context_for_versioned_pdf(&pdf, "2506.07853")
+            .unwrap()
+            .expect("legacy exact context");
+        assert_eq!(corpus.revision, legacy.revision);
+        assert_eq!(corpus.canonical_id, legacy.canonical_id);
+        assert_eq!(
+            corpus.revision_vid().unwrap(),
+            legacy.revision_vid().unwrap()
+        );
+        assert_eq!(
+            corpus.section_vid(0).unwrap(),
+            legacy.section_vid(0).unwrap()
+        );
+    }
+
+    #[test]
     fn versioned_source_paths_are_root_jailed_and_digest_bound() {
         let base = std::env::temp_dir().join(format!("da-revision-jail-{}", std::process::id()));
         let root = base.join("article");

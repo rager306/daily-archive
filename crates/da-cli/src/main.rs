@@ -837,7 +837,25 @@ async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
         use_case
     };
 
-    match use_case.ingest_pdf(pdf_path, paper_id).await {
+    let revision_context = match production::revision_context_for_versioned_pdf(
+        std::path::Path::new(pdf_path),
+        paper_id,
+    ) {
+        Ok(context) => context,
+        Err(error) => {
+            eprintln!("❌ {error}");
+            std::process::exit(1);
+        }
+    };
+    match revision_context.as_ref() {
+        Some(context) => println!("   Revision: v{} (exact)", context.revision),
+        None => println!("   Revision: versionless fallback (no versioned filename evidence)"),
+    }
+
+    match use_case
+        .ingest_pdf_with_context(pdf_path, paper_id, revision_context.as_ref())
+        .await
+    {
         Ok(result) => {
             println!("✅ Ingested: {}", result.paper_id);
             println!("   Title:    {}", result.title);
@@ -896,7 +914,7 @@ async fn batch_ingest(
     enable_import: bool,
 ) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
-    use da_application::{IngestUseCase, batch_ingest_pdfs};
+    use da_application::{IngestUseCase, batch_ingest_pdfs_with_context};
     use std::sync::Arc;
 
     let id_list = match batch_ids::resolve_batch_ids(ids, ids_file) {
@@ -907,21 +925,33 @@ async fn batch_ingest(
         }
     };
 
-    let pdfs: Vec<(String, String)> = id_list
-        .iter()
-        .filter_map(|pid| {
-            let pdf = std::process::Command::new("find")
-                .args(["data/article_catalog", "-name", &format!("{}.pdf", pid)])
-                .output()
-                .ok()?
-                .stdout;
-            let pdf_path = String::from_utf8(pdf).ok()?.trim().to_string();
-            if pdf_path.is_empty() {
-                return None;
+    let mut pdfs: Vec<(String, String)> = Vec::new();
+    let mut resolved_contexts: Vec<Option<da_application::RevisionContentContext>> = Vec::new();
+    for pid in &id_list {
+        let resolved = match production::resolve_catalog_pdf(
+            std::path::Path::new("data/article_catalog"),
+            pid,
+        ) {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                eprintln!("❌ Catalog revision resolution failed for {pid}: {error}");
+                std::process::exit(1);
             }
-            Some((pdf_path, pid.to_string()))
-        })
-        .collect();
+        };
+        let Some(resolved) = resolved else {
+            continue;
+        };
+        if resolved.revision_context.is_some() {
+            println!(
+                "   {pid}: exact catalog revision binding ({})",
+                resolved.binding_method
+            );
+        } else {
+            println!("   {pid}: versionless fallback (no authoritative version match)");
+        }
+        pdfs.push((resolved.path.display().to_string(), pid.to_string()));
+        resolved_contexts.push(resolved.revision_context);
+    }
 
     if pdfs.is_empty() {
         eprintln!("No PDFs found for {} resolved id(s)", id_list.len());
@@ -965,8 +995,23 @@ async fn batch_ingest(
     };
 
     let snapshot_path = output.map(PathBuf::from);
+    let revision_contexts = resolved_contexts;
+    let exact = revision_contexts
+        .iter()
+        .filter(|context| context.is_some())
+        .count();
+    println!(
+        "   Revision bindings: {exact} exact, {} versionless fallback",
+        revision_contexts.len() - exact
+    );
 
-    let result = batch_ingest_pdfs(&ingest, &pdfs, snapshot_path.as_deref()).await;
+    let result = batch_ingest_pdfs_with_context(
+        &ingest,
+        &pdfs,
+        &revision_contexts,
+        snapshot_path.as_deref(),
+    )
+    .await;
 
     match result {
         Ok(r) => {
@@ -1499,21 +1544,22 @@ async fn extract_entities(
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
 
-    // Find the PDF
-    let pdf = std::process::Command::new("find")
-        .args([
-            "data/article_catalog",
-            "-name",
-            &format!("{}.pdf", paper_id),
-        ])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
-
-    let pdf_path = match pdf {
-        Some(p) => p,
+    let resolved = match production::resolve_catalog_pdf(
+        std::path::Path::new("data/article_catalog"),
+        paper_id,
+    ) {
+        Ok(resolved) => resolved,
+        Err(error) => {
+            eprintln!("❌ Catalog revision resolution failed for {paper_id}: {error}");
+            std::process::exit(1);
+        }
+    };
+    let (pdf_path, revision_context, binding_method) = match resolved {
+        Some(resolved) => (
+            resolved.path.display().to_string(),
+            resolved.revision_context,
+            resolved.binding_method,
+        ),
         None => {
             eprintln!("❌ PDF not found for {paper_id}");
             std::process::exit(1);
@@ -1550,8 +1596,18 @@ async fn extract_entities(
     let graph_store = context.store.clone() as Arc<dyn da_ports::DirectGraphStore>;
     let use_case =
         ExtractionUseCase::from_shared(extractor, graph_store).with_clock(context.clock.clone());
+    match revision_context.as_ref() {
+        Some(context) => println!(
+            "   Revision: v{} (exact, {binding_method})",
+            context.revision
+        ),
+        None => println!("   Revision: versionless fallback (no authoritative version match)"),
+    }
 
-    match use_case.extract_from_parsed(&parsed).await {
+    match use_case
+        .extract_from_parsed_with_context(&parsed, revision_context.as_ref())
+        .await
+    {
         Ok(result) => {
             println!("✅ Extracted {} entities", result.entities_extracted);
             // Group by type

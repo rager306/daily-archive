@@ -1,5 +1,13 @@
 # Changelog
 
+### M397 S05 cross-command revision identity acceptance
+
+- Legacy `da ingest`, `da batch-ingest` and `da extract` now resolve exact revision contexts and call revision-aware materialization APIs; compatibility wrappers remain for research examples.
+- Catalog resolution prefers an exact versioned source whose bytes match a bare PDF, so the same v5 bytes no longer materialize as versionless by one command and revision-owned by another.
+- Revision requests enforce checksum binding: at least one manifestation SHA-256 must equal the parsed source digest; empty and mismatched digests fail closed with negative tests.
+- Production command inventory resolves canonical parse/embedding/extraction_compute/summary StageIds; load, corpus and legacy adapters agree on revision, canonical ID, revision VID and Section VID for the same exact source.
+- D127 remains false. No 200-paper rebuild or corpus seal is claimed.
+
 ### M397 S04 revision-owned corpus materialization
 
 - Gold graph corpus preparation now derives an Exact `RevisionContentContext` from authoritative `article.vN.json` metadata, or a unique checksum match to one versioned asset; ambiguous, missing and versionless identities fail before Section writes.

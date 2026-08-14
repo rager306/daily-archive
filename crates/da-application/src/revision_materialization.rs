@@ -515,6 +515,21 @@ fn validate_request(
             "at least one source manifestation is required".into(),
         ));
     }
+    let parsed_hash = request.parsed.pdf_hash.trim().to_ascii_lowercase();
+    if parsed_hash.is_empty() {
+        return Err(RevisionMaterializationError::Invalid(
+            "parsed article lacks source pdf_hash for checksum-bound revision identity".into(),
+        ));
+    }
+    if !request
+        .manifestations
+        .iter()
+        .any(|manifestation| manifestation.sha256.trim().to_ascii_lowercase() == parsed_hash)
+    {
+        return Err(RevisionMaterializationError::Invalid(format!(
+            "revision manifestations do not bind parsed source digest {parsed_hash}"
+        )));
+    }
     for manifestation in &request.manifestations {
         if manifestation.format.trim().is_empty() {
             return Err(RevisionMaterializationError::Invalid(
@@ -559,7 +574,7 @@ mod tests {
     use da_ports::parser::Section;
     use kg_storage::MockGraphStore;
 
-    fn parsed(id: &str, section_count: usize) -> ParsedArticle {
+    fn parsed(id: &str, revision: u32, section_count: usize) -> ParsedArticle {
         ParsedArticle {
             paper_id: id.into(),
             title: format!("Paper {id}"),
@@ -576,7 +591,7 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
-            pdf_hash: "a".repeat(64),
+            pdf_hash: format!("{revision:064x}"),
         }
     }
 
@@ -585,7 +600,7 @@ mod tests {
             source_code: "arxiv".into(),
             canonical_id: "2506.07853".into(),
             revision,
-            parsed: parsed("2506.07853", section_count),
+            parsed: parsed("2506.07853", revision, section_count),
             manifestations: vec![
                 RevisionManifestationInput {
                     format: "pdf".into(),
@@ -630,6 +645,22 @@ mod tests {
             uc.materialize(&empty).await,
             Err(RevisionMaterializationError::Invalid(_))
         ));
+        let mut missing_hash = request(1, 1);
+        missing_hash.parsed.pdf_hash.clear();
+        let error = uc.materialize(&missing_hash).await.unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("parsed article lacks source pdf_hash")
+        );
+        let mut mismatched_hash = request(1, 1);
+        mismatched_hash.parsed.pdf_hash = format!("{:064x}", 99);
+        let error = uc.materialize(&mismatched_hash).await.unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("do not bind parsed source digest")
+        );
     }
 
     #[tokio::test]

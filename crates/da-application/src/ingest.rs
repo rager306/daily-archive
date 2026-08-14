@@ -158,12 +158,23 @@ impl IngestUseCase {
     ///
     /// ADR-041: Uses direct GraphStore API (0.01ms per op) instead of Cypher MERGE.
     /// No parse/plan overhead. 100x faster than Cypher for batch writes.
+    pub async fn ingest_pdf(&self, pdf_path: &str, paper_id: &str) -> anyhow::Result<IngestResult> {
+        self.ingest_pdf_with_context(pdf_path, paper_id, None).await
+    }
+
+    /// Revision-aware variant of the HOT-path single PDF ingest. The context
+    /// must come from checksum-bound source evidence; callers never invent v1.
     #[tracing::instrument(
-        skip(self, pdf_path),
+        skip(self, pdf_path, revision_context),
         fields(paper_id = %paper_id),
         name = "ingest_pdf"
     )]
-    pub async fn ingest_pdf(&self, pdf_path: &str, paper_id: &str) -> anyhow::Result<IngestResult> {
+    pub async fn ingest_pdf_with_context(
+        &self,
+        pdf_path: &str,
+        paper_id: &str,
+        revision_context: Option<&crate::revision_materialization::RevisionContentContext>,
+    ) -> anyhow::Result<IngestResult> {
         tracing::info!(paper_id, pdf_path, "Starting ingest (HOT path)");
 
         // D127 / M357: import eligibility computed from CLI flag (default Locked).
@@ -271,13 +282,14 @@ impl IngestUseCase {
             .context("ingest_pdf unavailable on materializer-only IngestUseCase")?;
         let vector = embedder.embed(embed_text).await?;
         tracing::info!(paper_id, dimensions = vector.len(), "Embedded");
-        self.materialize_parsed_with_triage(
+        self.materialize_parsed_with_context(
             &parsed,
             vector,
             primary_domain,
             source_code,
             pdf_classification,
             pdf_triage,
+            revision_context,
         )
         .await
     }

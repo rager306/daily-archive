@@ -42,7 +42,9 @@ pub use revision_query::{
 };
 pub use tex_inspect::TexInspectUseCase;
 pub mod batch_ingest;
-pub use batch_ingest::{BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs};
+pub use batch_ingest::{
+    BatchIngestResult, BatchPdfTriageSummary, batch_ingest_pdfs, batch_ingest_pdfs_with_context,
+};
 pub mod entity_resolution;
 pub mod extraction;
 pub mod extractive_summary;
