@@ -5,7 +5,7 @@
 use clap::Args;
 use da_adapters::{
     ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, GrobidParser,
-    HtmlParser, RuleBasedExtractor, toc_unit_keys,
+    GrobidProfile, HtmlParser, RuleBasedExtractor, toc_unit_keys,
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
@@ -13,7 +13,7 @@ use da_application::{
     RevisionContentContext, RevisionManifestationInput,
 };
 use da_domain::{
-    AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadCacheRecord, LoadStageSet,
+    AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord, LoadCacheRecord, LoadStageSet,
     PrimaryContentKind, StageIdRegistry,
 };
 use da_ports::SourceAcquisitionPort;
@@ -136,12 +136,21 @@ impl LoadContentPipeline for CliContentPipeline {
             .extension()
             .and_then(|e| e.to_str())
             .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
+        let grobid_profile = if is_html {
+            GrobidProfile::rich()
+        } else {
+            GrobidParser::from_env().profile()
+        };
+        let source_identity =
+            source_identity_for_assets(req.paper_id, req.primary_path, is_html, req.assets)?;
 
         let (parsed, mut cache_records, parse_payload_sha) = parse_with_cache(
             self.cache.as_deref(),
             req.paper_id,
             req.primary_path,
             is_html,
+            source_identity.clone(),
+            grobid_profile,
         )
         .await?;
 
@@ -152,9 +161,7 @@ impl LoadContentPipeline for CliContentPipeline {
         };
         let (vector, embed_records) = embed_with_cache(
             self.cache.as_deref(),
-            req.paper_id,
-            req.primary_path,
-            is_html,
+            source_identity.clone(),
             &parse_payload_sha,
             embed_text,
         )
@@ -192,9 +199,7 @@ impl LoadContentPipeline for CliContentPipeline {
             let extractor = RuleBasedExtractor::new();
             let (extracted, extract_records) = extract_with_cache(
                 self.cache.as_deref(),
-                req.paper_id,
-                req.primary_path,
-                is_html,
+                source_identity,
                 &parse_payload_sha,
                 &parsed,
                 &extractor,
@@ -302,33 +307,87 @@ fn revision_context_from_load(
         .map_err(|e| e.to_string())
 }
 
-fn source_identity_for_primary(
+/// Build source identity from every PDF/HTML manifestation known to the
+/// catalog while keeping the selected parser input explicit. The primary file
+/// is always read: its exact bytes remain authoritative for the selected hash.
+fn source_identity_for_assets(
     paper_id: &str,
     primary_path: &Path,
     is_html: bool,
+    assets: &[LoadAssetRecord],
 ) -> Result<SourceIdentity, String> {
     let bytes = std::fs::read(primary_path)
-        .map_err(|e| format!("read primary {}: {e}", primary_path.display()))?;
-    let content_sha = sha256_hex(&bytes);
-    let format = if is_html {
-        SourceFormat::Html
+        .map_err(|error| format!("read primary {}: {error}", primary_path.display()))?;
+    let primary_sha = sha256_hex(&bytes);
+    let selected_kind = if is_html { "html" } else { "pdf" };
+
+    let mut known: BTreeMap<&str, String> = BTreeMap::new();
+    for asset in assets {
+        let kind = if asset.kind.eq_ignore_ascii_case("pdf") {
+            "pdf"
+        } else if asset.kind.eq_ignore_ascii_case("html") {
+            "html"
+        } else {
+            continue;
+        };
+        let Some(catalog_sha) = asset
+            .sha256
+            .as_deref()
+            .map(str::trim)
+            .filter(|sha| !sha.is_empty())
+        else {
+            continue;
+        };
+        match known.get(kind) {
+            Some(existing) if existing != catalog_sha => {
+                return Err(format!(
+                    "conflicting {kind} manifestation digests for {}: {existing} != {catalog_sha}",
+                    primary_path.display()
+                ));
+            }
+            Some(_) => {}
+            None => {
+                known.insert(kind, catalog_sha.to_string());
+            }
+        }
+    }
+
+    if let Some(catalog_sha) = known.get(selected_kind)
+        && catalog_sha != &primary_sha
+    {
+        return Err(format!(
+            "selected {selected_kind} bytes differ from catalog digest for {}: expected {catalog_sha}, got {primary_sha}",
+            primary_path.display()
+        ));
+    }
+
+    let selected_sha = primary_sha.clone();
+    let pdf_sha256 = if is_html {
+        known.get("pdf").cloned()
     } else {
-        SourceFormat::Pdf
+        Some(selected_sha.clone())
     };
+    let html_sha256 = if is_html {
+        Some(selected_sha.clone())
+    } else {
+        known.get("html").cloned()
+    };
+    let acquisition_fingerprint = format!(
+        "acq-v2;pdf={};html={}",
+        pdf_sha256.as_deref().unwrap_or("none"),
+        html_sha256.as_deref().unwrap_or("none")
+    );
+
     Ok(SourceIdentity {
         article_id: paper_id.to_string(),
-        selected_format: format,
-        pdf_sha256: if is_html {
-            None
+        selected_format: if is_html {
+            SourceFormat::Html
         } else {
-            Some(content_sha.clone())
+            SourceFormat::Pdf
         },
-        html_sha256: if is_html {
-            Some(content_sha.clone())
-        } else {
-            None
-        },
-        acquisition_fingerprint: content_sha,
+        pdf_sha256,
+        html_sha256,
+        acquisition_fingerprint,
         normalization_fingerprint: "identity-v1".into(),
     })
 }
@@ -375,6 +434,84 @@ fn lookup_with_legacy_stage_aliases(
     Ok((CacheLookup::Miss, None))
 }
 
+fn parse_cache_key(source: SourceIdentity, is_html: bool, profile: GrobidProfile) -> StageCacheKey {
+    let implementation_fingerprint = if is_html {
+        "da_adapters::HtmlParser@load-v1"
+    } else {
+        "da_adapters::GrobidParser@load-v1"
+    };
+    let configuration_fingerprint = if is_html {
+        "html-primary".to_string()
+    } else {
+        profile.configuration_fingerprint()
+    };
+    StageCacheKey {
+        source,
+        stage_id: "parse".into(),
+        dependency_output_sha256: BTreeMap::new(),
+        implementation_fingerprint: implementation_fingerprint.into(),
+        configuration_fingerprint,
+        prompt_fingerprint: None,
+        model_fingerprint: None,
+        output_schema_fingerprint: "ParsedArticle.v1".into(),
+    }
+}
+
+fn selected_source_sha(source: &SourceIdentity) -> Option<String> {
+    match source.selected_format {
+        SourceFormat::Pdf => source.pdf_sha256.clone(),
+        SourceFormat::Html => source.html_sha256.clone(),
+        SourceFormat::MetadataOnly => None,
+    }
+}
+
+/// Read the exact previous production parse key only for the semantics that
+/// form actually had: rich PDF-only or HTML-only collapsed source identity.
+/// Structural/custom profiles and dual-manifestation identities never reuse it.
+fn lookup_with_legacy_parse_identity(
+    cache: &FilePipelineCache,
+    canonical_key: &StageCacheKey,
+    is_html: bool,
+    profile: GrobidProfile,
+    now: &str,
+) -> Result<(CacheLookup, Option<String>), String> {
+    let legacy_configuration = if is_html {
+        if canonical_key.source.pdf_sha256.is_some() {
+            return Ok((CacheLookup::Miss, None));
+        }
+        "html-primary"
+    } else {
+        if profile != GrobidProfile::rich() || canonical_key.source.html_sha256.is_some() {
+            return Ok((CacheLookup::Miss, None));
+        }
+        "pdf-grobid"
+    };
+    let Some(selected_sha) = selected_source_sha(&canonical_key.source) else {
+        return Ok((CacheLookup::Miss, None));
+    };
+    let mut legacy_key = canonical_key.clone();
+    legacy_key.source.pdf_sha256 = if is_html {
+        None
+    } else {
+        Some(selected_sha.clone())
+    };
+    legacy_key.source.html_sha256 = if is_html {
+        Some(selected_sha.clone())
+    } else {
+        None
+    };
+    legacy_key.source.acquisition_fingerprint = selected_sha;
+    legacy_key.configuration_fingerprint = legacy_configuration.to_string();
+    let lookup = cache
+        .lookup(&legacy_key, now)
+        .map_err(|error| format!("legacy {legacy_configuration} parse cache lookup: {error}"))?;
+    if matches!(lookup, CacheLookup::Miss) {
+        Ok((lookup, None))
+    } else {
+        Ok((lookup, Some(legacy_configuration.to_string())))
+    }
+}
+
 /// Parse primary content with optional PipelineCache (derived payload only).
 /// Returns (parsed, cache records, payload_sha256 for dependency keys).
 async fn parse_with_cache(
@@ -382,28 +519,11 @@ async fn parse_with_cache(
     paper_id: &str,
     primary_path: &Path,
     is_html: bool,
+    source: SourceIdentity,
+    profile: GrobidProfile,
 ) -> Result<(ParsedArticle, Vec<LoadCacheRecord>, String), String> {
     let primary_str = primary_path.display().to_string();
-    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
-    let impl_fp = if is_html {
-        "da_adapters::HtmlParser@load-v1"
-    } else {
-        "da_adapters::GrobidParser@load-v1"
-    };
-    let key = StageCacheKey {
-        source,
-        stage_id: "parse".into(),
-        dependency_output_sha256: BTreeMap::new(),
-        implementation_fingerprint: impl_fp.into(),
-        configuration_fingerprint: if is_html {
-            "html-primary".into()
-        } else {
-            "pdf-grobid".into()
-        },
-        prompt_fingerprint: None,
-        model_fingerprint: None,
-        output_schema_fingerprint: "ParsedArticle.v1".into(),
-    };
+    let key = parse_cache_key(source, is_html, profile);
 
     // Async produce needs to be outside the sync cache helper: pre-run only on miss path
     // is handled by checking lookup first when cache is present.
@@ -413,10 +533,16 @@ async fn parse_with_cache(
 
     if let Some(cache) = cache {
         let now = chrono::Utc::now().to_rfc3339();
-        match cache
+        let canonical_lookup = cache
             .lookup(&key, &now)
-            .map_err(|e| format!("parse cache lookup: {e}"))?
-        {
+            .map_err(|e| format!("parse cache lookup: {e}"))?;
+        let (lookup, resolved_from) = match canonical_lookup {
+            CacheLookup::Miss => {
+                lookup_with_legacy_parse_identity(cache, &key, is_html, profile, &now)?
+            }
+            lookup => (lookup, None),
+        };
+        match lookup {
             CacheLookup::Hit(hit) => {
                 let parsed: ParsedArticle = serde_json::from_slice(&hit.payload)
                     .map_err(|e| format!("parse cache payload decode: {e}"))?;
@@ -425,7 +551,7 @@ async fn parse_with_cache(
                     parsed,
                     vec![LoadCacheRecord {
                         stage_id: "parse".into(),
-                        resolved_from: None,
+                        resolved_from,
                         status: "hit".into(),
                         key_sha256: Some(hit.manifest.key_sha256),
                         payload_sha256: Some(payload_sha.clone()),
@@ -434,10 +560,14 @@ async fn parse_with_cache(
                 ));
             }
             CacheLookup::RetryableFailure(manifest) => {
-                return Err(retry_suppressed_error("parse", None, &manifest));
+                return Err(retry_suppressed_error(
+                    "parse",
+                    resolved_from.as_deref(),
+                    &manifest,
+                ));
             }
             CacheLookup::Miss => {
-                let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+                let parsed = parse_primary(&primary_str, paper_id, is_html, profile).await?;
                 let payload =
                     serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
                 let payload_sha = sha256_hex(&payload);
@@ -459,7 +589,7 @@ async fn parse_with_cache(
         }
     }
 
-    let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
+    let parsed = parse_primary(&primary_str, paper_id, is_html, profile).await?;
     let payload = serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
     let payload_sha = sha256_hex(&payload);
     Ok((
@@ -479,13 +609,10 @@ async fn parse_with_cache(
 /// re-parse with different bytes cannot silently reuse an old vector.
 async fn embed_with_cache(
     cache: Option<&FilePipelineCache>,
-    paper_id: &str,
-    primary_path: &Path,
-    is_html: bool,
+    source: SourceIdentity,
     parse_payload_sha: &str,
     embed_text: &str,
 ) -> Result<(Vec<f32>, Vec<LoadCacheRecord>), String> {
-    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
     let embedder = FdApiEmbedder::from_env();
     let model_id = embedder.model_id().to_string();
     let text_sha = sha256_hex(embed_text.as_bytes());
@@ -575,14 +702,11 @@ async fn embed_with_cache(
 
 async fn extract_with_cache(
     cache: Option<&FilePipelineCache>,
-    paper_id: &str,
-    primary_path: &Path,
-    is_html: bool,
+    source: SourceIdentity,
     parse_payload_sha: &str,
     parsed: &ParsedArticle,
     extractor: &RuleBasedExtractor,
 ) -> Result<(Vec<ExtractedEntity>, Vec<LoadCacheRecord>), String> {
-    let source = source_identity_for_primary(paper_id, primary_path, is_html)?;
     let identity = extractor.cache_identity();
     let mut dependencies = BTreeMap::new();
     dependencies.insert("parse".into(), parse_payload_sha.to_string());
@@ -724,6 +848,7 @@ async fn parse_primary(
     primary_path: &str,
     paper_id: &str,
     is_html: bool,
+    profile: GrobidProfile,
 ) -> Result<ParsedArticle, String> {
     if is_html {
         let parser = HtmlParser::new();
@@ -732,7 +857,7 @@ async fn parse_primary(
             .await
             .map_err(|e| format!("html parse: {e:#}"))
     } else {
-        let parser = GrobidParser::from_env();
+        let parser = GrobidParser::from_env().with_profile(profile);
         if !parser.is_alive().await {
             return Err("GROBID is not reachable (start sidecar on :8070)".into());
         }
@@ -1311,6 +1436,205 @@ mod tests {
         assert!(decode_f32_le(&nan, 1).unwrap_err().contains("non-finite"));
     }
 
+    fn asset(kind: &str, path: &str, sha256: Option<String>) -> LoadAssetRecord {
+        LoadAssetRecord {
+            kind: kind.into(),
+            path: path.into(),
+            sha256,
+            bytes: Some(1),
+            disposition: da_domain::AssetDisposition::CatalogHit,
+        }
+    }
+
+    #[test]
+    fn source_identity_binds_all_available_manifestations_and_fails_closed() {
+        let root = std::env::temp_dir().join(format!(
+            "da-source-identity-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let pdf = root.join("paper.pdf");
+        std::fs::write(&pdf, b"primary-pdf").unwrap();
+        let pdf_sha = sha256_hex(b"primary-pdf");
+        let html_a = "c".repeat(64);
+        let html_b = "d".repeat(64);
+
+        let pdf_only = source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap();
+        assert_eq!(pdf_only.selected_format, SourceFormat::Pdf);
+        assert_eq!(pdf_only.pdf_sha256.as_deref(), Some(pdf_sha.as_str()));
+        assert_eq!(pdf_only.html_sha256, None);
+        assert!(pdf_only.acquisition_fingerprint.contains("html=none"));
+
+        let assets = vec![
+            asset("pdf", "catalog/paper.pdf", Some(pdf_sha.clone())),
+            asset("html", "catalog/paper.html", Some(html_a.clone())),
+        ];
+        let dual = source_identity_for_assets("test.paper", &pdf, false, &assets).unwrap();
+        assert_eq!(dual.pdf_sha256.as_deref(), Some(pdf_sha.as_str()));
+        assert_eq!(dual.html_sha256.as_deref(), Some(html_a.as_str()));
+        assert!(
+            dual.acquisition_fingerprint
+                .contains(&format!("html={html_a}"))
+        );
+
+        let changed_html = vec![asset("html", "catalog/paper.html", Some(html_b.clone()))];
+        let changed = source_identity_for_assets("test.paper", &pdf, false, &changed_html).unwrap();
+        assert_ne!(dual, changed);
+        assert_ne!(
+            dual.acquisition_fingerprint,
+            changed.acquisition_fingerprint
+        );
+
+        let conflicting = vec![
+            asset("pdf", "catalog/one.pdf", Some(pdf_sha.clone())),
+            asset("pdf", "catalog/two.pdf", Some(html_b)),
+        ];
+        let error =
+            source_identity_for_assets("test.paper", &pdf, false, &conflicting).unwrap_err();
+        assert!(error.contains("conflicting pdf manifestation digests"));
+
+        let wrong_selected = vec![asset("pdf", "catalog/paper.pdf", Some("e".repeat(64)))];
+        let error =
+            source_identity_for_assets("test.paper", &pdf, false, &wrong_selected).unwrap_err();
+        assert!(error.contains("differ from catalog digest"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn parse_cache_keys_bind_grobid_profile_semantics() {
+        let root = std::env::temp_dir().join(format!(
+            "da-parse-profile-key-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let pdf = root.join("paper.pdf");
+        std::fs::write(&pdf, b"profile-key").unwrap();
+        let source = source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap();
+        let rich = parse_cache_key(source.clone(), false, GrobidProfile::rich());
+        let rich_again = parse_cache_key(source.clone(), false, GrobidProfile::rich());
+        let structural = parse_cache_key(source, false, GrobidProfile::structural());
+        assert_eq!(
+            rich.key_sha256().unwrap(),
+            rich_again.key_sha256().unwrap(),
+            "identical effective rich inputs must remain stable"
+        );
+        assert_ne!(
+            rich.key_sha256().unwrap(),
+            structural.key_sha256().unwrap(),
+            "rich and structural profiles must never share a parse key"
+        );
+        assert!(rich.configuration_fingerprint.contains("profile=rich"));
+        assert!(
+            structural
+                .configuration_fingerprint
+                .contains("profile=structural")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn parse_reads_exact_legacy_rich_pdf_only_key_without_canonical_write() {
+        let root = std::env::temp_dir().join(format!(
+            "da-legacy-parse-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let pdf = root.join("paper.pdf");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&pdf, b"legacy-pdf").unwrap();
+        let content_sha = sha256_hex(b"legacy-pdf");
+        let mut legacy_source = source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap();
+        legacy_source.acquisition_fingerprint = content_sha;
+        let mut legacy_key = parse_cache_key(legacy_source, false, GrobidProfile::rich());
+        legacy_key.configuration_fingerprint = "pdf-grobid".into();
+        let parsed = ParsedArticle {
+            paper_id: "test.paper".into(),
+            title: "Legacy parse".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let payload = serde_json::to_vec(&parsed).unwrap();
+        let cache = FilePipelineCache::new(root.join("cache"));
+        let entry = cache
+            .store_success(
+                &legacy_key,
+                &payload,
+                BTreeMap::new(),
+                "2026-08-14T00:00:00Z",
+            )
+            .unwrap();
+        let (cached, records, payload_sha) = parse_with_cache(
+            Some(&cache),
+            "test.paper",
+            &pdf,
+            false,
+            source_identity_for_assets("test.paper", &pdf, false, &[]).unwrap(),
+            GrobidProfile::rich(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(serde_json::to_vec(&cached).unwrap(), payload);
+        assert_eq!(payload_sha, sha256_hex(&payload));
+        assert_eq!(records[0].stage_id, "parse");
+        assert_eq!(records[0].status, "hit");
+        assert_eq!(records[0].resolved_from.as_deref(), Some("pdf-grobid"));
+        assert_eq!(
+            records[0].key_sha256.as_deref(),
+            Some(entry.key_sha256.as_str())
+        );
+        assert_eq!(cache.manifest("test.paper").unwrap().len(), 1);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn legacy_parse_fallback_excludes_structural_and_dual_manifestations() {
+        let root = std::env::temp_dir().join(format!(
+            "da-parse-fallback-boundary-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let pdf = root.join("paper.pdf");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&pdf, b"boundary").unwrap();
+        let pdf_sha = sha256_hex(b"boundary");
+        let dual_assets = vec![asset("html", "catalog/paper.html", Some("c".repeat(64)))];
+        let dual = source_identity_for_assets("test.paper", &pdf, false, &dual_assets).unwrap();
+        assert_eq!(dual.pdf_sha256.as_deref(), Some(pdf_sha.as_str()));
+        let cache = FilePipelineCache::new(root.join("cache"));
+        let now = "2026-08-14T00:00:00Z";
+        let structural_key = parse_cache_key(dual.clone(), false, GrobidProfile::structural());
+        let (lookup, resolved) = lookup_with_legacy_parse_identity(
+            &cache,
+            &structural_key,
+            false,
+            GrobidProfile::structural(),
+            now,
+        )
+        .unwrap();
+        assert!(matches!(lookup, CacheLookup::Miss));
+        assert_eq!(resolved, None);
+
+        let rich_dual_key = parse_cache_key(dual, false, GrobidProfile::rich());
+        let (lookup, resolved) = lookup_with_legacy_parse_identity(
+            &cache,
+            &rich_dual_key,
+            false,
+            GrobidProfile::rich(),
+            now,
+        )
+        .unwrap();
+        assert!(matches!(lookup, CacheLookup::Miss));
+        assert_eq!(resolved, None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[tokio::test]
     async fn extraction_compute_reads_legacy_extract_cache_namespace() {
         let root = std::env::temp_dir().join(format!(
@@ -1343,7 +1667,7 @@ mod tests {
         let mut dependencies = BTreeMap::new();
         dependencies.insert("parse".into(), "b".repeat(64));
         let legacy_key = StageCacheKey {
-            source: source_identity_for_primary("test.paper", &source, true).unwrap(),
+            source: source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             stage_id: LEGACY_EXTRACTION_STAGE_ID.into(),
             dependency_output_sha256: dependencies,
             implementation_fingerprint: identity.implementation_fingerprint,
@@ -1364,9 +1688,7 @@ mod tests {
             .unwrap();
         let (entities, records) = extract_with_cache(
             Some(&cache),
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,
@@ -1408,7 +1730,7 @@ mod tests {
         let mut dependencies = BTreeMap::new();
         dependencies.insert("parse".into(), "b".repeat(64));
         let legacy_key = StageCacheKey {
-            source: source_identity_for_primary("test.paper", &source, true).unwrap(),
+            source: source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             stage_id: LEGACY_EXTRACTION_STAGE_ID.into(),
             dependency_output_sha256: dependencies,
             implementation_fingerprint: identity.implementation_fingerprint,
@@ -1429,9 +1751,7 @@ mod tests {
             .unwrap();
         let error = extract_with_cache(
             Some(&cache),
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,
@@ -1478,9 +1798,7 @@ mod tests {
         let cache = FilePipelineCache::new(root.join("cache"));
         let (cold, cold_records) = extract_with_cache(
             Some(&cache),
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,
@@ -1491,9 +1809,7 @@ mod tests {
         assert!(!cold.is_empty());
         let (hit, hit_records) = extract_with_cache(
             Some(&cache),
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,
@@ -1508,9 +1824,7 @@ mod tests {
         );
         let (_bypass, bypass_records) = extract_with_cache(
             None,
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,
@@ -1526,9 +1840,7 @@ mod tests {
         std::fs::write(payload, b"not-json").unwrap();
         let error = extract_with_cache(
             Some(&cache),
-            "test.paper",
-            &source,
-            true,
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
             &"b".repeat(64),
             &parsed,
             &extractor,

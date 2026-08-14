@@ -16,6 +16,9 @@ pub struct GrobidProfile {
 }
 
 impl GrobidProfile {
+    /// Coordinate groups always requested by this adapter.
+    pub const TEI_COORDINATES: &'static str = "figure,table,note";
+
     pub const fn rich() -> Self {
         Self {
             consolidate_citations: true,
@@ -28,6 +31,29 @@ impl GrobidProfile {
             consolidate_citations: false,
             consolidate_header: false,
         }
+    }
+
+    /// Stable semantic name for the effective consolidation policy.
+    /// Mixed policies are intentionally reported as `custom`; they remain
+    /// valid but must never reuse a named profile's cache identity.
+    pub fn name(self) -> &'static str {
+        match (self.consolidate_header, self.consolidate_citations) {
+            (true, true) => "rich",
+            (false, false) => "structural",
+            _ => "custom",
+        }
+    }
+
+    /// Exact effective-input identity for cache keys. HTTP timeout is
+    /// deliberately excluded: it does not alter successful TEI semantics.
+    pub fn configuration_fingerprint(self) -> String {
+        format!(
+            "profile={};consolidateHeader={};consolidateCitations={};teiCoordinates={}",
+            self.name(),
+            u8::from(self.consolidate_header),
+            u8::from(self.consolidate_citations),
+            Self::TEI_COORDINATES
+        )
     }
 }
 
@@ -835,6 +861,39 @@ mod tests {
         assert_eq!(parser.profile(), GrobidProfile::structural());
         assert!(!parser.profile().consolidate_header);
         assert!(!parser.profile().consolidate_citations);
+    }
+
+    #[test]
+    fn profile_fingerprints_bind_semantics_and_exclude_timeout() {
+        assert_eq!(GrobidProfile::rich().name(), "rich");
+        assert_eq!(
+            GrobidProfile::rich().configuration_fingerprint(),
+            "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note"
+        );
+        assert_eq!(
+            GrobidProfile::structural().configuration_fingerprint(),
+            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note"
+        );
+        assert_ne!(
+            GrobidProfile::rich().configuration_fingerprint(),
+            GrobidProfile::structural().configuration_fingerprint()
+        );
+        let mut custom = GrobidProfile::structural();
+        custom.consolidate_header = true;
+        assert_eq!(custom.name(), "custom");
+        assert!(
+            custom
+                .configuration_fingerprint()
+                .contains("profile=custom")
+        );
+        let with_timeout = GrobidParser::new(None)
+            .with_timeout(std::time::Duration::from_secs(1))
+            .profile();
+        assert_eq!(
+            with_timeout.configuration_fingerprint(),
+            GrobidProfile::rich().configuration_fingerprint(),
+            "timeout is operational policy, not a content-key input"
+        );
     }
 
     #[test]

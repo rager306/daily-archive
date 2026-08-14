@@ -1,5 +1,12 @@
 # Changelog
 
+### M397 S02 profile-bound parse identity and dual-manifestation source identity
+
+- `GrobidProfile::configuration_fingerprint` binds profile, consolidation flags and TEI coordinates; timeout stays operational and outside the content key.
+- `da load` builds one `SourceIdentity` from every catalog PDF/HTML manifestation, keeps the selected parser input explicit, and fails closed on duplicate or mismatched digests.
+- Parse, embedding and extraction compute keys share that exact identity; secondary manifestation changes now invalidate descendants.
+- Parse writes only profile-bound canonical keys. The exact previous rich PDF-only or HTML-only key remains read-compatible with disclosed `resolved_from`; structural/custom and dual-manifestation identities never reuse it. D127 unchanged.
+
 ### M397 S01 canonical pipeline stage identity and shared CLI context
 
 - `pipeline_stage_contracts.yaml` now owns validated implementation aliases while preserving the 14 canonical stage IDs.
