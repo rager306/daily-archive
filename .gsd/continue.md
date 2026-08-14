@@ -1,23 +1,17 @@
-# Handoff — 2026-08-13
+# Continue — M396-ng8zb0 / S01 / T01
 
-## Auto-ready
-**Next:** `/gsd auto M396-ng8zb0`
+## Last action
 
-Pins confirmed OK by operator. `unique_milestone_ids: true`. No open bare/suffixed
-duplicates. S01 has 1 planned task so auto can claim Attempt and `gsd_task_complete`.
+Headless auto unblocked: `gsd headless next M396-ng8zb0` exit 0. T01 not executed. Slice handoff: `.gsd/phases/396-ng8zb0-bounded-then-chained-extractive-derivati/S01-CONTINUE.md`.
 
-## Active: M396-ng8zb0
-Bounded then chained extractive derivation report.
+## Next action
 
-| Slice | Status |
-|-------|--------|
-| S01 bounded real producer report | planned, 1 task |
-| S02 chain onto 200-paper hashes | sketch until S01 |
-| S03 ontology_acceptance or honest skip | depends S02 |
+Run `da summarize-revisions` on `artifacts/article_context/revision_graph_2506.07853.sgsnap` and persist `artifacts/article_context/summarize_revisions_2506.07853.json`. Verify input digest equals file sha256. Restart TUI before `/gsd auto M396-ng8zb0`.
 
-## Closed
-M383-uber46, M395-h2kqbs. Residual after M395 was a *real* producer report file.
+## Why
 
-## Locks
-D127 false · optimizer false · D237 Rust-only
-Do not reuse `extractive_summary_canary.json`.
+Producer is lineage-ready (M395). This task is the first real derivation report file.
+
+## Do not
+
+Reuse `extractive_summary_canary.json`. Invent hashes. Claim 200-paper seal. Start TUI auto without process restart.

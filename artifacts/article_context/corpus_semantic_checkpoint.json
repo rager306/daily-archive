@@ -1,14 +1,45 @@
 {
-  "schema_version": "corpus-required-layer-checkpoint.v1",
+  "schema_version": "corpus-required-layer-checkpoint.v3",
   "package_id": "corpus-200-full-semantic",
   "pipeline_revision": "manifest:6fd1deb530e5c8888bac494e0a12b0624062d0d85a04e01203cff406257596e5+semantic",
   "materialization_manifest_sha256": "6fd1deb530e5c8888bac494e0a12b0624062d0d85a04e01203cff406257596e5",
-  "materialization_report_sha256": "ff708c1918eb20fe92cb0cdb22dc00b47635d396ad0747115b4fe92b45b65779",
+  "materialization_report_sha256": "5caa5b793254de720884db587d624a48a00d8383216e583fbbc4fa6164b7906b",
   "snapshot": {
-    "path": "artifacts/article_context/materialization_all_200_with_resolution.sgsnap",
-    "sha256": "c080fb24f5e9dc16ca16176aaa4887d27333641d2db886d3db81eef3a600ee48",
-    "nodes": 33172,
-    "edges": 49268
+    "path": "artifacts/article_context/materialization_all_200_with_summaries.sgsnap",
+    "physical_sha256": "f5b862b862f3c6264087191eba66cd9f0c50b844711e9309df5ce8c87d7c8721",
+    "semantic_sha256": "5efbd7057f575b2befe64482efd36a317d9acdd05c806814623422f7951bb65c",
+    "semantic_algorithm": "sgsnap-vid-canonical-json.v1",
+    "nodes": 24527,
+    "edges": 40623
+  },
+  "snapshot_lineage": {
+    "materialization_physical_sha256": "e8f3401b32f35f28384c3f9d531bdd29fe7d1395fd0801870a852d41fcec07da",
+    "links": [
+      {
+        "stage_id": "concept_cluster",
+        "report_path": "/root/daily-archive/artifacts/article_context/concept_cluster_canary.json",
+        "report_sha256": "c3e1a64b92ac02ff435d52ab149fc8af203855791df920a63a7923a8b391eef5",
+        "input_physical_sha256": "e8f3401b32f35f28384c3f9d531bdd29fe7d1395fd0801870a852d41fcec07da",
+        "output_physical_sha256": "63be46b2c7ba7c9e2723ff8b1f32f5b1d2e928694bfce45dc78bae08cfa72552",
+        "import_eligible": false
+      },
+      {
+        "stage_id": "entity_resolution",
+        "report_path": "/root/daily-archive/artifacts/article_context/entity_resolution_canary.json",
+        "report_sha256": "9f150a5d82f562d8e2d5491bb75173d2c6f4229b61e1efed2c6614cc90d5f481",
+        "input_physical_sha256": "63be46b2c7ba7c9e2723ff8b1f32f5b1d2e928694bfce45dc78bae08cfa72552",
+        "output_physical_sha256": "8a69676b6ed844b994cc8a6aad0ed148609658a0e30ca215b93185eaec0c6754",
+        "import_eligible": false
+      },
+      {
+        "stage_id": "extractive_summary",
+        "report_path": "/root/daily-archive/artifacts/article_context/summarize_revisions_all_200.json",
+        "report_sha256": "0d6940d576b394f4f1c1a299f07dc62f49dc816f5d9a51982220dd40bf0cbb72",
+        "input_physical_sha256": "8a69676b6ed844b994cc8a6aad0ed148609658a0e30ca215b93185eaec0c6754",
+        "output_physical_sha256": "f5b862b862f3c6264087191eba66cd9f0c50b844711e9309df5ce8c87d7c8721",
+        "import_eligible": false
+      }
+    ]
   },
   "acap": {
     "report_path": "artifacts/article_context/assurance_report.json",
@@ -34,7 +65,7 @@
   "structural_tasks": {
     "suite_path": "data/graph_tasks/materialization_all_200.tasks.cypher",
     "suite_sha256": "d2f352597a00fac51aa30afdfb751c26408909ef22e135a89457b234a8f59569",
-    "overall_passed": true,
+    "overall_passed": false,
     "by_class": {
       "structural": {
         "class": "structural",
@@ -54,10 +85,10 @@
       },
       "summary": {
         "class": "summary",
-        "status": "passed",
+        "status": "failed",
         "task_count": 1,
-        "pass": 1,
-        "empty": 0,
+        "pass": 0,
+        "empty": 1,
         "error": 0
       },
       "resolution": {
@@ -94,10 +125,12 @@
     "cluster",
     "resolution"
   ],
-  "findings": [],
-  "verdict": "pass",
+  "findings": [
+    "required_task_class:summary:Failed"
+  ],
+  "verdict": "fail",
   "import_eligible": false,
   "same_process_tasks": true,
-  "refreshed_at": "2026-08-10T16:02:06.032358229+00:00",
-  "package_sha256": "847bf32fb34b160e743a86b97d0f57a10bd162a9f2edbeabf143c417dea50f8f"
+  "refreshed_at": "2026-08-14T12:25:06.159387125+00:00",
+  "package_sha256": "14ee82a82d9c90b7047fbd381c854538c9506608f591eaaad43b2808f2fcd862"
 }
