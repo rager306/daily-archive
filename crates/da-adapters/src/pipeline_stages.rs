@@ -311,7 +311,8 @@ impl RuleExtractionStage {
                 configuration_fingerprint: configuration_fingerprint.into(),
                 prompt_fingerprint: None,
                 model_fingerprint: Some(extractor_name),
-                output_schema_fingerprint: "Vec<ExtractedEntity>@serde-v2-section-ordinal".into(),
+                output_schema_fingerprint:
+                    da_ports::cache_payload::extracted_entity_output_schema_fingerprint(),
             },
         }
     }
@@ -326,6 +327,15 @@ impl RuleExtractionStage {
 impl PipelineStageExecutor for RuleExtractionStage {
     fn contract(&self) -> StageContract {
         self.contract.clone()
+    }
+
+    fn validate_cached_payload(&self, payload: &[u8]) -> Result<(), StageExecutionError> {
+        da_ports::cache_payload::decode_extracted_entities(payload)
+            .map(|_| ())
+            .map_err(|error| StageExecutionError::Terminal {
+                error_class: "incompatible_cache_payload".into(),
+                message: error.to_string(),
+            })
     }
 
     async fn execute(
@@ -684,6 +694,35 @@ mod tests {
             stage.contract().configuration_fingerprint,
             "sha256:fixture-config"
         );
+    }
+
+    #[test]
+    fn rule_extraction_stage_binds_canonical_schema_and_rejects_legacy_hits() {
+        let stage = RuleExtractionStage::new(
+            Arc::new(crate::RuleBasedExtractor::new()),
+            "parse",
+            "sha256:fixture-config",
+        );
+        assert_eq!(
+            stage.contract().output_schema_fingerprint,
+            da_ports::cache_payload::extracted_entity_output_schema_fingerprint()
+        );
+        let legacy = serde_json::to_vec(&serde_json::json!([{
+            "label": "GEPA",
+            "entity_type": "Method",
+            "section_title": "Methods",
+            "char_start": 12,
+            "char_end": 16,
+            "surface": "GEPA"
+        }]))
+        .unwrap();
+        let error = stage.validate_cached_payload(&legacy).unwrap_err();
+        assert!(matches!(
+            error,
+            StageExecutionError::Terminal { ref error_class, .. }
+                if error_class == "incompatible_cache_payload"
+        ));
+        assert!(error.to_string().contains("section_ordinal"));
     }
 
     #[tokio::test]

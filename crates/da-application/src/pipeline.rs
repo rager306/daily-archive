@@ -78,6 +78,8 @@ pub enum PipelineOrchestratorError {
     #[error("pipeline executor registration duplicated: '{registration}'")]
     ExecutorCollision { registration: String },
     #[error(transparent)]
+    StagePayload(#[from] StageExecutionError),
+    #[error(transparent)]
     Cache(#[from] PipelineCacheError),
 }
 
@@ -203,6 +205,7 @@ impl PipelineOrchestrator {
 
             match lookup {
                 CacheLookup::Hit(hit) => {
+                    executor.validate_cached_payload(&hit.payload)?;
                     tracing::info!(
                         article_id = %source.article_id,
                         pipeline_id = %pipeline.id,
@@ -499,6 +502,7 @@ mod tests {
         payload: Vec<u8>,
         calls: AtomicUsize,
         failure: Option<StageExecutionError>,
+        enforce_extraction_schema: bool,
     }
 
     impl FakeStage {
@@ -515,6 +519,7 @@ mod tests {
                 payload: payload.to_vec(),
                 calls: AtomicUsize::new(0),
                 failure: None,
+                enforce_extraction_schema: false,
             }
         }
 
@@ -527,6 +532,18 @@ mod tests {
     impl PipelineStageExecutor for FakeStage {
         fn contract(&self) -> StageContract {
             self.contract.clone()
+        }
+
+        fn validate_cached_payload(&self, payload: &[u8]) -> Result<(), StageExecutionError> {
+            if !self.enforce_extraction_schema {
+                return Ok(());
+            }
+            da_ports::cache_payload::decode_extracted_entities(payload)
+                .map(|_| ())
+                .map_err(|error| StageExecutionError::Terminal {
+                    error_class: "incompatible_cache_payload".into(),
+                    message: error.to_string(),
+                })
         }
 
         async fn execute(
@@ -672,6 +689,64 @@ mod tests {
             PipelineOrchestratorError::MissingExecutor { ref stage_id }
                 if stage_id == "parse"
         ));
+    }
+
+    #[tokio::test]
+    async fn orchestrator_rejects_invalid_same_key_cached_payload_before_hit() {
+        let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
+        let mut stage = FakeStage::success("parse", b"[]");
+        stage.enforce_extraction_schema = true;
+        let contract = stage.contract();
+        let invalid_payload = serde_json::to_vec(&serde_json::json!([{
+            "label": "GEPA",
+            "entity_type": "Method",
+            "section_title": "Methods",
+            "char_start": 12,
+            "char_end": 16,
+            "surface": "GEPA"
+        }]))
+        .unwrap();
+        let key = StageCacheKey {
+            source: source("pdf-v1"),
+            stage_id: "parse".into(),
+            dependency_output_sha256: BTreeMap::new(),
+            implementation_fingerprint: contract.implementation_fingerprint,
+            configuration_fingerprint: contract.configuration_fingerprint,
+            prompt_fingerprint: contract.prompt_fingerprint,
+            model_fingerprint: contract.model_fingerprint,
+            output_schema_fingerprint: contract.output_schema_fingerprint,
+        };
+        cache
+            .store_success(
+                &key,
+                &invalid_payload,
+                BTreeMap::new(),
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let one_stage = PipelineBuilder::new("schema-fence")
+            .step("parse", "parse", &[])
+            .build()
+            .unwrap();
+        let stage = Arc::new(stage);
+        let error = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", stage.clone())
+            .unwrap()
+            .run(&one_stage, source("pdf-v1"))
+            .await
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            PipelineOrchestratorError::StagePayload(StageExecutionError::Terminal {
+                ref error_class,
+                ..
+            }) if error_class == "incompatible_cache_payload"
+        ));
+        assert_eq!(
+            stage.calls(),
+            0,
+            "invalid cached payload must not execute stage"
+        );
     }
 
     #[tokio::test]

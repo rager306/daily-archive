@@ -54,6 +54,13 @@ pub trait PipelineStageExecutor: Send + Sync {
         &self,
         request: StageExecutionRequest,
     ) -> Result<StageExecutionOutput, StageExecutionError>;
+
+    /// Validate a checksum-verified cached payload before it may be reported
+    /// as a hit. The default accepts stage-agnostic bytes; typed stages such as
+    /// extraction override this with their canonical wire contract.
+    fn validate_cached_payload(&self, _payload: &[u8]) -> Result<(), StageExecutionError> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

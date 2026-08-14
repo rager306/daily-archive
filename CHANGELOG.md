@@ -1,5 +1,13 @@
 # Changelog
 
+### M397 S03 canonical extraction payload schema fence
+
+- Added a canonical `extracted_entity.cache.v1` JSON wire contract in da-ports with a SHA-256 output-schema fingerprint.
+- The schema binds the closed `EntityType` wire vocabulary, not just JSON strings.
+- Cache wire payloads now require non-null `section_ordinal` grounding even though the in-memory field remains optional; additive unknown fields stay compatible.
+- `RuleBasedExtractor` and `RuleExtractionStage` cache identities use the canonical schema fingerprint instead of manual version strings, so required wire evolution changes the cache key.
+- `da load` validates extraction hits through this contract after checksum verification; `PipelineOrchestrator` now asks executors to validate cached bytes before recording a hit. Same-key payloads missing grounding fail visibly on both paths and are never reported as hits. The byte cache remains schema-agnostic.
+
 ### M397 S02 profile-bound parse identity and dual-manifestation source identity
 
 - `GrobidProfile::configuration_fingerprint` binds profile, consolidation flags and TEI coordinates; timeout stays operational and outside the content key.

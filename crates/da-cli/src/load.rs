@@ -730,8 +730,8 @@ async fn extract_with_cache(
             lookup_with_legacy_stage_aliases(cache, &key, &[LEGACY_EXTRACTION_STAGE_ID], &now)?;
         match lookup {
             CacheLookup::Hit(hit) => {
-                let extracted: Vec<ExtractedEntity> = serde_json::from_slice(&hit.payload)
-                    .map_err(|error| format!("extract cache payload decode: {error}"))?;
+                let extracted = da_ports::cache_payload::decode_extracted_entities(&hit.payload)
+                    .map_err(|error| format!("extract cache payload contract: {error}"))?;
                 return Ok((
                     extracted,
                     vec![LoadCacheRecord {
@@ -1763,6 +1763,71 @@ mod tests {
         let manifests = cache.manifest("test.paper").unwrap();
         assert_eq!(manifests.len(), 1);
         assert_eq!(manifests[0].key.stage_id, LEGACY_EXTRACTION_STAGE_ID);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn same_key_extract_payload_missing_grounding_is_never_a_hit() {
+        let root = std::env::temp_dir().join(format!(
+            "da-extract-schema-fence-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let source = root.join("article.html");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&source, b"<!doctype html><title>schema fence</title>").unwrap();
+        let parsed = ParsedArticle {
+            paper_id: "test.paper".into(),
+            title: "Schema fence".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let extractor = RuleBasedExtractor::with_config(
+            da_adapters::rule_extractor::ExtractionConfig::bundled(),
+        );
+        let identity = extractor.cache_identity();
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert("parse".into(), "b".repeat(64));
+        let key = StageCacheKey {
+            source: source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
+            stage_id: "extraction_compute".into(),
+            dependency_output_sha256: dependencies,
+            implementation_fingerprint: identity.implementation_fingerprint,
+            configuration_fingerprint: identity.configuration_fingerprint,
+            prompt_fingerprint: None,
+            model_fingerprint: None,
+            output_schema_fingerprint: identity.output_schema_fingerprint,
+        };
+        let legacy_payload = serde_json::json!([{
+            "label": "GEPA",
+            "entity_type": "Method",
+            "section_title": "Methods",
+            "char_start": 12,
+            "char_end": 16,
+            "surface": "GEPA"
+        }]);
+        let payload = serde_json::to_vec(&legacy_payload).unwrap();
+        let cache = FilePipelineCache::new(root.join("cache"));
+        cache
+            .store_success(&key, &payload, BTreeMap::new(), "2026-08-14T00:00:00Z")
+            .unwrap();
+        let error = extract_with_cache(
+            Some(&cache),
+            source_identity_for_assets("test.paper", &source, true, &[]).unwrap(),
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap_err();
+        assert!(error.contains("incompatible"), "{error}");
+        assert!(error.contains("section_ordinal"), "{error}");
+        assert_eq!(cache.manifest("test.paper").unwrap().len(), 1);
         std::fs::remove_dir_all(root).unwrap();
     }
 

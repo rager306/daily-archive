@@ -6,6 +6,7 @@
 pub mod acquisition;
 pub mod algorithms;
 pub mod assurance;
+pub mod cache_payload;
 pub mod catalog;
 pub mod clock;
 pub mod embedder;
@@ -28,6 +29,10 @@ pub use acquisition::{
 };
 pub use algorithms::GraphAlgorithms;
 pub use assurance::{AssuranceReportStore, AssuranceStoreError};
+pub use cache_payload::{
+    CachePayloadError, EXTRACTED_ENTITY_SCHEMA_ID, decode_extracted_entities,
+    extracted_entity_json_schema, extracted_entity_output_schema_fingerprint,
+};
 pub use catalog::{
     CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot, CatalogMutationPort,
     CatalogWriteDisposition,

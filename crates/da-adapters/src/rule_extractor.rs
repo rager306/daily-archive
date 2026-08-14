@@ -169,7 +169,8 @@ impl RuleBasedExtractor {
         ExtractionCacheIdentity {
             implementation_fingerprint: "da_adapters::RuleBasedExtractor@extract-v2".into(),
             configuration_fingerprint: hex::encode(Sha256::digest(config_bytes)),
-            output_schema_fingerprint: "Vec<ExtractedEntity>.json.v1".into(),
+            output_schema_fingerprint:
+                da_ports::cache_payload::extracted_entity_output_schema_fingerprint(),
         }
     }
 
@@ -1327,8 +1328,9 @@ fn cache_identity_is_stable_and_matches_equivalent_config() {
     );
     assert_eq!(
         first.output_schema_fingerprint,
-        "Vec<ExtractedEntity>.json.v1"
+        da_ports::cache_payload::extracted_entity_output_schema_fingerprint()
     );
+    assert_eq!(first.output_schema_fingerprint.len(), 64);
 }
 
 #[test]
