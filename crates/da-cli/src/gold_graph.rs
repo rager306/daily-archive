@@ -5,10 +5,11 @@ use anyhow::{Context, Result};
 use da_application::ingest::IngestResult;
 use da_application::{
     ExtractionResult, ExtractionUseCase, IngestUseCase, MaterializationAssuranceUseCase,
-    MaterializationReplayObservation,
+    MaterializationReadback, MaterializationReplayObservation, MaterializedSectionObservation,
+    RevisionClassifyUseCase, RevisionContentContext, RevisionManifestationInput,
 };
-use da_application::{PipelineRunReport, StageDisposition};
-use da_domain::{ArticleAssuranceReport, ContentDigest};
+use da_application::{PipelineRunReport, StageDisposition, StageRunRecord};
+use da_domain::{ArticleAssuranceReport, ArticleLocator, ContentDigest};
 use da_ports::Clock;
 use da_ports::extractor::ExtractedEntity;
 use da_ports::graph_store::DirectGraphStore;
@@ -45,7 +46,12 @@ pub struct VerifiedPaperArtifacts {
     pub hashes: ArtifactHashes,
 }
 
-type PreparedPaper = (GoldWavePaper, VerifiedPaperArtifacts, CatalogMetadata);
+type PreparedPaper = (
+    GoldWavePaper,
+    VerifiedPaperArtifacts,
+    CatalogMetadata,
+    CatalogRevisionBinding,
+);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ArtifactHashes {
@@ -73,6 +79,10 @@ pub struct NetWrites {
 pub struct PaperGraphMaterialization {
     pub paper_id: String,
     pub source_sha256: String,
+    #[serde(default)]
+    pub revision: u32,
+    #[serde(default)]
+    pub binding_method: String,
     pub artifacts: ArtifactHashes,
     /// Business object creation counters retained for operator diagnostics.
     pub first: NetWrites,
@@ -119,7 +129,19 @@ impl BatchGraphMaterialization {
     }
 }
 
-pub type CatalogMetadata = (Option<String>, Option<String>);
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogMetadata {
+    pub primary_domain: Option<String>,
+    pub source_code: Option<String>,
+    pub article_root: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CatalogRevisionBinding {
+    pub context: RevisionContentContext,
+    pub method: &'static str,
+}
+
 pub type MetadataLookup<'a> = dyn Fn(&str) -> Result<CatalogMetadata> + Sync + 'a;
 
 pub struct MaterializationRuntime<'a> {
@@ -269,7 +291,8 @@ pub fn catalog_metadata_index(
         let Some(source) = record.source.path.as_deref() else {
             continue;
         };
-        let metadata_path = article_root(Path::new(source)).map(|root| root.join("article.json"));
+        let root = article_root(Path::new(source));
+        let metadata_path = root.as_ref().map(|root| root.join("article.json"));
         let value = metadata_path
             .filter(|path| path.is_file())
             .map(|path| {
@@ -282,16 +305,17 @@ pub fn catalog_metadata_index(
         let fallback = infer_catalog_metadata(Path::new(source));
         index.insert(
             record.paper_id.clone(),
-            (
-                value
+            CatalogMetadata {
+                primary_domain: value
                     .as_ref()
                     .and_then(|item| item.coarse_topic_code.clone())
-                    .or(fallback.0),
-                value
+                    .or(fallback.primary_domain),
+                source_code: value
                     .as_ref()
                     .and_then(|item| item.source_code.clone())
-                    .or(fallback.1),
-            ),
+                    .or(fallback.source_code),
+                article_root: root,
+            },
         );
     }
     Ok(index)
@@ -312,9 +336,319 @@ fn infer_catalog_metadata(source: &Path) -> CatalogMetadata {
         .map(|part| part.as_os_str().to_string_lossy().to_string())
         .collect::<Vec<_>>();
     let Some(index) = parts.iter().position(|part| part == "arxiv") else {
-        return (None, None);
+        return CatalogMetadata::default();
     };
-    (parts.get(index + 1).cloned(), Some("arxiv".into()))
+    CatalogMetadata {
+        primary_domain: parts.get(index + 1).cloned(),
+        source_code: Some("arxiv".into()),
+        article_root: article_root(source),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct VersionedArticleMetadata {
+    article_key: String,
+    source_code: Option<String>,
+    requested_source: RequestedRevisionSource,
+    source_variants: Vec<VersionedSourceVariant>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RequestedRevisionSource {
+    revision: u32,
+    source_key: String,
+    versioned: bool,
+}
+
+#[derive(Debug, Deserialize)]
+struct VersionedSourceVariant {
+    byte_size: u64,
+    capture_status: String,
+    fetched_from_url: Option<String>,
+    path: String,
+    requested_revision: Option<u32>,
+    sha256: String,
+    source_format: String,
+}
+
+fn is_hex_sha256(value: &str) -> bool {
+    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn revision_from_metadata_path(path: &Path) -> Result<u32> {
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .context("versioned metadata path is not UTF-8")?;
+    let revision = name
+        .strip_prefix("article.v")
+        .and_then(|value| value.strip_suffix(".json"))
+        .with_context(|| format!("invalid versioned metadata filename {name}"))?;
+    revision
+        .parse::<u32>()
+        .with_context(|| format!("invalid revision in versioned metadata filename {name}"))
+}
+
+fn resolved_catalog_path(root: &Path, value: &str) -> Result<PathBuf> {
+    let root = root
+        .canonicalize()
+        .with_context(|| format!("canonicalize catalog root {}", root.display()))?;
+    let candidate = if Path::new(value).is_absolute() {
+        PathBuf::from(value)
+    } else {
+        root.join(value)
+    };
+    let resolved = candidate
+        .canonicalize()
+        .with_context(|| format!("canonicalize versioned source {value}"))?;
+    anyhow::ensure!(
+        resolved.starts_with(&root),
+        "versioned source escapes article root: {}",
+        resolved.display()
+    );
+    Ok(resolved)
+}
+
+fn evidence_path(path: &Path) -> String {
+    let Ok(current) = std::env::current_dir().and_then(|root| root.canonicalize()) else {
+        return path.display().to_string();
+    };
+    match path.canonicalize() {
+        Ok(resolved) if resolved.starts_with(&current) => resolved
+            .strip_prefix(&current)
+            .map(|relative| relative.display().to_string())
+            .unwrap_or_else(|_| resolved.display().to_string()),
+        Ok(resolved) => resolved.display().to_string(),
+        Err(_) => path.display().to_string(),
+    }
+}
+
+fn manifestation_from_variant(
+    root: &Path,
+    revision: u32,
+    variant: &VersionedSourceVariant,
+) -> Result<RevisionManifestationInput> {
+    let format = variant.source_format.to_ascii_lowercase();
+    anyhow::ensure!(
+        format == "pdf" || format == "html",
+        "unsupported versioned source format {:?}",
+        variant.source_format
+    );
+    anyhow::ensure!(
+        is_hex_sha256(&variant.sha256),
+        "invalid versioned source digest {:?}",
+        variant.sha256
+    );
+    anyhow::ensure!(
+        variant
+            .requested_revision
+            .is_some_and(|value| value == revision),
+        "versioned source revision drift for {}: expected v{revision}, found {:?}",
+        variant.path,
+        variant.requested_revision
+    );
+    let path = resolved_catalog_path(root, &variant.path)?;
+    let bytes = std::fs::metadata(&path)
+        .with_context(|| format!("stat versioned source {}", path.display()))?
+        .len();
+    anyhow::ensure!(
+        bytes == variant.byte_size,
+        "versioned source byte mismatch for {}: metadata {}, disk {bytes}",
+        path.display(),
+        variant.byte_size
+    );
+    let actual = sha256(
+        &std::fs::read(&path)
+            .with_context(|| format!("read versioned source {}", path.display()))?,
+    );
+    anyhow::ensure!(
+        actual == variant.sha256,
+        "versioned source digest mismatch for {}: metadata {}, disk {actual}",
+        path.display(),
+        variant.sha256
+    );
+    Ok(RevisionManifestationInput {
+        format,
+        sha256: variant.sha256.clone(),
+        bytes,
+        uri: variant
+            .fetched_from_url
+            .clone()
+            .unwrap_or_else(|| format!("catalog:{}", path.display())),
+        path: variant.path.clone(),
+        capture_status: variant.capture_status.clone(),
+    })
+}
+
+fn exact_context(
+    paper_id: &str,
+    revision: u32,
+    source_code: &str,
+    manifestations: Vec<RevisionManifestationInput>,
+) -> Result<RevisionContentContext> {
+    let locator = ArticleLocator::Arxiv {
+        id: paper_id.to_string(),
+        revision: Some(revision),
+    };
+    RevisionClassifyUseCase::bundled()?
+        .revision_context_for_classified_load(&locator, source_code, paper_id, manifestations)
+        .map_err(anyhow::Error::msg)?
+        .with_context(|| {
+            format!("exact revision {paper_id}v{revision} classified without a context")
+        })
+}
+
+pub fn revision_binding_from_catalog(
+    paper_id: &str,
+    source_sha256: &str,
+    root: &Path,
+) -> Result<CatalogRevisionBinding> {
+    anyhow::ensure!(
+        root.is_dir(),
+        "catalog article root missing: {}",
+        root.display()
+    );
+    let mut by_digest: BTreeMap<String, CatalogRevisionBinding> = BTreeMap::new();
+    let mut metadata_entries = root
+        .read_dir()
+        .with_context(|| format!("read catalog root {}", root.display()))?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with("article.v") && name.ends_with(".json"))
+        })
+        .collect::<Vec<_>>();
+    metadata_entries.sort();
+
+    for metadata_path in metadata_entries {
+        let revision = revision_from_metadata_path(&metadata_path)?;
+        let metadata: VersionedArticleMetadata = serde_json::from_slice(
+            &std::fs::read(&metadata_path)
+                .with_context(|| format!("read {}", metadata_path.display()))?,
+        )
+        .with_context(|| format!("parse {}", metadata_path.display()))?;
+        anyhow::ensure!(
+            metadata.article_key == paper_id,
+            "versioned metadata identity drift: expected {paper_id}, found {}",
+            metadata.article_key
+        );
+        anyhow::ensure!(
+            metadata.requested_source.versioned && metadata.requested_source.revision == revision,
+            "versioned metadata revision drift in {}",
+            metadata_path.display()
+        );
+        let expected_source_key = format!("{paper_id}v{revision}");
+        anyhow::ensure!(
+            metadata.requested_source.source_key == expected_source_key,
+            "versioned source key drift: expected {expected_source_key}, found {}",
+            metadata.requested_source.source_key
+        );
+        anyhow::ensure!(
+            !metadata.source_variants.is_empty(),
+            "versioned metadata has no source variants: {}",
+            metadata_path.display()
+        );
+        let manifestations = metadata
+            .source_variants
+            .iter()
+            .map(|variant| manifestation_from_variant(root, revision, variant))
+            .collect::<Result<Vec<_>>>()?;
+        let source_code = metadata
+            .source_code
+            .clone()
+            .unwrap_or_else(|| "arxiv".to_string());
+        let context = exact_context(paper_id, revision, &source_code, manifestations)?;
+        let binding = CatalogRevisionBinding {
+            context,
+            method: "authoritative_version_metadata",
+        };
+        for manifestation in &binding.context.manifestations {
+            if let Some(previous) = by_digest.insert(manifestation.sha256.clone(), binding.clone())
+                && previous.context != binding.context
+            {
+                anyhow::bail!(
+                    "ambiguous revision binding for {paper_id} digest {}: v{} and v{}",
+                    manifestation.sha256,
+                    previous.context.revision,
+                    binding.context.revision
+                );
+            }
+        }
+    }
+
+    if let Some(binding) = by_digest.get(source_sha256) {
+        return Ok(binding.clone());
+    }
+
+    // Recovery path: no version metadata digest matched, but exactly one local
+    // versioned asset may have the selected bytes. This never invents a revision.
+    let mut recovered = Vec::new();
+    let mut scan_paths = Vec::new();
+    if let Ok(entries) = root.join("source").read_dir() {
+        scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
+    }
+    if let Ok(entries) = root.read_dir() {
+        scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
+    }
+    for path in scan_paths {
+        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+            continue;
+        };
+        let (prefix, extension) = if let Some(value) = name.strip_suffix(".pdf") {
+            (value, "pdf")
+        } else if let Some(value) = name.strip_suffix(".html") {
+            (value, "html")
+        } else {
+            continue;
+        };
+        let Some(revision) = prefix
+            .strip_prefix(&format!("{paper_id}v"))
+            .or_else(|| prefix.strip_prefix("article.v"))
+            .and_then(|value| value.parse::<u32>().ok())
+        else {
+            continue;
+        };
+        anyhow::ensure!(revision > 0, "revision zero is invalid");
+        let bytes = std::fs::metadata(&path)
+            .with_context(|| format!("stat {}", path.display()))?
+            .len();
+        let digest =
+            sha256(&std::fs::read(&path).with_context(|| format!("read {}", path.display()))?);
+        if digest == source_sha256 {
+            recovered.push((
+                revision,
+                RevisionManifestationInput {
+                    format: extension.to_string(),
+                    sha256: digest,
+                    bytes,
+                    uri: format!("catalog:{}", evidence_path(&path)),
+                    path: evidence_path(&path),
+                    capture_status: "captured_local".into(),
+                },
+            ));
+        }
+    }
+    if recovered.len() > 1 {
+        let revisions = recovered
+            .iter()
+            .map(|(revision, _)| format!("v{revision}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        anyhow::bail!("ambiguous checksum revision binding for {paper_id}: {revisions}");
+    }
+    if let Some((revision, manifestation)) = recovered.pop() {
+        let context = exact_context(paper_id, revision, "arxiv", vec![manifestation])?;
+        return Ok(CatalogRevisionBinding {
+            context,
+            method: "unique_checksum_recovery",
+        });
+    }
+
+    anyhow::bail!(
+        "no exact revision binding for {paper_id} source {source_sha256}; versionless corpus materialization is blocked"
+    )
 }
 
 pub fn load_wave_report(path: &Path) -> Result<GoldWaveReport> {
@@ -338,6 +672,8 @@ pub fn load_verified_artifacts(
     let (parse, parse_key) = stage_identity(&paper.replay, "parse")?;
     let (extract, extract_key) = stage_identity(&paper.replay, "extract")?;
     let (embed, embed_key) = stage_identity(&paper.replay, "embed")?;
+    let extract_stage_id = stage_cache_id(&paper.replay, "extract")?;
+    let embed_stage_id = stage_cache_id(&paper.replay, "embed")?;
     let parsed: ParsedArticle =
         load_typed_payload(cache, &paper.paper_id, "parse", &parse, &parse_key)?;
     anyhow::ensure!(
@@ -350,9 +686,15 @@ pub fn load_verified_artifacts(
         "parse cache source hash mismatch for {}",
         paper.paper_id
     );
-    let entities = load_typed_payload(cache, &paper.paper_id, "extract", &extract, &extract_key)?;
+    let entities = load_typed_payload(
+        cache,
+        &paper.paper_id,
+        &extract_stage_id,
+        &extract,
+        &extract_key,
+    )?;
     let embedding: Vec<f32> =
-        load_typed_payload(cache, &paper.paper_id, "embed", &embed, &embed_key)?;
+        load_typed_payload(cache, &paper.paper_id, &embed_stage_id, &embed, &embed_key)?;
     anyhow::ensure!(
         !embedding.is_empty(),
         "empty embedding for {}",
@@ -569,10 +911,20 @@ fn prepare_wave(
                         break;
                     };
                     let result = (|| {
+                        let metadata = metadata(&paper.paper_id)?;
+                        let root = metadata.article_root.as_ref().with_context(|| {
+                            format!("catalog article root missing for {}", paper.paper_id)
+                        })?;
+                        let binding = revision_binding_from_catalog(
+                            &paper.paper_id,
+                            &paper.source_sha256,
+                            root,
+                        )?;
                         Ok((
                             paper.clone(),
                             load_verified_artifacts(cache, paper)?,
-                            metadata(&paper.paper_id)?,
+                            metadata,
+                            binding,
                         ))
                     })();
                     if sender.send((index, result)).is_err() {
@@ -588,6 +940,53 @@ fn prepare_wave(
             .into_iter()
             .map(|(_, result)| result)
             .collect::<Result<Vec<_>>>()
+    })
+}
+
+async fn revision_readback(
+    graph: &dyn DirectGraphStore,
+    parsed: &ParsedArticle,
+    context: &RevisionContentContext,
+    d127_unlock_count: u64,
+) -> Result<MaterializationReadback> {
+    let revision_vid = context
+        .revision_vid()
+        .map_err(|error| anyhow::anyhow!("revision VID: {error}"))?;
+    let revision_node = graph
+        .find_node_by_string_property("PaperRevision", "vid", &revision_vid)
+        .await
+        .with_context(|| format!("revision node missing for {revision_vid}"))?;
+    let abstract_text = graph
+        .get_node_property_string(revision_node, "abstract_text")
+        .await;
+    let mut sections = Vec::with_capacity(parsed.sections.len());
+    for ordinal in 0..parsed.sections.len() {
+        let section_vid = context
+            .section_vid(ordinal)
+            .map_err(|error| anyhow::anyhow!("revision section VID: {error}"))?;
+        let Some(node) = graph
+            .find_node_by_string_property("Section", "vid", &section_vid)
+            .await
+        else {
+            continue;
+        };
+        if let Some(text) = graph.get_node_property_string(node, "text").await {
+            sections.push(MaterializedSectionObservation { ordinal, text });
+        }
+    }
+    let observed_sections = sections.len() as u64;
+    let paper_citation_count = graph
+        .get_node_property_int(revision_node, "citation_count")
+        .await
+        .and_then(|value| u64::try_from(value).ok());
+    Ok(MaterializationReadback {
+        abstract_text,
+        sections,
+        paper_section_count: Some(observed_sections),
+        // Bibliography is counted on the revision that owns the parsed bytes;
+        // cross-revision citation ownership remains PIR-011.
+        paper_citation_count,
+        import_eligible_true_nodes: d127_unlock_count,
     })
 }
 
@@ -619,7 +1018,7 @@ pub async fn materialize_wave(
     let prepared = prepare_wave(cache, report, runtime.metadata, runtime.prepare_workers)?;
 
     let mut papers = Vec::with_capacity(prepared.len());
-    for (paper, artifacts, (primary_domain, source_code)) in &prepared {
+    for (paper, artifacts, metadata, binding) in &prepared {
         if let Some(progress) = &runtime.progress {
             progress.paper_started(
                 crate::materialization_progress::MaterializationPhase::FirstWrite,
@@ -629,16 +1028,22 @@ pub async fn materialize_wave(
         }
         instrumented.reset().await;
         let first_ingest = ingest
-            .materialize_parsed(
+            .materialize_parsed_with_context(
                 &artifacts.parsed,
                 artifacts.embedding.clone(),
-                primary_domain.clone(),
-                source_code.clone(),
+                metadata.primary_domain.clone(),
+                metadata.source_code.clone(),
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
+                Some(&binding.context),
             )
             .await?;
         let first_extract = extraction
-            .materialize_extracted(&artifacts.parsed, artifacts.entities.clone())
+            .materialize_extracted_with_context(
+                &artifacts.parsed,
+                artifacts.entities.clone(),
+                Some(&binding.context),
+            )
             .await?;
         let first_mutations = instrumented.snapshot().await;
         if let Some(progress) = &runtime.progress {
@@ -647,6 +1052,8 @@ pub async fn materialize_wave(
         papers.push(PaperGraphMaterialization {
             paper_id: paper.paper_id.clone(),
             source_sha256: paper.source_sha256.clone(),
+            revision: binding.context.revision,
+            binding_method: binding.method.to_string(),
             artifacts: artifacts.hashes.clone(),
             first: net_writes(&first_ingest, &first_extract),
             replay: NetWrites::default(),
@@ -663,7 +1070,7 @@ pub async fn materialize_wave(
     let graph_after_first = ingest.graph_stats().await;
 
     let mut replay_contexts = Vec::with_capacity(prepared.len());
-    for ((paper, artifacts, (primary_domain, source_code)), paper_report) in
+    for ((paper, artifacts, metadata, binding), paper_report) in
         prepared.into_iter().zip(&mut papers)
     {
         if let Some(progress) = &runtime.progress {
@@ -675,27 +1082,35 @@ pub async fn materialize_wave(
         }
         instrumented.reset().await;
         let replay_ingest = ingest
-            .materialize_parsed(
+            .materialize_parsed_with_context(
                 &artifacts.parsed,
                 artifacts.embedding,
-                primary_domain,
-                source_code,
+                metadata.primary_domain,
+                metadata.source_code,
                 None,
+                da_domain::PdfTriageStatus::NotConfigured,
+                Some(&binding.context),
             )
             .await?;
         let replay_extract = extraction
-            .materialize_extracted(&artifacts.parsed, artifacts.entities)
+            .materialize_extracted_with_context(
+                &artifacts.parsed,
+                artifacts.entities,
+                Some(&binding.context),
+            )
             .await?;
         paper_report.replay = net_writes(&replay_ingest, &replay_extract);
         paper_report.replay_mutations = instrumented.snapshot().await;
         if let Some(progress) = &runtime.progress {
             progress.work_unit_completed(paper_report.replay_mutations);
         }
-        replay_contexts.push((artifacts.parsed, replay_ingest));
+        replay_contexts.push((artifacts.parsed, replay_ingest, binding.context));
     }
     let d127_unlock_count =
         MaterializationAssuranceUseCase::count_d127_unlocks(&instrumented).await;
-    for ((parsed, replay_ingest), paper_report) in replay_contexts.into_iter().zip(&mut papers) {
+    for ((parsed, replay_ingest, revision_context), paper_report) in
+        replay_contexts.into_iter().zip(&mut papers)
+    {
         if let Some(progress) = &runtime.progress {
             progress.paper_started(
                 crate::materialization_progress::MaterializationPhase::Assurance,
@@ -703,16 +1118,15 @@ pub async fn materialize_wave(
                 &paper_report.paper_id,
             );
         }
-        paper_report.assurance = assurance
-            .evaluate_graph_with_d127(
-                &instrumented,
-                &parsed,
-                &replay_ingest,
-                MaterializationReplayObservation::from_mutations(paper_report.replay_mutations),
-                runtime.policy_sha256.clone(),
-                d127_unlock_count,
-            )
-            .await?;
+        let readback =
+            revision_readback(&instrumented, &parsed, &revision_context, d127_unlock_count).await?;
+        paper_report.assurance = assurance.evaluate(
+            &parsed,
+            &replay_ingest,
+            &readback,
+            MaterializationReplayObservation::from_mutations(paper_report.replay_mutations),
+            runtime.policy_sha256.clone(),
+        )?;
         if let Some(progress) = &runtime.progress {
             progress.paper_completed();
         }
@@ -751,11 +1165,7 @@ pub fn sha256(bytes: &[u8]) -> String {
 }
 
 fn stage_identity(report: &PipelineRunReport, step: &str) -> Result<(String, String)> {
-    let stage = report
-        .stages
-        .iter()
-        .find(|stage| stage.step_name == step)
-        .with_context(|| format!("missing successful stage '{step}'"))?;
+    let stage = stage_record(report, step)?;
     let key = stage
         .cache_key_sha256
         .clone()
@@ -765,6 +1175,26 @@ fn stage_identity(report: &PipelineRunReport, step: &str) -> Result<(String, Str
         | StageDisposition::CacheHit { output_sha256 } => Ok((output_sha256.clone(), key)),
         other => anyhow::bail!("stage '{step}' has no successful output: {other:?}"),
     }
+}
+
+fn stage_cache_id(report: &PipelineRunReport, step: &str) -> Result<String> {
+    Ok(stage_record(report, step)?.stage_id.clone())
+}
+
+fn stage_record<'a>(report: &'a PipelineRunReport, step: &str) -> Result<&'a StageRunRecord> {
+    let aliases: [&str; 2] = match step {
+        "embed" => ["embed", "embedding"],
+        "extract" => ["extract", "extraction_compute"],
+        other => [other, other],
+    };
+    report
+        .stages
+        .iter()
+        .find(|stage| {
+            aliases.contains(&stage.step_name.as_str())
+                || aliases.contains(&stage.stage_id.as_str())
+        })
+        .with_context(|| format!("missing successful stage '{step}'"))
 }
 
 fn cache_source_sha256(
@@ -871,6 +1301,361 @@ mod tests {
                 },
             }],
         }
+    }
+
+    #[test]
+    fn catalog_revision_bindings_select_exact_versions_without_inventing_identity() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+        let v1 = sha256(&std::fs::read(root.join("source/2506.07853v1.pdf")).unwrap());
+        let v5 = sha256(&std::fs::read(root.join("source/2506.07853v5.pdf")).unwrap());
+        assert_ne!(v1, v5);
+        let first = revision_binding_from_catalog("2506.07853", &v1, &root).unwrap();
+        let latest = revision_binding_from_catalog("2506.07853", &v5, &root).unwrap();
+        assert_eq!(first.method, "authoritative_version_metadata");
+        assert_eq!(latest.method, "authoritative_version_metadata");
+        assert_eq!(first.context.revision, 1);
+        assert_eq!(latest.context.revision, 5);
+        assert_eq!(first.context.canonical_id, "2506.07853");
+        assert_ne!(
+            first.context.revision_vid().unwrap(),
+            latest.context.revision_vid().unwrap()
+        );
+        assert_ne!(
+            first.context.section_vid(0).unwrap(),
+            latest.context.section_vid(0).unwrap()
+        );
+    }
+
+    #[test]
+    fn missing_or_ambiguous_revision_evidence_fails_closed() {
+        let root = std::env::temp_dir().join(format!("da-revision-missing-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(root.join("article.json"), b"{}").unwrap();
+        let error =
+            revision_binding_from_catalog("2506.07853", &"a".repeat(64), &root).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("versionless corpus materialization is blocked")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+
+        let ambiguous_root =
+            std::env::temp_dir().join(format!("da-revision-ambiguous-{}", std::process::id()));
+        let source = ambiguous_root.join("source");
+        std::fs::create_dir_all(&source).unwrap();
+        let bytes = b"same-version-bytes";
+        std::fs::write(source.join("2506.07853v1.pdf"), bytes).unwrap();
+        std::fs::write(source.join("2506.07853v2.pdf"), bytes).unwrap();
+        let digest = sha256(bytes);
+        let error =
+            revision_binding_from_catalog("2506.07853", &digest, &ambiguous_root).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("ambiguous checksum revision binding")
+        );
+        std::fs::remove_dir_all(ambiguous_root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn gold_wave_materializes_two_revisions_with_distinct_sections_and_replay() {
+        use da_adapters::FilePipelineCache;
+        use da_ports::pipeline_cache::{SourceFormat, SourceIdentity, StageCacheKey};
+
+        let catalog_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+        let cache_root =
+            std::env::temp_dir().join(format!("da-gold-two-revisions-{}", std::process::id()));
+        std::fs::create_dir_all(&cache_root).unwrap();
+        let cache = FilePipelineCache::new(cache_root.join("pipeline_cache"));
+        let extractor = da_adapters::RuleBasedExtractor::with_config(
+            da_adapters::rule_extractor::ExtractionConfig::bundled(),
+        );
+        let extraction_identity = extractor.cache_identity();
+        let mut papers = Vec::new();
+
+        for revision in [1_u32, 5_u32] {
+            let source_path = catalog_root.join(format!("source/2506.07853v{revision}.pdf"));
+            let source_bytes = std::fs::read(&source_path).unwrap();
+            let source_sha = sha256(&source_bytes);
+            let parsed = ParsedArticle {
+                paper_id: "2506.07853".into(),
+                title: format!("Revision {revision}"),
+                abstract_text: format!("Abstract for revision {revision}"),
+                body_text: format!("Body for revision {revision}"),
+                sections: vec![da_ports::parser::Section {
+                    title: "Methods".into(),
+                    text: format!("Methods text for revision {revision}"),
+                    level: 1,
+                    ..Default::default()
+                }],
+                citations: vec![da_ports::parser::CitationEntry {
+                    raw_text: format!("Citation in revision {revision}"),
+                    doi: None,
+                    arxiv_id: Some("2507.19457".into()),
+                    title: Some("Cited revision-aware paper".into()),
+                }],
+                layout_json: None,
+                tei_xml: None,
+                pdf_hash: source_sha.clone(),
+            };
+            let entities = Vec::<ExtractedEntity>::new();
+            let embedding = vec![0.25_f32, -0.5, 1.0];
+            let parse_payload = serde_json::to_vec(&parsed).unwrap();
+            let extract_payload = serde_json::to_vec(&entities).unwrap();
+            let embed_payload = serde_json::to_vec(&embedding).unwrap();
+            let source = SourceIdentity {
+                article_id: "2506.07853".into(),
+                selected_format: SourceFormat::Pdf,
+                pdf_sha256: Some(source_sha.clone()),
+                html_sha256: None,
+                acquisition_fingerprint: format!("acq-v2;pdf={source_sha};html=none"),
+                normalization_fingerprint: "identity-v1".into(),
+            };
+            let parse_key = StageCacheKey {
+                source: source.clone(),
+                stage_id: "parse".into(),
+                dependency_output_sha256: BTreeMap::new(),
+                implementation_fingerprint: "test-parser@two-revisions".into(),
+                configuration_fingerprint: "profile=structural;test".into(),
+                prompt_fingerprint: None,
+                model_fingerprint: None,
+                output_schema_fingerprint: "ParsedArticle.v1".into(),
+            };
+            let extraction_key = StageCacheKey {
+                source: source.clone(),
+                stage_id: "extraction_compute".into(),
+                dependency_output_sha256: BTreeMap::from([(
+                    "parse".into(),
+                    sha256(&parse_payload),
+                )]),
+                implementation_fingerprint: extraction_identity.implementation_fingerprint.clone(),
+                configuration_fingerprint: extraction_identity.configuration_fingerprint.clone(),
+                prompt_fingerprint: None,
+                model_fingerprint: None,
+                output_schema_fingerprint: extraction_identity.output_schema_fingerprint.clone(),
+            };
+            let embedding_key = StageCacheKey {
+                source,
+                stage_id: "embedding".into(),
+                dependency_output_sha256: BTreeMap::from([(
+                    "parse".into(),
+                    sha256(&parse_payload),
+                )]),
+                implementation_fingerprint: "test-embedder@two-revisions".into(),
+                configuration_fingerprint: "model=test;dims=3".into(),
+                prompt_fingerprint: None,
+                model_fingerprint: Some("test".into()),
+                output_schema_fingerprint: "Vec<f32>.json.v1".into(),
+            };
+            let parse_key_sha = parse_key.key_sha256().unwrap();
+            let extraction_key_sha = extraction_key.key_sha256().unwrap();
+            let embedding_key_sha = embedding_key.key_sha256().unwrap();
+            cache
+                .store_success(
+                    &parse_key,
+                    &parse_payload,
+                    BTreeMap::new(),
+                    "2026-08-14T00:00:00Z",
+                )
+                .unwrap();
+            cache
+                .store_success(
+                    &extraction_key,
+                    &extract_payload,
+                    BTreeMap::new(),
+                    "2026-08-14T00:00:00Z",
+                )
+                .unwrap();
+            cache
+                .store_success(
+                    &embedding_key,
+                    &embed_payload,
+                    BTreeMap::new(),
+                    "2026-08-14T00:00:00Z",
+                )
+                .unwrap();
+            let stages = vec![
+                StageRunRecord {
+                    step_name: "parse".into(),
+                    stage_id: "parse".into(),
+                    resolved_from: None,
+                    cache_key_sha256: Some(parse_key_sha),
+                    disposition: StageDisposition::CacheHit {
+                        output_sha256: sha256(&parse_payload),
+                    },
+                },
+                StageRunRecord {
+                    step_name: "extraction_compute".into(),
+                    stage_id: "extraction_compute".into(),
+                    resolved_from: None,
+                    cache_key_sha256: Some(extraction_key_sha),
+                    disposition: StageDisposition::CacheHit {
+                        output_sha256: sha256(&extract_payload),
+                    },
+                },
+                StageRunRecord {
+                    step_name: "embedding".into(),
+                    stage_id: "embedding".into(),
+                    resolved_from: None,
+                    cache_key_sha256: Some(embedding_key_sha),
+                    disposition: StageDisposition::CacheHit {
+                        output_sha256: sha256(&embed_payload),
+                    },
+                },
+            ];
+            papers.push(GoldWavePaper {
+                paper_id: "2506.07853".into(),
+                source_sha256: source_sha,
+                replay: PipelineRunReport {
+                    pipeline_id: "gold-two-revisions".into(),
+                    article_id: "2506.07853".into(),
+                    completed: true,
+                    stages,
+                },
+            });
+        }
+
+        let report = GoldWaveReport {
+            manifest_sha256: "two-revision-test".into(),
+            batch: 1,
+            wave_passed: true,
+            papers,
+        };
+        let mut metadata = BTreeMap::new();
+        metadata.insert(
+            "2506.07853".to_string(),
+            CatalogMetadata {
+                primary_domain: Some("cs-ai".into()),
+                source_code: Some("arxiv".into()),
+                article_root: Some(catalog_root.clone()),
+            },
+        );
+        let metadata_lookup = |paper_id: &str| {
+            metadata
+                .get(paper_id)
+                .cloned()
+                .with_context(|| format!("metadata missing for {paper_id}"))
+        };
+        let clock: Arc<dyn Clock> = Arc::new(da_ports::FixedClock::from_timestamp(1_700_000_000));
+        let runtime = MaterializationRuntime {
+            policy_sha256: ContentDigest::of_bytes(b"two-revision-policy"),
+            clock,
+            prepare_workers: 1,
+            metadata: &metadata_lookup,
+            progress: None,
+        };
+        let store = Arc::new(kg_storage::MockGraphStore::new());
+        let wave = materialize_wave(
+            store.clone() as Arc<dyn DirectGraphStore>,
+            &cache,
+            &report,
+            &runtime,
+        )
+        .await
+        .unwrap();
+        assert!(
+            wave.passed(),
+            "two-revision wave failed assurance/replay gate:\n{wave:#?}"
+        );
+        assert!(!wave.import_eligible);
+        assert_eq!(wave.papers.len(), 2);
+        assert_eq!(wave.papers[0].revision, 1);
+        assert_eq!(wave.papers[1].revision, 5);
+        assert_eq!(
+            wave.papers[0].binding_method,
+            "authoritative_version_metadata"
+        );
+        for paper in &wave.papers {
+            assert!(paper.first_mutations.applied() > 0);
+            assert!(paper.replay_mutations.replay_passes());
+        }
+
+        let revisions = store.get_nodes_by_label("PaperRevision").await;
+        assert_eq!(revisions.len(), 2);
+        let mut revision_vids = std::collections::BTreeSet::new();
+        for node in &revisions {
+            let vid = store.get_node_property_string(*node, "vid").await.unwrap();
+            revision_vids.insert(vid);
+        }
+        assert_eq!(revision_vids.len(), 2);
+        let papers_in_graph = store.get_nodes_by_label("Paper").await;
+        assert_eq!(papers_in_graph.len(), 1);
+        let sections = store.get_nodes_by_label("Section").await;
+        assert_eq!(sections.len(), 2);
+        let versionless_prefix = "vid:section:2506.07853:";
+        for node in &sections {
+            let vid = store.get_node_property_string(*node, "vid").await.unwrap();
+            assert!(
+                !vid.starts_with(versionless_prefix),
+                "versionless section VID {vid}"
+            );
+        }
+        std::fs::remove_dir_all(cache_root).unwrap();
+    }
+
+    #[test]
+    fn versioned_source_paths_are_root_jailed_and_digest_bound() {
+        let base = std::env::temp_dir().join(format!("da-revision-jail-{}", std::process::id()));
+        let root = base.join("article");
+        let source = root.join("source");
+        std::fs::create_dir_all(&source).unwrap();
+        let bytes = b"versioned-source";
+        std::fs::write(source.join("2506.07853v1.pdf"), bytes).unwrap();
+        let correct_sha = sha256(bytes);
+        let metadata = serde_json::json!({
+            "article_key": "2506.07853",
+            "requested_source": {
+                "revision": 1,
+                "source_key": "2506.07853v1",
+                "versioned": true
+            },
+            "source_variants": [{
+                "byte_size": bytes.len() as u64,
+                "capture_status": "captured_local",
+                "path": "source/2506.07853v1.pdf",
+                "requested_revision": 1,
+                "sha256": correct_sha,
+                "source_format": "pdf"
+            }]
+        });
+        std::fs::write(
+            root.join("article.v1.json"),
+            serde_json::to_vec(&metadata).unwrap(),
+        )
+        .unwrap();
+        assert!(revision_binding_from_catalog("2506.07853", &correct_sha, &root).is_ok());
+
+        let outside = base.join("outside.pdf");
+        std::fs::write(&outside, bytes).unwrap();
+        let escaped = serde_json::from_str::<serde_json::Value>(&metadata.to_string()).unwrap();
+        let mut escaped = escaped;
+        escaped["source_variants"][0]["path"] =
+            serde_json::Value::String(outside.display().to_string());
+        std::fs::write(
+            root.join("article.v1.json"),
+            serde_json::to_vec(&escaped).unwrap(),
+        )
+        .unwrap();
+        let error = revision_binding_from_catalog("2506.07853", &correct_sha, &root).unwrap_err();
+        assert!(
+            error.to_string().contains("escapes article root"),
+            "{error}"
+        );
+
+        let mut drifted = serde_json::from_str::<serde_json::Value>(&metadata.to_string()).unwrap();
+        drifted["source_variants"][0]["sha256"] = serde_json::Value::String("b".repeat(64));
+        std::fs::write(
+            root.join("article.v1.json"),
+            serde_json::to_vec(&drifted).unwrap(),
+        )
+        .unwrap();
+        let error =
+            revision_binding_from_catalog("2506.07853", &"b".repeat(64), &root).unwrap_err();
+        assert!(error.to_string().contains("digest mismatch"), "{error}");
+        std::fs::remove_dir_all(base).unwrap();
     }
 
     #[tokio::test]

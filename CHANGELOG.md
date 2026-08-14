@@ -1,5 +1,13 @@
 # Changelog
 
+### M397 S04 revision-owned corpus materialization
+
+- Gold graph corpus preparation now derives an Exact `RevisionContentContext` from authoritative `article.vN.json` metadata, or a unique checksum match to one versioned asset; ambiguous, missing and versionless identities fail before Section writes.
+- Versioned source paths are canonicalized and jailed to the article root, with revision and digest drift rejected.
+- `materialize_wave` calls revision-aware ingest and extraction materializers; it no longer uses the versionless wrappers.
+- Materialization reports expose selected revision and binding method; revision assurance reads abstract, section and citation evidence from the revision-owned nodes.
+- Two-revision proof: one Paper, two PaperRevisions, distinct revision Section VIDs, no versionless Section VID, replay applied=0 with unchanged>0, D127 false. Existing 200-paper artifacts were not rebuilt or resealed.
+
 ### M397 S03 canonical extraction payload schema fence
 
 - Added a canonical `extracted_entity.cache.v1` JSON wire contract in da-ports with a SHA-256 output-schema fingerprint.

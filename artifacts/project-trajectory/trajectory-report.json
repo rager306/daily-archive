@@ -130,13 +130,41 @@
     {
       "flag": "resource_target_bloat",
       "severity": "high",
-      "evidence": "target/ is 50.6GB (49GB free on disk) — run 'cargo clean' immediately Recommendation: Remove incremental cache: rm -rf target/debug/incremental (25.7GB); Remove example artifacts: rm -rf target/debug/examples (6.3GB); Dependencies cache large (17.4GB) — cargo clean -p <crate> to prune specific deps; Debug profile 50.6GB — run 'cargo clean' before workspace builds"
+      "evidence": "target/ is 50.7GB (49GB free on disk) — run 'cargo clean' immediately Recommendation: Remove incremental cache: rm -rf target/debug/incremental (25.7GB); Remove example artifacts: rm -rf target/debug/examples (6.3GB); Dependencies cache large (17.4GB) — cargo clean -p <crate> to prune specific deps; Debug profile 50.7GB — run 'cargo clean' before workspace builds"
     }
   ],
   "reverse_adr_audit_details": {
-    "status": "clear",
-    "violations": [],
-    "violations_count": 0
+    "status": "violations",
+    "violations": [
+      {
+        "rule_id": "no_hardcoded_inventory_label_walks",
+        "file": "/root/daily-archive/crates/da-cli/src/gold_graph.rs",
+        "line": 1576,
+        "anchor": "ADR-050 + M324/M325 (external meta-ontology; inventory YAML-first)",
+        "severity": "medium",
+        "rationale": "CLI inventory/discovery must not hardcode node labels as string literals. Walk via collect_graph_inventory / registered_node_labels_or_yaml from data/ontology.",
+        "matched_text": "let revisions = store.get_nodes_by_label(\"PaperRevision\").await;"
+      },
+      {
+        "rule_id": "no_hardcoded_inventory_label_walks",
+        "file": "/root/daily-archive/crates/da-cli/src/gold_graph.rs",
+        "line": 1584,
+        "anchor": "ADR-050 + M324/M325 (external meta-ontology; inventory YAML-first)",
+        "severity": "medium",
+        "rationale": "CLI inventory/discovery must not hardcode node labels as string literals. Walk via collect_graph_inventory / registered_node_labels_or_yaml from data/ontology.",
+        "matched_text": "let papers_in_graph = store.get_nodes_by_label(\"Paper\").await;"
+      },
+      {
+        "rule_id": "no_hardcoded_inventory_label_walks",
+        "file": "/root/daily-archive/crates/da-cli/src/gold_graph.rs",
+        "line": 1586,
+        "anchor": "ADR-050 + M324/M325 (external meta-ontology; inventory YAML-first)",
+        "severity": "medium",
+        "rationale": "CLI inventory/discovery must not hardcode node labels as string literals. Walk via collect_graph_inventory / registered_node_labels_or_yaml from data/ontology.",
+        "matched_text": "let sections = store.get_nodes_by_label(\"Section\").await;"
+      }
+    ],
+    "violations_count": 3
   },
   "next_actions": [
     "target/ bloated: prune debug incremental/examples before workspace cargo."
