@@ -14,7 +14,7 @@ use da_application::{
 };
 use da_domain::{
     AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadCacheRecord, LoadStageSet,
-    PrimaryContentKind,
+    PrimaryContentKind, StageIdRegistry,
 };
 use da_ports::SourceAcquisitionPort;
 use da_ports::embedder::Embedder;
@@ -22,7 +22,8 @@ use da_ports::extractor::{ExtractedEntity, Extractor};
 use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use da_ports::parser::{ParsedArticle, ParserPort};
 use da_ports::pipeline_cache::{
-    CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageCacheKey,
+    CacheLookup, PipelineCache, SourceFormat, SourceIdentity, StageCacheKey, StageManifestEntry,
+    StageOutcome,
 };
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
@@ -32,6 +33,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static REPORT_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+const LEGACY_EMBEDDING_STAGE_ID: &str = "embed";
+const LEGACY_EXTRACTION_STAGE_ID: &str = "extract";
 
 #[derive(Debug, Args)]
 pub struct LoadArgs {
@@ -109,6 +112,8 @@ struct CliContentPipeline {
     cache: Option<Arc<FilePipelineCache>>,
     /// One temporal basis shared by ingest and extraction for this load run.
     clock: Arc<dyn da_ports::Clock>,
+    /// DATA-governed canonical identity for every emitted production stage.
+    stage_registry: Arc<StageIdRegistry>,
 }
 
 #[async_trait::async_trait]
@@ -119,6 +124,11 @@ impl LoadContentPipeline for CliContentPipeline {
                 "primary asset missing: {}",
                 req.primary_path.display()
             ));
+        }
+        self.stage_registry.parse_canonical("parse")?;
+        self.stage_registry.parse_canonical("embedding")?;
+        if req.include_extract {
+            self.stage_registry.parse_canonical("extraction_compute")?;
         }
         let primary_path = req.primary_path.display().to_string();
         let is_html = req
@@ -323,6 +333,48 @@ fn source_identity_for_primary(
     })
 }
 
+fn retry_suppressed_error(
+    stage_id: &str,
+    resolved_from: Option<&str>,
+    manifest: &StageManifestEntry,
+) -> String {
+    let retry_after = match &manifest.outcome {
+        StageOutcome::RetryableFailure { retry_after, .. } => retry_after.as_str(),
+        StageOutcome::Success { .. } => "unknown",
+    };
+    format!(
+        "{stage_id} stage retry suppressed until {retry_after}{}",
+        resolved_from
+            .map(|alias| format!("; resolved_from={alias}"))
+            .unwrap_or_default()
+    )
+}
+
+fn lookup_with_legacy_stage_aliases(
+    cache: &FilePipelineCache,
+    canonical_key: &StageCacheKey,
+    legacy_stage_ids: &[&str],
+    now: &str,
+) -> Result<(CacheLookup, Option<String>), String> {
+    let canonical = cache
+        .lookup(canonical_key, now)
+        .map_err(|error| format!("{} cache lookup: {error}", canonical_key.stage_id))?;
+    if !matches!(canonical, CacheLookup::Miss) {
+        return Ok((canonical, None));
+    }
+    for legacy_stage_id in legacy_stage_ids {
+        let mut legacy_key = canonical_key.clone();
+        legacy_key.stage_id = (*legacy_stage_id).to_owned();
+        let lookup = cache
+            .lookup(&legacy_key, now)
+            .map_err(|error| format!("legacy {legacy_stage_id} cache lookup: {error}"))?;
+        if !matches!(lookup, CacheLookup::Miss) {
+            return Ok((lookup, Some((*legacy_stage_id).to_owned())));
+        }
+    }
+    Ok((CacheLookup::Miss, None))
+}
+
 /// Parse primary content with optional PipelineCache (derived payload only).
 /// Returns (parsed, cache records, payload_sha256 for dependency keys).
 async fn parse_with_cache(
@@ -355,9 +407,9 @@ async fn parse_with_cache(
 
     // Async produce needs to be outside the sync cache helper: pre-run only on miss path
     // is handled by checking lookup first when cache is present.
-    let key_sha = serde_json::to_vec(&key)
-        .map(|v| sha256_hex(&v))
-        .unwrap_or_default();
+    let key_sha = key
+        .key_sha256()
+        .map_err(|error| format!("parse cache key: {error}"))?;
 
     if let Some(cache) = cache {
         let now = chrono::Utc::now().to_rfc3339();
@@ -373,6 +425,7 @@ async fn parse_with_cache(
                     parsed,
                     vec![LoadCacheRecord {
                         stage_id: "parse".into(),
+                        resolved_from: None,
                         status: "hit".into(),
                         key_sha256: Some(hit.manifest.key_sha256),
                         payload_sha256: Some(payload_sha.clone()),
@@ -380,22 +433,8 @@ async fn parse_with_cache(
                     payload_sha,
                 ));
             }
-            CacheLookup::RetryableFailure(m) => {
-                let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
-                let payload =
-                    serde_json::to_vec(&parsed).map_err(|e| format!("serialize parse: {e}"))?;
-                let payload_sha = sha256_hex(&payload);
-                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
-                return Ok((
-                    parsed,
-                    vec![LoadCacheRecord {
-                        stage_id: "parse".into(),
-                        status: "retryable_failure".into(),
-                        key_sha256: Some(m.key_sha256),
-                        payload_sha256: Some(payload_sha.clone()),
-                    }],
-                    payload_sha,
-                ));
+            CacheLookup::RetryableFailure(manifest) => {
+                return Err(retry_suppressed_error("parse", None, &manifest));
             }
             CacheLookup::Miss => {
                 let parsed = parse_primary(&primary_str, paper_id, is_html).await?;
@@ -409,6 +448,7 @@ async fn parse_with_cache(
                     parsed,
                     vec![LoadCacheRecord {
                         stage_id: "parse".into(),
+                        resolved_from: None,
                         status: "miss".into(),
                         key_sha256: Some(entry.key_sha256),
                         payload_sha256: Some(payload_sha.clone()),
@@ -426,6 +466,7 @@ async fn parse_with_cache(
         parsed,
         vec![LoadCacheRecord {
             stage_id: "parse".into(),
+            resolved_from: None,
             status: "bypass".into(),
             key_sha256: Some(key_sha),
             payload_sha256: Some(payload_sha.clone()),
@@ -453,7 +494,7 @@ async fn embed_with_cache(
     deps.insert("embed_text".into(), text_sha);
     let key = StageCacheKey {
         source,
-        stage_id: "embed".into(),
+        stage_id: "embedding".into(),
         dependency_output_sha256: deps,
         implementation_fingerprint: "da_adapters::FdApiEmbedder@load-v1".into(),
         configuration_fingerprint: format!("model={model_id};input=abstract_or_title"),
@@ -461,44 +502,33 @@ async fn embed_with_cache(
         model_fingerprint: Some(model_id),
         output_schema_fingerprint: "Vec<f32>.le-bytes.v1".into(),
     };
-    let key_sha = serde_json::to_vec(&key)
-        .map(|v| sha256_hex(&v))
-        .unwrap_or_default();
+    let key_sha = key
+        .key_sha256()
+        .map_err(|error| format!("embedding cache key: {error}"))?;
 
     if let Some(cache) = cache {
         let now = chrono::Utc::now().to_rfc3339();
-        match cache
-            .lookup(&key, &now)
-            .map_err(|e| format!("embed cache lookup: {e}"))?
-        {
+        let (lookup, resolved_from) =
+            lookup_with_legacy_stage_aliases(cache, &key, &[LEGACY_EMBEDDING_STAGE_ID], &now)?;
+        match lookup {
             CacheLookup::Hit(hit) => {
                 let vector = decode_f32_le(&hit.payload, embedder.dimensions())?;
                 return Ok((
                     vector,
                     vec![LoadCacheRecord {
-                        stage_id: "embed".into(),
+                        stage_id: "embedding".into(),
+                        resolved_from,
                         status: "hit".into(),
                         key_sha256: Some(hit.manifest.key_sha256),
                         payload_sha256: Some(sha256_hex(&hit.payload)),
                     }],
                 ));
             }
-            CacheLookup::RetryableFailure(m) => {
-                require_embed_credentials()?;
-                let vector = embedder
-                    .embed(embed_text)
-                    .await
-                    .map_err(|e| format!("embed: {e:#}"))?;
-                let payload = encode_f32_le(&vector);
-                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
-                return Ok((
-                    vector,
-                    vec![LoadCacheRecord {
-                        stage_id: "embed".into(),
-                        status: "retryable_failure".into(),
-                        key_sha256: Some(m.key_sha256),
-                        payload_sha256: Some(sha256_hex(&payload)),
-                    }],
+            CacheLookup::RetryableFailure(manifest) => {
+                return Err(retry_suppressed_error(
+                    "embedding",
+                    resolved_from.as_deref(),
+                    &manifest,
                 ));
             }
             CacheLookup::Miss => {
@@ -514,7 +544,8 @@ async fn embed_with_cache(
                 return Ok((
                     vector,
                     vec![LoadCacheRecord {
-                        stage_id: "embed".into(),
+                        stage_id: "embedding".into(),
+                        resolved_from: None,
                         status: "miss".into(),
                         key_sha256: Some(entry.key_sha256),
                         payload_sha256: Some(sha256_hex(&payload)),
@@ -533,7 +564,8 @@ async fn embed_with_cache(
     Ok((
         vector,
         vec![LoadCacheRecord {
-            stage_id: "embed".into(),
+            stage_id: "embedding".into(),
+            resolved_from: None,
             status: "bypass".into(),
             key_sha256: Some(key_sha),
             payload_sha256: Some(sha256_hex(&payload)),
@@ -556,7 +588,7 @@ async fn extract_with_cache(
     dependencies.insert("parse".into(), parse_payload_sha.to_string());
     let key = StageCacheKey {
         source,
-        stage_id: "extract".into(),
+        stage_id: "extraction_compute".into(),
         dependency_output_sha256: dependencies,
         implementation_fingerprint: identity.implementation_fingerprint,
         configuration_fingerprint: identity.configuration_fingerprint,
@@ -564,23 +596,23 @@ async fn extract_with_cache(
         model_fingerprint: None,
         output_schema_fingerprint: identity.output_schema_fingerprint,
     };
-    let key_sha = serde_json::to_vec(&key)
-        .map(|bytes| sha256_hex(&bytes))
-        .unwrap_or_default();
+    let key_sha = key
+        .key_sha256()
+        .map_err(|error| format!("extraction_compute cache key: {error}"))?;
 
     if let Some(cache) = cache {
         let now = chrono::Utc::now().to_rfc3339();
-        match cache
-            .lookup(&key, &now)
-            .map_err(|error| format!("extract cache lookup: {error}"))?
-        {
+        let (lookup, resolved_from) =
+            lookup_with_legacy_stage_aliases(cache, &key, &[LEGACY_EXTRACTION_STAGE_ID], &now)?;
+        match lookup {
             CacheLookup::Hit(hit) => {
                 let extracted: Vec<ExtractedEntity> = serde_json::from_slice(&hit.payload)
                     .map_err(|error| format!("extract cache payload decode: {error}"))?;
                 return Ok((
                     extracted,
                     vec![LoadCacheRecord {
-                        stage_id: "extract".into(),
+                        stage_id: "extraction_compute".into(),
+                        resolved_from,
                         status: "hit".into(),
                         key_sha256: Some(hit.manifest.key_sha256),
                         payload_sha256: Some(sha256_hex(&hit.payload)),
@@ -588,18 +620,10 @@ async fn extract_with_cache(
                 ));
             }
             CacheLookup::RetryableFailure(manifest) => {
-                let extracted = compute_extraction(parsed, extractor).await?;
-                let payload = serde_json::to_vec(&extracted)
-                    .map_err(|error| format!("serialize extraction: {error}"))?;
-                let _ = cache.store_success(&key, &payload, BTreeMap::new(), &now);
-                return Ok((
-                    extracted,
-                    vec![LoadCacheRecord {
-                        stage_id: "extract".into(),
-                        status: "retryable_failure".into(),
-                        key_sha256: Some(manifest.key_sha256),
-                        payload_sha256: Some(sha256_hex(&payload)),
-                    }],
+                return Err(retry_suppressed_error(
+                    "extraction_compute",
+                    resolved_from.as_deref(),
+                    &manifest,
                 ));
             }
             CacheLookup::Miss => {
@@ -612,7 +636,8 @@ async fn extract_with_cache(
                 return Ok((
                     extracted,
                     vec![LoadCacheRecord {
-                        stage_id: "extract".into(),
+                        stage_id: "extraction_compute".into(),
+                        resolved_from: None,
                         status: "miss".into(),
                         key_sha256: Some(entry.key_sha256),
                         payload_sha256: Some(sha256_hex(&payload)),
@@ -628,7 +653,8 @@ async fn extract_with_cache(
     Ok((
         extracted,
         vec![LoadCacheRecord {
-            stage_id: "extract".into(),
+            stage_id: "extraction_compute".into(),
+            resolved_from: None,
             status: "bypass".into(),
             key_sha256: Some(key_sha),
             payload_sha256: Some(sha256_hex(&payload)),
@@ -726,35 +752,19 @@ fn make_content_pipeline(
     export_per_unit: bool,
     args: &LoadArgs,
 ) -> Result<CliContentPipeline, String> {
-    let cache = if args.no_cache {
-        None
-    } else {
-        let _ = std::fs::create_dir_all(&args.cache_root);
-        Some(Arc::new(FilePipelineCache::new(&args.cache_root)))
-    };
-    let clock: Arc<dyn da_ports::Clock> =
-        match validate_materialization_time(args.materialization_time.as_deref())? {
-            None => Arc::new(da_ports::SystemClock),
-            Some(parsed) => Arc::new(da_ports::FixedClock::from_timestamp(parsed.timestamp())),
-        };
-    Ok(CliContentPipeline {
+    let cache_root = (!args.no_cache).then_some(args.cache_root.as_path());
+    let context = crate::production::ProductionContext::new(
         store,
+        cache_root,
+        args.materialization_time.as_deref(),
+    )?;
+    Ok(CliContentPipeline {
+        store: context.store,
         export_per_unit,
-        cache,
-        clock,
+        cache: context.cache,
+        clock: context.clock,
+        stage_registry: context.stage_registry,
     })
-}
-
-fn validate_materialization_time(
-    value: Option<&str>,
-) -> Result<Option<chrono::DateTime<chrono::Utc>>, String> {
-    value
-        .map(|value| {
-            chrono::DateTime::parse_from_rfc3339(value)
-                .map(|time| time.with_timezone(&chrono::Utc))
-                .map_err(|error| format!("invalid --materialization-time {value:?}: {error}"))
-        })
-        .transpose()
 }
 
 fn infer_source_code(path: &str) -> Option<String> {
@@ -786,7 +796,7 @@ pub fn open_graph_store_for_load() -> da_adapters::SamyamaGraphStore {
 }
 
 pub async fn run_load(args: &LoadArgs) -> Result<(), String> {
-    validate_materialization_time(args.materialization_time.as_deref())?;
+    crate::production::parse_materialization_time(args.materialization_time.as_deref())?;
     if let Some(toc) = &args.batch_toc {
         return run_batch_toc(args, toc).await;
     }
@@ -1001,7 +1011,9 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         }
     };
 
-    if let Some(time) = validate_materialization_time(args.materialization_time.as_deref())? {
+    if let Some(time) =
+        crate::production::parse_materialization_time(args.materialization_time.as_deref())?
+    {
         report.findings.push(da_domain::LoadFinding {
             code: "materialization_time_explicit".into(),
             message: format!("graph temporal basis={}", time.to_rfc3339()),
@@ -1300,6 +1312,141 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn extraction_compute_reads_legacy_extract_cache_namespace() {
+        let root = std::env::temp_dir().join(format!(
+            "da-legacy-extract-cache-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let source = root.join("article.html");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            &source,
+            b"<!doctype html><title>legacy cache fixture</title>",
+        )
+        .unwrap();
+        let parsed = ParsedArticle {
+            paper_id: "test.paper".into(),
+            title: "Legacy cache fixture".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let extractor = RuleBasedExtractor::with_config(
+            da_adapters::rule_extractor::ExtractionConfig::bundled(),
+        );
+        let identity = extractor.cache_identity();
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert("parse".into(), "b".repeat(64));
+        let legacy_key = StageCacheKey {
+            source: source_identity_for_primary("test.paper", &source, true).unwrap(),
+            stage_id: LEGACY_EXTRACTION_STAGE_ID.into(),
+            dependency_output_sha256: dependencies,
+            implementation_fingerprint: identity.implementation_fingerprint,
+            configuration_fingerprint: identity.configuration_fingerprint,
+            prompt_fingerprint: None,
+            model_fingerprint: None,
+            output_schema_fingerprint: identity.output_schema_fingerprint,
+        };
+        let cache = FilePipelineCache::new(root.join("cache"));
+        let payload = serde_json::to_vec(&Vec::<ExtractedEntity>::new()).unwrap();
+        cache
+            .store_success(
+                &legacy_key,
+                &payload,
+                BTreeMap::new(),
+                "2026-08-14T00:00:00Z",
+            )
+            .unwrap();
+        let (entities, records) = extract_with_cache(
+            Some(&cache),
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap();
+        assert!(entities.is_empty());
+        assert_eq!(records[0].stage_id, "extraction_compute");
+        assert_eq!(records[0].resolved_from.as_deref(), Some("extract"));
+        assert_eq!(records[0].status, "hit");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn legacy_retryable_failure_suppresses_extraction_without_canonical_write() {
+        let root = std::env::temp_dir().join(format!(
+            "da-legacy-extract-failure-{}-{}",
+            std::process::id(),
+            REPORT_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let source = root.join("article.html");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(&source, b"<!doctype html><title>retry fixture</title>").unwrap();
+        let parsed = ParsedArticle {
+            paper_id: "test.paper".into(),
+            title: "Retry fixture".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "a".repeat(64),
+        };
+        let extractor = RuleBasedExtractor::with_config(
+            da_adapters::rule_extractor::ExtractionConfig::bundled(),
+        );
+        let identity = extractor.cache_identity();
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert("parse".into(), "b".repeat(64));
+        let legacy_key = StageCacheKey {
+            source: source_identity_for_primary("test.paper", &source, true).unwrap(),
+            stage_id: LEGACY_EXTRACTION_STAGE_ID.into(),
+            dependency_output_sha256: dependencies,
+            implementation_fingerprint: identity.implementation_fingerprint,
+            configuration_fingerprint: identity.configuration_fingerprint,
+            prompt_fingerprint: None,
+            model_fingerprint: None,
+            output_schema_fingerprint: identity.output_schema_fingerprint,
+        };
+        let cache = FilePipelineCache::new(root.join("cache"));
+        cache
+            .store_retryable_failure(
+                &legacy_key,
+                "sidecar_unavailable",
+                "retry later",
+                "2099-01-01T00:00:00Z",
+                "2026-08-14T00:00:00Z",
+            )
+            .unwrap();
+        let error = extract_with_cache(
+            Some(&cache),
+            "test.paper",
+            &source,
+            true,
+            &"b".repeat(64),
+            &parsed,
+            &extractor,
+        )
+        .await
+        .unwrap_err();
+        assert!(error.contains("retry suppressed until 2099-01-01T00:00:00Z"));
+        assert!(error.contains("resolved_from=extract"));
+        let manifests = cache.manifest("test.paper").unwrap();
+        assert_eq!(manifests.len(), 1);
+        assert_eq!(manifests[0].key.stage_id, LEGACY_EXTRACTION_STAGE_ID);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
     async fn extract_cache_miss_hit_bypass_and_corrupt_payload() {
         let root = std::env::temp_dir().join(format!(
             "da-extract-cache-{}-{}",
@@ -1389,7 +1536,7 @@ mod tests {
         .await
         .unwrap_err();
         assert!(
-            error.contains("extract cache lookup")
+            error.contains("extraction_compute cache lookup")
                 && (error.contains("checksum mismatch") || error.contains("payload decode")),
             "{error}"
         );

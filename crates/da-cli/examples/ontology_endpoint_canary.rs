@@ -324,6 +324,7 @@ async fn main() -> Result<()> {
         stages: vec![StageRunRecord {
             step_name: "semantic_enrichment".into(),
             stage_id: "semantic_enrichment".into(),
+            resolved_from: None,
             cache_key_sha256: None,
             disposition: StageDisposition::Executed {
                 output_sha256: format!(

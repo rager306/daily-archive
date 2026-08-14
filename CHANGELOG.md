@@ -1,5 +1,21 @@
 # Changelog
 
+### M397 S01 canonical pipeline stage identity and shared CLI context
+
+- `pipeline_stage_contracts.yaml` now owns validated implementation aliases while preserving the 14 canonical stage IDs.
+- `StageIdRegistry` rejects empty, unsafe, duplicate and canonical-colliding aliases.
+- New `da load` cache writes use `parse`, `embedding` and `extraction_compute`; legacy `embed` and `extract` entries remain read-compatible and are disclosed through `resolved_from`.
+- `PipelineOrchestrator` can canonicalize executor aliases, cache keys and run records through an injected registry.
+- `ProductionContext` centralizes CLI store, cache, clock and ledger wiring; load, ingest, batch-ingest, extract and summarize-revisions share it without moving infrastructure defaults into da-application.
+- Governor rejects new legacy `embed` / `extract` load cache IDs. D127 remains unchanged.
+
+### M396 real three-link derivation and honest corpus refusal
+
+- Real bounded and corpus `summarize-revisions.v1` reports bind exact input/output graph bytes.
+- Same-process ontology acceptance consumed cluster, resolution and summary reports.
+- Result remained honestly `FAIL`: 9 tasks PASS, Summary EMPTY, checkpoint FAIL, no new accepted snapshot, `import_eligible=false`.
+- Root residual is PIR-005: the current corpus graph has no `PaperRevision` nodes, so no revision summaries were produced.
+
 ### M395 S02 load_lineage accepts producer report serde
 
 - Three-report fixture: cluster + resolution + serialized `SummarizeRevisionsReport`.

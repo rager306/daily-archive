@@ -4,6 +4,7 @@
 //! article-specific effective-input keys and stage outcomes. Concrete parser,
 //! LLM, JAR and filesystem adapters are injected through ports.
 
+use da_domain::StageIdRegistry;
 use da_ports::clock::Clock;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, PipelineCacheError, SourceIdentity, StageCacheKey, StageOutcome,
@@ -36,7 +37,11 @@ pub enum StageDisposition {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct StageRunRecord {
     pub step_name: String,
+    /// Canonical pipeline stage ID when a registry is configured.
     pub stage_id: String,
+    /// Raw executor or pipeline alias resolved to `stage_id`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved_from: Option<String>,
     /// Exact cache contract identity. Required for durable payload replay when
     /// multiple historical contracts produced identical output bytes.
     #[serde(default)]
@@ -68,6 +73,10 @@ pub enum PipelineOrchestratorError {
         registry_key: String,
         contract_stage: String,
     },
+    #[error("pipeline stage identity invalid: {0}")]
+    StageIdentity(String),
+    #[error("pipeline executor registration duplicated: '{registration}'")]
+    ExecutorCollision { registration: String },
     #[error(transparent)]
     Cache(#[from] PipelineCacheError),
 }
@@ -75,16 +84,29 @@ pub enum PipelineOrchestratorError {
 pub struct PipelineOrchestrator {
     cache: Arc<dyn PipelineCache>,
     clock: Arc<dyn Clock>,
+    stage_registry: Arc<StageIdRegistry>,
     executors: HashMap<String, Arc<dyn PipelineStageExecutor>>,
 }
 
 impl PipelineOrchestrator {
-    pub fn new(cache: Arc<dyn PipelineCache>, clock: Arc<dyn Clock>) -> Self {
+    pub fn new(
+        cache: Arc<dyn PipelineCache>,
+        clock: Arc<dyn Clock>,
+        stage_registry: Arc<StageIdRegistry>,
+    ) -> Self {
         Self {
             cache,
             clock,
+            stage_registry,
             executors: HashMap::new(),
         }
+    }
+
+    fn canonical_stage_id(&self, raw: &str) -> Result<String, PipelineOrchestratorError> {
+        self.stage_registry
+            .resolve(raw)
+            .map(|id| id.as_str().to_owned())
+            .map_err(PipelineOrchestratorError::StageIdentity)
     }
 
     pub fn with_executor(
@@ -94,10 +116,17 @@ impl PipelineOrchestrator {
     ) -> Result<Self, PipelineOrchestratorError> {
         let stage_id = stage_id.into();
         let contract = executor.contract();
-        if contract.stage_id != stage_id {
+        let canonical_registry_key = self.canonical_stage_id(&stage_id)?;
+        let canonical_contract_stage = self.canonical_stage_id(&contract.stage_id)?;
+        if canonical_contract_stage != canonical_registry_key {
             return Err(PipelineOrchestratorError::ContractMismatch {
                 registry_key: stage_id,
                 contract_stage: contract.stage_id,
+            });
+        }
+        if self.executors.contains_key(&stage_id) {
+            return Err(PipelineOrchestratorError::ExecutorCollision {
+                registration: stage_id,
             });
         }
         self.executors.insert(stage_id, executor);
@@ -115,13 +144,15 @@ impl PipelineOrchestrator {
         let mut output_hashes: BTreeMap<String, String> = BTreeMap::new();
 
         for step in &pipeline.steps {
+            let canonical_stage_id = self.canonical_stage_id(&step.stage)?;
+            let resolved_from = (canonical_stage_id != step.stage).then(|| step.stage.clone());
             let executor = self.executors.get(&step.stage).ok_or_else(|| {
                 PipelineOrchestratorError::MissingExecutor {
                     stage_id: step.stage.clone(),
                 }
             })?;
             let contract = executor.contract();
-            if contract.stage_id != step.stage {
+            if self.canonical_stage_id(&contract.stage_id)? != canonical_stage_id {
                 return Err(PipelineOrchestratorError::ContractMismatch {
                     registry_key: step.stage.clone(),
                     contract_stage: contract.stage_id,
@@ -149,7 +180,7 @@ impl PipelineOrchestrator {
 
             let key = StageCacheKey {
                 source: source.clone(),
-                stage_id: step.name.clone(),
+                stage_id: canonical_stage_id.clone(),
                 dependency_output_sha256,
                 implementation_fingerprint: contract.implementation_fingerprint,
                 configuration_fingerprint: contract.configuration_fingerprint,
@@ -158,13 +189,27 @@ impl PipelineOrchestrator {
                 output_schema_fingerprint: contract.output_schema_fingerprint,
             };
 
-            match self.cache.lookup(&key, &now)? {
+            let (lookup, cache_resolved_from) = match self.cache.lookup(&key, &now)? {
+                CacheLookup::Miss if step.name != canonical_stage_id => {
+                    let mut legacy_key = key.clone();
+                    legacy_key.stage_id = step.name.clone();
+                    let legacy = self.cache.lookup(&legacy_key, &now)?;
+                    let resolved =
+                        (!matches!(legacy, CacheLookup::Miss)).then(|| step.name.clone());
+                    (legacy, resolved)
+                }
+                lookup => (lookup, None),
+            };
+
+            match lookup {
                 CacheLookup::Hit(hit) => {
                     tracing::info!(
                         article_id = %source.article_id,
                         pipeline_id = %pipeline.id,
                         step = %step.name,
-                        stage = %step.stage,
+                        stage = %canonical_stage_id,
+                        resolved_from = resolved_from.as_deref().unwrap_or(""),
+                        cache_resolved_from = cache_resolved_from.as_deref().unwrap_or(""),
                         event = "pipeline_stage_cache_hit"
                     );
                     let output_sha256 = payload_sha256(&hit.payload);
@@ -173,7 +218,8 @@ impl PipelineOrchestrator {
                     output_hashes.insert(step.name.clone(), output_sha256.clone());
                     records.push(StageRunRecord {
                         step_name: step.name.clone(),
-                        stage_id: step.stage.clone(),
+                        stage_id: canonical_stage_id.clone(),
+                        resolved_from: resolved_from.clone(),
                         cache_key_sha256: Some(cache_key_sha256),
                         disposition: StageDisposition::CacheHit { output_sha256 },
                     });
@@ -187,13 +233,16 @@ impl PipelineOrchestrator {
                         article_id = %source.article_id,
                         pipeline_id = %pipeline.id,
                         step = %step.name,
-                        stage = %step.stage,
+                        stage = %canonical_stage_id,
+                        resolved_from = resolved_from.as_deref().unwrap_or(""),
+                        cache_resolved_from = cache_resolved_from.as_deref().unwrap_or(""),
                         retry_after = %retry_after,
                         event = "pipeline_stage_retry_suppressed"
                     );
                     records.push(StageRunRecord {
                         step_name: step.name.clone(),
-                        stage_id: step.stage.clone(),
+                        stage_id: canonical_stage_id.clone(),
+                        resolved_from: resolved_from.clone(),
                         cache_key_sha256: Some(manifest.key_sha256),
                         disposition: StageDisposition::RetrySuppressed { retry_after },
                     });
@@ -209,7 +258,9 @@ impl PipelineOrchestrator {
                         article_id = %source.article_id,
                         pipeline_id = %pipeline.id,
                         step = %step.name,
-                        stage = %step.stage,
+                        stage = %canonical_stage_id,
+                        resolved_from = resolved_from.as_deref().unwrap_or(""),
+                        cache_resolved_from = cache_resolved_from.as_deref().unwrap_or(""),
                         event = "pipeline_stage_cache_miss"
                     );
                     let request = StageExecutionRequest {
@@ -231,13 +282,15 @@ impl PipelineOrchestrator {
                                 article_id = %source.article_id,
                                 pipeline_id = %pipeline.id,
                                 step = %step.name,
-                                stage = %step.stage,
+                                stage = %canonical_stage_id,
+                                resolved_from = resolved_from.as_deref().unwrap_or(""),
                                 output_sha256 = %output_sha256,
                                 event = "pipeline_stage_executed"
                             );
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
-                                stage_id: step.stage.clone(),
+                                stage_id: canonical_stage_id.clone(),
+                                resolved_from: resolved_from.clone(),
                                 cache_key_sha256: Some(manifest.key_sha256),
                                 disposition: StageDisposition::Executed { output_sha256 },
                             });
@@ -251,7 +304,8 @@ impl PipelineOrchestrator {
                                 article_id = %source.article_id,
                                 pipeline_id = %pipeline.id,
                                 step = %step.name,
-                                stage = %step.stage,
+                                stage = %canonical_stage_id,
+                                resolved_from = resolved_from.as_deref().unwrap_or(""),
                                 error_class = %error_class,
                                 retry_after = %retry_after,
                                 event = "pipeline_stage_retryable_failure"
@@ -265,7 +319,8 @@ impl PipelineOrchestrator {
                             )?;
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
-                                stage_id: step.stage.clone(),
+                                stage_id: canonical_stage_id.clone(),
+                                resolved_from: resolved_from.clone(),
                                 cache_key_sha256: Some(manifest.key_sha256),
                                 disposition: StageDisposition::Failed {
                                     error_class,
@@ -288,13 +343,15 @@ impl PipelineOrchestrator {
                                 article_id = %source.article_id,
                                 pipeline_id = %pipeline.id,
                                 step = %step.name,
-                                stage = %step.stage,
+                                stage = %canonical_stage_id,
+                                resolved_from = resolved_from.as_deref().unwrap_or(""),
                                 error_class = %error_class,
                                 event = "pipeline_stage_terminal_failure"
                             );
                             records.push(StageRunRecord {
                                 step_name: step.name.clone(),
-                                stage_id: step.stage.clone(),
+                                stage_id: canonical_stage_id.clone(),
+                                resolved_from: resolved_from.clone(),
                                 cache_key_sha256: None,
                                 disposition: StageDisposition::Failed {
                                     error_class,
@@ -512,11 +569,88 @@ mod tests {
         ))
     }
 
+    fn stage_contract(id: &str, aliases: &[&str]) -> da_domain::PipelineStageContract {
+        da_domain::PipelineStageContract {
+            id: id.into(),
+            aliases: aliases.iter().map(|alias| (*alias).into()).collect(),
+            owner: da_domain::StageOwner::Application,
+            input_semantics: vec!["input".into()],
+            output_semantics: vec!["output".into()],
+            depends_on: vec![],
+            context_adds: vec!["identity".into()],
+            context_losses: vec![],
+            hard_invariants: vec!["D127_false".into()],
+            consumers: vec!["test".into()],
+            cache_mode: da_domain::StageCacheMode::PureCompute,
+            failure_class: "terminal".into(),
+            conditional: false,
+            graph_truth_boundary: false,
+        }
+    }
+
+    fn registry() -> Arc<StageIdRegistry> {
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                stage_contract("parse", &["grobid_parse", "html_parse"]),
+                stage_contract("summary", &[]),
+            ],
+            import_eligible: false,
+        };
+        Arc::new(ledger.registry().unwrap())
+    }
+
+    #[tokio::test]
+    async fn registry_canonicalizes_executor_alias_cache_key_and_report() {
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![stage_contract("parse", &["grobid_parse"])],
+            import_eligible: false,
+        };
+        let registry = Arc::new(ledger.registry().unwrap());
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("grobid_parse", b"parsed"));
+        let pipeline = PipelineBuilder::new("alias-parse")
+            .step("parse-step", "grobid_parse", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache.clone(), clock(), registry)
+            .with_executor("grobid_parse", parse)
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert_eq!(report.stages[0].stage_id, "parse");
+        assert_eq!(
+            report.stages[0].resolved_from.as_deref(),
+            Some("grobid_parse")
+        );
+        assert_eq!(cache.entries.lock().unwrap()[0].0.stage_id, "parse");
+    }
+
+    #[test]
+    fn executor_registry_rejects_duplicate_raw_registration() {
+        let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
+        let first = Arc::new(FakeStage::success("grobid_parse", b"first"));
+        let second = Arc::new(FakeStage::success("grobid_parse", b"second"));
+        let error = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("grobid_parse", first)
+            .unwrap()
+            .with_executor("grobid_parse", second)
+            .err()
+            .expect("duplicate raw registration must fail");
+        assert!(matches!(
+            error,
+            PipelineOrchestratorError::ExecutorCollision { ref registration }
+                if registration == "grobid_parse"
+        ));
+    }
+
     #[test]
     fn executor_registry_rejects_contract_mismatch() {
         let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
         let summary = Arc::new(FakeStage::success("summary", b"summary"));
-        let error = PipelineOrchestrator::new(cache, clock())
+        let error = PipelineOrchestrator::new(cache, clock(), registry())
             .with_executor("parse", summary)
             .err()
             .expect("mismatched executor contract must fail");
@@ -529,7 +663,7 @@ mod tests {
     #[tokio::test]
     async fn run_rejects_missing_executor_instead_of_using_a_stub() {
         let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
-        let error = PipelineOrchestrator::new(cache, clock())
+        let error = PipelineOrchestrator::new(cache, clock(), registry())
             .run(&pipeline(), source("pdf-v1"))
             .await
             .unwrap_err();
@@ -541,6 +675,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn legacy_step_retryable_failure_suppresses_canonical_execution() {
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("grobid_parse", b"must-not-run"));
+        let contract = parse.contract();
+        let legacy_key = StageCacheKey {
+            source: source("pdf-v1"),
+            stage_id: "legacy-parse-cache".into(),
+            dependency_output_sha256: BTreeMap::new(),
+            implementation_fingerprint: contract.implementation_fingerprint,
+            configuration_fingerprint: contract.configuration_fingerprint,
+            prompt_fingerprint: contract.prompt_fingerprint,
+            model_fingerprint: contract.model_fingerprint,
+            output_schema_fingerprint: contract.output_schema_fingerprint,
+        };
+        cache
+            .store_retryable_failure(
+                &legacy_key,
+                "grobid_unavailable",
+                "retry later",
+                "2026-08-08T01:00:00Z",
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let pipeline = PipelineBuilder::new("legacy-negative-cache")
+            .step("legacy-parse-cache", "grobid_parse", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("grobid_parse", parse.clone())
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::RetrySuppressed { .. }
+        ));
+        assert_eq!(report.stages[0].stage_id, "parse");
+        assert_eq!(
+            parse.calls(),
+            0,
+            "legacy negative cache must suppress execution"
+        );
+    }
+
+    #[tokio::test]
     async fn first_run_executes_and_unchanged_second_run_hits_cache() {
         let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
         let parse = Arc::new(FakeStage::success("parse", b"parsed-gepa"));
@@ -548,7 +729,7 @@ mod tests {
             "summary",
             b"GEPA improves 6% with 35x fewer rollouts",
         ));
-        let orchestrator = PipelineOrchestrator::new(cache, clock())
+        let orchestrator = PipelineOrchestrator::new(cache, clock(), registry())
             .with_executor("parse", parse.clone())
             .unwrap()
             .with_executor("summary", summary.clone())
@@ -586,7 +767,7 @@ mod tests {
         let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
         let parse = Arc::new(FakeStage::success("parse", b"parsed-gepa"));
         let summary_v1 = Arc::new(FakeStage::success("summary", b"summary-v1"));
-        let first = PipelineOrchestrator::new(cache.clone(), clock())
+        let first = PipelineOrchestrator::new(cache.clone(), clock(), registry())
             .with_executor("parse", parse.clone())
             .unwrap()
             .with_executor("summary", summary_v1.clone())
@@ -596,7 +777,7 @@ mod tests {
         let mut changed = FakeStage::success("summary", b"summary-v2");
         changed.contract.prompt_fingerprint = Some("prompt-v2".into());
         let summary_v2 = Arc::new(changed);
-        let second = PipelineOrchestrator::new(cache, clock())
+        let second = PipelineOrchestrator::new(cache, clock(), registry())
             .with_executor("parse", parse.clone())
             .unwrap()
             .with_executor("summary", summary_v2.clone())
@@ -623,7 +804,7 @@ mod tests {
         let cache: Arc<dyn PipelineCache> = Arc::new(MemoryCache::default());
         let parse = Arc::new(FakeStage::success("parse", b"parsed"));
         let summary = Arc::new(FakeStage::success("summary", b"summary"));
-        let orchestrator = PipelineOrchestrator::new(cache, clock())
+        let orchestrator = PipelineOrchestrator::new(cache, clock(), registry())
             .with_executor("parse", parse.clone())
             .unwrap()
             .with_executor("summary", summary.clone())
@@ -650,7 +831,7 @@ mod tests {
             retry_after: "2026-08-08T01:00:00Z".into(),
         });
         let parse = Arc::new(failing);
-        let orchestrator = PipelineOrchestrator::new(cache, clock())
+        let orchestrator = PipelineOrchestrator::new(cache, clock(), registry())
             .with_executor("parse", parse.clone())
             .unwrap();
         let one_stage = PipelineBuilder::new("parse-only")

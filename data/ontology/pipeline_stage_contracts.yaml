@@ -28,6 +28,7 @@ stages:
     conditional: false
     graph_truth_boundary: false
   - id: parse
+    aliases: [grobid_parse, html_parse, parsed_artifact, document_context, figure_detect, figure_context, figure_context_artifact]
     owner: adapter
     input_semantics: [canonical_source_asset]
     output_semantics: [parsed_article]
@@ -54,6 +55,7 @@ stages:
     conditional: false
     graph_truth_boundary: true
   - id: extraction_compute
+    aliases: [extract, rule_extract, figure_analysis]
     owner: adapter
     input_semantics: [parsed_article]
     output_semantics: [extracted_entity_candidates]
@@ -67,6 +69,7 @@ stages:
     conditional: false
     graph_truth_boundary: false
   - id: extraction_materialization
+    aliases: [entity_papers_artifact]
     owner: application
     input_semantics: [extracted_entity_candidates, revision_scoped_graph_content]
     output_semantics: [grounded_entity_evidence_graph]
@@ -80,6 +83,7 @@ stages:
     conditional: false
     graph_truth_boundary: true
   - id: embedding
+    aliases: [embed, paper_embed]
     owner: adapter
     input_semantics: [parsed_article_or_entity_text]
     output_semantics: [typed_dense_vector]
@@ -93,6 +97,7 @@ stages:
     conditional: true
     graph_truth_boundary: false
   - id: summary
+    aliases: [summaries_artifact]
     owner: application
     input_semantics: [revision_scoped_graph_content]
     output_semantics: [grounded_revision_summary]
@@ -119,6 +124,7 @@ stages:
     conditional: true
     graph_truth_boundary: true
   - id: cluster
+    aliases: [cluster_detection]
     owner: application
     input_semantics: [grounded_entity_evidence_graph]
     output_semantics: [concept_cluster_assignments]

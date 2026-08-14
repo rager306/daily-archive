@@ -48,33 +48,39 @@ async fn main() -> Result<()> {
         .context("deserialize entity-papers artifact")?;
 
     let cache = Arc::new(FilePipelineCache::new(&args.cache_root));
-    let orchestrator = PipelineOrchestrator::new(cache.clone(), Arc::new(da_ports::SystemClock))
-        .with_executor(
+    let stage_registry =
+        da_cli::production::embedded_stage_registry().map_err(anyhow::Error::msg)?;
+    let orchestrator = PipelineOrchestrator::new(
+        cache.clone(),
+        Arc::new(da_ports::SystemClock),
+        stage_registry,
+    )
+    .with_executor(
+        "parsed_artifact",
+        Arc::new(ArtifactPayloadStage::new(
             "parsed_artifact",
-            Arc::new(ArtifactPayloadStage::new(
-                "parsed_artifact",
-                parsed_bytes,
-                "ParsedArticle@serde-v1",
-            )),
-        )?
-        .with_executor(
+            parsed_bytes,
+            "ParsedArticle@serde-v1",
+        )),
+    )?
+    .with_executor(
+        "summaries_artifact",
+        Arc::new(ArtifactPayloadStage::new(
             "summaries_artifact",
-            Arc::new(ArtifactPayloadStage::new(
-                "summaries_artifact",
-                summaries_bytes,
-                "Vec<SectionSummaryInput>@serde-v1",
-            )),
-        )?
-        .with_executor(
+            summaries_bytes,
+            "Vec<SectionSummaryInput>@serde-v1",
+        )),
+    )?
+    .with_executor(
+        "entity_papers_artifact",
+        Arc::new(ArtifactPayloadStage::new(
             "entity_papers_artifact",
-            Arc::new(ArtifactPayloadStage::new(
-                "entity_papers_artifact",
-                entity_papers_bytes,
-                "EntityPapersArtifact@serde-v1",
-            )),
-        )?
-        .with_executor("document_context", Arc::new(DocumentContextStage::new()))?
-        .with_executor("cluster_detection", Arc::new(ClusterDetectionStage::new()))?;
+            entity_papers_bytes,
+            "EntityPapersArtifact@serde-v1",
+        )),
+    )?
+    .with_executor("document_context", Arc::new(DocumentContextStage::new()))?
+    .with_executor("cluster_detection", Arc::new(ClusterDetectionStage::new()))?;
     let pipeline = PipelineBuilder::new("semantic-context-clusters-v1")
         .step("parse", "parsed_artifact", &[])
         .step("section_summaries", "summaries_artifact", &[])

@@ -619,6 +619,7 @@ mod tests {
                 },
                 cache_records: vec![LoadCacheRecord {
                     stage_id: "parse".into(),
+                    resolved_from: None,
                     status: "miss".into(),
                     key_sha256: Some("test-key".into()),
                     payload_sha256: None,

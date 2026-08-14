@@ -32,6 +32,18 @@ mod tests {
         let ledger = load_pipeline_stage_ledger(&path).unwrap();
         assert_eq!(ledger.stages.len(), 14);
         assert!(!ledger.import_eligible);
+        let registry = ledger.registry().unwrap();
+        assert_eq!(registry.resolve("grobid_parse").unwrap().as_str(), "parse");
+        assert_eq!(registry.resolve("html_parse").unwrap().as_str(), "parse");
+        assert_eq!(registry.resolve("embed").unwrap().as_str(), "embedding");
+        assert_eq!(
+            registry.resolve("rule_extract").unwrap().as_str(),
+            "extraction_compute"
+        );
+        assert_eq!(
+            registry.resolve("cluster_detection").unwrap().as_str(),
+            "cluster"
+        );
     }
 
     #[test]

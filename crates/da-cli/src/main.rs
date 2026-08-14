@@ -8,6 +8,7 @@ mod graph_ping;
 mod graph_query;
 mod health_report;
 mod load;
+mod production;
 mod serve_graph;
 mod snapshot_identity;
 mod summarize_revisions;
@@ -810,15 +811,26 @@ fn require_fd_api_key_for_ingest() {
 async fn ingest_pdf(pdf_path: &str, paper_id: &str, enable_import: bool) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::IngestUseCase;
+    use std::sync::Arc;
 
     require_fd_api_key_for_ingest();
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
-    let graph_store = Box::new(open_graph_store());
-    // DirectGraphStore is implemented by SamyamaGraphStore (ADR-041 HOT path)
-
-    let use_case = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
+    let context = match production::ProductionContext::from_env(None, None) {
+        Ok(context) => context,
+        Err(error) => {
+            eprintln!("❌ Production context failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let graph_store = context.store.clone() as Arc<dyn da_ports::DirectGraphStore>;
+    let use_case = maybe_attach_pdf_classifier(IngestUseCase::from_shared_with_clock(
+        parser,
+        embedder,
+        graph_store,
+        context.clock.clone(),
+    ));
     let use_case = if enable_import {
         use_case.with_import_eligibility(da_domain::ImportEligibility::Eligible)
     } else {
@@ -885,6 +897,7 @@ async fn batch_ingest(
 ) {
     use da_adapters::{FdApiEmbedder, GrobidParser};
     use da_application::{IngestUseCase, batch_ingest_pdfs};
+    use std::sync::Arc;
 
     let id_list = match batch_ids::resolve_batch_ids(ids, ids_file) {
         Ok(v) => v,
@@ -931,9 +944,20 @@ async fn batch_ingest(
 
     let parser = Box::new(GrobidParser::from_env());
     let embedder = Box::new(FdApiEmbedder::from_env());
-    let graph_store = Box::new(open_graph_store());
-
-    let ingest = maybe_attach_pdf_classifier(IngestUseCase::new(parser, embedder, graph_store));
+    let context = match production::ProductionContext::from_env(None, None) {
+        Ok(context) => context,
+        Err(error) => {
+            eprintln!("❌ Production context failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let graph_store = context.store.clone() as Arc<dyn da_ports::DirectGraphStore>;
+    let ingest = maybe_attach_pdf_classifier(IngestUseCase::from_shared_with_clock(
+        parser,
+        embedder,
+        graph_store,
+        context.clock.clone(),
+    ));
     let ingest = if enable_import {
         ingest.with_import_eligibility(da_domain::ImportEligibility::Eligible)
     } else {
@@ -1473,6 +1497,7 @@ async fn extract_entities(
     use da_adapters::{GrobidParser, RuleBasedExtractor};
     use da_application::ExtractionUseCase;
     use da_ports::parser::ParserPort;
+    use std::sync::Arc;
 
     // Find the PDF
     let pdf = std::process::Command::new("find")
@@ -1514,8 +1539,17 @@ async fn extract_entities(
 
     // Extract via rule-based extractor
     let extractor = Box::new(RuleBasedExtractor::new());
-    let graph_store = Box::new(open_graph_store_with_optional_snapshot(snapshot).await);
-    let use_case = ExtractionUseCase::new(extractor, graph_store);
+    let store = Arc::new(open_graph_store_with_optional_snapshot(snapshot).await);
+    let context = match production::ProductionContext::new(store, None, None) {
+        Ok(context) => context,
+        Err(error) => {
+            eprintln!("❌ Production context failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    let graph_store = context.store.clone() as Arc<dyn da_ports::DirectGraphStore>;
+    let use_case =
+        ExtractionUseCase::from_shared(extractor, graph_store).with_clock(context.clock.clone());
 
     match use_case.extract_from_parsed(&parsed).await {
         Ok(result) => {

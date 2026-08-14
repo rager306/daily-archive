@@ -114,6 +114,47 @@ def test_artifact_optimizer_unlock_is_caught():
     assert "no_optimizer_or_auto_promote_true_in_artifacts" in ids
 
 
+def test_legacy_load_cache_stage_ids_are_caught():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-cli" / "src" / "load.rs",
+        'let old = StageCacheKey { stage_id: "embed".into() };\n'
+        'let also_old = StageCacheKey { stage_id: "extract".into() };\n',
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    violations = [
+        violation
+        for result in report.results
+        if result.rule.id == "no_legacy_load_cache_stage_ids"
+        for violation in result.violations
+    ]
+    assert len(violations) == 2
+
+
+def test_canonical_load_cache_stage_ids_are_allowed():
+    root = _make_root()
+    checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
+    _write(
+        root / "crates" / "da-cli" / "src" / "load.rs",
+        'let embed = StageCacheKey { stage_id: "embedding".into() };\n'
+        'let extract = StageCacheKey { stage_id: "extraction_compute".into() };\n',
+    )
+    report = AuditService(
+        scanner=FilesystemCodeScanner(root),
+        rule_repo=YAMLRuleRepository(checks_dir),
+    ).run_audit()
+    ids = {
+        result.rule.id
+        for result in report.results
+        if result.violations
+    }
+    assert "no_legacy_load_cache_stage_ids" not in ids
+
+
 def test_no_new_product_python_scripts_is_caught():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"

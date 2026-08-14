@@ -132,9 +132,12 @@ async fn main() -> Result<()> {
     let analysis_stage = Arc::new(analysis_stage);
     let cache_root = args.article_dir.join("pipeline_cache");
     let cache = Arc::new(FilePipelineCache::new(&cache_root));
-    let orchestrator = PipelineOrchestrator::new(cache.clone(), Arc::new(SystemClock))
-        .with_executor("figure_context_artifact", context_stage)?
-        .with_executor("figure_analysis", analysis_stage)?;
+    let stage_registry =
+        da_cli::production::embedded_stage_registry().map_err(anyhow::Error::msg)?;
+    let orchestrator =
+        PipelineOrchestrator::new(cache.clone(), Arc::new(SystemClock), stage_registry)
+            .with_executor("figure_context_artifact", context_stage)?
+            .with_executor("figure_analysis", analysis_stage)?;
     let pipeline = PipelineBuilder::new("article-figure-analysis-v1")
         .step("analysis_context", "figure_context_artifact", &[])
         .step("analysis", "figure_analysis", &["analysis_context"])

@@ -847,6 +847,7 @@ mod tests {
         StageRunRecord {
             step_name: step.into(),
             stage_id: step.into(),
+            resolved_from: None,
             cache_key_sha256: Some(format!("key-{step}")),
             disposition: StageDisposition::CacheHit {
                 output_sha256: step.repeat(64),

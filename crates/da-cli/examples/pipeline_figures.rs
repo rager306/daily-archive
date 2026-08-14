@@ -71,10 +71,13 @@ async fn main() -> Result<()> {
     );
     let cache_root = args.article_dir.join("pipeline_cache");
     let cache = Arc::new(FilePipelineCache::new(&cache_root));
-    let orchestrator = PipelineOrchestrator::new(cache.clone(), Arc::new(SystemClock))
-        .with_executor("grobid_parse", parse_stage)?
-        .with_executor("figure_detect", figure_stage)?
-        .with_executor("figure_context", context_stage)?;
+    let stage_registry =
+        da_cli::production::embedded_stage_registry().map_err(anyhow::Error::msg)?;
+    let orchestrator =
+        PipelineOrchestrator::new(cache.clone(), Arc::new(SystemClock), stage_registry)
+            .with_executor("grobid_parse", parse_stage)?
+            .with_executor("figure_detect", figure_stage)?
+            .with_executor("figure_context", context_stage)?;
     let pipeline = PipelineBuilder::new("article-figure-context-v1")
         .step("parse", "grobid_parse", &[])
         .step("figures", "figure_detect", &[])

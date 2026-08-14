@@ -457,7 +457,11 @@ pub struct LoadAssetRecord {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LoadCacheRecord {
+    /// Canonical pipeline stage ID from pipeline_stage_contracts.yaml.
     pub stage_id: String,
+    /// Legacy cache namespace used for a compatibility hit, when applicable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved_from: Option<String>,
     /// hit | miss | bypass | retryable_failure
     pub status: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -750,6 +754,7 @@ mod tests {
         });
         report.cache.push(LoadCacheRecord {
             stage_id: "parse".into(),
+            resolved_from: None,
             status: "miss".into(),
             key_sha256: Some("k".into()),
             payload_sha256: None,

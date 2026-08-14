@@ -244,17 +244,22 @@ async fn main() -> Result<()> {
         let pipeline = pipeline_builder
             .build()
             .map_err(|error| anyhow::anyhow!("build canary pipeline: {error}"))?;
-        let mut orchestrator =
-            PipelineOrchestrator::new(cache.clone(), Arc::new(da_ports::SystemClock))
-                .with_executor(parse_stage_id, parse_stage)?
-                .with_executor(
-                    "rule_extract",
-                    Arc::new(RuleExtractionStage::new(
-                        Arc::new(RuleBasedExtractor::new()),
-                        "parse",
-                        extraction_configuration_fingerprint.clone(),
-                    )),
-                )?;
+        let stage_registry =
+            da_cli::production::embedded_stage_registry().map_err(anyhow::Error::msg)?;
+        let mut orchestrator = PipelineOrchestrator::new(
+            cache.clone(),
+            Arc::new(da_ports::SystemClock),
+            stage_registry,
+        )
+        .with_executor(parse_stage_id, parse_stage)?
+        .with_executor(
+            "rule_extract",
+            Arc::new(RuleExtractionStage::new(
+                Arc::new(RuleBasedExtractor::new()),
+                "parse",
+                extraction_configuration_fingerprint.clone(),
+            )),
+        )?;
         if args.include_embedding {
             let embedder = FdApiEmbedder::from_env();
             orchestrator = orchestrator.with_executor(

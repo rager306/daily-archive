@@ -99,6 +99,10 @@ pub use healing::{
 };
 pub use hypergraph::ConceptClusterSchema;
 pub use paper::{Paper, PaperSchema, PaperStatus};
+pub use pipeline_ledger::{
+    PipelineStageContract, PipelineStageLedger, StageCacheMode, StageId, StageIdRegistry,
+    StageOwner,
+};
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
 };

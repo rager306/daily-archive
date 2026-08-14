@@ -93,11 +93,25 @@ impl IngestUseCase {
         embedder: Box<dyn Embedder>,
         graph_store: std::sync::Arc<dyn DirectGraphStore>,
     ) -> Self {
+        Self::from_shared_with_clock(
+            parser,
+            embedder,
+            graph_store,
+            std::sync::Arc::new(da_ports::SystemClock),
+        )
+    }
+
+    pub fn from_shared_with_clock(
+        parser: Box<dyn ParserPort>,
+        embedder: Box<dyn Embedder>,
+        graph_store: std::sync::Arc<dyn DirectGraphStore>,
+        clock: std::sync::Arc<dyn da_ports::Clock>,
+    ) -> Self {
         Self {
             parser: Some(parser),
             embedder: Some(embedder),
             graph_store,
-            clock: std::sync::Arc::new(da_ports::SystemClock),
+            clock,
             pdf_classifier: None,
             eligibility: ImportEligibility::default(),
         }

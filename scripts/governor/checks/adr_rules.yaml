@@ -159,6 +159,16 @@ rules:
       - .rs
     path_prefix_include: crates/kg-
 
+  # --- M397 / R091: production cache keys use canonical pipeline ledger StageId ---
+  - id: no_legacy_load_cache_stage_ids
+    anchor: "R091, ADR-055, M397 (canonical DATA-governed pipeline stage identity)"
+    severity: high
+    scan: crates/da-cli/src/load.rs
+    pattern: 'stage_id:\s*"(?:embed|extract)"'
+    rationale: "New da load cache keys and records must use canonical ledger IDs embedding and extraction_compute. Legacy embed/extract namespaces are read-only compatibility aliases."
+    suffix_allowlist:
+      - .rs
+
   # --- ADR-045 / ADR-050 binding: no hardcoded schema in Rust (HE хардкодим) ---
   - id: no_hardcoded_node_label_definitions
     anchor: "ADR-050 + ADR-045 (HE хардкодим — data in YAML, logic in Rust)"

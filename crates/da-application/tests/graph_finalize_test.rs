@@ -21,6 +21,7 @@ fn pipeline(pass: bool) -> PipelineRunReport {
         .map(|stage| StageRunRecord {
             step_name: stage.into(),
             stage_id: stage.into(),
+            resolved_from: None,
             cache_key_sha256: None,
             disposition: if pass {
                 StageDisposition::Executed {

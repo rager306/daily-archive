@@ -82,7 +82,12 @@ pub async fn run(args: &SummarizeRevisionsArgs) -> Result<i32> {
         }
         None => String::new(),
     };
-    let store = open_process_store(args.graph.as_deref()).await?;
+    let context = open_process_context(args.graph.as_deref()).await?;
+    context
+        .stage_registry
+        .parse_canonical("summary")
+        .map_err(anyhow::Error::msg)?;
+    let store = context.store;
     let loaded_policy = LoadedSectionRolePolicy::load_project()?;
     let policy_identity = loaded_policy.identity().clone();
     let use_case = ExtractiveSummaryUseCase::with_role_policy(
@@ -160,22 +165,21 @@ pub async fn run(args: &SummarizeRevisionsArgs) -> Result<i32> {
     if report.ok() { Ok(0) } else { Ok(1) }
 }
 
-async fn open_process_store(
+async fn open_process_context(
     graph: Option<&std::path::Path>,
-) -> Result<Arc<da_adapters::SamyamaGraphStore>> {
+) -> Result<crate::production::ProductionContext> {
     use da_ports::graph_store::GraphStore;
-    let store = Arc::new(
-        da_adapters::SamyamaGraphStore::try_from_env()
-            .map_err(|e| anyhow::anyhow!("graph store open failed: {e}"))?,
-    );
+    let context =
+        crate::production::ProductionContext::from_env(None, None).map_err(anyhow::Error::msg)?;
     if let Some(path) = graph {
         let data = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-        store
+        context
+            .store
             .import_snapshot(&data)
             .await
             .map_err(|e| anyhow::anyhow!("graph import failed: {e}"))?;
     }
-    Ok(store)
+    Ok(context)
 }
 
 #[cfg(test)]
@@ -200,7 +204,9 @@ mod tests {
             output_snapshot_sha256: digest(2),
             import_eligible: false,
         };
-        crate::roundtrip_json(&ok);
+        let encoded = serde_json::to_vec(&ok).unwrap();
+        let decoded: SummarizeRevisionsReport = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(decoded, ok);
         assert!(ok.ok());
         assert!(ok.derivation_ready());
         let bad = SummarizeRevisionsReport {

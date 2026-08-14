@@ -1,8 +1,25 @@
 //! Provider-neutral semantic contract for the production article pipeline.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct StageId(String);
+
+impl StageId {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for StageId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -29,6 +46,8 @@ pub enum StageOwner {
 #[serde(deny_unknown_fields)]
 pub struct PipelineStageContract {
     pub id: String,
+    #[serde(default)]
+    pub aliases: Vec<String>,
     pub owner: StageOwner,
     pub input_semantics: Vec<String>,
     pub output_semantics: Vec<String>,
@@ -51,7 +70,84 @@ pub struct PipelineStageLedger {
     pub import_eligible: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StageIdRegistry {
+    canonical: BTreeSet<StageId>,
+    resolved: BTreeMap<String, StageId>,
+}
+
+impl StageIdRegistry {
+    pub fn from_ledger(ledger: &PipelineStageLedger) -> Result<Self, String> {
+        ledger.validate()?;
+        let canonical = ledger
+            .stages
+            .iter()
+            .map(|stage| StageId(stage.id.clone()))
+            .collect::<BTreeSet<_>>();
+        let mut resolved = canonical
+            .iter()
+            .map(|id| (id.as_str().to_owned(), id.clone()))
+            .collect::<BTreeMap<_, _>>();
+        for stage in &ledger.stages {
+            let target = StageId(stage.id.clone());
+            for alias in &stage.aliases {
+                if !safe_stage_component(alias) {
+                    return Err(format!(
+                        "pipeline stage alias is empty or unsafe: {} -> {alias}",
+                        stage.id
+                    ));
+                }
+                if let Some(existing) = resolved.insert(alias.clone(), target.clone()) {
+                    return Err(format!(
+                        "pipeline stage alias collision: {alias} resolves to {existing} and {}",
+                        stage.id
+                    ));
+                }
+            }
+        }
+        Ok(Self {
+            canonical,
+            resolved,
+        })
+    }
+
+    pub fn parse_canonical(&self, raw: &str) -> Result<StageId, String> {
+        let candidate = StageId(raw.to_owned());
+        self.canonical
+            .get(&candidate)
+            .cloned()
+            .ok_or_else(|| format!("unknown canonical pipeline stage id: {raw}"))
+    }
+
+    pub fn resolve(&self, raw: &str) -> Result<StageId, String> {
+        self.resolved
+            .get(raw)
+            .cloned()
+            .ok_or_else(|| format!("unknown pipeline stage id or alias: {raw}"))
+    }
+
+    pub fn contains(&self, raw: &str) -> bool {
+        self.resolved.contains_key(raw)
+    }
+}
+
+fn safe_stage_component(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 96
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
+}
+
 impl PipelineStageLedger {
+    pub fn stage(&self, id: &StageId) -> Option<&PipelineStageContract> {
+        self.stages.iter().find(|stage| stage.id == id.as_str())
+    }
+
+    pub fn registry(&self) -> Result<StageIdRegistry, String> {
+        StageIdRegistry::from_ledger(self)
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         if self.schema_version != "pipeline-stage-contracts.v1" || self.import_eligible {
             return Err("pipeline ledger schema/D127 invalid".into());
@@ -61,7 +157,8 @@ impl PipelineStageLedger {
         }
         let mut by_id = BTreeMap::new();
         for stage in &self.stages {
-            if stage.id.trim().is_empty() || by_id.insert(stage.id.as_str(), stage).is_some() {
+            if !safe_stage_component(&stage.id) || by_id.insert(stage.id.as_str(), stage).is_some()
+            {
                 return Err(format!(
                     "pipeline stage id empty or duplicated: {}",
                     stage.id
@@ -92,7 +189,20 @@ impl PipelineStageLedger {
                 ));
             }
         }
+        let canonical_ids = by_id.keys().copied().collect::<BTreeSet<_>>();
+        let mut aliases = BTreeSet::new();
         for stage in &self.stages {
+            for alias in &stage.aliases {
+                if !safe_stage_component(alias)
+                    || canonical_ids.contains(alias.as_str())
+                    || !aliases.insert(alias.as_str())
+                {
+                    return Err(format!(
+                        "pipeline stage alias empty, unsafe or duplicated: {} -> {alias}",
+                        stage.id
+                    ));
+                }
+            }
             for dependency in &stage.depends_on {
                 if dependency == &stage.id || !by_id.contains_key(dependency.as_str()) {
                     return Err(format!(
@@ -137,6 +247,7 @@ mod tests {
     fn stage(id: &str, deps: &[&str], mode: StageCacheMode, truth: bool) -> PipelineStageContract {
         PipelineStageContract {
             id: id.into(),
+            aliases: vec![],
             owner: StageOwner::Application,
             input_semantics: vec!["input".into()],
             output_semantics: vec!["output".into()],
@@ -171,6 +282,56 @@ mod tests {
             serde_json::from_slice(&serde_json::to_vec(&l).unwrap()).unwrap();
         assert_eq!(q, l);
     }
+    #[test]
+    fn registry_resolves_aliases_but_keeps_canonical_parsing_strict() {
+        let mut parse = stage("parse", &[], StageCacheMode::PureCompute, false);
+        parse.aliases = vec!["grobid_parse".into(), "html_parse".into()];
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![parse],
+            import_eligible: false,
+        };
+        let registry = ledger.registry().unwrap();
+        assert_eq!(registry.resolve("grobid_parse").unwrap().as_str(), "parse");
+        assert_eq!(registry.resolve("parse").unwrap().as_str(), "parse");
+        assert!(registry.parse_canonical("grobid_parse").is_err());
+        let parse_id = registry.parse_canonical("parse").unwrap();
+        assert_eq!(ledger.stage(&parse_id).unwrap().id, "parse");
+    }
+
+    #[test]
+    fn rejects_duplicate_colliding_and_unsafe_aliases() {
+        let mut parse = stage("parse", &[], StageCacheMode::PureCompute, false);
+        parse.aliases = vec!["shared".into()];
+        let mut embed = stage("embedding", &["parse"], StageCacheMode::PureCompute, false);
+        embed.aliases = vec!["shared".into()];
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![parse.clone(), embed],
+            import_eligible: false,
+        };
+        assert!(ledger.validate().unwrap_err().contains("alias"));
+
+        parse.aliases = vec!["embedding".into()];
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                parse.clone(),
+                stage("embedding", &["parse"], StageCacheMode::PureCompute, false),
+            ],
+            import_eligible: false,
+        };
+        assert!(ledger.validate().unwrap_err().contains("alias"));
+
+        parse.aliases = vec!["../parse".into()];
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![parse],
+            import_eligible: false,
+        };
+        assert!(ledger.validate().unwrap_err().contains("alias"));
+    }
+
     #[test]
     fn rejects_cycle_and_cache_truth_mismatch() {
         let l = PipelineStageLedger {

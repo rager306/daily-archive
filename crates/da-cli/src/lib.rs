@@ -9,6 +9,7 @@ pub mod health_report;
 pub mod load;
 pub mod logging;
 pub mod materialization_progress;
+pub mod production;
 pub mod snapshot_identity;
 pub mod snapshot_lineage;
 pub mod summarize_revisions;
