@@ -1053,3 +1053,168 @@ async fn summary_version_reactivates_when_content_returns() {
             .unwrap()
     );
 }
+
+/// Build a universal PropertyMap from a Summary node's temporal fields so the
+/// kg-ontology bitemporal helpers can be asserted directly (PIR-012 proof).
+async fn temporal_props(store: &MockGraphStore, node: u64) -> kg_ontology::bitemporal::PropertyMap {
+    use kg_ontology::bitemporal::PropertyMap;
+    let mut props = PropertyMap::new();
+    for key in ["valid_from", "valid_to", "recorded_at", "superseded_at"] {
+        if let Some(value) = store.get_node_property_string(node, key).await {
+            props.insert(key.to_string(), serde_json::Value::String(value));
+        }
+    }
+    props
+}
+
+#[tokio::test]
+async fn summary_as_of_reads_current_and_historical_versions() {
+    // PIR-012 as-of proof: after a rerun with changed text, the old version
+    // stays queryable at its own instant and the new version at its own —
+    // adjacent non-overlapping intervals (old.valid_to == new.valid_from), all
+    // through the same-process get_summary_as_of read surface.
+    use da_application::extractive_summary::{get_summary_as_of, list_summary_versions};
+    use kg_ontology::bitemporal::{is_active_at, validate_bitemporal, was_known_at};
+
+    let store = Arc::new(MockGraphStore::new());
+    let clock = Arc::new(MutableClock::new(ts(1_700_000_000)));
+    let use_case = ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .with_clock(clock.clone());
+    let (revision_node, revision_vid, sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    let base = input(revision_node, revision_vid.clone(), sections.clone());
+    use_case.materialize(base.clone()).await.unwrap();
+
+    clock.set(ts(1_700_000_100));
+    let mut changed = base.clone();
+    changed.sections[1].text = "GEPA now uses reflective evolution.".into();
+    use_case.materialize(changed).await.unwrap();
+
+    let store_ref = store.as_ref() as &dyn DirectGraphStore;
+    let logical_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+
+    // Before the first write nothing was valid/known yet.
+    assert!(
+        get_summary_as_of(store_ref, &logical_vid, ts(1_699_999_999))
+            .await
+            .is_none()
+    );
+
+    // At t1 the v1 version (old text) is active AND known.
+    let at_t1 = get_summary_as_of(store_ref, &logical_vid, ts(1_700_000_000))
+        .await
+        .expect("v1 readable at its own instant");
+    assert_eq!(at_t1.text, "GEPA mutates prompts.");
+    assert_eq!(at_t1.valid_from, Some(ts(1_700_000_000)));
+    assert_eq!(at_t1.valid_to, Some(ts(1_700_000_100)));
+    assert_eq!(at_t1.superseded_at, Some(ts(1_700_000_100)));
+    assert!(!at_t1.retrieval_eligible);
+    // PIR-007: the dotted AST path survives onto the version snapshot.
+    assert_eq!(at_t1.source_path_id, sections[1].path_id);
+    assert!(at_t1.source_path_missingness.is_empty());
+    assert!(at_t1.bitemporal_issues.is_empty());
+
+    // Boundary instant: intervals are [from, to) — exactly at t2 the NEW
+    // version becomes active/known.
+    let at_t2 = get_summary_as_of(store_ref, &logical_vid, ts(1_700_000_100))
+        .await
+        .expect("v2 readable at its own instant");
+    assert_eq!(at_t2.text, "GEPA now uses reflective evolution.");
+    assert_eq!(at_t2.valid_from, Some(ts(1_700_000_100)));
+    assert_eq!(at_t2.valid_to, None);
+    assert_eq!(at_t2.superseded_at, None);
+    assert!(at_t2.retrieval_eligible);
+    assert!(at_t2.bitemporal_issues.is_empty());
+
+    // Later: the current version is still v2.
+    let later = get_summary_as_of(store_ref, &logical_vid, ts(1_700_000_500))
+        .await
+        .expect("current readable");
+    assert_eq!(later.vid, at_t2.vid);
+
+    // Adjacent, non-overlapping valid intervals.
+    assert_eq!(at_t1.valid_to, at_t2.valid_from);
+
+    // Full history is queryable: both versions, oldest first, texts intact.
+    let history = list_summary_versions(store_ref, &logical_vid).await;
+    assert_eq!(history.len(), 2);
+    assert_eq!(history[0].text, "GEPA mutates prompts.");
+    assert_eq!(history[1].text, "GEPA now uses reflective evolution.");
+    assert_eq!(history[0].valid_to, history[1].valid_from);
+    assert_eq!(history[1].valid_to, None);
+
+    // Direct kg-ontology bitemporal proof on the raw node snapshots: v1 is
+    // active+known at t1 and neither at t2; v2 is active+known from t2 on.
+    let group = summary_group_nodes(&store, &logical_vid).await;
+    assert_eq!(group.len(), 2);
+    let mut v1_node = None;
+    let mut v2_node = None;
+    for n in group {
+        let text = store.get_node_property_string(n, "text").await;
+        if text.as_deref() == Some("GEPA mutates prompts.") {
+            v1_node = Some(n);
+        } else if text.as_deref() == Some("GEPA now uses reflective evolution.") {
+            v2_node = Some(n);
+        }
+    }
+    let v1_node = v1_node.expect("v1 node in group");
+    let v2_node = v2_node.expect("v2 node in group");
+    let v1_props = temporal_props(&store, v1_node).await;
+    let v2_props = temporal_props(&store, v2_node).await;
+    assert!(is_active_at(&v1_props, ts(1_700_000_000)));
+    assert!(was_known_at(&v1_props, ts(1_700_000_000)));
+    assert!(!is_active_at(&v1_props, ts(1_700_000_100)));
+    assert!(!was_known_at(&v1_props, ts(1_700_000_100)));
+    assert!(is_active_at(&v2_props, ts(1_700_000_100)));
+    assert!(was_known_at(&v2_props, ts(1_700_000_100)));
+    assert!(is_active_at(&v2_props, ts(1_700_000_500)));
+    assert!(was_known_at(&v2_props, ts(1_700_000_500)));
+    assert!(validate_bitemporal(&v1_props).is_empty());
+    assert!(validate_bitemporal(&v2_props).is_empty());
+}
+
+#[tokio::test]
+async fn summary_as_of_unknown_group_and_legacy_node() {
+    // Negative: an unknown logical group has no versions at any instant.
+    // Legacy: a pre-T03 Summary node (vid == logical_vid, no temporal fields)
+    // is active+known at every instant through the same read surface.
+    use da_application::extractive_summary::{get_summary_as_of, list_summary_versions};
+
+    let store = Arc::new(MockGraphStore::new());
+    let store_ref = store.as_ref() as &dyn DirectGraphStore;
+    let unknown = revision_summary_vid(&"a".repeat(64), "section", &"b".repeat(64)).unwrap();
+    assert!(
+        get_summary_as_of(store_ref, &unknown, ts(1_700_000_000))
+            .await
+            .is_none()
+    );
+    assert!(list_summary_versions(store_ref, &unknown).await.is_empty());
+
+    // Legacy node written by the pre-T03 writer shape: vid == logical_vid, no
+    // logical_vid property, no temporal fields. Missing bounds mean OPEN on
+    // both axes, so the node is readable at any instant.
+    let legacy_vid = revision_summary_vid(&"c".repeat(64), "abstract", &"c".repeat(64)).unwrap();
+    let node = store.create_node("Summary").await.unwrap();
+    store
+        .set_node_property_string(node, "vid", legacy_vid.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(node, "text", "legacy digest".into())
+        .await
+        .unwrap();
+    for at in [ts(1_000_000_000), ts(1_700_000_000), ts(2_000_000_000)] {
+        let read = get_summary_as_of(store_ref, &legacy_vid, at)
+            .await
+            .unwrap_or_else(|| panic!("legacy summary readable at {at}"));
+        assert_eq!(read.text, "legacy digest");
+        assert_eq!(read.vid, legacy_vid);
+        assert!(read.logical_vid.is_empty());
+        assert_eq!(read.valid_from, None);
+        assert_eq!(read.valid_to, None);
+    }
+    let history = list_summary_versions(store_ref, &legacy_vid).await;
+    assert_eq!(history.len(), 1);
+    assert_eq!(history[0].text, "legacy digest");
+}

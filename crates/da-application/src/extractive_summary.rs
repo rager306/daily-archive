@@ -6,6 +6,7 @@
 
 use std::sync::Arc;
 
+use chrono::{DateTime, Utc};
 use da_domain::extractive_summary::{
     EXTRACTIVE_SUMMARY_METHOD, ExtractiveSummaryBatch, ExtractiveSummaryError,
     ExtractiveSummaryUnit, compute_extractive_summaries,
@@ -15,6 +16,9 @@ use da_domain::section_summary_policy::SectionRolePolicy;
 use da_domain::vid::{revision_summary_version_vid, revision_summary_vid};
 use da_ports::DirectGraphStore;
 use da_ports::clock::{Clock, SystemClock};
+use kg_ontology::bitemporal::{
+    PropertyMap, is_active_at, read_datetime, validate_bitemporal, was_known_at,
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -423,17 +427,7 @@ impl ExtractiveSummaryUseCase {
         // valid_from is an RFC3339 string; lexicographic comparison is
         // chronological for identical UTC formats.
         let mut current: Option<(String, u64)> = None; // (valid_from, node_id)
-        for node in self.graph_store.get_nodes_by_label("Summary").await {
-            let logical = self
-                .graph_store
-                .get_node_property_string(node, "logical_vid")
-                .await;
-            let vid = self.graph_store.get_node_property_string(node, "vid").await;
-            let member = logical.as_deref() == Some(logical_vid)
-                || (logical.is_none() && vid.as_deref() == Some(logical_vid));
-            if !member {
-                continue;
-            }
+        for node in summary_group_members(&*self.graph_store, logical_vid).await {
             let superseded_at = self
                 .graph_store
                 .get_node_property_string(node, "superseded_at")
@@ -660,4 +654,269 @@ pub async fn collect_revision_summary_inputs(
         skipped,
         path_id_fallbacks,
     }
+}
+
+/// One Summary version read back from the graph through the as-of surface.
+///
+/// Temporal bounds are parsed RFC3339 instants (`None` = OPEN / never set), so
+/// callers compare intervals without re-parsing. `bitemporal_issues` carries
+/// `validate_bitemporal` findings for the version (empty = consistent).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SummaryAsOf {
+    pub node_id: u64,
+    /// Content+policy addressed version VID (D243), e.g.
+    /// `revision_summary_version_vid(logical_vid, text_sha256, policy_sha256)`.
+    pub vid: String,
+    /// Stable logical join key of the version group (unchanged across reruns).
+    pub logical_vid: String,
+    pub text: String,
+    pub granularity: String,
+    pub source_label: String,
+    pub source_id: String,
+    /// PIR-007: durable dotted AST path key (e.g. "3.2.1").
+    pub source_path_id: String,
+    /// Empty = real dotted path present; non-empty = typed fallback reason.
+    pub source_path_missingness: String,
+    pub revision_vid: String,
+    pub summary_type: String,
+    pub role_policy_schema_version: String,
+    pub role_policy_sha256: String,
+    pub method: String,
+    pub source_text_sha256: String,
+    pub char_count: i64,
+    pub source_chars: i64,
+    /// False once superseded: off the current retrieval surface, still readable
+    /// through `get_summary_as_of`/`list_summary_versions` (PIR-012).
+    pub retrieval_eligible: bool,
+    /// Valid-time axis: when the fact became true (OPEN = `None`).
+    pub valid_from: Option<DateTime<Utc>>,
+    /// Valid-time axis: when the fact stopped being true (`None` = still true).
+    pub valid_to: Option<DateTime<Utc>>,
+    /// Transaction-time axis: when our system first wrote the fact.
+    pub recorded_at: Option<DateTime<Utc>>,
+    /// Transaction-time axis: when our system stopped using it (`None` = current).
+    pub superseded_at: Option<DateTime<Utc>>,
+    /// Version VID of the node that superseded this one (`None` = never).
+    pub superseded_by: Option<String>,
+    /// `kg_ontology::bitemporal::validate_bitemporal` findings (empty = consistent).
+    pub bitemporal_issues: Vec<String>,
+}
+
+/// All Summary nodes of one logical group (D243): nodes whose `logical_vid`
+/// matches, plus legacy pre-T03 nodes that carry the logical VID directly in
+/// `vid` without a `logical_vid` property.
+async fn summary_group_members(store: &dyn DirectGraphStore, logical_vid: &str) -> Vec<u64> {
+    let mut members = Vec::new();
+    for node in store.get_nodes_by_label("Summary").await {
+        let logical = store.get_node_property_string(node, "logical_vid").await;
+        let vid = store.get_node_property_string(node, "vid").await;
+        if logical.as_deref() == Some(logical_vid)
+            || (logical.is_none() && vid.as_deref() == Some(logical_vid))
+        {
+            members.push(node);
+        }
+    }
+    members
+}
+
+/// Snapshot one Summary node into the universal PropertyMap shape so the
+/// kg-ontology bitemporal helpers (`is_active_at`/`was_known_at`/
+/// `validate_bitemporal`) evaluate its temporal state without a project
+/// reader. Missing/empty temporal fields stay absent — the helpers treat
+/// absent bounds as OPEN.
+async fn summary_property_map(store: &dyn DirectGraphStore, node: u64) -> PropertyMap {
+    let mut props = PropertyMap::new();
+    for key in [
+        "vid",
+        "logical_vid",
+        "text",
+        "granularity",
+        "source_label",
+        "source_id",
+        "source_path_id",
+        "source_path_missingness",
+        "revision_vid",
+        "summary_type",
+        "role_policy_schema_version",
+        "role_policy_sha256",
+        "method",
+        "source_text_sha256",
+        "valid_from",
+        "valid_to",
+        "recorded_at",
+        "superseded_at",
+        "superseded_by",
+    ] {
+        if let Some(value) = store.get_node_property_string(node, key).await {
+            props.insert(key.to_string(), serde_json::Value::String(value));
+        }
+    }
+    for key in ["char_count", "source_chars"] {
+        if let Some(value) = store.get_node_property_int(node, key).await {
+            props.insert(key.to_string(), serde_json::Value::Number(value.into()));
+        }
+    }
+    if let Some(value) = store
+        .get_node_property_bool(node, "retrieval_eligible")
+        .await
+    {
+        props.insert(
+            "retrieval_eligible".to_string(),
+            serde_json::Value::Bool(value),
+        );
+    }
+    props
+}
+
+/// Read one Summary version as a typed snapshot with parsed temporal bounds
+/// and bitemporal consistency findings.
+async fn summary_snapshot(store: &dyn DirectGraphStore, node: u64) -> SummaryAsOf {
+    let props = summary_property_map(store, node).await;
+    SummaryAsOf {
+        node_id: node,
+        vid: store
+            .get_node_property_string(node, "vid")
+            .await
+            .unwrap_or_default(),
+        logical_vid: store
+            .get_node_property_string(node, "logical_vid")
+            .await
+            .unwrap_or_default(),
+        text: store
+            .get_node_property_string(node, "text")
+            .await
+            .unwrap_or_default(),
+        granularity: store
+            .get_node_property_string(node, "granularity")
+            .await
+            .unwrap_or_default(),
+        source_label: store
+            .get_node_property_string(node, "source_label")
+            .await
+            .unwrap_or_default(),
+        source_id: store
+            .get_node_property_string(node, "source_id")
+            .await
+            .unwrap_or_default(),
+        source_path_id: store
+            .get_node_property_string(node, "source_path_id")
+            .await
+            .unwrap_or_default(),
+        source_path_missingness: store
+            .get_node_property_string(node, "source_path_missingness")
+            .await
+            .unwrap_or_default(),
+        revision_vid: store
+            .get_node_property_string(node, "revision_vid")
+            .await
+            .unwrap_or_default(),
+        summary_type: store
+            .get_node_property_string(node, "summary_type")
+            .await
+            .unwrap_or_default(),
+        role_policy_schema_version: store
+            .get_node_property_string(node, "role_policy_schema_version")
+            .await
+            .unwrap_or_default(),
+        role_policy_sha256: store
+            .get_node_property_string(node, "role_policy_sha256")
+            .await
+            .unwrap_or_default(),
+        method: store
+            .get_node_property_string(node, "method")
+            .await
+            .unwrap_or_default(),
+        source_text_sha256: store
+            .get_node_property_string(node, "source_text_sha256")
+            .await
+            .unwrap_or_default(),
+        char_count: store
+            .get_node_property_int(node, "char_count")
+            .await
+            .unwrap_or(0),
+        source_chars: store
+            .get_node_property_int(node, "source_chars")
+            .await
+            .unwrap_or(0),
+        retrieval_eligible: store
+            .get_node_property_bool(node, "retrieval_eligible")
+            .await
+            .unwrap_or(false),
+        valid_from: read_datetime(&props, "valid_from"),
+        valid_to: read_datetime(&props, "valid_to"),
+        recorded_at: read_datetime(&props, "recorded_at"),
+        superseded_at: read_datetime(&props, "superseded_at"),
+        superseded_by: store
+            .get_node_property_string(node, "superseded_by")
+            .await
+            .filter(|s| !s.is_empty()),
+        bitemporal_issues: validate_bitemporal(&props),
+    }
+}
+
+/// Same-process as-of read surface (PIR-012): the Summary version of a logical
+/// group that was valid AND known at instant `at`, or `None` when no version
+/// covers that instant (including before the first write). This is the read
+/// surface for both the current version (`at = now`) and historical versions
+/// (`at = any past instant`) — old summaries stay queryable after regeneration
+/// without unlocking D127.
+///
+/// Both temporal axes are evaluated through the universal kg-ontology helpers:
+/// `is_active_at` (valid_from <= at < valid_to) and `was_known_at`
+/// (recorded_at <= at < superseded_at). Among candidates the newest
+/// `valid_from` wins with `node_id` breaking ties, matching
+/// `find_current_summary` determinism (Q3).
+pub async fn get_summary_as_of(
+    store: &dyn DirectGraphStore,
+    logical_vid: &str,
+    at: DateTime<Utc>,
+) -> Option<SummaryAsOf> {
+    let mut best: Option<(DateTime<Utc>, u64)> = None;
+    for node in summary_group_members(store, logical_vid).await {
+        let props = summary_property_map(store, node).await;
+        if !is_active_at(&props, at) || !was_known_at(&props, at) {
+            continue;
+        }
+        // Legacy nodes (pre-T03, no temporal fields) are active+known at every
+        // instant; the epoch valid_from keeps their tie-break deterministic.
+        let valid_from = read_datetime(&props, "valid_from")
+            .unwrap_or_else(|| DateTime::from_timestamp(0, 0).expect("epoch is a valid instant"));
+        let better = match &best {
+            None => true,
+            Some((best_from, best_id)) => {
+                valid_from > *best_from || (valid_from == *best_from && node > *best_id)
+            }
+        };
+        if better {
+            best = Some((valid_from, node));
+        }
+    }
+    match best {
+        Some((_, node)) => Some(summary_snapshot(store, node).await),
+        None => None,
+    }
+}
+
+/// Full version history of one logical group, oldest first (valid_from
+/// ascending, `node_id` tie-break). Superseded versions remain readable here
+/// even though `retrieval_eligible=false` keeps them off the current retrieval
+/// surface — the immutable audit trail PIR-012 requires.
+pub async fn list_summary_versions(
+    store: &dyn DirectGraphStore,
+    logical_vid: &str,
+) -> Vec<SummaryAsOf> {
+    let mut members: Vec<(String, u64)> = Vec::new();
+    for node in summary_group_members(store, logical_vid).await {
+        let valid_from = store
+            .get_node_property_string(node, "valid_from")
+            .await
+            .unwrap_or_default();
+        members.push((valid_from, node));
+    }
+    members.sort();
+    let mut versions = Vec::with_capacity(members.len());
+    for (_, node) in members {
+        versions.push(summary_snapshot(store, node).await);
+    }
+    versions
 }

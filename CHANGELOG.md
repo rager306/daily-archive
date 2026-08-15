@@ -1,5 +1,13 @@
 # Changelog
 
+### M398 S02 summary path identity and temporal history
+
+- Summary input collector now prefers the real dotted `Section.path_id` over the `order` ordinal; `order`/`source_vid` fallbacks are typed `PathIdFallback` diagnostics (PIR-007), and every Summary node persists durable `source_path_id` plus `source_path_missingness` (hardcoded `SummarySchema` and `data/ontology/node_schemas.yaml` stay in sync).
+- Summary materialization is now versioned (PIR-012, D243): a rerun with a different `source_text_sha256` or `role_policy_sha256` closes the previous current node (`valid_to`, `superseded_at`, `superseded_by`, `retrieval_eligible=false`) and mints a fresh content+policy-addressed version VID (`revision_summary_version_vid`); an identical replay stays ONE current node and a returned version reactivates (one-current invariant per logical group).
+- New same-process as-of read surface: `get_summary_as_of(store, logical_vid, at)` returns the version that was valid AND known at instant `at` (kg-ontology `is_active_at`/`was_known_at`), and `list_summary_versions` returns the full version history oldest-first — old summaries stay queryable after regeneration without unlocking D127.
+- As-of proof tests: `old.valid_to == new.valid_from` adjacency, per-instant `is_active_at`/`was_known_at` through the universal kg-ontology helpers, `validate_bitemporal` clean on both versions, before-first-write instant returns `None`, unknown groups return `None`/empty history, legacy pre-T03 nodes (no `logical_vid`, no temporal fields) stay readable at any instant; `import_eligible` remains false (D127).
+- PIR-007 and PIR-012 resolved in `doc/review/pipeline-integrity-review.jsonl` with runtime evidence.
+
 ### M398 S01 deep-tree sibling navigation correctness
 
 - `build_section_navigation_edges` (now `pub`) selects `next_sibling` by the canonical parent identity (last-dot path prefix) and scans past intervening descendants, so a section keeps a direct edge to its actual same-parent successor at any depth; root sections chain to the next root. Deep-tree regression fixture: 8 sections / 13 navigation edges; legacy flat parsers still emit zero edges; replay is idempotent; D127 stays false.

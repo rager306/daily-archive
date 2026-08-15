@@ -54,6 +54,7 @@ pub use entity_resolution::{
     SystemExactAliasSkip,
 };
 pub use extraction::{ExtractionResult, ExtractionUseCase};
+pub use extractive_summary::{SummaryAsOf, get_summary_as_of, list_summary_versions};
 pub mod figure_analysis;
 pub use figure_analysis::{
     FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
