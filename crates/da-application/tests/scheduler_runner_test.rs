@@ -65,7 +65,7 @@ async fn fixture() -> (MockGraphStore, u64, u64) {
             .unwrap();
     }
     store
-        .set_node_property_int(paper, "valid_from", 1)
+        .set_node_property_string(paper, "valid_from", "2024-01-15T10:30:00Z".to_string())
         .await
         .unwrap();
     store
@@ -89,8 +89,10 @@ async fn fixture() -> (MockGraphStore, u64, u64) {
         .await
         .unwrap();
     let task = store.get_nodes_by_label("SchedulerTask").await[0];
+    // Due immediately via the canonical wire: epoch RFC3339 UTC string
+    // (PIR-008 — integer next_retry would fail graph conformance validation).
     store
-        .set_node_property_int(task, "next_retry", 0)
+        .set_node_property_string(task, "next_retry", "1970-01-01T00:00:00Z".to_string())
         .await
         .unwrap();
     (store, paper, task)
@@ -166,8 +168,13 @@ async fn successful_openalex_without_paper_never_completes() {
         .await
         .unwrap();
     let isolated_task = isolated.get_nodes_by_label("SchedulerTask").await[0];
+    // Due immediately via the canonical wire (epoch RFC3339 UTC string).
     isolated
-        .set_node_property_int(isolated_task, "next_retry", 0)
+        .set_node_property_string(
+            isolated_task,
+            "next_retry",
+            "1970-01-01T00:00:00Z".to_string(),
+        )
         .await
         .unwrap();
 
@@ -257,9 +264,21 @@ async fn adapter_error_advances_retry_and_never_completes() {
     );
     assert!(
         store
-            .get_node_property_int(task, "next_retry")
+            .get_node_property_string(task, "next_retry")
             .await
-            .unwrap()
-            > 0
+            .is_some(),
+        "retry should write a canonical RFC3339 next_retry (PIR-008)"
+    );
+    let next_retry = store
+        .get_node_property_string(task, "next_retry")
+        .await
+        .unwrap();
+    let next_dt = chrono::DateTime::parse_from_rfc3339(&next_retry)
+        .expect("next_retry must parse as RFC3339")
+        .with_timezone(&Utc);
+    let frozen = Utc.with_ymd_and_hms(2026, 8, 8, 12, 0, 0).unwrap();
+    assert!(
+        next_dt > frozen,
+        "retry should be scheduled in the future, got: {next_retry}"
     );
 }

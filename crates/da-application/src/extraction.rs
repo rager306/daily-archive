@@ -187,7 +187,9 @@ impl ExtractionUseCase {
             .await;
 
         // 4. Write Entity nodes to graph (HOT path) + MENTIONS edges
-        let now = self.clock.now().timestamp();
+        // PIR-008 / M398-S04: node DateTime wire is a Clock-derived RFC3339
+        // UTC string — integer timestamps are rejected by schema validation.
+        let now_rfc3339 = self.clock.now().to_rfc3339();
         let mut node_ids = Vec::new();
         let mut entities_created = 0usize;
         let mut entity_types = Vec::new();
@@ -245,7 +247,7 @@ impl ExtractionUseCase {
                         .set_node_property_string(new_node, "surface", ext.surface.clone())
                         .await?;
                     self.graph_store
-                        .set_node_property_int(new_node, "valid_from", now)
+                        .set_node_property_string(new_node, "valid_from", now_rfc3339.clone())
                         .await?;
                     self.graph_store
                         .set_node_property_int(new_node, "schema_version", 1)

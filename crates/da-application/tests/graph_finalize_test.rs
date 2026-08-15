@@ -62,7 +62,7 @@ async fn valid_paper(store: &MockGraphStore, import_eligible: bool) -> u64 {
             .unwrap();
     }
     store
-        .set_node_property_int(paper, "valid_from", 1)
+        .set_node_property_string(paper, "valid_from", "2024-01-15T10:30:00Z".to_string())
         .await
         .unwrap();
     store

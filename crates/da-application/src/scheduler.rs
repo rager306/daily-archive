@@ -12,6 +12,8 @@
 use da_domain::scheduler::{PendingTask, RetryPolicy};
 use da_ports::graph_store::DirectGraphStore;
 
+use chrono::DateTime;
+
 /// Scheduler that persists pending tasks in the graph (SchedulerTask nodes).
 pub struct GraphScheduler {
     pub graph_store: Box<dyn DirectGraphStore>,
@@ -74,6 +76,11 @@ impl GraphScheduler {
         now: i64,
     ) -> anyhow::Result<()> {
         let task = PendingTask::new_openalex_enrich(arxiv_id, policy, now);
+        // PIR-008 / M398-S04: SchedulerTask DateTime properties are written as
+        // canonical RFC3339 UTC strings; integer timestamps are the legacy
+        // read-only wire form (read back via read_datetime_secs below).
+        let added_at_wire = to_rfc3339_wire(now)?;
+        let next_retry_wire = to_rfc3339_wire(task.next_retry)?;
         let task_vid = da_domain::scheduler::scheduler_task_vid(&task.task_type, arxiv_id);
         // Scheduler lifecycle is one node per (task_type, arxiv_id). Re-scheduling
         // reopens that node instead of creating ambiguous duplicates.
@@ -111,10 +118,10 @@ impl GraphScheduler {
             .set_node_property_int(node, "retry_count", task.retry_count as i64)
             .await?;
         store
-            .set_node_property_int(node, "next_retry", task.next_retry)
+            .set_node_property_string(node, "next_retry", next_retry_wire.clone())
             .await?;
         store
-            .set_node_property_int(node, "added_at", task.added_at)
+            .set_node_property_string(node, "added_at", added_at_wire.clone())
             .await?;
         store
             .set_node_property_bool(node, "retrieval_eligible", false)
@@ -144,8 +151,7 @@ impl GraphScheduler {
             if status != "pending" {
                 continue;
             }
-            let next_retry = store
-                .get_node_property_int(node_id, "next_retry")
+            let next_retry = read_datetime_secs(store, node_id, "next_retry")
                 .await
                 .unwrap_or(0);
             if next_retry <= now
@@ -173,8 +179,9 @@ impl GraphScheduler {
         store
             .set_node_property_int(node_id, "retry_count", new_count)
             .await?;
+        let now_wire = to_rfc3339_wire(now)?;
         store
-            .set_node_property_int(node_id, "last_retry", now)
+            .set_node_property_string(node_id, "last_retry", now_wire.clone())
             .await?;
 
         if policy.should_give_up(new_count as u32) {
@@ -189,7 +196,7 @@ impl GraphScheduler {
         } else {
             let next = policy.next_retry_ts(new_count as u32, now);
             store
-                .set_node_property_int(node_id, "next_retry", next)
+                .set_node_property_string(node_id, "next_retry", to_rfc3339_wire(next)?)
                 .await?;
             tracing::info!(
                 node_id,
@@ -211,9 +218,36 @@ impl GraphScheduler {
             .set_node_property_string(node_id, "status", "completed".to_string())
             .await?;
         store
-            .set_node_property_int(node_id, "last_retry", now)
+            .set_node_property_string(node_id, "last_retry", to_rfc3339_wire(now)?)
             .await?;
         tracing::info!(node_id, "SchedulerTask completed");
         Ok(())
     }
+}
+
+/// Convert a Unix-seconds timestamp to the canonical RFC3339 UTC wire form
+/// (PIR-008 / M398-S04). Errors only on out-of-range timestamps.
+fn to_rfc3339_wire(secs: i64) -> anyhow::Result<String> {
+    DateTime::from_timestamp(secs, 0)
+        .map(|dt| dt.to_rfc3339())
+        .ok_or_else(|| anyhow::anyhow!("timestamp {secs} out of DateTime range"))
+}
+
+/// Read a DateTime-typed node property as Unix seconds. Accepts the canonical
+/// RFC3339 UTC string form first; falls back to the legacy integer form
+/// (bounded compatibility decoder, PIR-008) so old snapshots stay readable.
+/// None for missing/null/empty/OPEN values.
+async fn read_datetime_secs(store: &dyn DirectGraphStore, node_id: u64, key: &str) -> Option<i64> {
+    if let Some(s) = store.get_node_property_string(node_id, key).await {
+        if s.is_empty() || s == kg_ontology::temporal::OPEN {
+            return None;
+        }
+        if let Ok(dt) = DateTime::parse_from_rfc3339(&s) {
+            return Some(dt.timestamp());
+        }
+        // Legacy integer-string form (bounded compat read).
+        return s.parse::<i64>().ok();
+    }
+    // Legacy integer property form (bounded compat read).
+    store.get_node_property_int(node_id, key).await
 }

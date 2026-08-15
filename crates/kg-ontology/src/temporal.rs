@@ -19,6 +19,7 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// Sentinel string value for open temporal bounds (invalid_at, expired_at).
 /// Matches Semantica's TemporalBound::OPEN convention; serializable in
@@ -162,6 +163,11 @@ pub fn validate_temporal_edge(
 
 /// Parse a DateTime from a string (ISO-8601) or integer (Unix seconds).
 /// Returns None for empty strings, null, or the OPEN sentinel.
+///
+/// This is the **read** path: it intentionally keeps accepting the legacy
+/// integer string form so old snapshots remain readable. New writes must
+/// use the canonical RFC3339 UTC string form and are validated by
+/// [`validate_datetime_wire`] (which rejects integers).
 pub fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
     if s.is_empty() || s == OPEN {
         return None;
@@ -174,6 +180,47 @@ pub fn parse_datetime(s: &str) -> Option<DateTime<Utc>> {
                 .ok()
                 .and_then(|secs| DateTime::from_timestamp(secs, 0))
         })
+}
+
+/// Validate one DateTime property value against the canonical temporal
+/// wire contract (PIR-008; encoded in `data/ontology/node_schemas.yaml`
+/// under `temporal_wire_contract`, see
+/// [`crate::registry::TemporalWireContract`]).
+///
+/// New node/edge writes MUST encode DateTime properties as RFC3339 UTC
+/// strings — chrono's `DateTime<Utc>::to_rfc3339()` shape, e.g.
+/// `2024-01-15T10:30:00Z`. Integer Unix timestamps are the LEGACY wire
+/// form: still readable through the bounded compatibility decoders
+/// ([`crate::bitemporal::read_datetime`], [`crate::bitemporal::read_bound`],
+/// [`parse_datetime`]) but REJECTED for new writes.
+///
+/// `OPEN` remains the only open-bound sentinel and is accepted here for
+/// any DateTime field; bound semantics (OPEN meaningful only on open-bound
+/// fields such as `valid_to` / `superseded_at`) are enforced by the readers
+/// and `validate_bitemporal`.
+///
+/// Returns `Ok(())` for a canonical value, `Err(message)` otherwise.
+pub fn validate_datetime_wire(value: &Value, key: &str) -> Result<(), String> {
+    match value {
+        Value::Null => Ok(()),
+        Value::String(s) if s == OPEN => Ok(()),
+        Value::String(s) => match DateTime::parse_from_rfc3339(s) {
+            Ok(dt) if dt.offset().local_minus_utc() == 0 => Ok(()),
+            Ok(dt) => Err(format!(
+                "DateTime field '{key}': '{s}' is RFC3339 but not UTC (offset {} — canonical wire requires the Z/UTC designator)",
+                dt.offset()
+            )),
+            Err(e) => Err(format!(
+                "DateTime field '{key}': '{s}' is not a valid RFC3339 UTC string ({e})"
+            )),
+        },
+        Value::Number(_) => Err(format!(
+            "DateTime field '{key}': integer timestamp is the legacy wire form — new writes must use an RFC3339 UTC string"
+        )),
+        other => Err(format!(
+            "DateTime field '{key}': expected RFC3339 UTC string (or OPEN), got {other}"
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -351,6 +398,64 @@ mod tests {
     fn test_parse_datetime_open_returns_none() {
         assert!(parse_datetime(OPEN).is_none());
         assert!(parse_datetime("").is_none());
+    }
+}
+
+// ─── PIR-008: canonical DateTime wire contract (M398/S04/T01) ───
+
+#[cfg(test)]
+mod wire_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_wire_accepts_canonical_rfc3339_utc() {
+        assert!(validate_datetime_wire(&json!("2024-01-15T10:30:00Z"), "valid_from").is_ok());
+        assert!(
+            validate_datetime_wire(&json!("2024-01-15T10:30:00.123456789Z"), "recorded_at").is_ok()
+        );
+        // +00:00 is an explicit zero offset — same UTC instant, canonical.
+        assert!(validate_datetime_wire(&json!("2024-01-15T10:30:00+00:00"), "valid_from").is_ok());
+    }
+
+    #[test]
+    fn test_wire_rejects_integer_timestamps() {
+        let err = validate_datetime_wire(&json!(1_700_000_000_i64), "valid_from").unwrap_err();
+        assert!(
+            err.contains("legacy"),
+            "expected legacy-form rejection message, got: {err}"
+        );
+    }
+
+    #[test]
+    fn test_wire_rejects_non_utc_offset() {
+        let err =
+            validate_datetime_wire(&json!("2024-01-15T10:30:00+02:00"), "valid_from").unwrap_err();
+        assert!(err.contains("UTC"), "unexpected message: {err}");
+    }
+
+    #[test]
+    fn test_wire_rejects_non_rfc3339_string() {
+        let err = validate_datetime_wire(&json!("2024-01-15 10:30:00"), "valid_from").unwrap_err();
+        assert!(
+            err.contains("not a valid RFC3339"),
+            "unexpected message: {err}"
+        );
+    }
+
+    #[test]
+    fn test_wire_accepts_open_sentinel_and_null() {
+        assert!(validate_datetime_wire(&json!(OPEN), "valid_to").is_ok());
+        assert!(validate_datetime_wire(&Value::Null, "valid_to").is_ok());
+    }
+
+    #[test]
+    fn test_wire_rejects_other_types() {
+        let err = validate_datetime_wire(&json!(true), "valid_from").unwrap_err();
+        assert!(
+            err.contains("expected RFC3339"),
+            "unexpected message: {err}"
+        );
     }
 }
 

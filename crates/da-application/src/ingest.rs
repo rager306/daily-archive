@@ -363,7 +363,9 @@ impl IngestUseCase {
         // 3. Create domain Paper (compute VID)
         let paper = Paper::new(paper_id, &parsed.title);
         let vid_str = vid::paper_vid(paper_id);
-        let now = self.clock.now().timestamp();
+        // PIR-008 / M398-S04: node DateTime wire is a Clock-derived RFC3339
+        // UTC string — integer timestamps are rejected by schema validation.
+        let now_rfc3339 = self.clock.now().to_rfc3339();
 
         // 3b. Validate against schema before writing (GRAPH-SCHEMA.md)
         let paper_schema = da_domain::paper::PaperSchema;
@@ -371,7 +373,10 @@ impl IngestUseCase {
         paper_props.insert("vid".to_string(), serde_json::json!(vid_str));
         paper_props.insert("arxiv_id".to_string(), serde_json::json!(paper.arxiv_id));
         paper_props.insert("title".to_string(), serde_json::json!(paper.title));
-        paper_props.insert("valid_from".to_string(), serde_json::json!(now));
+        paper_props.insert(
+            "valid_from".to_string(),
+            serde_json::Value::String(now_rfc3339.clone()),
+        );
         paper_schema.validate(&paper_props)?;
 
         // 4. HOT PATH: Direct GraphStore API — replay-safe Paper identity.
@@ -401,15 +406,23 @@ impl IngestUseCase {
                 .await?;
         }
 
+        // The int read stays as the bounded legacy decoder: pre-PIR-008
+        // snapshots carry integer valid_from and must never be overwritten on
+        // replay; new writes are canonical RFC3339 UTC strings.
         if paper_created
-            || self
+            || (self
                 .graph_store
-                .get_node_property_int(node_id, "valid_from")
+                .get_node_property_string(node_id, "valid_from")
                 .await
                 .is_none()
+                && self
+                    .graph_store
+                    .get_node_property_int(node_id, "valid_from")
+                    .await
+                    .is_none())
         {
             self.graph_store
-                .set_node_property_int(node_id, "valid_from", now)
+                .set_node_property_string(node_id, "valid_from", now_rfc3339.clone())
                 .await?;
         }
         self.graph_store
@@ -799,7 +812,7 @@ impl IngestUseCase {
             .iter()
             .filter(|c| !c.anchors.is_empty())
             .count();
-        let now_ts = self.clock.now().timestamp();
+        let now_rfc3339 = self.clock.now().to_rfc3339();
         for citation in &parsed.citations {
             // T03: does this citation produce a CITES edge (resolvable arXiv
             // identity)? Anchors live on the CITES edge when it exists and on
@@ -848,14 +861,19 @@ impl IngestUseCase {
                         .await?;
                 }
                 if ref_created
-                    || self
+                    || (self
                         .graph_store
-                        .get_node_property_int(ref_node, "valid_from")
+                        .get_node_property_string(ref_node, "valid_from")
                         .await
                         .is_none()
+                        && self
+                            .graph_store
+                            .get_node_property_int(ref_node, "valid_from")
+                            .await
+                            .is_none())
                 {
                     self.graph_store
-                        .set_node_property_int(ref_node, "valid_from", now_ts)
+                        .set_node_property_string(ref_node, "valid_from", now_rfc3339.clone())
                         .await?;
                 }
                 self.graph_store
@@ -968,7 +986,7 @@ impl IngestUseCase {
                                 .await?;
                         }
                         self.graph_store
-                            .set_node_property_int(new_node, "valid_from", now_ts)
+                            .set_node_property_string(new_node, "valid_from", now_rfc3339.clone())
                             .await?;
                         self.graph_store
                             .set_node_property_int(new_node, "schema_version", 1)

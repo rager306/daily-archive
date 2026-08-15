@@ -2283,7 +2283,6 @@ fn audit_fields() {
 ///   (YAML-first contracts via `edge_contracts_or_yaml`)
 fn export_ontology_yaml(output_dir: &str) {
     use serde::Serialize;
-    use std::collections::BTreeMap;
 
     #[derive(Serialize)]
     struct FieldDef {
@@ -2296,6 +2295,12 @@ fn export_ontology_yaml(output_dir: &str) {
         label: String,
         required_fields: Vec<FieldDef>,
         optional_fields: Vec<FieldDef>,
+    }
+
+    #[derive(Serialize)]
+    struct OntologyExportRoot {
+        temporal_wire_contract: kg_ontology::registry::TemporalWireContract,
+        node_schemas: Vec<YamlNodeSchema>,
     }
 
     let schemas: Vec<YamlNodeSchema> = da_domain::schema::all_node_schemas()
@@ -2322,8 +2327,14 @@ fn export_ontology_yaml(output_dir: &str) {
         .collect();
 
     let schema_count = schemas.len();
-    let mut root: BTreeMap<&str, Vec<YamlNodeSchema>> = BTreeMap::new();
-    root.insert("node_schemas", schemas);
+    // PIR-008 (M398/S04): the canonical temporal wire contract is part of
+    // the ontology DATA. Re-emit it on every export so a regenerated
+    // node_schemas.yaml always carries the RFC3339-UTC / OPEN / integer-
+    // rejected decision.
+    let root = OntologyExportRoot {
+        temporal_wire_contract: kg_ontology::registry::TemporalWireContract::default(),
+        node_schemas: schemas,
+    };
 
     let yaml = serde_yaml::to_string(&root).expect("YAML serialize failed");
     let output_path = std::path::Path::new(output_dir);

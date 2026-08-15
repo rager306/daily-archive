@@ -119,7 +119,7 @@ async fn add_paper(store: &MockGraphStore, arxiv_id: &str) -> u64 {
             .unwrap();
     }
     store
-        .set_node_property_int(node, "valid_from", 1)
+        .set_node_property_string(node, "valid_from", "2024-01-15T10:30:00Z".to_string())
         .await
         .unwrap();
     store

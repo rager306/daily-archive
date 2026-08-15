@@ -124,13 +124,21 @@ impl RevisionMaterializationUseCase {
         self.set_string(paper_node, "vid", &paper_vid_value).await?;
         self.set_string(paper_node, "arxiv_id", &request.canonical_id)
             .await?;
+        // PIR-008 / M398-S04: node DateTime wire is a Clock-derived RFC3339
+        // UTC string. The int read below is the bounded legacy decoder for
+        // pre-PIR-008 snapshots — never overwrite an existing value on replay.
         if self
             .graph_store
-            .get_node_property_int(paper_node, "valid_from")
+            .get_node_property_string(paper_node, "valid_from")
             .await
             .is_none()
+            && self
+                .graph_store
+                .get_node_property_int(paper_node, "valid_from")
+                .await
+                .is_none()
         {
-            self.set_int(paper_node, "valid_from", self.clock.now().timestamp())
+            self.set_string(paper_node, "valid_from", &self.clock.now().to_rfc3339())
                 .await?;
         }
         self.set_bool(paper_node, "import_eligible", false).await?;

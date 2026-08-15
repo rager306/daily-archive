@@ -1396,6 +1396,7 @@ mod tests {
                     doi: None,
                     arxiv_id: Some("2507.19457".into()),
                     title: Some("Cited revision-aware paper".into()),
+                    anchors: Vec::new(),
                 }],
                 layout_json: None,
                 tei_xml: None,

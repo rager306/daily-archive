@@ -19,6 +19,14 @@ use std::collections::HashMap;
 /// Re-export OPEN sentinel for node-level code that imports from here.
 pub use crate::temporal::OPEN;
 
+/// Canonical DateTime wire validator (PIR-008 / M398/S04).
+///
+/// Re-exported from [`crate::temporal`]: new writes must carry RFC3339
+/// UTC strings; integer timestamps are rejected for writes while the
+/// read paths below (`read_datetime`, `read_bound`) remain the bounded
+/// compatibility decoder for legacy snapshots.
+pub use crate::temporal::validate_datetime_wire;
+
 /// A property map — generic JSON-like key-value store.
 /// This is the universal equivalent of da-domain's `PropertySnapshot`.
 pub type PropertyMap = HashMap<String, serde_json::Value>;
@@ -26,8 +34,11 @@ pub type PropertyMap = HashMap<String, serde_json::Value>;
 /// Parse a DateTime from a property map field. Returns None if the
 /// field is missing, null, empty, or the OPEN sentinel.
 ///
-/// Accepts Unix timestamps (i64 seconds since epoch) or ISO-8601 strings.
-/// The two encodings coexist because graph stores may write either shape.
+/// READ path (bounded compatibility decoder): accepts both the canonical
+/// RFC3339 UTC string form and legacy integer Unix timestamps (i64
+/// seconds since epoch) so old snapshots stay readable. New writes are
+/// validated by [`validate_datetime_wire`], which rejects the integer
+/// form.
 pub fn read_datetime(props: &PropertyMap, key: &str) -> Option<DateTime<Utc>> {
     let val = props.get(key)?;
     if val.is_null() {
@@ -236,5 +247,28 @@ mod tests {
         let now = Utc::now();
         assert!(is_active_at(&props, now));
         assert!(was_known_at(&props, now));
+    }
+
+    // ── PIR-008 canonical wire (re-exported from temporal) ──────────────
+
+    #[test]
+    fn test_validate_datetime_wire_reexport() {
+        // Canonical RFC3339 UTC string passes.
+        assert!(validate_datetime_wire(&json!("2024-01-15T10:30:00Z"), "valid_from").is_ok());
+        // Legacy integer form is rejected for NEW writes...
+        let err = validate_datetime_wire(&json!(1_700_000_000_i64), "valid_from").unwrap_err();
+        assert!(err.contains("legacy"), "unexpected message: {err}");
+        // ...while OPEN stays the accepted open-bound sentinel.
+        assert!(validate_datetime_wire(&json!(OPEN), "valid_to").is_ok());
+    }
+
+    #[test]
+    fn test_read_path_still_accepts_legacy_integer() {
+        // The compatibility decoder must keep reading legacy integers.
+        let props = map(&[("valid_from", json!(1_700_000_000_i64))]);
+        assert_eq!(
+            read_datetime(&props, "valid_from"),
+            DateTime::from_timestamp(1_700_000_000, 0)
+        );
     }
 }

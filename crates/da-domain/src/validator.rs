@@ -15,7 +15,8 @@
 //! - Two entry points:
 //!   - [`validate_node_properties`] for a single node
 //!   - [`validate_edge_type`] for edge-type registry check
-//! - [`Severity::Critical`] for missing required fields / broken invariants
+//! - [`Severity::Critical`] for missing required fields / broken invariants /
+//!   non-canonical DateTime wire values (PIR-008)
 //! - [`Severity::Warning`] for type mismatches / suspicious patterns
 //!
 //! # Universal types (ADR-050 Phase A re-export)
@@ -558,14 +559,27 @@ fn check_type_mismatch(
     fty: FieldType,
     val: &serde_json::Value,
 ) -> Option<SchemaViolation> {
+    // PIR-008 / GRAPH-CORE-TEMPORAL-DESIGN.md (encoded in
+    // data/ontology/node_schemas.yaml under `temporal_wire_contract`):
+    // DateTime properties must carry the canonical RFC3339 UTC string
+    // wire form (or the OPEN sentinel on open-bound fields). Integer
+    // Unix timestamps are the LEGACY read-only form — rejected for NEW
+    // writes with a Critical violation so writers cannot silently
+    // persist the legacy shape.
+    if fty == FieldType::DateTime {
+        return match kg_ontology::temporal::validate_datetime_wire(val, name) {
+            Ok(()) => None,
+            Err(message) => Some(SchemaViolation::critical("datetime-wire", name, message)),
+        };
+    }
     let ok = match fty {
         FieldType::String => val.is_string(),
         FieldType::Integer => val.is_i64(),
         FieldType::Float => val.is_f64() || val.is_i64(),
         FieldType::Boolean => val.is_boolean(),
-        FieldType::DateTime => val.is_i64() || val.is_string(),
         FieldType::Vector => val.is_array(),
         FieldType::Any => true,
+        FieldType::DateTime => unreachable!("DateTime handled by the wire check above"),
     };
     if ok {
         None
@@ -634,7 +648,7 @@ mod tests {
             ("vid", json!("vid:paper:1234.5678")),
             ("arxiv_id", json!("1234.5678")),
             ("title", json!("My Paper")),
-            ("valid_from", json!(1234567890_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -654,7 +668,7 @@ mod tests {
             ("vid", json!("vid:paper:1234.5678")),
             // arxiv_id missing
             ("title", json!("My Paper")),
-            ("valid_from", json!(1234567890_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -690,7 +704,7 @@ mod tests {
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             // import_eligible missing
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -705,7 +719,7 @@ mod tests {
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             // retrieval_eligible missing
             ("schema_version", json!(1_i64)),
@@ -720,7 +734,7 @@ mod tests {
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             // schema_version missing
@@ -735,7 +749,7 @@ mod tests {
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(0_i64)),
@@ -753,7 +767,7 @@ mod tests {
             // vid missing
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -768,7 +782,7 @@ mod tests {
             ("vid", json!("")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -783,8 +797,100 @@ mod tests {
     // ── Type checking ────────────────────────────────────────────────────
 
     #[test]
-    fn test_type_mismatch_on_required_field_is_warning() {
-        // valid_from declared DateTime; pass bool → Warning
+    fn test_integer_datetime_write_is_critical() {
+        // PIR-008: integer Unix timestamps are the legacy read-only wire
+        // form; new writes must be RFC3339 UTC strings → Critical.
+        let props = snap(&[
+            ("vid", json!("vid:paper:1")),
+            ("arxiv_id", json!("1")),
+            ("title", json!("T")),
+            ("valid_from", json!(1_700_000_000_i64)),
+            ("import_eligible", json!(false)),
+            ("retrieval_eligible", json!(true)),
+            ("schema_version", json!(1_i64)),
+        ]);
+        let v = validate_node_properties("Paper", &props);
+        let dw: Vec<_> = v
+            .iter()
+            .filter(|x| x.rule == "datetime-wire" && x.field.as_deref() == Some("valid_from"))
+            .collect();
+        assert_eq!(dw.len(), 1, "expected one datetime-wire violation: {:?}", v);
+        assert_eq!(dw[0].severity, Severity::Critical);
+        assert!(
+            dw[0].message.contains("legacy"),
+            "expected legacy-form message, got: {}",
+            dw[0].message
+        );
+    }
+
+    #[test]
+    fn test_rfc3339_utc_datetime_passes() {
+        // Canonical RFC3339 UTC string → no datetime-wire violation and no
+        // other violations for an otherwise valid minimum Paper.
+        let props = snap(&[
+            ("vid", json!("vid:paper:1")),
+            ("arxiv_id", json!("1")),
+            ("title", json!("T")),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
+            ("import_eligible", json!(false)),
+            ("retrieval_eligible", json!(true)),
+            ("schema_version", json!(1_i64)),
+        ]);
+        let v = validate_node_properties("Paper", &props);
+        assert!(
+            v.iter().all(|x| x.rule != "datetime-wire"),
+            "unexpected datetime-wire violations: {:?}",
+            v
+        );
+        assert!(v.is_empty(), "expected clean validation, got: {:?}", v);
+    }
+
+    #[test]
+    fn test_non_utc_offset_datetime_is_critical() {
+        // RFC3339 but not UTC (offset +02:00) — not the canonical wire.
+        let props = snap(&[
+            ("vid", json!("vid:paper:1")),
+            ("arxiv_id", json!("1")),
+            ("title", json!("T")),
+            ("valid_from", json!("2024-01-15T10:30:00+02:00")),
+            ("import_eligible", json!(false)),
+            ("retrieval_eligible", json!(true)),
+            ("schema_version", json!(1_i64)),
+        ]);
+        let v = validate_node_properties("Paper", &props);
+        let dw: Vec<_> = v
+            .iter()
+            .filter(|x| x.rule == "datetime-wire" && x.field.as_deref() == Some("valid_from"))
+            .collect();
+        assert_eq!(dw.len(), 1, "expected one datetime-wire violation: {:?}", v);
+        assert_eq!(dw[0].severity, Severity::Critical);
+        assert!(dw[0].message.contains("UTC"), "got: {}", dw[0].message);
+    }
+
+    #[test]
+    fn test_open_sentinel_passes_on_bound_field() {
+        // OPEN remains the only accepted open-bound sentinel.
+        let props = snap(&[
+            ("vid", json!("vid:paper:1")),
+            ("arxiv_id", json!("1")),
+            ("title", json!("T")),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
+            ("valid_to", json!("OPEN")),
+            ("import_eligible", json!(false)),
+            ("retrieval_eligible", json!(true)),
+            ("schema_version", json!(1_i64)),
+        ]);
+        let v = validate_node_properties("Paper", &props);
+        assert!(
+            v.iter().all(|x| x.rule != "datetime-wire"),
+            "OPEN on a bound field must pass the wire check: {:?}",
+            v
+        );
+    }
+
+    #[test]
+    fn test_bool_datetime_is_critical() {
+        // valid_from declared DateTime; pass bool → Critical datetime-wire.
         let props = snap(&[
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
@@ -797,7 +903,9 @@ mod tests {
         let v = validate_node_properties("Paper", &props);
         assert!(
             v.iter()
-                .any(|x| x.rule == "type-mismatch" && x.field.as_deref() == Some("valid_from"))
+                .any(|x| x.rule == "datetime-wire" && x.field.as_deref() == Some("valid_from")),
+            "expected datetime-wire violation for bool DateTime, got: {:?}",
+            v
         );
     }
 
@@ -809,7 +917,7 @@ mod tests {
             ("vid", json!("vid:paper:1")),
             ("arxiv_id", json!("1")),
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             ("import_eligible", json!(false)),
             ("retrieval_eligible", json!(true)),
             ("schema_version", json!(1_i64)),
@@ -832,7 +940,7 @@ mod tests {
             // vid missing
             // arxiv_id missing
             ("title", json!("T")),
-            ("valid_from", json!(1_i64)),
+            ("valid_from", json!("2024-01-15T10:30:00Z")),
             // import_eligible missing
             ("retrieval_eligible", json!(true)),
             // schema_version missing
@@ -881,7 +989,7 @@ mod tests {
                     FieldType::Integer => serde_json::json!(1_i64),
                     FieldType::Float => serde_json::json!(1.0_f64),
                     FieldType::Boolean => serde_json::json!(false),
-                    FieldType::DateTime => serde_json::json!(1_i64),
+                    FieldType::DateTime => serde_json::json!("1970-01-01T00:00:00Z"),
                     FieldType::Vector => serde_json::json!([0.0_f64]),
                     FieldType::Any => serde_json::json!("x"),
                 };

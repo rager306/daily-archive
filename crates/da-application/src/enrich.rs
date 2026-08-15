@@ -94,7 +94,9 @@ impl EnrichUseCase {
         arxiv_id: &str,
         work: da_ports::openalex::OpenAlexWork,
     ) -> anyhow::Result<EnrichResult> {
-        let now = self.clock.now().timestamp();
+        // PIR-008 / M398-S04: node DateTime wire is a Clock-derived RFC3339
+        // UTC string — integer timestamps are rejected by schema validation.
+        let now_rfc3339 = self.clock.now().to_rfc3339();
         let paper = self
             .graph_store
             .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
@@ -181,7 +183,7 @@ impl EnrichUseCase {
                         .set_node_property_int(node, "schema_version", 1)
                         .await?;
                     self.graph_store
-                        .set_node_property_int(node, "valid_from", now)
+                        .set_node_property_string(node, "valid_from", now_rfc3339.clone())
                         .await?;
                     topics_written += 1;
                     node
@@ -253,7 +255,7 @@ impl EnrichUseCase {
                         .set_node_property_int(node, "schema_version", 1)
                         .await?;
                     self.graph_store
-                        .set_node_property_int(node, "valid_from", now)
+                        .set_node_property_string(node, "valid_from", now_rfc3339.clone())
                         .await?;
                     authors_written += 1;
                     node
@@ -441,7 +443,7 @@ impl EnrichUseCase {
                             .set_node_property_int(node, "schema_version", 1)
                             .await?;
                         self.graph_store
-                            .set_node_property_int(node, "valid_from", now)
+                            .set_node_property_string(node, "valid_from", now_rfc3339.clone())
                             .await?;
                         node
                     }

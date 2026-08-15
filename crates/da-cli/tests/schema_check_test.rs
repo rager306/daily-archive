@@ -181,7 +181,7 @@ fn test_cross_refs_command_outputs_table() {
 fn test_validate_node_accepts_valid_snapshot() {
     use std::io::Write;
     let bin = env!("CARGO_BIN_EXE_da");
-    let valid = r#"{"vid":"vid:paper:1","arxiv_id":"1","title":"T","valid_from":1,"import_eligible":false,"retrieval_eligible":true,"schema_version":1}"#;
+    let valid = r#"{"vid":"vid:paper:1","arxiv_id":"1","title":"T","valid_from":"2024-01-15T10:30:00Z","import_eligible":false,"retrieval_eligible":true,"schema_version":1}"#;
     let mut child = std::process::Command::new(bin)
         .args(["validate-node", "--label", "Paper"])
         .stdin(std::process::Stdio::piped())

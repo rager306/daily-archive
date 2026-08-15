@@ -94,6 +94,45 @@ impl YamlEdgeContract {
     }
 }
 
+/// Canonical temporal wire contract (PIR-008 / M398/S04).
+///
+/// Encoded in `data/ontology/node_schemas.yaml` under the top-level
+/// `temporal_wire_contract` key so the decision lives in ontology DATA
+/// (ADR-050). [`TemporalWireContract::default`] carries the same
+/// canonical values so a regenerated YAML (`da ontology-export`) always
+/// re-emits the contract even when the input file lacks the block.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TemporalWireContract {
+    /// Wire format for DateTime properties: `rfc3339_utc`.
+    pub datetime_format: String,
+    /// The only open-bound sentinel.
+    pub open_sentinel: String,
+    /// New-write policy for integer timestamps: `rejected`.
+    pub integer_write: String,
+    /// Read policy for legacy integer timestamps: `compatibility_decoder_only`.
+    pub legacy_integer_read: String,
+    /// Human-readable statement of the contract.
+    pub description: String,
+}
+
+impl Default for TemporalWireContract {
+    fn default() -> Self {
+        Self {
+            datetime_format: "rfc3339_utc".into(),
+            open_sentinel: "OPEN".into(),
+            integer_write: "rejected".into(),
+            legacy_integer_read: "compatibility_decoder_only".into(),
+            description: concat!(
+                "DateTime node/edge properties are written as canonical RFC3339 UTC strings ",
+                "(chrono DateTime<Utc>::to_rfc3339(), e.g. 2024-01-15T10:30:00Z). Integer Unix ",
+                "timestamps are the legacy read-only wire form and are rejected for new writes. ",
+                "OPEN is the only open-bound sentinel."
+            )
+            .into(),
+        }
+    }
+}
+
 /// OntologyRegistry — in-memory index of node schemas + edge contracts from YAML.
 ///
 /// # Example
@@ -107,6 +146,8 @@ impl YamlEdgeContract {
 pub struct OntologyRegistry {
     schemas: HashMap<String, YamlNodeSchema>,
     edge_contracts: Vec<YamlEdgeContract>,
+    /// Canonical temporal wire contract parsed from YAML (default when absent).
+    temporal_wire_contract: TemporalWireContract,
     /// Directory loaded from (if any) — diagnostics only.
     source_dir: Option<PathBuf>,
 }
@@ -171,6 +212,8 @@ impl OntologyRegistry {
         #[derive(Deserialize)]
         struct Root {
             node_schemas: Vec<YamlNodeSchema>,
+            #[serde(default)]
+            temporal_wire_contract: Option<TemporalWireContract>,
         }
         let root: Root = serde_yaml::from_str(text).map_err(|e| RegistryError::YamlParse {
             file: file_id.to_string(),
@@ -183,6 +226,7 @@ impl OntologyRegistry {
         Ok(Self {
             schemas,
             edge_contracts: Vec::new(),
+            temporal_wire_contract: root.temporal_wire_contract.unwrap_or_default(),
             source_dir: None,
         })
     }
@@ -280,6 +324,14 @@ impl OntologyRegistry {
     /// Edge contracts loaded from YAML (may be empty).
     pub fn edge_contracts(&self) -> &[YamlEdgeContract] {
         &self.edge_contracts
+    }
+
+    /// The canonical temporal wire contract (PIR-008): RFC3339 UTC
+    /// strings for DateTime writes, `OPEN` as the only open-bound
+    /// sentinel, integer timestamps rejected for new writes. Falls back
+    /// to the canonical default when the YAML omits the block.
+    pub fn temporal_wire_contract(&self) -> &TemporalWireContract {
+        &self.temporal_wire_contract
     }
 
     /// Unique edge wire strings from YAML contracts (sorted).
@@ -380,6 +432,44 @@ edge_contracts:
         assert!(reg.get_schema("Paper").is_some());
         assert!(reg.get_schema("Author").is_some());
         assert!(reg.get_schema("Nonexistent").is_none());
+    }
+
+    // ── Temporal wire contract (PIR-008 / M398/S04/T01) ────────────────
+
+    #[test]
+    fn test_temporal_wire_contract_default_is_canonical() {
+        let reg = OntologyRegistry::load_from_str(SAMPLE_YAML, "test").unwrap();
+        let contract = reg.temporal_wire_contract();
+        assert_eq!(contract.datetime_format, "rfc3339_utc");
+        assert_eq!(contract.open_sentinel, "OPEN");
+        assert_eq!(contract.integer_write, "rejected");
+        assert_eq!(contract.legacy_integer_read, "compatibility_decoder_only");
+    }
+
+    #[test]
+    fn test_temporal_wire_contract_parsed_from_yaml() {
+        let yaml = concat!(
+            "temporal_wire_contract:\n",
+            "  datetime_format: rfc3339_utc\n",
+            "  open_sentinel: OPEN\n",
+            "  integer_write: rejected\n",
+            "  legacy_integer_read: compatibility_decoder_only\n",
+            "  description: test contract\n",
+            "node_schemas:\n",
+            "  - label: Paper\n    required_fields: []\n    optional_fields: []\n",
+        );
+        let reg = OntologyRegistry::load_from_str(yaml, "test").unwrap();
+        assert_eq!(reg.temporal_wire_contract().description, "test contract");
+        assert_eq!(reg.temporal_wire_contract().open_sentinel, "OPEN");
+    }
+
+    #[test]
+    fn test_default_contract_round_trips_through_serde() {
+        let contract = TemporalWireContract::default();
+        let yaml = serde_yaml::to_string(&contract).unwrap();
+        let parsed: TemporalWireContract = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(parsed, contract);
+        assert_eq!(parsed.datetime_format, "rfc3339_utc");
     }
 
     #[test]

@@ -71,7 +71,9 @@ async fn make_store_with_paper(arxiv_id: &str) -> MockGraphStore {
     s.set_node_property_string(id, "title", format!("Paper {arxiv_id}"))
         .await
         .unwrap();
-    s.set_node_property_int(id, "valid_from", 1).await.unwrap();
+    s.set_node_property_string(id, "valid_from", "2024-01-15T10:30:00Z".to_string())
+        .await
+        .unwrap();
     s.set_node_property_bool(id, "retrieval_eligible", true)
         .await
         .unwrap();
@@ -414,7 +416,7 @@ async fn test_extraction_links_entities_to_paper_via_mentions() {
         .await
         .unwrap();
     store
-        .set_node_property_int(paper_node, "valid_from", 1)
+        .set_node_property_string(paper_node, "valid_from", "2024-01-15T10:30:00Z".to_string())
         .await
         .unwrap();
     store
@@ -478,7 +480,7 @@ async fn test_extraction_links_entities_to_sections_via_found_in() {
         .await
         .unwrap();
     store
-        .set_node_property_int(paper_node, "valid_from", 1)
+        .set_node_property_string(paper_node, "valid_from", "2024-01-15T10:30:00Z".to_string())
         .await
         .unwrap();
     store
@@ -759,7 +761,10 @@ async fn test_extraction_produces_schema_valid_nodes() {
     snap.insert("vid".to_string(), serde_json::json!("vid:paper:2401.00001"));
     snap.insert("arxiv_id".to_string(), serde_json::json!("2401.00001"));
     snap.insert("title".to_string(), serde_json::json!("T"));
-    snap.insert("valid_from".to_string(), serde_json::json!(1_i64));
+    snap.insert(
+        "valid_from".to_string(),
+        serde_json::json!("2024-01-15T10:30:00Z"),
+    );
     snap.insert("import_eligible".to_string(), serde_json::json!(false));
     snap.insert("retrieval_eligible".to_string(), serde_json::json!(true));
     snap.insert("schema_version".to_string(), serde_json::json!(1_i64));

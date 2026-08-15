@@ -1,3 +1,14 @@
+temporal_wire_contract:
+  datetime_format: rfc3339_utc
+  open_sentinel: OPEN
+  integer_write: rejected
+  legacy_integer_read: compatibility_decoder_only
+  description: >-
+    DateTime node/edge properties are written as canonical RFC3339 UTC
+    strings (chrono DateTime<Utc>::to_rfc3339() shape, e.g.
+    2024-01-15T10:30:00Z). Integer Unix timestamps are the legacy
+    read-only wire form and are rejected for new writes. OPEN is the
+    only open-bound sentinel. (PIR-008 / M398/S04)
 node_schemas:
 - label: Paper
   required_fields:

@@ -182,7 +182,12 @@ async fn main() -> Result<()> {
     store
         .set_node_property_bool(paper, "retrieval_eligible", true)
         .await?;
-    store.set_node_property_int(paper, "valid_from", 1).await?;
+    // PIR-008 / M398-S04: node DateTime properties use the canonical RFC3339 UTC
+    // string wire form; fixed instant keeps the canary graph replay-deterministic
+    // (matches the fixed created_at/valid_at edge instants below).
+    store
+        .set_node_property_string(paper, "valid_from", "2023-11-14T22:13:20Z".to_string())
+        .await?;
     store
         .set_node_property_int(paper, "schema_version", 1)
         .await?;
@@ -487,9 +492,9 @@ async fn materialize_quality_signal_fixtures(
     paper: u64,
     paper_id: &str,
 ) -> Result<()> {
-    for (ordinal, signal_type, text) in [
-        (0, "reproducibility", "Deterministic fixture evidence."),
-        (1, "reading_difficulty", "Bounded fixture evidence."),
+    for (signal_type, text) in [
+        ("reproducibility", "Deterministic fixture evidence."),
+        ("reading_difficulty", "Bounded fixture evidence."),
     ] {
         let vid = format!("vid:quality:{paper_id}:{signal_type}");
         let node = match store
@@ -518,8 +523,10 @@ async fn materialize_quality_signal_fixtures(
         store
             .set_node_property_int(node, "schema_version", 1)
             .await?;
+        // PIR-008 / M398-S04: canonical RFC3339 UTC string wire form (fixed
+        // deterministic instant, mirroring the edge created_at/valid_at).
         store
-            .set_node_property_int(node, "valid_from", ordinal)
+            .set_node_property_string(node, "valid_from", "2023-11-14T22:13:20Z".to_string())
             .await?;
         if store
             .get_edges_between(paper, node, "hasQualitySignal")
