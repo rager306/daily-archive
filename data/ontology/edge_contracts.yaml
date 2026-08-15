@@ -17,6 +17,11 @@ edge_contracts:
     target_labels: [Citation]
     temporal_class: fact
     rationale: "Paper cites a bibliographic citation (resolvable to a Paper)."
+  - edge_constant: CITES
+    source_label: PaperRevision
+    target_labels: [Citation]
+    temporal_class: fact
+    rationale: "Immutable article revision cites this deduped Citation (additive revision-owned edge, PIR-011)."
   - edge_constant: authoredBy
     source_label: Author
     target_labels: [Paper]
@@ -39,9 +44,9 @@ edge_contracts:
     rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part)."
   - edge_constant: hasPart
     source_label: PaperRevision
-    target_labels: [Section]
+    target_labels: [Section, Reference]
     temporal_class: structural
-    rationale: "Immutable article revision has this revision-scoped Section (ADR-058)."
+    rationale: "Immutable article revision has this revision-scoped Section/Reference as a structural part (ADR-058 PIR-011, additive revision-owned edges)."
   - edge_constant: HAS_REVISION
     source_label: Paper
     target_labels: [PaperRevision]

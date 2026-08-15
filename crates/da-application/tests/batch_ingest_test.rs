@@ -747,3 +747,182 @@ async fn test_ingest_cites_valid_at_frozen_with_fixed_clock() {
         .expect("created_at");
     assert_eq!(created_at, expected);
 }
+
+#[tokio::test]
+async fn revision_ingest_emits_additive_revision_owned_bibliography_edges() {
+    // PIR-011 / D246: with a revision_context, ingest emits PaperRevision
+    // HAS_PART Reference and PaperRevision CITES Citation edges beside the
+    // existing Paper-level edges — without cloning the globally deduped
+    // Reference/Citation nodes (MEM471) and without unlocking import (D127).
+    use da_application::revision_materialization::{
+        RevisionContentContext, RevisionManifestationInput,
+    };
+    use da_ports::graph_store::DirectGraphStore;
+    use da_ports::parser::{CitationEntry, ParsedArticle, Section};
+
+    let paper_id = "2401.00001";
+    // 64-hex checksum binding: materialize requires manifestations whose
+    // sha256 equals parsed.pdf_hash AND passes source_manifestation_vid.
+    let source_sha256 = format!("{:064x}", 42);
+    let parsed = ParsedArticle {
+        paper_id: paper_id.into(),
+        title: "Title of 2401.00001".into(),
+        abstract_text: "Abstract of 2401.00001".into(),
+        body_text: "x".repeat(1000),
+        sections: vec![Section {
+            title: "Introduction".into(),
+            text: "intro text".into(),
+            level: 1,
+            ..Default::default()
+        }],
+        citations: vec![
+            CitationEntry {
+                raw_text: "Smith et al 2023".to_string(),
+                doi: None,
+                arxiv_id: Some("2301.00001".to_string()),
+                title: Some("Cited Paper A".to_string()),
+            },
+            CitationEntry {
+                raw_text: "Jones 2022".to_string(),
+                doi: None,
+                arxiv_id: None, // Reference-only: no Citation node
+                title: None,
+            },
+        ],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: source_sha256.clone(),
+    };
+    let revision_context = || RevisionContentContext {
+        source_code: "arxiv".into(),
+        canonical_id: paper_id.into(),
+        revision: 5,
+        manifestations: vec![RevisionManifestationInput {
+            format: "pdf".into(),
+            sha256: source_sha256.clone(),
+            bytes: 1234,
+            uri: "https://arxiv.org/pdf/2401.00001v5".into(),
+            path: "2401.00001v5.pdf".into(),
+            capture_status: "captured".into(),
+        }],
+    };
+    let (ingest, store) = make_ingest_with_citations(vec![], vec![]);
+
+    let result = ingest
+        .materialize_parsed_with_context(
+            &parsed,
+            vec![0.1; 1024],
+            None,
+            Some("arxiv".into()),
+            None,
+            da_domain::PdfTriageStatus::NotConfigured,
+            Some(&revision_context()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(result.cites_resolved, 1);
+    assert_eq!(result.references_written, 2);
+
+    let paper = store.get_nodes_by_label("Paper").await;
+    let revisions = store.get_nodes_by_label("PaperRevision").await;
+    let references = store.get_nodes_by_label("Reference").await;
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(paper.len(), 1);
+    assert_eq!(revisions.len(), 1);
+    assert_eq!(
+        references.len(),
+        2,
+        "Reference nodes stay globally deduped, one per raw_text (MEM471)"
+    );
+    assert_eq!(
+        citations.len(),
+        1,
+        "only the resolvable arxiv_id gets a Citation"
+    );
+    let revision_node = revisions[0];
+
+    // Work-level Paper edges remain (existing traversal surface).
+    assert_eq!(
+        store
+            .get_edges_between(paper[0], references[0], "hasPart")
+            .await
+            .len(),
+        1,
+        "Paper keeps HAS_PART Reference for work-level traversal"
+    );
+    assert_eq!(
+        store
+            .get_edges_between(paper[0], citations[0], "CITES")
+            .await
+            .len(),
+        1,
+        "Paper keeps CITES Citation for work-level traversal"
+    );
+
+    // Additive revision-owned edges (PIR-011).
+    assert_eq!(
+        store
+            .get_edges_between(revision_node, references[0], "hasPart")
+            .await
+            .len(),
+        1,
+        "PaperRevision must own Reference via additive HAS_PART (PIR-011)"
+    );
+    assert_eq!(
+        store
+            .get_edges_between(revision_node, references[1], "hasPart")
+            .await
+            .len(),
+        1,
+        "Reference-only bibliography entry is also revision-owned"
+    );
+    assert_eq!(
+        store
+            .get_edges_between(revision_node, citations[0], "CITES")
+            .await
+            .len(),
+        1,
+        "PaperRevision must own Citation via additive CITES (PIR-011)"
+    );
+
+    // D127: every written node stays import_eligible=false.
+    for node in [
+        paper[0],
+        revision_node,
+        references[0],
+        references[1],
+        citations[0],
+    ] {
+        assert_eq!(
+            store.get_node_property_bool(node, "import_eligible").await,
+            Some(false),
+            "D127: import_eligible must be false"
+        );
+    }
+
+    // Replay: identical revision ingest adds no nodes/edges (applied=0).
+    let nodes_before = store.node_count_total();
+    let edges_before = store.edge_count_total();
+    ingest
+        .materialize_parsed_with_context(
+            &parsed,
+            vec![0.1; 1024],
+            None,
+            Some("arxiv".into()),
+            None,
+            da_domain::PdfTriageStatus::NotConfigured,
+            Some(&revision_context()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        store.node_count_total(),
+        nodes_before,
+        "replay must not create nodes"
+    );
+    assert_eq!(
+        store.edge_count_total(),
+        edges_before,
+        "replay must not create edges (Paper + PaperRevision edges idempotent)"
+    );
+}

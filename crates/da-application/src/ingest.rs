@@ -786,6 +786,11 @@ impl IngestUseCase {
         // Idempotent: reuses existing Citation node if one with same arxiv_id exists.
         let mut cites_resolved = 0usize;
         let mut references_written = 0usize;
+        // PIR-011 / D246: additive revision-owned bibliography edges. These
+        // counters track PaperRevision -> Reference/Citation edges written
+        // beside the global Paper-level edges (never cloned nodes, MEM471).
+        let mut revision_reference_edges_written = 0usize;
+        let mut revision_cites_edges_written = 0usize;
         let now_ts = self.clock.now().timestamp();
         for citation in &parsed.citations {
             // Create Reference node for ALL citations (full bibliography).
@@ -863,6 +868,34 @@ impl IngestUseCase {
                     )
                     .await?;
                 }
+                // PIR-011 / D246: when content is a PaperRevision, the exact
+                // revision also owns this Reference via its own additive
+                // HAS_PART edge. The globally deduped Reference node is NOT
+                // cloned (MEM471); ownership is expressed through edges.
+                if revision_context.is_some()
+                    && self
+                        .graph_store
+                        .get_edges_between(content_node_id, ref_node, edge_type)
+                        .await
+                        .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        content_node_id,
+                        ref_node,
+                        edge_type,
+                        &temporal,
+                    )
+                    .await?;
+                    revision_reference_edges_written += 1;
+                    tracing::debug!(
+                        paper_id,
+                        revision_source = content_node_id,
+                        reference_node = ref_node,
+                        "Revision-owned HAS_PART Reference edge written"
+                    );
+                }
                 if ref_created {
                     references_written += 1;
                 }
@@ -937,6 +970,34 @@ impl IngestUseCase {
                     .await?;
                     cites_resolved += 1;
                 }
+                // PIR-011 / D246: the exact PaperRevision claims this citation
+                // via its own additive CITES edge; the global Paper-level edge
+                // remains for work-level traversal. Citation nodes stay
+                // globally deduped by arxiv_id (MEM471) — no per-revision clone.
+                if revision_context.is_some()
+                    && self
+                        .graph_store
+                        .get_edges_between(content_node_id, cited_node, edge_type)
+                        .await
+                        .is_empty()
+                {
+                    let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
+                    crate::temporal_stamp::create_edge_with_temporal(
+                        self.graph_store.as_ref(),
+                        content_node_id,
+                        cited_node,
+                        edge_type,
+                        &temporal,
+                    )
+                    .await?;
+                    revision_cites_edges_written += 1;
+                    tracing::debug!(
+                        paper_id,
+                        revision_source = content_node_id,
+                        citation_node = cited_node,
+                        "Revision-owned CITES edge written"
+                    );
+                }
             }
         }
 
@@ -950,6 +1011,8 @@ impl IngestUseCase {
             references_written,
             citation_count,
             cites_edges_written = cites_resolved,
+            revision_reference_edges_written,
+            revision_cites_edges_written,
             import_eligible = eligible,
             "Parsed article materialized through direct graph API"
         );

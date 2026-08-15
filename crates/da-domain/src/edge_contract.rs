@@ -27,6 +27,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             rationale: "Paper cites a bibliographic citation (resolvable to a Paper).",
         },
         EdgeContract {
+            edge_constant: bibliographic::CITES,
+            source_label: "PaperRevision",
+            target_labels: &["Citation"],
+            rationale: "Immutable article revision cites this deduped Citation (additive revision-owned edge, PIR-011).",
+        },
+        EdgeContract {
             edge_constant: structure::AUTHORED_BY,
             source_label: "Author",
             target_labels: &["Paper"],
@@ -55,8 +61,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
         EdgeContract {
             edge_constant: structure::HAS_PART,
             source_label: "PaperRevision",
-            target_labels: &["Section"],
-            rationale: "Immutable article revision has this revision-scoped Section (ADR-058).",
+            // Additive revision-owned bibliography edges (PIR-011 / D246): the
+            // revision owns its Section tree AND its Reference bibliography
+            // entries without cloning the globally deduped Reference nodes
+            // (MEM471). section_count must filter by Section label (D248).
+            target_labels: &["Section", "Reference"],
+            rationale: "Immutable article revision has this revision-scoped Section/Reference as a structural part (ADR-058 PIR-011, additive revision-owned edges).",
         },
         EdgeContract {
             edge_constant: structure::HAS_REVISION,
@@ -385,6 +395,14 @@ mod tests {
     #[test]
     fn compiled_endpoint_validation_supports_polymorphic_wires_and_rejects_drift() {
         assert!(validate_compiled_edge_endpoint("CITES", "Paper", "Citation").is_ok());
+        assert!(
+            validate_compiled_edge_endpoint("CITES", "PaperRevision", "Citation").is_ok(),
+            "additive revision-owned CITES endpoint (PIR-011)"
+        );
+        assert!(
+            validate_compiled_edge_endpoint("hasPart", "PaperRevision", "Reference").is_ok(),
+            "additive revision-owned HAS_PART Reference endpoint (PIR-011)"
+        );
         assert!(validate_compiled_edge_endpoint("hasSummary", "Paper", "Summary").is_ok());
         assert!(validate_compiled_edge_endpoint("hasSummary", "PaperRevision", "Summary").is_ok());
         assert!(validate_compiled_edge_endpoint("hasSummary", "Section", "Summary").is_ok());

@@ -272,7 +272,22 @@ impl RevisionQueryUseCase {
             )));
         }
 
-        let section_nodes = self.active_targets(node, "hasPart").await;
+        // D248 / MEM797: PaperRevision hasPart now also targets bibliography
+        // Reference nodes (PIR-011 additive revision-owned edges, T02).
+        // section_count must count only Section-labeled parts — bibliography
+        // nodes must never masquerade as sections (D248).
+        let mut section_nodes = Vec::new();
+        for target in self.active_targets(node, "hasPart").await {
+            if self
+                .graph
+                .get_node_labels(target)
+                .await
+                .iter()
+                .any(|label| label == "Section")
+            {
+                section_nodes.push(target);
+            }
+        }
         let manifestation_nodes = self.active_targets(node, "HAS_MANIFESTATION").await;
         let readiness_nodes = self.active_targets(node, "hasQualitySignal").await;
         let predecessor_nodes = self.active_targets(node, "SUPERSEDES").await;
@@ -535,6 +550,48 @@ mod tests {
                     .unwrap();
                 revision_sections.push(section);
             }
+            // PIR-011 additive revision-owned bibliography edges (T02): the
+            // revision also owns its Reference bibliography entries via
+            // hasPart and its Citations via a citation edge — without cloning
+            // the globally deduped nodes (MEM471). section_count must ignore
+            // these (D248).
+            let reference = store.create_node("Reference").await.unwrap();
+            store
+                .set_node_property_string(reference, "vid", format!("reference-{revision}"))
+                .await
+                .unwrap();
+            store
+                .create_edge(revision_node, reference, "hasPart")
+                .await
+                .unwrap();
+            let citation = store.create_node("Citation").await.unwrap();
+            store
+                .set_node_property_string(citation, "vid", format!("citation-{revision}"))
+                .await
+                .unwrap();
+            store
+                .set_node_property_string(
+                    citation,
+                    "arxiv_id",
+                    if revision == 1 {
+                        "2301.10001".into()
+                    } else {
+                        "2301.10005".into()
+                    },
+                )
+                .await
+                .unwrap();
+            crate::temporal_stamp::create_edge_with_temporal(
+                &store,
+                revision_node,
+                citation,
+                "CITES",
+                &crate::temporal_stamp::open_fact_edge_now(
+                    chrono::DateTime::from_timestamp(1_700_000_000, 0).unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
             let summary = store.create_node("Summary").await.unwrap();
             for (property, value) in [
                 ("vid", format!("summary-{revision}")),
@@ -722,6 +779,37 @@ mod tests {
         assert!(!response.import_eligible);
         assert_eq!(_store.node_count_total(), nodes_before);
         assert_eq!(_store.edge_count_total(), edges_before);
+    }
+
+    #[tokio::test]
+    async fn section_count_counts_only_section_labeled_has_part_targets() {
+        // D248 / MEM797: PaperRevision hasPart now also targets bibliography
+        // Reference nodes (PIR-011 additive revision-owned edges, T02).
+        // section_count must filter by Section label — bibliography nodes
+        // must never masquerade as sections.
+        let (store, query) = fixture(&[5]).await;
+        let response = query
+            .query("2506.07853", RevisionSelector::History)
+            .await
+            .unwrap();
+        assert_eq!(response.revisions[0].section_count, 2);
+        assert_eq!(response.revisions[1].section_count, 3);
+        // Sanity: the fixture really carries a Reference hasPart target that
+        // must be excluded from section_count.
+        let v1 = store
+            .find_node_by_string_property("PaperRevision", "vid", "revision-vid-1")
+            .await
+            .unwrap();
+        let has_part_targets = store
+            .get_outgoing_edges(v1)
+            .await
+            .iter()
+            .filter(|(_, edge_type)| edge_type == "hasPart")
+            .count();
+        assert_eq!(
+            has_part_targets, 3,
+            "fixture must have Section(2) + Reference(1) hasPart targets"
+        );
     }
 
     #[tokio::test]
