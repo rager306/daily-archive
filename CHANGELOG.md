@@ -1,5 +1,15 @@
 # Changelog
 
+### M398 S01 deep-tree sibling navigation correctness
+
+- `build_section_navigation_edges` (now `pub`) selects `next_sibling` by the canonical parent identity (last-dot path prefix) and scans past intervening descendants, so a section keeps a direct edge to its actual same-parent successor at any depth; root sections chain to the next root. Deep-tree regression fixture: 8 sections / 13 navigation edges; legacy flat parsers still emit zero edges; replay is idempotent; D127 stays false.
+- Extracted a pure ordered-tree model `compute_section_navigation_edges` with proptest invariants over GROBID-faithful forests up to five levels (direct same-parent siblings, unique successor/predecessor, acyclic complete chains, first_child/parent identity, `~N` restart suffix never treated as a dotted parent).
+- Added deterministic validator `da_application::section_navigation::validate_section_navigation` with 13 stable `NAV-*` codes and a serializable `NavigationReport` consumed by the Governor; 20+ validator tests including cycle detection and mutation sensitivity.
+- End-to-end graph proof: `section_navigation_test.rs` now materializes the deep tree into MockGraphStore and walks `next_sibling` chains read back from the graph — every sibling is reached directly past descendants, chains are complete and acyclic, and graph-injected cross-parent edges are reported by the validator.
+- Governor contract activated: `scripts/governor/checks/section_navigation_contract.yaml` (DATA) validates committed NavigationReport fixtures in `data/navigation_contract/` — positive complete-tree (`ok=true`, zero diagnostics) and negative broken-tree (must report `NAV-MISSING-SIBLING`, `NAV-CROSS-PARENT-SIBLING`, `NAV-MULTI-SUCCESSOR`) — plus presence of the `tree_navigation` graph-task template. Fixtures are pinned by the Rust test `navigation_report_fixtures_match_committed_governor_data`.
+- `data/graph_tasks/tree_navigation.tasks.cypher` extended with a sibling-chain-walk template query and deep-tree contract documentation.
+- PIR-006 (next_sibling lost under deep nesting) resolved in `doc/review/pipeline-integrity-review.jsonl` with runtime evidence.
+
 ### M397 S05 cross-command revision identity acceptance
 
 - Legacy `da ingest`, `da batch-ingest` and `da extract` now resolve exact revision contexts and call revision-aware materialization APIs; compatibility wrappers remain for research examples.

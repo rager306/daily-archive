@@ -1,0 +1,60 @@
+# Section navigation report contract — ADR-053 Layer A document tree navigation.
+#
+# DATA for the Governor `section_navigation_contract` check (PIR-006 closure,
+# M398 S01 T04). The fixtures are committed NavigationReport JSON rendered by
+# `da_application::section_navigation::render_navigation_report` (stable
+# NAV-* codes) and pinned by the Rust test
+# `navigation_report_fixtures_match_committed_governor_data` in
+# `crates/da-application/tests/section_navigation_test.rs`.
+#
+# Semantics:
+#   - positive (complete-tree): a fully consistent ordered tree validates to
+#     `ok: true` with zero diagnostics — every non-last sibling has a direct
+#     next_sibling edge even when descendants intervene (deep-tree fix,
+#     M398 S01 T01), chains are complete and acyclic;
+#   - negative (broken-tree): a tree with cross-parent / missing-sibling /
+#     multi-successor corruption must be `ok: false` and report the exact
+#     NAV-* codes below — the validator never green-washes broken navigation.
+#
+# This is DATA — adding a fixture or tightening an expectation is an edit
+# here (plus regenerating the committed report JSON), not a Python change.
+
+schema_version: section-navigation-contract.v1
+policy_id: section-navigation-contract
+dimension: temporal_ast_navigation
+severity: high
+anchor: "ADR-053 (document tree navigation), PIR-006"
+
+report_contract:
+  schema_version: navigation-report.v1
+  required_fields: [ok, section_count, edge_count, diagnostic_count, counts, diagnostics]
+
+fixtures:
+  positive:
+    id: complete_tree
+    path: data/navigation_contract/complete_tree.report.json
+    expect:
+      ok: true
+      diagnostic_count: 0
+  negative:
+    id: broken_tree
+    path: data/navigation_contract/broken_tree.report.json
+    expect:
+      ok: false
+      diagnostic_count_min: 1
+      require_codes:
+        - NAV-MISSING-SIBLING
+        - NAV-CROSS-PARENT-SIBLING
+        - NAV-MULTI-SUCCESSOR
+
+# Same-process graph navigation task template that expresses the same
+# parent/child/sibling contract against a durable snapshot. The bounded Rust
+# fixture (section_navigation_test.rs graph walk) proves the deep-tree case
+# deterministically; this suite template is the snapshot-level surface.
+graph_task_suite:
+  id: tree_navigation
+  path: data/graph_tasks/tree_navigation.tasks.cypher
+  required_patterns:
+    - first_child
+    - next_sibling
+    - parent_section

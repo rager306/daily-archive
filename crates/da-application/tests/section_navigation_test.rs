@@ -17,12 +17,16 @@
 //! paths never treated as dotted parents.
 
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 
-use da_application::ingest::{NavEdge, NavRelation, compute_section_navigation_edges};
+use da_application::ingest::{
+    NavEdge, NavRelation, build_section_navigation_edges, compute_section_navigation_edges,
+};
 use da_application::section_navigation::{
     NavigationReport, render_navigation_report, validate_section_navigation,
 };
 use da_ports::parser::Section;
+use kg_storage::DirectGraphStore;
 use proptest::prelude::*;
 use proptest::strategy::{BoxedStrategy, Strategy};
 
@@ -1230,6 +1234,278 @@ proptest! {
         prop_assert!(
             diags.iter().any(|d| d.code == "NAV-MISSING-SIBLING"),
             "removing {removed:?} must surface NAV-MISSING-SIBLING: {diags:?}"
+        );
+    }
+}
+
+// ─── End-to-end graph navigation proof (M398 S01 T04) ────────────────
+//
+// The tests above prove the pure model and the validator. The tests in this
+// section prove the corrected sibling traversal THROUGH THE GRAPH: the
+// production wrapper `build_section_navigation_edges` materializes the
+// navigation edges into a store, then a consumer walks `next_sibling` edges
+// read back from the store — every same-parent sibling is reached directly
+// even when descendants intervene, chains are complete and acyclic, and the
+// validator detects graph-injected corruption.
+
+/// Graph node ids of the deep-tree fixture in document order.
+const DEEP_TREE_NODE_IDS: [u64; 8] = [0, 1, 2, 3, 4, 5, 6, 7];
+
+/// Corrupted edge set for the negative Governor fixture (broken tree):
+///
+/// 1. drop the 1.1 → 1.2 next_sibling edge (node 1 → node 3)
+///    → `NAV-MISSING-SIBLING`;
+/// 2. add root 1 → its own child 1.1 next_sibling (node 0 → node 1)
+///    → `NAV-CROSS-PARENT-SIBLING` (plus `NAV-MULTI-SUCCESSOR` on node 0);
+/// 3. add 1.1 → 1.3 next_sibling (node 1 → node 5) → `NAV-MULTI-SUCCESSOR`
+///    on node 1.
+fn broken_tree_edges() -> Vec<NavEdge> {
+    let (sections, map) = deep_tree_fixture();
+    let edges = compute_section_navigation_edges(&sections, &map);
+    edges
+        .iter()
+        .copied()
+        .filter(|e| !(e.relation == NavRelation::NextSibling && e.from == 1 && e.to == 3))
+        .chain(std::iter::once(NavEdge {
+            from: 0,
+            to: 1,
+            relation: NavRelation::NextSibling,
+        }))
+        .chain(std::iter::once(NavEdge {
+            from: 1,
+            to: 5,
+            relation: NavRelation::NextSibling,
+        }))
+        .collect()
+}
+
+/// Follow every `next_sibling` edge a node has in the graph (sorted).
+/// A correct tree gives at most one; a corrupted graph can give more.
+async fn graph_next_sibling_targets(store: &kg_storage::MockGraphStore, from: u64) -> Vec<u64> {
+    let mut targets: Vec<u64> = store
+        .get_outgoing_edges(from)
+        .await
+        .into_iter()
+        .filter(|(_, edge_type)| edge_type == da_domain::relation::structure::NEXT_SIBLING)
+        .map(|(target, _)| target)
+        .collect();
+    targets.sort_unstable();
+    targets
+}
+
+/// Read every navigation edge back from the graph (outgoing per node) and
+/// reconstruct the `NavEdge` list the validator consumes — the honest
+/// graph-read path, not the pure helper.
+async fn read_nav_edges_from_graph(
+    store: &kg_storage::MockGraphStore,
+    node_ids: &[u64],
+) -> Vec<NavEdge> {
+    let mut edges = Vec::new();
+    for &from in node_ids {
+        for (to, edge_type) in store.get_outgoing_edges(from).await {
+            let relation = match edge_type.as_str() {
+                da_domain::relation::structure::NEXT_SIBLING => NavRelation::NextSibling,
+                da_domain::relation::structure::PARENT_SECTION => NavRelation::ParentSection,
+                da_domain::relation::structure::FIRST_CHILD => NavRelation::FirstChild,
+                other => panic!("unexpected navigation edge type {other:?} in graph"),
+            };
+            edges.push(NavEdge { from, to, relation });
+        }
+    }
+    edges
+}
+
+/// Walking `next_sibling` from the graph reaches every sibling DIRECTLY even
+/// when descendants sit between the siblings in document order.
+#[tokio::test]
+async fn graph_walk_next_sibling_reaches_siblings_directly_past_descendants() {
+    let (sections, map) = deep_tree_fixture();
+    let store = kg_storage::MockGraphStore::new();
+    let created = build_section_navigation_edges(&sections, &map, &store)
+        .await
+        .expect("build navigation edges");
+    assert_eq!(
+        created, 13,
+        "deep tree must materialize 13 navigation edges"
+    );
+
+    // 1.1 (node 1) → 1.2 (node 3): DIRECT, even though 1.1.1 (node 2) is a
+    // descendant in between.
+    assert_eq!(
+        graph_next_sibling_targets(&store, 1).await,
+        vec![3],
+        "1.1 must point directly at 1.2 past descendant 1.1.1"
+    );
+    // 1.2 (node 3) → 1.3 (node 5): DIRECT, even though 1.2.1 (node 4) is a
+    // descendant in between.
+    assert_eq!(
+        graph_next_sibling_targets(&store, 3).await,
+        vec![5],
+        "1.2 must point directly at 1.3 past descendant 1.2.1"
+    );
+    // root 1 (node 0) → root 2 (node 6): DIRECT, past the whole 1.x subtree.
+    assert_eq!(
+        graph_next_sibling_targets(&store, 0).await,
+        vec![6],
+        "root 1 must point directly at root 2 past the 1.x subtree"
+    );
+    // Last siblings terminate the chain (no successor).
+    assert_eq!(
+        graph_next_sibling_targets(&store, 5).await,
+        Vec::<u64>::new()
+    );
+    assert_eq!(
+        graph_next_sibling_targets(&store, 6).await,
+        Vec::<u64>::new()
+    );
+}
+
+/// Following the graph's `next_sibling` chain from the first member of each
+/// sibling group visits every same-parent sibling exactly once, in order,
+/// then terminates — complete and acyclic at the graph level.
+#[tokio::test]
+async fn graph_next_sibling_chains_are_complete_acyclic_and_same_parent() {
+    let (sections, map) = deep_tree_fixture();
+    let store = kg_storage::MockGraphStore::new();
+    build_section_navigation_edges(&sections, &map, &store)
+        .await
+        .expect("build navigation edges");
+
+    // Sibling groups of the fixture, derived from the dotted paths:
+    // roots [1, 2]; children of 1 [1.1, 1.2, 1.3]; singleton leaves.
+    let expected_groups: Vec<Vec<u64>> = vec![
+        vec![0, 6],    // roots 1 → 2
+        vec![1, 3, 5], // children of 1: 1.1 → 1.2 → 1.3
+        vec![2],       // 1.1.1 (leaf)
+        vec![4],       // 1.2.1 (leaf)
+        vec![7],       // 2.1 (leaf)
+    ];
+    for group in &expected_groups {
+        let mut visited: Vec<u64> = Vec::new();
+        let mut cur = group[0];
+        loop {
+            visited.push(cur);
+            let next = graph_next_sibling_targets(&store, cur).await;
+            assert!(
+                next.len() <= 1,
+                "node {cur} must have at most one graph successor: {next:?}"
+            );
+            match next.first() {
+                Some(&nxt) => cur = nxt,
+                None => break,
+            }
+        }
+        assert_eq!(
+            visited, *group,
+            "chain must visit every same-parent sibling in order and terminate"
+        );
+    }
+}
+
+/// The validator consumes edges read back from the GRAPH (not the pure
+/// helper): a clean materialized tree validates clean, and a cross-parent
+/// edge injected directly into the store is reported.
+#[tokio::test]
+async fn graph_edges_read_back_validate_clean_and_detect_cross_parent() {
+    let (sections, map) = deep_tree_fixture();
+    let store = kg_storage::MockGraphStore::new();
+    build_section_navigation_edges(&sections, &map, &store)
+        .await
+        .expect("build navigation edges");
+
+    let edges = read_nav_edges_from_graph(&store, &DEEP_TREE_NODE_IDS).await;
+    assert_eq!(edges.len(), 13);
+    assert!(
+        validate_section_navigation(&sections, &map, &edges).is_empty(),
+        "graph-read edges of the clean tree must validate clean"
+    );
+
+    // Inject a cross-parent next_sibling edge directly into the graph
+    // (root 1 → its own child 1.1). The validator must detect it from the
+    // graph-read edge set — end to end through the store.
+    store
+        .create_edge(0, 1, da_domain::relation::structure::NEXT_SIBLING)
+        .await
+        .expect("inject cross-parent edge");
+    let edges2 = read_nav_edges_from_graph(&store, &DEEP_TREE_NODE_IDS).await;
+    let diags = validate_section_navigation(&sections, &map, &edges2);
+    assert!(
+        diags.iter().any(|d| d.code == "NAV-CROSS-PARENT-SIBLING"),
+        "graph-injected cross-parent edge must be reported: {diags:?}"
+    );
+    let report = render_navigation_report(&sections, &map, &edges2);
+    assert!(!report.ok);
+    assert!(report.counts.contains_key("NAV-CROSS-PARENT-SIBLING"));
+}
+
+/// The committed Governor fixtures (`data/navigation_contract/`) are DATA
+/// consumed by `scripts/governor/checks/section_navigation_contract.yaml`.
+/// This test pins them to the current validator output, so the fixtures can
+/// never silently drift from the Rust contract.
+#[test]
+fn navigation_report_fixtures_match_committed_governor_data() {
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/navigation_contract");
+    let (sections, map) = deep_tree_fixture();
+
+    // Positive fixture: complete deep tree, model edges → zero diagnostics.
+    let clean = render_navigation_report(
+        &sections,
+        &map,
+        &compute_section_navigation_edges(&sections, &map),
+    );
+    let committed_clean: NavigationReport = serde_json::from_str(
+        &std::fs::read_to_string(fixtures_dir.join("complete_tree.report.json"))
+            .expect("read complete_tree.report.json"),
+    )
+    .expect("parse complete_tree.report.json");
+    assert_eq!(
+        committed_clean, clean,
+        "complete_tree fixture must match current validator output; \
+         regenerate via the fixture generator"
+    );
+
+    // Negative fixture: broken tree with cross-parent / missing sibling /
+    // multi-successor corruption.
+    let broken = render_navigation_report(&sections, &map, &broken_tree_edges());
+    let committed_broken: NavigationReport = serde_json::from_str(
+        &std::fs::read_to_string(fixtures_dir.join("broken_tree.report.json"))
+            .expect("read broken_tree.report.json"),
+    )
+    .expect("parse broken_tree.report.json");
+    assert_eq!(
+        committed_broken, broken,
+        "broken_tree fixture must match current validator output; \
+         regenerate via the fixture generator"
+    );
+}
+
+/// The exact properties the Governor contract requires of the fixtures:
+/// positive = ok with zero diagnostics; negative = not-ok and reports the
+/// three stable NAV-* codes the broken tree must exhibit.
+#[test]
+fn navigation_fixture_reports_satisfy_governor_contract() {
+    let (sections, map) = deep_tree_fixture();
+
+    let clean = render_navigation_report(
+        &sections,
+        &map,
+        &compute_section_navigation_edges(&sections, &map),
+    );
+    assert!(clean.ok, "complete-tree fixture must be ok=true");
+    assert_eq!(clean.diagnostic_count, 0);
+    assert!(clean.counts.is_empty());
+
+    let broken = render_navigation_report(&sections, &map, &broken_tree_edges());
+    assert!(!broken.ok, "broken-tree fixture must be ok=false");
+    assert!(broken.diagnostic_count > 0);
+    for code in [
+        "NAV-MISSING-SIBLING",
+        "NAV-CROSS-PARENT-SIBLING",
+        "NAV-MULTI-SUCCESSOR",
+    ] {
+        assert!(
+            broken.counts.get(code).copied().unwrap_or(0) > 0,
+            "broken fixture must report {code}: {broken:?}"
         );
     }
 }

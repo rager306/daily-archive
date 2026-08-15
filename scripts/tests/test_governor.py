@@ -1062,6 +1062,132 @@ def test_stale_precommit_package_caught():
     )
 
 
+def _write_navigation_contract(root: Path) -> Path:
+    """Write the section navigation contract + fixtures into a temp root."""
+    contract = root / "scripts/governor/checks/section_navigation_contract.yaml"
+    _write(contract, """schema_version: section-navigation-contract.v1
+policy_id: section-navigation-contract
+dimension: temporal_ast_navigation
+severity: high
+report_contract:
+  required_fields: [ok, section_count, edge_count, diagnostic_count, counts, diagnostics]
+fixtures:
+  positive:
+    id: complete_tree
+    path: data/navigation_contract/complete_tree.report.json
+    expect:
+      ok: true
+      diagnostic_count: 0
+  negative:
+    id: broken_tree
+    path: data/navigation_contract/broken_tree.report.json
+    expect:
+      ok: false
+      diagnostic_count_min: 1
+      require_codes: [NAV-MISSING-SIBLING, NAV-CROSS-PARENT-SIBLING, NAV-MULTI-SUCCESSOR]
+graph_task_suite:
+  id: tree_navigation
+  path: data/graph_tasks/tree_navigation.tasks.cypher
+  required_patterns: [first_child, next_sibling, parent_section]
+""")
+    _write(root / "data/navigation_contract/complete_tree.report.json", json.dumps({
+        "ok": True, "section_count": 8, "edge_count": 13,
+        "diagnostic_count": 0, "counts": {}, "diagnostics": [],
+    }))
+    _write(root / "data/navigation_contract/broken_tree.report.json", json.dumps({
+        "ok": False, "section_count": 8, "edge_count": 14, "diagnostic_count": 3,
+        "counts": {
+            "NAV-MISSING-SIBLING": 1,
+            "NAV-CROSS-PARENT-SIBLING": 1,
+            "NAV-MULTI-SUCCESSOR": 1,
+        },
+        "diagnostics": [{"code": "NAV-CROSS-PARENT-SIBLING", "path_id": "1",
+                          "section_id": "sec-1", "node_id": 0, "message": "x"}],
+    }))
+    _write(root / "data/graph_tasks/tree_navigation.tasks.cypher", (
+        "// @query First-child navigation\n"
+        "MATCH (s:Section)-[:first_child]->(c:Section) RETURN c;\n"
+        "// @query Next-sibling chain\n"
+        "MATCH (s:Section)-[:next_sibling]->(b:Section) RETURN b;\n"
+        "// @query Parent-section navigation\n"
+        "MATCH (s:Section)-[:parent_section]->(p:Section) RETURN p;\n"
+    ))
+    return contract
+
+
+def test_section_navigation_contract_pass_on_clean_fixtures():
+    """Positive + negative fixtures and the suite template satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_navigation_contract(service.root)
+    assert service._check_section_navigation_contract() == []
+
+
+def test_section_navigation_contract_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_navigation_contract(service.root)
+    (service.root / "data/navigation_contract/broken_tree.report.json").unlink()
+    flags = service._check_section_navigation_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "section_navigation_contract_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_section_navigation_contract_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_navigation_contract(service.root)
+    _write(service.root / "data/navigation_contract/complete_tree.report.json", json.dumps({
+        "ok": False, "section_count": 8, "edge_count": 13, "diagnostic_count": 1,
+        "counts": {"NAV-CYCLE": 1},
+        "diagnostics": [{"code": "NAV-CYCLE", "path_id": None, "section_id": None,
+                          "node_id": 0, "message": "cycle"}],
+    }))
+    flags = service._check_section_navigation_contract()
+    broken = [f for f in flags if f.flag == "section_navigation_contract_broken"]
+    assert len(broken) == 2, f"expected ok=true and zero-diagnostics flags: {flags}"
+    assert any("ok=true" in f.evidence for f in broken)
+
+
+def test_section_navigation_contract_negative_fixture_must_report_codes():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_navigation_contract(service.root)
+    # Negative fixture that omits NAV-CROSS-PARENT-SIBLING and NAV-MULTI-SUCCESSOR.
+    _write(service.root / "data/navigation_contract/broken_tree.report.json", json.dumps({
+        "ok": False, "section_count": 8, "edge_count": 12, "diagnostic_count": 1,
+        "counts": {"NAV-MISSING-SIBLING": 1},
+        "diagnostics": [{"code": "NAV-MISSING-SIBLING", "path_id": "1.1",
+                          "section_id": "sec-1.1", "node_id": 1, "message": "x"}],
+    }))
+    flags = service._check_section_navigation_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "section_navigation_contract_broken"
+    assert "NAV-CROSS-PARENT-SIBLING" in flags[0].evidence
+    assert "NAV-MULTI-SUCCESSOR" in flags[0].evidence
+
+
+def test_section_navigation_contract_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(service.root / "scripts/governor/checks/section_navigation_contract.yaml",
+           "schema_version: [unclosed\n")
+    flags = service._check_section_navigation_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "section_navigation_contract_invalid"
+
+
+def test_section_navigation_contract_suite_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_navigation_contract(service.root)
+    (service.root / "data/graph_tasks/tree_navigation.tasks.cypher").unlink()
+    flags = service._check_section_navigation_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "section_navigation_contract_suite_missing"
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -1075,6 +1201,12 @@ def _run_all_tests() -> int:
         test_boolean_derived_snapshot_waiver_caught,
         test_kg_crate_da_domain_rust_import_caught,
         test_stale_precommit_package_caught,
+        test_section_navigation_contract_pass_on_clean_fixtures,
+        test_section_navigation_contract_missing_fixture_is_flagged,
+        test_section_navigation_contract_positive_fixture_must_be_clean,
+        test_section_navigation_contract_negative_fixture_must_report_codes,
+        test_section_navigation_contract_invalid_yaml_is_flagged,
+        test_section_navigation_contract_suite_missing_is_flagged,
     ]
     passed = 0
     failed = 0

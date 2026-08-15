@@ -1093,7 +1093,7 @@ fn extract_domain_from_path(pdf_path: &str) -> Option<String> {
 ///
 /// All three edges are `temporal_class=structural` (created_at only per
 /// ADR-046). No bi-temporal stamping required for structural edges.
-async fn build_section_navigation_edges(
+pub async fn build_section_navigation_edges(
     sections: &[da_ports::parser::Section],
     section_id_map: &std::collections::HashMap<String, u64>,
     graph_store: &dyn da_ports::graph_store::DirectGraphStore,
