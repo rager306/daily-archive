@@ -37,6 +37,7 @@ fn parsed() -> ParsedArticle {
             doi: None,
             arxiv_id: None,
             title: Some("Ref".into()),
+            anchors: vec![],
         }],
         layout_json: None,
         tei_xml: None,

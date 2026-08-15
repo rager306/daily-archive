@@ -64,12 +64,41 @@ pub struct Section {
     pub section_id: Option<String>,
 }
 
+/// One in-text occurrence of a citation in the source document
+/// (GROBID TEI `<ref type="bibr" target="#bN">`). Anchors are
+/// revision-owned evidence: they are stored on PaperRevision CITES/HAS_PART
+/// edges, never on the globally deduped Citation/Reference nodes (D247/D249),
+/// so v1/v5 spans and cross-paper locations cannot mix.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CitationAnchor {
+    /// GROBID reference id — the `xml:id` of the cited `<biblStruct>`
+    /// (e.g. "b12"), with any leading `#` from the `<ref target>` stripped.
+    pub ref_id: String,
+    /// `path_id` of the section containing the anchor (e.g. "3.2"), or `None`
+    /// when the ref is inside the body but not within any section text window
+    /// (typed missingness `anchor_section_path_unresolved` at ingest).
+    pub section_path_id: Option<String>,
+    /// In-text surface text of the ref (e.g. "[12]" or "(Shao et al., 2024)").
+    pub quote: String,
+    /// 0-based char offset of the quote within the containing section's
+    /// stripped text (`Section.text`). `None` when there is no section text
+    /// to anchor against.
+    pub offset: Option<u32>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CitationEntry {
     pub raw_text: String,
     pub doi: Option<String>,
     pub arxiv_id: Option<String>,
     pub title: Option<String>,
+    /// In-text anchors (GROBID `<ref type="bibr">` occurrences) mapped to
+    /// this bibliography entry. Empty when the TEI has no resolvable in-text
+    /// refs — ingest then records typed missingness `no_in_text_anchor` on
+    /// the revision-owned edge. `#[serde(default)]` keeps legacy cached/fixture
+    /// JSON decodable (R085).
+    #[serde(default)]
+    pub anchors: Vec<CitationAnchor>,
 }
 
 /// Parser port — GROBID HTTP + HTML parser implement this.

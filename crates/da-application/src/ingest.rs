@@ -791,8 +791,24 @@ impl IngestUseCase {
         // beside the global Paper-level edges (never cloned nodes, MEM471).
         let mut revision_reference_edges_written = 0usize;
         let mut revision_cites_edges_written = 0usize;
+        // PIR-011 / D247+D249: PaperRevision edges that carry in-text anchors
+        // (citation_anchors_json + citation_anchor_missingness).
+        let mut revision_anchor_edges_written = 0usize;
+        let citations_with_anchors = parsed
+            .citations
+            .iter()
+            .filter(|c| !c.anchors.is_empty())
+            .count();
         let now_ts = self.clock.now().timestamp();
         for citation in &parsed.citations {
+            // T03: does this citation produce a CITES edge (resolvable arXiv
+            // identity)? Anchors live on the CITES edge when it exists and on
+            // the HAS_PART edge only for Reference-only citations (D249).
+            let resolves_to_citation = citation
+                .arxiv_id
+                .as_deref()
+                .map(|id| vid::citation_arxiv_vid(id).is_ok())
+                .unwrap_or(false);
             // Create Reference node for ALL citations (full bibliography).
             // Reference stores raw_text + metadata, even for unresolved citations.
             // Citation node is created separately for resolvable arxiv_ids.
@@ -880,7 +896,7 @@ impl IngestUseCase {
                         .is_empty()
                 {
                     let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    crate::temporal_stamp::create_edge_with_temporal(
+                    let edge_id = crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         content_node_id,
                         ref_node,
@@ -888,6 +904,20 @@ impl IngestUseCase {
                         &temporal,
                     )
                     .await?;
+                    // T03 (D247/D249): Reference-only citations (no resolvable
+                    // arXiv identity, so no CITES edge) carry in-text anchors on
+                    // the revision-owned HAS_PART edge. Resolvable citations use
+                    // the CITES edge instead — never both, never Paper-sourced
+                    // edges, never the global Reference/Citation node.
+                    if !resolves_to_citation {
+                        write_citation_anchors_on_edge(
+                            self.graph_store.as_ref(),
+                            edge_id,
+                            citation,
+                        )
+                        .await?;
+                        revision_anchor_edges_written += 1;
+                    }
                     revision_reference_edges_written += 1;
                     tracing::debug!(
                         paper_id,
@@ -982,7 +1012,7 @@ impl IngestUseCase {
                         .is_empty()
                 {
                     let temporal = crate::temporal_stamp::open_fact_edge_now(self.clock.now());
-                    crate::temporal_stamp::create_edge_with_temporal(
+                    let edge_id = crate::temporal_stamp::create_edge_with_temporal(
                         self.graph_store.as_ref(),
                         content_node_id,
                         cited_node,
@@ -990,6 +1020,12 @@ impl IngestUseCase {
                         &temporal,
                     )
                     .await?;
+                    // T03 (D247/D249): resolvable citations carry their in-text
+                    // anchors on the PaperRevision CITES edge (never on the
+                    // globally deduped Citation node or the Paper-sourced edge).
+                    write_citation_anchors_on_edge(self.graph_store.as_ref(), edge_id, citation)
+                        .await?;
+                    revision_anchor_edges_written += 1;
                     revision_cites_edges_written += 1;
                     tracing::debug!(
                         paper_id,
@@ -1013,6 +1049,8 @@ impl IngestUseCase {
             cites_edges_written = cites_resolved,
             revision_reference_edges_written,
             revision_cites_edges_written,
+            citations_with_anchors,
+            revision_anchor_edges_written,
             import_eligible = eligible,
             "Parsed article materialized through direct graph API"
         );
@@ -1188,6 +1226,46 @@ pub async fn build_section_navigation_edges(
     }
 
     Ok(edges_created)
+}
+
+/// Write in-text citation anchors onto a revision-owned edge (T03, D247/D249).
+///
+/// Stores `citation_anchors_json` (JSON array of `{ref_id, section_path_id,
+/// quote, offset}`) and `citation_anchor_missingness` (typed missingness:
+/// `no_in_text_anchor` when the citation has no in-text refs,
+/// `anchor_section_path_unresolved` when anchors exist but some lack a section
+/// path, empty string when anchors are fully resolved). Callers invoke this
+/// only for PaperRevision-sourced HAS_PART/CITES edges — never for Paper-sourced
+/// edges and never for the globally deduped Citation/Reference nodes, which
+/// would mix v1/v5 and cross-paper locations (MEM796/MEM798).
+async fn write_citation_anchors_on_edge(
+    store: &dyn da_ports::graph_store::DirectGraphStore,
+    edge_id: u64,
+    citation: &da_ports::parser::CitationEntry,
+) -> anyhow::Result<()> {
+    let anchors_json =
+        serde_json::to_string(&citation.anchors).context("serialize citation anchors to JSON")?;
+    store
+        .set_edge_property_string(edge_id, "citation_anchors_json", &anchors_json)
+        .await?;
+    let missingness = citation_anchor_missingness(&citation.anchors);
+    store
+        .set_edge_property_string(edge_id, "citation_anchor_missingness", &missingness)
+        .await?;
+    Ok(())
+}
+
+/// Typed anchor missingness per D249: empty anchors → `no_in_text_anchor`;
+/// any anchor without a resolved section path → `anchor_section_path_unresolved`;
+/// otherwise empty string (anchors present and fully resolved).
+fn citation_anchor_missingness(anchors: &[da_ports::parser::CitationAnchor]) -> String {
+    if anchors.is_empty() {
+        "no_in_text_anchor".to_string()
+    } else if anchors.iter().any(|a| a.section_path_id.is_none()) {
+        "anchor_section_path_unresolved".to_string()
+    } else {
+        String::new()
+    }
 }
 
 /// Return the parent path of a dotted path_id (everything before the last '.').

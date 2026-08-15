@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
 
@@ -72,6 +72,22 @@ struct DivSpan {
     content_start: usize,
     content_end: usize,
     n_attr: Option<String>,
+}
+
+/// Raw in-text `<ref type="bibr">` occurrence captured before it is mapped
+/// onto a back-matter bibliography entry (T03). `target` is the `xml:id` of
+/// the cited `<biblStruct>` with the leading `#` stripped; refs without a
+/// target cannot be attached and are dropped at mapping time.
+struct RawRefAnchor {
+    target: Option<String>,
+    quote: String,
+    section_path_id: Option<String>,
+    offset: Option<u32>,
+    /// Flat-pass window ordinal: anchors emitted from one `<head>` window
+    /// share an ordinal so path collision resolution can group them, while a
+    /// later window that repeats the same raw path resolves independently.
+    /// Nested-pass anchors all use 0 (paths are uniquified on the fly).
+    window_ordinal: usize,
 }
 
 impl GrobidParser {
@@ -663,6 +679,10 @@ impl GrobidParser {
 
     /// Extract citations from TEI `<back>` references.
     /// GROBID places references in `<div type="references"><listBibl><biblStruct>`.
+    /// T03 (M398-cz4pzx/S03): also scans in-text `<ref type="bibr" target="#bN">`
+    /// anchors in the body and attaches them to the matching bibliography
+    /// entry (resolved via biblStruct `xml:id`), so a revision-owned CITES/HAS_PART
+    /// edge can later carry exact source spans (D247/D249).
     fn extract_citations(tei: &str) -> Vec<da_ports::parser::CitationEntry> {
         use da_ports::parser::CitationEntry;
         let back = match tei.find("<back>") {
@@ -674,6 +694,11 @@ impl GrobidParser {
         };
 
         let mut citations = Vec::new();
+        // GROBID assigns xml:id="bN" to back-matter biblStruct entries;
+        // in-text `<ref type="bibr" target="#bN">` anchors resolve through
+        // this map. biblStruct without xml:id falls back to its ordinal key
+        // ("b{index}") for synthetic/hand-written TEI.
+        let mut id_to_index: HashMap<String, usize> = HashMap::new();
         let mut pos = 0;
         while let Some(bibl_start) = back[pos..].find("<biblStruct") {
             let abs = pos + bibl_start;
@@ -704,15 +729,419 @@ impl GrobidParser {
             });
             let raw_text = Self::strip_xml_tags(entry);
 
+            let xml_id = Self::extract_bibl_xml_id(&back[abs..=tag_end]);
+            let key = xml_id.unwrap_or_else(|| format!("b{}", citations.len()));
+            id_to_index.insert(key, citations.len());
+
             citations.push(CitationEntry {
                 raw_text,
                 doi,
                 arxiv_id,
                 title,
+                anchors: Vec::new(),
             });
             pos = bibl_end;
         }
+
+        // T03: attach in-text `<ref type="bibr">` anchors resolved against
+        // back-matter biblStruct xml:id targets. Refs without a target or with
+        // an unresolvable target are dropped here (the citation then stays
+        // anchor-less and ingest records typed missingness no_in_text_anchor).
+        for anchor in Self::extract_ref_anchors(tei) {
+            let Some(target) = anchor.target.as_deref() else {
+                continue;
+            };
+            let Some(&idx) = id_to_index.get(target) else {
+                continue;
+            };
+            if let Some(entry) = citations.get_mut(idx) {
+                entry.anchors.push(da_ports::parser::CitationAnchor {
+                    ref_id: target.to_string(),
+                    section_path_id: anchor.section_path_id,
+                    quote: anchor.quote,
+                    offset: anchor.offset,
+                });
+            }
+        }
         citations
+    }
+
+    /// Extract `xml:id` from a `<biblStruct ...>` opening tag. GROBID emits
+    /// `xml:id="b0"` on back-matter bibliography entries; in-text refs point
+    /// at those ids via `target="#bN"`.
+    fn extract_bibl_xml_id(open_tag: &str) -> Option<String> {
+        for attr in ["xml:id=\"", "xml:id='"] {
+            if let Some(pos) = open_tag.find(attr) {
+                let after = &open_tag[pos + attr.len()..];
+                let end = after.find(['"', '\''])?;
+                let value = after[..end].trim();
+                if !value.is_empty() {
+                    return Some(value.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Extract the `target` attribute of a `<ref>` opening tag, stripping any
+    /// leading `#` (GROBID emits `target="#b12"` pointing at a biblStruct
+    /// `xml:id`). Returns None when the ref has no target.
+    fn extract_ref_target(open_tag: &str) -> Option<String> {
+        for attr in ["target=\"", "target='"] {
+            if let Some(pos) = open_tag.find(attr) {
+                let after = &open_tag[pos + attr.len()..];
+                let end = after.find(['"', '\''])?;
+                let value = after[..end].trim();
+                if !value.is_empty() {
+                    return Some(value.trim_start_matches('#').to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Scan TEI body for in-text `<ref type="bibr">` citation anchors (T03).
+    /// Mirrors `extract_sections` so each anchor resolves to the same section
+    /// `path_id` and text window the section extractor produces: nested div
+    /// TEI walks divs recursively; flat TEI scans `<head>` windows and then
+    /// applies the same flat-path collision resolution as the section pass.
+    fn extract_ref_anchors(tei: &str) -> Vec<RawRefAnchor> {
+        let Some(body) = Self::tei_body(tei) else {
+            return Vec::new();
+        };
+        if Self::has_nested_divs(body) {
+            let mut out = Vec::new();
+            // The pre-first-div region belongs to no section (walk_divs only
+            // creates sections for divs); anchors there stay path-unresolved.
+            // Inter-sibling and tail gaps are handled inside walk_div_anchors
+            // so each frame's coordinate system stays consistent.
+            if let Some(first) = Self::find_child_divs(body).first()
+                && first.content_start > 0
+            {
+                Self::scan_refs_in_window(body, 0, first.content_start, None, &mut out, 0);
+            }
+            let mut used_paths = HashSet::new();
+            Self::walk_div_anchors(body, "", &mut used_paths, &mut out);
+            out
+        } else {
+            let mut out = Vec::new();
+            // Pre-first-head region belongs to no section (extract_sections_flat
+            // starts sections at the first `<head>`), so anchors there stay
+            // path-unresolved rather than being dropped silently.
+            if let Some(first_head) = body.find("<head") {
+                Self::scan_refs_in_window(body, 0, first_head, None, &mut out, 0);
+            }
+            Self::scan_flat_anchors(body, &mut out);
+            // Resolve anchor paths against every head window (including
+            // windows without anchors) using the same collision algorithm as
+            // the section pass, so a later window repeating a raw path (e.g.
+            // an appendix restarting at n="1") lands on the exact section path
+            // (1~k) that extract_sections_flat produced.
+            let windows = Self::flat_window_paths(body);
+            Self::uniquify_flat_anchor_paths(&mut out, &windows);
+            out
+        }
+    }
+
+    /// Extract the inner content of the `<body>...</body>` element, or None.
+    fn tei_body(tei: &str) -> Option<&str> {
+        let start = tei.find("<body")?;
+        let after = &tei[start..];
+        let tag_end = after.find('>')?;
+        let rest = &after[tag_end + 1..];
+        let end = rest.find("</body>")?;
+        Some(&rest[..end])
+    }
+
+    /// Recursive `<div>` walk for in-text anchors (nested TEI). Computes the
+    /// same `path_id` as `walk_divs` (same collision handling) and scans the
+    /// div's direct text window — everything after `</head>` up to the first
+    /// nested `<div>` — so anchor offsets match `Section.text`. Inter-sibling
+    /// gaps (after each div's close, before the next sibling or frame end)
+    /// belong to no section and are scanned with a None path. All indices are
+    /// relative to `body` (the current frame), so recursion into `div_content`
+    /// keeps each level's coordinate system consistent.
+    fn walk_div_anchors(
+        body: &str,
+        parent_path: &str,
+        used_paths: &mut HashSet<String>,
+        out: &mut Vec<RawRefAnchor>,
+    ) {
+        let div_spans = Self::find_child_divs(body);
+        for (local_sibling, div_span) in div_spans.iter().enumerate() {
+            let cs = div_span.content_start;
+            let ce = div_span.content_end;
+            let div_content = &body[cs..ce];
+            let path_component = div_span
+                .n_attr
+                .as_deref()
+                .and_then(|n| n.split('.').next_back())
+                .unwrap_or("")
+                .to_string();
+            let path_component = if path_component.is_empty() {
+                (local_sibling as u32 + 1).to_string()
+            } else {
+                path_component
+            };
+            let base_path = if parent_path.is_empty() {
+                path_component.to_string()
+            } else {
+                format!("{}.{}", parent_path, path_component)
+            };
+            let mut path_id = base_path.clone();
+            let mut collision = 2u32;
+            while used_paths.contains(&path_id) {
+                path_id = format!("{base_path}~{collision}");
+                collision += 1;
+            }
+            used_paths.insert(path_id.clone());
+
+            // This div's own text window, mapped to frame coordinates.
+            let (w_start, w_end) = Self::div_text_window(div_content);
+            let window_start = cs + w_start;
+            let window_end = cs + w_end;
+            if window_start < window_end {
+                Self::scan_refs_in_window(
+                    body,
+                    window_start,
+                    window_end,
+                    Some(path_id.clone()),
+                    out,
+                    0,
+                );
+            }
+
+            // Gap between this div's close and the next sibling (or frame
+            // end): belongs to no section → anchors stay path-unresolved so
+            // ingest records typed missingness anchor_section_path_unresolved.
+            let next_start = div_spans
+                .get(local_sibling + 1)
+                .map(|s| s.content_start)
+                .unwrap_or(body.len());
+            let gap_start = ce + "</div>".len();
+            if next_start > gap_start {
+                Self::scan_refs_in_window(body, gap_start, next_start, None, out, 0);
+            }
+
+            Self::walk_div_anchors(div_content, &path_id, used_paths, out);
+        }
+    }
+
+    /// Raw text window (start, end) of a div's direct content, mirroring
+    /// `extract_head_and_text`: everything after `</head>` up to the first
+    /// nested `<div>` (or the div end). Without a `<head>` the window starts
+    /// at the div content start, exactly like the section extractor.
+    fn div_text_window(div_content: &str) -> (usize, usize) {
+        let after_head = Self::find_head_text_start(div_content).unwrap_or_default();
+        let text_end = div_content[after_head..]
+            .find("<div")
+            .map(|e| after_head + e)
+            .unwrap_or(div_content.len());
+        (after_head, text_end)
+    }
+
+    /// Position just after the first `</head>` at this level, or None.
+    fn find_head_text_start(div_content: &str) -> Option<usize> {
+        let hs = div_content.find("<head")?;
+        let tag_end = div_content[hs..].find('>')? + hs;
+        let content_start = tag_end + 1;
+        let head_close = div_content[content_start..].find("</head>")?;
+        Some(content_start + head_close + "</head>".len())
+    }
+
+    /// Flat `<head>`-window scan for in-text anchors (flat TEI, MEM654),
+    /// mirroring `extract_sections_flat`: section text is everything after
+    /// `</head>` up to the next `<head>` (or body end).
+    fn scan_flat_anchors(body: &str, out: &mut Vec<RawRefAnchor>) {
+        let mut pos = 0;
+        // Window ordinal 0 is the pre-first-head region (path-unresolved);
+        // each <head> window gets 1, 2, ... so path-collision resolution can
+        // tell a later window repeating the same raw path (e.g. an appendix
+        // restarting at n="1") apart from the earlier one.
+        let mut window_ordinal = 1usize;
+        while let Some(head_start) = body[pos..].find("<head") {
+            let abs = pos + head_start;
+            let tag_end = match body[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let open_tag = &body[abs..=tag_end];
+            let path_component = Self::extract_head_n_string(open_tag);
+            let content_start = tag_end + 1;
+            let head_close = match body[content_start..].find("</head>") {
+                Some(e) => content_start + e,
+                None => break,
+            };
+            let after_head = head_close + "</head>".len();
+            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let text_end = next_head.unwrap_or(body.len());
+            Self::scan_refs_in_window(
+                body,
+                after_head,
+                text_end,
+                Some(path_component),
+                out,
+                window_ordinal,
+            );
+            pos = text_end;
+            window_ordinal += 1;
+            // Guard against infinite loop when text_end == abs (adjacent heads).
+            if pos <= tag_end {
+                pos = tag_end + 1;
+            }
+        }
+    }
+
+    /// Raw `n`-derived path of every flat `<head>` window in body order, plus
+    /// whether the window would create a Section (`!title.is_empty() ||
+    /// !text.is_empty()`, matching `extract_sections_flat`). Windows without
+    /// anchors are included so collision resolution consumes the same path
+    /// slots the section pass consumes.
+    fn flat_window_paths(body: &str) -> Vec<(String, bool)> {
+        let mut out = Vec::new();
+        let mut pos = 0;
+        while let Some(head_start) = body[pos..].find("<head") {
+            let abs = pos + head_start;
+            let tag_end = match body[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let open_tag = &body[abs..=tag_end];
+            let path_component = Self::extract_head_n_string(open_tag);
+            let content_start = tag_end + 1;
+            let head_close = match body[content_start..].find("</head>") {
+                Some(e) => content_start + e,
+                None => break,
+            };
+            let title = Self::strip_xml_tags(&body[content_start..head_close]);
+            let after_head = head_close + "</head>".len();
+            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let text_end = next_head.unwrap_or(body.len());
+            let text = Self::strip_xml_tags(&body[after_head..text_end]);
+            out.push((path_component, !title.is_empty() || !text.is_empty()));
+            pos = text_end;
+            // Guard against infinite loop when text_end == abs (adjacent heads).
+            if pos <= tag_end {
+                pos = tag_end + 1;
+            }
+        }
+        out
+    }
+
+    /// Resolve raw flat paths to the same uniquified paths the section pass
+    /// produces (`uniquify_flat_paths`): a numbering restart makes "3" appear
+    /// twice, so the second occurrence becomes "3~2". Anchors of one `<head>`
+    /// window share its resolved path (they all carry the same `window_ordinal`),
+    /// while a later window that repeats the same raw path (e.g. an appendix
+    /// restarting at n="1") must re-resolve and pick up the collision suffix.
+    /// Resolution iterates every window (not just windows with anchors) in
+    /// body order using the same collision algorithm and content filter as the
+    /// section pass, so anchor paths land exactly on the Section paths.
+    fn uniquify_flat_anchor_paths(anchors: &mut [RawRefAnchor], windows: &[(String, bool)]) {
+        let mut used = HashSet::new();
+        let mut latest_resolved: HashMap<String, String> = HashMap::new();
+        let mut resolved_by_ordinal: HashMap<usize, String> = HashMap::new();
+        for (idx, (raw_path, has_content)) in windows.iter().enumerate() {
+            if !has_content {
+                continue;
+            }
+            let ordinal = idx + 1; // windows are 1-based; ordinal 0 = pre-head
+            let candidate = match raw_path.rsplit_once('.') {
+                Some((raw_parent, component)) => latest_resolved
+                    .get(raw_parent)
+                    .map(|parent| format!("{parent}.{component}"))
+                    .unwrap_or_else(|| raw_path.clone()),
+                None => raw_path.clone(),
+            };
+            let mut resolved = candidate.clone();
+            let mut collision = 2u32;
+            while used.contains(&resolved) {
+                resolved = format!("{candidate}~{collision}");
+                collision += 1;
+            }
+            used.insert(resolved.clone());
+            latest_resolved.insert(raw_path.clone(), resolved.clone());
+            resolved_by_ordinal.insert(ordinal, resolved);
+        }
+        for anchor in anchors.iter_mut() {
+            if anchor.window_ordinal == 0 {
+                // Pre-first-head region: belongs to no section, stays
+                // path-unresolved (typed missingness at ingest).
+                continue;
+            }
+            if let Some(resolved) = resolved_by_ordinal.get(&anchor.window_ordinal) {
+                anchor.section_path_id = Some(resolved.clone());
+            }
+        }
+    }
+
+    /// Scan `raw[start..end]` for `<ref type="bibr">` anchors and push a
+    /// `RawRefAnchor` per occurrence. The offset is the char position of the
+    /// quote in the window's stripped-and-trimmed text (identical to
+    /// `Section.text` construction), so consumers can join anchors to the
+    /// stored section text directly.
+    fn scan_refs_in_window(
+        raw: &str,
+        start: usize,
+        end: usize,
+        section_path_id: Option<String>,
+        out: &mut Vec<RawRefAnchor>,
+        window_ordinal: usize,
+    ) {
+        let mut pos = start;
+        while let Some(rel) = raw[pos..end].find("<ref") {
+            let abs = pos + rel;
+            let tag_end = match raw[abs..end].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let open_tag = &raw[abs..=tag_end];
+            // Only bibl refs are citation anchors (ignores <ref type="note">
+            // and other non-bibliographic markers).
+            if !(open_tag.contains("type=\"bibr\"") || open_tag.contains("type='bibr'")) {
+                pos = abs + 1;
+                continue;
+            }
+            let quote_start = tag_end + 1;
+            let close = match raw[quote_start..end].find("</ref>") {
+                Some(e) => quote_start + e,
+                None => break,
+            };
+            let quote = Self::strip_xml_tags(&raw[quote_start..close]);
+            let target = Self::extract_ref_target(open_tag);
+            // Offset only makes sense against a real section text window.
+            let offset = section_path_id
+                .as_ref()
+                .map(|_| Self::stripped_text_offset(raw, start, quote_start, end));
+            out.push(RawRefAnchor {
+                target,
+                quote,
+                section_path_id: section_path_id.clone(),
+                offset,
+                window_ordinal,
+            });
+            pos = close + "</ref>".len();
+        }
+    }
+
+    /// Char offset of `pos` (absolute within `raw`) in the text produced by
+    /// `strip_xml_tags(raw[start..end])` — the exact `Section.text`
+    /// construction (tags stripped, then trimmed). Counts non-tag chars before
+    /// `pos`, then subtracts the leading whitespace that trim removes.
+    fn stripped_text_offset(raw: &str, start: usize, pos: usize, end: usize) -> u32 {
+        let full: Vec<char> = Self::strip_xml_tags(&raw[start..end]).chars().collect();
+        let leading = full.iter().take_while(|c| c.is_whitespace()).count();
+        let mut count = 0usize;
+        let mut in_tag = false;
+        for ch in raw[start..pos].chars() {
+            match ch {
+                '<' => in_tag = true,
+                '>' => in_tag = false,
+                _ if !in_tag => count += 1,
+                _ => {}
+            }
+        }
+        count.saturating_sub(leading) as u32
     }
 
     /// Extract the analytic title from a biblStruct entry.
@@ -983,6 +1412,204 @@ mod tests {
         assert_eq!(citations.len(), 1);
         assert_eq!(citations[0].title.as_deref(), Some("Cited With Attrs"));
         assert_eq!(citations[0].doi.as_deref(), Some("10.2000/x"));
+        // No in-text refs in this TEI → anchors stay empty.
+        assert!(citations[0].anchors.is_empty());
+    }
+
+    // ─── T03 (M398-cz4pzx/S03): in-text citation anchors ───
+
+    /// Flat TEI: `<head n="1">` window contains a `<ref type="bibr">`
+    /// targeting a back-matter biblStruct xml:id. The anchor must carry the
+    /// resolved section path "1" and the char offset of the quote in the
+    /// section's stripped text ("Alpha [1] Beta" → offset 6).
+    #[test]
+    fn test_extract_citations_in_text_anchors_flat() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>Alpha <ref type="bibr" target="#b0">[1]</ref> Beta</p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic><idno type="DOI">10.1000/cite.1</idno></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 1, "one in-text anchor attached");
+        let anchor = &citations[0].anchors[0];
+        assert_eq!(anchor.ref_id, "b0");
+        assert_eq!(anchor.section_path_id.as_deref(), Some("1"));
+        assert_eq!(anchor.quote, "[1]");
+        assert_eq!(
+            anchor.offset,
+            Some(6),
+            "offset of '[1]' in 'Alpha [1] Beta'"
+        );
+    }
+
+    /// Nested TEI: the same citation referenced in two sections keeps two
+    /// anchors with distinct section paths and offsets (multi-span, D249).
+    #[test]
+    fn test_extract_citations_anchors_nested_div_multi_span() {
+        let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha <ref type="bibr" target="#b1">(Jones, 2020)</ref></p><div n="1.1"><head>Setup</head><p>See <ref type="bibr" target="#b1">[1]</ref></p></div></div></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+<biblStruct xml:id="b1"><analytic><title level="a" type="main">Jones 2020</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 2);
+        assert!(citations[0].anchors.is_empty(), "b0 has no in-text refs");
+        let anchors = &citations[1].anchors;
+        assert_eq!(anchors.len(), 2, "Jones cited in sections 1 and 1.1");
+        assert_eq!(anchors[0].ref_id, "b1");
+        assert_eq!(anchors[0].section_path_id.as_deref(), Some("1"));
+        assert_eq!(anchors[0].quote, "(Jones, 2020)");
+        assert_eq!(anchors[0].offset, Some(6));
+        assert_eq!(anchors[1].section_path_id.as_deref(), Some("1.1"));
+        assert_eq!(anchors[1].quote, "[1]");
+        assert_eq!(anchors[1].offset, Some(4), "offset of '[1]' in 'See [1]'");
+    }
+
+    /// No in-text refs in the body → every citation stays anchor-less
+    /// (ingest then records typed missingness no_in_text_anchor).
+    #[test]
+    fn test_extract_citations_no_in_text_refs_anchors_empty() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>plain text</p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert!(citations[0].anchors.is_empty());
+    }
+
+    /// A `<ref type="bibr">` in the body before the first `<head>` is not
+    /// inside any section text window → anchor attaches with section_path_id
+    /// None (typed missingness anchor_section_path_unresolved at ingest).
+    #[test]
+    fn test_extract_citations_ref_outside_section_path_unresolved() {
+        let tei = r##"<TEI><text><body><p>Preamble <ref type="bibr" target="#b0">[1]</ref></p><head n="1">Intro</head><p>Body</p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 1);
+        let anchor = &citations[0].anchors[0];
+        assert_eq!(anchor.ref_id, "b0");
+        assert!(
+            anchor.section_path_id.is_none(),
+            "no section window → None path"
+        );
+        assert!(anchor.offset.is_none(), "no section text → no offset");
+    }
+
+    /// Refs without a `target` attribute (GROBID emits them for merged ref
+    /// groups) cannot be mapped to a bibliography entry and are dropped;
+    /// targeted refs in the same window still attach.
+    #[test]
+    fn test_extract_citations_ref_without_target_skipped() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>A <ref type="bibr">(no target)</ref> B <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(
+            citations[0].anchors.len(),
+            1,
+            "only the targeted ref attaches"
+        );
+        assert_eq!(citations[0].anchors[0].quote, "[1]");
+    }
+
+    /// Non-bibliographic refs (`type="note"`) are not citation anchors.
+    #[test]
+    fn test_extract_citations_ignores_non_bibr_refs() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="note" target="#n1">footnote</ref> and <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 1);
+        assert_eq!(citations[0].anchors[0].quote, "[1]");
+    }
+
+    /// biblStruct without xml:id falls back to its ordinal key ("b{index}")
+    /// so synthetic/hand-written TEI with ordinal targets still resolves.
+    #[test]
+    fn test_extract_citations_ordinal_fallback_without_xml_id() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref></p></body><back><div type="references"><listBibl>
+<biblStruct><analytic><title level="a" type="main">NoId</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 1);
+        assert_eq!(citations[0].anchors[0].ref_id, "b0");
+    }
+
+    /// Flat TEI with a numbering restart (two `<head n="1">`, e.g. an
+    /// appendix restarting section numbers): anchors from the second window
+    /// must resolve to the same uniquified path the section pass produces
+    /// ("1~2"), never the first window's "1" (regression: a global per-path
+    /// cache collapsed both windows onto the first window's path, so the
+    /// appendix anchors pointed into the INTRODUCTION section text).
+    #[test]
+    fn test_extract_citations_flat_numbering_restart_paths() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>See <ref type="bibr" target="#b0">[1]</ref></p><head n="2">Methods</head><p>X</p><head n="1">Appendix</head><p>See <ref type="bibr" target="#b0">[1]</ref> again</p></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let sections = GrobidParser::extract_sections(tei);
+        let citations = GrobidParser::extract_citations(tei);
+        // Section paths: "1", "2", then the appendix restart becomes "1~2".
+        let paths: Vec<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        assert_eq!(paths, vec!["1", "2", "1~2"]);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 2);
+        let p0 = citations[0].anchors[0].section_path_id.clone();
+        let p1 = citations[0].anchors[1].section_path_id.clone();
+        assert_eq!(p0.as_deref(), Some("1"), "first window keeps path 1");
+        assert_eq!(
+            p1.as_deref(),
+            Some("1~2"),
+            "restarted window resolves to the section's uniquified path"
+        );
+        // Offsets must point at the quote inside each section's own text.
+        let s1 = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1");
+        let sa = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1~2"))
+            .expect("section 1~2");
+        let a0 = &citations[0].anchors[0];
+        let a1 = &citations[0].anchors[1];
+        let off0 = a0.offset.expect("anchor 0 offset");
+        let off1 = a1.offset.expect("anchor 1 offset");
+        assert_eq!(
+            &s1.text[off0 as usize..off0 as usize + a0.quote.len()],
+            a0.quote,
+            "anchor 0 offset must land on its quote in section 1"
+        );
+        assert_eq!(
+            &sa.text[off1 as usize..off1 as usize + a1.quote.len()],
+            a1.quote,
+            "anchor 1 offset must land on its quote in section 1~2"
+        );
+    }
+
+    /// Anchors in a top-level gap (between sibling divs) of a NESTED body are
+    /// attached with section_path_id None rather than being dropped: the gap
+    /// belongs to no section text window.
+    #[test]
+    fn test_extract_citations_anchor_in_top_level_gap_path_unresolved() {
+        // div n="1" contains a nested child so the body counts as nested; the
+        // ref sits between div 1's close and div 2's open — outside any window.
+        let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><p>Between <ref type="bibr" target="#b0">[1]</ref></p><div n="2"><head>Methods</head><p>Beta</p></div></body><back><div type="references"><listBibl>
+<biblStruct xml:id="b0"><analytic><title level="a" type="main">First</title></analytic></biblStruct>
+</listBibl></div></back></text></TEI>"##;
+        let citations = GrobidParser::extract_citations(tei);
+        assert_eq!(citations.len(), 1);
+        assert_eq!(citations[0].anchors.len(), 1);
+        assert!(
+            citations[0].anchors[0].section_path_id.is_none(),
+            "inter-div gap belongs to no section → None path"
+        );
+        assert!(citations[0].anchors[0].offset.is_none());
     }
 
     #[test]
@@ -1239,6 +1866,71 @@ mod real_tei_tests {
             citations.iter().all(|c| !c.raw_text.trim().is_empty()),
             "every citation must carry non-empty raw_text for Reference nodes"
         );
+        // T03: in-text `<ref type="bibr">` anchors parsed from the real hub
+        // TEI. Every targetable ref resolves against back-matter xml:id; a
+        // minority sits in top-level gaps (no section path) and must surface
+        // as path-unresolved anchors instead of being dropped.
+        let total_anchors: usize = citations.iter().map(|c| c.anchors.len()).sum();
+        let resolved_paths = citations
+            .iter()
+            .flat_map(|c| c.anchors.iter())
+            .filter(|a| a.section_path_id.is_some())
+            .count();
+        let unresolved_paths = total_anchors - resolved_paths;
+        println!(
+            "  anchors total={total_anchors} resolved_paths={resolved_paths} unresolved_paths={unresolved_paths}"
+        );
+        assert!(
+            total_anchors >= 60,
+            "expected ≥60 in-text anchors in hub TEI, got {total_anchors}"
+        );
+        assert!(
+            resolved_paths >= 50,
+            "expected ≥50 anchors with a resolved section path, got {resolved_paths}"
+        );
+        // This fixed hub TEI has every targetable ref inside a section text
+        // window (footnote refs included) — none may be dropped or left
+        // path-unresolved. The unresolved path is exercised by unit tests
+        // (test_extract_citations_ref_outside_section_path_unresolved,
+        // test_extract_citations_anchor_in_top_level_gap_path_unresolved).
+        assert_eq!(
+            unresolved_paths, 0,
+            "hub TEI must resolve every anchor to a section path, got {unresolved_paths} unresolved"
+        );
+        // Anchor offsets must be stable within the section's stored text and
+        // every resolved path must exist among the section extractor's paths.
+        let section_paths: std::collections::HashSet<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        for c in &citations {
+            for a in &c.anchors {
+                if let Some(p) = a.section_path_id.as_deref() {
+                    assert!(
+                        section_paths.contains(p),
+                        "anchor path '{p}' must exist among section paths (anchor {} on '{}')",
+                        a.ref_id,
+                        c.raw_text.chars().take(40).collect::<String>()
+                    );
+                    if let Some(offset) = a.offset {
+                        // Offset must point at the quote inside the section text.
+                        let sec = sections
+                            .iter()
+                            .find(|s| s.path_id.as_deref() == Some(p))
+                            .expect("path found");
+                        let chars: Vec<char> = sec.text.chars().collect();
+                        let start = offset as usize;
+                        let end = (start + a.quote.chars().count()).min(chars.len());
+                        assert_eq!(
+                            chars.get(start..end).map(|s| s.iter().collect::<String>()),
+                            Some(a.quote.clone()),
+                            "offset {offset} must point at quote '{}' in section '{p}'",
+                            a.quote
+                        );
+                    }
+                }
+            }
+        }
     }
 
     /// Second large-bibliography pin (m033 probe): 2605.26525v1 ~78 back biblStruct.

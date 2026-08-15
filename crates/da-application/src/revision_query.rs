@@ -93,6 +93,15 @@ pub struct ArticleRevisionView {
     pub is_current: bool,
     pub predecessor_revision: Option<u32>,
     pub section_count: usize,
+    /// PIR-011 / D246 (T02): VIDs of the Reference nodes this exact revision
+    /// owns through additive PaperRevision HAS_PART edges. The nodes stay
+    /// globally deduped (MEM471) — ownership is expressed per revision via
+    /// edges, never by cloning. Sorted for deterministic serialization.
+    pub reference_vids: Vec<String>,
+    /// PIR-011 / D246 (T02): arxiv_ids of the Citation nodes this exact
+    /// revision owns through additive PaperRevision CITES edges. Sorted for
+    /// deterministic serialization.
+    pub citation_arxiv_ids: Vec<String>,
     pub summaries: Vec<RevisionSummaryView>,
     pub readiness: Option<RevisionReadinessView>,
     pub manifestations: Vec<RevisionManifestationView>,
@@ -288,6 +297,37 @@ impl RevisionQueryUseCase {
                 section_nodes.push(target);
             }
         }
+        // PIR-011 / D246 (T02): the revision also owns its bibliography
+        // entries through additive edges — Reference nodes via hasPart,
+        // Citation nodes via CITES — without cloning the globally deduped
+        // nodes (MEM471). Expose the per-revision citation surface so the
+        // PIR-011 acceptance ("citation query points at the exact
+        // PaperRevision") is readable from the query use case (T04).
+        let mut reference_vids = Vec::new();
+        for target in self.active_targets(node, "hasPart").await {
+            if self
+                .graph
+                .get_node_labels(target)
+                .await
+                .iter()
+                .any(|label| label == "Reference")
+                && let Some(vid) = self.graph.get_node_property_string(target, "vid").await
+            {
+                reference_vids.push(vid);
+            }
+        }
+        reference_vids.sort();
+        let mut citation_arxiv_ids = Vec::new();
+        for target in self.active_targets(node, "CITES").await {
+            if let Some(arxiv_id) = self
+                .graph
+                .get_node_property_string(target, "arxiv_id")
+                .await
+            {
+                citation_arxiv_ids.push(arxiv_id);
+            }
+        }
+        citation_arxiv_ids.sort();
         let manifestation_nodes = self.active_targets(node, "HAS_MANIFESTATION").await;
         let readiness_nodes = self.active_targets(node, "hasQualitySignal").await;
         let predecessor_nodes = self.active_targets(node, "SUPERSEDES").await;
@@ -414,6 +454,8 @@ impl RevisionQueryUseCase {
             is_current,
             predecessor_revision,
             section_count: section_nodes.len(),
+            reference_vids,
+            citation_arxiv_ids,
             summaries,
             readiness,
             manifestations,
@@ -748,6 +790,22 @@ mod tests {
         assert_eq!(response.revisions[0].section_count, 2);
         assert_eq!(response.revisions[1].section_count, 3);
         assert_eq!(response.revisions[1].predecessor_revision, Some(1));
+        // PIR-011 / D246 (T02): per-revision citation surface. The fixture
+        // gives each revision its own Reference (hasPart) and Citation
+        // (CITES) without cloning global nodes — the view must expose the
+        // exact revision-owned bibliography sets.
+        assert_eq!(response.revisions[0].reference_vids, ["reference-1"]);
+        assert_eq!(response.revisions[1].reference_vids, ["reference-5"]);
+        assert_eq!(response.revisions[0].citation_arxiv_ids, ["2301.10001"]);
+        assert_eq!(response.revisions[1].citation_arxiv_ids, ["2301.10005"]);
+        assert_ne!(
+            response.revisions[0].reference_vids,
+            response.revisions[1].reference_vids
+        );
+        assert_ne!(
+            response.revisions[0].citation_arxiv_ids,
+            response.revisions[1].citation_arxiv_ids
+        );
         assert_eq!(response.revisions[0].summaries.len(), 1);
         assert_eq!(response.revisions[0].summaries[0].summary_type, "generic");
         assert_eq!(response.revisions[1].summaries[0].summary_type, "methods");

@@ -57,7 +57,7 @@ pub use pdf_classification::{
     ClassificationError, ClassificationResult, NullClassifier, PdfClassificationPort,
 };
 
-pub use parser::ParserPort;
+pub use parser::{CitationAnchor, CitationEntry, ParserPort, Section};
 pub use tex_source::{
     TexAnalysisReportStore, TexAnalysisRequest, TexArchiveError, TexArchiveInventory,
     TexArchiveMember, TexArchivePort,
@@ -150,6 +150,47 @@ mod serde_roundtrip_tests {
             doi: Some("10.1234/abc".into()),
             arxiv_id: None,
             title: Some("Title".into()),
+            anchors: vec![],
         });
+    }
+
+    /// T03 (M398-cz4pzx/S03): in-text citation anchors survive serde
+    /// roundtrip — ref_id, section_path_id, quote and offset must be stable
+    /// on the wire so the ingest layer can persist them on revision-owned
+    /// edges (D247/D249).
+    #[test]
+    fn roundtrip_citation_entry_with_anchors() {
+        roundtrip_json(&CitationEntry {
+            raw_text: "Smith et al. 2024".into(),
+            doi: None,
+            arxiv_id: Some("2401.00001".into()),
+            title: None,
+            anchors: vec![
+                CitationAnchor {
+                    ref_id: "b12".into(),
+                    section_path_id: Some("3.2".into()),
+                    quote: "[12]".into(),
+                    offset: Some(41),
+                },
+                CitationAnchor {
+                    ref_id: "b12".into(),
+                    section_path_id: Some("5".into()),
+                    quote: "[12]".into(),
+                    offset: Some(7),
+                },
+            ],
+        });
+    }
+
+    /// Backward compat (R085): legacy parsers and cached fixtures produce
+    /// CitationEntry without the `anchors` field. Serde default must tolerate
+    /// the missing field on deserialize.
+    #[test]
+    fn roundtrip_citation_entry_legacy_omits_anchors() {
+        let json = r#"{"raw_text":"Smith et al. 2024","doi":null,"arxiv_id":null,"title":null}"#;
+        let entry: CitationEntry =
+            serde_json::from_str(json).expect("legacy CitationEntry deserializes");
+        assert_eq!(entry.raw_text, "Smith et al. 2024");
+        assert!(entry.anchors.is_empty(), "legacy JSON has no anchors");
     }
 }

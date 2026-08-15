@@ -1,5 +1,13 @@
 # Changelog
 
+### M398 S03 revision-owned AST and citation evidence
+
+- Standalone `RevisionMaterializationUseCase` now persists full ADR-053 Layer A tree evidence on revision-scoped Section nodes (`path_id`, `section_id`, `parent_section_id`, `order_in_parent`, `char_count`, `text_sha256`) while Section VIDs stay content-addressed `revision_section_vid` (T01, PIR-005 dependency for PIR-011).
+- Ingest emits additive revision-owned bibliography edges: `PaperRevision HAS_PART Reference` and `PaperRevision CITES Citation` beside the existing Paper-level edges, without cloning the globally deduped Reference/Citation nodes (MEM471). `section_count` counts only Section-labeled hasPart targets so bibliography nodes never masquerade as sections (D248).
+- `GrobidParser::extract_citations` now reads in-text `<ref type="bibr">` occurrences into `CitationEntry.anchors` (`#[serde(default)]` keeps legacy JSON decodable, R085); anchors and typed missingness (`no_in_text_anchor`, `anchor_section_path_unresolved`) are written only on revision-owned edges — never on Paper-sourced edges or the global nodes (D247/D249).
+- `ArticleRevisionView` exposes the per-revision citation surface: `reference_vids` and `citation_arxiv_ids` (T04). New `revision_citation_test` proves same-process two-revision ownership: v1/v5 keep disjoint Section VIDs, distinct CITES/HAS_PART bibliography sets, revision-local anchor spans on a shared Citation (no overwrite), replay stays applied=0 unchanged>0, and every node keeps import_eligible=false (D127).
+- PIR-011 resolved in `doc/review/pipeline-integrity-review.jsonl` with runtime evidence.
+
 ### M398 S02 summary path identity and temporal history
 
 - Summary input collector now prefers the real dotted `Section.path_id` over the `order` ordinal; `order`/`source_vid` fallbacks are typed `PathIdFallback` diagnostics (PIR-007), and every Summary node persists durable `source_path_id` plus `source_path_missingness` (hardcoded `SummarySchema` and `data/ontology/node_schemas.yaml` stay in sync).

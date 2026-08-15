@@ -203,6 +203,7 @@ async fn identical_materialization_replay_has_no_physical_writes() {
             doi: Some("10.1000/stable".into()),
             arxiv_id: None,
             title: Some("Stable reference".into()),
+            anchors: vec![],
         }],
         layout_json: None,
         tei_xml: None,
@@ -525,18 +526,21 @@ async fn test_ingest_citations_create_cites_edges() {
             doi: Some("10.1000/a".to_string()),
             arxiv_id: Some("2301.00001".to_string()),
             title: Some("Cited Paper A".to_string()),
+            anchors: vec![],
         },
         CitationEntry {
             raw_text: "Jones 2022".to_string(),
             doi: None,
             arxiv_id: Some("2201.00002".to_string()),
             title: Some("Cited Paper B".to_string()),
+            anchors: vec![],
         },
         CitationEntry {
             raw_text: "No id ref".to_string(),
             doi: None,
             arxiv_id: None, // no arxiv_id — should NOT create a Citation node
             title: None,
+            anchors: vec![],
         },
     ];
     let (ingest, store) = make_ingest_with_citations(vec![], citations);
@@ -563,6 +567,7 @@ async fn test_ingest_citation_dedup_shared_reference() {
         doi: None,
         arxiv_id: Some("2301.09999".to_string()),
         title: Some("Shared Paper".to_string()),
+        anchors: vec![],
     };
     let (ingest, store) = make_ingest_with_citations(vec![], vec![shared_citation.clone()]);
     let pdfs = vec![
@@ -601,6 +606,7 @@ async fn invalid_arxiv_citation_remains_reference_only() {
         doi: None,
         arxiv_id: Some("1410.3916.[Yahyaetal.2012".into()),
         title: None,
+        anchors: vec![],
     };
     let (ingest, store) = make_ingest_with_citations(vec![], vec![malformed]);
     let result = batch_ingest_pdfs(&ingest, &[("paper.pdf".into(), "2401.00001".into())], None)
@@ -621,6 +627,7 @@ async fn test_ingest_cites_edges_stamped_with_temporal_fields() {
         doi: None,
         arxiv_id: Some("2301.00001".to_string()),
         title: Some("Cited Paper A".to_string()),
+        anchors: vec![],
     }];
     let (ingest, store) = make_ingest_with_citations(vec![], citations);
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
@@ -669,6 +676,7 @@ async fn test_ingest_has_part_structural_no_valid_at() {
         doi: None,
         arxiv_id: None,
         title: None,
+        anchors: vec![],
     }];
     let (ingest, store) = make_ingest_with_citations(vec![], citations);
     let pdfs = vec![("paper1.pdf".to_string(), "2401.00001".to_string())];
@@ -716,6 +724,7 @@ async fn test_ingest_cites_valid_at_frozen_with_fixed_clock() {
         doi: None,
         arxiv_id: Some("2301.00001".to_string()),
         title: Some("Cited Paper A".to_string()),
+        anchors: vec![],
     }];
     let (mut ingest, store) = make_ingest_with_citations(vec![], citations);
     ingest.clock = Arc::new(FixedClock::new(frozen));
@@ -781,12 +790,14 @@ async fn revision_ingest_emits_additive_revision_owned_bibliography_edges() {
                 doi: None,
                 arxiv_id: Some("2301.00001".to_string()),
                 title: Some("Cited Paper A".to_string()),
+                anchors: vec![],
             },
             CitationEntry {
                 raw_text: "Jones 2022".to_string(),
                 doi: None,
                 arxiv_id: None, // Reference-only: no Citation node
                 title: None,
+                anchors: vec![],
             },
         ],
         layout_json: None,
@@ -925,4 +936,247 @@ async fn revision_ingest_emits_additive_revision_owned_bibliography_edges() {
         edges_before,
         "replay must not create edges (Paper + PaperRevision edges idempotent)"
     );
+}
+
+#[tokio::test]
+async fn revision_ingest_writes_in_text_anchors_on_revision_owned_edges_only() {
+    // PIR-011 / T03 (D247/D249): in-text citation anchors live on PaperRevision
+    // CITES/HAS_PART edges only — never on Paper-sourced edges, never on the
+    // globally deduped Citation/Reference nodes (MEM796/MEM798). Missingness
+    // is typed: "" when anchors resolve, no_in_text_anchor when the citation
+    // has no in-text refs.
+    use da_application::revision_materialization::{
+        RevisionContentContext, RevisionManifestationInput,
+    };
+    use da_ports::graph_store::DirectGraphStore;
+    use da_ports::parser::{CitationAnchor, CitationEntry, ParsedArticle, Section};
+
+    let paper_id = "2401.00002";
+    // 64-hex checksum binding for the revision manifestation.
+    let source_sha256 = format!("{:064x}", 7);
+    let parsed = ParsedArticle {
+        paper_id: paper_id.into(),
+        title: "Title of 2401.00002".into(),
+        abstract_text: "Abstract of 2401.00002".into(),
+        body_text: "x".repeat(1000),
+        sections: vec![Section {
+            title: "Introduction".into(),
+            text: "intro text".into(),
+            level: 1,
+            ..Default::default()
+        }],
+        citations: vec![
+            CitationEntry {
+                raw_text: "Resolvable cited work".to_string(),
+                doi: None,
+                arxiv_id: Some("2301.00001".to_string()),
+                title: Some("Cited Paper A".to_string()),
+                // Multi-span: cited twice in the same revision.
+                anchors: vec![
+                    CitationAnchor {
+                        ref_id: "b0".into(),
+                        section_path_id: Some("1".into()),
+                        quote: "[1]".into(),
+                        offset: Some(0),
+                    },
+                    CitationAnchor {
+                        ref_id: "b0".into(),
+                        section_path_id: Some("2".into()),
+                        quote: "[1]".into(),
+                        offset: Some(12),
+                    },
+                ],
+            },
+            CitationEntry {
+                raw_text: "Reference-only work".to_string(),
+                doi: None,
+                arxiv_id: None,
+                title: None,
+                anchors: vec![CitationAnchor {
+                    ref_id: "b1".into(),
+                    section_path_id: Some("1".into()),
+                    quote: "[2]".into(),
+                    offset: Some(3),
+                }],
+            },
+            CitationEntry {
+                raw_text: "No in-text refs".to_string(),
+                doi: None,
+                arxiv_id: None,
+                title: None,
+                anchors: vec![],
+            },
+        ],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: source_sha256.clone(),
+    };
+    let revision_context = || RevisionContentContext {
+        source_code: "arxiv".into(),
+        canonical_id: paper_id.into(),
+        revision: 5,
+        manifestations: vec![RevisionManifestationInput {
+            format: "pdf".into(),
+            sha256: source_sha256.clone(),
+            bytes: 100,
+            uri: format!("https://arxiv.org/pdf/{paper_id}v5"),
+            path: format!("{paper_id}v5.pdf"),
+            capture_status: "captured".into(),
+        }],
+    };
+    let (ingest, store) = make_ingest_with_citations(vec![], vec![]);
+
+    ingest
+        .materialize_parsed_with_context(
+            &parsed,
+            vec![0.1; 1024],
+            None,
+            Some("arxiv".into()),
+            None,
+            da_domain::PdfTriageStatus::NotConfigured,
+            Some(&revision_context()),
+        )
+        .await
+        .unwrap();
+
+    let papers = store.get_nodes_by_label("Paper").await;
+    let revisions = store.get_nodes_by_label("PaperRevision").await;
+    let references = store.get_nodes_by_label("Reference").await;
+    let citations = store.get_nodes_by_label("Citation").await;
+    assert_eq!(papers.len(), 1);
+    assert_eq!(revisions.len(), 1);
+    assert_eq!(references.len(), 3);
+    assert_eq!(
+        citations.len(),
+        1,
+        "only citation[0] has a resolvable arxiv_id"
+    );
+    let rev = revisions[0];
+    let paper = papers[0];
+
+    // Resolvable citation: anchors on the revision-owned CITES edge (D249).
+    let rev_cites = store.get_edges_between(rev, citations[0], "CITES").await;
+    assert_eq!(rev_cites.len(), 1);
+    let (rev_cites_eid, _) = rev_cites[0];
+    let anchors_json = store
+        .get_edge_property_string(rev_cites_eid, "citation_anchors_json")
+        .await
+        .expect("revision-owned CITES edge must carry citation_anchors_json");
+    let anchors: Vec<CitationAnchor> = serde_json::from_str(&anchors_json).unwrap();
+    assert_eq!(anchors.len(), 2, "both spans survive the roundtrip");
+    assert_eq!(anchors[0].ref_id, "b0");
+    assert_eq!(anchors[0].section_path_id.as_deref(), Some("1"));
+    assert_eq!(anchors[0].quote, "[1]");
+    assert_eq!(anchors[0].offset, Some(0));
+    assert_eq!(anchors[1].section_path_id.as_deref(), Some("2"));
+    assert_eq!(
+        store
+            .get_edge_property_string(rev_cites_eid, "citation_anchor_missingness")
+            .await
+            .as_deref(),
+        Some(""),
+        "anchors present and resolved → empty missingness"
+    );
+
+    // Paper-sourced CITES edge: never carries anchor keys (D249).
+    let paper_cites = store.get_edges_between(paper, citations[0], "CITES").await;
+    assert_eq!(paper_cites.len(), 1);
+    let (paper_cites_eid, _) = paper_cites[0];
+    assert_eq!(
+        store
+            .get_edge_property_string(paper_cites_eid, "citation_anchors_json")
+            .await,
+        None,
+        "Paper-sourced edges must never carry citation_anchors_json"
+    );
+    assert_eq!(
+        store
+            .get_edge_property_string(paper_cites_eid, "citation_anchor_missingness")
+            .await,
+        None
+    );
+
+    // Reference-only citation with anchors: anchors on revision HAS_PART edge.
+    let rev_hp = store.get_edges_between(rev, references[1], "hasPart").await;
+    assert_eq!(rev_hp.len(), 1);
+    let (rev_hp_eid, _) = rev_hp[0];
+    let anchors_json = store
+        .get_edge_property_string(rev_hp_eid, "citation_anchors_json")
+        .await
+        .expect("Reference-only revision HAS_PART edge must carry anchors");
+    let anchors: Vec<CitationAnchor> = serde_json::from_str(&anchors_json).unwrap();
+    assert_eq!(anchors.len(), 1);
+    assert_eq!(anchors[0].ref_id, "b1");
+    assert_eq!(
+        store
+            .get_edge_property_string(rev_hp_eid, "citation_anchor_missingness")
+            .await
+            .as_deref(),
+        Some("")
+    );
+    // Paper HAS_PART edge: no anchor keys.
+    let paper_hp = store
+        .get_edges_between(paper, references[1], "hasPart")
+        .await;
+    let (paper_hp_eid, _) = paper_hp[0];
+    assert_eq!(
+        store
+            .get_edge_property_string(paper_hp_eid, "citation_anchors_json")
+            .await,
+        None
+    );
+
+    // Citation without in-text refs: typed missingness no_in_text_anchor.
+    let rev_hp_none = store.get_edges_between(rev, references[2], "hasPart").await;
+    assert_eq!(rev_hp_none.len(), 1);
+    let (rev_hp_none_eid, _) = rev_hp_none[0];
+    assert_eq!(
+        store
+            .get_edge_property_string(rev_hp_none_eid, "citation_anchors_json")
+            .await
+            .as_deref(),
+        Some("[]"),
+        "empty anchors serialize as an empty JSON array"
+    );
+    assert_eq!(
+        store
+            .get_edge_property_string(rev_hp_none_eid, "citation_anchor_missingness")
+            .await
+            .as_deref(),
+        Some("no_in_text_anchor")
+    );
+
+    // Global dedup surface (Citation/Reference nodes): never anchor properties.
+    assert_eq!(
+        store
+            .get_node_property_string(citations[0], "citation_anchors_json")
+            .await,
+        None,
+        "global Citation node must never carry anchors (MEM796)"
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(references[0], "citation_anchors_json")
+            .await,
+        None,
+        "global Reference node must never carry anchors (MEM796)"
+    );
+
+    // Replay: identical revision ingest adds no nodes/edges (applied=0).
+    let nodes_before = store.node_count_total();
+    let edges_before = store.edge_count_total();
+    ingest
+        .materialize_parsed_with_context(
+            &parsed,
+            vec![0.1; 1024],
+            None,
+            Some("arxiv".into()),
+            None,
+            da_domain::PdfTriageStatus::NotConfigured,
+            Some(&revision_context()),
+        )
+        .await
+        .unwrap();
+    assert_eq!(store.node_count_total(), nodes_before);
+    assert_eq!(store.edge_count_total(), edges_before);
 }

@@ -342,6 +342,7 @@ mod tests {
                 doi: None,
                 arxiv_id: None,
                 title: Some("Reference".into()),
+                anchors: vec![],
             }],
             layout_json: None,
             tei_xml: None,
