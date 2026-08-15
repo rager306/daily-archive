@@ -90,8 +90,8 @@ Rules:
 Minimum baseline unless not applicable:
 
 ```bash
-PYTHONPATH=scripts python3 -m governor --validate-yaml
-PYTHONPATH=scripts python3 -m governor --phase active
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --validate-yaml
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase active
 ```
 
 Run per-crate tests during iteration. Run `bash scripts/verify_rust_architecture.sh` only at the slice end.

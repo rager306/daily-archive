@@ -79,7 +79,7 @@ The current Governor does **not** ingest this JSONL directly. Native enforcement
 wc -l doc/review/pipeline-integrity-review.jsonl
 
 # Open P0 findings
-python3 - <<'PY'
+uv run python - <<'PY'
 import json
 from pathlib import Path
 for line in Path('doc/review/pipeline-integrity-review.jsonl').read_text().splitlines():
@@ -89,7 +89,7 @@ for line in Path('doc/review/pipeline-integrity-review.jsonl').read_text().split
 PY
 
 # Governor automation gaps
-python3 - <<'PY'
+uv run python - <<'PY'
 import json
 from pathlib import Path
 for line in Path('doc/review/pipeline-integrity-review.jsonl').read_text().splitlines():
@@ -101,10 +101,10 @@ PY
 
 ## Schema validation
 
-If Python `jsonschema` is available:
+Validate through uv's isolated environment:
 
 ```bash
-python3 - <<'PY'
+uv run --with jsonschema python - <<'PY'
 import json
 from pathlib import Path
 import jsonschema
@@ -120,7 +120,7 @@ PY
 Minimal parse/ID/dependency validation without external packages:
 
 ```bash
-python3 - <<'PY'
+uv run python - <<'PY'
 import json
 from pathlib import Path
 p = Path('doc/review/pipeline-integrity-review.jsonl')
@@ -137,10 +137,10 @@ PY
 ## Governor workflow
 
 ```bash
-PYTHONPATH=scripts python3 -m governor --validate-yaml
-PYTHONPATH=scripts python3 -m governor --phase preflight
-PYTHONPATH=scripts python3 -m governor --phase active
-PYTHONPATH=scripts python3 -m governor --phase closeout
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --validate-yaml
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase preflight
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase active
+PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase closeout
 ```
 
 When implementing a `proposed_rule_id`:
