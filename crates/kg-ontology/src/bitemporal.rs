@@ -271,4 +271,24 @@ mod tests {
             DateTime::from_timestamp(1_700_000_000, 0)
         );
     }
+
+    #[test]
+    fn test_mixed_wire_values_compare_parsed_instants_not_lexical_forms() {
+        // PIR-008 (M398/S04/T03): a snapshot may mix wire forms across
+        // fields — legacy integer `valid_from` (2023-11-14T22:13:20Z) with a
+        // canonical RFC3339 UTC `valid_to` (2024-01-15T10:30:00Z, unix
+        // 1705314600). `is_active_at` must compare parsed instants, never raw
+        // lexical integer/string forms: a lexical compare of "1700000000" vs
+        // "2024-01-15T10:30:00Z" would order them wrong ("1" < "2").
+        let props = map(&[
+            ("valid_from", json!(1_700_000_000_i64)),
+            ("valid_to", json!("2024-01-15T10:30:00Z")),
+        ]);
+        let within = DateTime::from_timestamp(1_702_000_000, 0).unwrap(); // 2023-12-08
+        let before = DateTime::from_timestamp(1_600_000_000, 0).unwrap();
+        let after = DateTime::from_timestamp(1_706_000_000, 0).unwrap(); // 2024-01-23
+        assert!(is_active_at(&props, within));
+        assert!(!is_active_at(&props, before));
+        assert!(!is_active_at(&props, after));
+    }
 }

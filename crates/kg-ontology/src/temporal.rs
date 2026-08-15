@@ -459,12 +459,148 @@ mod wire_tests {
     }
 }
 
+// ─── PIR-008: canonical wire stability + replay proof (M398/S04/T04) ───
+
+#[cfg(test)]
+mod wire_stability_tests {
+    use super::*;
+    use serde_json::Value;
+    use std::fs;
+    use std::path::Path;
+
+    fn ts(seconds: i64) -> DateTime<Utc> {
+        DateTime::from_timestamp(seconds, 0).unwrap()
+    }
+
+    fn edge_with(dt: DateTime<Utc>) -> TemporalEdge {
+        TemporalEdge {
+            valid_at: dt,
+            invalid_at: Some(dt),
+            expired_at: None,
+            reference_time: Some(dt),
+            created_at: dt,
+        }
+    }
+
+    /// Serde wire stability: every DateTime field serializes as a canonical
+    /// RFC3339 UTC string — never as a JSON number — and the serialized
+    /// form passes the write validator (ADR-051 §4.4 wire-drift guard).
+    #[test]
+    fn test_serde_wire_serializes_datetime_as_rfc3339_utc_strings() {
+        let edge = edge_with(ts(1_700_000_000));
+        let value: Value = serde_json::to_value(&edge).unwrap();
+        for key in ["valid_at", "invalid_at", "reference_time", "created_at"] {
+            let s = value.get(key).and_then(Value::as_str).unwrap_or_else(|| {
+                panic!("{key} must serialize as a string, got {:?}", value.get(key))
+            });
+            assert!(
+                s.ends_with('Z') || s.ends_with("+00:00"),
+                "{key} must carry the UTC designator on the wire, got {s}"
+            );
+            assert!(
+                validate_datetime_wire(&value[key], key).is_ok(),
+                "{key} serialized form must pass the write validator"
+            );
+        }
+        let numeric: Vec<&str> = [
+            "valid_at",
+            "invalid_at",
+            "expired_at",
+            "reference_time",
+            "created_at",
+        ]
+        .into_iter()
+        .filter(|k| value[*k].is_number())
+        .collect();
+        assert!(
+            numeric.is_empty(),
+            "numeric temporal wire fields are the legacy form: {numeric:?}"
+        );
+    }
+
+    /// Replay proof at the wire level: decode → re-encode must be
+    /// byte-identical — re-applying the same wire changes nothing.
+    /// (The graph-level replay equivalence applied=0 / unchanged>0 for
+    /// canonical writers is proven in da-application
+    /// `revision_citation_test::replay_stays_applied_zero_and_d127_holds`
+    /// and `batch_ingest_test`.)
+    #[test]
+    fn test_wire_replay_is_byte_stable() {
+        let edge = edge_with(ts(1_700_000_000));
+        let first = serde_json::to_string(&edge).unwrap();
+        for _ in 0..3 {
+            let decoded: TemporalEdge = serde_json::from_str(&first).unwrap();
+            let re_encoded = serde_json::to_string(&decoded).unwrap();
+            assert_eq!(
+                first, re_encoded,
+                "re-encoding a decoded edge must be byte-identical (replay stability)"
+            );
+        }
+    }
+
+    /// The committed Governor wire fixtures are pinned to the actual
+    /// validator: every positive value must be accepted, every negative
+    /// value must be rejected. Regenerating either fixture without the
+    /// matching validator behavior fails this test (mirrors
+    /// `navigation_report_fixtures_match_committed_governor_data` in
+    /// `crates/da-application/tests/section_navigation_test.rs`).
+    #[test]
+    fn temporal_wire_fixtures_match_committed_governor_data() {
+        let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("data/temporal_wire_contract");
+        let positive_path = fixtures_dir.join("canonical_wire.positive.json");
+        if !positive_path.exists() {
+            eprintln!("skip: {} not found", positive_path.display());
+            return;
+        }
+        let positive: Value = serde_json::from_str(
+            &fs::read_to_string(positive_path).expect("read canonical_wire.positive.json"),
+        )
+        .expect("parse canonical_wire.positive.json");
+        let positive = positive
+            .as_array()
+            .expect("positive fixture must be a JSON array");
+        assert!(!positive.is_empty(), "positive fixture must not be empty");
+        for (i, v) in positive.iter().enumerate() {
+            assert!(
+                validate_datetime_wire(v, "valid_from").is_ok(),
+                "positive fixture[{i}] must be accepted: {v}"
+            );
+        }
+
+        let negative_path = fixtures_dir.join("legacy_integer_wire.negative.json");
+        if !negative_path.exists() {
+            eprintln!("skip: {} not found", negative_path.display());
+            return;
+        }
+        let negative: Value = serde_json::from_str(
+            &fs::read_to_string(negative_path).expect("read legacy_integer_wire.negative.json"),
+        )
+        .expect("parse legacy_integer_wire.negative.json");
+        let negative = negative
+            .as_array()
+            .expect("negative fixture must be a JSON array");
+        assert!(!negative.is_empty(), "negative fixture must not be empty");
+        for (i, v) in negative.iter().enumerate() {
+            assert!(
+                validate_datetime_wire(v, "valid_from").is_err(),
+                "negative fixture[{i}] must be rejected: {v}"
+            );
+        }
+    }
+}
+
 // ─── ADR-051 P1: Property-based tests (M353) ───
 
 #[cfg(test)]
 mod proptest_tests {
     use super::*;
     use proptest::prelude::*;
+    use serde_json::{Value, json};
 
     /// Bounded unix seconds (avoids chrono edge overflow).
     fn arb_ts() -> impl Strategy<Value = DateTime<Utc>> {
@@ -668,6 +804,50 @@ mod proptest_tests {
             let _ = edge.is_active_at(at, None);
             let _ = edge.was_known_at(at);
             let _ = edge.is_expired();
+        }
+
+        /// Property 9 (PIR-008 / M398 S04 T04): the canonical to_rfc3339()
+        /// wire of any DateTime always passes the write validator, parses
+        /// back to the identical instant (no drift), and re-encodes to the
+        /// same bytes (replay stability).
+        #[test]
+        fn prop_canonical_wire_roundtrips_without_drift(dt in arb_ts()) {
+            let wire = dt.to_rfc3339();
+            prop_assert!(
+                validate_datetime_wire(&Value::String(wire.clone()), "valid_from").is_ok(),
+                "canonical wire must be accepted: {wire}"
+            );
+            let reparsed = DateTime::parse_from_rfc3339(&wire).unwrap().with_timezone(&Utc);
+            prop_assert_eq!(
+                reparsed, dt,
+                "canonical wire must roundtrip to the identical instant"
+            );
+            prop_assert_eq!(
+                reparsed.to_rfc3339(),
+                wire,
+                "re-encoding must be byte-identical (replay stability)"
+            );
+        }
+
+        /// Property 10 (PIR-008 / M398 S04 T04): serde roundtrip of an
+        /// arbitrary TemporalEdge is identity (wire-stability guard).
+        #[test]
+        fn prop_edge_serde_roundtrip_identity(edge in arb_edge()) {
+            let wire = serde_json::to_string(&edge).unwrap();
+            let back: TemporalEdge = serde_json::from_str(&wire).unwrap();
+            prop_assert_eq!(edge, back, "serde roundtrip mismatch: {}", wire);
+        }
+
+        /// Property 11 (PIR-008 / M398 S04 T04): the legacy integer wire
+        /// form is always rejected for new writes — including negative and
+        /// extreme values, not just the classic 1.7e9 epoch.
+        #[test]
+        fn prop_integer_wire_always_rejected(secs in i64::MIN..=2_000_000_000i64) {
+            let err = validate_datetime_wire(&json!(secs), "valid_from").unwrap_err();
+            prop_assert!(
+                err.contains("legacy"),
+                "expected legacy-form rejection message, got: {err}"
+            );
         }
     }
 }

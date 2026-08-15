@@ -541,3 +541,94 @@ async fn test_add_temporal_edge_retains_both_on_overlap() {
         "retain_both rule must not invalidate any edge"
     );
 }
+
+#[tokio::test]
+async fn test_add_temporal_edge_decodes_legacy_integer_wire() {
+    // PIR-008 (M398/S04/T03): the healing contradiction-resolution path reads
+    // existing edge temporal fields through the bounded compatibility decoder
+    // `parse_datetime`. A legacy integer Unix-seconds wire (string form) must
+    // decode to its real instant — a plain RFC3339-only FromStr parse would
+    // collapse it to the epoch and corrupt the resolution outcome.
+    use chrono::DateTime;
+    use common::mock_graph_store::MockGraphStore;
+    use da_application::healing::GraphHealingUseCase;
+    use da_ports::graph_store::DirectGraphStore;
+    use kg_ontology::temporal::TemporalEdge;
+
+    let store = MockGraphStore::new();
+    let uc = GraphHealingUseCase {
+        graph_store: std::sync::Arc::new(store.clone()),
+        clock: std::sync::Arc::new(da_ports::SystemClock),
+    };
+
+    let p1 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p1, "vid", "vid:paper:p1".to_string())
+        .await
+        .unwrap();
+    let p2 = store.create_node("Paper").await.unwrap();
+    store
+        .set_node_property_string(p2, "vid", "vid:paper:p2".to_string())
+        .await
+        .unwrap();
+
+    // Legacy integer wire edge: valid_at/created_at stored as integer-seconds
+    // strings (1600000000 = 2020-09-13T08:26:40Z).
+    let old_edge = store.create_edge(p1, p2, "CITES").await.unwrap();
+    store
+        .set_edge_property_string(old_edge, "valid_at", "1600000000")
+        .await
+        .unwrap();
+    store
+        .set_edge_property_string(old_edge, "created_at", "1600000000")
+        .await
+        .unwrap();
+
+    // New edge valid 2017-07-14 (1500000000) — EARLIER than the legacy old
+    // edge (2020). Correct instant decoding → the old edge is not strictly
+    // earlier → RetainBoth (0 invalidated). A buggy epoch collapse (valid_at
+    // decoded to 0) would trigger the Supersede rule and wrongly invalidate
+    // the 2020 edge.
+    let new_temporal = TemporalEdge {
+        valid_at: DateTime::from_timestamp(1_500_000_000, 0).unwrap(),
+        invalid_at: None,
+        expired_at: None,
+        reference_time: None,
+        created_at: DateTime::from_timestamp(1_500_000_000, 0).unwrap(),
+    };
+
+    let invalidated = uc
+        .add_temporal_edge(
+            "vid:paper:p1",
+            "Paper",
+            "vid:paper:p2",
+            "Paper",
+            "CITES",
+            &new_temporal,
+        )
+        .await
+        .expect("add_temporal_edge must succeed");
+
+    assert_eq!(
+        invalidated, 0,
+        "legacy edge is LATER than the new edge → retain both, never supersede"
+    );
+    assert_eq!(
+        store.get_edge_property_string(old_edge, "invalid_at").await,
+        None,
+        "old edge must stay open when retained"
+    );
+    // The new edge itself is still created with canonical RFC3339 stamps.
+    let new_edge = store
+        .get_edges_between(p1, p2, "CITES")
+        .await
+        .iter()
+        .find(|(eid, _)| *eid != old_edge)
+        .map(|(eid, _)| *eid)
+        .expect("new edge must exist");
+    assert_eq!(
+        store.get_edge_property_string(new_edge, "valid_at").await,
+        Some("2017-07-14T02:40:00+00:00".to_string()),
+        "new edge carries the canonical RFC3339 UTC wire"
+    );
+}

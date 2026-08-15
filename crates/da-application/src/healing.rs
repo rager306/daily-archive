@@ -7,6 +7,7 @@ use da_domain::healing::{
     CorrectResult, HealingActor, HealingOperation, MergeResult, ProvenanceEvent, SilenceResult,
 };
 use da_ports::graph_store::DirectGraphStore;
+use kg_ontology::temporal::parse_datetime;
 
 /// Graph healing use case: correct, merge, silence nodes in the graph.
 pub struct GraphHealingUseCase {
@@ -342,25 +343,31 @@ impl GraphHealingUseCase {
             .get_edges_between(source_id, target_id, edge_type)
             .await;
 
-        // Read temporal properties for each existing edge to build TemporalEdge structs.
+        // Read temporal properties for each existing edge to build TemporalEdge
+        // structs. PIR-008 (M398/S04/T03): decode through the bounded
+        // compatibility decoder `parse_datetime` — it accepts the canonical
+        // RFC3339 UTC string wire AND the legacy integer Unix-seconds string
+        // form so old snapshots keep resolving contradictions correctly. New
+        // integer writes remain rejected by `validate_datetime_wire`; this is
+        // read-only decoding, never a write path.
         let mut existing_temporal: Vec<kg_ontology::temporal::TemporalEdge> = Vec::new();
         for (edge_id, _) in &existing_edges_meta {
             let valid_at = self
                 .graph_store
                 .get_edge_property_string(*edge_id, "valid_at")
                 .await
-                .and_then(|s| s.parse().ok())
+                .and_then(|s| parse_datetime(&s))
                 .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
             let invalid_at = self
                 .graph_store
                 .get_edge_property_string(*edge_id, "invalid_at")
                 .await
-                .and_then(|s| s.parse().ok());
+                .and_then(|s| parse_datetime(&s));
             let created_at = self
                 .graph_store
                 .get_edge_property_string(*edge_id, "created_at")
                 .await
-                .and_then(|s| s.parse().ok())
+                .and_then(|s| parse_datetime(&s))
                 .unwrap_or_else(|| chrono::DateTime::from_timestamp(0, 0).unwrap());
             existing_temporal.push(kg_ontology::temporal::TemporalEdge {
                 valid_at,

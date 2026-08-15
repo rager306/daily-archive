@@ -1188,6 +1188,132 @@ def test_section_navigation_contract_suite_missing_is_flagged():
     assert flags[0].flag == "section_navigation_contract_suite_missing"
 
 
+def _write_temporal_wire_contract(root: Path) -> Path:
+    """Write the canonical temporal wire contract + fixtures into a temp root."""
+    contract = root / "scripts/governor/checks/canonical_temporal_wire_format.yaml"
+    _write(contract, """schema_version: canonical-temporal-wire-format.v1
+policy_id: canonical-temporal-wire-format
+dimension: temporal_ast
+severity: high
+ontology_data:
+  path: data/ontology/node_schemas.yaml
+  required_markers:
+    - "temporal_wire_contract"
+    - "datetime_format: rfc3339_utc"
+    - "integer_write: rejected"
+    - "legacy_integer_read: compatibility_decoder_only"
+    - "open_sentinel: OPEN"
+wire_fixtures:
+  positive:
+    id: canonical_wire
+    path: data/temporal_wire_contract/canonical_wire.positive.json
+    expect: accepted
+  negative:
+    id: legacy_integer_wire
+    path: data/temporal_wire_contract/legacy_integer_wire.negative.json
+    expect: rejected
+""")
+    _write(root / "data/ontology/node_schemas.yaml", (
+        "temporal_wire_contract:\n"
+        "  datetime_format: rfc3339_utc\n"
+        "  integer_write: rejected\n"
+        "  legacy_integer_read: compatibility_decoder_only\n"
+        "  open_sentinel: OPEN\n"
+        "node_schemas:\n"
+        "- label: Paper\n"
+    ))
+    _write(root / "data/temporal_wire_contract/canonical_wire.positive.json", json.dumps([
+        "2024-01-15T10:30:00Z",
+        "2023-11-14T22:13:20Z",
+        "2024-01-15T10:30:00.123456Z",
+        "2024-01-15T10:30:00+00:00",
+        "OPEN",
+        None,
+    ]))
+    _write(root / "data/temporal_wire_contract/legacy_integer_wire.negative.json", json.dumps([
+        1700000000,
+        0,
+        -1,
+        "1700000000",
+        "2024-01-15T10:30:00+02:00",
+        "2024-01-15 10:30:00",
+        "not-a-date",
+        True,
+        {"valid_from": "2024-01-15T10:30:00Z"},
+    ]))
+    return contract
+
+
+def test_canonical_temporal_wire_format_pass_on_clean_fixtures():
+    """Ontology DATA markers + positive/negative wire fixtures satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_temporal_wire_contract(service.root)
+    assert service._check_canonical_temporal_wire_format() == []
+
+
+def test_canonical_temporal_wire_format_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_temporal_wire_contract(service.root)
+    (service.root / "data/temporal_wire_contract/legacy_integer_wire.negative.json").unlink()
+    flags = service._check_canonical_temporal_wire_format()
+    assert len(flags) == 1
+    assert flags[0].flag == "canonical_temporal_wire_format_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_canonical_temporal_wire_format_ontology_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_temporal_wire_contract(service.root)
+    _write(service.root / "data/ontology/node_schemas.yaml", (
+        "node_schemas:\n- label: Paper\n"
+    ))
+    flags = service._check_canonical_temporal_wire_format()
+    assert len(flags) == 1
+    assert flags[0].flag == "canonical_temporal_wire_format_ontology_marker_missing"
+    assert "integer_write: rejected" in flags[0].evidence
+
+
+def test_canonical_temporal_wire_format_positive_fixture_must_be_clean():
+    """A legacy integer smuggled into the positive fixture breaks the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_temporal_wire_contract(service.root)
+    _write(service.root / "data/temporal_wire_contract/canonical_wire.positive.json",
+           json.dumps(["2024-01-15T10:30:00Z", 1700000000]))
+    flags = service._check_canonical_temporal_wire_format()
+    assert len(flags) == 1
+    assert flags[0].flag == "canonical_temporal_wire_format_broken"
+    assert "positive" in flags[0].evidence
+    assert "1700000000" in flags[0].evidence
+
+
+def test_canonical_temporal_wire_format_negative_fixture_must_be_rejected():
+    """A canonical RFC3339 UTC string smuggled into the negative fixture breaks it."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_temporal_wire_contract(service.root)
+    _write(service.root / "data/temporal_wire_contract/legacy_integer_wire.negative.json",
+           json.dumps([1700000000, "2024-01-15T10:30:00Z"]))
+    flags = service._check_canonical_temporal_wire_format()
+    assert len(flags) == 1
+    assert flags[0].flag == "canonical_temporal_wire_format_broken"
+    assert "negative" in flags[0].evidence
+    assert "2024-01-15T10:30:00Z" in flags[0].evidence
+
+
+def test_canonical_temporal_wire_format_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(service.root / "scripts/governor/checks/canonical_temporal_wire_format.yaml",
+           "schema_version: [unclosed\n")
+    flags = service._check_canonical_temporal_wire_format()
+    assert len(flags) == 1
+    assert flags[0].flag == "canonical_temporal_wire_format_invalid"
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -1207,6 +1333,12 @@ def _run_all_tests() -> int:
         test_section_navigation_contract_negative_fixture_must_report_codes,
         test_section_navigation_contract_invalid_yaml_is_flagged,
         test_section_navigation_contract_suite_missing_is_flagged,
+        test_canonical_temporal_wire_format_pass_on_clean_fixtures,
+        test_canonical_temporal_wire_format_missing_fixture_is_flagged,
+        test_canonical_temporal_wire_format_ontology_marker_missing_is_flagged,
+        test_canonical_temporal_wire_format_positive_fixture_must_be_clean,
+        test_canonical_temporal_wire_format_negative_fixture_must_be_rejected,
+        test_canonical_temporal_wire_format_invalid_yaml_is_flagged,
     ]
     passed = 0
     failed = 0

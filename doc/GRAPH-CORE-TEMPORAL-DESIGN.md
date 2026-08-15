@@ -76,6 +76,59 @@ become false**.
 
 ---
 
+## 2.1 Canonical DateTime Wire Contract (PIR-008, M398/S04)
+
+**Status:** Frozen — `kg-ontology` is the single authority, ontology DATA
+is the single source of the decision, and the Governor enforces it.
+
+### One canonical wire form
+
+Every node and edge DateTime property is written to the graph as a
+**canonical RFC3339 UTC string** — the shape produced by
+`chrono::DateTime<Utc>::to_rfc3339()`, e.g. `2024-01-15T10:30:00Z`.
+Fractional seconds and the explicit `+00:00` zero offset are canonical
+(same UTC instant); any other non-UTC offset is rejected.
+
+| Wire form | New writes | Legacy snapshot reads |
+|-----------|-----------|----------------------|
+| RFC3339 UTC string (`…Z` / `…+00:00`) | ✅ canonical | ✅ decoded |
+| Integer Unix seconds (i64) | ❌ rejected | ✅ bounded compatibility decoder |
+| `OPEN` sentinel (open bound only) | ✅ accepted | ✅ accepted |
+| `null` / missing field | ✅ accepted | ✅ accepted |
+
+### Where the decision lives
+
+- **Ontology DATA** — `data/ontology/node_schemas.yaml` carries the
+  top-level `temporal_wire_contract` block (`datetime_format:
+  rfc3339_utc`, `integer_write: rejected`, `legacy_integer_read:
+  compatibility_decoder_only`, `open_sentinel: OPEN`).
+  `OntologyRegistry::temporal_wire_contract()` exposes it;
+  `TemporalWireContract::default` re-emits the same values so
+  `da ontology-export` always regenerates the contract.
+- **Write validator** — `kg_ontology::temporal::validate_datetime_wire`
+  (re-exported by `kg_ontology::bitemporal`) rejects integer timestamps,
+  non-UTC offsets, non-RFC3339 strings and non-string JSON types.
+  `da-domain` validator delegates to it; `kg-ontology` stays universal
+  (no `da-*` dependency).
+- **Bounded compatibility decoder (read-only)** —
+  `kg_ontology::temporal::parse_datetime` and
+  `kg_ontology::bitemporal::{read_datetime, read_bound}` still accept
+  legacy integer Unix seconds so old snapshots stay readable. The decoder
+  never writes: all readers parse to `DateTime<Utc>` before comparison,
+  so as-of selection, healing and summary supersession never compare raw
+  lexical integer/string forms.
+- **Serde wire** — `TemporalEdge`/`RetroactiveExtension` serialize every
+  DateTime via chrono RFC3339 strings; `wire_stability_tests` prove the
+  wire carries strings (never numbers), decode→re-encode is byte-identical
+  (replay stability), and committed Governor fixtures match the validator
+  (`temporal_wire_fixtures_match_committed_governor_data`).
+- **Governor** — `scripts/governor/checks/canonical_temporal_wire_format.yaml`
+  (DATA) requires the ontology markers and positive/negative wire fixtures
+  in `data/temporal_wire_contract/`, so integer-write regressions surface
+  as trajectory drift without unlocking import (D127 stays false).
+
+---
+
 ## 3. EpisodicNode — Provenance Ground Truth
 
 Every raw data source (paper, law, court decision, log entry) enters

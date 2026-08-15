@@ -1,5 +1,15 @@
 # Changelog
 
+### M398 S04 canonical temporal wire format
+
+- Frozen one canonical DateTime graph wire (PIR-008): node and edge DateTime properties are written as **canonical RFC3339 UTC strings** (`DateTime<Utc>::to_rfc3339()` shape). The decision lives in ontology DATA (`data/ontology/node_schemas.yaml` → `temporal_wire_contract`) and in `kg_ontology::registry::TemporalWireContract` (T01).
+- `kg_ontology::temporal::validate_datetime_wire` (re-exported by `kg_ontology::bitemporal` and used by the da-domain validator) now rejects integer timestamps, non-UTC offsets, non-RFC3339 strings and wrong JSON types for **new** writes; `OPEN` stays the only open-bound sentinel (T01).
+- All node temporal writers migrated to Clock-derived RFC3339 UTC strings — ingest, revision materialization, enrich, extraction, scheduler (`valid_from`, `recorded_at`, `added_at`, `next_retry`, `last_retry`); no `set_node_property_int` temporal write path remains (T02).
+- Temporal reads unified: healing, revision/as-of and summary history decode both canonical strings and legacy integers through the bounded compatibility decoder (`read_datetime`/`read_bound`/`parse_datetime`) and compare parsed `DateTime<Utc>` — never raw lexical forms (T03).
+- Wire stability proof (T04): serde/property tests in `crates/kg-ontology/src/temporal.rs` (`wire_stability_tests` + proptests 9–11) prove every DateTime serializes as an RFC3339 UTC string, decode→re-encode is byte-identical (replay stability), and the legacy integer form is always rejected; graph-level replay `applied=0 unchanged>0` holds in `revision_citation_test` / `batch_ingest_test`.
+- Governor contract activated: `scripts/governor/checks/canonical_temporal_wire_format.yaml` (DATA) validates the ontology markers plus positive/negative wire fixtures in `data/temporal_wire_contract/`, pinned by the Rust test `temporal_wire_fixtures_match_committed_governor_data`.
+- PIR-008 resolved in `doc/review/pipeline-integrity-review.jsonl` with runtime evidence; D127 remains false (import_eligible lock untouched).
+
 ### M398 S03 revision-owned AST and citation evidence
 
 - Standalone `RevisionMaterializationUseCase` now persists full ADR-053 Layer A tree evidence on revision-scoped Section nodes (`path_id`, `section_id`, `parent_section_id`, `order_in_parent`, `char_count`, `text_sha256`) while Section VIDs stay content-addressed `revision_section_vid` (T01, PIR-005 dependency for PIR-011).

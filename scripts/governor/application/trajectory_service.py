@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+from datetime import datetime, timedelta
 
 import yaml
 from pathlib import Path
@@ -19,6 +20,33 @@ from governor.ports.gsd_planning_reader import GsdPlanningReader
 from governor.ports.milestone_reader import MilestoneReader
 from governor.ports.rule_repository import RuleRepository
 
+
+
+# PIR-008: RFC3339 shape guard for the canonical temporal wire contract.
+# Mirrors `kg_ontology::temporal::validate_datetime_wire`: a canonical value
+# is an RFC3339 date-time with a UTC designator (Z or +00:00), the OPEN
+# sentinel, or JSON null. Fractional seconds are allowed; a space separator,
+# missing offset, or non-UTC offset is rejected.
+_RFC3339_UTC_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$"
+)
+
+
+def _wire_value_accepted(value) -> bool:
+    """True when `validate_datetime_wire` accepts the JSON value."""
+    if value is None:
+        return True
+    if isinstance(value, str):
+        if value == "OPEN":
+            return True
+        if not _RFC3339_UTC_RE.match(value):
+            return False
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+        return parsed.utcoffset() == timedelta(0)
+    return False
 
 
 def _acap_hard_failures_nonzero(value) -> bool:
@@ -86,6 +114,12 @@ class TrajectoryService:
         # PIR-006: section navigation report contract — positive/negative
         # fixtures keep the corrected deep-tree navigation contract enforced.
         drift_flags.extend(self._check_section_navigation_contract())
+
+        # PIR-008: canonical temporal wire format contract — ontology DATA
+        # markers plus positive/negative wire fixtures keep the RFC3339 UTC
+        # DateTime wire decision enforced (integer writes rejected, legacy
+        # reads bounded to the compatibility decoder).
+        drift_flags.extend(self._check_canonical_temporal_wire_format())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -500,6 +534,79 @@ class TrajectoryService:
             if missing:
                 _flag("section_navigation_contract_suite_broken",
                       f"navigation graph task suite missing required markers: {missing}")
+        return flags
+
+    def _check_canonical_temporal_wire_format(self) -> list[DriftFlag]:
+        """Evaluate the data-driven canonical temporal wire contract (PIR-008).
+
+        Reads `scripts/governor/checks/canonical_temporal_wire_format.yaml`
+        (DATA). The ontology DATA file (`data/ontology/node_schemas.yaml`)
+        must carry the `temporal_wire_contract` markers; the positive wire
+        fixture must contain only values the write validator accepts
+        (canonical RFC3339 UTC strings, OPEN, null); the negative fixture
+        must contain only values the write validator rejects (integer
+        timestamps, non-UTC offsets, non-RFC3339 strings, wrong types). The
+        Rust test `temporal_wire_fixtures_match_committed_governor_data` in
+        `crates/kg-ontology/src/temporal.rs` pins the fixtures to the actual
+        validator, so a broken contract cannot silently survive a
+        regenerate. The classification predicate `_wire_value_accepted`
+        mirrors `kg_ontology::temporal::validate_datetime_wire`.
+        """
+        path = self.root / "scripts/governor/checks/canonical_temporal_wire_format.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="canonical_temporal_wire_format_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="temporal_ast",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "temporal_ast"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        onto = contract.get("ontology_data") or {}
+        onto_path = self.root / str(onto.get("path", ""))
+        if not onto_path.is_file():
+            _flag("canonical_temporal_wire_format_ontology_data_missing",
+                  f"ontology DATA missing: {onto_path}")
+        else:
+            text = onto_path.read_text(errors="replace")
+            missing = [m for m in onto.get("required_markers", []) if m not in text]
+            if missing:
+                _flag("canonical_temporal_wire_format_ontology_marker_missing",
+                      f"ontology DATA missing contract markers: {missing}")
+
+        for polarity, expected in (("positive", True), ("negative", False)):
+            fixture = (contract.get("wire_fixtures") or {}).get(polarity) or {}
+            fixture_path = self.root / str(fixture.get("path", ""))
+            if not fixture_path.is_file():
+                _flag("canonical_temporal_wire_format_fixture_missing",
+                      f"{polarity} fixture missing: {fixture_path}")
+                continue
+            try:
+                values = json.loads(fixture_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("canonical_temporal_wire_format_fixture_invalid",
+                      f"{polarity} fixture unreadable: {error}")
+                continue
+            if not isinstance(values, list) or not values:
+                _flag("canonical_temporal_wire_format_fixture_invalid",
+                      f"{polarity} fixture must be a non-empty JSON array")
+                continue
+            bad = [v for v in values if _wire_value_accepted(v) != expected]
+            if bad:
+                _flag("canonical_temporal_wire_format_broken",
+                      f"{polarity} fixture {fixture.get('id')} violates the wire contract: "
+                      f"{bad}")
         return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:

@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use da_domain::paper_vid;
 use da_ports::graph_store::DirectGraphStore;
+use kg_ontology::temporal::parse_datetime;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -475,10 +476,18 @@ impl RevisionQueryUseCase {
                 .get_edges_between(source, target, edge_type)
                 .await
             {
+                // PIR-008 (M398/S04/T03): decode `invalid_at` through the bounded
+                // compatibility decoder. An edge is active iff no concrete bound
+                // decodes — missing, empty, or the OPEN sentinel stay open, while
+                // both the canonical RFC3339 UTC string and the legacy integer
+                // Unix-seconds wire form mark the edge invalidated. This keeps
+                // as-of selection comparing parsed instants instead of raw lexical
+                // forms ("OPEN" vs "1600000000" vs "2024-...Z").
                 if self
                     .graph
                     .get_edge_property_string(edge, "invalid_at")
                     .await
+                    .and_then(|s| parse_datetime(&s))
                     .is_none()
                 {
                     active = true;
@@ -968,5 +977,62 @@ mod tests {
                 .await,
             Err(RevisionQueryError::AmbiguousCurrent { .. })
         ));
+    }
+
+    #[tokio::test]
+    async fn active_targets_decodes_legacy_and_open_invalid_bounds() {
+        // PIR-008 (M398/S04/T03): as-of selection decodes `invalid_at` through
+        // the bounded compatibility decoder. The OPEN sentinel stays an open
+        // bound (edge still active) while both wire forms of a concrete bound —
+        // legacy integer Unix-seconds and canonical RFC3339 UTC — deactivate
+        // the edge. Raw lexical presence checks cannot tell these apart.
+        let store = MockGraphStore::new();
+        let source = store.create_node("PaperRevision").await.unwrap();
+        let open_target = store.create_node("Section").await.unwrap();
+        let legacy_target = store.create_node("Section").await.unwrap();
+        let canonical_target = store.create_node("Section").await.unwrap();
+        let untouchable = store.create_node("Section").await.unwrap();
+
+        // OPEN invalid_at — still an open bound → active.
+        let open_edge = store
+            .create_edge(source, open_target, "hasPart")
+            .await
+            .unwrap();
+        store
+            .set_edge_property_string(open_edge, "invalid_at", kg_ontology::temporal::OPEN)
+            .await
+            .unwrap();
+        // Legacy integer Unix-seconds invalid_at (string wire) → invalidated.
+        let legacy_edge = store
+            .create_edge(source, legacy_target, "hasPart")
+            .await
+            .unwrap();
+        store
+            .set_edge_property_string(legacy_edge, "invalid_at", "1600000000")
+            .await
+            .unwrap();
+        // Canonical RFC3339 UTC invalid_at → invalidated.
+        let canonical_edge = store
+            .create_edge(source, canonical_target, "hasPart")
+            .await
+            .unwrap();
+        store
+            .set_edge_property_string(canonical_edge, "invalid_at", "2024-01-15T10:30:00Z")
+            .await
+            .unwrap();
+        // No invalid_at at all → active (canonical open edge).
+        store
+            .create_edge(source, untouchable, "hasPart")
+            .await
+            .unwrap();
+
+        let query = RevisionQueryUseCase::new(Arc::new(store.clone()));
+        let mut targets = query.active_targets(source, "hasPart").await;
+        targets.sort();
+        assert_eq!(
+            targets,
+            vec![open_target, untouchable],
+            "OPEN/missing invalid_at stay active; integer and RFC3339 bounds deactivate"
+        );
     }
 }

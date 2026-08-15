@@ -269,11 +269,12 @@ impl ExtractiveSummaryUseCase {
             .find_node_by_string_property("Summary", "vid", &version_vid)
             .await
         {
-            let superseded_at = self
-                .graph_store
-                .get_node_property_string(existing, "superseded_at")
-                .await;
-            if superseded_at.as_deref().is_none_or(|s| s.is_empty()) {
+            // PIR-008 (M398/S04/T03): supersession is decided by the bounded
+            // compatibility decoder, not raw string presence — a legacy
+            // integer superseded_at (int-typed property) must also mark the
+            // node superseded so replay converges to one current node.
+            let props = summary_property_map(&*self.graph_store, existing).await;
+            if read_datetime(&props, "superseded_at").is_none() {
                 return Ok(existing);
             }
             self.close_current_summary(&logical_vid, &now, &version_vid)
@@ -416,30 +417,30 @@ impl ExtractiveSummaryUseCase {
     ///
     /// A node belongs to the group when its `logical_vid` property matches, or
     /// — legacy nodes written before T03 versioning — when it has no
-    /// `logical_vid` but its `vid` equals the logical VID. Among current
-    /// members the newest `valid_from` wins; `node_id` breaks ties (Q3
-    /// advisory: with multiple nodes sharing a logical_vid, resolution must be
-    /// deterministic).
+    /// `logical_vid` but its `vid` equals the logical VID. Supersession and
+    /// recency are decided on **parsed DateTime instants** (PIR-008 / M398/S04
+    /// T03): `superseded_at` decodes through the bounded compatibility
+    /// decoder (canonical RFC3339 string or legacy integer), and the newest
+    /// `valid_from` wins with `node_id` breaking ties (Q3 advisory: with
+    /// multiple nodes sharing a logical_vid, resolution must be
+    /// deterministic). Mixed lexical integer/string comparison is never used —
+    /// a legacy integer `valid_from` must order against RFC3339 strings by
+    /// instant, not by byte order.
     async fn find_current_summary(
         &self,
         logical_vid: &str,
     ) -> Result<Option<u64>, ExtractiveSummaryMaterializeError> {
-        // valid_from is an RFC3339 string; lexicographic comparison is
-        // chronological for identical UTC formats.
-        let mut current: Option<(String, u64)> = None; // (valid_from, node_id)
+        let mut current: Option<(DateTime<Utc>, u64)> = None; // (valid_from, node_id)
         for node in summary_group_members(&*self.graph_store, logical_vid).await {
-            let superseded_at = self
-                .graph_store
-                .get_node_property_string(node, "superseded_at")
-                .await;
-            if superseded_at.as_deref().is_some_and(|s| !s.is_empty()) {
+            let props = summary_property_map(&*self.graph_store, node).await;
+            // Superseded iff a concrete bound decodes (RFC3339 string or
+            // legacy integer). Missing/empty/OPEN stay current.
+            if read_datetime(&props, "superseded_at").is_some() {
                 continue;
             }
-            let valid_from = self
-                .graph_store
-                .get_node_property_string(node, "valid_from")
-                .await
-                .unwrap_or_default();
+            let valid_from = read_datetime(&props, "valid_from").unwrap_or_else(|| {
+                DateTime::from_timestamp(0, 0).expect("epoch is a valid instant")
+            });
             let better = match &current {
                 None => true,
                 Some((best_from, best_id)) => {
@@ -724,6 +725,13 @@ async fn summary_group_members(store: &dyn DirectGraphStore, logical_vid: &str) 
 /// `validate_bitemporal`) evaluate its temporal state without a project
 /// reader. Missing/empty temporal fields stay absent — the helpers treat
 /// absent bounds as OPEN.
+///
+/// PIR-008 (M398/S04/T03): temporal fields are read through BOTH typed
+/// accessors — canonical RFC3339 UTC strings (string props) and legacy
+/// integer Unix-seconds timestamps (int props) — so old integer snapshots
+/// decode through `kg_ontology::bitemporal::read_datetime`/`read_bound`, the
+/// bounded compatibility decoder. New integer writes remain rejected by
+/// `validate_datetime_wire`; this surface is read-only.
 async fn summary_property_map(store: &dyn DirectGraphStore, node: u64) -> PropertyMap {
     let mut props = PropertyMap::new();
     for key in [
@@ -752,6 +760,18 @@ async fn summary_property_map(store: &dyn DirectGraphStore, node: u64) -> Proper
         }
     }
     for key in ["char_count", "source_chars"] {
+        if let Some(value) = store.get_node_property_int(node, key).await {
+            props.insert(key.to_string(), serde_json::Value::Number(value.into()));
+        }
+    }
+    // Legacy integer temporal wire (pre-PIR-008): typed accessors are
+    // exclusive per store, so a temporal field is either a string (canonical)
+    // or an int (legacy) — never both. Inserting the int form lets the
+    // bounded decoder read old snapshots.
+    for key in ["valid_from", "valid_to", "recorded_at", "superseded_at"] {
+        if props.contains_key(key) {
+            continue;
+        }
         if let Some(value) = store.get_node_property_int(node, key).await {
             props.insert(key.to_string(), serde_json::Value::Number(value.into()));
         }
@@ -901,19 +921,23 @@ pub async fn get_summary_as_of(
 /// ascending, `node_id` tie-break). Superseded versions remain readable here
 /// even though `retrieval_eligible=false` keeps them off the current retrieval
 /// surface — the immutable audit trail PIR-012 requires.
+///
+/// PIR-008 (M398/S04/T03): ordering compares **parsed DateTime instants**
+/// through the bounded compatibility decoder, so legacy integer `valid_from`
+/// values order against canonical RFC3339 strings by instant, never by
+/// lexical byte order. Nodes without a decodable `valid_from` (pre-temporal
+/// legacy nodes) sort first, oldest.
 pub async fn list_summary_versions(
     store: &dyn DirectGraphStore,
     logical_vid: &str,
 ) -> Vec<SummaryAsOf> {
-    let mut members: Vec<(String, u64)> = Vec::new();
+    let mut members: Vec<(Option<DateTime<Utc>>, u64)> = Vec::new();
     for node in summary_group_members(store, logical_vid).await {
-        let valid_from = store
-            .get_node_property_string(node, "valid_from")
-            .await
-            .unwrap_or_default();
+        let props = summary_property_map(store, node).await;
+        let valid_from = read_datetime(&props, "valid_from");
         members.push((valid_from, node));
     }
-    members.sort();
+    members.sort_by(|(a_from, a_id), (b_from, b_id)| a_from.cmp(b_from).then(a_id.cmp(b_id)));
     let mut versions = Vec::with_capacity(members.len());
     for (_, node) in members {
         versions.push(summary_snapshot(store, node).await);

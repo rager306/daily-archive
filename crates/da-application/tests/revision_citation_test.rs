@@ -536,3 +536,83 @@ async fn replay_stays_applied_zero_and_d127_holds() {
         }
     }
 }
+
+#[tokio::test]
+async fn legacy_wire_bounds_decode_on_revision_edges() {
+    // PIR-008 (M398/S04/T03): the revision as-of surface decodes edge
+    // `invalid_at` through the bounded compatibility decoder. A legacy
+    // integer Unix-seconds bound deactivates an edge; the OPEN sentinel keeps
+    // it active even when spelled as a string property. Raw string-presence
+    // checks would get both wrong (OPEN string present → inactive; integer
+    // wire → indistinguishable from RFC3339 without parsing).
+    let inner = MockGraphStore::new();
+    let instrumented = InstrumentedGraphStore::new(Arc::new(inner.clone()));
+    let ingest = IngestUseCase::materializer_only_with_clock(
+        Arc::new(instrumented.clone()),
+        Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+    );
+    materialize(&ingest, &v1_parsed(), 1).await;
+    materialize(&ingest, &v5_parsed(), 5).await;
+    let query = RevisionQueryUseCase::new(Arc::new(inner.clone()));
+
+    let rev1 = inner
+        .find_node_by_string_property(
+            "PaperRevision",
+            "vid",
+            &paper_revision_vid("arxiv", PAPER_ID, 1).unwrap(),
+        )
+        .await
+        .expect("v1 revision node");
+    let rev5 = inner
+        .find_node_by_string_property(
+            "PaperRevision",
+            "vid",
+            &paper_revision_vid("arxiv", PAPER_ID, 5).unwrap(),
+        )
+        .await
+        .expect("v5 revision node");
+    let cited_a = inner
+        .find_node_by_string_property("Citation", "arxiv_id", "2301.00001")
+        .await
+        .expect("globally deduped Citation 2301.00001");
+
+    // Baseline: v1 owns 2301.00001 through an open (no invalid_at) CITES edge.
+    let exact_v1 = query
+        .query(PAPER_ID, RevisionSelector::Exact(1))
+        .await
+        .unwrap();
+    assert_eq!(exact_v1.revisions[0].citation_arxiv_ids, ["2301.00001"]);
+
+    // Legacy integer invalid_at (integer-seconds string wire) deactivates the
+    // v1 CITES edge → the citation leaves the revision's owned set.
+    let (v1_cites_eid, _) = inner.get_edges_between(rev1, cited_a, "CITES").await[0];
+    inner
+        .set_edge_property_string(v1_cites_eid, "invalid_at", "1600000000")
+        .await
+        .unwrap();
+    let exact_v1 = query
+        .query(PAPER_ID, RevisionSelector::Exact(1))
+        .await
+        .unwrap();
+    assert!(
+        exact_v1.revisions[0].citation_arxiv_ids.is_empty(),
+        "legacy integer invalid_at must deactivate the revision-owned CITES edge"
+    );
+
+    // OPEN invalid_at keeps the v5→v1 SUPERSEDES edge active: the predecessor
+    // must still resolve even when the open bound is spelled as a string.
+    let (v5_sup_eid, _) = inner.get_edges_between(rev5, rev1, "SUPERSEDES").await[0];
+    inner
+        .set_edge_property_string(v5_sup_eid, "invalid_at", kg_ontology::temporal::OPEN)
+        .await
+        .unwrap();
+    let exact_v5 = query
+        .query(PAPER_ID, RevisionSelector::Exact(5))
+        .await
+        .unwrap();
+    assert_eq!(
+        exact_v5.revisions[0].predecessor_revision,
+        Some(1),
+        "OPEN invalid_at is an open bound — the SUPERSEDES predecessor edge stays active"
+    );
+}

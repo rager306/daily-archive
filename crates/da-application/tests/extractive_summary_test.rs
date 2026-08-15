@@ -1218,3 +1218,102 @@ async fn summary_as_of_unknown_group_and_legacy_node() {
     assert_eq!(history.len(), 1);
     assert_eq!(history[0].text, "legacy digest");
 }
+
+#[tokio::test]
+async fn legacy_integer_wire_summary_decodes_through_bounded_decoder() {
+    // PIR-008 (M398/S04/T03): a pre-T03 Summary node with INTEGER (legacy)
+    // temporal properties — valid_from/recorded_at/superseded_at as int props —
+    // must decode through the bounded compatibility decoder. As-of selection
+    // returns it inside [valid_from, superseded_at), supersession hides it
+    // from the current surface, and history ordering compares parsed
+    // instants — never lexical integer/string byte order.
+    use da_application::extractive_summary::{get_summary_as_of, list_summary_versions};
+
+    let store = Arc::new(MockGraphStore::new());
+    let store_ref = store.as_ref() as &dyn DirectGraphStore;
+    let logical = revision_summary_vid(&"e".repeat(64), "abstract", &"e".repeat(64)).unwrap();
+
+    // v1: legacy integer wire, superseded at 1010000000 (2002-01-02T14:13:20Z).
+    // Its valid_from 999999999 (2001-09-09T01:46:39Z) is LEXICALLY GREATER than
+    // "2002-…" ("9" > "2"), so a byte-order sort would misorder it — the
+    // history must order by parsed instant instead.
+    let v1 = store.create_node("Summary").await.unwrap();
+    store
+        .set_node_property_string(v1, "vid", format!("{logical}#v1"))
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v1, "logical_vid", logical.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v1, "text", "legacy integer v1".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(v1, "valid_from", 999_999_999)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(v1, "recorded_at", 999_999_999)
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(v1, "superseded_at", 1_010_000_000)
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(v1, "retrieval_eligible", false)
+        .await
+        .unwrap();
+
+    // v2: canonical RFC3339 UTC string wire, still current (no superseded_at),
+    // valid_from "2002-01-03T00:00:00Z" (unix 1010006720).
+    let v2 = store.create_node("Summary").await.unwrap();
+    store
+        .set_node_property_string(v2, "vid", format!("{logical}#v2"))
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v2, "logical_vid", logical.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v2, "text", "canonical string v2".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v2, "valid_from", "2002-01-03T00:00:00Z".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(v2, "recorded_at", "2002-01-03T00:00:00Z".to_string())
+        .await
+        .unwrap();
+    store
+        .set_node_property_bool(v2, "retrieval_eligible", true)
+        .await
+        .unwrap();
+
+    // As-of: v1 valid+known inside [999999999, 1010000000); v2 from 2002-01-03.
+    let at_v1 = get_summary_as_of(store_ref, &logical, ts(1_000_000_000))
+        .await
+        .expect("v1 readable as-of");
+    assert_eq!(at_v1.text, "legacy integer v1");
+    assert_eq!(at_v1.valid_from, Some(ts(999_999_999)));
+    assert_eq!(at_v1.superseded_at, Some(ts(1_010_000_000)));
+    let at_v2 = get_summary_as_of(store_ref, &logical, ts(1_010_100_000))
+        .await
+        .expect("v2 readable as-of");
+    assert_eq!(at_v2.text, "canonical string v2");
+    assert_eq!(at_v2.valid_from, Some(ts(1_010_016_000)));
+    assert_eq!(at_v2.superseded_at, None);
+
+    // History orders by parsed instant: v1 (2001) before v2 (2002). A lexical
+    // sort of the raw forms ("999999999" vs "2002-01-03T00:00:00Z") would put
+    // v2 first ('2' < '9') — the decoder-backed ordering must not.
+    let history = list_summary_versions(store_ref, &logical).await;
+    assert_eq!(history.len(), 2);
+    assert_eq!(history[0].text, "legacy integer v1");
+    assert_eq!(history[1].text, "canonical string v2");
+}
