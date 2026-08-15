@@ -244,6 +244,40 @@ impl RevisionMaterializationUseCase {
             self.set_int(section_node, "order", ordinal as i64).await?;
             self.set_string(section_node, "work_vid", &revision_vid_value)
                 .await?;
+            // ADR-053 Layer A tree evidence: persist the exact AST ownership
+            // fields on revision-scoped Section nodes. Ingest also writes these
+            // (ingest.rs section loop), but the standalone materializer — and
+            // any caller that does not go through ingest — must not drop AST
+            // ownership. PIR-011 depends on this tree identity; S02 summaries
+            // already join on path_id. VID stays `revision_section_vid` so
+            // replay idempotency is preserved (evidence properties only).
+            if let Some(path_id) = &section.path_id {
+                self.set_string(section_node, "path_id", path_id).await?;
+            }
+            if let Some(section_id) = &section.section_id {
+                self.set_string(section_node, "section_id", section_id)
+                    .await?;
+            }
+            if let Some(parent_section_id) = &section.parent_section_id {
+                self.set_string(section_node, "parent_section_id", parent_section_id)
+                    .await?;
+            }
+            if let Some(order_in_parent) = section.order_in_parent {
+                self.set_int(section_node, "order_in_parent", order_in_parent as i64)
+                    .await?;
+            }
+            self.set_int(
+                section_node,
+                "char_count",
+                section.text.chars().count() as i64,
+            )
+            .await?;
+            self.set_string(
+                section_node,
+                "text_sha256",
+                &hex::encode(Sha256::digest(section.text.as_bytes())),
+            )
+            .await?;
             self.set_bool(section_node, "import_eligible", false)
                 .await?;
             self.set_int(section_node, "schema_version", 1).await?;
@@ -585,7 +619,13 @@ mod tests {
                     title: format!("Section {ordinal}"),
                     text: format!("text {ordinal}"),
                     level: 1,
-                    ..Section::default()
+                    // ADR-053 Layer A tree evidence: every fixture section
+                    // carries the exact AST ownership fields the materializer
+                    // must persist on revision-scoped Section nodes.
+                    path_id: Some(format!("{ordinal}")),
+                    section_id: Some(format!("sec-{ordinal}")),
+                    parent_section_id: (ordinal > 0).then(|| "sec-0".to_string()),
+                    order_in_parent: Some(ordinal as u32),
                 })
                 .collect(),
             citations: vec![],
@@ -728,6 +768,65 @@ mod tests {
                 .len(),
             1
         );
+    }
+
+    #[tokio::test]
+    async fn revision_section_persists_tree_evidence() {
+        let store = MockGraphStore::new();
+        let uc = use_case(store.clone());
+        let v1 = uc.materialize(&request(1, 3)).await.unwrap();
+
+        // Read back every revision-scoped Section via its content-addressed VID
+        // and assert the exact AST ownership fields survived the standalone
+        // materializer (PIR-011 depends on this tree identity; S02 summaries
+        // already join on path_id).
+        for ordinal in 0..3 {
+            let section_vid = revision_section_vid(&v1.revision_vid, ordinal).unwrap();
+            let section = store
+                .find_node_by_string_property("Section", "vid", &section_vid)
+                .await
+                .unwrap();
+            let text = format!("text {ordinal}");
+            assert_eq!(
+                store.get_node_property_string(section, "path_id").await,
+                Some(format!("{ordinal}"))
+            );
+            assert_eq!(
+                store.get_node_property_string(section, "section_id").await,
+                Some(format!("sec-{ordinal}"))
+            );
+            let expected_parent = (ordinal > 0).then(|| "sec-0".to_string());
+            assert_eq!(
+                store
+                    .get_node_property_string(section, "parent_section_id")
+                    .await,
+                expected_parent
+            );
+            assert_eq!(
+                store
+                    .get_node_property_int(section, "order_in_parent")
+                    .await,
+                Some(ordinal as i64)
+            );
+            assert_eq!(
+                store.get_node_property_int(section, "char_count").await,
+                Some(text.chars().count() as i64)
+            );
+            assert_eq!(
+                store.get_node_property_string(section, "text_sha256").await,
+                Some(hex::encode(Sha256::digest(text.as_bytes())))
+            );
+            assert_eq!(
+                store.get_node_property_string(section, "work_vid").await,
+                Some(v1.revision_vid.clone())
+            );
+            assert_eq!(
+                store
+                    .get_node_property_bool(section, "import_eligible")
+                    .await,
+                Some(false)
+            );
+        }
     }
 
     #[tokio::test]
