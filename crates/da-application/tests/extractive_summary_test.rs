@@ -467,6 +467,155 @@ async fn walker_collects_two_revisions_and_skips_identity_less_nodes() {
     assert_eq!(walk.skipped.len(), 1);
     assert_eq!(walk.skipped[0].reason, "missing_vid");
     assert_eq!(walk.skipped[0].node_id, orphan);
+    // Seeded sections carry a real dotted path_id, so no fallback is needed.
+    assert!(walk.path_id_fallbacks.is_empty());
+}
+
+#[tokio::test]
+async fn walker_prefers_dotted_path_id_over_order_and_records_fallbacks() {
+    use da_application::extractive_summary::collect_revision_summary_inputs;
+    let store = Arc::new(MockGraphStore::new());
+    let (revision_node, revision_vid, seed_sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    store
+        .set_node_property_string(revision_node, "canonical_id", "2507.19457".into())
+        .await
+        .unwrap();
+    // seed_revision returns sections without linking them; link them now.
+    for section in &seed_sections {
+        store
+            .create_edge(revision_node, section.node_id, HAS_PART)
+            .await
+            .unwrap();
+    }
+
+    // Nested section: dotted path_id "3.2" with a conflicting order=2.
+    // PIR-007: must be collected as "3.2", not as the order ordinal "2".
+    let nested_vid = revision_section_vid(&revision_vid, 7).unwrap();
+    let nested = store.create_node("Section").await.unwrap();
+    store
+        .set_node_property_string(nested, "vid", nested_vid.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(nested, "path_id", "3.2".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(nested, "order", 2)
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(nested, "title", "Nested".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(nested, "text", "Nested body text.".into())
+        .await
+        .unwrap();
+    store
+        .create_edge(revision_node, nested, HAS_PART)
+        .await
+        .unwrap();
+
+    // Section with order only: typed fallback to the order ordinal.
+    let order_only_vid = revision_section_vid(&revision_vid, 8).unwrap();
+    let order_only = store.create_node("Section").await.unwrap();
+    store
+        .set_node_property_string(order_only, "vid", order_only_vid.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_int(order_only, "order", 9)
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(order_only, "title", "NoPath".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(order_only, "text", "No path body.".into())
+        .await
+        .unwrap();
+    store
+        .create_edge(revision_node, order_only, HAS_PART)
+        .await
+        .unwrap();
+
+    // Section with neither path_id nor order: typed fallback to source_vid.
+    let bare_vid = revision_section_vid(&revision_vid, 9).unwrap();
+    let bare = store.create_node("Section").await.unwrap();
+    store
+        .set_node_property_string(bare, "vid", bare_vid.clone())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(bare, "title", "Bare".into())
+        .await
+        .unwrap();
+    store
+        .set_node_property_string(bare, "text", "Bare body.".into())
+        .await
+        .unwrap();
+    store
+        .create_edge(revision_node, bare, HAS_PART)
+        .await
+        .unwrap();
+
+    let walk = collect_revision_summary_inputs(store.as_ref() as &dyn DirectGraphStore, 160).await;
+    assert_eq!(walk.inputs.len(), 1);
+    let input = &walk.inputs[0];
+    // 3 seeded + nested + order_only + bare.
+    assert_eq!(input.sections.len(), 6);
+
+    // Dotted path wins over order even when the ordinals conflict.
+    let nested_input = input
+        .sections
+        .iter()
+        .find(|s| s.source_vid == nested_vid)
+        .expect("nested section collected");
+    assert_eq!(nested_input.path_id, "3.2");
+    // Seeded sections keep their real dotted path, never the missing order.
+    let seeded_input = input
+        .sections
+        .iter()
+        .find(|s| s.source_vid == seed_sections[1].source_vid)
+        .expect("seeded section collected");
+    assert_eq!(seeded_input.path_id, "2");
+    // order-only section falls back to the order ordinal, recorded as typed.
+    let order_only_input = input
+        .sections
+        .iter()
+        .find(|s| s.source_vid == order_only_vid)
+        .expect("order-only section collected");
+    assert_eq!(order_only_input.path_id, "9");
+    // Bare section falls back to its VID, recorded as typed.
+    let bare_input = input
+        .sections
+        .iter()
+        .find(|s| s.source_vid == bare_vid)
+        .expect("bare section collected");
+    assert_eq!(bare_input.path_id, bare_vid);
+
+    assert_eq!(walk.path_id_fallbacks.len(), 2);
+    let order_fallback = walk
+        .path_id_fallbacks
+        .iter()
+        .find(|f| f.section_node == order_only)
+        .expect("order fallback diagnostic");
+    assert_eq!(order_fallback.reason, "path_id_missing_fallback_to_order");
+    assert_eq!(order_fallback.path_id, "9");
+    assert_eq!(order_fallback.source_vid, order_only_vid);
+    let source_fallback = walk
+        .path_id_fallbacks
+        .iter()
+        .find(|f| f.section_node == bare)
+        .expect("source_vid fallback diagnostic");
+    assert_eq!(
+        source_fallback.reason,
+        "path_id_missing_fallback_to_source_vid"
+    );
+    assert_eq!(source_fallback.path_id, bare_vid);
 }
 
 #[tokio::test]

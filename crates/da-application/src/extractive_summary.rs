@@ -321,10 +321,23 @@ pub struct RevisionSummaryWalkSkip {
     pub reason: String,
 }
 
+/// Typed fallback diagnostic when a Section lacks a non-empty dotted `path_id`
+/// and the walker must derive identity from `order` or the section VID
+/// (PIR-007). Lets downstream joins distinguish real AST paths from invented
+/// ordinals instead of silently joining on the wrong key.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PathIdFallback {
+    pub section_node: u64,
+    pub source_vid: String,
+    pub path_id: String,
+    pub reason: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RevisionSummaryWalk {
     pub inputs: Vec<ExtractiveSummaryMaterializeInput>,
     pub skipped: Vec<RevisionSummaryWalkSkip>,
+    pub path_id_fallbacks: Vec<PathIdFallback>,
 }
 
 /// Walk PaperRevision nodes already in the graph. Does not invent revision=1.
@@ -334,6 +347,7 @@ pub async fn collect_revision_summary_inputs(
 ) -> RevisionSummaryWalk {
     let mut inputs = Vec::new();
     let mut skipped = Vec::new();
+    let mut path_id_fallbacks = Vec::new();
     for revision_node in store.get_nodes_by_label("PaperRevision").await {
         let Some(revision_vid) = store.get_node_property_string(revision_node, "vid").await else {
             skipped.push(RevisionSummaryWalkSkip {
@@ -364,14 +378,34 @@ pub async fn collect_revision_summary_inputs(
             let Some(source_vid) = store.get_node_property_string(section_node, "vid").await else {
                 continue;
             };
-            let path_id = store
-                .get_node_property_int(section_node, "order")
+            // PIR-007: prefer the real dotted AST path; `order` and the section
+            // VID are typed fallbacks, never silent identity invention.
+            let path_id = match store
+                .get_node_property_string(section_node, "path_id")
                 .await
-                .map(|ordinal| ordinal.to_string())
-                .or(store
-                    .get_node_property_string(section_node, "path_id")
-                    .await)
-                .unwrap_or_else(|| source_vid.clone());
+            {
+                Some(path_id) if !path_id.trim().is_empty() => path_id,
+                _ => {
+                    let order = store.get_node_property_int(section_node, "order").await;
+                    let (fallback, reason) = match order {
+                        Some(ordinal) => (
+                            ordinal.to_string(),
+                            "path_id_missing_fallback_to_order".to_string(),
+                        ),
+                        None => (
+                            source_vid.clone(),
+                            "path_id_missing_fallback_to_source_vid".to_string(),
+                        ),
+                    };
+                    path_id_fallbacks.push(PathIdFallback {
+                        section_node,
+                        source_vid: source_vid.clone(),
+                        path_id: fallback.clone(),
+                        reason,
+                    });
+                    fallback
+                }
+            };
             sections.push(SectionSource {
                 path_id,
                 source_vid,
@@ -397,5 +431,9 @@ pub async fn collect_revision_summary_inputs(
         });
     }
     inputs.sort_by(|a, b| a.revision_vid.cmp(&b.revision_vid));
-    RevisionSummaryWalk { inputs, skipped }
+    RevisionSummaryWalk {
+        inputs,
+        skipped,
+        path_id_fallbacks,
+    }
 }
