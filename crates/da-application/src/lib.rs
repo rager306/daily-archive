@@ -100,6 +100,11 @@ pub use queries::{
 };
 pub mod schema_init;
 pub use schema_init::CURRENT_SCHEMA_VERSION;
+pub mod section_navigation;
+pub use section_navigation::{
+    NavDiagCode, NavDiagnostic, NavigationReport, render_navigation_report,
+    validate_section_navigation,
+};
 pub mod decision_recorder;
 pub use decision_recorder::{
     DecisionRecord, DecisionRecordError, DecisionRecorder, DecisionRequest, DecisionRequestBuilder,
