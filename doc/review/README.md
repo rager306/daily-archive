@@ -2,6 +2,28 @@
 
 This directory contains a compact, source-bound review of the daily-archive Rust pipeline, cache invalidation, temporal article structure, context conservation, FSMs, agent readiness and multimodal understanding.
 
+## Current baseline
+
+Assessed at `git:caab43ed`, immediately after closing GSD milestone **M397-a3bxv7**.
+
+| Status | Count | Findings |
+|---|---:|---|
+| Resolved | 7 | PIR-001..PIR-005, PIR-013, PIR-022 |
+| Open | 15 | PIR-006..PIR-012, PIR-014..PIR-021 |
+
+M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. It did **not** repair temporal AST defects, make ACAP a live guard, integrate multimodal evidence into the graph, open a remote read plane or rebuild/seal the 200-paper corpus.
+
+## Long-horizon execution map
+
+| Wave | Title | Owns | Status |
+|---|---|---|---|
+| M398-cz4pzx | Temporal AST correctness | PIR-006..PIR-012 | planned-active, run through GSD auto/headless |
+| M399-assurance-fsm | Live assurance and promotion FSM | PIR-014, PIR-015, PIR-016 | backlog, depends on M398 |
+| M400-multimodal-graph | Multimodal graph bridge | PIR-018, PIR-019, PIR-020 | backlog, depends on M399 |
+| M401-agent-readiness | Remote read plane and read-only agent | PIR-017, PIR-021 | backlog, depends on M400 |
+
+A revision-aware corpus rebuild and honest ontology acceptance are operational follow-ups after M398; they are not claimed by the current register.
+
 ## Files
 
 | File | Purpose |
@@ -226,6 +248,7 @@ FINAL CHECKS
 
 ## Maintenance
 
+- Each record carries an `assessment` object with assessment date, source revision and owning wave.
 - Keep existing `finding_id` values stable.
 - Add new findings at the end with the next ID.
 - Update `manifest.yaml` record count and ID range.

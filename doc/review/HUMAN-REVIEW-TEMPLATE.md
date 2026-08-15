@@ -28,7 +28,22 @@ Use one copy of this section per finding. Do not mark a finding resolved from pr
 
 > Copy the finding `risk` exactly.
 
-## 2. Evidence inspected
+## 2. Post-M397 baseline audit
+
+Complete before interpreting a finding:
+
+| Baseline check | Result | Note |
+|---|---|---|
+| Canonical StageId / ProductionContext present | PASS/FAIL |  |
+| GROBID profile + PDF/HTML manifestations in cache identity | PASS/FAIL |  |
+| Exact revision binding or explicit versionless fallback | PASS/FAIL |  |
+| Same-key extraction payload without grounding rejected | PASS/FAIL |  |
+| D127 remains false | PASS/FAIL |  |
+| No 200-paper rebuild or corpus seal claimed | PASS/FAIL |  |
+
+These checks establish the assessment baseline; they do not by themselves resolve open findings.
+
+## 3. Evidence inspected
 
 | Evidence path or execution ID | What was inspected | Source-bound? | Result |
 |---|---|---:|---|
@@ -43,13 +58,13 @@ Rules:
 - Logical counters are not replay proof; use physical store outcomes.
 - Cross-process graph claims require a real remote contract; otherwise use same-process snapshot execution.
 
-## 3. Acceptance criteria
+## 4. Acceptance criteria
 
 | Criterion from JSONL | Result | Evidence | Notes |
 |---|---|---|---|
 |  | PASS/FAIL/NEEDS-HUMAN |  |  |
 
-## 4. Standards and lock audit
+## 5. Standards and lock audit
 
 | Standard | Result | Note |
 |---|---|---|
@@ -62,7 +77,7 @@ Rules:
 | Same-process graph semantics where applicable | PASS/FAIL/N/A |  |
 | Onion dependency direction | PASS/FAIL |  |
 
-## 5. Verification commands
+## 6. Verification commands
 
 ```text
 # Paste exact commands; do not paste secrets.
@@ -81,7 +96,7 @@ PYTHONPATH=scripts python3 -m governor --phase active
 
 Run per-crate tests during iteration. Run `bash scripts/verify_rust_architecture.sh` only at the slice end.
 
-## 6. Adversarial / negative checks
+## 7. Adversarial / negative checks
 
 | Failure injected or invariant challenged | Expected | Actual | Result |
 |---|---|---|---|
@@ -89,7 +104,7 @@ Run per-crate tests during iteration. Run `bash scripts/verify_rust_architecture
 
 At least one negative check is required for a new Governor rule or a fail-closed contract.
 
-## 7. Decision
+## 8. Decision
 
 Select exactly one:
 
@@ -103,7 +118,7 @@ Select exactly one:
 **Blocker or replacement:**  
 **Follow-up finding IDs:**  
 
-## 8. JSONL update proposal
+## 9. JSONL update proposal
 
 Only update lifecycle fields after evidence review. Preserve `finding_id` and original claim/risk. If remediation changed materially, create a new review revision or a superseding finding.
 
