@@ -273,6 +273,23 @@ impl NodeSchemaDef for SummarySchema {
             // DATA source).
             ("source_path_id", FieldType::String),
             ("source_path_missingness", FieldType::String),
+            // PIR-012 / D243 (S02): Summary nodes are versioned, not
+            // overwritten in place. `vid` is the content-addressed version VID
+            // (`revision_summary_version_vid`); `logical_vid` is the stable
+            // cross-stage join key (`revision_summary_vid`) shared by every
+            // version of the same abstract/section digest. `valid_from` /
+            // `valid_to` bound the version's valid-time interval, `recorded_at`
+            // is when this version was written, `superseded_at` /
+            // `superseded_by` close the interval when a rerun with different
+            // content or policy replaced it (retrieval_eligible=false). Kept in
+            // sync with data/ontology/node_schemas.yaml (YamlSchemaAdapter
+            // DATA source). DateTime encoding stays the already-accepted
+            // i64/RFC3339 pair — no validator tightening (S04 owns the wire).
+            ("logical_vid", FieldType::String),
+            ("valid_to", FieldType::DateTime),
+            ("recorded_at", FieldType::DateTime),
+            ("superseded_at", FieldType::DateTime),
+            ("superseded_by", FieldType::String),
             ("revision_vid", FieldType::String),
             ("summary_type", FieldType::String),
             ("role_policy_schema_version", FieldType::String),

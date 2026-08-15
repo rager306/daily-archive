@@ -1,7 +1,8 @@
 //! ADR-051 suite for revision-scoped grounded extractive summaries (M363/S01).
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+use chrono::{DateTime, Utc};
 use da_application::extractive_summary::{
     ExtractiveSummaryMaterializeError, ExtractiveSummaryMaterializeInput, ExtractiveSummaryUseCase,
     SectionRolePolicyBinding, SectionSource,
@@ -11,7 +12,63 @@ use da_domain::relation::structure::{HAS_PART, HAS_SUMMARY};
 use da_domain::section_summary_policy::{SectionRolePolicy, SectionRoleRule, SummaryType};
 use da_domain::vid::{paper_revision_vid, revision_section_vid, revision_summary_vid};
 use da_ports::DirectGraphStore;
+use da_ports::clock::{Clock, FixedClock};
 use kg_storage::MockGraphStore;
+
+/// Deterministic mutable wall clock (ADR-051 Contour 1): tests set the instant
+/// between materialize runs so version intervals can be pinned exactly
+/// (old.valid_to == new.valid_from).
+#[derive(Clone, Default)]
+struct MutableClock(Arc<Mutex<DateTime<Utc>>>);
+
+impl MutableClock {
+    fn new(at: DateTime<Utc>) -> Self {
+        Self(Arc::new(Mutex::new(at)))
+    }
+
+    fn set(&self, at: DateTime<Utc>) {
+        *self.0.lock().unwrap() = at;
+    }
+}
+
+impl Clock for MutableClock {
+    fn now(&self) -> DateTime<Utc> {
+        *self.0.lock().unwrap()
+    }
+}
+
+fn ts(secs: i64) -> DateTime<Utc> {
+    FixedClock::from_timestamp(secs).now()
+}
+
+/// All Summary nodes belonging to one logical group (D243): nodes whose
+/// `logical_vid` matches, or legacy pre-T03 nodes that carry the logical VID
+/// directly in `vid` without a `logical_vid` property.
+async fn summary_group_nodes(store: &MockGraphStore, logical_vid: &str) -> Vec<u64> {
+    let mut members = Vec::new();
+    for node in store.get_nodes_by_label("Summary").await {
+        let logical = store.get_node_property_string(node, "logical_vid").await;
+        let vid = store.get_node_property_string(node, "vid").await;
+        if logical.as_deref() == Some(logical_vid)
+            || (logical.is_none() && vid.as_deref() == Some(logical_vid))
+        {
+            members.push(node);
+        }
+    }
+    members
+}
+
+/// The current (not superseded) Summary node of a logical group. Exactly one
+/// node per group is current after every write (PIR-012 invariant).
+async fn current_summary_node(store: &MockGraphStore, logical_vid: &str) -> Option<u64> {
+    for node in summary_group_nodes(store, logical_vid).await {
+        let superseded_at = store.get_node_property_string(node, "superseded_at").await;
+        if superseded_at.as_deref().is_none_or(|s| s.is_empty()) {
+            return Some(node);
+        }
+    }
+    None
+}
 
 async fn seed_revision(
     store: &MockGraphStore,
@@ -105,8 +162,7 @@ async fn materializes_revision_abstract_and_section_summaries() {
     assert_eq!(result.method, EXTRACTIVE_SUMMARY_METHOD);
 
     let abstract_vid = revision_summary_vid(&revision_vid, "abstract", &revision_vid).unwrap();
-    let abstract_node = store
-        .find_node_by_string_property("Summary", "vid", &abstract_vid)
+    let abstract_node = current_summary_node(&store, &abstract_vid)
         .await
         .expect("revision abstract summary");
     assert_eq!(
@@ -133,8 +189,7 @@ async fn materializes_revision_abstract_and_section_summaries() {
 
     let section_vid = sections[0].source_vid.clone();
     let section_summary_vid = revision_summary_vid(&revision_vid, "section", &section_vid).unwrap();
-    let section_summary = store
-        .find_node_by_string_property("Summary", "vid", &section_summary_vid)
+    let section_summary = current_summary_node(&store, &section_summary_vid)
         .await
         .expect("revision section summary");
     assert_eq!(
@@ -182,8 +237,7 @@ async fn summary_node_persists_source_path_id() {
         .unwrap();
 
     let abstract_vid = revision_summary_vid(&revision_vid, "abstract", &revision_vid).unwrap();
-    let abstract_node = store
-        .find_node_by_string_property("Summary", "vid", &abstract_vid)
+    let abstract_node = current_summary_node(&store, &abstract_vid)
         .await
         .expect("revision abstract summary");
     assert_eq!(
@@ -204,8 +258,7 @@ async fn summary_node_persists_source_path_id() {
 
     let summary_vid =
         revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
-    let summary_node = store
-        .find_node_by_string_property("Summary", "vid", &summary_vid)
+    let summary_node = current_summary_node(&store, &summary_vid)
         .await
         .expect("nested section summary");
     assert_eq!(
@@ -246,8 +299,7 @@ async fn materialize_persists_typed_path_fallback_missingness() {
 
     let summary_vid =
         revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
-    let summary_node = store
-        .find_node_by_string_property("Summary", "vid", &summary_vid)
+    let summary_node = current_summary_node(&store, &summary_vid)
         .await
         .expect("order-fallback section summary");
     assert_eq!(
@@ -289,14 +341,8 @@ async fn two_revisions_with_same_paths_keep_distinct_summary_history() {
     let v5_summary_vid =
         revision_summary_vid(&v5_vid, "section", &v5_sections[1].source_vid).unwrap();
     assert_ne!(v1_summary_vid, v5_summary_vid);
-    let v1_summary = store
-        .find_node_by_string_property("Summary", "vid", &v1_summary_vid)
-        .await
-        .unwrap();
-    let v5_summary = store
-        .find_node_by_string_property("Summary", "vid", &v5_summary_vid)
-        .await
-        .unwrap();
+    let v1_summary = current_summary_node(&store, &v1_summary_vid).await.unwrap();
+    let v5_summary = current_summary_node(&store, &v5_summary_vid).await.unwrap();
     assert_eq!(
         store
             .get_node_property_string(v1_summary, "text")
@@ -354,10 +400,7 @@ async fn role_policy_specializes_matching_summaries_and_counts_unmatched() {
 
     let methods_vid =
         revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
-    let methods_node = store
-        .find_node_by_string_property("Summary", "vid", &methods_vid)
-        .await
-        .unwrap();
+    let methods_node = current_summary_node(&store, &methods_vid).await.unwrap();
     assert_eq!(
         store
             .get_node_property_string(methods_node, "summary_type")
@@ -374,10 +417,7 @@ async fn role_policy_specializes_matching_summaries_and_counts_unmatched() {
     );
     let results_vid =
         revision_summary_vid(&revision_vid, "section", &sections[0].source_vid).unwrap();
-    let results_node = store
-        .find_node_by_string_property("Summary", "vid", &results_vid)
-        .await
-        .unwrap();
+    let results_node = current_summary_node(&store, &results_vid).await.unwrap();
     assert_eq!(
         store
             .get_node_property_string(results_node, "summary_type")
@@ -386,29 +426,70 @@ async fn role_policy_specializes_matching_summaries_and_counts_unmatched() {
         Some("results")
     );
 
-    // Replaying without specialization must clear stale role metadata rather
-    // than leave a historical policy decision looking current.
+    // Replaying without specialization must NOT silently rewrite the
+    // historical policy decision (PIR-012): the old version stays closed with
+    // its "methods"/"results" metadata, and a NEW current version carries the
+    // fresh policy digest (empty = generic).
     ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
         .materialize(input(revision_node, revision_vid, sections))
         .await
         .unwrap();
+    // Old version: closed, historical policy decision preserved.
+    assert!(
+        store
+            .get_node_property_string(methods_node, "superseded_at")
+            .await
+            .as_deref()
+            .is_some_and(|s| !s.is_empty()),
+        "methods version must be superseded after policy change"
+    );
     assert_eq!(
         store
             .get_node_property_string(methods_node, "summary_type")
+            .await
+            .as_deref(),
+        Some("methods"),
+        "historical policy decision stays visible on the superseded version"
+    );
+    assert!(
+        !store
+            .get_node_property_bool(methods_node, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
+    // New current version: generic, no policy digest, same logical group.
+    let current_methods = current_summary_node(&store, &methods_vid).await.unwrap();
+    assert_ne!(
+        current_methods, methods_node,
+        "policy change mints a new version"
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(current_methods, "summary_type")
             .await
             .as_deref(),
         Some("generic")
     );
     assert_eq!(
         store
-            .get_node_property_string(methods_node, "role_policy_sha256")
+            .get_node_property_string(current_methods, "role_policy_sha256")
             .await
             .as_deref(),
         Some("")
     );
     assert_eq!(
         store
-            .get_node_property_string(results_node, "summary_type")
+            .get_node_property_string(current_methods, "logical_vid")
+            .await
+            .as_deref(),
+        Some(methods_vid.as_str()),
+        "logical identity stays joinable across versions"
+    );
+    let current_results = current_summary_node(&store, &results_vid).await.unwrap();
+    assert_ne!(current_results, results_node);
+    assert_eq!(
+        store
+            .get_node_property_string(current_results, "summary_type")
             .await
             .as_deref(),
         Some("generic")
@@ -432,10 +513,7 @@ async fn materialization_is_idempotent() {
         second.section_summaries_written
     );
     let abstract_vid = revision_summary_vid(&revision_vid, "abstract", &revision_vid).unwrap();
-    let abstract_node = store
-        .find_node_by_string_property("Summary", "vid", &abstract_vid)
-        .await
-        .unwrap();
+    let abstract_node = current_summary_node(&store, &abstract_vid).await.unwrap();
     assert_eq!(
         store
             .get_edges_between(revision_node, abstract_node, HAS_SUMMARY)
@@ -733,4 +811,245 @@ async fn walker_does_not_invent_revision_for_unrelated_labels() {
     let walk = collect_revision_summary_inputs(store.as_ref() as &dyn DirectGraphStore, 160).await;
     assert!(walk.inputs.is_empty());
     assert!(walk.skipped.is_empty());
+}
+
+#[tokio::test]
+async fn summary_rerun_with_changed_text_supersedes_previous_version() {
+    // PIR-012: a rerun with a different source text must close the previous
+    // current Summary (valid_to, superseded_at, superseded_by,
+    // retrieval_eligible=false) and write a new version, leaving both
+    // queryable. Identity: same logical_vid, different content-addressed vid.
+    let store = Arc::new(MockGraphStore::new());
+    let clock = Arc::new(MutableClock::new(ts(1_700_000_000)));
+    let use_case = ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .with_clock(clock.clone());
+    let (revision_node, revision_vid, sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts with Pareto selection.").await;
+
+    let mut first_input = input(revision_node, revision_vid.clone(), sections.clone());
+    use_case.materialize(first_input.clone()).await.unwrap();
+
+    // Rerun with changed section text at a later instant.
+    clock.set(ts(1_700_000_100));
+    first_input.sections[1].text = "GEPA now uses reflective evolution.".into();
+    use_case.materialize(first_input).await.unwrap();
+
+    let logical_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let group = summary_group_nodes(&store, &logical_vid).await;
+    assert_eq!(group.len(), 2, "both versions remain in the graph");
+
+    // The group contains exactly one current node (the new version).
+    let current = current_summary_node(&store, &logical_vid).await.unwrap();
+    let superseded = group.iter().copied().find(|n| *n != current).unwrap();
+
+    // Old version: closed at t2, points at the new version, off the
+    // retrieval surface, but its text/digest history is intact.
+    assert_eq!(
+        store
+            .get_node_property_string(superseded, "valid_to")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_100).to_rfc3339().as_str())
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(superseded, "superseded_at")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_100).to_rfc3339().as_str())
+    );
+    let current_vid = store
+        .get_node_property_string(current, "vid")
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(superseded, "superseded_by")
+            .await
+            .as_deref(),
+        Some(current_vid.as_str())
+    );
+    assert!(
+        !store
+            .get_node_property_bool(superseded, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(superseded, "text")
+            .await
+            .as_deref(),
+        Some("GEPA mutates prompts with Pareto selection.")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(superseded, "logical_vid")
+            .await
+            .as_deref(),
+        Some(logical_vid.as_str())
+    );
+
+    // New version: current, opened at t2, carries the new text.
+    assert_eq!(
+        store
+            .get_node_property_string(current, "valid_from")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_100).to_rfc3339().as_str())
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(current, "recorded_at")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_100).to_rfc3339().as_str())
+    );
+    assert!(
+        store
+            .get_node_property_bool(current, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(current, "text")
+            .await
+            .as_deref(),
+        Some("GEPA now uses reflective evolution.")
+    );
+    assert!(
+        !store
+            .get_node_property_bool(current, "import_eligible")
+            .await
+            .unwrap(),
+        "D127: import_eligible stays false"
+    );
+}
+
+#[tokio::test]
+async fn summary_rerun_identical_content_is_replay_idempotent() {
+    // PIR-012 replay gate: identical content+policy must stay ONE current
+    // node — no new version, no closed sibling, no history churn.
+    let store = Arc::new(MockGraphStore::new());
+    let clock = Arc::new(MutableClock::new(ts(1_700_000_000)));
+    let use_case = ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .with_clock(clock.clone());
+    let (revision_node, revision_vid, sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    let materialize_input = input(revision_node, revision_vid.clone(), sections.clone());
+    use_case
+        .materialize(materialize_input.clone())
+        .await
+        .unwrap();
+    clock.set(ts(1_700_000_100));
+    use_case.materialize(materialize_input).await.unwrap();
+
+    let logical_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let group = summary_group_nodes(&store, &logical_vid).await;
+    assert_eq!(group.len(), 1, "identical replay must not add a version");
+    let node = group[0];
+    // Still current: interval opened at t1, no close markers anywhere.
+    assert_eq!(
+        store
+            .get_node_property_string(node, "valid_from")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_000).to_rfc3339().as_str())
+    );
+    assert_eq!(store.get_node_property_string(node, "valid_to").await, None);
+    assert_eq!(
+        store.get_node_property_string(node, "superseded_at").await,
+        None
+    );
+    assert!(
+        store
+            .get_node_property_bool(node, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
+}
+
+#[tokio::test]
+async fn summary_version_reactivates_when_content_returns() {
+    // PIR-012 replay convergence: v1 → v2 (changed) → v1 again must
+    // re-activate the v1 node (one current node), not duplicate its vid.
+    let store = Arc::new(MockGraphStore::new());
+    let clock = Arc::new(MutableClock::new(ts(1_700_000_000)));
+    let use_case = ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .with_clock(clock.clone());
+    let (revision_node, revision_vid, sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    let base = input(revision_node, revision_vid.clone(), sections.clone());
+
+    use_case.materialize(base.clone()).await.unwrap();
+    clock.set(ts(1_700_000_100));
+    let mut changed = base.clone();
+    changed.sections[1].text = "Different body text for the rerun.".into();
+    use_case.materialize(changed).await.unwrap();
+    clock.set(ts(1_700_000_200));
+    use_case.materialize(base).await.unwrap();
+
+    let logical_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let group = summary_group_nodes(&store, &logical_vid).await;
+    assert_eq!(group.len(), 2, "no third node: the v1 node was reactivated");
+    let current = current_summary_node(&store, &logical_vid).await.unwrap();
+    // Current node is the reactivated v1: text matches v1, interval reopened.
+    assert_eq!(
+        store
+            .get_node_property_string(current, "text")
+            .await
+            .as_deref(),
+        Some("GEPA mutates prompts.")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(current, "valid_from")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_200).to_rfc3339().as_str())
+    );
+    assert!(
+        store
+            .get_node_property_string(current, "superseded_at")
+            .await
+            .as_deref()
+            .is_none_or(|s| s.is_empty()),
+        "reactivated version carries no close marker"
+    );
+    assert!(
+        store
+            .get_node_property_bool(current, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
+    // The v2 node is now the closed one, superseded by the v1 version vid.
+    let closed = group.iter().copied().find(|n| *n != current).unwrap();
+    let current_vid = store
+        .get_node_property_string(current, "vid")
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(closed, "valid_to")
+            .await
+            .as_deref(),
+        Some(ts(1_700_000_200).to_rfc3339().as_str())
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(closed, "superseded_by")
+            .await
+            .as_deref(),
+        Some(current_vid.as_str())
+    );
+    assert!(
+        !store
+            .get_node_property_bool(closed, "retrieval_eligible")
+            .await
+            .unwrap()
+    );
 }

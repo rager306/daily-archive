@@ -12,8 +12,9 @@ use da_domain::extractive_summary::{
 };
 use da_domain::relation::structure::{HAS_PART, HAS_SUMMARY};
 use da_domain::section_summary_policy::SectionRolePolicy;
-use da_domain::vid::revision_summary_vid;
+use da_domain::vid::{revision_summary_version_vid, revision_summary_vid};
 use da_ports::DirectGraphStore;
+use da_ports::clock::{Clock, SystemClock};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -78,6 +79,9 @@ pub struct SectionRolePolicyBinding {
 pub struct ExtractiveSummaryUseCase {
     graph_store: Arc<dyn DirectGraphStore>,
     role_policy: Option<SectionRolePolicyBinding>,
+    // ADR-051 Contour 1: injectable wall clock (tests freeze/advance time so
+    // valid_from/valid_to/recorded_at/superseded_at are deterministic).
+    clock: Arc<dyn Clock>,
 }
 
 impl ExtractiveSummaryUseCase {
@@ -85,7 +89,15 @@ impl ExtractiveSummaryUseCase {
         Self {
             graph_store,
             role_policy: None,
+            clock: Arc::new(SystemClock),
         }
+    }
+
+    /// Builder for deterministic tests: freeze or advance time between
+    /// materialize runs to pin version intervals exactly.
+    pub fn with_clock(mut self, clock: Arc<dyn Clock>) -> Self {
+        self.clock = clock;
+        self
     }
 
     pub fn with_role_policy(
@@ -96,6 +108,7 @@ impl ExtractiveSummaryUseCase {
         Ok(Self {
             graph_store,
             role_policy: Some(binding),
+            clock: Arc::new(SystemClock),
         })
     }
 
@@ -224,23 +237,64 @@ impl ExtractiveSummaryUseCase {
         summary_type: Option<&str>,
         source_path_missingness: &str,
     ) -> Result<u64, ExtractiveSummaryMaterializeError> {
-        let summary_vid = revision_summary_vid(revision_vid, &unit.granularity, &unit.source_id)
+        let logical_vid = revision_summary_vid(revision_vid, &unit.granularity, &unit.source_id)
             .map_err(ExtractiveSummaryMaterializeError::InvalidIdentity)?;
-        let node = match self
+        let (policy_version, policy_sha256) = self
+            .role_policy
+            .as_ref()
+            .map(|binding| {
+                (
+                    binding.policy.schema_version.clone(),
+                    binding.configuration_sha256.clone(),
+                )
+            })
+            .unwrap_or_else(|| ("none".into(), String::new()));
+        // D243: version identity is content+policy addressed. Identical digest
+        // pair replays onto the same node; any change mints a fresh version.
+        let version_vid =
+            revision_summary_version_vid(&logical_vid, &unit.source_text_sha256, &policy_sha256)
+                .map_err(ExtractiveSummaryMaterializeError::InvalidIdentity)?;
+        let now = self.clock.now().to_rfc3339();
+
+        // PIR-012 replay gate: the exact version already exists. A current
+        // replay is a no-op (history is already correct, one current node); a
+        // superseded replay reactivates this version and closes whichever
+        // sibling is currently current, so "one current node" always holds.
+        if let Some(existing) = self
             .graph_store
-            .find_node_by_string_property("Summary", "vid", &summary_vid)
+            .find_node_by_string_property("Summary", "vid", &version_vid)
             .await
         {
-            Some(existing) => existing,
-            None => self
+            let superseded_at = self
                 .graph_store
-                .create_node("Summary")
-                .await
-                .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?,
-        };
+                .get_node_property_string(existing, "superseded_at")
+                .await;
+            if superseded_at.as_deref().is_none_or(|s| s.is_empty()) {
+                return Ok(existing);
+            }
+            self.close_current_summary(&logical_vid, &now, &version_vid)
+                .await?;
+            self.activate_summary(existing, &now).await?;
+            return Ok(existing);
+        }
+
+        // New version: close the previous current node of the same logical
+        // group so the prior digest stays queryable, then write the new node
+        // (vid = content-addressed version vid, logical_vid = stable join key).
+        self.close_current_summary(&logical_vid, &now, &version_vid)
+            .await?;
+        let node = self
+            .graph_store
+            .create_node("Summary")
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
 
         self.graph_store
-            .set_node_property_string(node, "vid", summary_vid)
+            .set_node_property_string(node, "vid", version_vid)
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "logical_vid", logical_vid)
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
@@ -286,16 +340,6 @@ impl ExtractiveSummaryUseCase {
             )
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
-        let (policy_version, policy_sha256) = self
-            .role_policy
-            .as_ref()
-            .map(|binding| {
-                (
-                    binding.policy.schema_version.clone(),
-                    binding.configuration_sha256.clone(),
-                )
-            })
-            .unwrap_or_else(|| ("none".into(), String::new()));
         self.graph_store
             .set_node_property_string(node, "role_policy_schema_version", policy_version)
             .await
@@ -325,11 +369,27 @@ impl ExtractiveSummaryUseCase {
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
-            .set_node_property_bool(node, "import_eligible", false)
+            .set_node_property_bool(node, "import_eligible", false) // D127
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
             .set_node_property_int(node, "schema_version", 1)
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        // PIR-012 interval: this version is valid/recorded from `now`; the
+        // previously current node was closed at the same instant, so
+        // old.valid_to == new.valid_from (adjacent, non-overlapping intervals).
+        // RFC3339 strings are an already-accepted DateTime encoding (the LLM
+        // summary writer uses the same for `generated_at`); the validator is
+        // not tightened (S04 owns the canonical wire). Empty string clears a
+        // temporal bound when a version is reactivated (no property-delete API
+        // on the store trait).
+        self.graph_store
+            .set_node_property_string(node, "valid_from", now.clone())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "recorded_at", now)
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
 
@@ -345,6 +405,135 @@ impl ExtractiveSummaryUseCase {
                 .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         }
         Ok(node)
+    }
+
+    /// Deterministically select the current (not superseded) Summary node of a
+    /// logical group, or `None` when the group has no node yet.
+    ///
+    /// A node belongs to the group when its `logical_vid` property matches, or
+    /// — legacy nodes written before T03 versioning — when it has no
+    /// `logical_vid` but its `vid` equals the logical VID. Among current
+    /// members the newest `valid_from` wins; `node_id` breaks ties (Q3
+    /// advisory: with multiple nodes sharing a logical_vid, resolution must be
+    /// deterministic).
+    async fn find_current_summary(
+        &self,
+        logical_vid: &str,
+    ) -> Result<Option<u64>, ExtractiveSummaryMaterializeError> {
+        // valid_from is an RFC3339 string; lexicographic comparison is
+        // chronological for identical UTC formats.
+        let mut current: Option<(String, u64)> = None; // (valid_from, node_id)
+        for node in self.graph_store.get_nodes_by_label("Summary").await {
+            let logical = self
+                .graph_store
+                .get_node_property_string(node, "logical_vid")
+                .await;
+            let vid = self.graph_store.get_node_property_string(node, "vid").await;
+            let member = logical.as_deref() == Some(logical_vid)
+                || (logical.is_none() && vid.as_deref() == Some(logical_vid));
+            if !member {
+                continue;
+            }
+            let superseded_at = self
+                .graph_store
+                .get_node_property_string(node, "superseded_at")
+                .await;
+            if superseded_at.as_deref().is_some_and(|s| !s.is_empty()) {
+                continue;
+            }
+            let valid_from = self
+                .graph_store
+                .get_node_property_string(node, "valid_from")
+                .await
+                .unwrap_or_default();
+            let better = match &current {
+                None => true,
+                Some((best_from, best_id)) => {
+                    valid_from > *best_from || (valid_from == *best_from && node > *best_id)
+                }
+            };
+            if better {
+                current = Some((valid_from, node));
+            }
+        }
+        Ok(current.map(|(_, node)| node))
+    }
+
+    /// Close the current member of a logical group (if any): it is no longer
+    /// the current version (PIR-012). `valid_to`/`superseded_at` are set to
+    /// `now`, `superseded_by` points at the replacement version VID, and the
+    /// node flips out of the retrieval surface (`retrieval_eligible=false`).
+    async fn close_current_summary(
+        &self,
+        logical_vid: &str,
+        now: &str,
+        superseded_by: &str,
+    ) -> Result<(), ExtractiveSummaryMaterializeError> {
+        let Some(current) = self.find_current_summary(logical_vid).await? else {
+            return Ok(());
+        };
+        self.close_summary(current, now, superseded_by).await
+    }
+
+    async fn close_summary(
+        &self,
+        node: u64,
+        now: &str,
+        superseded_by: &str,
+    ) -> Result<(), ExtractiveSummaryMaterializeError> {
+        self.graph_store
+            .set_node_property_string(node, "valid_to", now.to_string())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "superseded_at", now.to_string())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "superseded_by", superseded_by.to_string())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", false)
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        Ok(())
+    }
+
+    /// Re-activate a previously superseded version as the current one (PIR-012
+    /// replay convergence): clear the close markers, open a fresh valid
+    /// interval at `now`, and re-enable retrieval. `recorded_at` moves to
+    /// `now` so the transaction-time axis stays monotonic per activation.
+    async fn activate_summary(
+        &self,
+        node: u64,
+        now: &str,
+    ) -> Result<(), ExtractiveSummaryMaterializeError> {
+        self.graph_store
+            .set_node_property_string(node, "valid_to", String::new())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "superseded_at", String::new())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "superseded_by", String::new())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", true)
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "valid_from", now.to_string())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(node, "recorded_at", now.to_string())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        Ok(())
     }
 }
 

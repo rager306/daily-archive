@@ -98,6 +98,42 @@ pub fn revision_summary_vid(
     ))
 }
 
+/// Compute a content-addressed Summary version VID from the stable logical
+/// VID and the content+policy digests that determine the version's meaning.
+///
+/// D243 (PIR-012): [`revision_summary_vid`] stays the stable cross-stage
+/// join key (stored as `logical_vid`); the version identity changes only when
+/// the extracted text digest or the role-policy configuration digest changes.
+/// A rerun with identical content+policy replays onto the same version node
+/// (one current node), while any change mints a fresh version so the previous
+/// current Summary can be closed and superseded instead of silently
+/// overwritten. `role_policy_sha256` may be empty (no role policy bound);
+/// `source_text_sha256` must be a real 64-hex digest.
+pub fn revision_summary_version_vid(
+    logical_vid: &str,
+    source_text_sha256: &str,
+    role_policy_sha256: &str,
+) -> Result<Vid, String> {
+    let logical_vid = logical_vid.trim();
+    if logical_vid.len() != 64 || !logical_vid.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("summary logical VID must be a 64-character SHA256 VID".into());
+    }
+    let text_digest = source_text_sha256.trim().to_ascii_lowercase();
+    if text_digest.len() != 64 || !text_digest.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("summary source_text_sha256 must be 64 hexadecimal characters".into());
+    }
+    let policy_digest = role_policy_sha256.trim().to_ascii_lowercase();
+    if !policy_digest.is_empty()
+        && (policy_digest.len() != 64 || !policy_digest.bytes().all(|b| b.is_ascii_hexdigit()))
+    {
+        return Err("summary role_policy_sha256 must be 64 hexadecimal characters".into());
+    }
+    Ok(sha256_vid(
+        "revision_summary_version",
+        &format!("{logical_vid}\n{text_digest}\n{policy_digest}"),
+    ))
+}
+
 /// Compute an Entity VID from (entity_type, canonical_label).
 pub fn entity_vid(entity_type: &str, label: &str) -> Vid {
     let canonical = label.trim().to_lowercase();
@@ -288,6 +324,52 @@ mod tests {
             evidence_bundle_vid("p1", "Methods", &a),
             evidence_bundle_vid("p1", "Results", &a)
         );
+    }
+
+    #[test]
+    fn summary_version_vid_is_content_addressed_and_policy_sensitive() {
+        let logical = revision_summary_vid(&"a".repeat(64), "section", &"b".repeat(64)).unwrap();
+        let text_a = "c".repeat(64);
+        let text_b = "d".repeat(64);
+        let policy = "e".repeat(64);
+        let v1 = revision_summary_version_vid(&logical, &text_a, &policy).unwrap();
+        // Deterministic and case-insensitive on digest representation.
+        assert_eq!(
+            revision_summary_version_vid(&logical, &text_a.to_ascii_uppercase(), &policy).unwrap(),
+            v1
+        );
+        assert_eq!(v1.len(), 64);
+        // Content change mints a different version identity.
+        assert_ne!(
+            v1,
+            revision_summary_version_vid(&logical, &text_b, &policy).unwrap()
+        );
+        // Policy change mints a different version identity.
+        assert_ne!(
+            v1,
+            revision_summary_version_vid(&logical, &text_a, &"f".repeat(64)).unwrap()
+        );
+        // Empty policy (no role policy bound) is a distinct, valid version.
+        let no_policy = revision_summary_version_vid(&logical, &text_a, "").unwrap();
+        assert_eq!(no_policy.len(), 64);
+        assert_ne!(no_policy, v1);
+        // Logical group change separates versions too.
+        let other_logical =
+            revision_summary_vid(&"a".repeat(64), "section", &"0".repeat(64)).unwrap();
+        assert_ne!(
+            v1,
+            revision_summary_version_vid(&other_logical, &text_a, &policy).unwrap()
+        );
+    }
+
+    #[test]
+    fn summary_version_vid_rejects_malformed_identity_inputs() {
+        let logical = revision_summary_vid(&"a".repeat(64), "section", &"b".repeat(64)).unwrap();
+        let text = "c".repeat(64);
+        assert!(revision_summary_version_vid("not-hex", &text, "").is_err());
+        assert!(revision_summary_version_vid(&logical, "short", "").is_err());
+        assert!(revision_summary_version_vid(&logical, &text, "not-hex").is_err());
+        assert!(revision_summary_version_vid(&logical, &"z".repeat(64), "").is_err());
     }
 
     #[test]
