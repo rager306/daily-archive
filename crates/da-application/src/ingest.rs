@@ -1098,8 +1098,6 @@ async fn build_section_navigation_edges(
     section_id_map: &std::collections::HashMap<String, u64>,
     graph_store: &dyn da_ports::graph_store::DirectGraphStore,
 ) -> anyhow::Result<usize> {
-    use da_domain::relation::structure;
-
     let mut edges_created = 0usize;
 
     // Short-circuit: if no section has a section_id, this is a legacy
@@ -1108,12 +1106,99 @@ async fn build_section_navigation_edges(
         return Ok(0);
     }
 
-    // Build next_sibling + parent_section edges per section.
-    // First-child edges: derived from parent_section_id + order_in_parent.
-    //
-    // Strategy: walk sections in document order. For each section with a
-    // path_id, compute its parent path_id (everything before the last '.') and
-    // find its next sibling (next section in the list with the same parent).
+    // Pure ordered-tree model (M398 S01 T02): compute the expected navigation
+    // edges without graph IO, then materialize them idempotently against the
+    // store. Property tests exercise `compute_section_navigation_edges`
+    // directly; this wrapper is the only graph-touching part.
+    for edge in compute_section_navigation_edges(sections, section_id_map) {
+        // Idempotent replay: only create edges that do not already exist.
+        if graph_store
+            .get_edges_between(edge.from, edge.to, edge.relation.as_edge_type())
+            .await
+            .is_empty()
+        {
+            graph_store
+                .create_edge(edge.from, edge.to, edge.relation.as_edge_type())
+                .await?;
+            edges_created += 1;
+        }
+    }
+
+    Ok(edges_created)
+}
+
+/// Return the parent path of a dotted path_id (everything before the last '.').
+/// Returns `None` for root sections (no parent).
+///
+/// GROBID restart suffixes (`~N`, e.g. "1~2", "1~2.1") are dot-free, so they
+/// never introduce a phantom hierarchy level: "1~2" stays a root and the
+/// parent of "1~2.1" is "1~2", not "1".
+fn parent_path_of(path_id: &str) -> Option<&str> {
+    match path_id.rfind('.') {
+        Some(pos) => Some(&path_id[..pos]),
+        None => None,
+    }
+}
+
+/// Navigation relation kinds emitted by the ordered-section tree model.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NavRelation {
+    /// Direct edge from a section to its same-parent successor.
+    NextSibling,
+    /// Edge from a section up to its parent (inverse of FIRST_CHILD).
+    ParentSection,
+    /// Edge from a parent to its first child in document order.
+    FirstChild,
+}
+
+impl NavRelation {
+    /// The graph edge type string for this relation (structure ontology).
+    pub fn as_edge_type(self) -> &'static str {
+        match self {
+            NavRelation::NextSibling => da_domain::relation::structure::NEXT_SIBLING,
+            NavRelation::ParentSection => da_domain::relation::structure::PARENT_SECTION,
+            NavRelation::FirstChild => da_domain::relation::structure::FIRST_CHILD,
+        }
+    }
+}
+
+/// A navigation edge in the ordered-section tree, computed without graph IO.
+/// `from`/`to` are graph node ids taken from `section_id_map`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct NavEdge {
+    pub from: u64,
+    pub to: u64,
+    pub relation: NavRelation,
+}
+
+/// Pure ordered-tree navigation model (M398 S01 T02).
+///
+/// Given parsed sections with structural `path_id`s (e.g. "1.2.1") and the
+/// `section_id` → graph-node map, computes the navigation edges a correct
+/// ordered-section tree must have, with **no graph IO**:
+///
+/// - `next_sibling`: every non-last child of a parent points **directly** to
+///   its actual same-parent successor, even when intervening descendants sit
+///   between them (deep-tree fix, M398 S01 T01). Root sections chain to the
+///   next root section.
+/// - `first_child`: every parent points to its first child in document order.
+/// - `parent_section`: every non-root section points to its parent.
+///
+/// Sibling selection uses the canonical parent identity (the parent path
+/// prefix derived from the last '.'). GROBID restart suffixes (`~N`) are
+/// dot-free, so a restart path is never misread as a dotted parent:
+/// "1~2.1" belongs to parent "1~2", not "1".
+///
+/// The caller (`build_section_navigation_edges`) applies idempotent
+/// dedup-and-create against the store; property tests exercise this function
+/// directly without a graph.
+pub fn compute_section_navigation_edges(
+    sections: &[da_ports::parser::Section],
+    section_id_map: &std::collections::HashMap<String, u64>,
+) -> Vec<NavEdge> {
+    let mut edges = Vec::new();
+
+    // Map each structural path to its graph node (canonical parent lookup).
     let path_to_node: std::collections::HashMap<&str, u64> = sections
         .iter()
         .filter_map(|s| {
@@ -1137,38 +1222,47 @@ async fn build_section_navigation_edges(
         // parent_section edge: this → parent.
         if let Some(parent_path) = parent_path_of(path_id)
             && let Some(&parent_node) = path_to_node.get(parent_path)
-            && graph_store
-                .get_edges_between(this_node, parent_node, structure::PARENT_SECTION)
-                .await
-                .is_empty()
         {
-            graph_store
-                .create_edge(this_node, parent_node, structure::PARENT_SECTION)
-                .await?;
-            edges_created += 1;
+            edges.push(NavEdge {
+                from: this_node,
+                to: parent_node,
+                relation: NavRelation::ParentSection,
+            });
         }
 
         // next_sibling edge: this → next section with the same parent.
-        let this_parent = parent_path_of(path_id).unwrap_or("");
-        if let Some(subsequent) = sections[i + 1..]
-            .iter()
-            .find(|s| s.path_id.is_some() && s.section_id.is_some())
-        {
-            let sub_path = subsequent.path_id.as_deref().unwrap();
-            let sub_sid = subsequent.section_id.as_deref().unwrap();
-            let sub_parent = parent_path_of(sub_path).unwrap_or("");
-            if sub_parent == this_parent
-                && let Some(&sibling_node) = section_id_map.get(sub_sid)
-                && graph_store
-                    .get_edges_between(this_node, sibling_node, structure::NEXT_SIBLING)
-                    .await
-                    .is_empty()
-            {
-                graph_store
-                    .create_edge(this_node, sibling_node, structure::NEXT_SIBLING)
-                    .await?;
-                edges_created += 1;
+        //
+        // Sibling selection uses the canonical parent identity (the parent
+        // path prefix) and scans PAST intervening descendants instead of
+        // stopping at the first later path (deep-tree fix, M398 S01 T01):
+        // in `1, 1.1, 1.1.1, 1.2, 2`, section 1.1's next sibling is 1.2 and
+        // section 1's next sibling is 2, even though 1.1 / 1.1.1 / 1.2 sit
+        // between them. Root sections (parent_path_of == None) match the next
+        // root section; nested sections match the next section whose parent
+        // path prefix is identical.
+        let this_parent = parent_path_of(path_id);
+        let next_sibling = sections[i + 1..].iter().find(|s| {
+            let Some(sub_path) = s.path_id.as_deref() else {
+                return false;
+            };
+            // A sibling must be a real graph node (populated section_id).
+            if s.section_id.is_none() {
+                return false;
             }
+            match this_parent {
+                None => parent_path_of(sub_path).is_none(),
+                Some(parent) => parent_path_of(sub_path) == Some(parent),
+            }
+        });
+        if let Some(subsequent) = next_sibling
+            && let Some(sub_sid) = subsequent.section_id.as_deref()
+            && let Some(&sibling_node) = section_id_map.get(sub_sid)
+        {
+            edges.push(NavEdge {
+                from: this_node,
+                to: sibling_node,
+                relation: NavRelation::NextSibling,
+            });
         }
 
         // first_child edge: this → first child (a section whose parent is this).
@@ -1180,28 +1274,16 @@ async fn build_section_navigation_edges(
                 .unwrap_or(false)
         }) && let Some(child_sid) = child.section_id.as_deref()
             && let Some(&child_node) = section_id_map.get(child_sid)
-            && graph_store
-                .get_edges_between(this_node, child_node, structure::FIRST_CHILD)
-                .await
-                .is_empty()
         {
-            graph_store
-                .create_edge(this_node, child_node, structure::FIRST_CHILD)
-                .await?;
-            edges_created += 1;
+            edges.push(NavEdge {
+                from: this_node,
+                to: child_node,
+                relation: NavRelation::FirstChild,
+            });
         }
     }
 
-    Ok(edges_created)
-}
-
-/// Return the parent path of a dotted path_id (everything before the last '.').
-/// Returns `None` for root sections (no parent).
-fn parent_path_of(path_id: &str) -> Option<&str> {
-    match path_id.rfind('.') {
-        Some(pos) => Some(&path_id[..pos]),
-        None => None,
-    }
+    edges
 }
 
 #[cfg(test)]
@@ -1380,22 +1462,143 @@ mod tests {
             .await
             .expect("navigation edges build");
         // Expected edges:
+        //   1 -> next_sibling -> 2
         //   1 -> first_child -> 1.1
         //   1.1 -> parent_section -> 1
         //   1.1 -> next_sibling -> 1.2
         //   1.2 -> parent_section -> 1
         //   2 -> first_child -> 2.1
         //   2.1 -> parent_section -> 2
-        // Total = 6 edges
+        // Total = 7 edges (root sibling 1 -> 2 is emitted now that sibling
+        // selection uses canonical parent identity, M398 S01 T01)
         assert_eq!(
-            edges, 6,
-            "expected 6 navigation edges for 5-section tree, got {}",
+            edges, 7,
+            "expected 7 navigation edges for 5-section tree, got {}",
             edges
         );
         let replay = build_section_navigation_edges(&sections, &section_id_map, &store)
             .await
             .expect("navigation replay");
         assert_eq!(replay, 0, "navigation replay must create zero net edges");
+    }
+
+    #[tokio::test]
+    async fn test_build_navigation_edges_deep_tree_descendant_interruption() {
+        use da_ports::parser::Section;
+        // Deep-tree regression fixture (M398 S01 T01): siblings whose direct
+        // successor is hidden behind one or more levels of descendants.
+        //   1 (root)
+        //   1.1 (child of 1)
+        //   1.1.1 (child of 1.1 — descends between 1.1 and its sibling 1.2)
+        //   1.2 (child of 1, sibling of 1.1)
+        //   1.2.1 (child of 1.2 — descends between 1.2 and its sibling 1.3)
+        //   1.3 (child of 1, sibling of 1.2)
+        //   2 (root, sibling of 1)
+        //   2.1 (child of 2)
+        let mk = |title: &str,
+                  path: Option<&str>,
+                  sid: Option<&str>,
+                  parent: Option<&str>,
+                  order: Option<u32>| Section {
+            title: title.into(),
+            text: "text".into(),
+            level: 0,
+            path_id: path.map(String::from),
+            section_id: sid.map(String::from),
+            parent_section_id: parent.map(String::from),
+            order_in_parent: order,
+        };
+        let sections = vec![
+            mk("Intro", Some("1"), Some("sec-1"), None, Some(0)),
+            mk(
+                "Background",
+                Some("1.1"),
+                Some("sec-1.1"),
+                Some("sec-1"),
+                Some(0),
+            ),
+            mk(
+                "Sub-detail",
+                Some("1.1.1"),
+                Some("sec-1.1.1"),
+                Some("sec-1.1"),
+                Some(0),
+            ),
+            mk(
+                "Motivation",
+                Some("1.2"),
+                Some("sec-1.2"),
+                Some("sec-1"),
+                Some(1),
+            ),
+            mk(
+                "Deep-child",
+                Some("1.2.1"),
+                Some("sec-1.2.1"),
+                Some("sec-1.2"),
+                Some(0),
+            ),
+            mk(
+                "Related",
+                Some("1.3"),
+                Some("sec-1.3"),
+                Some("sec-1"),
+                Some(2),
+            ),
+            mk("Methods", Some("2"), Some("sec-2"), None, Some(1)),
+            mk(
+                "Model",
+                Some("2.1"),
+                Some("sec-2.1"),
+                Some("sec-2"),
+                Some(0),
+            ),
+        ];
+        let mut section_id_map = std::collections::HashMap::new();
+        for (i, sid) in [
+            "sec-1",
+            "sec-1.1",
+            "sec-1.1.1",
+            "sec-1.2",
+            "sec-1.2.1",
+            "sec-1.3",
+            "sec-2",
+            "sec-2.1",
+        ]
+        .iter()
+        .enumerate()
+        {
+            section_id_map.insert((*sid).to_string(), i as u64);
+        }
+        let store = kg_storage::MockGraphStore::new();
+        let edges = build_section_navigation_edges(&sections, &section_id_map, &store)
+            .await
+            .expect("navigation edges build");
+        // Expected edges:
+        //   1 -> next_sibling -> 2            (root sibling past 1.1/1.1.1/1.2/1.2.1/1.3)
+        //   1 -> first_child -> 1.1
+        //   1.1 -> parent_section -> 1
+        //   1.1 -> next_sibling -> 1.2        (sibling past descendant 1.1.1)
+        //   1.1 -> first_child -> 1.1.1
+        //   1.1.1 -> parent_section -> 1.1
+        //   1.2 -> parent_section -> 1
+        //   1.2 -> next_sibling -> 1.3        (sibling past descendant 1.2.1)
+        //   1.2 -> first_child -> 1.2.1
+        //   1.2.1 -> parent_section -> 1.2
+        //   1.3 -> parent_section -> 1
+        //   2 -> first_child -> 2.1
+        //   2.1 -> parent_section -> 2
+        // Total = 13 edges (1.2 has no sibling edge to root section 2:
+        // same-parent identity is canonical, root 2 is not 1.2's sibling)
+        assert_eq!(
+            edges, 13,
+            "expected 13 navigation edges for deep 8-section tree, got {}",
+            edges
+        );
+        let replay = build_section_navigation_edges(&sections, &section_id_map, &store)
+            .await
+            .expect("navigation replay");
+        assert_eq!(replay, 0, "deep-tree navigation replay must be idempotent");
     }
 
     // Integration tests require live services (GROBID, fd_api, Samyama embedded)
