@@ -258,15 +258,146 @@ fn normalize(value: &str) -> String {
         .join(" ")
         .to_ascii_lowercase()
 }
+
 fn text_chars(parsed: &ParsedArticle) -> u64 {
     parsed.title.chars().count() as u64
         + parsed.abstract_text.chars().count() as u64
         + parsed.body_text.chars().count() as u64
 }
+
 fn duplicate_titles(parsed: &ParsedArticle) -> u64 {
     let mut counts = BTreeMap::new();
     for section in &parsed.sections {
         *counts.entry(normalize(&section.title)).or_insert(0_u64) += 1;
     }
     counts.values().map(|x| x.saturating_sub(1)).sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use da_ports::parser::Section;
+
+    /// An HTML-only article as produced by `HtmlParser` (T01): retained
+    /// headings carry deterministic dotted identity, there is no bibliography
+    /// and no TEI (layout/figure/table structure is unobserved).
+    fn html_parsed() -> ParsedArticle {
+        ParsedArticle {
+            paper_id: "html-lecture-01".into(),
+            title: "Lecture Notes".into(),
+            abstract_text: "A grounded HTML abstract.".into(),
+            body_text: "Intro text. Setup text. Method text.".into(),
+            sections: vec![
+                Section {
+                    title: "Introduction".into(),
+                    text: "Intro text.".into(),
+                    level: 1,
+                    path_id: Some("1".into()),
+                    parent_section_id: None,
+                    order_in_parent: Some(0),
+                    section_id: Some("sec-1".into()),
+                },
+                Section {
+                    title: "Background".into(),
+                    text: "Background text.".into(),
+                    level: 1,
+                    path_id: Some("2".into()),
+                    parent_section_id: None,
+                    order_in_parent: Some(1),
+                    section_id: Some("sec-2".into()),
+                },
+                Section {
+                    title: "Method".into(),
+                    text: "Setup text. Method text.".into(),
+                    level: 2,
+                    path_id: Some("2.1".into()),
+                    parent_section_id: Some("sec-2".into()),
+                    order_in_parent: Some(0),
+                    section_id: Some("sec-2.1".into()),
+                },
+            ],
+            citations: Vec::new(),
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "b".repeat(64),
+        }
+    }
+
+    /// HTML without bibliography must report GenuinelyAbsent citations, keep
+    /// TEI-dependent observations NotMaterialized, and never fabricate counts:
+    /// no synthetic Citation/Reference nodes, figures, or tables.
+    #[test]
+    fn html_without_bibliography_reports_genuinely_absent_citations() {
+        let snapshot = observe_parsed_article(&html_parsed(), 1024, &BTreeSet::new()).unwrap();
+        assert_eq!(
+            snapshot.missingness["citations_missing"],
+            MissingnessReason::GenuinelyAbsent
+        );
+        assert_eq!(snapshot.citations, 0);
+        assert_eq!(
+            snapshot.missingness["figures_unobserved"],
+            MissingnessReason::NotMaterialized
+        );
+        assert_eq!(
+            snapshot.missingness["tables_unobserved"],
+            MissingnessReason::NotMaterialized
+        );
+        assert_eq!(snapshot.figures, 0);
+        assert_eq!(snapshot.tables, 0);
+        assert!(!snapshot.import_eligible);
+        snapshot.validate().unwrap();
+    }
+
+    /// Derived path identity removes navigation_identity_missing only when
+    /// every retained section carries a stable path_id AND section_id.
+    #[test]
+    fn html_path_identity_removes_navigation_identity_missing_when_all_sections_stable() {
+        let snapshot = observe_parsed_article(&html_parsed(), 1024, &BTreeSet::new()).unwrap();
+        assert!(
+            !snapshot
+                .missingness
+                .contains_key("navigation_identity_missing"),
+            "all retained sections have stable identity; navigation must not claim missingness"
+        );
+    }
+
+    /// A single section without stable identity keeps the typed missingness:
+    /// the observer never clears navigation_identity_missing for partial trees.
+    #[test]
+    fn html_navigation_identity_missing_remains_when_any_section_lacks_identity() {
+        let mut parsed = html_parsed();
+        // GROBID-style flat section that never received path identity.
+        parsed.sections.push(Section {
+            title: "Flat Legacy".into(),
+            text: "Flat text.".into(),
+            level: 0,
+            ..Default::default()
+        });
+        let snapshot = observe_parsed_article(&parsed, 1024, &BTreeSet::new()).unwrap();
+        assert_eq!(
+            snapshot.missingness["navigation_identity_missing"],
+            MissingnessReason::NotMaterialized
+        );
+    }
+
+    /// section_id alone or path_id alone is not enough: both halves of the
+    /// stable identity are required before missingness is cleared.
+    #[test]
+    fn html_navigation_identity_requires_both_path_and_section_id() {
+        let mut parsed = html_parsed();
+        parsed.sections[0].section_id = None;
+        let snapshot = observe_parsed_article(&parsed, 1024, &BTreeSet::new()).unwrap();
+        assert_eq!(
+            snapshot.missingness["navigation_identity_missing"],
+            MissingnessReason::NotMaterialized
+        );
+
+        let mut parsed = html_parsed();
+        parsed.sections[1].path_id = None;
+        let snapshot = observe_parsed_article(&parsed, 1024, &BTreeSet::new()).unwrap();
+        assert_eq!(
+            snapshot.missingness["navigation_identity_missing"],
+            MissingnessReason::NotMaterialized
+        );
+    }
 }
