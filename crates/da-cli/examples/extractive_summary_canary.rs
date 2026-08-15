@@ -105,11 +105,24 @@ async fn main() -> Result<()> {
             let Some(source_vid) = store.get_node_property_string(section_node, "vid").await else {
                 continue;
             };
-            let path_id = store
-                .get_node_property_int(section_node, "order")
+            // PIR-007: prefer the real dotted AST path over `order`; the typed
+            // fallback reason is mirrored onto the Summary node.
+            let (path_id, path_id_missingness) = match store
+                .get_node_property_string(section_node, "path_id")
                 .await
-                .map(|ordinal| ordinal.to_string())
-                .unwrap_or_else(|| source_vid.clone());
+            {
+                Some(path_id) if !path_id.trim().is_empty() => (path_id, String::new()),
+                _ => match store.get_node_property_int(section_node, "order").await {
+                    Some(ordinal) => (
+                        ordinal.to_string(),
+                        "path_id_missing_fallback_to_order".to_string(),
+                    ),
+                    None => (
+                        source_vid.clone(),
+                        "path_id_missing_fallback_to_source_vid".to_string(),
+                    ),
+                },
+            };
             sections.push(SectionSource {
                 path_id,
                 source_vid,
@@ -122,6 +135,7 @@ async fn main() -> Result<()> {
                     .await
                     .unwrap_or_default(),
                 node_id: section_node,
+                path_id_missingness,
             });
         }
         sections.sort_by(|left, right| left.path_id.cmp(&right.path_id));

@@ -68,6 +68,7 @@ async fn seed_revision(
             title: title.into(),
             text: text.into(),
             node_id: node,
+            path_id_missingness: String::new(),
         });
     }
     (revision_node, revision_vid, sections)
@@ -162,6 +163,106 @@ async fn materializes_revision_abstract_and_section_summaries() {
             .get_node_property_bool(section_summary, "import_eligible")
             .await
             .unwrap()
+    );
+}
+
+#[tokio::test]
+async fn summary_node_persists_source_path_id() {
+    // PIR-007 (T02): Summary nodes carry a durable dotted source_path_id so
+    // downstream joins and S05 honesty resolve the source Section by AST path
+    // instead of an invented ordinal.
+    let store = Arc::new(MockGraphStore::new());
+    let (revision_node, revision_vid, mut sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts with Pareto selection.").await;
+    // Nested section: materialize must persist the dotted path, not an ordinal.
+    sections[1].path_id = "3.2.1".into();
+    ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .materialize(input(revision_node, revision_vid.clone(), sections.clone()))
+        .await
+        .unwrap();
+
+    let abstract_vid = revision_summary_vid(&revision_vid, "abstract", &revision_vid).unwrap();
+    let abstract_node = store
+        .find_node_by_string_property("Summary", "vid", &abstract_vid)
+        .await
+        .expect("revision abstract summary");
+    assert_eq!(
+        store
+            .get_node_property_string(abstract_node, "source_path_id")
+            .await
+            .as_deref(),
+        Some("abstract")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(abstract_node, "source_path_missingness")
+            .await
+            .as_deref(),
+        Some(""),
+        "abstract summary has no path missingness"
+    );
+
+    let summary_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let summary_node = store
+        .find_node_by_string_property("Summary", "vid", &summary_vid)
+        .await
+        .expect("nested section summary");
+    assert_eq!(
+        store
+            .get_node_property_string(summary_node, "source_path_id")
+            .await
+            .as_deref(),
+        Some("3.2.1"),
+        "nested path must survive materialization, not collapse to an ordinal"
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(summary_node, "source_path_missingness")
+            .await
+            .as_deref(),
+        Some(""),
+        "real dotted path is not a fallback"
+    );
+}
+
+#[tokio::test]
+async fn materialize_persists_typed_path_fallback_missingness() {
+    // PIR-007 (T02): when the walker had to derive path_id from `order`
+    // because no real dotted AST path exists, the typed fallback reason is
+    // mirrored onto the Summary node so honesty checks can tell invented
+    // ordinals from real paths after materialization.
+    let store = Arc::new(MockGraphStore::new());
+    let (revision_node, revision_vid, mut sections) =
+        seed_revision(&store, 1, "GEPA mutates prompts.").await;
+    // Simulate an order-only section: path_id came from the ordinal and the
+    // collector recorded the typed missingness reason.
+    sections[1].path_id = "9".into();
+    sections[1].path_id_missingness = "path_id_missing_fallback_to_order".into();
+    ExtractiveSummaryUseCase::new(store.clone() as Arc<dyn DirectGraphStore>)
+        .materialize(input(revision_node, revision_vid.clone(), sections.clone()))
+        .await
+        .unwrap();
+
+    let summary_vid =
+        revision_summary_vid(&revision_vid, "section", &sections[1].source_vid).unwrap();
+    let summary_node = store
+        .find_node_by_string_property("Summary", "vid", &summary_vid)
+        .await
+        .expect("order-fallback section summary");
+    assert_eq!(
+        store
+            .get_node_property_string(summary_node, "source_path_id")
+            .await
+            .as_deref(),
+        Some("9")
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(summary_node, "source_path_missingness")
+            .await
+            .as_deref(),
+        Some("path_id_missing_fallback_to_order")
     );
 }
 
@@ -360,6 +461,7 @@ async fn missing_revision_node_fails_closed() {
                 title: "Method".into(),
                 text: "Body".into(),
                 node_id: 999_999,
+                path_id_missingness: String::new(),
             }],
         ))
         .await
@@ -391,6 +493,7 @@ async fn missing_section_node_fails_closed_before_any_summary_write() {
                 title: "Method".into(),
                 text: "Body".into(),
                 node_id: 999_999,
+                path_id_missingness: String::new(),
             }],
         ))
         .await

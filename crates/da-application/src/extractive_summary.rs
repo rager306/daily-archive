@@ -24,6 +24,12 @@ pub struct SectionSource {
     pub title: String,
     pub text: String,
     pub node_id: u64,
+    /// PIR-007: typed reason when `path_id` was derived from an `order`/
+    /// `source_vid` fallback instead of a real dotted AST path. Empty string
+    /// means the real dotted path was present. Mirrored onto the Summary node
+    /// as `source_path_missingness` by the writer (T02).
+    #[serde(default)]
+    pub path_id_missingness: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -141,13 +147,19 @@ impl ExtractiveSummaryUseCase {
 
         // Map path_id -> node_id from input (caller-owned graph inventory).
         let mut path_to_node = std::collections::BTreeMap::new();
+        // PIR-007: mirror the typed path_id fallback reason onto the Summary
+        // node so S05 honesty can tell real dotted AST paths from invented
+        // ordinals after materialization.
+        let mut path_to_missingness = std::collections::BTreeMap::new();
         for section in &input.sections {
             path_to_node.insert(section.path_id.clone(), section.node_id);
+            path_to_missingness
+                .insert(section.path_id.clone(), section.path_id_missingness.clone());
         }
 
         let mut abstract_written = false;
         if let Some(unit) = &batch.abstract_summary {
-            self.write_summary_node(&input.revision_vid, unit, input.revision_node_id, None)
+            self.write_summary_node(&input.revision_vid, unit, input.revision_node_id, None, "")
                 .await?;
             abstract_written = true;
         }
@@ -175,11 +187,17 @@ impl ExtractiveSummaryUseCase {
                     .entry(unit.title.clone())
                     .or_insert(0) += 1;
             }
+            // Same keys as path_to_node, so the lookup cannot fail here.
+            let source_path_missingness = path_to_missingness
+                .get(&unit.path_id)
+                .map(String::as_str)
+                .unwrap_or("");
             self.write_summary_node(
                 &input.revision_vid,
                 unit,
                 section_node,
                 summary_type.as_ref().map(|value| value.as_str()),
+                source_path_missingness,
             )
             .await?;
             section_summaries_written += 1;
@@ -204,6 +222,7 @@ impl ExtractiveSummaryUseCase {
         unit: &ExtractiveSummaryUnit,
         link_source: u64,
         summary_type: Option<&str>,
+        source_path_missingness: &str,
     ) -> Result<u64, ExtractiveSummaryMaterializeError> {
         let summary_vid = revision_summary_vid(revision_vid, &unit.granularity, &unit.source_id)
             .map_err(ExtractiveSummaryMaterializeError::InvalidIdentity)?;
@@ -238,6 +257,21 @@ impl ExtractiveSummaryUseCase {
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
             .set_node_property_string(node, "source_id", unit.source_id.clone())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        // PIR-007: durable dotted AST path key (e.g. "3.2.1") plus the typed
+        // missingness reason when the path was derived from an order/source_vid
+        // fallback. Empty missingness = real dotted path present.
+        self.graph_store
+            .set_node_property_string(node, "source_path_id", unit.path_id.clone())
+            .await
+            .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
+        self.graph_store
+            .set_node_property_string(
+                node,
+                "source_path_missingness",
+                source_path_missingness.to_string(),
+            )
             .await
             .map_err(|e| ExtractiveSummaryMaterializeError::Graph(e.to_string()))?;
         self.graph_store
@@ -380,11 +414,11 @@ pub async fn collect_revision_summary_inputs(
             };
             // PIR-007: prefer the real dotted AST path; `order` and the section
             // VID are typed fallbacks, never silent identity invention.
-            let path_id = match store
+            let (path_id, path_id_missingness) = match store
                 .get_node_property_string(section_node, "path_id")
                 .await
             {
-                Some(path_id) if !path_id.trim().is_empty() => path_id,
+                Some(path_id) if !path_id.trim().is_empty() => (path_id, String::new()),
                 _ => {
                     let order = store.get_node_property_int(section_node, "order").await;
                     let (fallback, reason) = match order {
@@ -401,9 +435,9 @@ pub async fn collect_revision_summary_inputs(
                         section_node,
                         source_vid: source_vid.clone(),
                         path_id: fallback.clone(),
-                        reason,
+                        reason: reason.clone(),
                     });
-                    fallback
+                    (fallback, reason)
                 }
             };
             sections.push(SectionSource {
@@ -418,6 +452,7 @@ pub async fn collect_revision_summary_inputs(
                     .await
                     .unwrap_or_default(),
                 node_id: section_node,
+                path_id_missingness,
             });
         }
         sections.sort_by(|left, right| left.path_id.cmp(&right.path_id));

@@ -260,8 +260,23 @@ impl NodeSchemaDef for SummarySchema {
         vec![
             ("granularity", FieldType::String),
             ("char_count", FieldType::Integer),
+            ("source_chars", FieldType::Integer),
+            ("source_text_sha256", FieldType::String),
             ("source_label", FieldType::String),
             ("source_id", FieldType::String),
+            // PIR-007 (S02): durable dotted AST key on the Summary node so
+            // downstream joins and S05 honesty resolve the source Section by
+            // path instead of an invented ordinal. source_path_missingness
+            // records the typed fallback reason when path_id was derived from
+            // order/source_vid (empty = real dotted path present). Kept in
+            // sync with data/ontology/node_schemas.yaml (YamlSchemaAdapter
+            // DATA source).
+            ("source_path_id", FieldType::String),
+            ("source_path_missingness", FieldType::String),
+            ("revision_vid", FieldType::String),
+            ("summary_type", FieldType::String),
+            ("role_policy_schema_version", FieldType::String),
+            ("role_policy_sha256", FieldType::String),
             ("method", FieldType::String),
             ("generated_at", FieldType::DateTime),
             ("prompt_task_id", FieldType::String),
@@ -528,6 +543,22 @@ mod tests {
             optional.contains(&"char_count"),
             "Summary must have 'char_count' optional"
         );
+    }
+
+    #[test]
+    fn test_summary_schema_has_path_identity_fields() {
+        // PIR-007 (S02): Summary carries a durable dotted source_path_id so
+        // downstream joins and S05 honesty resolve the source Section by AST
+        // path, plus the typed source_path_missingness reason when the path
+        // was derived from order/source_vid fallback.
+        let s = SummarySchema;
+        let optional: Vec<&str> = s.optional_fields().iter().map(|(n, _)| *n).collect();
+        for field in ["source_path_id", "source_path_missingness"] {
+            assert!(
+                optional.contains(&field),
+                "Summary must have '{field}' optional, got: {optional:?}"
+            );
+        }
     }
 
     #[test]
