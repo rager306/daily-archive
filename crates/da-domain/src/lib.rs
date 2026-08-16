@@ -38,6 +38,7 @@ pub mod pipeline_cache_lineage;
 pub mod pipeline_ledger;
 pub mod pipeline_metrics;
 pub mod process;
+pub mod promotion;
 pub mod prompt_optimization;
 pub mod relation;
 pub mod revision_classification;
@@ -103,6 +104,9 @@ pub use paper::{Paper, PaperSchema, PaperStatus};
 pub use pipeline_ledger::{
     PipelineStageContract, PipelineStageLedger, StageCacheMode, StageId, StageIdRegistry,
     StageOwner,
+};
+pub use promotion::{
+    ActorId, EvidenceRef, PromotionCandidate, PromotionError, PromotionKind, PromotionState,
 };
 pub use relation::hypergraph::{
     CONTRADICTS, MEMBER_OF_CLUSTER, PARTICIPATES_IN, QUALIFIES, SUPPORTS,
@@ -511,6 +515,57 @@ mod serde_roundtrip_tests {
         for state in &states {
             let json = serde_json::to_string(state).unwrap();
             let back: PromptCandidateState = serde_json::from_str(&json).unwrap();
+            assert_eq!(*state, back);
+        }
+    }
+
+    // ── promotion.rs (PIR-015) ──
+
+    #[test]
+    fn roundtrip_promotion_candidate() {
+        use crate::promotion::EvidenceRef;
+        roundtrip_json(&PromotionCandidate {
+            candidate_id: "cand-1".into(),
+            kind: crate::promotion::PromotionKind::EntityResolution,
+            state: crate::promotion::PromotionState::Reviewed,
+            proposer: "alice".into(),
+            verifier: Some("bob".into()),
+            reviewer: Some("carol".into()),
+            promoter: None,
+            evidence_refs: vec![EvidenceRef::new("ev:review:run-43").with_kind("gsd_uat_exec")],
+            rejection_reason: None,
+            import_eligible: false,
+        });
+    }
+
+    #[test]
+    fn roundtrip_promotion_kind_all_variants() {
+        use crate::promotion::PromotionKind;
+        let kinds = [
+            PromotionKind::Prompt,
+            PromotionKind::Gold,
+            PromotionKind::EntityResolution,
+        ];
+        for kind in &kinds {
+            let json = serde_json::to_string(kind).unwrap();
+            let back: PromotionKind = serde_json::from_str(&json).unwrap();
+            assert_eq!(*kind, back);
+        }
+    }
+
+    #[test]
+    fn roundtrip_promotion_state_all_variants() {
+        use crate::promotion::PromotionState;
+        let states = [
+            PromotionState::Proposed,
+            PromotionState::Verified,
+            PromotionState::Reviewed,
+            PromotionState::Promoted,
+            PromotionState::Rejected,
+        ];
+        for state in &states {
+            let json = serde_json::to_string(state).unwrap();
+            let back: PromotionState = serde_json::from_str(&json).unwrap();
             assert_eq!(*state, back);
         }
     }

@@ -20,6 +20,7 @@ pub mod openalex;
 pub mod parser;
 pub mod pipeline_cache;
 pub mod pipeline_stage;
+pub mod promotion;
 pub mod prompt_execution;
 pub mod tex_source;
 
@@ -58,6 +59,7 @@ pub use pdf_classification::{
 };
 
 pub use parser::{CitationAnchor, CitationEntry, ParserPort, Section};
+pub use promotion::{PromotionCommitError, PromotionCommitSink, PromotionDecision};
 pub use tex_source::{
     TexAnalysisReportStore, TexAnalysisRequest, TexArchiveError, TexArchiveInventory,
     TexArchiveMember, TexArchivePort,

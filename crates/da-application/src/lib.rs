@@ -53,8 +53,12 @@ pub use entity_resolution::{
     SystemExactAliasApplied, SystemExactAliasBatchResult, SystemExactAliasFailure,
     SystemExactAliasSkip,
 };
+pub mod promotion;
 pub use extraction::{ExtractionResult, ExtractionUseCase};
 pub use extractive_summary::{SummaryAsOf, get_summary_as_of, list_summary_versions};
+pub use promotion::{
+    PromotionAction, PromotionService, PromotionServiceError, PromotionTransitionRequest,
+};
 pub mod figure_analysis;
 pub use figure_analysis::{
     FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
