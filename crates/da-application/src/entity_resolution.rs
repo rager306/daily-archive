@@ -7,6 +7,7 @@ use da_domain::entity_resolution::{
     pair_is_candidate,
 };
 use da_domain::healing::{HealingActor, MergeResult};
+use da_domain::promotion::{EvidenceRef, PromotionCandidate, PromotionError, PromotionKind};
 use da_ports::graph_store::DirectGraphStore;
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -45,6 +46,50 @@ pub struct ReviewedMergeResult {
     pub decision_vid: String,
     pub decision_node_id: u64,
     pub merge: MergeResult,
+}
+
+/// Deterministic verifier identity for the entity-resolution surface: the
+/// blocking profile + `pair_is_candidate` check (ADR-053).
+pub const ER_BLOCKING_VERIFIER: &str = "entity-resolution:blocking-check";
+
+/// Deterministic reviewer identity for the entity-resolution surface: the
+/// decision-record review gate (ADR-053 Layer G).
+pub const ER_DECISION_REVIEWER: &str = "entity-resolution:decision-review";
+
+impl ReviewedMergeResult {
+    /// Adapter to the shared authority-neutral promotion protocol (PIR-015).
+    ///
+    /// A reviewed entity-resolution merge becomes a
+    /// [`PromotionKind::EntityResolution`] candidate at
+    /// `PromotionState::Reviewed`: the pair already passed the independent
+    /// blocking check (verifier) and the decision-backed review (reviewer),
+    /// so no further verification is replayed. The candidate is **never
+    /// produced as `Promoted`** — deployment authority stays separate and a
+    /// separate authority must promote through the application fail-closed
+    /// service. Durable evidence refs: the merge pair (proposal), the
+    /// blocking-profile outcome (verification), and the decision record
+    /// (review). `import_eligible` stays false (D127 lock).
+    pub fn to_promotion_candidate(&self) -> Result<PromotionCandidate, PromotionError> {
+        let proposer = self.merge.provenance.actor.as_str();
+        let pair = format!("{}:{}", self.merge.kept_vid, self.merge.merged_vid);
+        let proposed = PromotionCandidate::propose(
+            PromotionKind::EntityResolution,
+            format!("er-merge:{pair}"),
+            proposer,
+            vec![EvidenceRef::new(format!("merge:{pair}")).with_kind("merge_provenance")],
+        )?;
+        let verified = proposed.verify(
+            ER_BLOCKING_VERIFIER,
+            vec![EvidenceRef::new(format!("blocking:{pair}")).with_kind("blocking_profile")],
+        )?;
+        verified.review(
+            ER_DECISION_REVIEWER,
+            vec![
+                EvidenceRef::new(format!("decision:{}", self.decision_vid))
+                    .with_kind("decision_record"),
+            ],
+        )
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

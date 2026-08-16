@@ -1,6 +1,7 @@
 //! Provider-neutral prompt task, execution lineage and candidate FSM (D238).
 
 use crate::assurance::ContentDigest;
+use crate::promotion::{EvidenceRef, PromotionCandidate, PromotionError, PromotionKind};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -314,10 +315,144 @@ impl PromptCandidate {
         self.validate()?;
         Ok(self)
     }
+
+    /// Adapter to the shared authority-neutral promotion protocol (PIR-015).
+    ///
+    /// Maps the prompt FSM onto the promotion FSM **without granting
+    /// authority**:
+    /// - [`PromptCandidateState::CandidateProposed`] →
+    ///   `PromotionState::Proposed`;
+    /// - [`PromptCandidateState::Evaluated`] → `PromotionState::Verified`
+    ///   (the independent evaluation suite verified same-n performance);
+    /// - [`PromptCandidateState::Eligible`] → `PromotionState::Reviewed`
+    ///   (the eligibility gate reviewed the evaluation record);
+    /// - [`PromptCandidateState::BaselineRegistered`] and
+    ///   [`PromptCandidateState::Rejected`] are refused with a typed
+    ///   [`PromotionError::InvalidState`] — a baseline has nothing to promote
+    ///   and a rejected prompt candidate has no promotion path.
+    ///
+    /// The conversion **never produces a `Promoted` candidate**: prompt
+    /// candidates stay candidate-only (D238), so optimizer auto-promotion
+    /// remains disabled and a separate authority must promote through the
+    /// application fail-closed service. Evidence refs are durable spec and
+    /// fixture hashes plus the evaluation record; `import_eligible` stays
+    /// false (D127 lock). Actor identities are deterministic per task:
+    /// `prompt:registry:{task}` (proposer), `prompt:evaluation:{task}`
+    /// (verifier), `prompt:eligibility:{task}` (reviewer).
+    pub fn to_promotion_candidate(&self) -> Result<PromotionCandidate, PromotionError> {
+        self.validate().map_err(PromotionError::InvalidState)?;
+        match self.state {
+            PromptCandidateState::BaselineRegistered => Err(PromotionError::InvalidState(
+                "baseline has no candidate to promote; propose first".into(),
+            )),
+            PromptCandidateState::CandidateProposed => PromotionCandidate::propose(
+                PromotionKind::Prompt,
+                self.candidate_id.clone(),
+                prompt_proposer(&self.task_id),
+                self.candidate_evidence(),
+            ),
+            PromptCandidateState::Evaluated => {
+                let candidate = PromotionCandidate::propose(
+                    PromotionKind::Prompt,
+                    self.candidate_id.clone(),
+                    prompt_proposer(&self.task_id),
+                    self.candidate_evidence(),
+                )?;
+                candidate.verify(prompt_verifier(&self.task_id), self.evaluation_evidence())
+            }
+            PromptCandidateState::Eligible => {
+                let candidate = PromotionCandidate::propose(
+                    PromotionKind::Prompt,
+                    self.candidate_id.clone(),
+                    prompt_proposer(&self.task_id),
+                    self.candidate_evidence(),
+                )?;
+                let candidate =
+                    candidate.verify(prompt_verifier(&self.task_id), self.evaluation_evidence())?;
+                candidate.review(prompt_reviewer(&self.task_id), self.eligibility_evidence())
+            }
+            PromptCandidateState::Rejected => Err(PromotionError::InvalidState(
+                "rejected prompt candidate has no promotion path".into(),
+            )),
+        }
+    }
+
+    /// Durable evidence for the candidate spec — present in every
+    /// non-baseline state (guaranteed by `validate`).
+    fn candidate_evidence(&self) -> Vec<EvidenceRef> {
+        self.candidate_spec_sha256
+            .as_ref()
+            .map(|spec| {
+                vec![
+                    EvidenceRef::new(format!("sha256:{}", spec.as_str()))
+                        .with_kind("artifact_hash"),
+                ]
+            })
+            .unwrap_or_default()
+    }
+
+    /// Durable evaluation evidence: fixture hashes, the same-n record, and the
+    /// metric vector (Evaluated / Eligible states carry `evaluation`).
+    fn evaluation_evidence(&self) -> Vec<EvidenceRef> {
+        let Some(evaluation) = self.evaluation.as_ref() else {
+            return Vec::new();
+        };
+        let mut refs = vec![
+            EvidenceRef::new(format!(
+                "sha256:{}",
+                evaluation.train_fixture_sha256.as_str()
+            ))
+            .with_kind("fixture_hash"),
+            EvidenceRef::new(format!(
+                "sha256:{}",
+                evaluation.validation_fixture_sha256.as_str()
+            ))
+            .with_kind("fixture_hash"),
+            EvidenceRef::new(format!("eval:same_n={}", evaluation.candidate_n))
+                .with_kind("eval_record"),
+        ];
+        for (metric, basis_points) in &evaluation.metric_basis_points {
+            refs.push(
+                EvidenceRef::new(format!("eval:metric:{metric}={basis_points}"))
+                    .with_kind("eval_metric"),
+            );
+        }
+        refs
+    }
+
+    /// Eligibility evidence: the evaluation record plus the gates-passed
+    /// assertion and the human decision reference when one was recorded.
+    fn eligibility_evidence(&self) -> Vec<EvidenceRef> {
+        let mut refs = self.evaluation_evidence();
+        refs.push(EvidenceRef::new("eval:gates_passed=true").with_kind("eligibility_gate"));
+        if let Some(decision) = &self.human_decision_ref {
+            refs.push(EvidenceRef::new(format!("decision:{decision}")).with_kind("human_decision"));
+        }
+        refs
+    }
+}
+
+/// Deterministic proposer identity for the prompt surface: the D238 candidate
+/// registry that proposed the candidate.
+fn prompt_proposer(task_id: &str) -> String {
+    format!("prompt:registry:{task_id}")
+}
+
+/// Deterministic verifier identity: the independent evaluation suite that
+/// produced the same-n metrics.
+fn prompt_verifier(task_id: &str) -> String {
+    format!("prompt:evaluation:{task_id}")
+}
+
+/// Deterministic reviewer identity: the eligibility gate that accepted the
+/// candidate based on the evaluation record.
+fn prompt_reviewer(task_id: &str) -> String {
+    format!("prompt:eligibility:{task_id}")
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::promotion::PromotionState;
     use proptest::prelude::*;
     fn base() -> PromptCandidate {
         PromptCandidate {
@@ -389,6 +524,116 @@ mod tests {
         let mut bad = task.clone();
         bad.optimizer_enabled = true;
         assert!(bad.validate().is_err());
+    }
+
+    // ── PIR-015: prompt surface → shared promotion protocol adapter ──
+
+    #[test]
+    fn promotion_adapter_maps_prompt_states_without_auto_promotion() {
+        // CandidateProposed → Proposed.
+        let proposed = base().propose(ContentDigest::of_text("candidate")).unwrap();
+        let mapped = proposed.to_promotion_candidate().unwrap();
+        assert_eq!(mapped.state, PromotionState::Proposed);
+        assert_eq!(mapped.kind, PromotionKind::Prompt);
+        assert_eq!(mapped.proposer, "prompt:registry:summary");
+        assert_eq!(mapped.verifier, None);
+        assert_eq!(mapped.evidence_refs.len(), 1);
+        assert!(!mapped.import_eligible);
+
+        // Evaluated → Verified by the independent evaluation suite.
+        let evaluated = proposed.evaluate(eval(), 500).unwrap();
+        let mapped = evaluated.to_promotion_candidate().unwrap();
+        assert_eq!(mapped.state, PromotionState::Verified);
+        assert_eq!(
+            mapped.verifier.as_deref(),
+            Some("prompt:evaluation:summary")
+        );
+        assert_eq!(mapped.reviewer, None);
+        assert!(
+            mapped.evidence_refs.len() >= 4,
+            "fixture hashes + same-n record + metric vector"
+        );
+        assert!(
+            mapped
+                .evidence_refs
+                .iter()
+                .any(|e| e.kind.as_deref() == Some("fixture_hash"))
+        );
+        assert!(!mapped.import_eligible);
+
+        // Eligible → Reviewed (never Promoted — optimizer auto-promotion is off).
+        let eligible = evaluated.mark_eligible().unwrap();
+        let mapped = eligible.to_promotion_candidate().unwrap();
+        assert_eq!(mapped.state, PromotionState::Reviewed);
+        assert_eq!(
+            mapped.reviewer.as_deref(),
+            Some("prompt:eligibility:summary")
+        );
+        assert_ne!(mapped.state, PromotionState::Promoted);
+        assert!(
+            mapped
+                .evidence_refs
+                .iter()
+                .any(|e| e.kind.as_deref() == Some("eligibility_gate"))
+        );
+        assert!(!mapped.import_eligible);
+    }
+
+    #[test]
+    fn promotion_adapter_refuses_baseline_rejected_and_import_leak() {
+        // BaselineRegistered: nothing to promote.
+        assert!(matches!(
+            base().to_promotion_candidate().unwrap_err(),
+            PromotionError::InvalidState(_)
+        ));
+
+        // Rejected prompt candidate: no promotion path.
+        let rejected = base()
+            .propose(ContentDigest::of_text("candidate"))
+            .unwrap()
+            .evaluate(eval(), 500)
+            .unwrap()
+            .mark_eligible()
+            .unwrap();
+        let mut rejected = rejected;
+        rejected.state = PromptCandidateState::Rejected;
+        rejected.validate().unwrap();
+        assert!(matches!(
+            rejected.to_promotion_candidate().unwrap_err(),
+            PromotionError::InvalidState(_)
+        ));
+
+        // D127 import leak is refused before any promotion candidate exists.
+        let mut leaked = base().propose(ContentDigest::of_text("candidate")).unwrap();
+        leaked.import_eligible = !leaked.import_eligible;
+        assert!(matches!(
+            leaked.to_promotion_candidate().unwrap_err(),
+            PromotionError::InvalidState(_)
+        ));
+    }
+
+    #[test]
+    fn promotion_adapter_records_human_decision_as_review_evidence() {
+        let eligible = base()
+            .propose(ContentDigest::of_text("candidate"))
+            .unwrap()
+            .evaluate(eval(), 500)
+            .unwrap();
+        let mut eligible = eligible.mark_eligible().unwrap();
+        eligible.human_decision_ref = Some("dr-77".into());
+        let mapped = eligible.to_promotion_candidate().unwrap();
+        assert!(
+            mapped
+                .evidence_refs
+                .iter()
+                .any(|e| e.reference == "decision:dr-77")
+        );
+        assert!(
+            mapped
+                .evidence_refs
+                .iter()
+                .any(|e| e.kind.as_deref() == Some("human_decision"))
+        );
     }
 
     proptest! {

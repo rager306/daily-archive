@@ -9,6 +9,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::promotion::{EvidenceRef, PromotionCandidate, PromotionError, PromotionKind};
+
 /// A gold-standard entity for evaluation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GoldEntity {
@@ -22,6 +24,58 @@ pub struct GoldEntity {
 pub struct PredictedEntity {
     pub label: String,
     pub entity_type: String,
+}
+
+/// Deterministic proposer identity for the constrained multi-paper gold
+/// promote pipeline (E2: `inventory_fp` + `batch_promote_gold`).
+pub const GOLD_PROMOTE_PROPOSER: &str = "gold:multi-paper-promote";
+
+impl GoldEntity {
+    /// Adapter to the shared authority-neutral promotion protocol (PIR-015).
+    ///
+    /// A gold entity promoted by the constrained multi-paper pipeline
+    /// ([`promote_candidates`]) becomes a [`PromotionKind::Gold`] proposal at
+    /// `PromotionState::Proposed`, with one durable evidence ref per
+    /// supporting paper plus the multi-paper count and the `min_papers`
+    /// constraint that authorized the promotion. An empty or
+    /// below-constraint `supporting_papers` slice is refused — a gold promote
+    /// without durable paper evidence can never enter the protocol.
+    /// `import_eligible` stays false (D127 lock).
+    pub fn to_promotion_proposal(
+        &self,
+        supporting_papers: &[String],
+        min_papers: usize,
+    ) -> Result<PromotionCandidate, PromotionError> {
+        if supporting_papers.is_empty() || supporting_papers.len() < min_papers {
+            return Err(PromotionError::MissingEvidence);
+        }
+        let mut evidence: Vec<EvidenceRef> = supporting_papers
+            .iter()
+            .map(|paper| {
+                EvidenceRef::new(format!("gold:{paper}:{}:{}", self.label, self.entity_type))
+                    .with_kind("gold_paper_row")
+            })
+            .collect();
+        evidence.push(
+            EvidenceRef::new(format!(
+                "gold:multi-paper:{}:{}:papers={}",
+                self.label,
+                self.entity_type,
+                supporting_papers.len()
+            ))
+            .with_kind("gold_multi_paper_count"),
+        );
+        evidence.push(
+            EvidenceRef::new(format!("gold:constraint:min_papers={min_papers}"))
+                .with_kind("gold_constraint"),
+        );
+        PromotionCandidate::propose(
+            PromotionKind::Gold,
+            format!("gold:{}:{}", self.label, self.entity_type),
+            GOLD_PROMOTE_PROPOSER,
+            evidence,
+        )
+    }
 }
 
 /// Evaluation metrics for one extraction run.
@@ -685,5 +739,58 @@ mod tests {
         }];
         let promoted = promote_candidates(&[], &fps, &index, 2);
         assert!(promoted.is_empty(), "free invent forbidden");
+    }
+
+    // ── PIR-015: gold surface → shared promotion protocol adapter ──
+
+    #[test]
+    fn promotion_adapter_gold_carries_durable_multi_paper_evidence() {
+        use crate::promotion::PromotionState;
+        let entity = GoldEntity {
+            label: "RLHF".into(),
+            entity_type: "Method".into(),
+            section: None,
+        };
+        let proposal = entity
+            .to_promotion_proposal(&["2510.26094".into(), "2601.00001".into()], 2)
+            .expect("adapter");
+        assert_eq!(proposal.state, PromotionState::Proposed);
+        assert_eq!(proposal.kind, PromotionKind::Gold);
+        assert_eq!(proposal.proposer, GOLD_PROMOTE_PROPOSER);
+        assert_eq!(proposal.candidate_id, "gold:RLHF:Method");
+        assert!(
+            proposal
+                .evidence_refs
+                .iter()
+                .any(|e| e.reference == "gold:2510.26094:RLHF:Method"),
+            "per-paper durable row evidence"
+        );
+        assert!(
+            proposal
+                .evidence_refs
+                .iter()
+                .any(|e| e.reference == "gold:constraint:min_papers=2"),
+            "constraint recorded as durable evidence"
+        );
+        assert!(
+            proposal
+                .evidence_refs
+                .iter()
+                .any(|e| e.reference == "gold:multi-paper:RLHF:Method:papers=2")
+        );
+        assert!(!proposal.import_eligible, "D127 lock");
+
+        // Fail-closed: no durable paper evidence → no promotion proposal.
+        assert_eq!(
+            entity.to_promotion_proposal(&[], 2).unwrap_err(),
+            PromotionError::MissingEvidence
+        );
+        // Below the multi-paper constraint → refused.
+        assert_eq!(
+            entity
+                .to_promotion_proposal(&["2510.26094".into()], 2)
+                .unwrap_err(),
+            PromotionError::MissingEvidence
+        );
     }
 }
