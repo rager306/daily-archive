@@ -1,0 +1,63 @@
+# HTML structure honesty contract — PIR-009 / PIR-010 closure, M398 S05 T04.
+#
+# DATA for the Governor `html_structure_honesty` check. The contract binds
+# HTML document-context readiness to source proof:
+#
+#   - positive (`html_path_identity`): a DocumentContextProjection rendered
+#     from HTML sections that carry the full derived identity (dotted
+#     `path_id`, `parent_section_id`, `section_id`, per-parent `order`) —
+#     the projection must have unique paths, every section must carry a
+#     path, each declared parent must be the dotted parent of that path
+#     (dot-free `~N` restart suffixes never become dotted parents), and the
+#     previous/next chains must follow document order. The Rust test
+#     `document_context_stage_fixtures_match_committed_governor_data` pins
+#     this fixture to the current `DocumentContextStage` output;
+#
+#   - negative (`flat_missing_identity`): flat HTML without path identity
+#     stays BLOCKED and `not_claimed` — the stage fails closed with the
+#     typed `missing_section_path_id` reason and readiness never claims
+#     structure the source does not prove. `import_eligible` stays false
+#     (D127). The Rust test
+#     `document_context_stage_negative_fixture_models_blocked_html_readiness`
+#     pins this record contract;
+#
+#   - readiness_markers: the load surface stamps HTML/textbook sources as
+#     `graph_readiness = "not_claimed"` — no HTML source can silently claim
+#     graph readiness without the full proof chain.
+#
+# This is DATA — adding a fixture or tightening an expectation is an edit
+# here (plus updating the committed fixture JSON), not a Python change.
+
+schema_version: html-structure-honesty.v1
+policy_id: html-structure-honesty
+dimension: html_structure_ast
+severity: high
+anchor: "ADR-053 (document tree), ADR-055 (ACAP readiness), PIR-009, PIR-010"
+
+report_contract:
+  schema_version: document-context-projection.v1
+  required_fields: [article_id, sections]
+  section_required_fields: [path_id, title, parent_section_id, previous_path_id, next_path_id, summary]
+
+fixtures:
+  positive:
+    id: html_path_identity
+    path: data/html_structure_contract/html_path_identity.projection.json
+    expect:
+      ok: true
+      unique_paths: true
+      all_sections_have_identity: true
+  negative:
+    id: flat_missing_identity
+    path: data/html_structure_contract/flat_missing_identity.blocked.json
+    expect:
+      ok: false
+      readiness: not_claimed
+      reason: missing_section_path_id
+      import_eligible: false
+
+readiness_markers:
+  path: crates/da-application/src/article_load.rs
+  required_patterns:
+    - 'graph_readiness = "not_claimed"'
+    - 'source_profile.as_deref() == Some("textbook")'

@@ -1314,6 +1314,185 @@ def test_canonical_temporal_wire_format_invalid_yaml_is_flagged():
     assert flags[0].flag == "canonical_temporal_wire_format_invalid"
 
 
+def _write_html_structure_contract(root: Path) -> Path:
+    """Write the HTML structure honesty contract + fixtures into a temp root."""
+    contract = root / "scripts/governor/checks/html_structure_honesty.yaml"
+    _write(contract, """schema_version: html-structure-honesty.v1
+policy_id: html-structure-honesty
+dimension: html_structure_ast
+severity: high
+report_contract:
+  required_fields: [article_id, sections]
+  section_required_fields: [path_id, title, parent_section_id, previous_path_id, next_path_id, summary]
+fixtures:
+  positive:
+    id: html_path_identity
+    path: data/html_structure_contract/html_path_identity.projection.json
+    expect:
+      ok: true
+      unique_paths: true
+      all_sections_have_identity: true
+  negative:
+    id: flat_missing_identity
+    path: data/html_structure_contract/flat_missing_identity.blocked.json
+    expect:
+      ok: false
+      readiness: not_claimed
+      reason: missing_section_path_id
+      import_eligible: false
+readiness_markers:
+  path: crates/da-application/src/article_load.rs
+  required_patterns:
+    - 'graph_readiness = "not_claimed"'
+    - 'source_profile.as_deref() == Some("textbook")'
+""")
+    _write(root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+        "article_id": "gnn-ch-chapters__01-intro-to-graphs",
+        "sections": [
+            {"path_id": "1", "title": "Chapter 1", "parent_section_id": None,
+             "previous_path_id": None, "next_path_id": "1.1", "summary": None},
+            {"path_id": "1.1", "title": "Section A", "parent_section_id": "sec-1",
+             "previous_path_id": "1", "next_path_id": "1.2", "summary": None},
+            {"path_id": "1.2", "title": "Section B", "parent_section_id": "sec-1",
+             "previous_path_id": "1.1", "next_path_id": "1.2.1", "summary": None},
+            {"path_id": "1.2.1", "title": "Sub B.1", "parent_section_id": "sec-1.2",
+             "previous_path_id": "1.2", "next_path_id": None, "summary": None},
+        ],
+    }))
+    _write(root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+        "schema_version": "document-context-blocked.v1",
+        "article_id": "gnn-ch-chapters__03-flat",
+        "ok": False,
+        "readiness": "not_claimed",
+        "reason": "missing_section_path_id",
+        "detail": "flat HTML sections carry no path identity; blocked fail-closed.",
+        "import_eligible": False,
+    }))
+    _write(root / "crates/da-application/src/article_load.rs", (
+        '        if report.source_profile.as_deref() == Some("textbook") {\n'
+        '            report.graph_readiness = "not_claimed".into();\n'
+        '        }\n'
+    ))
+    return contract
+
+def test_html_structure_honesty_pass_on_clean_fixtures():
+    """Positive projection + negative blocked record satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    assert service._check_html_structure_honesty() == []
+
+def test_html_structure_honesty_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    (service.root / "data/html_structure_contract/flat_missing_identity.blocked.json").unlink()
+    flags = service._check_html_structure_honesty()
+    assert len(flags) == 1
+    assert flags[0].flag == "html_structure_honesty_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+def test_html_structure_honesty_positive_fixture_must_have_full_identity():
+    """A section without path_id (or with a phantom parent) breaks the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    _write(service.root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+        "article_id": "gnn-ch-chapters__01-intro-to-graphs",
+        "sections": [
+            {"path_id": "1", "title": "Chapter 1", "parent_section_id": None,
+             "previous_path_id": None, "next_path_id": "1.1", "summary": None},
+            {"path_id": "1.1", "title": "Section A", "parent_section_id": "sec-9",
+             "previous_path_id": "1", "next_path_id": None, "summary": None},
+        ],
+    }))
+    flags = service._check_html_structure_honesty()
+    broken = [f for f in flags if f.flag == "html_structure_honesty_broken"]
+    assert len(broken) == 1, f"expected broken flags: {flags}"
+    assert "parent_section_id" in broken[0].evidence
+    assert "sec-9" in broken[0].evidence
+
+def test_html_structure_honesty_positive_fixture_must_have_unique_paths():
+    """Duplicate path_ids break the honesty contract (unique tree positions)."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    _write(service.root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+        "article_id": "gnn-ch-chapters__01-intro-to-graphs",
+        "sections": [
+            {"path_id": "1", "title": "A", "parent_section_id": None,
+             "previous_path_id": None, "next_path_id": "1", "summary": None},
+            {"path_id": "1", "title": "B", "parent_section_id": None,
+             "previous_path_id": "1", "next_path_id": None, "summary": None},
+        ],
+    }))
+    flags = service._check_html_structure_honesty()
+    broken = [f for f in flags if f.flag == "html_structure_honesty_broken"]
+    assert len(broken) == 1
+    assert "not unique" in broken[0].evidence
+
+def test_html_structure_honesty_negative_fixture_must_stay_not_claimed():
+    """A blocked record claiming ok=true or readiness is flagged."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    _write(service.root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+        "schema_version": "document-context-blocked.v1",
+        "article_id": "gnn-ch-chapters__03-flat",
+        "ok": True,
+        "readiness": "ready",
+        "reason": "",
+        "import_eligible": False,
+    }))
+    flags = service._check_html_structure_honesty()
+    broken = [f for f in flags if f.flag == "html_structure_honesty_broken"]
+    assert len(broken) == 1
+    assert "ok=false" in broken[0].evidence
+    assert "not_claimed/blocked" in broken[0].evidence
+    assert "typed reason" in broken[0].evidence
+
+def test_html_structure_honesty_negative_fixture_must_keep_d127_locked():
+    """A blocked record with import_eligible=true unlocks D127 — flagged."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    _write(service.root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+        "schema_version": "document-context-blocked.v1",
+        "article_id": "gnn-ch-chapters__03-flat",
+        "ok": False,
+        "readiness": "not_claimed",
+        "reason": "missing_section_path_id",
+        "import_eligible": True,
+    }))
+    flags = service._check_html_structure_honesty()
+    broken = [f for f in flags if f.flag == "html_structure_honesty_broken"]
+    assert len(broken) == 1
+    assert "import_eligible" in broken[0].evidence
+    assert "D127" in broken[0].evidence
+
+def test_html_structure_honesty_readiness_marker_missing_is_flagged():
+    """The load surface must keep stamping HTML/textbook as not_claimed."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_html_structure_contract(service.root)
+    _write(service.root / "crates/da-application/src/article_load.rs", (
+        '        report.graph_readiness = "claimed".into();\n'
+    ))
+    flags = service._check_html_structure_honesty()
+    assert len(flags) == 1
+    assert flags[0].flag == "html_structure_honesty_readiness_marker_missing"
+    assert "graph_readiness = \"not_claimed\"" in flags[0].evidence
+
+def test_html_structure_honesty_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write(service.root / "scripts/governor/checks/html_structure_honesty.yaml",
+           "schema_version: [unclosed\n")
+    flags = service._check_html_structure_honesty()
+    assert len(flags) == 1
+    assert flags[0].flag == "html_structure_honesty_invalid"
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -1339,6 +1518,14 @@ def _run_all_tests() -> int:
         test_canonical_temporal_wire_format_positive_fixture_must_be_clean,
         test_canonical_temporal_wire_format_negative_fixture_must_be_rejected,
         test_canonical_temporal_wire_format_invalid_yaml_is_flagged,
+        test_html_structure_honesty_pass_on_clean_fixtures,
+        test_html_structure_honesty_missing_fixture_is_flagged,
+        test_html_structure_honesty_positive_fixture_must_have_full_identity,
+        test_html_structure_honesty_positive_fixture_must_have_unique_paths,
+        test_html_structure_honesty_negative_fixture_must_stay_not_claimed,
+        test_html_structure_honesty_negative_fixture_must_keep_d127_locked,
+        test_html_structure_honesty_readiness_marker_missing_is_flagged,
+        test_html_structure_honesty_invalid_yaml_is_flagged,
     ]
     passed = 0
     failed = 0

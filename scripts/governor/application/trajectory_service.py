@@ -49,6 +49,91 @@ def _wire_value_accepted(value) -> bool:
     return False
 
 
+def _validate_html_projection(projection, required_fields, section_fields) -> list[str]:
+    """Validate a positive DocumentContextProjection fixture (PIR-010).
+
+    Mirrors `da_application::DocumentContextStage` semantics: every section
+    must carry a non-empty `path_id`, all paths must be unique, each declared
+    `parent_section_id` must equal `sec-<dotted parent of path_id>` (dot-free
+    `~N` restart suffixes never introduce a hierarchy level), and the
+    `previous_path_id` / `next_path_id` chains must follow document order.
+    Returns a list of contract problems (empty = honest).
+    """
+    problems: list[str] = []
+    missing = [f for f in required_fields if f not in projection]
+    if missing:
+        return [f"missing required fields: {missing}"]
+    sections = projection.get("sections")
+    if not isinstance(sections, list) or not sections:
+        return ["sections must be a non-empty array"]
+    paths: list[str] = []
+    for index, section in enumerate(sections):
+        if not isinstance(section, dict):
+            problems.append(f"sections[{index}] is not an object")
+            continue
+        missing_sec = [f for f in section_fields if f not in section]
+        if missing_sec:
+            problems.append(f"sections[{index}] missing fields: {missing_sec}")
+        path_id = section.get("path_id")
+        if not isinstance(path_id, str) or not path_id:
+            problems.append(f"sections[{index}] has no path_id")
+            continue
+        paths.append(path_id)
+        # Parent identity must be the last-dot prefix (restart suffixes are
+        # dot-free and never become dotted parents).
+        parent_path = path_id.rpartition(".")[0]
+        expected_parent = f"sec-{parent_path}" if parent_path else None
+        parent = section.get("parent_section_id")
+        if parent is not None and parent != expected_parent:
+            problems.append(
+                f"sections[{index}] parent_section_id {parent!r} inconsistent "
+                f"with path {path_id!r} (expected {expected_parent!r})"
+            )
+        # prev/next chains follow document order (stage contract).
+        prev_expected = sections[index - 1].get("path_id") if index > 0 else None
+        if section.get("previous_path_id") != prev_expected:
+            problems.append(
+                f"sections[{index}] previous_path_id must be {prev_expected!r}, "
+                f"got {section.get('previous_path_id')!r}"
+            )
+        next_expected = (
+            sections[index + 1].get("path_id") if index + 1 < len(sections) else None
+        )
+        if section.get("next_path_id") != next_expected:
+            problems.append(
+                f"sections[{index}] next_path_id must be {next_expected!r}, "
+                f"got {section.get('next_path_id')!r}"
+            )
+    if len(paths) != len(set(paths)):
+        problems.append("path_id values are not unique")
+    return problems
+
+
+def _validate_html_blocked_record(record) -> list[str]:
+    """Validate a negative blocked/not_claimed fixture (PIR-010, D127).
+
+    Flat HTML without path identity must stay blocked: `ok=false`,
+    `readiness` must be `not_claimed` (or `blocked`), a typed `reason` must
+    name the missing identity, and `import_eligible` must stay false (D127
+    lock). Returns a list of contract problems (empty = honest).
+    """
+    problems: list[str] = []
+    if record.get("ok") is not False:
+        problems.append("blocked record must have ok=false")
+    readiness = record.get("readiness")
+    if readiness not in ("not_claimed", "blocked"):
+        problems.append(
+            f"readiness must stay not_claimed/blocked, got {readiness!r}"
+        )
+    if not record.get("reason"):
+        problems.append(
+            "blocked record must carry a typed reason (missing_section_path_id)"
+        )
+    if record.get("import_eligible") is not False:
+        problems.append("import_eligible must stay false (D127)")
+    return problems
+
+
 def _acap_hard_failures_nonzero(value) -> bool:
     """True when ACAP hard_failures indicates a failure.
 
@@ -120,6 +205,13 @@ class TrajectoryService:
         # DateTime wire decision enforced (integer writes rejected, legacy
         # reads bounded to the compatibility decoder).
         drift_flags.extend(self._check_canonical_temporal_wire_format())
+
+        # PIR-009/PIR-010: HTML structure honesty contract — positive
+        # document-context projection and negative blocked/not_claimed
+        # fixtures keep HTML readiness honest: proven paths may claim
+        # structure, missing identity stays blocked or not_claimed, and
+        # D127 stays locked.
+        drift_flags.extend(self._check_html_structure_honesty())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -607,6 +699,87 @@ class TrajectoryService:
                 _flag("canonical_temporal_wire_format_broken",
                       f"{polarity} fixture {fixture.get('id')} violates the wire contract: "
                       f"{bad}")
+        return flags
+
+    def _check_html_structure_honesty(self) -> list[DriftFlag]:
+        """Evaluate the data-driven HTML structure honesty contract (PIR-009/PIR-010).
+
+        Reads `scripts/governor/checks/html_structure_honesty.yaml` (DATA).
+        The positive fixture is a DocumentContextProjection rendered by
+        `da_application::DocumentContextStage` from HTML sections that carry
+        the full derived identity: paths must be unique, every section must
+        have a `path_id`, each declared parent must be the dotted parent of
+        that path (dot-free `~N` restart suffixes never become dotted
+        parents), and prev/next chains must follow document order. The
+        negative fixture models the fail-closed outcome for flat HTML:
+        ok=false, readiness stays `not_claimed`/`blocked`, a typed reason
+        names the missing identity, and `import_eligible` stays false (D127).
+        The Rust tests
+        `document_context_stage_fixtures_match_committed_governor_data` and
+        `document_context_stage_negative_fixture_models_blocked_html_readiness`
+        pin the fixtures to the current stage behavior, so a broken contract
+        cannot silently survive a regenerate. The readiness surface
+        (`article_load.rs`) must keep stamping HTML/textbook sources as
+        `graph_readiness = "not_claimed"`.
+        """
+        path = self.root / "scripts/governor/checks/html_structure_honesty.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="html_structure_honesty_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="html_structure_ast",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "html_structure_ast"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        report_contract = contract.get("report_contract") or {}
+        required_fields = list(report_contract.get("required_fields", []))
+        section_fields = list(report_contract.get("section_required_fields", []))
+
+        for polarity in ("positive", "negative"):
+            fixture = (contract.get("fixtures") or {}).get(polarity) or {}
+            fixture_path = self.root / str(fixture.get("path", ""))
+            if not fixture_path.is_file():
+                _flag("html_structure_honesty_fixture_missing",
+                      f"{polarity} fixture missing: {fixture_path}")
+                continue
+            try:
+                payload = json.loads(fixture_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("html_structure_honesty_fixture_invalid",
+                      f"{polarity} fixture unreadable: {error}")
+                continue
+            if polarity == "positive":
+                problems = _validate_html_projection(payload, required_fields, section_fields)
+            else:
+                problems = _validate_html_blocked_record(payload)
+            if problems:
+                _flag("html_structure_honesty_broken",
+                      f"{polarity} fixture {fixture.get('id')} violates the contract: "
+                      f"; ".join(problems))
+
+        markers = contract.get("readiness_markers") or {}
+        markers_path = self.root / str(markers.get("path", ""))
+        if not markers_path.is_file():
+            _flag("html_structure_honesty_readiness_marker_missing",
+                  f"readiness surface missing: {markers_path}")
+        else:
+            text = markers_path.read_text(errors="replace")
+            missing = [m for m in markers.get("required_patterns", []) if m not in text]
+            if missing:
+                _flag("html_structure_honesty_readiness_marker_missing",
+                      f"readiness surface missing honesty markers: {missing}")
         return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
