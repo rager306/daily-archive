@@ -1629,6 +1629,375 @@ def test_promotion_evidence_contract_invalid_yaml_is_flagged():
     flags = service._check_promotion_evidence_contract()
     assert flags[0].flag == "promotion_evidence_contract_invalid"
 
+def _write_acap_runtime_control_plane_contract(root: Path) -> Path:
+    """Write the ACAP runtime control-plane contract + fixtures into a temp root."""
+    contract = root / "scripts/governor/checks/acap_runtime_control_plane.yaml"
+    _write(contract, """schema_version: acap-runtime-control-plane.v1
+policy_id: acap-runtime-control-plane
+dimension: acap_runtime_control_plane
+severity: high
+locks:
+  import_eligible: false
+  promotion_explicit_transitions: 3
+admission:
+  fsm_policy: scripts/governor/checks/article_context_assurance.yaml
+  record_contract:
+    required_fields: [stage_id, admitted, evidence_ref, disposition, from_state, to_state]
+    dispositions: [executed, cache_hit, failed]
+  fixtures:
+    positive:
+      id: legal_admission
+      path: data/acap_runtime_control_plane/admission_legal.positive.json
+      expect: clean
+    negative:
+      id: admission_violations
+      path: data/acap_runtime_control_plane/admission_illegal.negative.json
+      expect:
+        require_violations: [illegal_transition, denied_without_reason, missing_evidence_ref, admitted_with_error, import_leak]
+promotion:
+  record_contract:
+    required_fields: [decision_id, transition, verifier, reviewer, promoter, evidence_refs, sink_len, explicit_transitions, import_eligible]
+    required_explicit_transitions: 3
+  fixtures:
+    positive:
+      id: authority_legal
+      path: data/acap_runtime_control_plane/promotion_authority.positive.json
+      expect: clean
+    negative:
+      id: authority_violations
+      path: data/acap_runtime_control_plane/promotion_authority.negative.json
+      expect:
+        require_violations: [auto_promote, import_leak, self_authority, missing_evidence]
+scheduler:
+  record_contract:
+    required_fields: [task_vid, status, attempts, attempt_outcomes, published_by_epoch, logical_results, due_after_replay, import_eligible]
+    completed_status: completed
+  fixtures:
+    positive:
+      id: recovery_legal
+      path: data/acap_runtime_control_plane/scheduler_recovery.positive.json
+      expect: clean
+    negative:
+      id: recovery_violations
+      path: data/acap_runtime_control_plane/scheduler_recovery.negative.json
+      expect:
+        require_violations: [double_publish, stale_epoch_publish, recovery_without_aborted_attempt, completed_without_result, due_after_completion, import_leak]
+replay:
+  record_contract:
+    required_fields: [scenario, pipeline_executor_calls, pipeline_stage_records, pipeline_replay_dispositions, promotion_sink_len, promotion_sink_len_after_replay, scheduler_attempts, scheduler_attempts_after_replay, scheduler_due_after_replay, import_eligible]
+  fixtures:
+    positive:
+      id: replay_idempotent
+      path: data/acap_runtime_control_plane/replay_idempotent.positive.json
+      expect: clean
+    negative:
+      id: replay_violations
+      path: data/acap_runtime_control_plane/replay_idempotent.negative.json
+      expect:
+        require_violations: [executor_rerun, duplicate_stage_records, cache_miss_on_replay, promotion_sink_growth, scheduler_new_attempts, scheduler_due_again, import_leak]
+source_markers:
+  control_plane_test:
+    path: crates/da-application/tests/acap_control_plane_test.rs
+    required_patterns: [ControlPlaneEvidenceLedger, admission:illegal_transition, AlreadyPromoted, recovered, import_eligible]
+  admission_domain:
+    path: crates/da-domain/src/assurance.rs
+    required_patterns: [ArticleContextState, IllegalTransition, error_class]
+  admission_ledger:
+    path: crates/da-domain/src/pipeline_ledger.rs
+    required_patterns: [PipelineStageLedger, StageIdRegistry]
+  scheduler_domain:
+    path: crates/da-domain/src/scheduler.rs
+    required_patterns: [logical_result_vid, AttemptOutcome, PendingTask]
+""")
+    _write(root / "scripts/governor/checks/article_context_assurance.yaml", """schema_version: article-context-assurance.v1
+fsm:
+  initial_state: source_registered
+  transitions:
+    - [source_registered, source_verified]
+    - [source_verified, parsed]
+    - [parsed, structured]
+    - [structured, extracted]
+    - [extracted, evidence_linked]
+    - [evidence_linked, embedded]
+    - [embedded, materialized]
+    - [materialized, enriched]
+    - [enriched, resolved]
+    - [resolved, summarized]
+    - [summarized, finalized]
+    - [finalized, task_accepted]
+    - [task_accepted, accepted_checkpoint]
+""")
+    _write(root / "data/acap_runtime_control_plane/admission_legal.positive.json", json.dumps([
+        {"stage_id": "acquisition", "admitted": True,
+         "evidence_ref": "source:sha256:pdf-v1", "disposition": "executed",
+         "from_state": "source_registered", "to_state": "source_verified"},
+        {"stage_id": "checkpoint", "admitted": True,
+         "evidence_ref": "test-key-summary", "disposition": "executed",
+         "from_state": "materialized", "to_state": "enriched"},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/admission_illegal.negative.json", json.dumps([
+        {"violation": "illegal_transition", "record": {
+            "stage_id": "summary", "admitted": False, "evidence_ref": "",
+            "disposition": "failed", "from_state": "source_registered",
+            "to_state": "summarized", "error_class": "admission:illegal_transition"}},
+        {"violation": "denied_without_reason", "record": {
+            "stage_id": "checkpoint", "admitted": False, "evidence_ref": "",
+            "disposition": "failed", "from_state": "task_accepted",
+            "to_state": "accepted_checkpoint", "error_class": None}},
+        {"violation": "missing_evidence_ref", "record": {
+            "stage_id": "summary", "admitted": True, "evidence_ref": "",
+            "disposition": "executed", "from_state": "resolved", "to_state": "summarized"}},
+        {"violation": "admitted_with_error", "record": {
+            "stage_id": "parse", "admitted": True, "evidence_ref": "test-key-catalog",
+            "disposition": "executed", "from_state": "source_verified", "to_state": "parsed",
+            "error": {"error_class": "network"}}},
+        {"violation": "import_leak", "record": {
+            "stage_id": "summary", "admitted": True, "evidence_ref": "test-key-resolution",
+            "disposition": "executed", "from_state": "embedded", "to_state": "materialized",
+            "import_eligible": True}},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/promotion_authority.positive.json", json.dumps([
+        {"decision_id": "gold-3", "transition": "promoted",
+         "verifier": "contract:verifier:gold:1", "reviewer": "contract:reviewer:gold:2",
+         "promoter": "contract:promoter:gold:3",
+         "evidence_refs": ["gold:2510.26094:RLHF:Method"],
+         "sink_len": 3, "explicit_transitions": 3, "import_eligible": False},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/promotion_authority.negative.json", json.dumps([
+        {"violation": "auto_promote", "record": {
+            "decision_id": "opt-1", "transition": "auto_promoted",
+            "verifier": "eval:summary", "reviewer": "elig:summary", "promoter": "optimizer:grpo",
+            "evidence_refs": ["candidate:grpo:7"], "sink_len": 1,
+            "explicit_transitions": 0, "import_eligible": False}},
+        {"violation": "import_leak", "record": {
+            "decision_id": "gold-3", "transition": "promoted",
+            "verifier": "contract:verifier:gold:1", "reviewer": "contract:reviewer:gold:2",
+            "promoter": "contract:promoter:gold:3",
+            "evidence_refs": ["gold:2510.26094:RLHF:Method"], "sink_len": 3,
+            "explicit_transitions": 3, "import_eligible": True}},
+        {"violation": "self_authority", "record": {
+            "decision_id": "gold-4", "transition": "promoted",
+            "verifier": "contract:verifier:gold:1", "reviewer": "contract:reviewer:gold:2",
+            "promoter": "contract:reviewer:gold:2",
+            "evidence_refs": ["gold:2510.26094:X:Y"], "sink_len": 3,
+            "explicit_transitions": 3, "import_eligible": False}},
+        {"violation": "missing_evidence", "record": {
+            "decision_id": "gold-5", "transition": "promoted",
+            "verifier": "contract:verifier:gold:1", "reviewer": "contract:reviewer:gold:2",
+            "promoter": "contract:promoter:gold:5", "evidence_refs": [],
+            "sink_len": 3, "explicit_transitions": 3, "import_eligible": False}},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/scheduler_recovery.positive.json", json.dumps([
+        {"task_vid": "scheduler:openalex_enrich:2401.00001", "status": "completed",
+         "attempts": 2, "attempt_outcomes": ["aborted", "succeeded"],
+         "published_by_epoch": 2,
+         "logical_results": [{"result_id": "lr-1", "published_by_epoch": 2,
+                                "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+         "due_after_replay": 0, "import_eligible": False},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/scheduler_recovery.negative.json", json.dumps([
+        {"violation": "double_publish", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00001", "status": "completed",
+            "attempts": 2, "attempt_outcomes": ["aborted", "succeeded"],
+            "published_by_epoch": 2,
+            "logical_results": [{"result_id": "lr-1", "published_by_epoch": 2,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]},
+                                  {"result_id": "lr-1-dupe", "published_by_epoch": 2,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+            "due_after_replay": 0, "import_eligible": False}},
+        {"violation": "stale_epoch_publish", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00002", "status": "completed",
+            "attempts": 2, "attempt_outcomes": ["aborted", "succeeded"],
+            "published_by_epoch": 1,
+            "logical_results": [{"result_id": "lr-2", "published_by_epoch": 1,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+            "due_after_replay": 0, "import_eligible": False}},
+        {"violation": "recovery_without_aborted_attempt", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00003", "status": "completed",
+            "attempts": 2, "attempt_outcomes": ["succeeded", "succeeded"],
+            "published_by_epoch": 2,
+            "logical_results": [{"result_id": "lr-3", "published_by_epoch": 2,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+            "due_after_replay": 0, "import_eligible": False}},
+        {"violation": "completed_without_result", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00004", "status": "completed",
+            "attempts": 1, "attempt_outcomes": ["succeeded"], "published_by_epoch": 1,
+            "logical_results": [], "due_after_replay": 0, "import_eligible": False}},
+        {"violation": "due_after_completion", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00005", "status": "completed",
+            "attempts": 1, "attempt_outcomes": ["succeeded"], "published_by_epoch": 1,
+            "logical_results": [{"result_id": "lr-5", "published_by_epoch": 1,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+            "due_after_replay": 2, "import_eligible": False}},
+        {"violation": "import_leak", "record": {
+            "task_vid": "scheduler:openalex_enrich:2401.00006", "status": "completed",
+            "attempts": 1, "attempt_outcomes": ["succeeded"], "published_by_epoch": 1,
+            "logical_results": [{"result_id": "lr-6", "published_by_epoch": 1,
+                                   "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
+            "due_after_replay": 0, "import_eligible": True}},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/replay_idempotent.positive.json", json.dumps([
+        {"scenario": "full-fsm-chain pdf-v1 replay",
+         "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+         "pipeline_stage_records": 2,
+         "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+         "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+         "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+         "scheduler_due_after_replay": 0, "import_eligible": False},
+    ]))
+    _write(root / "data/acap_runtime_control_plane/replay_idempotent.negative.json", json.dumps([
+        {"violation": "executor_rerun", "record": {
+            "scenario": "executor rerun",
+            "pipeline_executor_calls": [["acquisition", 2], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 0, "import_eligible": False}},
+        {"violation": "duplicate_stage_records", "record": {
+            "scenario": "duplicate records",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 3,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 0, "import_eligible": False}},
+        {"violation": "cache_miss_on_replay", "record": {
+            "scenario": "cache miss on replay",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "executed"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 0, "import_eligible": False}},
+        {"violation": "promotion_sink_growth", "record": {
+            "scenario": "sink growth",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 4,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 0, "import_eligible": False}},
+        {"violation": "scheduler_new_attempts", "record": {
+            "scenario": "new attempts",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 3,
+            "scheduler_due_after_replay": 0, "import_eligible": False}},
+        {"violation": "scheduler_due_again", "record": {
+            "scenario": "due again",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 1, "import_eligible": False}},
+        {"violation": "import_leak", "record": {
+            "scenario": "import leak",
+            "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
+            "pipeline_stage_records": 2,
+            "pipeline_replay_dispositions": ["cache_hit", "cache_hit"],
+            "promotion_sink_len": 3, "promotion_sink_len_after_replay": 3,
+            "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
+            "scheduler_due_after_replay": 0, "import_eligible": True}},
+    ]))
+    _write(root / "crates/da-application/tests/acap_control_plane_test.rs", (
+        "struct ControlPlaneEvidenceLedger;\n"
+        "// admission:illegal_transition AlreadyPromoted recovered import_eligible\n"
+    ))
+    _write(root / "crates/da-domain/src/assurance.rs", (
+        "pub enum ArticleContextState { }\n"
+        "IllegalTransition error_class\n"
+    ))
+    _write(root / "crates/da-domain/src/pipeline_ledger.rs", (
+        "pub struct PipelineStageLedger;\npub struct StageIdRegistry;\n"
+    ))
+    _write(root / "crates/da-domain/src/scheduler.rs", (
+        "pub fn logical_result_vid() {} AttemptOutcome PendingTask\n"
+    ))
+    return contract
+
+def test_acap_runtime_control_plane_pass_on_clean_fixtures():
+    """Positive + negative fixtures and source markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    assert service._check_acap_runtime_control_plane() == []
+
+def test_acap_runtime_control_plane_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    (service.root / "data/acap_runtime_control_plane/admission_illegal.negative.json").unlink()
+    flags = service._check_acap_runtime_control_plane()
+    assert len(flags) == 1
+    assert flags[0].flag == "acap_runtime_control_plane_fixture_missing"
+    assert "admission/negative" in flags[0].evidence
+
+def test_acap_runtime_control_plane_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    # Inject an import leak into the promotion positive record (D127).
+    path = service.root / "data/acap_runtime_control_plane/promotion_authority.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["import_eligible"] = True
+    _write(path, json.dumps(records))
+    flags = service._check_acap_runtime_control_plane()
+    broken = [f for f in flags if f.flag == "acap_runtime_control_plane_broken"]
+    assert len(broken) == 1
+    assert "import_leak" in broken[0].evidence
+
+def test_acap_runtime_control_plane_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    # Break the self_authority record so its labelled violation no longer fires.
+    path = service.root / "data/acap_runtime_control_plane/promotion_authority.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "self_authority":
+            record["record"]["promoter"] = "contract:promoter:gold:4"
+    _write(path, json.dumps(records))
+    flags = service._check_acap_runtime_control_plane()
+    broken = [f for f in flags if f.flag == "acap_runtime_control_plane_broken"]
+    assert any("self_authority" in f.evidence for f in broken)
+
+def test_acap_runtime_control_plane_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    # Remove the scheduler import_leak record entirely — coverage must fail.
+    path = service.root / "data/acap_runtime_control_plane/scheduler_recovery.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "import_leak"]
+    _write(path, json.dumps(records))
+    flags = service._check_acap_runtime_control_plane()
+    broken = [f for f in flags if f.flag == "acap_runtime_control_plane_broken"]
+    assert any("import_leak" in f.evidence for f in broken)
+
+def test_acap_runtime_control_plane_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    # Drop the typed guards from the scheduler domain surface.
+    _write(service.root / "crates/da-domain/src/scheduler.rs", "pub struct Scheduler;\n")
+    flags = service._check_acap_runtime_control_plane()
+    marker = [f for f in flags if f.flag == "acap_runtime_control_plane_source_marker_missing"]
+    assert len(marker) == 1
+    assert "scheduler_domain" in marker[0].evidence
+
+def test_acap_runtime_control_plane_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    _write(service.root / "scripts/governor/checks/acap_runtime_control_plane.yaml",
+           "{bad yaml: [")
+    flags = service._check_acap_runtime_control_plane()
+    assert flags[0].flag == "acap_runtime_control_plane_invalid"
+
 def _write_html_structure_contract(root: Path) -> Path:
     """Write the HTML structure honesty contract + fixtures into a temp root."""
     contract = root / "scripts/governor/checks/html_structure_honesty.yaml"
@@ -1840,6 +2209,13 @@ def _run_all_tests() -> int:
         test_promotion_evidence_contract_negative_fixture_must_cover_required_violations,
         test_promotion_evidence_contract_source_marker_missing_is_flagged,
         test_promotion_evidence_contract_invalid_yaml_is_flagged,
+        test_acap_runtime_control_plane_pass_on_clean_fixtures,
+        test_acap_runtime_control_plane_missing_fixture_is_flagged,
+        test_acap_runtime_control_plane_positive_fixture_must_be_clean,
+        test_acap_runtime_control_plane_negative_fixture_must_trigger_labelled_violations,
+        test_acap_runtime_control_plane_negative_fixture_must_cover_required_violations,
+        test_acap_runtime_control_plane_source_marker_missing_is_flagged,
+        test_acap_runtime_control_plane_invalid_yaml_is_flagged,
         test_html_structure_honesty_pass_on_clean_fixtures,
         test_html_structure_honesty_missing_fixture_is_flagged,
         test_html_structure_honesty_positive_fixture_must_have_full_identity,

@@ -252,6 +252,173 @@ def _promotion_journal_violations(journal: list, contract: dict) -> set[str]:
     return violations
 
 
+def _acap_admission_violations(record: dict, contract: dict, transitions: set) -> set[str]:
+    """Return violation codes for one ACAP runtime admission record (PIR-014).
+
+    Mirrors `ArticleContextState::admit_transition` + `can_transition_to` in
+    `crates/da-domain/src/assurance.rs`: an admitted stage must carry a
+    durable evidence reference and a declared forward FSM transition; a
+    blocked record must carry the typed `admission:<code>` error class; a
+    cache hit keeps its durable cache-key sha256; D127 keeps
+    `import_eligible` false. An illegal mid-FSM jump fails closed even when a
+    durable cached output exists for the target stage.
+    """
+    violations: set[str] = set()
+    req = set((contract.get("record_contract") or {}).get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_record_fields"}
+    if not str(record.get("stage_id") or "").strip():
+        violations.add("empty_stage_id")
+    if record.get("import_eligible") is True:
+        violations.add("import_leak")
+
+    admitted = record.get("admitted")
+    disposition = record.get("disposition")
+    allowed = set((contract.get("record_contract") or {}).get("dispositions", []))
+    if allowed and disposition not in allowed:
+        violations.add("invalid_disposition")
+    from_state = str(record.get("from_state") or "")
+    to_state = str(record.get("to_state") or "")
+    if transitions and (from_state, to_state) not in transitions:
+        violations.add("illegal_transition")
+
+    if admitted is True:
+        evidence_ref = record.get("evidence_ref")
+        if not isinstance(evidence_ref, str) or not evidence_ref.strip():
+            violations.add("missing_evidence_ref")
+        if record.get("error"):
+            violations.add("admitted_with_error")
+    elif admitted is False:
+        if not record.get("error_class"):
+            violations.add("denied_without_reason")
+    if disposition == "cache_hit" and not record.get("cache_key_sha256"):
+        violations.add("cache_hit_without_key")
+    return violations
+
+
+def _acap_promotion_authority_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one promotion authority record (PIR-015).
+
+    Mirrors the runtime promotion surface of the T01 control-plane proof:
+    promotion requires exactly three explicit actor-gated transitions
+    (Verify → Review → Promote) — optimizer auto-promotion is never allowed;
+    the promoter must be independent of verifier/reviewer (no authority
+    collapse); durable evidence refs are mandatory; D127 keeps
+    `import_eligible` false. The full PromotionDecision wire contract lives
+    in `promotion_evidence_contract.yaml`; this check guards the runtime
+    authority shape of the same protocol.
+    """
+    violations: set[str] = set()
+    req = set((contract.get("record_contract") or {}).get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_record_fields"}
+    if not str(record.get("decision_id") or "").strip():
+        violations.add("empty_decision_id")
+    if record.get("import_eligible") is True:
+        violations.add("import_leak")
+
+    transition = str(record.get("transition") or "")
+    required_transitions = int(
+        (contract.get("record_contract") or {}).get("required_explicit_transitions", 3)
+    )
+    explicit = record.get("explicit_transitions")
+    if transition == "auto_promoted" or explicit != required_transitions:
+        violations.add("auto_promote")
+
+    verifier = record.get("verifier")
+    reviewer = record.get("reviewer")
+    promoter = record.get("promoter")
+    if promoter and (promoter == verifier or promoter == reviewer):
+        violations.add("self_authority")
+    evidence = record.get("evidence_refs")
+    if not isinstance(evidence, list) or not evidence:
+        violations.add("missing_evidence")
+    return violations
+
+
+def _acap_scheduler_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one durable scheduler recovery record (PIR-016).
+
+    Mirrors the T01 scheduler plane: a crashed worker's expired lease is
+    reclaimed by a successor (the crashed attempt stays Aborted, the fence
+    epoch increments), the task completes with exactly one logical result
+    published at the current epoch, and after replay the completed task is
+    never due again and no new attempts exist. D127 keeps `import_eligible`
+    false.
+    """
+    violations: set[str] = set()
+    req = set((contract.get("record_contract") or {}).get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_record_fields"}
+    if not str(record.get("task_vid") or "").strip():
+        violations.add("empty_task_vid")
+    if record.get("import_eligible") is True:
+        violations.add("import_leak")
+
+    status = str(record.get("status") or "")
+    completed = str((contract.get("record_contract") or {}).get("completed_status", "completed"))
+    results = record.get("logical_results") or []
+    if len(results) > 1:
+        violations.add("double_publish")
+    outcomes = record.get("attempt_outcomes") or []
+    attempts = int(record.get("attempts") or 0)
+    if attempts > 1 and "aborted" not in outcomes:
+        violations.add("recovery_without_aborted_attempt")
+    if status == completed and not results:
+        violations.add("completed_without_result")
+    if int(record.get("due_after_replay") or 0) > 0:
+        violations.add("due_after_completion")
+    if results:
+        first = results[0] if isinstance(results[0], dict) else {}
+        if int(first.get("published_by_epoch") or 0) < len(outcomes):
+            violations.add("stale_epoch_publish")
+        evidence = first.get("evidence_refs")
+        if not isinstance(evidence, list) or not evidence:
+            violations.add("missing_evidence")
+    return violations
+
+
+def _acap_replay_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one replay-idempotence record.
+
+    Mirrors the T01 replay section: an identical replay creates no duplicate
+    authoritative effects — every stage executor runs exactly once, stage
+    records stay 1:1 with executors, every replay disposition is a cache hit,
+    the promotion sink does not grow, no new scheduler attempts are minted,
+    and the completed task is never due again. D127 stays locked.
+    """
+    violations: set[str] = set()
+    req = set((contract.get("record_contract") or {}).get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_record_fields"}
+    if record.get("import_eligible") is True:
+        violations.add("import_leak")
+
+    calls = record.get("pipeline_executor_calls") or []
+    if any(
+        isinstance(pair, (list, tuple)) and len(pair) == 2 and int(pair[1]) > 1
+        for pair in calls
+    ):
+        violations.add("executor_rerun")
+    stage_records = int(record.get("pipeline_stage_records") or 0)
+    if stage_records > len(calls):
+        violations.add("duplicate_stage_records")
+    dispositions = record.get("pipeline_replay_dispositions") or []
+    if any(d != "cache_hit" for d in dispositions):
+        violations.add("cache_miss_on_replay")
+    if int(record.get("promotion_sink_len_after_replay") or 0) > int(
+        record.get("promotion_sink_len") or 0
+    ):
+        violations.add("promotion_sink_growth")
+    if int(record.get("scheduler_attempts_after_replay") or 0) > int(
+        record.get("scheduler_attempts") or 0
+    ):
+        violations.add("scheduler_new_attempts")
+    if int(record.get("scheduler_due_after_replay") or 0) > 0:
+        violations.add("scheduler_due_again")
+    return violations
+
+
 def _acap_hard_failures_nonzero(value) -> bool:
     """True when ACAP hard_failures indicates a failure.
 
@@ -336,6 +503,12 @@ class TrajectoryService:
         # promotion protocol enforced (no self-confirmation, no double
         # promotion, mandatory evidence, terminal immutability, D127 lock).
         drift_flags.extend(self._check_promotion_evidence_contract())
+
+        # PIR-014/015/016: ACAP runtime control plane — positive/negative
+        # committed fixtures keep runtime admission, promotion authority,
+        # durable scheduler recovery and replay idempotence enforced with
+        # D127 and the optimizer auto-promote lock intact (M399 S04 T02).
+        drift_flags.extend(self._check_acap_runtime_control_plane())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -1036,6 +1209,146 @@ class TrajectoryService:
             missing = [p for p in entry.get("required_patterns", []) if p not in text]
             if missing:
                 _flag("promotion_evidence_contract_source_marker_missing",
+                      f"{marker_key} source missing enforcement markers: {missing}")
+        return flags
+
+    def _check_acap_runtime_control_plane(self) -> list[DriftFlag]:
+        """Evaluate the data-driven ACAP runtime control-plane contract.
+
+        Reads `scripts/governor/checks/acap_runtime_control_plane.yaml`
+        (DATA) and validates the committed positive/negative fixtures for
+        runtime admission (PIR-014), promotion authority (PIR-015), durable
+        scheduler recovery (PIR-016) and replay idempotence, mirroring the
+        same-process proof in `acap_control_plane_test.rs` (M399/S04 T01):
+        every positive record must be clean across all four planes; every
+        negative record must trigger exactly its labelled violation and every
+        required violation must appear in the fixture (a future edit that
+        removes a negative case is flagged); the Rust enforcement points must
+        keep the named typed guards. The admission FSM transition table is
+        read from `article_context_assurance.yaml` (the canonical ACAP
+        policy), so the runtime gate mirrors `ArticleContextState::
+        can_transition_to` by construction.
+        """
+        path = self.root / "scripts/governor/checks/acap_runtime_control_plane.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="acap_runtime_control_plane_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="acap_runtime_control_plane",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "acap_runtime_control_plane"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # Admission legality depends on the canonical ACAP FSM transition
+        # table. Fail closed: an unreadable policy means no transition is
+        # declared, so every from/to pair is illegal.
+        transitions: set = set()
+        fsm_policy = str((contract.get("admission") or {}).get("fsm_policy", ""))
+        if fsm_policy:
+            fsm_path = self.root / fsm_policy
+            if fsm_path.is_file():
+                try:
+                    policy = yaml.safe_load(fsm_path.read_text(encoding="utf-8")) or {}
+                    for transition in ((policy.get("fsm") or {}).get("transitions") or []):
+                        if isinstance(transition, list) and len(transition) == 2:
+                            transitions.add((str(transition[0]), str(transition[1])))
+                except (OSError, yaml.YAMLError):
+                    pass
+
+        planes = [
+            ("admission", _acap_admission_violations, transitions),
+            ("promotion", _acap_promotion_authority_violations, None),
+            ("scheduler", _acap_scheduler_violations, None),
+            ("replay", _acap_replay_violations, None),
+        ]
+        for plane_key, fn, extra in planes:
+            section = contract.get(plane_key) or {}
+            fixtures = section.get("fixtures") or {}
+            for kind in ("positive", "negative"):
+                spec = fixtures.get(kind) or {}
+                fixture_path = self.root / str(spec.get("path", ""))
+                if not fixture_path.is_file():
+                    _flag("acap_runtime_control_plane_fixture_missing",
+                          f"{plane_key}/{kind} fixture missing: {fixture_path}")
+                    continue
+                try:
+                    records = json.loads(fixture_path.read_text(encoding="utf-8"))
+                except (ValueError, OSError) as error:
+                    _flag("acap_runtime_control_plane_fixture_invalid",
+                          f"{plane_key}/{kind} fixture unreadable: {error}")
+                    continue
+                if not isinstance(records, list) or not records:
+                    _flag("acap_runtime_control_plane_fixture_invalid",
+                          f"{plane_key}/{kind} fixture must be a non-empty JSON array")
+                    continue
+                if kind == "positive":
+                    broken = []
+                    for record in records:
+                        if not isinstance(record, dict):
+                            broken.append(("<non-object>", ["missing_record_fields"]))
+                            continue
+                        violations = fn(record, contract) if extra is None else fn(record, contract, extra)
+                        if violations:
+                            identity = record.get(
+                                "stage_id",
+                                record.get("decision_id", record.get("task_vid", record.get("scenario", "?"))),
+                            )
+                            broken.append((identity, sorted(violations)))
+                    if broken:
+                        _flag("acap_runtime_control_plane_broken",
+                              f"{plane_key} positive fixture {spec.get('id')} must be clean, "
+                              f"got violations: {broken}")
+                else:
+                    observed: set[str] = set()
+                    mismatches = []
+                    for record in records:
+                        if not isinstance(record, dict):
+                            mismatches.append("<non-object>: not a labelled record")
+                            continue
+                        label = str(record.get("violation", "unnamed"))
+                        payload = record.get("record") or {}
+                        violations = fn(payload, contract) if extra is None else fn(payload, contract, extra)
+                        observed.update(violations)
+                        if label not in violations:
+                            mismatches.append(
+                                f"{label}: expected to trigger {label}, "
+                                f"got {sorted(violations)}"
+                            )
+                    if mismatches:
+                        _flag("acap_runtime_control_plane_broken",
+                              f"{plane_key} negative fixture {spec.get('id')} records do not "
+                              f"trigger their labelled violations: {'; '.join(mismatches)}")
+                    require = list(
+                        (spec.get("expect") or {}).get("require_violations", [])
+                    )
+                    missing_required = [v for v in require if v not in observed]
+                    if missing_required:
+                        _flag("acap_runtime_control_plane_broken",
+                              f"{plane_key} negative fixture {spec.get('id')} missing required "
+                              f"violation coverage: {missing_required}")
+
+        # Source markers: the Rust enforcement points must stay present.
+        for marker_key, entry in (contract.get("source_markers") or {}).items():
+            marker_path = self.root / str(entry.get("path", ""))
+            if not marker_path.is_file():
+                _flag("acap_runtime_control_plane_source_marker_missing",
+                      f"{marker_key} source missing: {marker_path}")
+                continue
+            text = marker_path.read_text(errors="replace")
+            missing = [p for p in entry.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag("acap_runtime_control_plane_source_marker_missing",
                       f"{marker_key} source missing enforcement markers: {missing}")
         return flags
 

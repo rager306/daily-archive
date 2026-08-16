@@ -1,0 +1,97 @@
+[
+  {
+    "violation": "double_publish",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00001",
+      "status": "completed",
+      "attempts": 2,
+      "attempt_outcomes": ["aborted", "succeeded"],
+      "published_by_epoch": 2,
+      "logical_results": [
+        {"result_id": "logical:result:2401.00001", "published_by_epoch": 2,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]},
+        {"result_id": "logical:result:2401.00001-dupe", "published_by_epoch": 2,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}
+      ],
+      "due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "stale_epoch_publish",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00002",
+      "status": "completed",
+      "attempts": 2,
+      "attempt_outcomes": ["aborted", "succeeded"],
+      "published_by_epoch": 1,
+      "logical_results": [
+        {"result_id": "logical:result:2401.00002", "published_by_epoch": 1,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}
+      ],
+      "due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "recovery_without_aborted_attempt",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00003",
+      "status": "completed",
+      "attempts": 2,
+      "attempt_outcomes": ["succeeded", "succeeded"],
+      "published_by_epoch": 2,
+      "logical_results": [
+        {"result_id": "logical:result:2401.00003", "published_by_epoch": 2,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}
+      ],
+      "due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "completed_without_result",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00004",
+      "status": "completed",
+      "attempts": 1,
+      "attempt_outcomes": ["succeeded"],
+      "published_by_epoch": 1,
+      "logical_results": [],
+      "due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "due_after_completion",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00005",
+      "status": "completed",
+      "attempts": 1,
+      "attempt_outcomes": ["succeeded"],
+      "published_by_epoch": 1,
+      "logical_results": [
+        {"result_id": "logical:result:2401.00005", "published_by_epoch": 1,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}
+      ],
+      "due_after_replay": 2,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "import_leak",
+    "record": {
+      "task_vid": "scheduler:openalex_enrich:2401.00006",
+      "status": "completed",
+      "attempts": 1,
+      "attempt_outcomes": ["succeeded"],
+      "published_by_epoch": 1,
+      "logical_results": [
+        {"result_id": "logical:result:2401.00006", "published_by_epoch": 1,
+         "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}
+      ],
+      "due_after_replay": 0,
+      "import_eligible": true
+    }
+  }
+]

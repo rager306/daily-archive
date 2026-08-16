@@ -1,0 +1,170 @@
+[
+  {
+    "violation": "executor_rerun",
+    "record": {
+      "scenario": "executor rerun on replay",
+      "pipeline_executor_calls": [
+        ["acquisition", 2],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "duplicate_stage_records",
+    "record": {
+      "scenario": "duplicate stage records on replay",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 10,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "cache_miss_on_replay",
+    "record": {
+      "scenario": "stage re-executed on replay (cache miss)",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "executed", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "promotion_sink_growth",
+    "record": {
+      "scenario": "promotion sink grew on replay",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 4,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "scheduler_new_attempts",
+    "record": {
+      "scenario": "scheduler minted new attempts on replay",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 3,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "scheduler_due_again",
+    "record": {
+      "scenario": "completed task due again on replay",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 1,
+      "import_eligible": false
+    }
+  },
+  {
+    "violation": "import_leak",
+    "record": {
+      "scenario": "replay import leak (D127)",
+      "pipeline_executor_calls": [
+        ["acquisition", 1],
+        ["catalog", 1],
+        ["parse", 1],
+        ["extraction_compute", 1],
+        ["embedding", 1],
+        ["resolution", 1],
+        ["summary", 1],
+        ["checkpoint", 1]
+      ],
+      "pipeline_stage_records": 8,
+      "pipeline_replay_dispositions": ["cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit", "cache_hit"],
+      "promotion_sink_len": 3,
+      "promotion_sink_len_after_replay": 3,
+      "scheduler_attempts": 2,
+      "scheduler_attempts_after_replay": 2,
+      "scheduler_due_after_replay": 0,
+      "import_eligible": true
+    }
+  }
+]

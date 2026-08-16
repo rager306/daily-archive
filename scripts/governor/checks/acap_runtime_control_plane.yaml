@@ -1,0 +1,187 @@
+# ACAP runtime control-plane contract — PIR-014/015/016 closure, M399 S04 T02.
+#
+# DATA for the Governor `acap_runtime_control_plane` check. The contract
+# mirrors the same-process control-plane proof in
+# `crates/da-application/tests/acap_control_plane_test.rs` (M399/S04 T01):
+# runtime admission (PIR-014), promotion authority (PIR-015), durable
+# scheduler recovery (PIR-016) and byte-identical replay idempotence compose
+# end to end, with D127 (`import_eligible` stays false everywhere) and the
+# optimizer auto-promote lock intact.
+#
+# Semantics:
+#   - admission (PIR-014): every admitted stage record must carry a durable
+#     evidence reference and a declared ACAP forward FSM transition (the
+#     transition table is read from `article_context_assurance.yaml`, the
+#     canonical ACAP policy); a blocked record must carry the typed
+#     `admission:<code>` error class. An illegal mid-FSM jump fails closed
+#     even when a durable cached output exists for the target stage.
+#   - promotion (PIR-015): an authority record must show exactly three
+#     explicit actor-gated transitions (Verify → Review → Promote), distinct
+#     actors (no authority collapse), durable evidence refs, and no
+#     optimizer auto-promotion; D127 keeps `import_eligible` false.
+#   - scheduler (PIR-016): a recovered task must retain the crashed attempt
+#     as Aborted, publish exactly one logical result at the current fence
+#     epoch, stay never-due after replay, and keep D127 locked.
+#   - replay: identical replay creates no duplicate authoritative effects —
+#     every executor runs once, stage records stay 1:1, the promotion sink
+#     does not grow, no new scheduler attempts are minted, and the completed
+#     task is never due again.
+#
+# The committed fixtures are validated by `scripts/tests/test_governor.py`
+# (`_check_acap_runtime_control_plane`), and the same invariants are pinned
+# by the Rust runtime proof in `acap_control_plane_test.rs` plus the domain
+# guards in `da-domain` (assurance FSM, promotion, scheduler) — a broken
+# contract cannot silently survive a regenerate. This is DATA — tightening
+# an expectation is an edit here (plus updating the committed fixture JSON),
+# not a Python change.
+
+schema_version: acap-runtime-control-plane.v1
+policy_id: acap-runtime-control-plane
+dimension: acap_runtime_control_plane
+severity: high
+anchor: "PIR-014, PIR-015, PIR-016, D127"
+
+# Cross-plane lock status (mirrors the LockStatus ledger rows of T01).
+locks:
+  import_eligible: false
+  promotion_explicit_transitions: 3
+
+admission:
+  # The canonical ACAP FSM transition table lives in the ACAP policy —
+  # runtime admission mirrors `ArticleContextState::can_transition_to`.
+  fsm_policy: scripts/governor/checks/article_context_assurance.yaml
+  record_contract:
+    required_fields: [stage_id, admitted, evidence_ref, disposition, from_state, to_state]
+    dispositions: [executed, cache_hit, failed]
+    source_evidence_prefix: "source:sha256:"
+  fixtures:
+    positive:
+      id: legal_admission
+      path: data/acap_runtime_control_plane/admission_legal.positive.json
+      expect: clean
+    negative:
+      id: admission_violations
+      path: data/acap_runtime_control_plane/admission_illegal.negative.json
+      expect:
+        require_violations:
+          - illegal_transition
+          - denied_without_reason
+          - missing_evidence_ref
+          - admitted_with_error
+          - import_leak
+
+promotion:
+  record_contract:
+    required_fields:
+      - decision_id
+      - transition
+      - verifier
+      - reviewer
+      - promoter
+      - evidence_refs
+      - sink_len
+      - explicit_transitions
+      - import_eligible
+    required_explicit_transitions: 3
+  fixtures:
+    positive:
+      id: authority_legal
+      path: data/acap_runtime_control_plane/promotion_authority.positive.json
+      expect: clean
+    negative:
+      id: authority_violations
+      path: data/acap_runtime_control_plane/promotion_authority.negative.json
+      expect:
+        require_violations:
+          - auto_promote
+          - import_leak
+          - self_authority
+          - missing_evidence
+
+scheduler:
+  record_contract:
+    required_fields:
+      - task_vid
+      - status
+      - attempts
+      - attempt_outcomes
+      - published_by_epoch
+      - logical_results
+      - due_after_replay
+      - import_eligible
+    completed_status: completed
+  fixtures:
+    positive:
+      id: recovery_legal
+      path: data/acap_runtime_control_plane/scheduler_recovery.positive.json
+      expect: clean
+    negative:
+      id: recovery_violations
+      path: data/acap_runtime_control_plane/scheduler_recovery.negative.json
+      expect:
+        require_violations:
+          - double_publish
+          - stale_epoch_publish
+          - recovery_without_aborted_attempt
+          - completed_without_result
+          - due_after_completion
+          - import_leak
+
+replay:
+  record_contract:
+    required_fields:
+      - scenario
+      - pipeline_executor_calls
+      - pipeline_stage_records
+      - pipeline_replay_dispositions
+      - promotion_sink_len
+      - promotion_sink_len_after_replay
+      - scheduler_attempts
+      - scheduler_attempts_after_replay
+      - scheduler_due_after_replay
+      - import_eligible
+  fixtures:
+    positive:
+      id: replay_idempotent
+      path: data/acap_runtime_control_plane/replay_idempotent.positive.json
+      expect: clean
+    negative:
+      id: replay_violations
+      path: data/acap_runtime_control_plane/replay_idempotent.negative.json
+      expect:
+        require_violations:
+          - executor_rerun
+          - duplicate_stage_records
+          - cache_miss_on_replay
+          - promotion_sink_growth
+          - scheduler_new_attempts
+          - scheduler_due_again
+          - import_leak
+
+# Enforcement points that must keep existing on the Rust side (T01 surfaces).
+source_markers:
+  control_plane_test:
+    path: crates/da-application/tests/acap_control_plane_test.rs
+    required_patterns:
+      - "ControlPlaneEvidenceLedger"
+      - "admission:illegal_transition"
+      - "AlreadyPromoted"
+      - "recovered"
+      - "import_eligible"
+  admission_domain:
+    path: crates/da-domain/src/assurance.rs
+    required_patterns:
+      - "ArticleContextState"
+      - "IllegalTransition"
+      - "error_class"
+  admission_ledger:
+    path: crates/da-domain/src/pipeline_ledger.rs
+    required_patterns:
+      - "PipelineStageLedger"
+      - "StageIdRegistry"
+  scheduler_domain:
+    path: crates/da-domain/src/scheduler.rs
+    required_patterns:
+      - "logical_result_vid"
+      - "AttemptOutcome"
+      - "PendingTask"
