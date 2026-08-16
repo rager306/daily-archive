@@ -60,11 +60,12 @@ pub use article::{
 };
 pub use assurance::{
     ACAP_AGGREGATE_REPORT_SCHEMA_VERSION, ACAP_POLICY_ID, ACAP_REPORT_SCHEMA_VERSION,
-    ArticleAssuranceReport, ArticleContextState, AssuranceError, AssuranceVerdict, BoundaryMode,
-    ConservationObservation, ContentDigest, CorpusAggregateMetrics, CorpusAssuranceReport,
-    CorpusLayerResult, CorpusLayerStatus, CountObservation, LayerAssuranceResult,
-    MissingnessReason, MutationFamilyObservation, ReplayObservation, WriteDelta,
-    corpus_report_digest,
+    AdmissionDecision, ArticleAssuranceReport, ArticleContextState, AssuranceError,
+    AssuranceVerdict, BoundaryMode, ConservationObservation, ContentDigest, CorpusAggregateMetrics,
+    CorpusAssuranceReport, CorpusLayerResult, CorpusLayerStatus, CountObservation,
+    LayerAssuranceResult, MissingnessReason, MutationFamilyObservation, ReplayObservation,
+    TransitionAdmissionCode, TransitionAdmissionError, WriteDelta, admit_stage_transition,
+    admit_transition, corpus_report_digest,
 };
 pub use edge_contract::{
     EdgeContract, contract_edge_types, contract_edge_types_or_yaml, edge_contracts,

@@ -138,6 +138,286 @@ impl ArticleContextState {
                     | (TaskAccepted, AcceptedCheckpoint)
             )
     }
+
+    /// ACAP runtime admission decision for a transition from `self` to
+    /// `target` (PIR-014). Fail-closed: only declared forward transitions or
+    /// the failure sink `FailedVisible` are admitted; `FailedVisible` itself
+    /// is a terminal sink (nothing transitions out of it); an admission must
+    /// carry a durable evidence reference.
+    ///
+    /// Pure domain value — no I/O, no graph truth. The orchestrator maps a
+    /// canonical pipeline stage id to `target` and passes the durable record
+    /// (cache key sha256 / manifest key / source checksum) that establishes
+    /// `self` as `evidence_ref`; the reference must never be taken verbatim
+    /// from caller-supplied input.
+    pub fn admit_transition(self, target: Self, evidence_ref: &str) -> AdmissionDecision {
+        if evidence_ref.trim().is_empty() {
+            return AdmissionDecision::blocked(TransitionAdmissionError::new(
+                TransitionAdmissionCode::MissingEvidence,
+                "admission requires a durable evidence reference (cache key sha256 / manifest key / source checksum)",
+                evidence_ref.to_string(),
+                self,
+                target,
+            ));
+        }
+        if self == Self::FailedVisible {
+            return AdmissionDecision::blocked(TransitionAdmissionError::new(
+                TransitionAdmissionCode::TerminalSink,
+                "prior state is FailedVisible, a terminal ACAP sink: no stage may follow a failure disposition",
+                evidence_ref.to_string(),
+                self,
+                target,
+            ));
+        }
+        if target == Self::FailedVisible || self.can_transition_to(target) {
+            AdmissionDecision::admitted(evidence_ref.to_string())
+        } else {
+            AdmissionDecision::blocked(TransitionAdmissionError::new(
+                TransitionAdmissionCode::IllegalTransition,
+                format!(
+                    "{self:?} -> {target:?} is not a declared ACAP forward transition (target is not the failure sink)"
+                ),
+                evidence_ref.to_string(),
+                self,
+                target,
+            ))
+        }
+    }
+}
+
+/// Stable machine-readable ACAP runtime admission failure codes (PIR-014).
+///
+/// These codes are part of the report/log surface: [`TransitionAdmissionError::error_class`]
+/// renders the stable token `admission:<code>` that run reports and logs carry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TransitionAdmissionCode {
+    /// `prior -> target` is not a declared ACAP forward transition and target
+    /// is not the failure sink `FailedVisible`.
+    IllegalTransition,
+    /// The run has no prior ACAP stage state (first step without entry
+    /// evidence). Runs must start from a defined entry state with durable
+    /// evidence.
+    MissingEntryState,
+    /// The prior state is `FailedVisible`, a terminal ACAP sink: no stage may
+    /// follow a failure disposition.
+    TerminalSink,
+    /// Admission was requested without a durable evidence reference.
+    MissingEvidence,
+}
+
+impl TransitionAdmissionCode {
+    /// Stable wire/log token (matches the serde snake_case spelling).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::IllegalTransition => "illegal_transition",
+            Self::MissingEntryState => "missing_entry_state",
+            Self::TerminalSink => "terminal_sink",
+            Self::MissingEvidence => "missing_evidence",
+        }
+    }
+}
+
+impl std::fmt::Display for TransitionAdmissionCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+/// Typed ACAP runtime admission refusal (PIR-014).
+///
+/// Pure domain value: stable code + human/typed reason + durable evidence
+/// reference. No I/O. Emitted into run reports (Failed disposition) and logs.
+/// The `evidence_ref` must name a durable record produced by the orchestrator
+/// itself (cache key sha256 / manifest key / source checksum), never a
+/// caller-supplied string.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Error)]
+#[error("stage transition {from:?} -> {to:?} not admitted ({code}): {reason}")]
+pub struct TransitionAdmissionError {
+    pub code: TransitionAdmissionCode,
+    pub reason: String,
+    pub evidence_ref: String,
+    pub from: ArticleContextState,
+    pub to: ArticleContextState,
+}
+
+impl TransitionAdmissionError {
+    pub fn new(
+        code: TransitionAdmissionCode,
+        reason: impl Into<String>,
+        evidence_ref: impl Into<String>,
+        from: ArticleContextState,
+        to: ArticleContextState,
+    ) -> Self {
+        Self {
+            code,
+            reason: reason.into(),
+            evidence_ref: evidence_ref.into(),
+            from,
+            to,
+        }
+    }
+
+    /// Stable error-class token for reports and logs: `admission:<code>`.
+    pub fn error_class(&self) -> String {
+        format!("admission:{}", self.code.as_str())
+    }
+}
+
+/// ACAP runtime admission decision for one pipeline stage transition (PIR-014).
+///
+/// Computed from a prior stage state and the target stage state. Fail-closed:
+/// a blocked decision carries the typed [`TransitionAdmissionError`] and the
+/// executor must not run. Pure value — serializable into run reports.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AdmissionDecision {
+    pub admitted: bool,
+    /// Durable evidence reference backing this decision. For admitted
+    /// transitions it names the record establishing the prior state; for
+    /// blocked transitions the record the refusal is based on.
+    pub evidence_ref: String,
+    /// Typed refusal when `admitted == false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<TransitionAdmissionError>,
+}
+
+impl AdmissionDecision {
+    pub fn admitted(evidence_ref: impl Into<String>) -> Self {
+        Self {
+            admitted: true,
+            evidence_ref: evidence_ref.into(),
+            error: None,
+        }
+    }
+
+    pub fn blocked(error: TransitionAdmissionError) -> Self {
+        let evidence_ref = error.evidence_ref.clone();
+        Self {
+            admitted: false,
+            evidence_ref,
+            error: Some(error),
+        }
+    }
+}
+
+/// ACAP runtime admission for a pipeline stage transition (PIR-014), including
+/// the run-entry case.
+///
+/// `prior` is the established ACAP state before the stage runs. `None` means
+/// the run provides no prior stage evidence (first step without entry
+/// evidence): fail-closed — [`TransitionAdmissionCode::MissingEntryState`]
+/// unless the orchestrator supplies an explicit entry state derived from
+/// durable source evidence (e.g. checksum-bound `SourceIdentity`).
+pub fn admit_transition(
+    prior: Option<ArticleContextState>,
+    target: ArticleContextState,
+    evidence_ref: &str,
+) -> AdmissionDecision {
+    match prior {
+        Some(prior) => prior.admit_transition(target, evidence_ref),
+        None => AdmissionDecision::blocked(TransitionAdmissionError::new(
+            TransitionAdmissionCode::MissingEntryState,
+            "no prior ACAP stage state: the run must start from a defined entry state with durable evidence",
+            evidence_ref.to_string(),
+            ArticleContextState::SourceRegistered,
+            target,
+        )),
+    }
+}
+
+/// ACAP runtime admission for a pipeline stage transition (PIR-014) in a
+/// stage-subset run (the orchestrator gate).
+///
+/// The strict [`ArticleContextState::admit_transition`] requires declared
+/// adjacent forward transitions. Production pipelines execute a *subset* of
+/// canonical stages and legitimately skip layers (e.g. `parse -> extract ->
+/// embed` or the thin `parse -> summary` pipeline), so the runtime gate admits
+/// monotonic forward progress instead: a gated stage may establish any ACAP
+/// state at or after the state established by the previous gated stage. It
+/// fails closed on: missing durable evidence, a `FailedVisible` prior (terminal
+/// sink), a mid-FSM run entry (first gated stage above `Parsed`), and FSM
+/// regression (a later stage moving to an earlier layer).
+///
+/// `prior` is the ACAP state established by the previous gated stage, or
+/// `None` for the first gated stage of the run (the entry case — see
+/// [`TransitionAdmissionCode::MissingEntryState`]). `evidence_ref` must be a
+/// durable record produced by the orchestrator (cache key sha256 / manifest
+/// key / source checksum), never a caller-supplied string. Pure domain value —
+/// no I/O, no graph truth.
+pub fn admit_stage_transition(
+    prior: Option<ArticleContextState>,
+    target: ArticleContextState,
+    evidence_ref: &str,
+) -> AdmissionDecision {
+    use ArticleContextState::*;
+    use TransitionAdmissionCode::*;
+    let from = prior.unwrap_or(SourceRegistered);
+    if evidence_ref.trim().is_empty() {
+        let (code, reason) = match prior {
+            None => (
+                MissingEntryState,
+                "no prior ACAP stage state and no durable source evidence: the run must start from a defined entry state",
+            ),
+            Some(_) => (
+                MissingEvidence,
+                "admission requires a durable evidence reference (cache key sha256 / manifest key / source checksum)",
+            ),
+        };
+        return AdmissionDecision::blocked(TransitionAdmissionError::new(
+            code,
+            reason,
+            evidence_ref.to_string(),
+            from,
+            target,
+        ));
+    }
+    if prior == Some(FailedVisible) {
+        return AdmissionDecision::blocked(TransitionAdmissionError::new(
+            TerminalSink,
+            "prior state is FailedVisible, a terminal ACAP sink: no stage may follow a failure disposition",
+            evidence_ref.to_string(),
+            FailedVisible,
+            target,
+        ));
+    }
+    if target == FailedVisible {
+        return AdmissionDecision::admitted(evidence_ref.to_string());
+    }
+    match prior {
+        None => {
+            // Entry stage: only the first FSM layers may start a run. A run
+            // that begins mid-FSM (e.g. first step = summarized) fails closed
+            // instead of default-admitting (Q3 guardrail).
+            if target <= Parsed {
+                AdmissionDecision::admitted(evidence_ref.to_string())
+            } else {
+                AdmissionDecision::blocked(TransitionAdmissionError::new(
+                    IllegalTransition,
+                    format!(
+                        "{target:?} is not a valid entry stage: runs must start from the first ACAP FSM layers (source_registered/source_verified/parsed) with durable source evidence"
+                    ),
+                    evidence_ref.to_string(),
+                    from,
+                    target,
+                ))
+            }
+        }
+        Some(prior) => {
+            if target >= prior {
+                AdmissionDecision::admitted(evidence_ref.to_string())
+            } else {
+                AdmissionDecision::blocked(TransitionAdmissionError::new(
+                    IllegalTransition,
+                    format!(
+                        "{prior:?} -> {target:?} regresses the ACAP FSM: stage-subset pipelines may skip layers forward but never move backward"
+                    ),
+                    evidence_ref.to_string(),
+                    prior,
+                    target,
+                ))
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -908,5 +1188,275 @@ mod tests {
             let expected = b == 14 || (a < 13 && b == a + 1);
             prop_assert_eq!(states[a].can_transition_to(states[b]), expected);
         }
+    }
+
+    // ── PIR-014 ACAP runtime admission gate (T01) ──
+
+    #[test]
+    fn declared_forward_transition_is_admitted_with_evidence() {
+        let decision = ArticleContextState::SourceRegistered
+            .admit_transition(ArticleContextState::SourceVerified, "sha256:source-v1");
+        assert!(decision.admitted);
+        assert_eq!(decision.evidence_ref, "sha256:source-v1");
+        assert!(decision.error.is_none());
+        let decision = ArticleContextState::Parsed
+            .admit_transition(ArticleContextState::Structured, "sha256:parse-v1");
+        assert!(decision.admitted);
+    }
+
+    #[test]
+    fn failure_sink_is_always_reachable() {
+        for prior in [
+            ArticleContextState::SourceRegistered,
+            ArticleContextState::Extracted,
+            ArticleContextState::AcceptedCheckpoint,
+        ] {
+            let decision = prior.admit_transition(ArticleContextState::FailedVisible, "ev-1");
+            assert!(decision.admitted, "prior {prior:?}");
+        }
+    }
+
+    #[test]
+    fn illegal_jump_fails_closed_with_typed_reason() {
+        let decision = ArticleContextState::SourceRegistered
+            .admit_transition(ArticleContextState::Parsed, "ev-1");
+        assert!(!decision.admitted);
+        assert_eq!(decision.evidence_ref, "ev-1");
+        let error = decision.error.expect("blocked decision carries error");
+        assert_eq!(error.code, TransitionAdmissionCode::IllegalTransition);
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.from, ArticleContextState::SourceRegistered);
+        assert_eq!(error.to, ArticleContextState::Parsed);
+        assert_eq!(error.evidence_ref, "ev-1");
+        assert!(!error.reason.is_empty());
+    }
+
+    #[test]
+    fn backward_jump_fails_closed() {
+        let decision =
+            ArticleContextState::Summarized.admit_transition(ArticleContextState::Parsed, "ev-1");
+        assert!(!decision.admitted);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::IllegalTransition
+        );
+    }
+
+    #[test]
+    fn failed_visible_is_a_terminal_sink() {
+        for target in [
+            ArticleContextState::SourceRegistered,
+            ArticleContextState::Parsed,
+            ArticleContextState::FailedVisible,
+        ] {
+            let decision = ArticleContextState::FailedVisible.admit_transition(target, "ev-1");
+            assert!(!decision.admitted, "target {target:?}");
+            assert_eq!(
+                decision.error.unwrap().code,
+                TransitionAdmissionCode::TerminalSink
+            );
+        }
+    }
+
+    #[test]
+    fn admission_requires_durable_evidence() {
+        let decision = ArticleContextState::SourceRegistered
+            .admit_transition(ArticleContextState::SourceVerified, "   ");
+        assert!(!decision.admitted);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::MissingEvidence
+        );
+    }
+
+    #[test]
+    fn missing_prior_state_fails_closed_on_entry() {
+        let decision = admit_transition(None, ArticleContextState::Summarized, "ev-1");
+        assert!(!decision.admitted);
+        let error = decision.error.unwrap();
+        assert_eq!(error.code, TransitionAdmissionCode::MissingEntryState);
+        assert_eq!(error.from, ArticleContextState::SourceRegistered);
+        assert_eq!(error.to, ArticleContextState::Summarized);
+        // An explicit entry state with durable evidence admits the first stage.
+        let decision = admit_transition(
+            Some(ArticleContextState::SourceRegistered),
+            ArticleContextState::SourceVerified,
+            "sha256:source-v1",
+        );
+        assert!(decision.admitted);
+    }
+
+    #[test]
+    fn admission_decision_serde_roundtrip() {
+        crate::roundtrip_json(&AdmissionDecision::admitted("sha256:parse-v1"));
+        let blocked = AdmissionDecision::blocked(TransitionAdmissionError::new(
+            TransitionAdmissionCode::IllegalTransition,
+            "not declared",
+            "ev-1",
+            ArticleContextState::Parsed,
+            ArticleContextState::Summarized,
+        ));
+        crate::roundtrip_json(&blocked);
+        for code in [
+            TransitionAdmissionCode::IllegalTransition,
+            TransitionAdmissionCode::MissingEntryState,
+            TransitionAdmissionCode::TerminalSink,
+            TransitionAdmissionCode::MissingEvidence,
+        ] {
+            crate::roundtrip_json(&code);
+        }
+    }
+
+    #[test]
+    fn admission_error_exposes_stable_error_class_and_display() {
+        let error = TransitionAdmissionError::new(
+            TransitionAdmissionCode::TerminalSink,
+            "terminal sink",
+            "ev-1",
+            ArticleContextState::FailedVisible,
+            ArticleContextState::Parsed,
+        );
+        assert_eq!(error.error_class(), "admission:terminal_sink");
+        assert_eq!(
+            error.to_string(),
+            "stage transition FailedVisible -> Parsed not admitted (terminal_sink): terminal sink"
+        );
+    }
+
+    proptest! {
+        #[test]
+        fn admission_gate_matches_fsm_rule_for_evidence_bound_transitions(a in 0usize..15, b in 0usize..15) {
+            let states = [
+                ArticleContextState::SourceRegistered, ArticleContextState::SourceVerified,
+                ArticleContextState::Parsed, ArticleContextState::Structured,
+                ArticleContextState::Extracted, ArticleContextState::EvidenceLinked,
+                ArticleContextState::Embedded, ArticleContextState::Materialized,
+                ArticleContextState::Enriched, ArticleContextState::Resolved,
+                ArticleContextState::Summarized, ArticleContextState::Finalized,
+                ArticleContextState::TaskAccepted, ArticleContextState::AcceptedCheckpoint,
+                ArticleContextState::FailedVisible,
+            ];
+            // Terminal sink: nothing transitions out of FailedVisible.
+            let expected = if a == 14 {
+                false
+            } else {
+                b == 14 || b == a + 1
+            };
+            let decision = states[a].admit_transition(states[b], "sha256:ev");
+            prop_assert_eq!(decision.admitted, expected);
+            prop_assert_eq!(decision.admitted, decision.error.is_none());
+        }
+    }
+
+    // ── PIR-014 stage-subset runtime gate (T02) ──
+
+    #[test]
+    fn stage_gate_admits_first_layer_entry_with_source_evidence() {
+        for entry in [
+            ArticleContextState::SourceRegistered,
+            ArticleContextState::SourceVerified,
+            ArticleContextState::Parsed,
+        ] {
+            let decision = admit_stage_transition(None, entry, "source:sha256:abc");
+            assert!(decision.admitted, "entry {entry:?}");
+            assert_eq!(decision.evidence_ref, "source:sha256:abc");
+            assert!(decision.error.is_none());
+        }
+    }
+
+    #[test]
+    fn stage_gate_rejects_mid_fsm_entry() {
+        for entry in [
+            ArticleContextState::Structured,
+            ArticleContextState::Extracted,
+            ArticleContextState::Embedded,
+            ArticleContextState::Summarized,
+        ] {
+            let decision = admit_stage_transition(None, entry, "source:sha256:abc");
+            assert!(!decision.admitted, "entry {entry:?}");
+            let error = decision.error.expect("blocked entry carries error");
+            assert_eq!(error.code, TransitionAdmissionCode::IllegalTransition);
+            assert_eq!(error.error_class(), "admission:illegal_transition");
+        }
+    }
+
+    #[test]
+    fn stage_gate_requires_durable_source_evidence_on_entry() {
+        let decision = admit_stage_transition(None, ArticleContextState::Parsed, "   ");
+        assert!(!decision.admitted);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::MissingEntryState
+        );
+    }
+
+    #[test]
+    fn stage_gate_admits_forward_progress_and_skips_layers() {
+        // Thin pipeline parse -> summary skips Structured..Resolved legitimately.
+        let first = admit_stage_transition(None, ArticleContextState::Parsed, "source:sha256:abc");
+        assert!(first.admitted);
+        let second = admit_stage_transition(
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Summarized,
+            "key:parse-v1",
+        );
+        assert!(second.admitted, "{second:?}");
+        assert_eq!(second.evidence_ref, "key:parse-v1");
+        // Repeated same-layer stages (e.g. figure aliases of parse) stay legal.
+        let repeat = admit_stage_transition(
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Parsed,
+            "key:parse-v1",
+        );
+        assert!(repeat.admitted, "{repeat:?}");
+    }
+
+    #[test]
+    fn stage_gate_rejects_fsm_regression() {
+        let decision = admit_stage_transition(
+            Some(ArticleContextState::Summarized),
+            ArticleContextState::Parsed,
+            "key:summary-v1",
+        );
+        assert!(!decision.admitted);
+        let error = decision.error.unwrap();
+        assert_eq!(error.code, TransitionAdmissionCode::IllegalTransition);
+        assert_eq!(error.from, ArticleContextState::Summarized);
+        assert_eq!(error.to, ArticleContextState::Parsed);
+        assert_eq!(error.evidence_ref, "key:summary-v1");
+    }
+
+    #[test]
+    fn stage_gate_rejects_missing_evidence_after_entry() {
+        let decision = admit_stage_transition(
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::Summarized,
+            "  ",
+        );
+        assert!(!decision.admitted);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::MissingEvidence
+        );
+    }
+
+    #[test]
+    fn stage_gate_keeps_failed_visible_terminal() {
+        let decision = admit_stage_transition(
+            Some(ArticleContextState::FailedVisible),
+            ArticleContextState::Parsed,
+            "key:failed",
+        );
+        assert!(!decision.admitted);
+        assert_eq!(
+            decision.error.unwrap().code,
+            TransitionAdmissionCode::TerminalSink
+        );
+        let sink = admit_stage_transition(
+            Some(ArticleContextState::Parsed),
+            ArticleContextState::FailedVisible,
+            "key:parse-v1",
+        );
+        assert!(sink.admitted, "any state may reach the failure sink");
     }
 }

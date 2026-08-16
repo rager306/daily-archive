@@ -4,7 +4,7 @@
 //! article-specific effective-input keys and stage outcomes. Concrete parser,
 //! LLM, JAR and filesystem adapters are injected through ports.
 
-use da_domain::StageIdRegistry;
+use da_domain::{AdmissionDecision, ArticleContextState, StageIdRegistry, admit_stage_transition};
 use da_ports::clock::Clock;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, PipelineCacheError, SourceIdentity, StageCacheKey, StageOutcome,
@@ -46,6 +46,13 @@ pub struct StageRunRecord {
     /// multiple historical contracts produced identical output bytes.
     #[serde(default)]
     pub cache_key_sha256: Option<String>,
+    /// ACAP runtime admission decision (PIR-014) computed from the previous
+    /// stage state and the canonical stage id. `None` when the stage is outside
+    /// the ACAP FSM mapping (gate not applicable — the report surface exposes
+    /// these as `skipped` transitions). Blocked decisions carry the typed
+    /// reason and evidence reference in the record.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub admission: Option<AdmissionDecision>,
     pub disposition: StageDisposition,
 }
 
@@ -144,6 +151,11 @@ impl PipelineOrchestrator {
         let mut records = Vec::with_capacity(pipeline.steps.len());
         let mut outputs: BTreeMap<String, Vec<u8>> = BTreeMap::new();
         let mut output_hashes: BTreeMap<String, String> = BTreeMap::new();
+        // ACAP runtime admission state (PIR-014): the ACAP state established by
+        // the previous gated stage plus the durable evidence (cache key sha256)
+        // that establishes it. `None` until the first gated stage is admitted.
+        let mut prior_state: Option<ArticleContextState> = None;
+        let mut prior_evidence: Option<String> = None;
 
         for step in &pipeline.steps {
             let canonical_stage_id = self.canonical_stage_id(&step.stage)?;
@@ -159,6 +171,78 @@ impl PipelineOrchestrator {
                     registry_key: step.stage.clone(),
                     contract_stage: contract.stage_id,
                 });
+            }
+
+            // ── ACAP admission gate (PIR-014) ────────────────────────────────
+            // Computed once per step, before cache-hit acceptance and before
+            // executor execution, from the prior stage state and the canonical
+            // stage id. Both cache paths (canonical hit and legacy alias
+            // fallback) and execution sit behind the same decision; a blocked
+            // transition fails closed with a typed reason and a durable
+            // evidence reference, and the executor never runs. Stages outside
+            // the ACAP FSM mapping are not gated (report surface: skipped).
+            let target_state = acap_state_for_stage(&canonical_stage_id);
+            let admission = target_state.map(|target| {
+                let evidence_ref = prior_evidence
+                    .clone()
+                    .unwrap_or_else(|| source_entry_evidence(&source).unwrap_or_default());
+                admit_stage_transition(prior_state, target, &evidence_ref)
+            });
+            if let Some(decision) = &admission {
+                if !decision.admitted {
+                    let error = decision
+                        .error
+                        .as_ref()
+                        .expect("blocked admission decision carries a typed error");
+                    tracing::warn!(
+                        article_id = %source.article_id,
+                        pipeline_id = %pipeline.id,
+                        step = %step.name,
+                        stage = %canonical_stage_id,
+                        resolved_from = resolved_from.as_deref().unwrap_or(""),
+                        error_class = %error.error_class(),
+                        reason = %error.reason,
+                        evidence_ref = %error.evidence_ref,
+                        event = "pipeline_stage_admission_blocked"
+                    );
+                    records.push(StageRunRecord {
+                        step_name: step.name.clone(),
+                        stage_id: canonical_stage_id.clone(),
+                        resolved_from: resolved_from.clone(),
+                        cache_key_sha256: None,
+                        admission: Some(decision.clone()),
+                        disposition: StageDisposition::Failed {
+                            error_class: error.error_class(),
+                            message: error.to_string(),
+                            retryable: false,
+                        },
+                    });
+                    return Ok(PipelineRunReport {
+                        pipeline_id: pipeline.id.clone(),
+                        article_id: source.article_id,
+                        completed: false,
+                        stages: records,
+                    });
+                }
+                tracing::info!(
+                    article_id = %source.article_id,
+                    pipeline_id = %pipeline.id,
+                    step = %step.name,
+                    stage = %canonical_stage_id,
+                    resolved_from = resolved_from.as_deref().unwrap_or(""),
+                    evidence_ref = %decision.evidence_ref,
+                    event = "pipeline_stage_admitted"
+                );
+                prior_state = target_state;
+            } else {
+                tracing::debug!(
+                    article_id = %source.article_id,
+                    pipeline_id = %pipeline.id,
+                    step = %step.name,
+                    stage = %canonical_stage_id,
+                    reason = "stage outside ACAP FSM mapping",
+                    event = "pipeline_stage_admission_skipped"
+                );
             }
 
             let mut dependency_payloads = BTreeMap::new();
@@ -219,11 +303,13 @@ impl PipelineOrchestrator {
                     let cache_key_sha256 = hit.manifest.key_sha256.clone();
                     outputs.insert(step.name.clone(), hit.payload);
                     output_hashes.insert(step.name.clone(), output_sha256.clone());
+                    prior_evidence = Some(cache_key_sha256.clone());
                     records.push(StageRunRecord {
                         step_name: step.name.clone(),
                         stage_id: canonical_stage_id.clone(),
                         resolved_from: resolved_from.clone(),
                         cache_key_sha256: Some(cache_key_sha256),
+                        admission: admission.clone(),
                         disposition: StageDisposition::CacheHit { output_sha256 },
                     });
                 }
@@ -247,6 +333,7 @@ impl PipelineOrchestrator {
                         stage_id: canonical_stage_id.clone(),
                         resolved_from: resolved_from.clone(),
                         cache_key_sha256: Some(manifest.key_sha256),
+                        admission: admission.clone(),
                         disposition: StageDisposition::RetrySuppressed { retry_after },
                     });
                     return Ok(PipelineRunReport {
@@ -281,6 +368,7 @@ impl PipelineOrchestrator {
                             )?;
                             outputs.insert(step.name.clone(), output.payload);
                             output_hashes.insert(step.name.clone(), output_sha256.clone());
+                            prior_evidence = Some(manifest.key_sha256.clone());
                             tracing::info!(
                                 article_id = %source.article_id,
                                 pipeline_id = %pipeline.id,
@@ -295,6 +383,7 @@ impl PipelineOrchestrator {
                                 stage_id: canonical_stage_id.clone(),
                                 resolved_from: resolved_from.clone(),
                                 cache_key_sha256: Some(manifest.key_sha256),
+                                admission: admission.clone(),
                                 disposition: StageDisposition::Executed { output_sha256 },
                             });
                         }
@@ -325,6 +414,7 @@ impl PipelineOrchestrator {
                                 stage_id: canonical_stage_id.clone(),
                                 resolved_from: resolved_from.clone(),
                                 cache_key_sha256: Some(manifest.key_sha256),
+                                admission: admission.clone(),
                                 disposition: StageDisposition::Failed {
                                     error_class,
                                     message,
@@ -356,6 +446,7 @@ impl PipelineOrchestrator {
                                 stage_id: canonical_stage_id.clone(),
                                 resolved_from: resolved_from.clone(),
                                 cache_key_sha256: None,
+                                admission: admission.clone(),
                                 disposition: StageDisposition::Failed {
                                     error_class,
                                     message,
@@ -387,11 +478,54 @@ fn payload_sha256(payload: &[u8]) -> String {
     hex::encode(Sha256::digest(payload))
 }
 
+/// Canonical pipeline stage id -> ACAP FSM state (PIR-014 runtime gate).
+///
+/// Stages with an unambiguous ACAP layer are gated; stages outside the FSM
+/// (derived diagnostics such as readiness/assurance/query, cross-cutting
+/// materialization helpers, and candidate structures like cluster) are not
+/// gated and do not advance the run's FSM state — their transitions surface in
+/// reports as `skipped`. Gating keys on the canonical id so alias smuggling
+/// cannot bypass the FSM.
+fn acap_state_for_stage(stage_id: &str) -> Option<ArticleContextState> {
+    use ArticleContextState::*;
+    match stage_id {
+        "acquisition" => Some(SourceRegistered),
+        "catalog" => Some(SourceVerified),
+        "parse" => Some(Parsed),
+        "extraction_compute" => Some(Extracted),
+        "embedding" => Some(Embedded),
+        "summary" => Some(Summarized),
+        "resolution" => Some(Resolved),
+        "checkpoint" => Some(AcceptedCheckpoint),
+        _ => None,
+    }
+}
+
+/// Durable entry evidence for the first gated stage, derived from the
+/// checksum-bound source identity (never a caller-supplied free-form string).
+/// `None` when the run carries no source checksum — the gate then fails closed
+/// with `missing_entry_state` on the first gated stage.
+fn source_entry_evidence(source: &SourceIdentity) -> Option<String> {
+    if let Some(hash) = source
+        .pdf_sha256
+        .as_deref()
+        .or(source.html_sha256.as_deref())
+    {
+        return Some(format!("source:sha256:{hash}"));
+    }
+    let fingerprint = source.acquisition_fingerprint.trim();
+    if !fingerprint.is_empty() {
+        return Some(format!("acquisition:{fingerprint}"));
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use async_trait::async_trait;
     use chrono::{TimeZone, Utc};
+    use da_domain::TransitionAdmissionCode;
     use da_ports::clock::FixedClock;
     use da_ports::pipeline_cache::{
         CacheLookup, CachedSuccess, PipelineCacheResult, StageManifestEntry,
@@ -615,6 +749,47 @@ mod tests {
             import_eligible: false,
         };
         Arc::new(ledger.registry().unwrap())
+    }
+
+    /// Registry covering the full ACAP FSM mapping plus one stage (`readiness`)
+    /// outside the FSM — used by the T03 fail-closed admission tests.
+    fn fsm_registry() -> Arc<StageIdRegistry> {
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                stage_contract("acquisition", &[]),
+                stage_contract("catalog", &[]),
+                stage_contract("parse", &["grobid_parse", "html_parse"]),
+                stage_contract("extraction_compute", &[]),
+                stage_contract("embedding", &[]),
+                stage_contract("resolution", &[]),
+                stage_contract("summary", &[]),
+                stage_contract("checkpoint", &[]),
+                stage_contract("readiness", &[]),
+            ],
+            import_eligible: false,
+        };
+        Arc::new(ledger.registry().unwrap())
+    }
+
+    /// Build a cache key for a canonical stage with the given dependency output
+    /// hashes and the executor's exact contract fingerprints.
+    fn cache_key(
+        source: &SourceIdentity,
+        stage_id: &str,
+        deps: BTreeMap<String, String>,
+        contract: &StageContract,
+    ) -> StageCacheKey {
+        StageCacheKey {
+            source: source.clone(),
+            stage_id: stage_id.into(),
+            dependency_output_sha256: deps,
+            implementation_fingerprint: contract.implementation_fingerprint.clone(),
+            configuration_fingerprint: contract.configuration_fingerprint.clone(),
+            prompt_fingerprint: contract.prompt_fingerprint.clone(),
+            model_fingerprint: contract.model_fingerprint.clone(),
+            output_schema_fingerprint: contract.output_schema_fingerprint.clone(),
+        }
     }
 
     #[tokio::test]
@@ -935,5 +1110,632 @@ mod tests {
             StageDisposition::RetrySuppressed { .. }
         ));
         assert_eq!(parse.calls(), 1, "negative cache must suppress early retry");
+    }
+
+    // ── PIR-014 fail-closed admission tests (T03) ──
+
+    #[tokio::test]
+    async fn mid_fsm_entry_fails_closed_before_executor_runs() {
+        // A run that starts mid-FSM (first step = summary) must fail closed on
+        // the entry transition: no default-admit, executor call count 0, typed
+        // reason + durable evidence ref in the Failed disposition.
+        let cache = Arc::new(MemoryCache::default());
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let mid_fsm = PipelineBuilder::new("mid-fsm-entry")
+            .step("summary", "summary", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&mid_fsm, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert_eq!(report.stages.len(), 1);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::Failed {
+                ref error_class,
+                retryable: false,
+                ..
+            } if error_class == "admission:illegal_transition"
+        ));
+        let admission = report.stages[0]
+            .admission
+            .as_ref()
+            .expect("blocked record carries admission");
+        assert!(!admission.admitted);
+        let error = admission.error.as_ref().expect("typed error");
+        assert_eq!(error.code, TransitionAdmissionCode::IllegalTransition);
+        assert_eq!(error.from, ArticleContextState::SourceRegistered);
+        assert_eq!(error.to, ArticleContextState::Summarized);
+        assert_eq!(error.evidence_ref, "source:sha256:pdf-v1");
+        assert_eq!(
+            summary.calls(),
+            0,
+            "blocked transition must never reach the executor"
+        );
+    }
+
+    #[tokio::test]
+    async fn fsm_regression_fails_closed_without_running_regressed_stage() {
+        // parse -> summary -> parse regresses the ACAP FSM: the third step is
+        // blocked even though its executor is registered and its dependencies
+        // are present. The regressed stage must not execute.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let regressed = PipelineBuilder::new("fsm-regression")
+            .step("parse", "parse", &[])
+            .step("summary", "summary", &["parse"])
+            .step("parse-again", "parse", &["summary"])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&regressed, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert_eq!(
+            report.stages.len(),
+            3,
+            "blocked step still records one Failed row"
+        );
+        assert!(matches!(
+            report.stages[2].disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        let error = report.stages[2]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.from, ArticleContextState::Summarized);
+        assert_eq!(error.to, ArticleContextState::Parsed);
+        assert_eq!(
+            parse.calls(),
+            1,
+            "parse ran for step 1 only; the regressed step 3 must not run"
+        );
+        assert_eq!(summary.calls(), 1);
+    }
+
+    #[tokio::test]
+    async fn terminal_failure_does_not_chain_to_next_stage() {
+        // A non-FailedVisible failure (terminal executor error) must fail the
+        // run closed: the stage after the failed disposition never executes.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let mut failing = FakeStage::success("summary", b"");
+        failing.failure = Some(StageExecutionError::Terminal {
+            error_class: "llm_unavailable".into(),
+            message: "LLM provider rejected request".into(),
+        });
+        let summary = Arc::new(failing);
+        let chain = PipelineBuilder::new("terminal-fail-chain")
+            .step("parse", "parse", &[])
+            .step("summary", "summary", &["parse"])
+            .step("summary-again", "summary", &["summary"])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&chain, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert_eq!(report.stages.len(), 2, "run must stop at the failed stage");
+        assert!(matches!(
+            report.stages[1].disposition,
+            StageDisposition::Failed {
+                ref error_class,
+                retryable: false,
+                ..
+            } if error_class == "llm_unavailable"
+        ));
+        assert_eq!(
+            summary.calls(),
+            1,
+            "failed disposition must not chain to the next stage"
+        );
+    }
+
+    #[tokio::test]
+    async fn retryable_failure_does_not_chain_to_next_stage() {
+        // Same fail-closed property for a retryable (non-FailedVisible)
+        // failure: the run returns completed=false and the next stage never
+        // executes.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let mut failing = FakeStage::success("summary", b"");
+        failing.failure = Some(StageExecutionError::Retryable {
+            error_class: "grobid_unavailable".into(),
+            message: "GROBID returned 503".into(),
+            retry_after: "2026-08-08T01:00:00Z".into(),
+        });
+        let summary = Arc::new(failing);
+        let chain = PipelineBuilder::new("retryable-fail-chain")
+            .step("parse", "parse", &[])
+            .step("summary", "summary", &["parse"])
+            .step("summary-again", "summary", &["summary"])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&chain, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert_eq!(report.stages.len(), 2, "run must stop at the failed stage");
+        assert!(matches!(
+            report.stages[1].disposition,
+            StageDisposition::Failed {
+                ref error_class,
+                retryable: true,
+                ..
+            } if error_class == "grobid_unavailable"
+        ));
+        assert_eq!(
+            summary.calls(),
+            1,
+            "retryable failure must not chain to the next stage"
+        );
+    }
+
+    #[tokio::test]
+    async fn legacy_linear_fsm_chain_passes_with_admission_evidence() {
+        // The legacy linear pipeline shape (full ACAP chain, skipping layers) is
+        // monotonic forward: every stage is admitted with a durable evidence
+        // reference and the run completes with exactly one record per step.
+        let cache = Arc::new(MemoryCache::default());
+        let ids = [
+            "acquisition",
+            "catalog",
+            "parse",
+            "extraction_compute",
+            "embedding",
+            "resolution",
+            "summary",
+            "checkpoint",
+        ];
+        let mut orchestrator = PipelineOrchestrator::new(cache, clock(), fsm_registry());
+        let mut executors = Vec::new();
+        for id in ids {
+            let stage = Arc::new(FakeStage::success(id, format!("{id}-out").as_bytes()));
+            orchestrator = orchestrator.with_executor(id, stage.clone()).unwrap();
+            executors.push(stage);
+        }
+        let chain = PipelineBuilder::new("full-fsm-chain")
+            .step("acquisition", "acquisition", &[])
+            .step("catalog", "catalog", &["acquisition"])
+            .step("parse", "parse", &["catalog"])
+            .step("extraction", "extraction_compute", &["parse"])
+            .step("embedding", "embedding", &["extraction"])
+            .step("resolution", "resolution", &["embedding"])
+            .step("summary", "summary", &["resolution"])
+            .step("checkpoint", "checkpoint", &["summary"])
+            .build()
+            .unwrap();
+        let report = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(report.completed);
+        assert_eq!(report.stages.len(), 8, "one record per step, no duplicates");
+        for (index, record) in report.stages.iter().enumerate() {
+            assert!(matches!(
+                record.disposition,
+                StageDisposition::Executed { .. }
+            ));
+            let admission = record
+                .admission
+                .as_ref()
+                .expect("gated stage carries admission");
+            assert!(
+                admission.admitted,
+                "stage {} must be admitted",
+                record.stage_id
+            );
+            assert!(admission.error.is_none());
+            assert!(
+                !admission.evidence_ref.is_empty(),
+                "admission must carry a durable evidence reference"
+            );
+            if index == 0 {
+                assert_eq!(admission.evidence_ref, "source:sha256:pdf-v1");
+            } else {
+                assert!(
+                    admission.evidence_ref.starts_with("test-key-"),
+                    "downstream evidence references the prior stage cache key"
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn cached_output_cannot_bypass_mid_fsm_entry_gate() {
+        // Replay attack via cache: a cached summary output exists for the exact
+        // canonical key, but the run starts mid-FSM. The gate must block BEFORE
+        // cache-hit acceptance — the record is Failed, not CacheHit, and the
+        // executor never runs.
+        let cache = Arc::new(MemoryCache::default());
+        let summary = Arc::new(FakeStage::success("summary", b"cached-summary"));
+        let key = cache_key(
+            &source("pdf-v1"),
+            "summary",
+            BTreeMap::new(),
+            &summary.contract(),
+        );
+        cache
+            .store_success(
+                &key,
+                b"cached-summary",
+                BTreeMap::new(),
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let mid_fsm = PipelineBuilder::new("mid-fsm-entry")
+            .step("summary", "summary", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&mid_fsm, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        assert_eq!(
+            report.stages[0].cache_key_sha256, None,
+            "a blocked admission must not accept the cached hit"
+        );
+        let error = report.stages[0]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(summary.calls(), 0);
+    }
+
+    #[tokio::test]
+    async fn cache_hit_does_not_relax_gate_for_downstream_regression() {
+        // Even when a cache hit is *available* for a regressed stage (the
+        // replay-attack variant: parse with a summary dependency output), the
+        // gate must reject the transition before the hit is accepted.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let orchestrator = PipelineOrchestrator::new(cache.clone(), clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap();
+        // Prime the cache with a legal parse -> summary run.
+        orchestrator
+            .run(&pipeline(), source("pdf-v1"))
+            .await
+            .unwrap();
+        // Seed a cache hit for the regressed parse step (parse keyed on a
+        // summary dependency output).
+        let regressed_key = cache_key(
+            &source("pdf-v1"),
+            "parse",
+            BTreeMap::from([("summary".into(), payload_sha256(b"summary"))]),
+            &parse.contract(),
+        );
+        cache
+            .store_success(
+                &regressed_key,
+                b"parsed-from-summary",
+                BTreeMap::new(),
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let regressed = PipelineBuilder::new("cache-replay-attack")
+            .step("parse", "parse", &[])
+            .step("summary", "summary", &["parse"])
+            .step("parse-again", "parse", &["summary"])
+            .build()
+            .unwrap();
+        let report = orchestrator
+            .run(&regressed, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert_eq!(report.stages.len(), 3);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::CacheHit { .. }
+        ));
+        assert!(matches!(
+            report.stages[1].disposition,
+            StageDisposition::CacheHit { .. }
+        ));
+        assert!(matches!(
+            report.stages[2].disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        let error = report.stages[2]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.from, ArticleContextState::Summarized);
+        assert_eq!(error.to, ArticleContextState::Parsed);
+        assert_eq!(parse.calls(), 1, "only the priming run executed parse");
+        assert_eq!(summary.calls(), 1);
+    }
+
+    #[tokio::test]
+    async fn legacy_alias_cache_hit_cannot_bypass_entry_gate() {
+        // The legacy alias fallback lookup also sits behind the gate: a cached
+        // entry keyed on the raw step name cannot admit a mid-FSM entry.
+        let cache = Arc::new(MemoryCache::default());
+        let summary = Arc::new(FakeStage::success("summary", b"cached-summary"));
+        let legacy_key = cache_key(
+            &source("pdf-v1"),
+            "legacy-summary-cache",
+            BTreeMap::new(),
+            &summary.contract(),
+        );
+        cache
+            .store_success(
+                &legacy_key,
+                b"legacy-summary",
+                BTreeMap::new(),
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let mid_fsm = PipelineBuilder::new("legacy-mid-fsm")
+            .step("legacy-summary-cache", "summary", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&mid_fsm, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        let error = report.stages[0]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.evidence_ref, "source:sha256:pdf-v1");
+        assert_eq!(summary.calls(), 0);
+    }
+
+    #[tokio::test]
+    async fn legal_legacy_alias_hit_keeps_gate_evidence() {
+        // The legacy alias cache-hit path is not broken by the gate: a legal
+        // entry (parse via its alias) admits, accepts the legacy hit, and the
+        // record carries the admission decision with durable source evidence.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("grobid_parse", b"parsed"));
+        let legacy_key = cache_key(
+            &source("pdf-v1"),
+            "legacy-parse-cache",
+            BTreeMap::new(),
+            &parse.contract(),
+        );
+        cache
+            .store_success(
+                &legacy_key,
+                b"parsed-legacy",
+                BTreeMap::new(),
+                "2026-08-08T00:00:00Z",
+            )
+            .unwrap();
+        let pipeline = PipelineBuilder::new("legacy-parse-hit")
+            .step("legacy-parse-cache", "grobid_parse", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("grobid_parse", parse.clone())
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(report.completed);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::CacheHit { .. }
+        ));
+        assert_eq!(report.stages[0].stage_id, "parse");
+        let admission = report.stages[0]
+            .admission
+            .as_ref()
+            .expect("gated stage carries admission");
+        assert!(admission.admitted);
+        assert_eq!(admission.evidence_ref, "source:sha256:pdf-v1");
+        assert_eq!(parse.calls(), 0);
+    }
+
+    #[tokio::test]
+    async fn cache_hit_replay_keeps_one_record_per_step_with_admission_evidence() {
+        // Replay via cache must not duplicate stage records and must keep the
+        // admission decision (with durable evidence) on every gated record.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let orchestrator = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap();
+        let first = orchestrator
+            .run(&pipeline(), source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(first.completed);
+        assert_eq!(first.stages.len(), 2, "one record per step");
+        let second = orchestrator
+            .run(&pipeline(), source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(second.completed);
+        assert_eq!(
+            second.stages.len(),
+            2,
+            "replay must not duplicate stage records"
+        );
+        assert!(
+            second
+                .stages
+                .iter()
+                .all(|record| matches!(record.disposition, StageDisposition::CacheHit { .. }))
+        );
+        for (index, record) in second.stages.iter().enumerate() {
+            let admission = record
+                .admission
+                .as_ref()
+                .expect("gated stage carries admission");
+            assert!(admission.admitted, "cache-hit replay keeps the admission");
+            assert!(admission.error.is_none());
+            assert!(
+                !admission.evidence_ref.is_empty(),
+                "evidence ref must be durable"
+            );
+            if index == 0 {
+                assert_eq!(admission.evidence_ref, "source:sha256:pdf-v1");
+            } else {
+                assert_eq!(
+                    admission.evidence_ref, "test-key-parse",
+                    "downstream evidence is the prior stage cache key"
+                );
+            }
+        }
+        assert_eq!(parse.calls(), 1);
+        assert_eq!(summary.calls(), 1);
+    }
+
+    #[tokio::test]
+    async fn run_without_source_evidence_fails_closed_with_missing_entry_state() {
+        // A run whose source identity carries no durable checksum or fingerprint
+        // must fail closed on the first gated stage (missing_entry_state): the
+        // gate never default-admits.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let mut unbound = source("pdf-v1");
+        unbound.pdf_sha256 = None;
+        unbound.html_sha256 = None;
+        unbound.acquisition_fingerprint = "   ".into();
+        let one_stage = PipelineBuilder::new("no-entry-evidence")
+            .step("parse", "parse", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .run(&one_stage, unbound)
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        assert!(matches!(
+            report.stages[0].disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        let error = report.stages[0]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:missing_entry_state");
+        assert_eq!(error.code, TransitionAdmissionCode::MissingEntryState);
+        assert_eq!(parse.calls(), 0);
+    }
+
+    #[tokio::test]
+    async fn skipped_stage_outside_fsm_does_not_advance_or_bypass_gate() {
+        // Stages outside the ACAP FSM mapping surface as `skipped` (admission
+        // None), still execute, and do not advance or corrupt the run's FSM
+        // state: summary after readiness is still admitted from Parsed.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let readiness = Arc::new(FakeStage::success("readiness", b"ready"));
+        let summary = Arc::new(FakeStage::success("summary", b"summary"));
+        let pipeline = PipelineBuilder::new("with-skipped-stage")
+            .step("parse", "parse", &[])
+            .step("readiness", "readiness", &["parse"])
+            .step("summary", "summary", &["readiness"])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), fsm_registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("readiness", readiness.clone())
+            .unwrap()
+            .with_executor("summary", summary.clone())
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(report.completed);
+        assert_eq!(report.stages.len(), 3);
+        assert!(report.stages[1].admission.is_none(), "readiness is skipped");
+        assert!(matches!(
+            report.stages[1].disposition,
+            StageDisposition::Executed { .. }
+        ));
+        let parse_admission = report.stages[0].admission.as_ref().unwrap();
+        assert!(parse_admission.admitted);
+        assert_eq!(parse_admission.evidence_ref, "source:sha256:pdf-v1");
+        let summary_admission = report.stages[2].admission.as_ref().unwrap();
+        assert!(summary_admission.admitted);
+        // The skipped stage does not advance the FSM state (prior stays Parsed,
+        // so summary is admitted), but `prior_evidence` is refreshed by every
+        // executed stage: the evidence reference names the last durable record
+        // (readiness's cache key), which is still an orchestrator-produced
+        // durable record.
+        assert_eq!(
+            summary_admission.evidence_ref, "test-key-readiness",
+            "evidence ref is the last durable record; FSM state is unaffected by skipped stages"
+        );
     }
 }
