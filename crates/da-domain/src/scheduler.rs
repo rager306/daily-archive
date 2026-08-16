@@ -496,7 +496,7 @@ fn default_schema_version() -> u32 {
 }
 
 /// What kind of lazy-load task this is.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskType {
     /// Paper not yet indexed by OpenAlex — retry enrichment later.
@@ -804,6 +804,7 @@ impl NodeSchemaDef for SchedulerTaskSchema {
             ("import_eligible", FieldType::Boolean),
             ("schema_version", FieldType::Integer),
             // ── durable task plane (M399/S03) ──
+            ("task_json", FieldType::String),
             ("priority", FieldType::String),
             ("resource_class", FieldType::String),
             ("lease_owner", FieldType::String),
