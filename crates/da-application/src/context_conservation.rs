@@ -4,13 +4,29 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use da_domain::{
     assurance::{BoundaryMode, MissingnessReason},
-    context_conservation::StageContextSnapshot,
+    context_conservation::{ConservationEvidence, StageContextSnapshot},
     extractive_summary::ExtractiveSummaryBatch,
     revision_readiness::{RevisionReadinessAssessment, RevisionReadinessObservation},
 };
 use da_ports::{extractor::ExtractedEntity, parser::ParsedArticle};
 
 use crate::revision_materialization::{RevisionContentContext, RevisionMaterializationResult};
+
+/// Same-process conservation evidence for one article: observes the parse
+/// snapshot, then the extraction snapshot, and derives the parse→extraction
+/// transition. All snapshots keep `import_eligible = false`, so the durable
+/// evidence is non-authoritative (D127 stays locked). HTML articles with no
+/// bibliography naturally report `no_claim` on the zero citation denominator.
+pub fn observe_conservation_evidence(
+    parsed: &ParsedArticle,
+    entities: &[ExtractedEntity],
+    source_bytes: u64,
+    navigation_noise_titles: &BTreeSet<String>,
+) -> Result<ConservationEvidence, String> {
+    let from = observe_parsed_article(parsed, source_bytes, navigation_noise_titles)?;
+    let to = observe_extracted_entities(parsed, entities)?;
+    ConservationEvidence::between(from, to)
+}
 
 pub fn observe_parsed_article(
     parsed: &ParsedArticle,

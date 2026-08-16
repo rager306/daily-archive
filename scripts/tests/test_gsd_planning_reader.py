@@ -1,5 +1,6 @@
 """Contracts for governor's read-only GSD planning projection boundary."""
 
+import re
 from pathlib import Path
 
 from governor.adapters.filesystem_gsd_planning_reader import (
@@ -100,6 +101,22 @@ def test_duplicate_base_ids_do_not_merge_task_counts(tmp_path: Path) -> None:
         ("M371-pr59ty", 1),
     ]
     assert any("refusing suffixed phase merge" in item for item in result.diagnostics)
+
+
+def test_state_active_pending_roadmap_row_is_projection_active(tmp_path: Path) -> None:
+    _roadmap(tmp_path, "- ⬜ **M398-cz4pzx: Executing** (`depends:[—]`)")
+    _plan(tmp_path, "398-cz4pzx-executing", 398, ["T01"])
+    _write(
+        tmp_path / ".gsd" / "STATE.md",
+        "# State\n\n**Active Milestone:** M398-cz4pzx: Executing\n",
+    )
+
+    result = FilesystemGsdPlanningReader(tmp_path).read()
+
+    assert result.available is True
+    assert result.diagnostics == ()
+    assert result.milestones[0].status == "active"
+    assert result.milestones[0].task_count == 1
 
 
 def test_state_and_roadmap_active_divergence_is_visible(tmp_path: Path) -> None:
@@ -216,12 +233,21 @@ def test_unplanned_active_slice_is_diagnosed(tmp_path: Path) -> None:
     assert any("slice S02 has no PLAN tasks" in item for item in result.diagnostics)
 
 
-def test_repository_projection_reports_active_m383() -> None:
-    """Live repo smoke: STATE/ROADMAP active unit is M383-uber46."""
+def test_repository_projection_tracks_state_active_milestone() -> None:
+    """Live repo smoke: the projection promotes the exact STATE-active row."""
     root = Path(__file__).resolve().parents[2]
+    state_text = (root / ".gsd" / "STATE.md").read_text(encoding="utf-8")
+    match = re.search(
+        r"^\*\*Active Milestone:\*\*\s+(M\d{3}(?:-[a-z0-9]+)?):",
+        state_text,
+        flags=re.MULTILINE,
+    )
+    assert match is not None
+    active_id = match.group(1)
+
     result = FilesystemGsdPlanningReader(root).read()
     milestones = {item.milestone_id: item for item in result.milestones}
 
     assert result.available is True
-    assert "M383-uber46" in milestones
-    assert milestones["M383-uber46"].status == "active"
+    assert active_id in milestones
+    assert milestones[active_id].status == "active"

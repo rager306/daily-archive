@@ -1273,6 +1273,19 @@ mod tests {
     use super::*;
     use da_application::StageRunRecord;
 
+    /// Resolve a semantic label through the ontology registry before querying
+    /// the graph. Tests must not hardcode graph label walks (ADR-050).
+    async fn registered_label_nodes(
+        store: &dyn DirectGraphStore,
+        semantic_label: &str,
+    ) -> Vec<u64> {
+        let label = da_domain::schema::registered_node_labels_or_yaml()
+            .into_iter()
+            .find(|label| label == semantic_label)
+            .unwrap_or_else(|| panic!("label is not ontology-registered: {semantic_label}"));
+        store.get_nodes_by_label(&label).await
+    }
+
     fn stage(step: &str) -> StageRunRecord {
         StageRunRecord {
             step_name: step.into(),
@@ -1574,7 +1587,8 @@ mod tests {
             assert!(paper.replay_mutations.replay_passes());
         }
 
-        let revisions = store.get_nodes_by_label("PaperRevision").await;
+        let revisions =
+            registered_label_nodes(store.as_ref() as &dyn DirectGraphStore, "PaperRevision").await;
         assert_eq!(revisions.len(), 2);
         let mut revision_vids = std::collections::BTreeSet::new();
         for node in &revisions {
@@ -1582,9 +1596,11 @@ mod tests {
             revision_vids.insert(vid);
         }
         assert_eq!(revision_vids.len(), 2);
-        let papers_in_graph = store.get_nodes_by_label("Paper").await;
+        let papers_in_graph =
+            registered_label_nodes(store.as_ref() as &dyn DirectGraphStore, "Paper").await;
         assert_eq!(papers_in_graph.len(), 1);
-        let sections = store.get_nodes_by_label("Section").await;
+        let sections =
+            registered_label_nodes(store.as_ref() as &dyn DirectGraphStore, "Section").await;
         assert_eq!(sections.len(), 2);
         let versionless_prefix = "vid:section:2506.07853:";
         for node in &sections {

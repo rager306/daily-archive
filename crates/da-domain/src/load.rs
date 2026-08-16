@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fmt;
 
+use crate::context_conservation::ConservationEvidence;
+
 /// Schema id stamped on every durable load report.
 pub const LOAD_REPORT_SCHEMA_VERSION: &str = "load-report.v1";
 
@@ -429,6 +431,12 @@ pub struct LoadReport {
     pub errors: Vec<String>,
     #[serde(default)]
     pub findings: Vec<LoadFinding>,
+    /// Deterministic non-authoritative conservation evidence (parse →
+    /// extraction) for HTML articles, with exact source lineage bound through
+    /// snapshot artifact digests. `import_eligible` stays false on every
+    /// snapshot; this field never authorizes graph import (D127 locked).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conservation: Option<ConservationEvidence>,
     /// Content digest over canonical report body (excluding this field).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub report_digest_sha256: Option<String>,
@@ -525,6 +533,7 @@ impl LoadReport {
             duration_ms: 0,
             errors: Vec::new(),
             findings: Vec::new(),
+            conservation: None,
             report_digest_sha256: None,
         }
     }
@@ -570,6 +579,9 @@ impl std::error::Error for LoadDomainError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assurance::{BoundaryMode, ContentDigest, MissingnessReason};
+    use crate::context_conservation::{ConservationEvidence, StageContextSnapshot};
+    use std::collections::BTreeMap;
 
     #[test]
     fn empty_locator_fails() {
@@ -777,6 +789,78 @@ mod tests {
         // Second seal must not change body digest identity when field stripped
         report.seal_digest();
         assert_eq!(report.report_digest_sha256.as_deref(), Some(d1.as_str()));
+    }
+
+    /// The durable HTML conservation evidence must ride on the LoadReport,
+    /// round-trip stably, keep the digest deterministic, and never flip
+    /// import_eligible — the report remains a non-authoritative diagnostic
+    /// even when it carries conservation evidence (D127 locked).
+    #[test]
+    fn load_report_carries_deterministic_non_authoritative_conservation_evidence() {
+        let locator = ArticleLocator::parse("catalog:gnn_textbook/html/gnn-ch-01").unwrap();
+        let mut report = LoadReport::new_skeleton("catalog:gnn_textbook/html/gnn-ch-01", locator);
+        report.source_code = "gnn_textbook".into();
+        report.primary_kind = Some(PrimaryContentKind::Html);
+        let from = StageContextSnapshot {
+            stage_id: "parse".into(),
+            mode: BoundaryMode::LosslessProjection,
+            artifact_sha256: ContentDigest::of_text("html-a"),
+            source_bytes: 512,
+            text_chars: 100,
+            token_count: None,
+            tokenizer_lineage: None,
+            sections: 3,
+            citations: 0,
+            figures: 0,
+            tables: 0,
+            grounded_spans: 0,
+            grounded_section_vids: 0,
+            entities: 0,
+            evidence_items: 0,
+            summaries: 0,
+            manifestations: 0,
+            duplicate_section_titles: 1,
+            navigation_noise_sections: 1,
+            missingness: BTreeMap::from([(
+                "citations_missing".into(),
+                MissingnessReason::GenuinelyAbsent,
+            )]),
+            no_claim: None,
+            import_eligible: false,
+        };
+        let mut to = from.clone();
+        to.stage_id = "extraction_compute".into();
+        to.mode = BoundaryMode::ReviewCandidate;
+        to.text_chars = 30;
+        to.entities = 2;
+        to.grounded_spans = 2;
+        to.missingness = BTreeMap::new();
+        let evidence = ConservationEvidence::between(from, to).unwrap();
+        report.conservation = Some(evidence);
+        report.import_eligible = false;
+        report.ok = true;
+        report.seal_digest();
+
+        // Round-trip preserves the evidence and the digest stays sealed.
+        crate::roundtrip_json(&report);
+        assert_eq!(
+            report.report_digest_sha256.as_deref(),
+            Some(report.compute_digest().as_str())
+        );
+        let decoded: LoadReport =
+            serde_json::from_slice(&serde_json::to_vec(&report).unwrap()).unwrap();
+        let ev = decoded.conservation.unwrap();
+        ev.validate().unwrap();
+        assert!(!ev.from.import_eligible && !ev.to.import_eligible);
+        assert!(!decoded.import_eligible);
+        assert_eq!(
+            ev.transition.citation_retention.no_claim,
+            Some(MissingnessReason::GenuinelyAbsent)
+        );
+        assert_eq!(
+            ev.transition.duplicate_or_navigation["duplicate_section_titles"],
+            1
+        );
     }
 
     #[test]

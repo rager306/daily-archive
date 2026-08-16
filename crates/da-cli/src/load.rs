@@ -5,12 +5,14 @@
 use clap::Args;
 use da_adapters::{
     ArxivSourceAcquisition, CatalogHtmlAcquisition, FdApiEmbedder, FilePipelineCache, GrobidParser,
-    GrobidProfile, HtmlParser, RuleBasedExtractor, toc_unit_keys,
+    GrobidProfile, HtmlParser, RuleBasedExtractor,
+    context_conservation_policy::load_context_conservation_policy, toc_unit_keys,
 };
 use da_application::{
     ArticleLoadUseCase, ExtractionUseCase, IngestUseCase, LoadContentOutcome, LoadContentPipeline,
     LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome, RevisionClassifyUseCase,
     RevisionContentContext, RevisionManifestationInput,
+    context_conservation::observe_conservation_evidence,
 };
 use da_domain::{
     AcquisitionPolicy, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord, LoadCacheRecord, LoadStageSet,
@@ -26,7 +28,7 @@ use da_ports::pipeline_cache::{
     StageOutcome,
 };
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -114,6 +116,9 @@ struct CliContentPipeline {
     clock: Arc<dyn da_ports::Clock>,
     /// DATA-governed canonical identity for every emitted production stage.
     stage_registry: Arc<StageIdRegistry>,
+    /// DATA-governed navigation noise titles for honest conservation
+    /// observations (context_conservation_policy.yaml).
+    navigation_noise_titles: BTreeSet<String>,
 }
 
 #[async_trait::async_trait]
@@ -195,6 +200,7 @@ impl LoadContentPipeline for CliContentPipeline {
             .map_err(|e| format!("materialize: {e:#}"))?;
 
         let mut extract_out = None;
+        let mut conservation = None;
         if req.include_extract {
             let extractor = RuleBasedExtractor::new();
             let (extracted, extract_records) = extract_with_cache(
@@ -206,6 +212,19 @@ impl LoadContentPipeline for CliContentPipeline {
             )
             .await?;
             cache_records.extend(extract_records);
+            if is_html {
+                // Same-process conservation evidence for HTML: parse → extraction
+                // snapshots plus the derived transition. Non-authoritative.
+                let source_bytes = std::fs::metadata(req.primary_path)
+                    .map(|m| m.len())
+                    .unwrap_or(0);
+                conservation = Some(observe_conservation_evidence(
+                    &parsed,
+                    &extracted,
+                    source_bytes,
+                    &self.navigation_noise_titles,
+                )?);
+            }
             let extract_uc = ExtractionUseCase::materializer_only_with_clock(
                 self.store.clone() as Arc<dyn DirectGraphStore>,
                 self.clock.clone(),
@@ -254,6 +273,7 @@ impl LoadContentPipeline for CliContentPipeline {
             },
             extract: extract_out,
             cache_records,
+            conservation,
         })
     }
 }
@@ -872,6 +892,29 @@ fn sha256_hex(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 
+fn load_policy_noise_titles() -> Result<BTreeSet<String>, String> {
+    // Production CWD is the repo root; tests run from the crate manifest dir.
+    // Relative path wins first; manifest-relative fallback keeps tests honest
+    // without changing runtime behavior.
+    let relative = Path::new("data/ontology/context_conservation_policy.yaml");
+    match load_context_conservation_policy(relative) {
+        Ok(policy) => Ok(policy.navigation_noise_titles),
+        Err(relative_err) => {
+            let manifest = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../data/ontology/context_conservation_policy.yaml");
+            load_context_conservation_policy(&manifest)
+                .map(|p| p.navigation_noise_titles)
+                .map_err(|e| {
+                    format!(
+                        "context conservation policy ({}: {relative_err}; {}: {e})",
+                        relative.display(),
+                        manifest.display()
+                    )
+                })
+        }
+    }
+}
+
 fn make_content_pipeline(
     store: Arc<da_adapters::SamyamaGraphStore>,
     export_per_unit: bool,
@@ -889,6 +932,7 @@ fn make_content_pipeline(
         cache: context.cache,
         clock: context.clock,
         stage_registry: context.stage_registry,
+        navigation_noise_titles: load_policy_noise_titles()?,
     })
 }
 

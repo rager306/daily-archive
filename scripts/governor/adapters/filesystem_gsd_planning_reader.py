@@ -55,8 +55,17 @@ class FilesystemGsdPlanningReader(GsdPlanningReader):
             ids_by_base.setdefault(base, []).append(milestone_id)
 
         diagnostics: list[str] = []
-        roadmap_active = {row[0] for row in rows if row[2] == "active"}
         state_active = self._state_active_milestone()
+        # Root ROADMAP.md renders an executing milestone as pending until closeout,
+        # while STATE.md identifies the engine-selected active milestone. Promote
+        # only that exact pending row to active so task projections are counted
+        # without hand-editing engine projections.
+        if state_active is not None:
+            for index, (milestone_id, title, status) in enumerate(rows):
+                if milestone_id == state_active and status == "pending":
+                    rows[index] = (milestone_id, title, "active")
+                    break
+        roadmap_active = {row[0] for row in rows if row[2] == "active"}
         if state_active is not None and state_active not in roadmap_active:
             preferred = self._preferred_active_milestone(roadmap_active)
             diagnostics.append(

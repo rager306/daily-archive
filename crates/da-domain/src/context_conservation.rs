@@ -180,6 +180,17 @@ pub struct ContextTransition {
 }
 
 impl ContextTransition {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.from_stage.trim().is_empty() || self.to_stage.trim().is_empty() {
+            return Err("context transition requires nonempty stage ids".into());
+        }
+        self.text_retention.validate()?;
+        self.section_retention.validate()?;
+        self.citation_retention.validate()?;
+        self.grounded_entities.validate()?;
+        Ok(())
+    }
+
     pub fn between(from: &StageContextSnapshot, to: &StageContextSnapshot) -> Result<Self, String> {
         from.validate()?;
         to.validate()?;
@@ -224,7 +235,7 @@ impl ContextTransition {
                 to.navigation_noise_sections,
             ),
         ]);
-        Ok(Self {
+        let transition = Self {
             from_stage: from.stage_id.clone(),
             to_stage: to.stage_id.clone(),
             text_retention: ratio("text_retention", to.text_chars, from.text_chars, to.mode)?,
@@ -234,7 +245,59 @@ impl ContextTransition {
             candidate_added,
             authoritative_lost,
             duplicate_or_navigation,
-        })
+        };
+        transition.validate()?;
+        Ok(transition)
+    }
+}
+
+/// Durable same-process conservation evidence for one article: the exact
+/// StageContextSnapshot pair observed before/after one stage transition plus
+/// the derived ContextTransition. Deterministic (stable serde JSON digest) and
+/// non-authoritative: every snapshot keeps `import_eligible = false`, so the
+/// evidence can never authorize graph import (D127 / ADR-055).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ConservationEvidence {
+    pub schema_version: String,
+    pub from: StageContextSnapshot,
+    pub to: StageContextSnapshot,
+    pub transition: ContextTransition,
+}
+
+impl ConservationEvidence {
+    pub const SCHEMA_VERSION: &'static str = "conservation-evidence.v1";
+
+    pub fn between(from: StageContextSnapshot, to: StageContextSnapshot) -> Result<Self, String> {
+        let transition = ContextTransition::between(&from, &to)?;
+        let evidence = Self {
+            schema_version: Self::SCHEMA_VERSION.into(),
+            from,
+            to,
+            transition,
+        };
+        evidence.validate()?;
+        Ok(evidence)
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if self.schema_version != Self::SCHEMA_VERSION {
+            return Err("conservation evidence schema mismatch".into());
+        }
+        self.from.validate()?;
+        self.to.validate()?;
+        self.transition.validate()?;
+        if self.from.import_eligible || self.to.import_eligible {
+            return Err("conservation evidence cannot authorize import".into());
+        }
+        Ok(())
+    }
+
+    /// Deterministic digest over the canonical JSON body. Same bytes always
+    /// yield the same digest; the evidence is a pure function of the observed
+    /// snapshots (source lineage is bound through artifact digests).
+    pub fn digest(&self) -> Result<ContentDigest, String> {
+        StageContextSnapshot::digest_json(self)
     }
 }
 
@@ -309,5 +372,75 @@ mod tests {
         let y: StageContextSnapshot =
             serde_json::from_slice(&serde_json::to_vec(&x).unwrap()).unwrap();
         assert_eq!(x, y);
+    }
+
+    /// HTML articles have no bibliography: both the parse and the extraction
+    /// snapshot report zero citations, so the citation retention ratio must be
+    /// `no_claim` (GenuinelyAbsent), never a perfect-retention claim.
+    #[test]
+    fn html_zero_citation_denominator_is_no_claim_not_retention() {
+        let mut from = snapshot("parse", 100, 3);
+        from.citations = 0;
+        from.duplicate_section_titles = 1;
+        from.navigation_noise_sections = 1;
+        let mut to = snapshot("extraction_compute", 30, 3);
+        to.citations = 0;
+        to.entities = 2;
+        to.grounded_spans = 2;
+        to.duplicate_section_titles = 1;
+        to.navigation_noise_sections = 1;
+        let evidence = ConservationEvidence::between(from.clone(), to.clone()).unwrap();
+        assert_eq!(
+            evidence.transition.citation_retention.no_claim,
+            Some(MissingnessReason::GenuinelyAbsent)
+        );
+        assert_eq!(evidence.transition.citation_retention.basis_points, 0);
+        // Measured ratios stay honest where denominators exist.
+        assert_eq!(evidence.transition.text_retention.basis_points, 3000);
+        assert_eq!(evidence.transition.section_retention.basis_points, 10_000);
+        assert_eq!(evidence.transition.grounded_entities.basis_points, 10_000);
+        // Candidates, authoritative loss and navigation noise are partitioned.
+        assert_eq!(evidence.transition.candidate_added["entities"], 2);
+        assert_eq!(evidence.transition.authoritative_lost["text_chars"], 70);
+        assert_eq!(
+            evidence.transition.duplicate_or_navigation["duplicate_section_titles"],
+            1
+        );
+        assert_eq!(
+            evidence.transition.duplicate_or_navigation["navigation_noise_sections"],
+            1
+        );
+        evidence.validate().unwrap();
+        assert!(!evidence.from.import_eligible && !evidence.to.import_eligible);
+    }
+
+    /// The durable evidence body must round-trip and digest deterministically:
+    /// the same observed snapshots always produce the same report bytes.
+    #[test]
+    fn conservation_evidence_serde_roundtrip_and_digest_stable() {
+        let mut from = snapshot("parse", 100, 3);
+        from.citations = 0;
+        let mut to = snapshot("extraction_compute", 30, 3);
+        to.citations = 0;
+        to.entities = 2;
+        to.grounded_spans = 2;
+        let evidence = ConservationEvidence::between(from, to).unwrap();
+        let bytes = serde_json::to_vec(&evidence).unwrap();
+        let decoded: ConservationEvidence = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(evidence, decoded);
+        assert_eq!(evidence.digest().unwrap(), evidence.digest().unwrap());
+    }
+
+    #[test]
+    fn conservation_evidence_rejects_import_eligible_snapshots() {
+        let mut from = snapshot("parse", 100, 3);
+        from.citations = 0;
+        let mut to = snapshot("extraction_compute", 30, 3);
+        to.citations = 0;
+        to.entities = 2;
+        to.grounded_spans = 2;
+        to.import_eligible = !to.import_eligible;
+        let err = ConservationEvidence::between(from, to).unwrap_err();
+        assert!(err.contains("cannot authorize import"), "{err}");
     }
 }

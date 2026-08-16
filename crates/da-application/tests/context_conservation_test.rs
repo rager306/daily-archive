@@ -1,9 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use da_application::context_conservation::{
-    observe_extracted_entities, observe_parsed_article, observe_summary_readiness,
+    observe_conservation_evidence, observe_extracted_entities, observe_parsed_article,
+    observe_summary_readiness,
 };
 use da_domain::{
+    assurance::MissingnessReason,
+    context_conservation::ConservationEvidence,
     entity::EntityType,
     extractive_summary::{ExtractiveSummaryBatch, ExtractiveSummaryUnit},
     revision_readiness::{
@@ -176,6 +179,130 @@ fn html_context_conservation_observer_partial_identity_keeps_missingness() {
         da_domain::assurance::MissingnessReason::NotMaterialized
     );
     assert!(!snapshot.import_eligible);
+}
+
+/// Same-process HTML parse → extraction evidence must expose honest
+/// conservation deltas through the public observer API: measured retention
+/// where denominators exist, `no_claim` on the zero citation denominator,
+/// authoritative text loss partitioned from extraction candidates, and typed
+/// duplicate/navigation noise — all durable, deterministic and
+/// non-authoritative (import_eligible stays false, D127 locked).
+#[test]
+fn html_context_conservation_evidence_reports_honest_deltas() {
+    let noise = BTreeSet::from(["references".into()]);
+    let parsed = ParsedArticle {
+        paper_id: "html-lecture-03".into(),
+        title: "Lecture Notes".into(),
+        abstract_text: "A grounded HTML abstract.".into(),
+        body_text: "Intro text. Setup text. Method alpha. Method beta. References.".into(),
+        sections: vec![
+            Section {
+                title: "Introduction".into(),
+                text: "Intro text.".into(),
+                level: 1,
+                path_id: Some("1".into()),
+                parent_section_id: None,
+                order_in_parent: Some(0),
+                section_id: Some("sec-1".into()),
+            },
+            Section {
+                title: "Method".into(),
+                text: "Method alpha.".into(),
+                level: 2,
+                path_id: Some("1.1".into()),
+                parent_section_id: Some("sec-1".into()),
+                order_in_parent: Some(0),
+                section_id: Some("sec-1.1".into()),
+            },
+            Section {
+                title: "Method".into(),
+                text: "Method beta.".into(),
+                level: 2,
+                path_id: Some("1.2".into()),
+                parent_section_id: Some("sec-1".into()),
+                order_in_parent: Some(1),
+                section_id: Some("sec-1.2".into()),
+            },
+            Section {
+                title: "References".into(),
+                text: "References.".into(),
+                level: 1,
+                path_id: Some("2".into()),
+                parent_section_id: None,
+                order_in_parent: Some(1),
+                section_id: Some("sec-2".into()),
+            },
+        ],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        pdf_hash: "d".repeat(64),
+    };
+    let entities = vec![
+        ExtractedEntity {
+            label: "alpha".into(),
+            entity_type: EntityType::Method,
+            section_title: "Method".into(),
+            section_ordinal: Some(1),
+            char_start: 0,
+            char_end: 6,
+            surface: "Method".into(),
+        },
+        ExtractedEntity {
+            label: "beta".into(),
+            entity_type: EntityType::Method,
+            section_title: "Method".into(),
+            section_ordinal: Some(2),
+            char_start: 0,
+            char_end: 6,
+            surface: "Method".into(),
+        },
+    ];
+    let evidence = observe_conservation_evidence(&parsed, &entities, 4096, &noise).unwrap();
+
+    // Retention is measured where the denominator exists.
+    assert_eq!(evidence.from.stage_id, "parse");
+    assert_eq!(evidence.to.stage_id, "extraction_compute");
+    assert!(evidence.transition.text_retention.no_claim.is_none());
+    assert_eq!(evidence.transition.section_retention.basis_points, 10_000);
+    assert_eq!(evidence.transition.grounded_entities.basis_points, 10_000);
+    // HTML has no bibliography: the zero citation denominator stays no_claim,
+    // never a fabricated perfect-retention claim.
+    assert_eq!(
+        evidence.transition.citation_retention.no_claim,
+        Some(MissingnessReason::GenuinelyAbsent)
+    );
+    assert_eq!(evidence.transition.citation_retention.basis_points, 0);
+    // Authoritative text loss is partitioned, not silently hidden.
+    assert!(evidence.transition.authoritative_lost["text_chars"] > 0);
+    // Extraction candidates are partitioned from authoritative loss.
+    assert_eq!(evidence.transition.candidate_added["entities"], 2);
+    assert_eq!(evidence.transition.candidate_added["evidence_items"], 2);
+    // Duplicate titles and navigation noise stay typed diagnostics.
+    assert_eq!(
+        evidence.transition.duplicate_or_navigation["duplicate_section_titles"],
+        1
+    );
+    assert!(
+        evidence
+            .transition
+            .duplicate_or_navigation
+            .contains_key("navigation_noise_sections")
+    );
+
+    // Durable: deterministic digest, stable serde roundtrip, non-authoritative.
+    assert_eq!(evidence.digest().unwrap(), evidence.digest().unwrap());
+    let decoded: ConservationEvidence =
+        serde_json::from_slice(&serde_json::to_vec(&evidence).unwrap()).unwrap();
+    assert_eq!(evidence, decoded);
+    evidence.validate().unwrap();
+    assert!(!evidence.from.import_eligible && !evidence.to.import_eligible);
+    assert!(
+        !evidence
+            .from
+            .missingness
+            .contains_key("navigation_identity_missing")
+    );
 }
 
 #[test]

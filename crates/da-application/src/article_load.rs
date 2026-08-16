@@ -6,7 +6,7 @@
 use da_domain::{
     AcquisitionPolicy, ArticleLocator, LOAD_REPORT_SCHEMA_VERSION, LoadAssetRecord,
     LoadCacheRecord, LoadFinding, LoadQueueRecord, LoadReport, LoadStageName, LoadStageSet,
-    StageStatus,
+    StageStatus, context_conservation::ConservationEvidence,
 };
 use da_ports::{AcquisitionError, EnsuredAssets, SourceAcquisitionPort};
 use std::path::{Path, PathBuf};
@@ -52,6 +52,9 @@ pub struct LoadContentOutcome {
     pub extract: Option<LoadExtractOutcome>,
     /// PipelineCache dispositions for LoadReport (ADR-056 §2.5.1).
     pub cache_records: Vec<LoadCacheRecord>,
+    /// Deterministic non-authoritative HTML conservation evidence
+    /// (parse → extraction), when observed. Never authorizes import.
+    pub conservation: Option<ConservationEvidence>,
 }
 
 /// Request for the injected content pipeline.
@@ -297,6 +300,22 @@ impl<'a, A: SourceAcquisitionPort + ?Sized> ArticleLoadUseCase<'a, A> {
                                     report.import_eligible = ing.import_eligible;
                                 }
                                 report.cache.extend(out.cache_records);
+                                if let Some(evidence) = &out.conservation {
+                                    report.conservation = Some(evidence.clone());
+                                    let digest = evidence
+                                        .digest()
+                                        .map(|d| d.as_str().to_string())
+                                        .unwrap_or_else(|e| format!("unavailable:{e}"));
+                                    report.findings.push(LoadFinding {
+                                        code: "conservation_evidence_ok".into(),
+                                        message: format!(
+                                            "html conservation evidence {} -> {} import_eligible=false digest={}",
+                                            evidence.from.stage_id,
+                                            evidence.to.stage_id,
+                                            digest,
+                                        ),
+                                    });
+                                }
                             }
                             Err(e) => {
                                 report.stages.push(StageStatus {
@@ -624,6 +643,7 @@ mod tests {
                     key_sha256: Some("test-key".into()),
                     payload_sha256: None,
                 }],
+                conservation: None,
             })
         }
     }
