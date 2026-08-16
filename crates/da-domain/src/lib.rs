@@ -142,7 +142,11 @@ pub use revision_classification::{
     RevisionClass, RevisionClassification, RevisionClassificationPolicy, classify_revision,
 };
 pub use scheduler::{
-    PendingTask, RetryPolicy, SchedulerTaskSchema, TaskPriority, TaskStatus, TaskType,
+    AttemptError, AttemptOutcome, DEFAULT_LEASE_TERM_SECS, DependencyNode, HEARTBEAT_INTERVAL_SECS,
+    LeaseError, LogicalTaskResult, MAX_CLOCK_DRIFT_SECS, MAX_LEASE_TERM_SECS, PendingTask,
+    PublishError, RetryPolicy, SchedulerTaskSchema, TaskAttempt, TaskDependency, TaskLease,
+    TaskPriority, TaskRecordError, TaskResourceClass, TaskStatus, TaskType,
+    all_dependencies_satisfied, find_dependency_cycle, logical_result_vid,
 };
 pub use schema::{
     Field, FieldType, NodeSchemaDef, SchemaError, all_node_schemas, registered_node_labels,
@@ -467,6 +471,13 @@ mod serde_roundtrip_tests {
             last_retry: None,
             next_retry: 1700000060,
             status: crate::scheduler::TaskStatus::Pending,
+            schema_version: 2,
+            priority: crate::scheduler::TaskPriority::High,
+            lease: None,
+            dependencies: vec![],
+            resource_class: crate::scheduler::TaskResourceClass::Standard,
+            attempts: vec![],
+            logical_result: None,
         });
     }
 
