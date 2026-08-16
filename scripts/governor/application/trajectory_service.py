@@ -134,6 +134,124 @@ def _validate_html_blocked_record(record) -> list[str]:
     return problems
 
 
+def _promotion_decision_violations(decision: dict, contract: dict) -> set[str]:
+    """Return violation codes for one PromotionDecision record (PIR-015).
+
+    Mirrors `da_domain::promotion::PromotionDecision::validate` plus
+    `PromotionCandidate::validate`: fail-closed decision integrity
+    (transition must equal candidate.state, committed_at must be RFC3339),
+    mandatory durable evidence references (except on rejected candidates),
+    the D127 `import_eligible` lock, per-state actor shape, and actor
+    independence (verifier differs from proposer, reviewer differs from
+    proposer/verifier, promoter differs from all three). Returns a set of
+    violation codes (empty = honest).
+    """
+    violations: set[str] = set()
+    req = set((contract.get("decision_contract") or {}).get("required_fields", []))
+    if not req.issubset(decision):
+        return {"missing_decision_fields"}
+    candidate = decision.get("candidate") or {}
+    creq = set((contract.get("candidate_contract") or {}).get("required_fields", []))
+    if not creq.issubset(candidate):
+        return {"missing_candidate_fields"}
+
+    if not str(decision.get("decision_id") or "").strip():
+        violations.add("empty_decision_id")
+    if decision.get("transition") != candidate.get("state"):
+        violations.add("transition_mismatch")
+    committed_at = decision.get("committed_at")
+    if not isinstance(committed_at, str) or not _RFC3339_UTC_RE.match(committed_at):
+        violations.add("invalid_timestamp")
+    else:
+        # Mirror `chrono::DateTime::parse_from_rfc3339`: the shape regex
+        # alone accepts lexically valid but impossible dates (e.g. month 13).
+        try:
+            parsed = datetime.fromisoformat(committed_at.replace("Z", "+00:00"))
+            if parsed.utcoffset() != timedelta(0):
+                violations.add("invalid_timestamp")
+        except ValueError:
+            violations.add("invalid_timestamp")
+
+    if not str(candidate.get("candidate_id") or "").strip():
+        violations.add("empty_candidate_id")
+    if candidate.get("import_eligible") is True:
+        violations.add("import_leak")
+
+    state = candidate.get("state")
+    except_states = set(
+        (contract.get("candidate_contract") or {}).get("evidence_required_except", [])
+    )
+    evidence = candidate.get("evidence_refs") or []
+    if state not in except_states:
+        if not isinstance(evidence, list) or not evidence:
+            violations.add("missing_evidence")
+        elif any(
+            not isinstance(ref, dict) or not str(ref.get("reference") or "").strip()
+            for ref in evidence
+        ):
+            violations.add("missing_evidence")
+
+    proposer = candidate.get("proposer")
+    if not str(proposer or "").strip():
+        violations.add("empty_actor")
+
+    shape = (contract.get("candidate_contract") or {}).get("state_shape") or {}
+    for field, requirement in (shape.get(state) or {}).items():
+        value = candidate.get(field)
+        if requirement == "absent" and value not in (None, "", False):
+            violations.add("invalid_state_shape")
+        if requirement == "present" and value in (None, ""):
+            violations.add("invalid_state_shape")
+
+    verifier = candidate.get("verifier")
+    reviewer = candidate.get("reviewer")
+    promoter = candidate.get("promoter")
+    for actor in (verifier, reviewer, promoter):
+        if actor is not None and not str(actor).strip():
+            violations.add("empty_actor")
+
+    if verifier and verifier == proposer:
+        violations.add("self_confirmation")
+    if reviewer and (reviewer == proposer or (verifier and reviewer == verifier)):
+        violations.add("reviewer_not_independent")
+    if promoter and (
+        promoter == proposer
+        or (verifier and promoter == verifier)
+        or (reviewer and promoter == reviewer)
+    ):
+        violations.add("promoter_not_independent")
+    return violations
+
+
+def _promotion_journal_violations(journal: list, contract: dict) -> set[str]:
+    """Return journal-level violation codes for a decision sequence (PIR-015).
+
+    Mirrors the terminal-state guards of the domain FSM: a candidate may be
+    promoted at most once (`double_promotion`, AlreadyPromoted) and terminal
+    states are immutable (`terminal_mutation`) — any decision that differs
+    from the previous one for the same candidate after a terminal state is a
+    mutation. Byte-identical idempotent replays remain allowed.
+    """
+    violations: set[str] = set()
+    terminal_seen: set[str] = set()
+    promote_count: dict[str, int] = {}
+    previous: dict[str, dict] = {}
+    for decision in journal:
+        candidate = decision.get("candidate") or {}
+        candidate_id = candidate.get("candidate_id")
+        state = candidate.get("state")
+        if state == "promoted":
+            promote_count[candidate_id] = promote_count.get(candidate_id, 0) + 1
+            if promote_count[candidate_id] > 1:
+                violations.add("double_promotion")
+        if candidate_id in terminal_seen and decision != previous.get(candidate_id):
+            violations.add("terminal_mutation")
+        if state in ("promoted", "rejected"):
+            terminal_seen.add(candidate_id)
+        previous[candidate_id] = decision
+    return violations
+
+
 def _acap_hard_failures_nonzero(value) -> bool:
     """True when ACAP hard_failures indicates a failure.
 
@@ -212,6 +330,12 @@ class TrajectoryService:
         # structure, missing identity stays blocked or not_claimed, and
         # D127 stays locked.
         drift_flags.extend(self._check_html_structure_honesty())
+
+        # PIR-015: promotion evidence contract — positive/negative committed
+        # PromotionDecision fixtures keep the authority-neutral candidate
+        # promotion protocol enforced (no self-confirmation, no double
+        # promotion, mandatory evidence, terminal immutability, D127 lock).
+        drift_flags.extend(self._check_promotion_evidence_contract())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -780,6 +904,139 @@ class TrajectoryService:
             if missing:
                 _flag("html_structure_honesty_readiness_marker_missing",
                       f"readiness surface missing honesty markers: {missing}")
+        return flags
+
+    def _check_promotion_evidence_contract(self) -> list[DriftFlag]:
+        """Evaluate the data-driven promotion evidence contract (PIR-015).
+
+        Reads `scripts/governor/checks/promotion_evidence_contract.yaml`
+        (DATA) and validates the committed PromotionDecision fixtures against
+        the authority-neutral promotion protocol implemented in
+        `da_domain::promotion`: every positive decision must be clean across
+        all five states; every negative record must trigger exactly its
+        labelled violation (missing evidence, D127 import leak,
+        self-confirmation, non-independent reviewer/promoter, transition
+        mismatch, invalid timestamp, double promotion, terminal mutation) and
+        every required violation must appear in the fixture; the domain FSM
+        and the application commit service must keep the typed guard
+        markers. The Rust domain tests and proptests
+        (`crates/da-domain/src/promotion.rs`) plus the fail-closed contract
+        test (`crates/da-application/tests/promotion_contract_test.rs`)
+        implement the same guards, so a broken contract cannot silently
+        survive.
+        """
+        path = self.root / "scripts/governor/checks/promotion_evidence_contract.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="promotion_evidence_contract_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="candidate_promotion",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "candidate_promotion"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # Positive fixture: every committed decision must be clean.
+        positive = (contract.get("fixtures") or {}).get("positive") or {}
+        positive_path = self.root / str(positive.get("path", ""))
+        if not positive_path.is_file():
+            _flag("promotion_evidence_contract_fixture_missing",
+                  f"positive fixture missing: {positive_path}")
+        else:
+            try:
+                decisions = json.loads(positive_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("promotion_evidence_contract_fixture_invalid",
+                      f"positive fixture unreadable: {error}")
+            else:
+                if not isinstance(decisions, list) or not decisions:
+                    _flag("promotion_evidence_contract_fixture_invalid",
+                          "positive fixture must be a non-empty JSON array")
+                else:
+                    broken = []
+                    for decision in decisions:
+                        violations = _promotion_decision_violations(decision, contract)
+                        if violations:
+                            broken.append((
+                                decision.get("decision_id"),
+                                sorted(violations),
+                            ))
+                    if broken:
+                        _flag("promotion_evidence_contract_broken",
+                              f"positive fixture {positive.get('id')} must be clean, "
+                              f"got violations: {broken}")
+
+        # Negative fixture: each record must trigger its labelled violation
+        # and every required violation must appear somewhere.
+        negative = (contract.get("fixtures") or {}).get("negative") or {}
+        negative_path = self.root / str(negative.get("path", ""))
+        if not negative_path.is_file():
+            _flag("promotion_evidence_contract_fixture_missing",
+                  f"negative fixture missing: {negative_path}")
+        else:
+            try:
+                records = json.loads(negative_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("promotion_evidence_contract_fixture_invalid",
+                      f"negative fixture unreadable: {error}")
+            else:
+                if not isinstance(records, list) or not records:
+                    _flag("promotion_evidence_contract_fixture_invalid",
+                          "negative fixture must be a non-empty JSON array")
+                else:
+                    observed: set[str] = set()
+                    mismatches = []
+                    for record in records:
+                        label = str(record.get("violation", "unnamed"))
+                        if "decision" in record:
+                            violations = _promotion_decision_violations(
+                                record.get("decision") or {}, contract)
+                        elif "journal" in record:
+                            violations = _promotion_journal_violations(
+                                record.get("journal") or [], contract)
+                        else:
+                            violations = {"missing_record_shape"}
+                        observed.update(violations)
+                        if label not in violations:
+                            mismatches.append(
+                                f"{label}: expected to trigger {label}, "
+                                f"got {sorted(violations)}"
+                            )
+                    if mismatches:
+                        _flag("promotion_evidence_contract_broken",
+                              f"negative fixture {negative.get('id')} records do not "
+                              f"trigger their labelled violations: {'; '.join(mismatches)}")
+                    require = list(
+                        (negative.get("expect") or {}).get("require_violations", [])
+                    )
+                    missing_required = [v for v in require if v not in observed]
+                    if missing_required:
+                        _flag("promotion_evidence_contract_broken",
+                              f"negative fixture {negative.get('id')} missing required "
+                              f"violation coverage: {missing_required}")
+
+        # Source markers: the Rust enforcement points must stay present.
+        for marker_key, entry in (contract.get("source_markers") or {}).items():
+            marker_path = self.root / str(entry.get("path", ""))
+            if not marker_path.is_file():
+                _flag("promotion_evidence_contract_source_marker_missing",
+                      f"{marker_key} source missing: {marker_path}")
+                continue
+            text = marker_path.read_text(errors="replace")
+            missing = [p for p in entry.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag("promotion_evidence_contract_source_marker_missing",
+                      f"{marker_key} source missing enforcement markers: {missing}")
         return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:

@@ -1,0 +1,136 @@
+# Promotion evidence contract — PIR-015 closure, M399 S02 T04.
+#
+# DATA for the Governor `promotion_evidence_contract` check. The contract
+# mirrors the authority-neutral candidate promotion protocol implemented in
+# `da_domain::promotion` (PromotionCandidate FSM + PromotionDecision wire):
+# proposed → verified → reviewed → promoted (or rejected from any
+# non-terminal state), with mandatory durable evidence references (except on
+# rejected candidates), independent actor identities (no self-confirmation,
+# no reviewer/proposer or promoter/proposer collusion), fail-closed decision
+# integrity (transition == candidate.state, RFC3339 committed_at), terminal
+# immutability (promoted/rejected candidates never mutate), no double
+# promotion (one promote transition per candidate), and D127:
+# `import_eligible` is always false — promotion never grants import
+# eligibility.
+#
+# Semantics:
+#   - positive (valid_decisions): every committed PromotionDecision fixture
+#     must be clean — all five states (proposed/verified/reviewed/promoted/
+#     rejected) validate with zero violations;
+#   - negative (contract_violations): every record must trigger exactly its
+#     labelled violation (missing evidence, import leak, self-confirmation,
+#     non-independent reviewer/promoter, transition mismatch, invalid
+#     timestamp, double promotion, terminal mutation), and every violation in
+#     `require_violations` must appear in the fixture — a future edit that
+#     removes a negative case is flagged;
+#   - source_markers: the domain FSM and the application commit service must
+#     keep the named typed guards and the fail-closed sink, so the contract
+#     cannot silently survive a Rust refactor.
+#
+# The committed fixtures are validated by `scripts/tests/test_governor.py`
+# (`_check_promotion_evidence_contract`), and the same invariants are pinned
+# by the Rust domain tests and proptests in `crates/da-domain/src/promotion.rs`
+# plus the fail-closed contract test
+# `crates/da-application/tests/promotion_contract_test.rs` — a broken
+# contract cannot silently survive a regenerate. This is DATA — tightening an
+# expectation is an edit here (plus updating the committed fixture JSON), not
+# a Python change.
+
+schema_version: promotion-evidence-contract.v1
+policy_id: promotion-evidence-contract
+dimension: candidate_promotion
+severity: high
+anchor: "PIR-015, ADR-051, ADR-059, D127"
+
+# PromotionDecision wire contract (`da_ports::promotion::PromotionDecision`).
+decision_contract:
+  required_fields: [decision_id, transition, committed_at, candidate]
+  transition_matches_state: true
+  committed_at_rfc3339: true
+
+# PromotionCandidate wire contract (`da_domain::promotion::PromotionCandidate`).
+candidate_contract:
+  required_fields:
+    - candidate_id
+    - kind
+    - state
+    - proposer
+    - verifier
+    - reviewer
+    - promoter
+    - evidence_refs
+    - rejection_reason
+    - import_eligible
+  # D127 — promotion never grants import eligibility.
+  import_eligible: false
+  # Durable evidence references are mandatory on every non-terminal state;
+  # a rejected candidate carries the typed reason instead.
+  evidence_required_except: [rejected]
+  # Per-state actor shape (mirrors PromotionCandidate::validate).
+  state_shape:
+    proposed:
+      verifier: absent
+      reviewer: absent
+      promoter: absent
+      rejection_reason: absent
+    verified:
+      verifier: present
+      reviewer: absent
+      promoter: absent
+      rejection_reason: absent
+    reviewed:
+      verifier: present
+      reviewer: present
+      promoter: absent
+      rejection_reason: absent
+    promoted:
+      verifier: present
+      reviewer: present
+      promoter: present
+      rejection_reason: absent
+    rejected:
+      rejection_reason: present
+
+# Actor independence — no self-confirmation, no authority collapse
+# (mirrors SelfConfirmation / ReviewerNotIndependent / PromoterNotIndependent).
+independence:
+  verifier_differs_from: [proposer]
+  reviewer_differs_from: [proposer, verifier]
+  promoter_differs_from: [proposer, verifier, reviewer]
+
+fixtures:
+  positive:
+    id: valid_decisions
+    path: data/promotion_contract/valid_decisions.positive.json
+    expect: clean
+  negative:
+    id: contract_violations
+    path: data/promotion_contract/contract_violations.negative.json
+    expect:
+      require_violations:
+        - missing_evidence
+        - import_leak
+        - self_confirmation
+        - reviewer_not_independent
+        - promoter_not_independent
+        - transition_mismatch
+        - invalid_timestamp
+        - double_promotion
+        - terminal_mutation
+
+# Enforcement points that must keep existing on the Rust side.
+source_markers:
+  domain:
+    path: crates/da-domain/src/promotion.rs
+    required_patterns:
+      - "ImportEligibleLeak"
+      - "SelfConfirmation"
+      - "ReviewerNotIndependent"
+      - "PromoterNotIndependent"
+      - "AlreadyPromoted"
+      - "TerminalMutation"
+  service:
+    path: crates/da-application/src/promotion.rs
+    required_patterns:
+      - "PromotionCommitSink"
+      - "PromotionTransitionRequest"

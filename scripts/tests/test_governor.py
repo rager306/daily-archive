@@ -1314,6 +1314,321 @@ def test_canonical_temporal_wire_format_invalid_yaml_is_flagged():
     assert flags[0].flag == "canonical_temporal_wire_format_invalid"
 
 
+def _write_promotion_contract(root: Path) -> Path:
+    """Write the promotion evidence contract + fixtures into a temp root."""
+    contract = root / "scripts/governor/checks/promotion_evidence_contract.yaml"
+    _write(contract, """schema_version: promotion-evidence-contract.v1
+policy_id: promotion-evidence-contract
+dimension: candidate_promotion
+severity: high
+decision_contract:
+  required_fields: [decision_id, transition, committed_at, candidate]
+candidate_contract:
+  required_fields: [candidate_id, kind, state, proposer, verifier, reviewer, promoter, evidence_refs, rejection_reason, import_eligible]
+  import_eligible: false
+  evidence_required_except: [rejected]
+  state_shape:
+    proposed: {verifier: absent, reviewer: absent, promoter: absent, rejection_reason: absent}
+    verified: {verifier: present, reviewer: absent, promoter: absent, rejection_reason: absent}
+    reviewed: {verifier: present, reviewer: present, promoter: absent, rejection_reason: absent}
+    promoted: {verifier: present, reviewer: present, promoter: present, rejection_reason: absent}
+    rejected: {rejection_reason: present}
+independence:
+  verifier_differs_from: [proposer]
+  reviewer_differs_from: [proposer, verifier]
+  promoter_differs_from: [proposer, verifier, reviewer]
+fixtures:
+  positive:
+    id: valid_decisions
+    path: data/promotion_contract/valid_decisions.positive.json
+    expect: clean
+  negative:
+    id: contract_violations
+    path: data/promotion_contract/contract_violations.negative.json
+    expect:
+      require_violations: [missing_evidence, import_leak, self_confirmation, reviewer_not_independent, promoter_not_independent, transition_mismatch, invalid_timestamp, double_promotion, terminal_mutation]
+source_markers:
+  domain:
+    path: crates/da-domain/src/promotion.rs
+    required_patterns: [ImportEligibleLeak, SelfConfirmation, AlreadyPromoted, TerminalMutation]
+  service:
+    path: crates/da-application/src/promotion.rs
+    required_patterns: [PromotionCommitSink, PromotionTransitionRequest]
+""")
+    _write(root / "crates/da-domain/src/promotion.rs", (
+        "pub enum PromotionError { ImportEligibleLeak, SelfConfirmation, "
+        "AlreadyPromoted, TerminalMutation }\n"
+    ))
+    _write(root / "crates/da-application/src/promotion.rs", (
+        "pub struct PromotionService;\n"
+        "PromotionCommitSink PromotionTransitionRequest\n"
+    ))
+    _write(root / "data/promotion_contract/valid_decisions.positive.json", json.dumps([
+        {
+            "decision_id": "gold-propose-1",
+            "transition": "proposed",
+            "committed_at": "2026-08-15T10:30:00Z",
+            "candidate": {
+                "candidate_id": "gold:RLHF:Method", "kind": "gold", "state": "proposed",
+                "proposer": "gold:multi-paper-promote",
+                "verifier": None, "reviewer": None, "promoter": None,
+                "evidence_refs": [
+                    {"reference": "gold:2510.26094:RLHF:Method", "kind": "gold_paper_row"},
+                    {"reference": "gold:constraint:min_papers=2", "kind": "gold_constraint"},
+                ],
+                "rejection_reason": None, "import_eligible": False,
+            },
+        },
+        {
+            "decision_id": "prompt-promote-1",
+            "transition": "promoted",
+            "committed_at": "2026-08-15T10:33:00Z",
+            "candidate": {
+                "candidate_id": "prompt-cand-1", "kind": "prompt", "state": "promoted",
+                "proposer": "prompt:registry:summary",
+                "verifier": "prompt:evaluation:summary",
+                "reviewer": "prompt:eligibility:summary",
+                "promoter": "deployment:review:summary",
+                "evidence_refs": [
+                    {"reference": "sha256:abc", "kind": "artifact_hash"},
+                    {"reference": "decision:DR-42", "kind": "human_decision"},
+                ],
+                "rejection_reason": None, "import_eligible": False,
+            },
+        },
+    ]))
+    _write(root / "data/promotion_contract/contract_violations.negative.json", json.dumps([
+        {
+            "violation": "missing_evidence",
+            "decision": {
+                "decision_id": "neg-1", "transition": "proposed",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "gold:LoRA:Method", "kind": "gold", "state": "proposed",
+                    "proposer": "gold:multi-paper-promote",
+                    "verifier": None, "reviewer": None, "promoter": None,
+                    "evidence_refs": [],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "import_leak",
+            "decision": {
+                "decision_id": "neg-2", "transition": "promoted",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "c-leak", "kind": "prompt", "state": "promoted",
+                    "proposer": "p", "verifier": "v", "reviewer": "r", "promoter": "d",
+                    "evidence_refs": [{"reference": "sha256:abc", "kind": "artifact_hash"}],
+                    "rejection_reason": None, "import_eligible": True,
+                },
+            },
+        },
+        {
+            "violation": "self_confirmation",
+            "decision": {
+                "decision_id": "neg-3", "transition": "verified",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "c-self", "kind": "gold", "state": "verified",
+                    "proposer": "gold:multi-paper-promote",
+                    "verifier": "gold:multi-paper-promote",
+                    "reviewer": None, "promoter": None,
+                    "evidence_refs": [{"reference": "gold:2510.26094:X:Y", "kind": "gold_paper_row"}],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "reviewer_not_independent",
+            "decision": {
+                "decision_id": "neg-4", "transition": "reviewed",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "c-rev", "kind": "entity_resolution", "state": "reviewed",
+                    "proposer": "human:alice", "verifier": "er:blocking", "reviewer": "er:blocking",
+                    "promoter": None,
+                    "evidence_refs": [{"reference": "merge:a:b", "kind": "merge_provenance"}],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "promoter_not_independent",
+            "decision": {
+                "decision_id": "neg-5", "transition": "promoted",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "c-prom", "kind": "prompt", "state": "promoted",
+                    "proposer": "prompt:registry:summary", "verifier": "prompt:eval:summary",
+                    "reviewer": "prompt:elig:summary", "promoter": "prompt:registry:summary",
+                    "evidence_refs": [{"reference": "sha256:def", "kind": "artifact_hash"}],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "transition_mismatch",
+            "decision": {
+                "decision_id": "neg-6", "transition": "promoted",
+                "committed_at": "2026-08-15T10:30:00Z",
+                "candidate": {
+                    "candidate_id": "c-mismatch", "kind": "entity_resolution", "state": "reviewed",
+                    "proposer": "human:alice", "verifier": "er:blocking", "reviewer": "er:review",
+                    "promoter": None,
+                    "evidence_refs": [{"reference": "merge:m1:m2", "kind": "merge_provenance"}],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "invalid_timestamp",
+            "decision": {
+                "decision_id": "neg-7", "transition": "proposed",
+                "committed_at": "not-a-date",
+                "candidate": {
+                    "candidate_id": "c-ts", "kind": "gold", "state": "proposed",
+                    "proposer": "gold:multi-paper-promote",
+                    "verifier": None, "reviewer": None, "promoter": None,
+                    "evidence_refs": [{"reference": "gold:2601.00001:X:Y", "kind": "gold_paper_row"}],
+                    "rejection_reason": None, "import_eligible": False,
+                },
+            },
+        },
+        {
+            "violation": "double_promotion",
+            "journal": [
+                {
+                    "decision_id": "neg-8a", "transition": "promoted",
+                    "committed_at": "2026-08-15T10:30:00Z",
+                    "candidate": {
+                        "candidate_id": "c-double", "kind": "prompt", "state": "promoted",
+                        "proposer": "p", "verifier": "v", "reviewer": "r", "promoter": "d1",
+                        "evidence_refs": [{"reference": "sha256:111", "kind": "artifact_hash"}],
+                        "rejection_reason": None, "import_eligible": False,
+                    },
+                },
+                {
+                    "decision_id": "neg-8b", "transition": "promoted",
+                    "committed_at": "2026-08-15T10:31:00Z",
+                    "candidate": {
+                        "candidate_id": "c-double", "kind": "prompt", "state": "promoted",
+                        "proposer": "p", "verifier": "v", "reviewer": "r", "promoter": "d2",
+                        "evidence_refs": [{"reference": "sha256:111", "kind": "artifact_hash"}],
+                        "rejection_reason": None, "import_eligible": False,
+                    },
+                },
+            ],
+        },
+        {
+            "violation": "terminal_mutation",
+            "journal": [
+                {
+                    "decision_id": "neg-9a", "transition": "promoted",
+                    "committed_at": "2026-08-15T10:30:00Z",
+                    "candidate": {
+                        "candidate_id": "c-term", "kind": "gold", "state": "promoted",
+                        "proposer": "p", "verifier": "v", "reviewer": "r", "promoter": "d",
+                        "evidence_refs": [{"reference": "gold:2510.26094:G:Method", "kind": "gold_paper_row"}],
+                        "rejection_reason": None, "import_eligible": False,
+                    },
+                },
+                {
+                    "decision_id": "neg-9b", "transition": "rejected",
+                    "committed_at": "2026-08-15T10:31:00Z",
+                    "candidate": {
+                        "candidate_id": "c-term", "kind": "gold", "state": "rejected",
+                        "proposer": "p", "verifier": "v", "reviewer": "r", "promoter": None,
+                        "evidence_refs": [{"reference": "gold:2510.26094:G:Method", "kind": "gold_paper_row"}],
+                        "rejection_reason": "revoked after promotion", "import_eligible": False,
+                    },
+                },
+            ],
+        },
+    ]))
+    return contract
+
+def test_promotion_evidence_contract_pass_on_clean_fixtures():
+    """Positive + negative fixtures and source markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    assert service._check_promotion_evidence_contract() == []
+
+def test_promotion_evidence_contract_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    (service.root / "data/promotion_contract/contract_violations.negative.json").unlink()
+    flags = service._check_promotion_evidence_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "promotion_evidence_contract_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+def test_promotion_evidence_contract_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    # Inject an import leak into the positive promoted decision (D127).
+    path = service.root / "data/promotion_contract/valid_decisions.positive.json"
+    decisions = json.loads(path.read_text())
+    decisions[1]["candidate"]["import_eligible"] = True
+    _write(path, json.dumps(decisions))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert len(broken) == 1
+    assert "import_leak" in broken[0].evidence
+
+def test_promotion_evidence_contract_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    # Break the self_confirmation record so its labelled violation no longer fires.
+    path = service.root / "data/promotion_contract/contract_violations.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "self_confirmation":
+            record["decision"]["candidate"]["verifier"] = "independent-verifier"
+    _write(path, json.dumps(records))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert any("self_confirmation" in f.evidence for f in broken)
+
+def test_promotion_evidence_contract_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    # Remove the double_promotion journal entirely — coverage must fail.
+    path = service.root / "data/promotion_contract/contract_violations.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "double_promotion"]
+    _write(path, json.dumps(records))
+    flags = service._check_promotion_evidence_contract()
+    broken = [f for f in flags if f.flag == "promotion_evidence_contract_broken"]
+    assert any("double_promotion" in f.evidence for f in broken)
+
+def test_promotion_evidence_contract_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    # Drop the typed guards from the domain FSM surface.
+    _write(service.root / "crates/da-domain/src/promotion.rs",
+           "pub enum PromotionError { }\n")
+    flags = service._check_promotion_evidence_contract()
+    marker = [f for f in flags if f.flag == "promotion_evidence_contract_source_marker_missing"]
+    assert len(marker) == 1
+    assert "domain" in marker[0].evidence
+
+def test_promotion_evidence_contract_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_promotion_contract(service.root)
+    _write(service.root / "scripts/governor/checks/promotion_evidence_contract.yaml",
+           "{bad yaml: [")
+    flags = service._check_promotion_evidence_contract()
+    assert flags[0].flag == "promotion_evidence_contract_invalid"
+
 def _write_html_structure_contract(root: Path) -> Path:
     """Write the HTML structure honesty contract + fixtures into a temp root."""
     contract = root / "scripts/governor/checks/html_structure_honesty.yaml"
@@ -1518,6 +1833,13 @@ def _run_all_tests() -> int:
         test_canonical_temporal_wire_format_positive_fixture_must_be_clean,
         test_canonical_temporal_wire_format_negative_fixture_must_be_rejected,
         test_canonical_temporal_wire_format_invalid_yaml_is_flagged,
+        test_promotion_evidence_contract_pass_on_clean_fixtures,
+        test_promotion_evidence_contract_missing_fixture_is_flagged,
+        test_promotion_evidence_contract_positive_fixture_must_be_clean,
+        test_promotion_evidence_contract_negative_fixture_must_trigger_labelled_violations,
+        test_promotion_evidence_contract_negative_fixture_must_cover_required_violations,
+        test_promotion_evidence_contract_source_marker_missing_is_flagged,
+        test_promotion_evidence_contract_invalid_yaml_is_flagged,
         test_html_structure_honesty_pass_on_clean_fixtures,
         test_html_structure_honesty_missing_fixture_is_flagged,
         test_html_structure_honesty_positive_fixture_must_have_full_identity,
