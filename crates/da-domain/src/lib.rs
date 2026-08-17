@@ -24,6 +24,7 @@ pub mod evidence_bundle;
 pub mod extractive_summary;
 pub mod figure;
 pub mod figure_analysis;
+pub mod figure_candidate;
 pub mod figure_context;
 pub mod finalize;
 pub mod graph_tasks;
@@ -92,6 +93,7 @@ pub use figure_analysis::{
     FigureScaleBar, FigureSchemaRegistry, FigureSchemaSelection, FigureTablePayload,
     FigureTypeClassification, FigureTypeLabelTable, FigureTypedPayload, VisualAnalysisType,
 };
+pub use figure_candidate::{FigureCandidate, FigureCandidateError, figure_candidate_vid};
 pub use figure_context::{
     ArticleSummaryContext, FigureContextError, FigureReferenceExcerpt, FigureSectionContext,
     FigureSectionRelation, FigureSemanticContext,
