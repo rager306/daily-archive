@@ -436,6 +436,336 @@ def _acap_hard_failures_nonzero(value) -> bool:
     return bool(value)
 
 
+def _is_sha256_hex(value) -> bool:
+    """True when value is a 64-character SHA-256 hex digest (case-insensitive).
+
+    Mirrors `normalize_sha256` in the da-domain candidate modules: a lineage
+    field must be exactly 64 ASCII hex digits to be a content-hash reference.
+    """
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(ch in "0123456789abcdefABCDEF" for ch in value)
+    )
+
+
+def _sha256_vid(prefix: str, key: str) -> str:
+    """Reproduce `kg_ontology::vid::sha256_vid` (prefix + ":" + trimmed key).
+
+    The Rust helper canonicalizes the key with `trim()` then hashes
+    `prefix + ":" + canonical`; the Python mirror must match byte-for-byte so
+    the committed fixture VIDs can be recomputed by the Governor.
+    """
+    return hashlib.sha256(f"{prefix}:{key.strip()}".encode("utf-8")).hexdigest()
+
+
+def _visual_candidate_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one FigureCandidate fixture record (PIR-018).
+
+    Mirrors `da_domain::figure_candidate::FigureCandidate::validate` plus
+    `figure_candidate_vid`: the revision and section VIDs and every SHA-256
+    lineage field must be 64-character hex digests, the stored VID must equal
+    the recomputed revision-bound lineage VID (revision + artifact label +
+    detector fingerprint + rendered image hash + section VID), and authority
+    and import locks must stay false (D127 / ADR-053 — candidate evidence is
+    never graph truth and never gains import eligibility). Returns a set of
+    violation codes (empty = honest).
+    """
+    violations: set[str] = set()
+    candidate_contract = contract.get("candidate_contract") or {}
+    req = set(candidate_contract.get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_candidate_fields"}
+
+    if not _is_sha256_hex(record.get("revision_vid")):
+        violations.add("missing_revision_lineage")
+    if not _is_sha256_hex(record.get("section_vid")):
+        violations.add("broken_section_lineage")
+    for field in candidate_contract.get("sha256_fields", []):
+        if not _is_sha256_hex(record.get(field)):
+            violations.add("missing_sha256_lineage")
+    try:
+        recomputed = _sha256_vid(
+            "figure_candidate",
+            "\n".join([
+                str(record.get("revision_vid", "")),
+                str(record.get("artifact_id", "")),
+                str(record.get("detector_fingerprint", "")),
+                str(record.get("image_sha256", "")),
+                str(record.get("section_vid", "")),
+            ]),
+        )
+        if recomputed != record.get("vid"):
+            violations.add("identity_mismatch")
+    except Exception:
+        violations.add("identity_mismatch")
+    if record.get("authoritative") is True:
+        violations.add("authority_unlock")
+    if record.get("import_eligible") is True:
+        violations.add("import_unlock")
+    return violations
+
+
+def _table_candidate_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one TableCandidate fixture record (PIR-019).
+
+    Mirrors `da_domain::table_candidate` + `da_domain::table_fidelity` (M400
+    S02, ADR-051): TEI grounding is mandatory (R087 — no structural TEI
+    table, no candidate), every materialized cell must carry grid provenance
+    (row, column), a deterministic digest, and a both-or-neither source span
+    (typed missingness, never guessed), disagreements between VLM and TEI
+    must be typed conflict nodes with allowed kinds (coverage gaps stay
+    counters — never conflict nodes), and authority/import stay hard-locked
+    false (D127 / ADR-053). Returns a set of violation codes (empty = honest).
+    """
+    violations: set[str] = set()
+    candidate_contract = contract.get("candidate_contract") or {}
+    req = set(candidate_contract.get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_candidate_fields"}
+
+    if not str(record.get("tei_table_id") or "").strip():
+        violations.add("no_tei_grounding")
+
+    cell_contract = contract.get("cell_contract") or {}
+    cell_req = set(cell_contract.get("required_fields", []))
+    for cell in record.get("cells") or []:
+        if not cell_req.issubset(cell):
+            violations.add("missing_cell_provenance")
+        if cell.get("row") is None or cell.get("column") is None:
+            violations.add("missing_cell_provenance")
+        if not _is_sha256_hex(cell.get("digest")):
+            violations.add("cell_without_digest")
+        span_start = cell.get("span_start")
+        span_end = cell.get("span_end")
+        if (span_start is None) != (span_end is None):
+            violations.add("cell_partial_span")
+        if cell.get("candidate_vid") != record.get("vid"):
+            violations.add("identity_mismatch")
+        if cell.get("row") is not None and cell.get("column") is not None:
+            try:
+                cell_vid = _sha256_vid(
+                    "table_cell",
+                    f"{cell.get('candidate_vid')}\n{cell.get('row')}\n{cell.get('column')}",
+                )
+                if cell_vid != cell.get("vid"):
+                    violations.add("identity_mismatch")
+            except Exception:
+                violations.add("identity_mismatch")
+
+    conflict_contract = contract.get("conflict_contract") or {}
+    allowed_kinds = set(conflict_contract.get("allowed_kinds", []))
+    gap_kinds = set(conflict_contract.get("gap_kinds_forbidden", []))
+    for conflict in record.get("conflicts") or []:
+        kind = str(conflict.get("kind") or "")
+        if kind in gap_kinds:
+            violations.add("coverage_gap_as_conflict")
+        elif kind and kind not in allowed_kinds:
+            violations.add("invalid_conflict_kind")
+        if conflict.get("authoritative") is True:
+            violations.add("authority_unlock")
+        if conflict.get("import_eligible") is True:
+            violations.add("import_unlock")
+
+    try:
+        recomputed = _sha256_vid(
+            "table_candidate",
+            "\n".join([
+                str(record.get("revision_vid", "")),
+                str(record.get("artifact_id", "")),
+                str(record.get("image_sha256", "")),
+                str(record.get("section_vid", "")),
+                str(record.get("tei_table_id", "")),
+                str(record.get("tei_source_digest", "")),
+            ]),
+        )
+        if recomputed != record.get("vid"):
+            violations.add("identity_mismatch")
+    except Exception:
+        violations.add("identity_mismatch")
+    if record.get("authoritative") is True:
+        violations.add("authority_unlock")
+    if record.get("import_eligible") is True:
+        violations.add("import_unlock")
+    return violations
+
+
+def _equation_candidate_violations(record: dict, contract: dict) -> set[str]:
+    """Return violation codes for one EquationCandidate fixture record (PIR-020).
+
+    Mirrors `da_domain::equation_candidate` (M400 S03, ADR-051): every
+    equation candidate must retain formula identity (`formula_id`), exact
+    revision-scoped section lineage (`revision_vid`, `section_vid`,
+    `section_path_id`), a typed representation kind (MathML, TeX, plain text)
+    with representation text and digest, and a both-or-neither source span
+    (typed missingness — never guessed). Authority and import stay hard-locked
+    false (D127 / ADR-053); extraction missingness is typed at conversion and
+    never invents a candidate. Returns a set of violation codes (empty =
+    honest).
+    """
+    violations: set[str] = set()
+    candidate_contract = contract.get("candidate_contract") or {}
+    req = set(candidate_contract.get("required_fields", []))
+    if not req.issubset(record):
+        return {"missing_candidate_fields"}
+
+    if not str(record.get("formula_id") or "").strip():
+        violations.add("missing_formula_identity")
+    if not _is_sha256_hex(record.get("revision_vid")):
+        violations.add("ungrounded_formula")
+    kinds = set(candidate_contract.get("representation_kinds", []))
+    if (
+        not str(record.get("representation_text") or "").strip()
+        or record.get("representation_kind") not in kinds
+    ):
+        violations.add("missing_representation")
+    span_start = record.get("span_start")
+    span_end = record.get("span_end")
+    if (span_start is None) != (span_end is None):
+        violations.add("partial_span")
+    if span_start is not None and span_end is not None and span_start > span_end:
+        violations.add("invalid_span")
+    try:
+        recomputed = _sha256_vid(
+            "equation_candidate",
+            "\n".join([
+                str(record.get("revision_vid", "")),
+                str(record.get("formula_id", "")),
+                str(record.get("section_vid", "")),
+                str(record.get("source_digest", "")),
+            ]),
+        )
+        if recomputed != record.get("vid"):
+            violations.add("identity_mismatch")
+    except Exception:
+        violations.add("identity_mismatch")
+    if record.get("authoritative") is True:
+        violations.add("authority_unlock")
+    if record.get("import_eligible") is True:
+        violations.add("import_unlock")
+    return violations
+
+
+def _candidate_contract_flags(
+    contract: dict,
+    root: Path,
+    dimension: str,
+    prefix: str,
+    violations_fn,
+) -> list[DriftFlag]:
+    """Validate positive/negative fixtures + markers for one candidate contract.
+
+    Shared by the visual-lineage (PIR-018), table-provenance (PIR-019) and
+    equation-coverage (PIR-020) checks: the positive fixture must be clean
+    (no violations), every negative record must trigger its labelled
+    violation (and every required violation must appear somewhere — a future
+    edit that removes a negative case is flagged), and the Rust source
+    markers plus the snapshot graph task suite must keep the named
+    enforcement points.
+    """
+    flags: list[DriftFlag] = []
+    severity = str(contract.get("severity", "high"))
+
+    def _flag(name: str, evidence: str) -> None:
+        flags.append(DriftFlag(
+            flag=name, severity=severity, evidence=evidence, dimension=dimension,
+        ))
+
+    # Positive fixture: every committed candidate must be clean.
+    positive = (contract.get("fixtures") or {}).get("positive") or {}
+    positive_path = root / str(positive.get("path", ""))
+    if not positive_path.is_file():
+        _flag(f"{prefix}_fixture_missing", f"positive fixture missing: {positive_path}")
+    else:
+        try:
+            records = json.loads(positive_path.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as error:
+            _flag(f"{prefix}_fixture_invalid", f"positive fixture unreadable: {error}")
+        else:
+            if not isinstance(records, list) or not records:
+                _flag(f"{prefix}_fixture_invalid",
+                      "positive fixture must be a non-empty JSON array")
+            else:
+                broken = []
+                for record in records:
+                    violations = violations_fn(record, contract)
+                    if violations:
+                        broken.append((record.get("vid", "?"), sorted(violations)))
+                if broken:
+                    _flag(f"{prefix}_broken",
+                          f"positive fixture {positive.get('id')} must be clean, "
+                          f"got violations: {broken}")
+
+    # Negative fixture: each record must trigger its labelled violation and
+    # every required violation must appear somewhere.
+    negative = (contract.get("fixtures") or {}).get("negative") or {}
+    negative_path = root / str(negative.get("path", ""))
+    if not negative_path.is_file():
+        _flag(f"{prefix}_fixture_missing", f"negative fixture missing: {negative_path}")
+    else:
+        try:
+            records = json.loads(negative_path.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as error:
+            _flag(f"{prefix}_fixture_invalid", f"negative fixture unreadable: {error}")
+        else:
+            if not isinstance(records, list) or not records:
+                _flag(f"{prefix}_fixture_invalid",
+                      "negative fixture must be a non-empty JSON array")
+            else:
+                observed: set[str] = set()
+                mismatches = []
+                for record in records:
+                    label = str(record.get("violation", "unnamed"))
+                    if "record" in record:
+                        violations = violations_fn(record.get("record") or {}, contract)
+                    else:
+                        violations = {"missing_record_shape"}
+                    observed.update(violations)
+                    if label not in violations:
+                        mismatches.append(
+                            f"{label}: expected to trigger {label}, "
+                            f"got {sorted(violations)}"
+                        )
+                if mismatches:
+                    _flag(f"{prefix}_broken",
+                          f"negative fixture {negative.get('id')} records do not "
+                          f"trigger their labelled violations: {'; '.join(mismatches)}")
+                require = list(
+                    (negative.get("expect") or {}).get("require_violations", [])
+                )
+                missing_required = [v for v in require if v not in observed]
+                if missing_required:
+                    _flag(f"{prefix}_broken",
+                          f"negative fixture {negative.get('id')} missing required "
+                          f"violation coverage: {missing_required}")
+
+    # Source markers: the Rust enforcement points must stay present.
+    for marker_key, entry in (contract.get("source_markers") or {}).items():
+        marker_path = root / str(entry.get("path", ""))
+        if not marker_path.is_file():
+            _flag(f"{prefix}_source_marker_missing",
+                  f"{marker_key} source missing: {marker_path}")
+            continue
+        text = marker_path.read_text(errors="replace")
+        missing = [p for p in entry.get("required_patterns", []) if p not in text]
+        if missing:
+            _flag(f"{prefix}_source_marker_missing",
+                  f"{marker_key} source missing enforcement markers: {missing}")
+
+    # Graph task suite: the snapshot-level suite must keep its task markers.
+    suite = contract.get("graph_task_suite") or {}
+    suite_path = root / str(suite.get("path", ""))
+    if not suite_path.is_file():
+        _flag(f"{prefix}_suite_missing", f"graph task suite missing: {suite_path}")
+    else:
+        text = suite_path.read_text(errors="replace")
+        missing = [p for p in suite.get("required_patterns", []) if p not in text]
+        if missing:
+            _flag(f"{prefix}_suite_broken",
+                  f"graph task suite missing markers: {missing}")
+    return flags
+
+
 class TrajectoryService:
     """Builds a trajectory report by orchestrating domain + ports."""
 
@@ -509,6 +839,25 @@ class TrajectoryService:
         # durable scheduler recovery and replay idempotence enforced with
         # D127 and the optimizer auto-promote lock intact (M399 S04 T02).
         drift_flags.extend(self._check_acap_runtime_control_plane())
+
+        # PIR-018: visual candidate graph lineage contract — positive/negative
+        # committed FigureCandidate fixtures keep every visual candidate bound
+        # to a PaperRevision VID and revision-scoped Section VID with SHA-256
+        # lineage digests, deterministic identity and D127 authority/import
+        # locks (M400 S05 T01).
+        drift_flags.extend(self._check_visual_candidates_require_graph_lineage())
+
+        # PIR-019: table payload cell provenance contract — positive/negative
+        # committed TableCandidate fixtures keep TEI grounding (R087),
+        # per-cell grid/digest/span provenance and typed conflict kinds with
+        # D127 locks (M400 S05 T01).
+        drift_flags.extend(self._check_table_payload_requires_cell_provenance())
+
+        # PIR-020: equation context coverage contract — positive/negative
+        # committed EquationCandidate fixtures keep formula identity,
+        # revision/section grounding, typed representation and source span
+        # with D127 locks (M400 S05 T01).
+        drift_flags.extend(self._check_equation_context_coverage())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -1351,6 +1700,104 @@ class TrajectoryService:
                 _flag("acap_runtime_control_plane_source_marker_missing",
                       f"{marker_key} source missing enforcement markers: {missing}")
         return flags
+
+    def _check_visual_candidates_require_graph_lineage(self) -> list[DriftFlag]:
+        """Evaluate the data-driven visual candidate lineage contract (PIR-018).
+
+        Reads `scripts/governor/checks/visual_candidates_require_graph_lineage.yaml`
+        (DATA) and validates the committed FigureCandidate fixtures against
+        the revision-grounded candidate contract in `da_domain::figure_candidate`
+        (M400 S01, ADR-051): every positive candidate must be clean — full
+        revision/section lineage, valid SHA-256 digests, deterministic
+        revision-bound identity (VID matches the recomputed lineage), and
+        authority/import locks false (D127 / ADR-053); every negative record
+        must trigger exactly its labelled violation and every required
+        violation must appear in the fixture (a future edit that removes a
+        negative case is flagged); the Rust domain and the snapshot graph
+        task suite must keep the named enforcement markers.
+        """
+        path = self.root / "scripts/governor/checks/visual_candidates_require_graph_lineage.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="visual_candidates_require_graph_lineage_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="visual_candidate_lineage",
+            )]
+        return _candidate_contract_flags(
+            contract, self.root, "visual_candidate_lineage",
+            "visual_candidates_require_graph_lineage",
+            _visual_candidate_violations,
+        )
+
+    def _check_table_payload_requires_cell_provenance(self) -> list[DriftFlag]:
+        """Evaluate the data-driven table cell provenance contract (PIR-019).
+
+        Reads `scripts/governor/checks/table_payload_requires_cell_provenance.yaml`
+        (DATA) and validates the committed TableCandidate fixtures against
+        the revision-grounded table contract in `da_domain::table_candidate`
+        + `da_domain::table_fidelity` (M400 S02, ADR-051): every positive
+        candidate must be clean — TEI grounding (R087), per-cell
+        row/column/digest/span provenance, deterministic cell identities,
+        typed conflict kinds only, authority/import locks false (D127 /
+        ADR-053); every negative record must trigger exactly its labelled
+        violation and every required violation must appear in the fixture;
+        the Rust domain/fidelity and the snapshot table fidelity suite must
+        keep the named enforcement markers.
+        """
+        path = self.root / "scripts/governor/checks/table_payload_requires_cell_provenance.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="table_payload_requires_cell_provenance_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="table_cell_provenance",
+            )]
+        return _candidate_contract_flags(
+            contract, self.root, "table_cell_provenance",
+            "table_payload_requires_cell_provenance",
+            _table_candidate_violations,
+        )
+
+    def _check_equation_context_coverage(self) -> list[DriftFlag]:
+        """Evaluate the data-driven equation context coverage contract (PIR-020).
+
+        Reads `scripts/governor/checks/equation_context_coverage.yaml` (DATA)
+        and validates the committed EquationCandidate fixtures against the
+        revision-grounded equation contract in `da_domain::equation_candidate`
+        (M400 S03, ADR-051): every positive candidate must be clean — formula
+        identity, revision/section grounding, typed representation, source
+        span, deterministic identity, locks false (D127 / ADR-053); every
+        negative record must trigger exactly its labelled violation and every
+        required violation must appear in the fixture; the Rust domain and
+        the snapshot equation candidate suite must keep the named enforcement
+        markers.
+        """
+        path = self.root / "scripts/governor/checks/equation_context_coverage.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="equation_context_coverage_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="equation_context_coverage",
+            )]
+        return _candidate_contract_flags(
+            contract, self.root, "equation_context_coverage",
+            "equation_context_coverage",
+            _equation_candidate_violations,
+        )
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
         """Require valuable pipeline logs without leaking transport into core layers."""

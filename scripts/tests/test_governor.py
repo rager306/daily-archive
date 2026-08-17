@@ -2177,6 +2177,309 @@ def test_html_structure_honesty_invalid_yaml_is_flagged():
     assert flags[0].flag == "html_structure_honesty_invalid"
 
 
+# ---------------------------------------------------------------------------
+# Multimodal Governor contracts (M400 S05 T01, PIR-018/019/020)
+# ---------------------------------------------------------------------------
+# Self-tests for the three committed multimodal candidate contracts. The
+# tests copy the REAL committed YAML contracts, fixtures, Rust source
+# markers and graph task suites into a scratch root (never mutating tracked
+# files), then validate: every positive fixture must be clean, every
+# negative record must trigger exactly its labelled violation, every
+# required violation must stay covered, source markers and the graph task
+# suite must keep their enforcement points, and invalid YAML must flag.
+# No direct database access — TrajectoryService is built via __new__ with a
+# scratch root only (same pattern as the other contract self-tests).
+
+
+def _copy_multimodal_contracts(root: Path) -> None:
+    """Copy committed multimodal Governor contracts + fixtures + markers + suites."""
+    repo = _scripts_dir.parent
+    rels = [
+        "scripts/governor/checks/visual_candidates_require_graph_lineage.yaml",
+        "scripts/governor/checks/table_payload_requires_cell_provenance.yaml",
+        "scripts/governor/checks/equation_context_coverage.yaml",
+        "data/visual_lineage_contract/lineage_complete.positive.json",
+        "data/visual_lineage_contract/lineage_broken.negative.json",
+        "data/table_provenance_contract/provenance_complete.positive.json",
+        "data/table_provenance_contract/provenance_broken.negative.json",
+        "data/equation_coverage_contract/coverage_complete.positive.json",
+        "data/equation_coverage_contract/coverage_broken.negative.json",
+        "crates/da-domain/src/figure_candidate.rs",
+        "crates/da-domain/src/table_candidate.rs",
+        "crates/da-domain/src/table_fidelity.rs",
+        "crates/da-domain/src/equation_candidate.rs",
+        "data/graph_tasks/figure_candidate.tasks.cypher",
+        "data/graph_tasks/table_cell_fidelity.tasks.cypher",
+        "data/graph_tasks/equation_candidate.tasks.cypher",
+    ]
+    for rel in rels:
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def test_visual_candidates_require_graph_lineage_pass_on_clean_fixtures():
+    """Committed positive + negative fixtures and source markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    assert service._check_visual_candidates_require_graph_lineage() == []
+
+
+def test_visual_candidates_require_graph_lineage_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    (service.root / "data/visual_lineage_contract/lineage_broken.negative.json").unlink()
+    flags = service._check_visual_candidates_require_graph_lineage()
+    assert len(flags) == 1
+    assert flags[0].flag == "visual_candidates_require_graph_lineage_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_visual_candidates_require_graph_lineage_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Inject an import unlock into the positive candidate (D127).
+    path = service.root / "data/visual_lineage_contract/lineage_complete.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["import_eligible"] = True
+    _write(path, json.dumps(records))
+    flags = service._check_visual_candidates_require_graph_lineage()
+    broken = [f for f in flags if f.flag == "visual_candidates_require_graph_lineage_broken"]
+    assert len(broken) == 1
+    assert "import_unlock" in broken[0].evidence
+
+
+def test_visual_candidates_require_graph_lineage_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Neutralise the import_unlock record so its labelled violation no longer fires.
+    path = service.root / "data/visual_lineage_contract/lineage_broken.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "import_unlock":
+            record["record"]["import_eligible"] = False
+    _write(path, json.dumps(records))
+    flags = service._check_visual_candidates_require_graph_lineage()
+    broken = [f for f in flags if f.flag == "visual_candidates_require_graph_lineage_broken"]
+    assert any("import_unlock" in f.evidence for f in broken)
+
+
+def test_visual_candidates_require_graph_lineage_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Remove the authority_unlock record entirely — coverage must fail.
+    path = service.root / "data/visual_lineage_contract/lineage_broken.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "authority_unlock"]
+    _write(path, json.dumps(records))
+    flags = service._check_visual_candidates_require_graph_lineage()
+    broken = [f for f in flags if f.flag == "visual_candidates_require_graph_lineage_broken"]
+    assert any("authority_unlock" in f.evidence for f in broken)
+
+
+def test_visual_candidates_require_graph_lineage_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Drop the typed guards from the domain surface.
+    _write(service.root / "crates/da-domain/src/figure_candidate.rs",
+           "pub struct FigureCandidate;\n")
+    flags = service._check_visual_candidates_require_graph_lineage()
+    marker = [f for f in flags
+              if f.flag == "visual_candidates_require_graph_lineage_source_marker_missing"]
+    assert len(marker) == 1
+    assert "domain" in marker[0].evidence
+
+
+def test_visual_candidates_require_graph_lineage_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    _write(service.root / "scripts/governor/checks/visual_candidates_require_graph_lineage.yaml",
+           "{bad yaml: [")
+    flags = service._check_visual_candidates_require_graph_lineage()
+    assert flags[0].flag == "visual_candidates_require_graph_lineage_invalid"
+
+
+def test_table_payload_requires_cell_provenance_pass_on_clean_fixtures():
+    """Committed positive + negative fixtures and source markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    assert service._check_table_payload_requires_cell_provenance() == []
+
+
+def test_table_payload_requires_cell_provenance_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    (service.root / "data/table_provenance_contract/provenance_broken.negative.json").unlink()
+    flags = service._check_table_payload_requires_cell_provenance()
+    assert len(flags) == 1
+    assert flags[0].flag == "table_payload_requires_cell_provenance_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Inject an import unlock into the positive candidate (D127).
+    path = service.root / "data/table_provenance_contract/provenance_complete.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["import_eligible"] = True
+    _write(path, json.dumps(records))
+    flags = service._check_table_payload_requires_cell_provenance()
+    broken = [f for f in flags if f.flag == "table_payload_requires_cell_provenance_broken"]
+    assert len(broken) == 1
+    assert "import_unlock" in broken[0].evidence
+
+
+def test_table_payload_requires_cell_provenance_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Neutralise the import_unlock record so its labelled violation no longer fires.
+    path = service.root / "data/table_provenance_contract/provenance_broken.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "import_unlock":
+            record["record"]["import_eligible"] = False
+    _write(path, json.dumps(records))
+    flags = service._check_table_payload_requires_cell_provenance()
+    broken = [f for f in flags if f.flag == "table_payload_requires_cell_provenance_broken"]
+    assert any("import_unlock" in f.evidence for f in broken)
+
+
+def test_table_payload_requires_cell_provenance_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Remove the cell_without_digest record entirely — coverage must fail.
+    path = service.root / "data/table_provenance_contract/provenance_broken.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "cell_without_digest"]
+    _write(path, json.dumps(records))
+    flags = service._check_table_payload_requires_cell_provenance()
+    broken = [f for f in flags if f.flag == "table_payload_requires_cell_provenance_broken"]
+    assert any("cell_without_digest" in f.evidence for f in broken)
+
+
+def test_table_payload_requires_cell_provenance_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Drop the typed guards from the domain surface.
+    _write(service.root / "crates/da-domain/src/table_candidate.rs",
+           "pub struct TableCandidate;\n")
+    flags = service._check_table_payload_requires_cell_provenance()
+    marker = [f for f in flags
+              if f.flag == "table_payload_requires_cell_provenance_source_marker_missing"]
+    assert len(marker) == 1
+    assert "domain" in marker[0].evidence
+
+
+def test_table_payload_requires_cell_provenance_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    _write(service.root / "scripts/governor/checks/table_payload_requires_cell_provenance.yaml",
+           "{bad yaml: [")
+    flags = service._check_table_payload_requires_cell_provenance()
+    assert flags[0].flag == "table_payload_requires_cell_provenance_invalid"
+
+
+def test_equation_context_coverage_pass_on_clean_fixtures():
+    """Committed positive + negative fixtures and source markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    assert service._check_equation_context_coverage() == []
+
+
+def test_equation_context_coverage_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    (service.root / "data/equation_coverage_contract/coverage_broken.negative.json").unlink()
+    flags = service._check_equation_context_coverage()
+    assert len(flags) == 1
+    assert flags[0].flag == "equation_context_coverage_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_equation_context_coverage_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Inject an import unlock into the positive candidate (D127).
+    path = service.root / "data/equation_coverage_contract/coverage_complete.positive.json"
+    records = json.loads(path.read_text())
+    records[0]["import_eligible"] = True
+    _write(path, json.dumps(records))
+    flags = service._check_equation_context_coverage()
+    broken = [f for f in flags if f.flag == "equation_context_coverage_broken"]
+    assert len(broken) == 1
+    assert "import_unlock" in broken[0].evidence
+
+
+def test_equation_context_coverage_negative_fixture_must_trigger_labelled_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Neutralise the import_unlock record so its labelled violation no longer fires.
+    path = service.root / "data/equation_coverage_contract/coverage_broken.negative.json"
+    records = json.loads(path.read_text())
+    for record in records:
+        if record.get("violation") == "import_unlock":
+            record["record"]["import_eligible"] = False
+    _write(path, json.dumps(records))
+    flags = service._check_equation_context_coverage()
+    broken = [f for f in flags if f.flag == "equation_context_coverage_broken"]
+    assert any("import_unlock" in f.evidence for f in broken)
+
+
+def test_equation_context_coverage_negative_fixture_must_cover_required_violations():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Remove the invalid_span record entirely — coverage must fail.
+    path = service.root / "data/equation_coverage_contract/coverage_broken.negative.json"
+    records = json.loads(path.read_text())
+    records = [r for r in records if r.get("violation") != "invalid_span"]
+    _write(path, json.dumps(records))
+    flags = service._check_equation_context_coverage()
+    broken = [f for f in flags if f.flag == "equation_context_coverage_broken"]
+    assert any("invalid_span" in f.evidence for f in broken)
+
+
+def test_equation_context_coverage_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    # Drop the typed guards from the domain surface.
+    _write(service.root / "crates/da-domain/src/equation_candidate.rs",
+           "pub struct EquationCandidate;\n")
+    flags = service._check_equation_context_coverage()
+    marker = [f for f in flags
+              if f.flag == "equation_context_coverage_source_marker_missing"]
+    assert len(marker) == 1
+    assert "domain" in marker[0].evidence
+
+
+def test_equation_context_coverage_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_multimodal_contracts(service.root)
+    _write(service.root / "scripts/governor/checks/equation_context_coverage.yaml",
+           "{bad yaml: [")
+    flags = service._check_equation_context_coverage()
+    assert flags[0].flag == "equation_context_coverage_invalid"
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -2224,6 +2527,27 @@ def _run_all_tests() -> int:
         test_html_structure_honesty_negative_fixture_must_keep_d127_locked,
         test_html_structure_honesty_readiness_marker_missing_is_flagged,
         test_html_structure_honesty_invalid_yaml_is_flagged,
+        test_visual_candidates_require_graph_lineage_pass_on_clean_fixtures,
+        test_visual_candidates_require_graph_lineage_missing_fixture_is_flagged,
+        test_visual_candidates_require_graph_lineage_positive_fixture_must_be_clean,
+        test_visual_candidates_require_graph_lineage_negative_fixture_must_trigger_labelled_violations,
+        test_visual_candidates_require_graph_lineage_negative_fixture_must_cover_required_violations,
+        test_visual_candidates_require_graph_lineage_source_marker_missing_is_flagged,
+        test_visual_candidates_require_graph_lineage_invalid_yaml_is_flagged,
+        test_table_payload_requires_cell_provenance_pass_on_clean_fixtures,
+        test_table_payload_requires_cell_provenance_missing_fixture_is_flagged,
+        test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean,
+        test_table_payload_requires_cell_provenance_negative_fixture_must_trigger_labelled_violations,
+        test_table_payload_requires_cell_provenance_negative_fixture_must_cover_required_violations,
+        test_table_payload_requires_cell_provenance_source_marker_missing_is_flagged,
+        test_table_payload_requires_cell_provenance_invalid_yaml_is_flagged,
+        test_equation_context_coverage_pass_on_clean_fixtures,
+        test_equation_context_coverage_missing_fixture_is_flagged,
+        test_equation_context_coverage_positive_fixture_must_be_clean,
+        test_equation_context_coverage_negative_fixture_must_trigger_labelled_violations,
+        test_equation_context_coverage_negative_fixture_must_cover_required_violations,
+        test_equation_context_coverage_source_marker_missing_is_flagged,
+        test_equation_context_coverage_invalid_yaml_is_flagged,
     ]
     passed = 0
     failed = 0

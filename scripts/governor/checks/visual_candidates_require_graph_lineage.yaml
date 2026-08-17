@@ -1,0 +1,107 @@
+# Visual candidate graph lineage contract — PIR-018 closure, M400 S05 T01.
+#
+# DATA for the Governor `visual_candidates_require_graph_lineage` check. The
+# contract mirrors the revision-grounded FigureCandidate contract implemented
+# in `da_domain::figure_candidate` (M400 S01): every visual candidate must
+# bind a PaperRevision VID and a revision-scoped Section VID, carry SHA-256
+# lineage digests for detector metadata, source PDF, rendered image and
+# candidate metadata, keep a deterministic candidate VID that matches the
+# recomputed revision-bound lineage, and stay hard-locked non-authoritative
+# and import-ineligible (D127 / ADR-053 — candidate evidence is never graph
+# truth and never gains import eligibility).
+#
+# Semantics:
+#   - positive (lineage_complete): every committed FigureCandidate fixture
+#     must be clean — full revision/section lineage, valid SHA-256 digests,
+#     consistent deterministic identity, authority/import locks false;
+#   - negative (lineage_broken): every record must trigger exactly its
+#     labelled violation (missing revision lineage, broken section lineage,
+#     missing SHA-256 lineage, identity mismatch, authority unlock, import
+#     unlock), and every violation in `require_violations` must appear in the
+#     fixture — a future edit that removes a negative case is flagged;
+#   - graph_task_suite: the snapshot-level figure candidate suite must keep
+#     the grounded/lineage/D127 task markers.
+#
+# The committed fixtures are validated by `scripts/tests/test_governor.py`
+# (`_check_visual_candidates_require_graph_lineage`), and the same
+# invariants are pinned by the Rust domain tests and proptests in
+# `crates/da-domain/src/figure_candidate.rs` plus the materializer test
+# `crates/da-application/tests/figure_candidate_test.rs` — a broken contract
+# cannot silently survive a regenerate. This is DATA — tightening an
+# expectation is an edit here (plus updating the committed fixture JSON),
+# not a Python change.
+
+schema_version: visual-candidates-require-graph-lineage.v1
+policy_id: visual-candidates-require-graph-lineage
+dimension: visual_candidate_lineage
+severity: high
+anchor: "PIR-018, ADR-060, ADR-053, D127"
+
+# FigureCandidate wire contract (`da_domain::figure_candidate::FigureCandidate`).
+candidate_contract:
+  required_fields:
+    - vid
+    - revision_vid
+    - artifact_id
+    - kind
+    - detector_name
+    - detector_fingerprint
+    - detector_metadata_sha256
+    - source_pdf_sha256
+    - image_sha256
+    - asset_path
+    - page_index
+    - section_vid
+    - section_title
+    - section_ordinal
+    - caption
+    - candidate_metadata_sha256
+    - authoritative
+    - import_eligible
+    - schema_version
+  # Content-hash lineage fields (revision/section VIDs get their own labels).
+  sha256_fields:
+    - detector_metadata_sha256
+    - source_pdf_sha256
+    - image_sha256
+    - candidate_metadata_sha256
+  # D127 / ADR-053 — candidate evidence is never graph truth or importable.
+  authority_locked: true
+  import_locked: true
+
+fixtures:
+  positive:
+    id: lineage_complete
+    path: data/visual_lineage_contract/lineage_complete.positive.json
+    expect: clean
+  negative:
+    id: lineage_broken
+    path: data/visual_lineage_contract/lineage_broken.negative.json
+    expect:
+      require_violations:
+        - missing_revision_lineage
+        - broken_section_lineage
+        - missing_sha256_lineage
+        - identity_mismatch
+        - authority_unlock
+        - import_unlock
+
+# Enforcement points that must keep existing on the Rust side.
+source_markers:
+  domain:
+    path: crates/da-domain/src/figure_candidate.rs
+    required_patterns:
+      - figure_candidate_vid
+      - AuthorityViolation
+      - IdentityMismatch
+      - InvalidSha256
+
+# Same contract expressed against a durable snapshot (ADR-051 Contour 6).
+graph_task_suite:
+  id: figure_candidate
+  path: data/graph_tasks/figure_candidate.tasks.cypher
+  required_patterns:
+    - grounded_candidates
+    - revision_bound_candidates
+    - section_bound_candidates
+    - unlocked_import_candidates

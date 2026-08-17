@@ -2,7 +2,8 @@
 
 ## Status
 Partially implemented (M388-mhds9q, 2026-08-13) — Stage1 heuristic + DATA schemas + analyze wiring.
-Remaining: compound panels, chart-native domain type (not synthetic components), stage-cache schema_id fingerprint, CharXiv-style eval suite.
+**M400-xijx04 (S01–S05, 2026-08-17):** FigureCandidate / TableCandidate+TableCell / EquationCandidate are now first-class **revision-grounded candidate nodes** with exact source lineage and semantic graph task suites; Governor DATA contracts enforce the candidate-only wire contract on every trajectory build; PIR-018..PIR-020 resolved in the review register.
+Remaining: compound panels, chart-native domain type (not synthetic components), stage-cache schema_id fingerprint, full CharXiv-style eval suite.
 
 ## Context
 
@@ -174,6 +175,19 @@ Multimodal adapter должен корректно форвардить этот
 - **Negative**: больше VLM вызовов (2+ per figure вместо 1) — bounded budget в policy
 - **Negative**: Docling sidecar добавляет Python зависимость (D237 conflict — нужен Rust port или sidecar API как GROBID)
 
+## M400 S05: revision-grounded candidate contracts (closure)
+
+M400 turns the multimodal analysis plane into **queryable, revision-grounded candidate evidence** while keeping it strictly candidate-only (D127 / ADR-053):
+
+1. **FigureCandidate** (S01) — `da_domain::figure_candidate`: deterministic `figure_candidate_vid`, `revision_vid`/`section_vid` lineage, 4× SHA-256 lineage digests (detector metadata, source PDF, rendered image, candidate metadata), `authoritative=false` + `import_eligible=false` hard-locked. Suite: `data/graph_tasks/figure_candidate.tasks.cypher` (grounded/revision-bound/section-bound counts; orphan and import-unlock fail closed).
+2. **TableCandidate / TableCell / TableConflict** (S02) — GROBID TEI grounding (`tei_table_id`, `tei_source_digest`), per-cell row/column provenance, digest, typed visual-versus-TEI conflict plane (ADR-047, never overwrite); coverage gaps are counters (`coverage_unmatched_*`), never invented cells (R087). Suite: `data/graph_tasks/table_cell_fidelity.tasks.cypher` (4 candidates / 18 cells / 2 conflicts).
+3. **EquationCandidate** (S03) — `formula_id`, revision+section lineage (`section_path_id`, `section_ordinal`), typed representation (MathML/TeX/plain), exact source span. Suite: `data/graph_tasks/equation_candidate.tasks.cypher` (2 grounded formulas; missing/ungrounded/unlocked fails visibly).
+4. **Canonical journey** (S04) — `multimodal_pipeline_test.rs`: admission → cache → candidate materialization → query → idempotent replay, D127 false on every step; `candidate_materialization` is a cross-cutting helper outside the ACAP FSM (D263).
+5. **Governor DATA contracts** (S05 T01) — `visual_candidates_require_graph_lineage` / `table_payload_requires_cell_provenance` / `equation_context_coverage` with committed positive/negative fixtures (`data/{visual_lineage,table_provenance,equation_coverage}_contract/`); 65/65 self-tests, violations=0. Expectations live in YAML/fixtures, not validator Python.
+6. **Review register closure** (S05 T02) — PIR-018, PIR-019, PIR-020 resolved in `doc/review/pipeline-integrity-review.jsonl` with fresh runtime + Governor evidence; PIR-017/PIR-021 stay open (M401 agent readiness).
+
+**Candidate-only boundary is explicit:** no Figure/Table/Equation candidate is ever graph truth, never gains import eligibility (D127), and optimizer auto-promotion (D238) stays off. Docling remains an optional sidecar opinion (candidate-only), never a replacement for GROBID grounding.
+
 ## D127 / authority locks
 
 - Stage outputs — **candidate-only**, никогда graph truth
@@ -185,7 +199,9 @@ Multimodal adapter должен корректно форвардить этот
 
 1. ~~Stage 1 classifier (per-type routing)~~ **done M388 (heuristic; VLM Stage1 optional later)**
 2. ~~Per-type schema registry + analyze selection~~ **done M388**
-3. Chart-native domain candidate type (replace synthetic components) + numeric chart-to-table quality
-4. Compound figure decomposition
-5. Stage cache fingerprint includes selected schema_id/sha
-6. CharXiv-style evaluation suite (`data/figure_tasks/`) — **not** Docling product sidecar (D237)
+3. ~~Revision-grounded candidate schemas (FigureCandidate/TableCandidate/TableCell/EquationCandidate) + graph task suites~~ **done M400 S01–S03** (`data/graph_tasks/{figure_candidate,table_cell_fidelity,equation_candidate}.tasks.cypher`)
+4. ~~Governor DATA contracts pinning the candidate-only wire contract~~ **done M400 S05** (`visual_candidates_require_graph_lineage`, `table_payload_requires_cell_provenance`, `equation_context_coverage`)
+5. Chart-native domain type (replace synthetic components) + numeric chart-to-table quality
+6. Compound figure decomposition
+7. Stage cache fingerprint includes selected schema_id/sha
+8. Full CharXiv-style evaluation suite (`data/figure_tasks/`) — **not** Docling product sidecar (D237); M400 candidate graph task suites are the bounded first step
