@@ -4,7 +4,10 @@
 //! GROBID runs at http://127.0.0.1:8070 (Java service, no API key).
 
 use async_trait::async_trait;
-use da_ports::parser::{ParseResult, ParsedArticle, ParserError, ParserPort};
+use da_ports::parser::{
+    CharSpan, ExtractedTable, ParseResult, ParsedArticle, ParserError, ParserPort, TableCell,
+    TableMissingReason,
+};
 use std::collections::{HashMap, HashSet};
 
 const DEFAULT_GROBID_URL: &str = "http://127.0.0.1:8070";
@@ -88,6 +91,14 @@ struct RawRefAnchor {
     /// later window that repeats the same raw path resolves independently.
     /// Nested-pass anchors all use 0 (paths are uniquified on the fly).
     window_ordinal: usize,
+}
+
+/// Borrowed TEI table-parse context shared by every table in one document.
+struct TableParseContext<'a> {
+    body: Option<&'a str>,
+    body_start: usize,
+    windows: &'a [(usize, usize, Option<String>)],
+    ordinal_by_path: &'a HashMap<String, usize>,
 }
 
 impl GrobidParser {
@@ -1144,6 +1155,582 @@ impl GrobidParser {
         count.saturating_sub(leading) as u32
     }
 
+    // ─── M400 S02 T01: deterministic TEI table extraction ───
+
+    /// Extract deterministic TEI table structures (M400 S02 T01).
+    ///
+    /// GROBID emits tables as `<figure type="table" xml:id="tab_0">
+    /// <head>…</head><label>…</label><figDesc>…</figDesc>
+    /// <table><row><cell …>…</cell></row></table></figure>` inside the
+    /// `<body>` (coordinates requested via `teiCoordinates=["figure",
+    /// "table","note"]`). Section identity mirrors `extract_sections`
+    /// exactly — the same nested-div / flat-`<head>` window algorithm with
+    /// the same path collision resolution — so a table maps to the same
+    /// `path_id` the section extractor produced for its containing text
+    /// window. Tables outside every section window (top-level gaps / trailing
+    /// region) get `section_path_id: None` — typed missingness, never
+    /// guessed into a neighbour.
+    ///
+    /// Returns the extracted tables plus the article-level typed missingness:
+    /// `Some(NoTableElements)` when the TEI contains no `<table>` element at
+    /// all (R087 — an empty Vec alone cannot distinguish that from a parser
+    /// that did not populate tables).
+    fn extract_tables(tei: &str) -> (Vec<ExtractedTable>, Option<TableMissingReason>) {
+        let body = Self::tei_body(tei);
+        let (windows, body_start) = match body {
+            Some(b) => {
+                let body_start = b.as_ptr() as usize - tei.as_ptr() as usize;
+                (Self::table_windows(b), body_start)
+            }
+            None => (Vec::new(), 0),
+        };
+
+        // 0-based ordinal of each section path (section titles repeat, so
+        // tables need the ordinal to disambiguate — mirrors
+        // ExtractedEntity.section_ordinal, MEM685).
+        let sections = Self::extract_sections(tei);
+        let mut ordinal_by_path: HashMap<String, usize> = HashMap::new();
+        for (idx, section) in sections.iter().enumerate() {
+            if let Some(path) = section.path_id.as_deref() {
+                ordinal_by_path.entry(path.to_string()).or_insert(idx);
+            }
+        }
+
+        let mut tables = Vec::new();
+        let mut table_count = 0usize;
+        let mut pos = 0usize;
+        while let Some(rel) = tei[pos..].find("<table") {
+            let abs = pos + rel;
+            // Skip closing tags and non-element matches.
+            if tei[abs..].starts_with("</table") {
+                pos = abs + 1;
+                continue;
+            }
+            let tag_end = match tei[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let close = match tei[tag_end..].find("</table>") {
+                Some(e) => tag_end + e,
+                None => break,
+            };
+            table_count += 1;
+            let open_tag = &tei[abs..=tag_end];
+            let content = &tei[tag_end + 1..close];
+            let table = Self::build_table(
+                tei,
+                open_tag,
+                content,
+                abs,
+                close,
+                &TableParseContext {
+                    body,
+                    body_start,
+                    windows: &windows,
+                    ordinal_by_path: &ordinal_by_path,
+                },
+                table_count,
+            );
+            tables.push(table);
+            pos = close + "</table>".len();
+        }
+
+        let missingness = if table_count == 0 {
+            Some(TableMissingReason::NoTableElements)
+        } else {
+            None
+        };
+        (tables, missingness)
+    }
+
+    /// Section text windows with their resolved `path_id`, mirroring
+    /// `extract_sections` exactly (nested div walk or flat `<head>` scan with
+    /// the same path collision resolution). Windows cover the body with no
+    /// gaps: regions outside any section (pre-first-div/head region,
+    /// inter-sibling gaps, trailing region) carry `None` so a table there is
+    /// honestly reported as not-section-resolved instead of being guessed.
+    fn table_windows(body: &str) -> Vec<(usize, usize, Option<String>)> {
+        let mut out = Vec::new();
+        if Self::has_nested_divs(body) {
+            let divs = Self::find_child_divs(body);
+            if let Some(first) = divs.first()
+                && first.content_start > 0
+            {
+                out.push((0, first.content_start, None));
+            }
+            let mut used = HashSet::new();
+            Self::walk_table_windows(body, "", &mut used, &mut out);
+        } else {
+            Self::flat_table_windows(body, &mut out);
+        }
+        out
+    }
+
+    /// Recursive `<div>` walk producing section text windows (mirrors
+    /// `walk_divs` path computation and `walk_div_anchors` window/gap
+    /// coverage). Each div's direct text window (after `</head>` up to the
+    /// first nested `<div>`) carries the div's resolved path; inter-sibling
+    /// gaps and the trailing region belong to no section (`None`).
+    fn walk_table_windows(
+        body: &str,
+        parent_path: &str,
+        used_paths: &mut HashSet<String>,
+        out: &mut Vec<(usize, usize, Option<String>)>,
+    ) {
+        let div_spans = Self::find_child_divs(body);
+        for (local_sibling, div_span) in div_spans.iter().enumerate() {
+            let cs = div_span.content_start;
+            let ce = div_span.content_end;
+            let div_content = &body[cs..ce];
+            let path_component = div_span
+                .n_attr
+                .as_deref()
+                .and_then(|n| n.split('.').next_back())
+                .unwrap_or("")
+                .to_string();
+            let path_component = if path_component.is_empty() {
+                (local_sibling as u32 + 1).to_string()
+            } else {
+                path_component
+            };
+            let base_path = if parent_path.is_empty() {
+                path_component.to_string()
+            } else {
+                format!("{}.{}", parent_path, path_component)
+            };
+            let mut path_id = base_path.clone();
+            let mut collision = 2u32;
+            while used_paths.contains(&path_id) {
+                path_id = format!("{base_path}~{collision}");
+                collision += 1;
+            }
+            used_paths.insert(path_id.clone());
+
+            let (w_start, w_end) = Self::div_text_window(div_content);
+            let window_start = cs + w_start;
+            let window_end = cs + w_end;
+            if window_start < window_end {
+                out.push((window_start, window_end, Some(path_id.clone())));
+            }
+
+            // Gap between this div's close and the next sibling (or frame
+            // end): belongs to no section → None window.
+            let next_start = div_spans
+                .get(local_sibling + 1)
+                .map(|s| s.content_start)
+                .unwrap_or(body.len());
+            let gap_start = ce + "</div>".len();
+            if next_start > gap_start {
+                out.push((gap_start, next_start, None));
+            }
+
+            Self::walk_table_windows(div_content, &path_id, used_paths, out);
+        }
+    }
+
+    /// Flat `<head>`-window enumeration (mirrors `extract_sections_flat`):
+    /// every `<head>` opens a window to the next `<head>` (or body end); the
+    /// pre-first-head region belongs to no section. Raw paths are then
+    /// resolved with the same collision algorithm as `uniquify_flat_paths` —
+    /// windows without content (empty title AND text) are skipped exactly
+    /// like the section pass.
+    fn flat_table_windows(body: &str, out: &mut Vec<(usize, usize, Option<String>)>) {
+        let mut raw: Vec<(usize, usize, String, bool)> = Vec::new();
+        let mut pos = 0usize;
+        while let Some(head_start) = body[pos..].find("<head") {
+            let abs = pos + head_start;
+            let tag_end = match body[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let open_tag = &body[abs..=tag_end];
+            let path_component = Self::extract_head_n_string(open_tag);
+            let content_start = tag_end + 1;
+            let head_close = match body[content_start..].find("</head>") {
+                Some(e) => content_start + e,
+                None => break,
+            };
+            let title = Self::strip_xml_tags(&body[content_start..head_close]);
+            let after_head = head_close + "</head>".len();
+            let next_head = body[after_head..].find("<head").map(|e| after_head + e);
+            let text_end = next_head.unwrap_or(body.len());
+            let text = Self::strip_xml_tags(&body[after_head..text_end]);
+            raw.push((
+                after_head,
+                text_end,
+                path_component,
+                !title.is_empty() || !text.is_empty(),
+            ));
+            pos = text_end;
+            // Guard against infinite loop when text_end == abs (adjacent heads).
+            if pos <= tag_end {
+                pos = tag_end + 1;
+            }
+        }
+        // Pre-first-head region belongs to no section.
+        if let Some(first_head) = body.find("<head")
+            && first_head > 0
+        {
+            out.push((0, first_head, None));
+        }
+        let resolved = Self::resolve_flat_window_paths(&raw);
+        for ((start, end, _, _), path) in raw.into_iter().zip(resolved) {
+            if start < end {
+                out.push((start, end, path));
+            }
+        }
+    }
+
+    /// Resolve flat raw window paths with the same algorithm as
+    /// `uniquify_flat_paths` (same iteration order, same content filter), so
+    /// tables land on the exact section paths the section pass produced.
+    fn resolve_flat_window_paths(raw: &[(usize, usize, String, bool)]) -> Vec<Option<String>> {
+        let mut used = HashSet::new();
+        let mut latest_resolved: HashMap<String, String> = HashMap::new();
+        let mut out = Vec::with_capacity(raw.len());
+        for (_, _, raw_path, has_content) in raw {
+            if !has_content {
+                // The section pass never creates a Section for this window,
+                // so it consumes no path slot and tables inside it stay
+                // not-section-resolved.
+                out.push(None);
+                continue;
+            }
+            let candidate = match raw_path.rsplit_once('.') {
+                Some((raw_parent, component)) => latest_resolved
+                    .get(raw_parent)
+                    .map(|parent| format!("{parent}.{component}"))
+                    .unwrap_or_else(|| raw_path.clone()),
+                None => raw_path.clone(),
+            };
+            let mut resolved = candidate.clone();
+            let mut collision = 2u32;
+            while used.contains(&resolved) {
+                resolved = format!("{candidate}~{collision}");
+                collision += 1;
+            }
+            used.insert(resolved.clone());
+            latest_resolved.insert(raw_path.clone(), resolved.clone());
+            out.push(Some(resolved));
+        }
+        out
+    }
+
+    /// Build one `ExtractedTable` from a `<table ...>` element (TEI-absolute
+    /// `abs_start`/`abs_end`). Section identity comes from the containing
+    /// window (`windows` are body-relative); per-cell source spans are
+    /// computed against the containing section's stripped text.
+    fn build_table(
+        tei: &str,
+        open_tag: &str,
+        content: &str,
+        abs_start: usize,
+        abs_end: usize,
+        context: &TableParseContext<'_>,
+        index: usize,
+    ) -> ExtractedTable {
+        // Enclosing <figure type="table"> context: caption head + xml:id + coords.
+        let figure_ctx = Self::enclosing_table_figure(tei, abs_start, abs_end);
+
+        let table_id = figure_ctx
+            .as_ref()
+            .and_then(|(tag, _)| Self::extract_attr(tag, "xml:id"))
+            .or_else(|| Self::extract_attr(open_tag, "xml:id"))
+            .unwrap_or_else(|| format!("table-{index}"));
+
+        let caption = figure_ctx
+            .as_ref()
+            .and_then(|(_, caption)| caption.clone())
+            .unwrap_or_default();
+
+        let coordinates = figure_ctx
+            .as_ref()
+            .and_then(|(tag, _)| Self::extract_attr(tag, "coords"))
+            .or_else(|| Self::extract_attr(open_tag, "coords"));
+
+        // Section window containing this table (body-relative coordinates).
+        let table_rel = abs_start.saturating_sub(context.body_start);
+        let window = context
+            .windows
+            .iter()
+            .find(|(s, e, _)| *s <= table_rel && table_rel < *e);
+        let section_path = window.and_then(|(_, _, path)| path.clone());
+        let section_ordinal = section_path
+            .as_ref()
+            .and_then(|path| context.ordinal_by_path.get(path).copied());
+        // Spans are only computable against a real section text window; a
+        // None window (gap) has no section text to anchor against.
+        let span_window = window.and_then(
+            |(s, e, path)| {
+                if path.is_some() { Some((*s, *e)) } else { None }
+            },
+        );
+
+        let table_content_abs = abs_start + open_tag.len();
+        let (cells, missingness) = Self::build_cells(
+            content,
+            table_content_abs,
+            context.body,
+            context.body_start,
+            span_window,
+        );
+        let source_digest = Self::table_digest(&table_id, &caption, coordinates.as_deref(), &cells);
+
+        ExtractedTable {
+            table_id,
+            section_path_id: section_path,
+            section_ordinal,
+            caption,
+            coordinates,
+            cells,
+            source_digest,
+            missingness,
+        }
+    }
+
+    /// Parse `<row>`/`<cell>` structure of a `<table>` content fragment into
+    /// deterministic `TableCell`s. Empty `<cell></cell>` entries are
+    /// preserved (grid alignment for fidelity), `cols`/`rows` attributes
+    /// become colspan/rowspan, and the column index is the cumulative grid
+    /// position accounting for colspans of preceding cells. Returns typed
+    /// missingness when the structure is unusable (fail-closed, never
+    /// invented cells).
+    fn build_cells(
+        content: &str,
+        table_content_tei_abs: usize,
+        body: Option<&str>,
+        body_start: usize,
+        span_window: Option<(usize, usize)>,
+    ) -> (Vec<TableCell>, Option<TableMissingReason>) {
+        let mut cells = Vec::new();
+        let mut pos = 0usize;
+        let mut row = 0u32;
+        let mut any_row = false;
+        while let Some(rel) = content[pos..].find("<row") {
+            let abs = pos + rel;
+            if content[abs..].starts_with("</row") {
+                pos = abs + 1;
+                continue;
+            }
+            let tag_end = match content[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let close = match content[tag_end..].find("</row>") {
+                Some(e) => tag_end + e,
+                None => break,
+            };
+            any_row = true;
+            let row_content = &content[tag_end + 1..close];
+            let row_content_start_rel = tag_end + 1; // relative to `content`
+            let mut col = 0u32;
+            let mut cpos = 0usize;
+            while let Some(crel) = row_content[cpos..].find("<cell") {
+                let cabs = cpos + crel;
+                if row_content[cabs..].starts_with("</cell") {
+                    cpos = cabs + 1;
+                    continue;
+                }
+                let ctag_end = match row_content[cabs..].find('>') {
+                    Some(e) => cabs + e,
+                    None => break,
+                };
+                let cclose = match row_content[ctag_end..].find("</cell>") {
+                    Some(e) => ctag_end + e,
+                    None => break,
+                };
+                let ctag = &row_content[cabs..=ctag_end];
+                let cell_content = &row_content[ctag_end + 1..cclose];
+                let colspan = Self::parse_span_attr(ctag, "cols").unwrap_or(1).max(1);
+                let rowspan = Self::parse_span_attr(ctag, "rows").unwrap_or(1).max(1);
+                let text = Self::strip_xml_tags(cell_content);
+                let coords = Self::extract_attr(ctag, "coords");
+
+                // Source span of the cell's visible content inside the
+                // containing section's stripped text.
+                let span = match span_window {
+                    Some((w_start, w_end)) => body.and_then(|body| {
+                        let cell_content_abs =
+                            table_content_tei_abs + row_content_start_rel + (ctag_end + 1);
+                        let cell_rel = cell_content_abs.saturating_sub(body_start);
+                        if cell_rel < w_start || cell_rel >= w_end {
+                            return None;
+                        }
+                        let start = Self::stripped_text_offset(body, w_start, cell_rel, w_end);
+                        let end = start + Self::visible_char_count(cell_content) as u32;
+                        Some(CharSpan { start, end })
+                    }),
+                    None => None,
+                };
+
+                let digest =
+                    Self::cell_digest(row, col, colspan, rowspan, &text, coords.as_deref());
+                cells.push(TableCell {
+                    row,
+                    column: col,
+                    colspan,
+                    rowspan,
+                    text,
+                    coordinates: coords,
+                    span,
+                    digest,
+                });
+                col += colspan;
+                cpos = cclose + "</cell>".len();
+            }
+            row += 1;
+            pos = close + "</row>".len();
+        }
+
+        let missingness = if cells.is_empty() {
+            let reason = if any_row {
+                "rows found but zero cells".to_string()
+            } else {
+                "zero rows".to_string()
+            };
+            Some(TableMissingReason::Malformed(reason))
+        } else {
+            None
+        };
+        (cells, missingness)
+    }
+
+    /// Find the enclosing `<figure type="table">` for a `<table>` element:
+    /// returns `(figure_open_tag, Option<caption>)` where the caption is the
+    /// stripped text of the figure's first `<head>` (e.g. "Table 1 :").
+    fn enclosing_table_figure(
+        tei: &str,
+        abs_start: usize,
+        abs_end: usize,
+    ) -> Option<(String, Option<String>)> {
+        let figure_start = tei[..abs_start].rfind("<figure")?;
+        let tag_end = tei[figure_start..].find('>')? + figure_start;
+        let open_tag = &tei[figure_start..=tag_end];
+        if !(open_tag.contains("type=\"table\"") || open_tag.contains("type='table'")) {
+            return None;
+        }
+        let fig_close = tei[tag_end..].find("</figure>")? + tag_end;
+        if fig_close < abs_end {
+            // The table is not inside this figure (closes after it).
+            return None;
+        }
+        let fig_content = &tei[tag_end + 1..fig_close];
+        let caption = if let Some(hs) = fig_content.find("<head") {
+            let htag_end = fig_content[hs..].find('>').map(|e| hs + e)?;
+            let content_start = htag_end + 1;
+            if let Some(hc) = fig_content[content_start..].find("</head>") {
+                let caption = Self::strip_xml_tags(&fig_content[content_start..content_start + hc]);
+                if !caption.is_empty() {
+                    Some(caption)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        Some((open_tag.to_string(), caption))
+    }
+
+    /// Extract an XML attribute `name="value"` (single or double quotes)
+    /// from an opening tag. Matches on attribute boundaries so `id=` never
+    /// matches inside `xml:id=` and `grid=` never matches inside `id=`.
+    fn extract_attr(open_tag: &str, name: &str) -> Option<String> {
+        for quote in ['"', '\''] {
+            let needle = format!("{name}={quote}");
+            let mut search_from = 0usize;
+            while let Some(pos) = open_tag[search_from..].find(&needle) {
+                let abs = search_from + pos;
+                let boundary_ok = open_tag[..abs]
+                    .chars()
+                    .next_back()
+                    .map(|c| c == ' ' || c == '\t' || c == '\n' || c == '>')
+                    .unwrap_or(true);
+                if boundary_ok {
+                    let after = &open_tag[abs + needle.len()..];
+                    if let Some(end) = after.find(quote) {
+                        let value = after[..end].trim();
+                        if !value.is_empty() {
+                            return Some(value.to_string());
+                        }
+                    }
+                }
+                search_from = abs + 1;
+            }
+        }
+        None
+    }
+
+    /// Parse a positive integer TEI span attribute (`cols`/`rows`); None
+    /// when missing or unparseable (caller defaults to 1).
+    fn parse_span_attr(open_tag: &str, name: &str) -> Option<u32> {
+        Self::extract_attr(open_tag, name)?.trim().parse().ok()
+    }
+
+    /// Count visible (non-tag) chars of a raw TEI fragment, mirroring
+    /// `strip_xml_tags` semantics (chars inside `<...>` are not counted).
+    fn visible_char_count(s: &str) -> usize {
+        let mut count = 0usize;
+        let mut in_tag = false;
+        for ch in s.chars() {
+            match ch {
+                '<' => in_tag = true,
+                '>' => in_tag = false,
+                _ if !in_tag => count += 1,
+                _ => {}
+            }
+        }
+        count
+    }
+
+    /// Deterministic SHA-256 cell digest over (row, column, colspan,
+    /// rowspan, text, coordinates). Location (span/section) is intentionally
+    /// excluded so the digest is pure source-content evidence;
+    /// materialization binds revision + section into the graph VID.
+    fn cell_digest(
+        row: u32,
+        column: u32,
+        colspan: u32,
+        rowspan: u32,
+        text: &str,
+        coords: Option<&str>,
+    ) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(row.to_le_bytes());
+        hasher.update(column.to_le_bytes());
+        hasher.update(colspan.to_le_bytes());
+        hasher.update(rowspan.to_le_bytes());
+        hasher.update(text.as_bytes());
+        hasher.update(coords.unwrap_or("").as_bytes());
+        hex::encode(hasher.finalize())
+    }
+
+    /// Deterministic SHA-256 table digest over table_id + caption +
+    /// coordinates + every cell digest (document order).
+    fn table_digest(
+        table_id: &str,
+        caption: &str,
+        coords: Option<&str>,
+        cells: &[TableCell],
+    ) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(table_id.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(caption.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(coords.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        for cell in cells {
+            hasher.update(cell.digest.as_bytes());
+            hasher.update(b"\n");
+        }
+        hex::encode(hasher.finalize())
+    }
+
     /// Extract the analytic title from a biblStruct entry.
     fn extract_citation_title(entry: &str) -> Option<String> {
         let analytic = entry
@@ -1237,6 +1824,7 @@ impl ParserPort for GrobidParser {
         let body_text = Self::extract_body(&tei_xml);
         let sections = Self::extract_sections(&tei_xml);
         let citations = Self::extract_citations(&tei_xml);
+        let (tables, table_missingness) = Self::extract_tables(&tei_xml);
 
         let sections_with_path_id = sections.iter().filter(|s| s.path_id.is_some()).count();
         let max_depth = sections
@@ -1245,6 +1833,7 @@ impl ParserPort for GrobidParser {
             .map(|p| p.split('.').count())
             .max()
             .unwrap_or(0);
+        let table_cells: usize = tables.iter().map(|t| t.cells.len()).sum();
 
         tracing::info!(
             paper_id,
@@ -1255,6 +1844,9 @@ impl ParserPort for GrobidParser {
             sections_with_path_id,
             max_tree_depth = max_depth,
             citations = citations.len(),
+            tables = tables.len(),
+            table_cells,
+            table_missingness = ?table_missingness,
             pdf_hash = %pdf_hash,
             "GROBID parsed: extraction complete"
         );
@@ -1276,6 +1868,8 @@ impl ParserPort for GrobidParser {
             layout_json: None, // ODL provides this separately
             tei_xml: Some(tei_xml),
             pdf_hash,
+            tables,
+            table_missingness,
         })
     }
 }
@@ -1799,6 +2393,266 @@ mod tests {
         assert_eq!(sections[0].path_id.as_deref(), Some("1"));
         assert_eq!(sections[1].path_id.as_deref(), Some("2"));
     }
+
+    // ─── M400 S02 T01: deterministic TEI table extraction ───
+
+    /// Flat TEI: a `<figure type="table">` (no caption head, so it creates
+    /// no section boundary) inside the Results window maps to section "1";
+    /// cells carry row/column/colspan/text, spans land on the section's
+    /// stripped text, and digests are 64-hex.
+    #[test]
+    fn test_extract_tables_flat_section_resolved() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p>Benchmarks.</p><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><table><row><cell>Model</cell><cell>Score</cell></row><row><cell>GEPA</cell><cell>54.85</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, missingness) = GrobidParser::extract_tables(tei);
+        assert_eq!(
+            missingness, None,
+            "tables found → no article-level missingness"
+        );
+        assert_eq!(tables.len(), 1);
+        let table = &tables[0];
+        assert_eq!(table.table_id, "tab_0");
+        assert_eq!(table.section_path_id.as_deref(), Some("1"));
+        assert_eq!(table.section_ordinal, Some(0));
+        assert_eq!(table.caption, "", "no <head> in figure → empty caption");
+        assert_eq!(table.cells.len(), 4);
+        assert_eq!(table.cells[0].row, 0);
+        assert_eq!(table.cells[0].column, 0);
+        assert_eq!(table.cells[0].text, "Model");
+        assert_eq!(table.cells[1].row, 0);
+        assert_eq!(table.cells[1].column, 1);
+        assert_eq!(table.cells[1].text, "Score");
+        assert_eq!(table.cells[3].text, "54.85");
+        assert_eq!(table.source_digest.len(), 64);
+        for cell in &table.cells {
+            assert_eq!(cell.digest.len(), 64);
+        }
+        // Spans must land on the section's stripped text.
+        let sections = GrobidParser::extract_sections(tei);
+        let sec = &sections[0];
+        assert_eq!(sec.path_id.as_deref(), Some("1"));
+        for cell in &table.cells {
+            let span = cell.span.expect("resolved table cells carry spans");
+            let slice = &sec.text[span.start as usize..span.end as usize];
+            assert_eq!(
+                slice.trim(),
+                cell.text,
+                "span must point at the cell text in the section"
+            );
+        }
+        // Section identity must be consistent with the section extractor.
+        assert_eq!(sec.title, "Results");
+    }
+
+    /// Nested TEI: a table in a div's direct content maps to that div's
+    /// path; a table inside a nested div maps to the nested path. Spans are
+    /// verified against each section's stripped text.
+    #[test]
+    fn test_extract_tables_nested_section_mapping_and_spans() {
+        let tei = r##"<TEI><text><body><div n="1"><head>Introduction</head><p>Intro text.</p><figure type="table" xml:id="tab_0"><head>Table 1 :</head><table><row><cell>h1</cell><cell>h2</cell></row><row><cell>42</cell><cell>7</cell></row></table></figure><div n="1.1"><head>Setup</head><p>Setup text.</p></div></div></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        assert_eq!(tables.len(), 1);
+        let table = &tables[0];
+        assert_eq!(table.section_path_id.as_deref(), Some("1"));
+        assert_eq!(table.section_ordinal, Some(0));
+        assert_eq!(table.caption, "Table 1 :");
+        assert_eq!(table.cells.len(), 4);
+        let sections = GrobidParser::extract_sections(tei);
+        let sec = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1");
+        assert!(sec.text.contains("Intro text."));
+        for cell in &table.cells {
+            let span = cell.span.expect("nested resolved cells carry spans");
+            let slice = &sec.text[span.start as usize..span.end as usize];
+            assert_eq!(slice.trim(), cell.text);
+        }
+    }
+
+    /// Flat TEI with a caption `<head>` inside the figure: the caption head
+    /// becomes a section boundary (mirroring `extract_sections_flat`), so the
+    /// table lands in its own caption window with a collision-resolved path
+    /// that exists in the section list — consistency, never invention.
+    #[test]
+    fn test_extract_tables_caption_head_creates_consistent_section() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p>Benchmarks.</p><figure xmlns="http://www.tei-c.org/ns/1.0" type="table" xml:id="tab_0"><head>Table 1 :</head><table><row><cell>a</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        let sections = GrobidParser::extract_sections(tei);
+        assert_eq!(sections.len(), 2, "caption head is a flat section boundary");
+        assert_eq!(sections[1].title, "Table 1 :");
+        let section_paths: std::collections::HashSet<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        let table = &tables[0];
+        assert_eq!(table.caption, "Table 1 :");
+        let path = table
+            .section_path_id
+            .as_deref()
+            .expect("table resolves to its caption window");
+        assert!(
+            section_paths.contains(path),
+            "table path '{path}' must exist among section paths"
+        );
+        let ordinal = table.section_ordinal.expect("ordinal resolved");
+        assert_eq!(
+            sections[ordinal].path_id.as_deref(),
+            Some(path),
+            "ordinal must point at the section with the table's path"
+        );
+    }
+
+    /// A table in a top-level gap (outside every section text window) is
+    /// reported with `section_path_id: None` and no spans — typed
+    /// missingness, never guessed into a neighbour section.
+    #[test]
+    fn test_extract_tables_gap_table_path_unresolved() {
+        let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><figure type="table" xml:id="tab_0"><table><row><cell>gap</cell></row></table></figure><div n="2"><head>Methods</head><p>Beta</p></div></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        assert_eq!(tables.len(), 1);
+        let table = &tables[0];
+        assert!(
+            table.section_path_id.is_none(),
+            "inter-div gap belongs to no section"
+        );
+        assert!(table.section_ordinal.is_none());
+        assert!(
+            table.cells[0].span.is_none(),
+            "no section text window → no source span"
+        );
+        assert_eq!(table.cells[0].text, "gap");
+    }
+
+    /// TEI without any `<table>` element: article-level typed missingness
+    /// `NoTableElements` (R087 — an empty Vec alone cannot distinguish this
+    /// from a parser that did not populate tables).
+    #[test]
+    fn test_extract_tables_no_tables_typed_missingness() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>No tables here.</p></body></text></TEI>"##;
+        let (tables, missingness) = GrobidParser::extract_tables(tei);
+        assert!(tables.is_empty());
+        assert_eq!(missingness, Some(TableMissingReason::NoTableElements));
+
+        // No body at all → also typed missingness, not a crash.
+        let header_only = r##"<TEI><teiHeader><title>No body</title></teiHeader></TEI>"##;
+        let (tables, missingness) = GrobidParser::extract_tables(header_only);
+        assert!(tables.is_empty());
+        assert_eq!(missingness, Some(TableMissingReason::NoTableElements));
+    }
+
+    /// A `<table>` element with zero rows / zero cells is fail-closed: typed
+    /// per-table missingness `Malformed`, never invented cells.
+    #[test]
+    fn test_extract_tables_malformed_zero_rows() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><figure type="table" xml:id="tab_0"><table></table></figure></body></text></TEI>"##;
+        let (tables, article_missingness) = GrobidParser::extract_tables(tei);
+        assert_eq!(tables.len(), 1);
+        assert_eq!(article_missingness, None, "a <table> element was found");
+        let table = &tables[0];
+        assert!(table.cells.is_empty());
+        assert_eq!(
+            table.missingness,
+            Some(TableMissingReason::Malformed("zero rows".into()))
+        );
+
+        // Rows present but no cells.
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><figure type="table" xml:id="tab_0"><table><row></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        assert_eq!(
+            tables[0].missingness,
+            Some(TableMissingReason::Malformed(
+                "rows found but zero cells".into()
+            ))
+        );
+    }
+
+    /// `cols="N"` colspan drives the cumulative column index; empty cells
+    /// are preserved so the grid stays aligned for fidelity comparison.
+    #[test]
+    fn test_extract_tables_colspan_column_accounting_and_empty_cells() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell cols="2">span</cell><cell>b</cell></row><row><cell>x</cell><cell></cell><cell>z</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        let table = &tables[0];
+        assert_eq!(table.cells.len(), 5);
+        let c0 = &table.cells[0];
+        assert_eq!(
+            (c0.row, c0.column, c0.colspan, c0.text.as_str()),
+            (0, 0, 2, "span")
+        );
+        let c1 = &table.cells[1];
+        assert_eq!(
+            (c1.row, c1.column, c1.colspan, c1.text.as_str()),
+            (0, 2, 1, "b"),
+            "column accounts for the preceding colspan"
+        );
+        let empty = &table.cells[3];
+        assert_eq!((empty.row, empty.column, empty.text.as_str()), (1, 1, ""));
+        assert_eq!(
+            table.cells[4].column, 2,
+            "empty cell still occupies a grid column"
+        );
+    }
+
+    /// Nested tags inside a cell (`<ref>`/`<p>`) are stripped for text but
+    /// the span still covers only visible chars in the section text.
+    #[test]
+    fn test_extract_tables_cell_nested_tags_span() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>See <ref type="bibr" target="#b1">[1]</ref> now</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        let cell = &tables[0].cells[0];
+        assert_eq!(cell.text, "See [1] now");
+        let sections = GrobidParser::extract_sections(tei);
+        let sec = &sections[0];
+        let span = cell.span.expect("span present");
+        let slice = &sec.text[span.start as usize..span.end as usize];
+        assert_eq!(slice.trim(), "See [1] now");
+    }
+
+    /// Extraction is deterministic: the same TEI yields identical digests;
+    /// a changed cell text changes the cell and table digests.
+    #[test]
+    fn test_extract_tables_digest_determinism() {
+        let tei_a = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>GEPA</cell><cell>54.85</cell></row></table></figure></body></text></TEI>"##;
+        let tei_b = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0"><table><row><cell>GEPA</cell><cell>55.00</cell></row></table></figure></body></text></TEI>"##;
+        let (tables_a, _) = GrobidParser::extract_tables(tei_a);
+        let (tables_a2, _) = GrobidParser::extract_tables(tei_a);
+        let (tables_b, _) = GrobidParser::extract_tables(tei_b);
+        assert_eq!(tables_a, tables_a2, "identical TEI → identical tables");
+        assert_eq!(tables_a[0].source_digest, tables_a2[0].source_digest);
+        assert_ne!(
+            tables_a[0].source_digest, tables_b[0].source_digest,
+            "changed cell text must change the source digest"
+        );
+        assert_ne!(tables_a[0].cells[1].digest, tables_b[0].cells[1].digest);
+    }
+
+    /// Without an `xml:id`, the table id falls back to the deterministic
+    /// ordinal key "table-{index}".
+    #[test]
+    fn test_extract_tables_ordinal_fallback_without_xml_id() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table"><table><row><cell>a</cell></row></table></figure><figure type="table"><table><row><cell>b</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        assert_eq!(tables.len(), 2);
+        assert_eq!(tables[0].table_id, "table-1");
+        assert_eq!(tables[1].table_id, "table-2");
+    }
+
+    /// Cell-level `coords` attribute (rare in GROBID) is preserved and
+    /// participates in the cell digest; a figure `coords` becomes the
+    /// table's coordinates.
+    #[test]
+    fn test_extract_tables_coordinates_preserved() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><figure type="table" xml:id="tab_0" coords="50,100,550,300;1"><table><row><cell coords="60,110,120,130;1">a</cell></row></table></figure></body></text></TEI>"##;
+        let (tables, _) = GrobidParser::extract_tables(tei);
+        let table = &tables[0];
+        assert_eq!(table.coordinates.as_deref(), Some("50,100,550,300;1"));
+        assert_eq!(
+            table.cells[0].coordinates.as_deref(),
+            Some("60,110,120,130;1")
+        );
+        // Table id extraction must not confuse `id=` inside `xml:id=`.
+        assert_eq!(table.table_id, "tab_0");
+    }
 }
 
 #[cfg(test)]
@@ -1953,6 +2807,89 @@ mod real_tei_tests {
             citations.len() >= 70,
             "expected large bibliography ≥70 citations, got {}",
             citations.len()
+        );
+    }
+
+    /// M400 S02 T01 real-TEI pin (hub 2507.19457): the three `<figure
+    /// type="table">` tables must extract with their GROBID `xml:id`, cell
+    /// counts, captions and 64-hex digests, deterministically across runs,
+    /// and every resolved section identity must exist among the section
+    /// extractor's paths with the matching ordinal.
+    #[test]
+    fn test_real_grobid_tei_tables_2507_19457() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
+        );
+        let tei = match std::fs::read_to_string(path) {
+            Ok(t) => t,
+            Err(_) => {
+                eprintln!("skipping real TEI test (file not found): {path}");
+                return;
+            }
+        };
+        let (tables, missingness) = GrobidParser::extract_tables(&tei);
+        let (tables_again, _) = GrobidParser::extract_tables(&tei);
+        assert_eq!(
+            tables, tables_again,
+            "table extraction must be deterministic across runs"
+        );
+        assert_eq!(missingness, None, "hub TEI has <table> elements");
+        assert_eq!(
+            tables.len(),
+            3,
+            "hub TEI expected 3 tables, got {}",
+            tables.len()
+        );
+        // tab_0 is the benchmark table: caption, 10 rows, 79 cells.
+        let tab_0 = tables
+            .iter()
+            .find(|t| t.table_id == "tab_0")
+            .expect("tab_0 present");
+        assert_eq!(tab_0.caption, "Table 1 :");
+        assert_eq!(tab_0.cells.len(), 79, "tab_0 expected 79 cells");
+        let rows: std::collections::HashSet<u32> = tab_0.cells.iter().map(|c| c.row).collect();
+        assert_eq!(rows.len(), 10, "tab_0 expected 10 rows");
+        // Every table and cell digest is a 64-hex SHA-256.
+        for table in &tables {
+            assert_eq!(table.source_digest.len(), 64);
+            assert!(table.source_digest.bytes().all(|b| b.is_ascii_hexdigit()));
+            for cell in &table.cells {
+                assert_eq!(cell.digest.len(), 64);
+                assert!(cell.digest.bytes().all(|b| b.is_ascii_hexdigit()));
+            }
+        }
+        // Section identity consistency: every resolved path exists among the
+        // section extractor's paths and the ordinal points at that section.
+        let sections = GrobidParser::extract_sections(&tei);
+        let section_paths: std::collections::HashSet<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        for table in &tables {
+            if let Some(path) = table.section_path_id.as_deref() {
+                assert!(
+                    section_paths.contains(path),
+                    "table '{}' path '{path}' must exist among section paths",
+                    table.table_id
+                );
+                let ordinal = table.section_ordinal.expect("ordinal with path");
+                assert_eq!(
+                    sections[ordinal].path_id.as_deref(),
+                    Some(path),
+                    "table '{}' ordinal must point at its section",
+                    table.table_id
+                );
+            }
+        }
+        println!(
+            "hub TEI tables: {} tables, cells={}, ids={:?}",
+            tables.len(),
+            tables.iter().map(|t| t.cells.len()).sum::<usize>(),
+            tables
+                .iter()
+                .map(|t| t.table_id.clone())
+                .collect::<Vec<_>>()
         );
     }
 

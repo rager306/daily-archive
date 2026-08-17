@@ -1292,6 +1292,7 @@ mod tests {
             stage_id: step.into(),
             resolved_from: None,
             cache_key_sha256: Some(format!("key-{step}")),
+            admission: None,
             disposition: StageDisposition::CacheHit {
                 output_sha256: step.repeat(64),
             },
@@ -1413,6 +1414,8 @@ mod tests {
                 }],
                 layout_json: None,
                 tei_xml: None,
+                tables: Vec::new(),
+                table_missingness: None,
                 pdf_hash: source_sha.clone(),
             };
             let entities = Vec::<ExtractedEntity>::new();
@@ -1497,6 +1500,7 @@ mod tests {
                     stage_id: "parse".into(),
                     resolved_from: None,
                     cache_key_sha256: Some(parse_key_sha),
+                    admission: None,
                     disposition: StageDisposition::CacheHit {
                         output_sha256: sha256(&parse_payload),
                     },
@@ -1506,6 +1510,7 @@ mod tests {
                     stage_id: "extraction_compute".into(),
                     resolved_from: None,
                     cache_key_sha256: Some(extraction_key_sha),
+                    admission: None,
                     disposition: StageDisposition::CacheHit {
                         output_sha256: sha256(&extract_payload),
                     },
@@ -1515,6 +1520,7 @@ mod tests {
                     stage_id: "embedding".into(),
                     resolved_from: None,
                     cache_key_sha256: Some(embedding_key_sha),
+                    admission: None,
                     disposition: StageDisposition::CacheHit {
                         output_sha256: sha256(&embed_payload),
                     },

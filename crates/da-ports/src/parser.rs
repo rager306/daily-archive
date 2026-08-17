@@ -26,6 +26,125 @@ pub struct ParsedArticle {
     pub layout_json: Option<serde_json::Value>,
     pub tei_xml: Option<String>,
     pub pdf_hash: String,
+    /// Deterministic TEI table structures (M400 S02 T01). `#[serde(default)]`
+    /// keeps legacy cached/fixture JSON decodable (R085) — legacy payloads
+    /// without the field deserialize to an empty Vec.
+    #[serde(default)]
+    pub tables: Vec<ExtractedTable>,
+    /// Typed missingness when the source TEI has no table structure at all
+    /// (R087 — no silent loss: an empty `tables` Vec alone cannot distinguish
+    /// "document genuinely has no tables" from "parser did not populate
+    /// tables"). `None` means the parser does not extract tables (legacy
+    /// payload / HTML parser) or extraction ran and found tables.
+    #[serde(default)]
+    pub table_missingness: Option<TableMissingReason>,
+}
+
+/// A source char span `[start, end)` (end exclusive) inside a section's
+/// stripped text (M400 S02 T01). Offsets are 0-based char offsets into
+/// `Section.text`, mirroring `CitationAnchor.offset` semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CharSpan {
+    pub start: u32,
+    pub end: u32,
+}
+
+/// Typed missingness reason for TEI table structure (M400 S02 T01).
+///
+/// `ParsedArticle.table_missingness` records the article-level reason when no
+/// `<table>` element exists in the source TEI; `ExtractedTable.missingness`
+/// records per-table reasons when a `<table>` element was found but its
+/// structure is unusable. Either way the parser is fail-closed: cells are
+/// never invented and neither source is overwritten.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TableMissingReason {
+    /// The source TEI contains no `<table>` element at all.
+    NoTableElements,
+    /// A `<table>` element was found but its structure could not be parsed
+    /// deterministically (e.g. zero rows or zero cells).
+    Malformed(String),
+}
+
+/// A single table cell from deterministic TEI structure (M400 S02 T01).
+///
+/// Cells are preserved in document order including empty `<cell></cell>`
+/// entries, so column alignment survives for visual-versus-structural
+/// fidelity comparison (T02) — nothing is collapsed or invented.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TableCell {
+    /// 0-based row index within the table.
+    pub row: u32,
+    /// 0-based column index within the row, accounting for the `cols`
+    /// (colspan) of every preceding cell (cumulative grid position).
+    pub column: u32,
+    /// TEI `cols` attribute (colspan); default 1.
+    #[serde(default = "default_one")]
+    pub colspan: u32,
+    /// TEI `rows` attribute (rowspan); default 1.
+    #[serde(default = "default_one")]
+    pub rowspan: u32,
+    /// Trimmed visible text of the cell. Empty for `<cell></cell>` — empty
+    /// cells are preserved so the grid stays aligned.
+    pub text: String,
+    /// GROBID `coords` attribute on the cell when emitted (rare), else None.
+    #[serde(default)]
+    pub coordinates: Option<String>,
+    /// Source char span of the cell's visible content inside the containing
+    /// section's stripped text. `None` when the table is not inside any
+    /// section text window (typed missingness, never guessed).
+    #[serde(default)]
+    pub span: Option<CharSpan>,
+    /// Deterministic SHA-256 digest of (row, column, colspan, rowspan, text,
+    /// coordinates) — the cell's source-digest evidence (R087).
+    pub digest: String,
+}
+
+fn default_one() -> u32 {
+    1
+}
+
+/// A deterministic TEI table structure (M400 S02 T01).
+///
+/// GROBID emits tables as `<figure type="table" xml:id="tab_0"><head>…</head>
+/// <table><row><cell …>…</cell></row></table></figure>` inside the `<body>`.
+/// Section identity mirrors the section extractor exactly: a table maps to
+/// the `path_id` of the section text window that contains it, or `None` when
+/// it sits outside every section window (top-level gap / trailing region).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtractedTable {
+    /// Stable table identifier: the `xml:id` of the enclosing
+    /// `<figure type="table">` (e.g. "tab_0") or of the `<table>` itself,
+    /// falling back to the deterministic ordinal key "table-{index}".
+    pub table_id: String,
+    /// `path_id` of the section whose text window contains this table.
+    /// `None` when the table is outside every section window — typed
+    /// missingness at ingest, never guessed.
+    #[serde(default)]
+    pub section_path_id: Option<String>,
+    /// 0-based ordinal of that section in `ParsedArticle.sections` (section
+    /// titles repeat, so the ordinal disambiguates, mirroring
+    /// `ExtractedEntity.section_ordinal`). `None` together with
+    /// `section_path_id`.
+    #[serde(default)]
+    pub section_ordinal: Option<usize>,
+    /// Caption from the enclosing `<figure><head>` (e.g. "Table 1 :").
+    #[serde(default)]
+    pub caption: String,
+    /// GROBID `coords` attribute on the enclosing figure/table when emitted,
+    /// else None. Format "x1,y1,x2,y2;page" (page is the last value).
+    #[serde(default)]
+    pub coordinates: Option<String>,
+    /// Cells in document order (row-major).
+    #[serde(default)]
+    pub cells: Vec<TableCell>,
+    /// Deterministic SHA-256 digest of table_id + caption + coordinates +
+    /// every cell digest — the table's source-digest evidence (R087).
+    pub source_digest: String,
+    /// Typed missingness when this table's structure is unusable (e.g. found
+    /// but zero rows/cells) — fail-closed, never invented cells.
+    #[serde(default)]
+    pub missingness: Option<TableMissingReason>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

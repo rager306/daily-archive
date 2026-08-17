@@ -59,6 +59,8 @@ fn revision_request(revision: u32, section_count: usize) -> RevisionMaterializat
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: sha(u64::from(revision)),
         },
         manifestations: vec![RevisionManifestationInput {

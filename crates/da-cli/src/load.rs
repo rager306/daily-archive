@@ -1602,6 +1602,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let payload = serde_json::to_vec(&parsed).unwrap();
@@ -1702,6 +1704,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -1765,6 +1769,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -1829,6 +1835,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -1899,6 +1907,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(

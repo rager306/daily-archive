@@ -58,7 +58,10 @@ pub use pdf_classification::{
     ClassificationError, ClassificationResult, NullClassifier, PdfClassificationPort,
 };
 
-pub use parser::{CitationAnchor, CitationEntry, ParserPort, Section};
+pub use parser::{
+    CharSpan, CitationAnchor, CitationEntry, ExtractedTable, ParserPort, Section, TableCell,
+    TableMissingReason,
+};
 pub use promotion::{PromotionCommitError, PromotionCommitSink, PromotionDecision};
 pub use tex_source::{
     TexAnalysisReportStore, TexAnalysisRequest, TexArchiveError, TexArchiveInventory,
@@ -99,7 +102,84 @@ mod serde_roundtrip_tests {
             layout_json: Some(serde_json::json!({"pages": 10})),
             tei_xml: None,
             pdf_hash: "abc123".into(),
+            tables: vec![],
+            table_missingness: Some(TableMissingReason::NoTableElements),
         });
+    }
+
+    /// M400 S02 T01: a ParsedArticle carrying extracted TEI tables survives
+    /// roundtrip with table_id, section identity, coordinates, cells, spans
+    /// and digests intact.
+    #[test]
+    fn roundtrip_parsed_article_with_tables() {
+        roundtrip_json(&ParsedArticle {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            abstract_text: "a".into(),
+            body_text: "b".into(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "abc123".into(),
+            tables: vec![ExtractedTable {
+                table_id: "tab_0".into(),
+                section_path_id: Some("4".into()),
+                section_ordinal: Some(3),
+                caption: "Table 1 :".into(),
+                coordinates: Some("90,91,428,331;1".into()),
+                cells: vec![TableCell {
+                    row: 0,
+                    column: 0,
+                    colspan: 2,
+                    rowspan: 1,
+                    text: "Model".into(),
+                    coordinates: None,
+                    span: Some(CharSpan { start: 12, end: 17 }),
+                    digest: "a".repeat(64),
+                }],
+                source_digest: "b".repeat(64),
+                missingness: None,
+            }],
+            table_missingness: None,
+        });
+    }
+
+    /// M400 S02 T01: ExtractedTable + TableCell + TableMissingReason wire
+    /// formats are stable (serde tag snake_case for the missingness enum).
+    #[test]
+    fn roundtrip_table_types() {
+        roundtrip_json(&TableCell {
+            row: 2,
+            column: 1,
+            colspan: 1,
+            rowspan: 3,
+            text: "42.33".into(),
+            coordinates: Some("10,20,30,40;2".into()),
+            span: None,
+            digest: "c".repeat(64),
+        });
+        roundtrip_json(&TableMissingReason::NoTableElements);
+        roundtrip_json(&TableMissingReason::Malformed("zero rows".into()));
+        let json = serde_json::to_string(&TableMissingReason::NoTableElements).unwrap();
+        assert_eq!(json, "\"no_table_elements\"");
+    }
+
+    /// M400 S02 T01 (R085): legacy ParsedArticle JSON without `tables` /
+    /// `table_missingness` must deserialize with typed defaults — empty Vec
+    /// and None missingness — so cached fixtures and older payloads stay
+    /// decodable.
+    #[test]
+    fn roundtrip_parsed_article_legacy_omits_tables() {
+        let json = r#"{"paper_id":"2507.19457","title":"GEPA","abstract_text":"a","body_text":"b","sections":[],"citations":[],"layout_json":null,"tei_xml":null,"pdf_hash":"abc123"}"#;
+        let article: ParsedArticle =
+            serde_json::from_str(json).expect("legacy ParsedArticle deserializes");
+        assert_eq!(article.paper_id, "2507.19457");
+        assert!(article.tables.is_empty(), "legacy JSON has no tables");
+        assert!(
+            article.table_missingness.is_none(),
+            "legacy payload does not claim typed missingness"
+        );
     }
 
     #[test]

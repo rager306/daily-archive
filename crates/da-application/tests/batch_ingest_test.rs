@@ -60,6 +60,8 @@ impl ParserPort for MockParser {
             citations: self.citations.clone(),
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: format!("hash_{paper_id}"),
         })
     }
@@ -134,6 +136,8 @@ async fn materializer_only_ingest_has_no_fake_compute_ports() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-hash".into(),
     };
     ingest
@@ -160,6 +164,8 @@ async fn cached_parsed_materialization_replay_is_idempotent() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-hash".into(),
     };
 
@@ -207,6 +213,8 @@ async fn identical_materialization_replay_has_no_physical_writes() {
         }],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-replay-hash".into(),
     };
 
@@ -265,6 +273,8 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-hash-long".into(),
     };
     let ingest_result = ingest
@@ -364,6 +374,8 @@ async fn changed_embedding_fails_closed_until_storage_upsert_is_available() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-hash".into(),
     };
     ingest
@@ -395,6 +407,8 @@ async fn cached_catalog_provenance_replay_is_idempotent() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "cached-hash".into(),
     };
 
@@ -802,6 +816,8 @@ async fn revision_ingest_emits_additive_revision_owned_bibliography_edges() {
         ],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: source_sha256.clone(),
     };
     let revision_context = || RevisionContentContext {
@@ -1009,6 +1025,8 @@ async fn revision_ingest_writes_in_text_anchors_on_revision_owned_edges_only() {
         ],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: source_sha256.clone(),
     };
     let revision_context = || RevisionContentContext {

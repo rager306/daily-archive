@@ -44,6 +44,8 @@ fn parsed() -> ParsedArticle {
         citations: vec![],
         layout_json: None,
         tei_xml: Some("<figure></figure><figure type=\"table\"></figure>".into()),
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "a".repeat(64),
     }
 }
@@ -111,6 +113,8 @@ fn html_context_conservation_observer_reports_honest_typed_missingness() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "b".repeat(64),
     };
     let snapshot = observe_parsed_article(&parsed, 1024, &BTreeSet::new()).unwrap();
@@ -162,6 +166,8 @@ fn html_context_conservation_observer_partial_identity_keeps_missingness() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "c".repeat(64),
     };
     parsed.sections.push(Section {
@@ -236,6 +242,8 @@ fn html_context_conservation_evidence_reports_honest_deltas() {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "d".repeat(64),
     };
     let entities = vec![

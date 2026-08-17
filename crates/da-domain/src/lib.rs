@@ -49,6 +49,7 @@ pub mod schema;
 pub mod scholarly_evidence;
 pub mod section_summary_policy;
 pub mod source;
+pub mod table_fidelity;
 pub mod temporal;
 pub mod tex_source;
 pub mod validator;
@@ -156,6 +157,10 @@ pub use schema::{
 };
 pub use source::{
     SourceSchema, is_known_source_code, is_known_source_profile, is_known_source_type,
+};
+pub use table_fidelity::{
+    StructuralTable, StructuralTableCell, TableCellCoverage, TableFidelityError,
+    TableFidelityFinding, TableFidelityMissingness, TableFidelityReport, compare_table_fidelity,
 };
 pub use vid::{
     Vid, entity_vid, paper_revision_vid, paper_vid, reference_vid, revision_section_vid,

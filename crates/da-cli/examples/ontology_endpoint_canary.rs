@@ -331,6 +331,7 @@ async fn main() -> Result<()> {
             stage_id: "semantic_enrichment".into(),
             resolved_from: None,
             cache_key_sha256: None,
+            admission: None,
             disposition: StageDisposition::Executed {
                 output_sha256: format!(
                     "sha256:{}",
@@ -440,6 +441,8 @@ fn parsed(paper_id: &str) -> ParsedArticle {
         citations: vec![],
         layout_json: None,
         tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
         pdf_hash: "fixture-sha256".into(),
     }
 }

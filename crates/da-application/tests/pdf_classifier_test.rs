@@ -55,6 +55,8 @@ impl ParserPort for MockParser {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "hash".into(),
         })
     }

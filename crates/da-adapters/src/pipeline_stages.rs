@@ -503,6 +503,8 @@ mod tests {
                 citations: vec![],
                 layout_json: None,
                 tei_xml: None,
+                tables: Vec::new(),
+                table_missingness: None,
                 pdf_hash: "a".repeat(64),
             })
         }
@@ -596,6 +598,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let output = stage
@@ -674,6 +678,8 @@ mod tests {
             citations: vec![],
             layout_json: None,
             tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let output = stage

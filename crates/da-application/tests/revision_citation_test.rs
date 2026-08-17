@@ -65,6 +65,8 @@ fn parsed_article(
         layout_json: None,
         tei_xml: None,
         pdf_hash,
+        tables: Vec::new(),
+        table_missingness: None,
     }
 }
 
