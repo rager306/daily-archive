@@ -62,6 +62,18 @@ impl GrobidProfile {
             Self::TEI_COORDINATES
         )
     }
+
+    /// The `teiCoordinates` JSON array sent to GROBID, rendered from
+    /// [`Self::TEI_COORDINATES`] so the request body can never drift from the
+    /// configuration fingerprint (D204 — M400 S03 T01: `formula` must reach
+    /// the REST call, not just the cache key).
+    pub fn tei_coordinates_json() -> String {
+        let items: Vec<String> = Self::TEI_COORDINATES
+            .split(',')
+            .map(|c| format!("\"{c}\""))
+            .collect();
+        format!("[{}]", items.join(","))
+    }
 }
 
 /// GROBID HTTP adapter for PDF → scholarly structure (TEI XML).
@@ -166,9 +178,10 @@ impl GrobidParser {
     ///   ADR-053 Layer F cross-paper edges (predecessor_of, superseded_by).
     /// - `consolidateHeader=1`: enrich paper header (title, authors, DOI, abstract)
     ///   via Crossref. Improves author disambiguation (Layer G) and DOI coverage.
-    /// - `teiCoordinates=["figure","table","note"]`: add PDF coordinates for
-    ///   figures, tables, and footnotes. Enables Layer I figure image cropping
-    ///   and provenance tracking.
+    /// - `teiCoordinates=["figure","table","note","formula"]`: add PDF
+    ///   coordinates for figures, tables, footnotes, and formulas (M400 S03
+    ///   T01 adds `formula` so GROBID emits `coords` on `<formula>` elements).
+    ///   Enables Layer I figure image cropping and provenance tracking.
     ///
     /// These parameters are GROBID 0.9.0 REST API options (see GROBID docs).
     /// They add ~2-5s per paper for Crossref lookups; acceptable for batch ingest.
@@ -197,7 +210,7 @@ impl GrobidParser {
                     "0"
                 },
             )
-            .text("teiCoordinates", "[\"figure\",\"table\",\"note\"]");
+            .text("teiCoordinates", GrobidProfile::tei_coordinates_json());
 
         let resp = self
             .client
@@ -2200,6 +2213,29 @@ mod tests {
             with_timeout.configuration_fingerprint(),
             GrobidProfile::rich().configuration_fingerprint(),
             "timeout is operational policy, not a content-key input"
+        );
+    }
+
+    #[test]
+    fn tei_coordinates_json_matches_fingerprint_and_includes_formula() {
+        // M400 S03 T01: the REST body must request formula coordinates so
+        // GROBID emits `coords` on `<formula>` elements — the request can
+        // never silently drop a coordinate group the fingerprint claims.
+        assert_eq!(
+            GrobidProfile::tei_coordinates_json(),
+            "[\"figure\",\"table\",\"note\",\"formula\"]"
+        );
+        // Rendered from the same constant the fingerprint uses: splitting the
+        // JSON back out must reproduce the constant exactly.
+        let json = GrobidProfile::tei_coordinates_json();
+        let inner = json.trim_start_matches('[').trim_end_matches(']');
+        let items: Vec<&str> = inner.split(',').map(|s| s.trim_matches('"')).collect();
+        assert_eq!(items.join(","), GrobidProfile::TEI_COORDINATES);
+        assert!(
+            GrobidProfile::rich()
+                .configuration_fingerprint()
+                .contains("teiCoordinates=figure,table,note,formula"),
+            "fingerprint keeps the formula coordinate group"
         );
     }
 
