@@ -755,6 +755,125 @@ impl From<crate::table_fidelity::TableFidelityError> for TableCandidateError {
     }
 }
 
+// ─── Schema-as-code registrations (ADR-040 §11.1 / ADR-045 Wave E) ───
+// Mirrors data/ontology/node_schemas.yaml (ADR-050 DATA source) so the
+// compiled `all_node_schemas()` registry stays consistent with the external
+// meta-ontology — `da schema-check` / `da audit-fields` (ADR-045 Wave E)
+// audit pipeline create_node sites against this compiled registry.
+
+/// Non-authoritative revision-grounded table candidate DATA schema.
+#[derive(Debug, Default)]
+pub struct TableCandidateSchema;
+
+impl crate::schema::NodeSchemaDef for TableCandidateSchema {
+    fn label(&self) -> &'static str {
+        "TableCandidate"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("vid", FieldType::String),
+            ("revision_vid", FieldType::String),
+            ("artifact_id", FieldType::String),
+            ("detector_name", FieldType::String),
+            ("detector_fingerprint", FieldType::String),
+            ("image_sha256", FieldType::String),
+            ("asset_path", FieldType::String),
+            ("page_index", FieldType::Integer),
+            ("section_vid", FieldType::String),
+            ("section_title", FieldType::String),
+            ("section_ordinal", FieldType::Integer),
+            ("caption", FieldType::String),
+            ("source_pdf_sha256", FieldType::String),
+            ("tei_table_id", FieldType::String),
+            ("tei_source_digest", FieldType::String),
+            ("coverage_visual_cells", FieldType::Integer),
+            ("coverage_tei_cells", FieldType::Integer),
+            ("coverage_matched", FieldType::Integer),
+            ("coverage_unmatched_visual", FieldType::Integer),
+            ("coverage_unmatched_tei", FieldType::Integer),
+            ("candidate_metadata_sha256", FieldType::String),
+            ("authoritative", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("tei_coordinates", FieldType::String),
+            ("missingness_kind", FieldType::String),
+            ("materialization_diagnostics", FieldType::String),
+        ]
+    }
+}
+
+/// Structural TEI table cell DATA schema (per-cell row/column/span/digest
+/// evidence — slice demo).
+#[derive(Debug, Default)]
+pub struct TableCellSchema;
+
+impl crate::schema::NodeSchemaDef for TableCellSchema {
+    fn label(&self) -> &'static str {
+        "TableCell"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("vid", FieldType::String),
+            ("candidate_vid", FieldType::String),
+            ("row", FieldType::Integer),
+            ("column", FieldType::Integer),
+            ("colspan", FieldType::Integer),
+            ("rowspan", FieldType::Integer),
+            ("text", FieldType::String),
+            ("digest", FieldType::String),
+            ("authoritative", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("coordinates", FieldType::String),
+            ("span_start", FieldType::Integer),
+            ("span_end", FieldType::Integer),
+            ("visual_text", FieldType::String),
+            ("fidelity_kind", FieldType::String),
+        ]
+    }
+}
+
+/// Typed visual-versus-TEI disagreement evidence DATA schema (no overwrite).
+#[derive(Debug, Default)]
+pub struct TableConflictSchema;
+
+impl crate::schema::NodeSchemaDef for TableConflictSchema {
+    fn label(&self) -> &'static str {
+        "TableConflict"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("vid", FieldType::String),
+            ("candidate_vid", FieldType::String),
+            ("kind", FieldType::String),
+            ("row", FieldType::Integer),
+            ("column", FieldType::Integer),
+            ("visual_text", FieldType::String),
+            ("tei_text", FieldType::String),
+            ("tei_digest", FieldType::String),
+            ("authoritative", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        vec![]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -44,6 +44,7 @@ pub mod prompt_optimization;
 pub mod relation;
 pub mod revision_classification;
 pub mod revision_readiness;
+pub mod revision_schema;
 pub mod scheduler;
 pub mod schema;
 pub mod scholarly_evidence;

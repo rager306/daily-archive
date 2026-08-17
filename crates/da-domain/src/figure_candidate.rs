@@ -190,6 +190,50 @@ pub enum FigureCandidateError {
     IdentityMismatch,
 }
 
+// ─── Schema-as-code registration (ADR-040 §11.1 / ADR-045 Wave E) ───
+// Mirrors data/ontology/node_schemas.yaml (ADR-050 DATA source) so the
+// compiled `all_node_schemas()` registry stays consistent with the external
+// meta-ontology — `da schema-check` / `da audit-fields` (ADR-045 Wave E)
+// audit pipeline create_node sites against this compiled registry.
+
+/// Non-authoritative revision-grounded figure candidate DATA schema.
+#[derive(Debug, Default)]
+pub struct FigureCandidateSchema;
+
+impl crate::schema::NodeSchemaDef for FigureCandidateSchema {
+    fn label(&self) -> &'static str {
+        "FigureCandidate"
+    }
+    fn required_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![
+            ("vid", FieldType::String),
+            ("revision_vid", FieldType::String),
+            ("artifact_id", FieldType::String),
+            ("kind", FieldType::String),
+            ("detector_name", FieldType::String),
+            ("detector_fingerprint", FieldType::String),
+            ("detector_metadata_sha256", FieldType::String),
+            ("source_pdf_sha256", FieldType::String),
+            ("image_sha256", FieldType::String),
+            ("asset_path", FieldType::String),
+            ("page_index", FieldType::Integer),
+            ("section_vid", FieldType::String),
+            ("section_title", FieldType::String),
+            ("section_ordinal", FieldType::Integer),
+            ("caption", FieldType::String),
+            ("candidate_metadata_sha256", FieldType::String),
+            ("authoritative", FieldType::Boolean),
+            ("import_eligible", FieldType::Boolean),
+            ("schema_version", FieldType::Integer),
+        ]
+    }
+    fn optional_fields(&self) -> Vec<(&'static str, crate::schema::FieldType)> {
+        use crate::schema::FieldType;
+        vec![("materialization_diagnostics", FieldType::String)]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

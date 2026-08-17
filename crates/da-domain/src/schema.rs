@@ -57,6 +57,14 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::process::ConflictSchema),
         // ─── Decision plane (ADR-048) ───
         Box::new(crate::process::DecisionSchema),
+        // ─── Revision plane (ADR-058) ───
+        Box::new(crate::revision_schema::PaperRevisionSchema),
+        Box::new(crate::revision_schema::SourceManifestationSchema),
+        // ─── Candidate planes (M400 S01/S02, ADR-053) ───
+        Box::new(crate::figure_candidate::FigureCandidateSchema),
+        Box::new(crate::table_candidate::TableCandidateSchema),
+        Box::new(crate::table_candidate::TableCellSchema),
+        Box::new(crate::table_candidate::TableConflictSchema),
     ]
 }
 
@@ -132,7 +140,7 @@ mod tests {
     #[test]
     fn test_all_node_schemas_has_thirty_six_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 36); // + QualitySignal: real SummaryUseCase output
+        assert_eq!(schemas.len(), 42); // + QualitySignal, + 6 revision/candidate plane types
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         // Publication plane
         assert!(labels.contains(&"Paper"));
@@ -167,6 +175,13 @@ mod tests {
         assert!(labels.contains(&"ResultComparison"));
         assert!(labels.contains(&"FailureEvent"));
         assert!(labels.contains(&"SchedulerTask"));
+        // Revision plane (ADR-058) + candidate planes (M400)
+        assert!(labels.contains(&"PaperRevision"));
+        assert!(labels.contains(&"SourceManifestation"));
+        assert!(labels.contains(&"FigureCandidate"));
+        assert!(labels.contains(&"TableCandidate"));
+        assert!(labels.contains(&"TableCell"));
+        assert!(labels.contains(&"TableConflict"));
     }
 
     #[test]

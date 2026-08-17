@@ -582,9 +582,16 @@ mod tests {
     #[test]
     fn test_schema_resource_uses_all_authoritative_ontology_labels() {
         let labels = data_ontology_labels();
-        assert_eq!(labels.len(), 36);
+        assert_eq!(labels.len(), 42);
         assert!(labels.contains(&"Paper".to_string()));
         assert!(labels.contains(&"Conflict".to_string()));
+        // M400 candidate planes + ADR-058 revision plane are registered DATA.
+        assert!(labels.contains(&"TableCandidate".to_string()));
+        assert!(labels.contains(&"TableCell".to_string()));
+        assert!(labels.contains(&"TableConflict".to_string()));
+        assert!(labels.contains(&"FigureCandidate".to_string()));
+        assert!(labels.contains(&"PaperRevision".to_string()));
+        assert!(labels.contains(&"SourceManifestation".to_string()));
         assert!(!labels.contains(&"HealingAction".to_string()));
         assert!(!labels.contains(&"ExtractionOverride".to_string()));
     }

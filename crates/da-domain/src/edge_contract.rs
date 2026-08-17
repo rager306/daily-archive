@@ -12,7 +12,7 @@ pub use kg_ontology::edge_contract::EdgeContract;
 ///
 /// Keep alphabetized by edge_constant for easy scanning.
 pub fn edge_contracts() -> Vec<EdgeContract> {
-    use crate::relation::{bibliographic, hypergraph, structure};
+    use crate::relation::{bibliographic, conflict, hypergraph, structure};
     vec![
         EdgeContract {
             edge_constant: bibliographic::AFFILIATED_WITH,
@@ -66,8 +66,9 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             // entries without cloning the globally deduped Reference nodes
             // (MEM471). section_count must filter by Section label (D248).
             // M400 S01: the revision also owns its FigureCandidate nodes.
-            target_labels: &["Section", "Reference", "FigureCandidate"],
-            rationale: "Immutable article revision has this revision-scoped Section/Reference/FigureCandidate as a structural part (ADR-058 PIR-011, additive revision-owned edges).",
+            // M400 S02: the revision also owns its TableCandidate nodes.
+            target_labels: &["Section", "Reference", "FigureCandidate", "TableCandidate"],
+            rationale: "Immutable article revision has this revision-scoped Section/Reference/FigureCandidate/TableCandidate as a structural part (ADR-058 PIR-011, additive revision-owned edges).",
         },
         EdgeContract {
             edge_constant: structure::HAS_REVISION,
@@ -86,6 +87,24 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             source_label: "FigureCandidate",
             target_labels: &["Section"],
             rationale: "Figure candidate is grounded in this revision-scoped Section (M400 S01 candidate evidence, never graph truth).",
+        },
+        EdgeContract {
+            edge_constant: structure::GROUNDED_IN,
+            source_label: "TableCandidate",
+            target_labels: &["Section"],
+            rationale: "Table candidate is grounded in this revision-scoped Section (M400 S02 candidate evidence, never graph truth).",
+        },
+        EdgeContract {
+            edge_constant: structure::HAS_PART,
+            source_label: "TableCandidate",
+            target_labels: &["TableCell"],
+            rationale: "Table candidate has this structural TEI cell as a part (M400 S02: cell carries row/column/span/digest evidence).",
+        },
+        EdgeContract {
+            edge_constant: conflict::CONFLICTS_OVER,
+            source_label: "TableCandidate",
+            target_labels: &["TableConflict"],
+            rationale: "Table candidate participates in this typed visual-versus-TEI disagreement (M400 S02, ADR-047 conflict plane; never an overwrite).",
         },
         EdgeContract {
             edge_constant: structure::HAS_TOPIC,
