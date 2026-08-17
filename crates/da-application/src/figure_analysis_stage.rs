@@ -360,6 +360,9 @@ mod tests {
             asset_path: "figures/Figure3.png".into(),
             asset_sha256: image().sha256,
             source_pdf_sha256: "a".repeat(64),
+            revision_vid: None,
+            canonical_id: None,
+            section_vid: None,
             detector_fingerprint: "detector".into(),
             detector_metadata_sha256: "b".repeat(64),
             page_index: 4,
@@ -377,6 +380,7 @@ mod tests {
                 title: "GEPA".into(),
                 text: "GEPA mutates prompts.".into(),
                 truncated: false,
+                section_ordinal: None,
             },
             neighboring_sections: vec![],
             reference_excerpts: vec![FigureReferenceExcerpt {

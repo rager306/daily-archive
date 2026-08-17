@@ -58,6 +58,7 @@ async fn main() -> Result<()> {
             source_pdf_path: args.pdf.clone(),
             source_pdf_sha256: pdf_sha256.clone(),
             canonical_article_dir: args.article_dir.clone(),
+            revision_vid: None,
         },
         &retry_after,
     ));

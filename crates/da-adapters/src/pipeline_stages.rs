@@ -771,6 +771,7 @@ mod tests {
                 source_pdf_path: "/catalog/paper.pdf".into(),
                 source_pdf_sha256: "a".repeat(64),
                 canonical_article_dir: "/catalog/paper".into(),
+                revision_vid: None,
             },
             "2026-08-08T01:00:00Z",
         );
@@ -797,6 +798,7 @@ mod tests {
                 source_pdf_path: "/catalog/paper.pdf".into(),
                 source_pdf_sha256: "a".repeat(64),
                 canonical_article_dir: "/catalog/paper".into(),
+                revision_vid: None,
             },
             "2026-08-08T01:00:00Z",
         );

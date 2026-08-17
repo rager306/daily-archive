@@ -71,7 +71,9 @@ pub use figure_schema::{FigureSchemaError, FigureSchemaService};
 pub mod figure_analysis_stage;
 pub use figure_analysis_stage::{FigureAnalysisStage, FigureContextArtifactStage};
 pub mod figure_context;
-pub use figure_context::{FigureContextAssembler, FigureContextBudget, FigureSectionLocator};
+pub use figure_context::{
+    FigureContextAssembler, FigureContextBudget, FigureRevisionIdentity, FigureSectionLocator,
+};
 pub mod figure_context_stage;
 pub use figure_context_stage::FigureContextStage;
 pub mod healing;

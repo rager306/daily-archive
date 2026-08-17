@@ -1,6 +1,6 @@
 //! Application-owned pipeline stage for semantic figure context assembly.
 
-use crate::{FigureContextAssembler, FigureSectionLocator};
+use crate::{FigureContextAssembler, FigureRevisionIdentity, FigureSectionLocator};
 use async_trait::async_trait;
 use da_domain::{ArticleSummaryContext, DetectedVisualArtifact};
 use da_ports::parser::ParsedArticle;
@@ -15,6 +15,7 @@ pub struct FigureContextStage {
     artifact_id: String,
     section_locator: FigureSectionLocator,
     article_summary: Option<ArticleSummaryContext>,
+    revision_identity: Option<FigureRevisionIdentity>,
     parse_dependency: String,
     figures_dependency: String,
     contract: StageContract,
@@ -30,6 +31,7 @@ impl FigureContextStage {
             artifact_id: artifact_id.into(),
             section_locator,
             article_summary,
+            revision_identity: None,
             parse_dependency: "parse".into(),
             figures_dependency: "figures".into(),
             contract: StageContract {
@@ -56,6 +58,17 @@ impl FigureContextStage {
 
     pub fn with_output_schema_fingerprint(mut self, fingerprint: impl Into<String>) -> Self {
         self.contract.output_schema_fingerprint = fingerprint.into();
+        self
+    }
+
+    /// Bind revision identity into the assembled context (M400 S01).
+    ///
+    /// When set, the assembled `FigureSemanticContext` carries the revision
+    /// VID, canonical id and revision-scoped section VID. Unset keeps the
+    /// stage legacy-unbound; revision binding changes the output schema, so
+    /// callers that set it should also override the output schema fingerprint.
+    pub fn with_revision_identity(mut self, revision_identity: FigureRevisionIdentity) -> Self {
+        self.revision_identity = Some(revision_identity);
         self
     }
 }
@@ -116,6 +129,7 @@ impl PipelineStageExecutor for FigureContextStage {
                 &article,
                 Some(&self.section_locator),
                 parsed_summary.as_ref(),
+                self.revision_identity.as_ref(),
             )
             .map_err(|error| StageExecutionError::Terminal {
                 error_class: "figure_context_contract".into(),
@@ -250,5 +264,27 @@ mod tests {
             before.contract().output_schema_fingerprint,
             after.contract().output_schema_fingerprint
         );
+    }
+
+    #[tokio::test]
+    async fn revision_identity_binds_into_stage_payload() {
+        let revision_vid = "e".repeat(64);
+        let stage =
+            FigureContextStage::new("Figure3", FigureSectionLocator::PathId("3".into()), None)
+                .with_revision_identity(crate::FigureRevisionIdentity {
+                    revision_vid: revision_vid.clone(),
+                    canonical_id: "2507.19457".into(),
+                })
+                .with_output_schema_fingerprint("FigureSemanticContext@serde-v4-revision-bound");
+        let output = stage.execute(request()).await.unwrap();
+        let context: da_domain::FigureSemanticContext =
+            serde_json::from_slice(&output.payload).unwrap();
+        assert_eq!(context.revision_vid.as_deref(), Some(revision_vid.as_str()));
+        assert_eq!(context.canonical_id.as_deref(), Some("2507.19457"));
+        // Single-section fixture: containing ordinal is 1.
+        assert_eq!(context.containing_section.section_ordinal, Some(1));
+        let expected = da_domain::vid::revision_section_vid(&revision_vid, 1).unwrap();
+        assert_eq!(context.section_vid.as_deref(), Some(expected.as_str()));
+        context.validate().unwrap();
     }
 }

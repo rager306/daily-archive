@@ -11,6 +11,10 @@ pub struct FigureDetectionRequest {
     pub source_pdf_path: PathBuf,
     pub source_pdf_sha256: String,
     pub canonical_article_dir: PathBuf,
+    /// Backward-compatible revision identity (M400 S01). `None` keeps legacy
+    /// unbound detection; `Some` is the PaperRevision VID this detection run
+    /// is grounded in and is echoed into the canonical manifest and result.
+    pub revision_vid: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,6 +28,23 @@ pub struct FigureDetectionResult {
     pub manifest_sha256: String,
     pub artifacts: Vec<DetectedVisualArtifact>,
     pub duration_ms: u64,
+    /// Revision identity echoed from the request (M400 S01); `None` for legacy
+    /// unbound detection runs.
+    pub revision_vid: Option<String>,
+}
+
+/// Validate an optional revision VID bound at detection time (M400 S01).
+///
+/// `None` keeps legacy unbound detection; `Some` must be a 64-character
+/// lowercase-hex SHA-256 VID (the PaperRevision VID shape).
+pub fn validate_revision_vid(revision_vid: Option<&str>) -> Result<(), String> {
+    if let Some(value) = revision_vid {
+        let value = value.trim();
+        if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err("revision_vid must be a 64-character SHA256 VID".into());
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Error)]
@@ -65,10 +86,36 @@ mod tests {
             source_pdf_path: "/catalog/2507.19457/source/2507.19457.pdf".into(),
             source_pdf_sha256: "a".repeat(64),
             canonical_article_dir: "/catalog/2507.19457".into(),
+            revision_vid: Some("e".repeat(64)),
         };
         assert!(request.source_pdf_path.ends_with("2507.19457.pdf"));
         assert!(request.canonical_article_dir.ends_with("2507.19457"));
         assert_eq!(request.source_pdf_sha256.len(), 64);
+        assert_eq!(
+            request.revision_vid.as_deref(),
+            Some("e".repeat(64).as_str())
+        );
+    }
+
+    #[test]
+    fn revision_vid_is_optional_and_shape_validated() {
+        assert!(
+            validate_revision_vid(None).is_ok(),
+            "legacy unbound detection"
+        );
+        assert!(
+            validate_revision_vid(Some(&"a".repeat(64))).is_ok(),
+            "valid 64-hex revision VID"
+        );
+        assert!(validate_revision_vid(Some("short")).is_err());
+        assert!(
+            validate_revision_vid(Some(&"g".repeat(64))).is_err(),
+            "not hex"
+        );
+        assert!(
+            validate_revision_vid(Some(&"A".repeat(64))).is_ok(),
+            "uppercase hex normalizes to a valid digest shape"
+        );
     }
 
     #[test]

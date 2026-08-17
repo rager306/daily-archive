@@ -38,6 +38,7 @@ async fn main() -> Result<()> {
             source_pdf_path: args.pdf,
             source_pdf_sha256,
             canonical_article_dir: args.article_dir,
+            revision_vid: None,
         })
         .await
         .with_context(|| format!("detect figures for {}", args.article_id))?;

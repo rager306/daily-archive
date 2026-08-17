@@ -1,10 +1,29 @@
 //! Deterministic figure semantic-context assembly (M371 S02).
+//!
+//! M400 S01: the assembler can bind revision identity (revision VID + versionless
+//! canonical id) into the context. When bound, the exact revision-scoped
+//! Section VID is derived from the containing section's one-based ordinal and
+//! every section carries its document ordinal. When unbound, the context stays
+//! legacy-shaped and old serialized fixtures keep deserializing.
 
 use da_domain::{
     ArticleSummaryContext, DetectedVisualArtifact, FigureContextError, FigureReferenceExcerpt,
     FigureSectionContext, FigureSectionRelation, FigureSemanticContext,
 };
 use da_ports::parser::{ParsedArticle, Section};
+
+/// Revision identity bound into figure semantic context lineage (M400 S01).
+///
+/// `revision_vid` is the PaperRevision VID (64-hex, e.g. from
+/// `da_domain::vid::paper_revision_vid`); `canonical_id` is the versionless
+/// canonical article id (e.g. `2507.19457`). Binding is all-or-none: the
+/// assembler either binds the full trio (revision VID, canonical id, section
+/// VID) or leaves the context legacy-unbound.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FigureRevisionIdentity {
+    pub revision_vid: String,
+    pub canonical_id: String,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FigureSectionLocator {
@@ -96,6 +115,7 @@ impl FigureContextAssembler {
         article: &ParsedArticle,
         locator: Option<&FigureSectionLocator>,
         article_summary: Option<&ArticleSummaryContext>,
+        revision: Option<&FigureRevisionIdentity>,
     ) -> Result<FigureSemanticContext, FigureContextError> {
         artifact
             .validate()
@@ -124,6 +144,9 @@ impl FigureContextAssembler {
         };
         let containing = &article.sections[containing_index];
         require_provenance(containing, locator.display())?;
+        let bound = bind_revision(revision, containing_index)?;
+        let (revision_vid, canonical_id, section_vid) =
+            (bound.revision_vid, bound.canonical_id, bound.section_vid);
 
         let mut diagnostics = Vec::new();
         let (caption, caption_truncated) =
@@ -135,6 +158,7 @@ impl FigureContextAssembler {
             containing,
             FigureSectionRelation::Containing,
             self.budget.containing_section_chars,
+            containing_index + 1,
         )?;
         if containing_section.truncated {
             diagnostics.push("containing_section_truncated".into());
@@ -155,6 +179,7 @@ impl FigureContextAssembler {
                 &article.sections[index],
                 relation,
                 self.budget.neighbor_section_chars,
+                index + 1,
             ) {
                 Ok(section) => {
                     if section.truncated {
@@ -223,6 +248,9 @@ impl FigureContextAssembler {
             asset_path: artifact.asset_path.clone(),
             asset_sha256: artifact.asset_sha256.clone(),
             source_pdf_sha256: artifact.source_pdf_sha256.clone(),
+            revision_vid,
+            canonical_id,
+            section_vid,
             detector_fingerprint: artifact.detector_fingerprint.clone(),
             detector_metadata_sha256: artifact.metadata_sha256.clone(),
             page_index: artifact.page_index,
@@ -241,6 +269,39 @@ impl FigureContextAssembler {
     }
 }
 
+/// Revision lineage fields bound into a context (all-or-none trio).
+struct BoundRevisionIdentity {
+    revision_vid: Option<String>,
+    canonical_id: Option<String>,
+    section_vid: Option<String>,
+}
+
+fn bind_revision(
+    revision: Option<&FigureRevisionIdentity>,
+    containing_index: usize,
+) -> Result<BoundRevisionIdentity, FigureContextError> {
+    let Some(identity) = revision else {
+        return Ok(BoundRevisionIdentity {
+            revision_vid: None,
+            canonical_id: None,
+            section_vid: None,
+        });
+    };
+    if identity.canonical_id.trim().is_empty() {
+        return Err(FigureContextError::Invalid(
+            "canonical_id must be non-empty".into(),
+        ));
+    }
+    let ordinal = containing_index + 1;
+    let section_vid = da_domain::vid::revision_section_vid(&identity.revision_vid, ordinal)
+        .map_err(FigureContextError::Invalid)?;
+    Ok(BoundRevisionIdentity {
+        revision_vid: Some(identity.revision_vid.clone()),
+        canonical_id: Some(identity.canonical_id.clone()),
+        section_vid: Some(section_vid),
+    })
+}
+
 fn require_provenance(section: &Section, locator: &str) -> Result<(), FigureContextError> {
     if section.section_id.as_deref().is_none_or(str::is_empty)
         || section.path_id.as_deref().is_none_or(str::is_empty)
@@ -256,6 +317,7 @@ fn section_context(
     section: &Section,
     relation: FigureSectionRelation,
     max_chars: usize,
+    ordinal: usize,
 ) -> Result<FigureSectionContext, FigureContextError> {
     let locator = section
         .section_id
@@ -271,6 +333,7 @@ fn section_context(
         title: section.title.clone(),
         text,
         truncated,
+        section_ordinal: Some(ordinal as u32),
     })
 }
 
@@ -459,6 +522,7 @@ mod tests {
                     text: "GEPA improves 6% with 35x fewer rollouts.".into(),
                     truncated: false,
                 }),
+                None,
             )
             .unwrap();
         assert_eq!(context.containing_section.path_id, "3");
@@ -475,7 +539,7 @@ mod tests {
     fn missing_locator_or_unknown_section_never_selects_first_section() {
         let assembler = FigureContextAssembler::with_default_budget();
         assert_eq!(
-            assembler.assemble(&artifact(), &article(), None, None),
+            assembler.assemble(&artifact(), &article(), None, None, None),
             Err(FigureContextError::MissingSectionLocator)
         );
         assert_eq!(
@@ -483,6 +547,7 @@ mod tests {
                 &artifact(),
                 &article(),
                 Some(&FigureSectionLocator::PathId("missing".into())),
+                None,
                 None,
             ),
             Err(FigureContextError::SectionNotFound("missing".into()))
@@ -518,6 +583,7 @@ mod tests {
                     text: "глобальное резюме статьи".into(),
                     truncated: false,
                 }),
+                None,
             )
             .unwrap();
         assert!(context.truncated);
@@ -540,6 +606,7 @@ mod tests {
                 &article,
                 Some(&FigureSectionLocator::PathId("3".into())),
                 None,
+                None,
             )
             .unwrap_err();
         assert_eq!(
@@ -561,11 +628,98 @@ mod tests {
                 &article,
                 Some(&FigureSectionLocator::PathId("3".into())),
                 None,
+                None,
             )
             .unwrap_err();
         assert_eq!(
             error,
             FigureContextError::MissingSectionProvenance("3".into())
+        );
+    }
+
+    // ─── M400 S01 T02: revision identity binding ───
+
+    fn revision_vid() -> String {
+        "e".repeat(64)
+    }
+
+    #[test]
+    fn revision_identity_binds_revision_and_section_vid_into_context() {
+        let revision = revision_vid();
+        let context = FigureContextAssembler::with_default_budget()
+            .assemble(
+                &artifact(),
+                &article(),
+                Some(&FigureSectionLocator::PathId("3".into())),
+                None,
+                Some(&FigureRevisionIdentity {
+                    revision_vid: revision.clone(),
+                    canonical_id: "2507.19457".into(),
+                }),
+            )
+            .unwrap();
+        // The containing section (path "3", index 1) has ordinal 2.
+        assert_eq!(context.containing_section.section_ordinal, Some(2));
+        assert_eq!(context.neighboring_sections[0].section_ordinal, Some(1));
+        assert_eq!(context.neighboring_sections[1].section_ordinal, Some(3));
+        assert_eq!(context.revision_vid.as_deref(), Some(revision.as_str()));
+        assert_eq!(context.canonical_id.as_deref(), Some("2507.19457"));
+        let expected_section_vid = da_domain::vid::revision_section_vid(&revision, 2).unwrap();
+        assert_eq!(
+            context.section_vid.as_deref(),
+            Some(expected_section_vid.as_str())
+        );
+        // The source manifestation hash stays bound from the artifact.
+        assert_eq!(context.source_pdf_sha256, artifact().source_pdf_sha256);
+        context.validate().unwrap();
+        // Serde roundtrip keeps the revision lineage intact.
+        let decoded: FigureSemanticContext =
+            serde_json::from_str(&serde_json::to_string(&context).unwrap()).unwrap();
+        assert_eq!(decoded, context);
+    }
+
+    #[test]
+    fn revision_identity_rejects_empty_canonical_id() {
+        let error = FigureContextAssembler::with_default_budget()
+            .assemble(
+                &artifact(),
+                &article(),
+                Some(&FigureSectionLocator::PathId("3".into())),
+                None,
+                Some(&FigureRevisionIdentity {
+                    revision_vid: revision_vid(),
+                    canonical_id: "   ".into(),
+                }),
+            )
+            .unwrap_err();
+        assert!(matches!(error, FigureContextError::Invalid(_)));
+    }
+
+    #[test]
+    fn revision_bound_context_rejects_tampered_section_vid() {
+        let context = FigureContextAssembler::with_default_budget()
+            .assemble(
+                &artifact(),
+                &article(),
+                Some(&FigureSectionLocator::PathId("3".into())),
+                None,
+                Some(&FigureRevisionIdentity {
+                    revision_vid: revision_vid(),
+                    canonical_id: "2507.19457".into(),
+                }),
+            )
+            .unwrap();
+        let mut tampered = context.clone();
+        tampered.section_vid = Some("f".repeat(64));
+        assert_eq!(
+            tampered.validate(),
+            Err(FigureContextError::RevisionSectionVidMismatch)
+        );
+        let mut tampered = context;
+        tampered.canonical_id = None;
+        assert_eq!(
+            tampered.validate(),
+            Err(FigureContextError::MixedRevisionIdentity)
         );
     }
 }

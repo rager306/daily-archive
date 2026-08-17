@@ -44,7 +44,7 @@ pub use evidence_store::EvidenceStore;
 pub use extractor::{ExtractedEntity, Extractor};
 pub use figure_detection::{
     FigureDetectionError, FigureDetectionPort, FigureDetectionPortResult, FigureDetectionRequest,
-    FigureDetectionResult,
+    FigureDetectionResult, validate_revision_vid,
 };
 pub use graph_store::{DirectGraphStore, GraphStore, MutationCounters, MutationFamilyCounters};
 pub use llm_client::{ChatMessage, ChatOptions, ChatResponse, LLMClient};

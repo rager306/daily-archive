@@ -88,6 +88,8 @@ impl PdfFigures2Adapter {
         }
         validate_sha256(&request.source_pdf_sha256)
             .map_err(FigureDetectionError::InvalidRequest)?;
+        da_ports::validate_revision_vid(request.revision_vid.as_deref())
+            .map_err(FigureDetectionError::InvalidRequest)?;
         if self.render_dpi == 0 {
             return Err(FigureDetectionError::InvalidRequest(
                 "render DPI must be greater than zero".into(),
@@ -208,6 +210,7 @@ impl PdfFigures2Adapter {
             detector_fingerprint: self.detector_fingerprint.clone(),
             source_pdf_sha256: request.source_pdf_sha256.clone(),
             detector_metadata_sha256: metadata_sha256.clone(),
+            revision_vid: request.revision_vid.clone(),
             artifacts: artifacts.clone(),
         };
         let manifest_bytes = serde_json::to_vec_pretty(&manifest).map_err(|error| {
@@ -296,6 +299,7 @@ impl FigureDetectionPort for PdfFigures2Adapter {
             article_id = %request.article_id,
             detector = %self.detector_fingerprint,
             artifact_count = artifacts.len(),
+            revision_vid = ?request.revision_vid,
             duration_ms,
             event = "pdffigures2_detection_complete"
         );
@@ -307,6 +311,7 @@ impl FigureDetectionPort for PdfFigures2Adapter {
             manifest_sha256,
             artifacts,
             duration_ms,
+            revision_vid: request.revision_vid,
         })
     }
 }
@@ -316,6 +321,10 @@ struct CanonicalFigureManifest {
     detector_fingerprint: String,
     source_pdf_sha256: String,
     detector_metadata_sha256: String,
+    /// Revision identity bound at detection time (M400 S01). Absent (serde
+    /// default) for manifests written before revision binding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    revision_vid: Option<String>,
     artifacts: Vec<DetectedVisualArtifact>,
 }
 
@@ -506,6 +515,7 @@ mod tests {
             source_pdf_path: pdf,
             source_pdf_sha256: sha256(b"fake-pdf"),
             canonical_article_dir: root.join("article"),
+            revision_vid: None,
         }
     }
 
@@ -556,6 +566,7 @@ mod tests {
             source_pdf_path: "/missing.pdf".into(),
             source_pdf_sha256: "a".repeat(64),
             canonical_article_dir: temp_dir("missing"),
+            revision_vid: None,
         };
         assert!(matches!(
             adapter.validate_request(&request),
@@ -653,6 +664,7 @@ mod tests {
             source_pdf_path: root.join("paper.pdf"),
             source_pdf_sha256: "a".repeat(64),
             canonical_article_dir: article_dir.clone(),
+            revision_vid: None,
         };
         let adapter = PdfFigures2Adapter::new("unused-in-parser-test.jar");
         let (artifacts, manifest_path, _, manifest_sha256) = adapter
@@ -675,6 +687,68 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
     }
 
+    #[test]
+    fn revision_bound_request_echoes_into_manifest_and_rejects_malformed() {
+        let root = temp_dir("revision");
+        let staging = root.join("stage");
+        fs::create_dir_all(&staging).unwrap();
+        let image = staging.join("fig-paper-Figure3-1.png");
+        fs::write(&image, b"png-revision").unwrap();
+        let raw_path = staging.join("data_paper.json");
+        let raw = serde_json::json!([
+            {
+                "renderDpi": 150,
+                "name": "3",
+                "page": 4,
+                "figType": "Figure",
+                "regionBoundary": {"x1": 10.0, "y1": 20.0, "x2": 100.0, "y2": 120.0},
+                "caption": "Figure 3: GEPA flowchart",
+                "imageText": ["GEPA"],
+                "renderURL": image,
+                "captionBoundary": {"x1": 10.0, "y1": 125.0, "x2": 100.0, "y2": 140.0}
+            }
+        ]);
+        fs::write(&raw_path, serde_json::to_vec(&raw).unwrap()).unwrap();
+        let article_dir = root.join("article");
+        let revision = da_domain::vid::paper_revision_vid("arxiv", "2507.19457", 1).unwrap();
+        let jar = root.join("detector.jar");
+        fs::write(&jar, b"jar").unwrap();
+        let pdf = root.join("paper.pdf");
+        fs::write(&pdf, b"fake-pdf").unwrap();
+        let request = FigureDetectionRequest {
+            article_id: "2507.19457".into(),
+            source_pdf_path: pdf,
+            source_pdf_sha256: "a".repeat(64),
+            canonical_article_dir: article_dir.clone(),
+            revision_vid: Some(revision.clone()),
+        };
+        let adapter = PdfFigures2Adapter::new(jar);
+        // Malformed revision VIDs are rejected before any subprocess runs.
+        let mut malformed = request.clone();
+        malformed.revision_vid = Some("not-a-vid".into());
+        assert!(matches!(
+            adapter.validate_request(&malformed),
+            Err(FigureDetectionError::InvalidRequest(_))
+        ));
+        // The canonical manifest persists the revision identity.
+        let (_, manifest_path, _, _) = adapter
+            .parse_and_retain(&request, &staging, &raw_path)
+            .unwrap();
+        let manifest: CanonicalFigureManifest =
+            serde_json::from_slice(&fs::read(&manifest_path).unwrap()).unwrap();
+        assert_eq!(manifest.revision_vid.as_deref(), Some(revision.as_str()));
+        // Legacy manifests without the field still deserialize.
+        let legacy = serde_json::json!({
+            "detector_fingerprint": "pdffigures2-0.0.12-SNAPSHOT",
+            "source_pdf_sha256": "a".repeat(64),
+            "detector_metadata_sha256": "c".repeat(64),
+            "artifacts": []
+        });
+        let decoded: CanonicalFigureManifest = serde_json::from_value(legacy).unwrap();
+        assert!(decoded.revision_vid.is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
+
     #[tokio::test]
     async fn real_gepa_pdf_yields_figures_tables_and_grounded_figure3() {
         let jar = PathBuf::from(
@@ -692,15 +766,23 @@ mod tests {
         let pdf_bytes = fs::read(&pdf).unwrap();
         let article_dir = temp_dir("gepa");
         let adapter = PdfFigures2Adapter::new(jar);
+        let revision = da_domain::vid::paper_revision_vid("arxiv", "2507.19457", 1).unwrap();
         let result = adapter
             .detect(FigureDetectionRequest {
                 article_id: "2507.19457".into(),
                 source_pdf_path: pdf,
                 source_pdf_sha256: sha256(&pdf_bytes),
                 canonical_article_dir: article_dir.clone(),
+                revision_vid: Some(revision.clone()),
             })
             .await
             .unwrap();
+
+        assert_eq!(
+            result.revision_vid.as_deref(),
+            Some(revision.as_str()),
+            "revision identity echoes into the detection result"
+        );
 
         assert_eq!(result.artifacts.len(), 25);
         assert_eq!(
@@ -746,6 +828,11 @@ mod tests {
         let canonical_manifest: CanonicalFigureManifest =
             serde_json::from_slice(&fs::read(&result.metadata_path).unwrap()).unwrap();
         assert_eq!(canonical_manifest.artifacts.len(), 25);
+        assert_eq!(
+            canonical_manifest.revision_vid.as_deref(),
+            Some(revision.as_str()),
+            "revision identity persists in the canonical manifest"
+        );
         let manifest_text = fs::read_to_string(&result.metadata_path).unwrap();
         assert!(!manifest_text.contains("/tmp/"));
         assert!(

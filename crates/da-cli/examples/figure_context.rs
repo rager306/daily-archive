@@ -102,6 +102,7 @@ async fn main() -> Result<()> {
         &article,
         Some(&FigureSectionLocator::PathId(section_path.into())),
         article_summary.as_ref(),
+        None,
     )?;
     let output = args
         .output
