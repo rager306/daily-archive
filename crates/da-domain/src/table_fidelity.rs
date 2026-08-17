@@ -54,6 +54,16 @@ pub struct StructuralTableCell {
     /// GROBID `coords` attribute on the cell when emitted (rare), else None.
     #[serde(default)]
     pub coordinates: Option<String>,
+    /// Source char span start of the cell's visible content inside the
+    /// containing section's stripped text (`da_ports::CharSpan`, M400 S02 T01).
+    /// `None` when the table is not inside any section text window (typed
+    /// missingness, never guessed). The domain projection keeps the span so
+    /// materialized cells carry source-span evidence (T03 slice demo).
+    #[serde(default)]
+    pub span_start: Option<u32>,
+    /// Source char span end (exclusive) — pairs with `span_start`.
+    #[serde(default)]
+    pub span_end: Option<u32>,
     /// Deterministic SHA-256 digest of (row, column, colspan, rowspan, text,
     /// coordinates) — the cell's source-digest evidence (R087).
     pub digest: String,
@@ -618,6 +628,8 @@ mod tests {
             rowspan: 1,
             text: text.into(),
             coordinates: None,
+            span_start: None,
+            span_end: None,
             digest: hex64('d'),
         }
     }
@@ -649,6 +661,8 @@ mod tests {
             rowspan: 1,
             text: text.into(),
             coordinates: None,
+            span_start: None,
+            span_end: None,
             digest: digest.into(),
         }
     }
@@ -819,6 +833,8 @@ mod tests {
                     rowspan: 1,
                     text: "GEPA".into(),
                     coordinates: None,
+                    span_start: None,
+                    span_end: None,
                     digest: hex64('f'),
                 },
             ],
@@ -848,6 +864,8 @@ mod tests {
                     rowspan: 1,
                     text: "GEPA".into(),
                     coordinates: None,
+                    span_start: None,
+                    span_end: None,
                     digest: hex64('f'),
                 },
             ],
@@ -882,6 +900,8 @@ mod tests {
                     rowspan: 2,
                     text: "GEPA".into(),
                     coordinates: None,
+                    span_start: None,
+                    span_end: None,
                     digest: hex64('f'),
                 },
             ],
@@ -1172,9 +1192,11 @@ mod proptest_tests {
             any_text(),
             hex64(),
             prop::option::of("[0-9,;]{4,32}"),
+            prop::option::of(0u32..10_000),
+            prop::option::of(0u32..10_000),
         )
             .prop_map(
-                |(row, column, colspan, rowspan, text, digest, coordinates)| StructuralTableCell {
+                |(
                     row,
                     column,
                     colspan,
@@ -1182,6 +1204,20 @@ mod proptest_tests {
                     text,
                     digest,
                     coordinates,
+                    span_start,
+                    span_end,
+                )| {
+                    StructuralTableCell {
+                        row,
+                        column,
+                        colspan,
+                        rowspan,
+                        text,
+                        digest,
+                        coordinates,
+                        span_start,
+                        span_end,
+                    }
                 },
             )
     }
@@ -1215,6 +1251,8 @@ mod proptest_tests {
                 rowspan: 1,
                 text: header.clone(),
                 coordinates: None,
+                span_start: None,
+                span_end: None,
                 digest: hex64_seeded('a'),
             });
         }
@@ -1227,6 +1265,8 @@ mod proptest_tests {
                     rowspan: 1,
                     text: cell_text.clone(),
                     coordinates: None,
+                    span_start: None,
+                    span_end: None,
                     digest: hex64_seeded('b'),
                 });
             }

@@ -81,6 +81,11 @@ pub use figure_materialize::{
     DIAGNOSTIC_APPLIED, DIAGNOSTIC_UNCHANGED_REPLAY, FigureCandidateMaterializer,
     FigureMaterializationError, FigureMaterializationResult,
 };
+pub mod table_materialize;
+pub use table_materialize::{
+    TableCandidateMaterializer, TableMaterializationError, TableMaterializationResult,
+    structural_table_from_extracted,
+};
 pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;

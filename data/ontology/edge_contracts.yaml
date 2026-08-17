@@ -44,14 +44,29 @@ edge_contracts:
     rationale: "Paper has this Section/Reference as a structural part (FaBiO frbr:part)."
   - edge_constant: hasPart
     source_label: PaperRevision
-    target_labels: [Section, Reference, FigureCandidate]
+    target_labels: [Section, Reference, FigureCandidate, TableCandidate]
     temporal_class: structural
-    rationale: "Immutable article revision has this revision-scoped Section/Reference/FigureCandidate as a structural part (ADR-058 PIR-011, additive revision-owned edges; M400 S01 figure candidates)."
+    rationale: "Immutable article revision has this revision-scoped Section/Reference/FigureCandidate/TableCandidate as a structural part (ADR-058 PIR-011, additive revision-owned edges; M400 S01 figure + S02 table candidates)."
   - edge_constant: groundedIn
     source_label: FigureCandidate
     target_labels: [Section]
     temporal_class: structural
     rationale: "Figure candidate is grounded in this revision-scoped Section (M400 S01 candidate evidence, never graph truth)."
+  - edge_constant: groundedIn
+    source_label: TableCandidate
+    target_labels: [Section]
+    temporal_class: structural
+    rationale: "Table candidate is grounded in this revision-scoped Section (M400 S02 candidate evidence, never graph truth)."
+  - edge_constant: hasPart
+    source_label: TableCandidate
+    target_labels: [TableCell]
+    temporal_class: structural
+    rationale: "Table candidate has this structural TEI cell as a part (M400 S02: cell carries row/column/span/digest evidence)."
+  - edge_constant: CONFLICTS_OVER
+    source_label: TableCandidate
+    target_labels: [TableConflict]
+    temporal_class: structural
+    rationale: "Table candidate participates in this typed visual-versus-TEI disagreement (M400 S02, ADR-047 conflict plane; never an overwrite)."
   - edge_constant: HAS_REVISION
     source_label: Paper
     target_labels: [PaperRevision]

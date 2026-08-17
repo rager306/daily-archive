@@ -36,10 +36,12 @@ fn test_schema_check_counts_match() {
         .expect("failed to spawn `da schema-check`");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    // Typed semantic enrichment adds first-class Method/Dataset/Metric writes.
+    // Typed semantic enrichment adds first-class Method/Dataset/Metric writes
+    // and the M400 candidate planes add FigureCandidate/TableCandidate/TableCell/
+    // TableConflict materializations.
     assert!(
-        stdout.contains("22 distinct node labels"),
-        "expected 22 materialized labels, got:\n{stdout}"
+        stdout.contains("25 distinct node labels"),
+        "expected 25 materialized labels, got:\n{stdout}"
     );
     assert!(
         stdout.contains("36 declared node types"),

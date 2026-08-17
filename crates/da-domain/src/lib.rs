@@ -162,6 +162,12 @@ pub use table_fidelity::{
     StructuralTable, StructuralTableCell, TableCellCoverage, TableFidelityError,
     TableFidelityFinding, TableFidelityMissingness, TableFidelityReport, compare_table_fidelity,
 };
+pub mod table_candidate;
+pub use table_candidate::{
+    TABLE_CANDIDATE_SCHEMA_VERSION, TableCandidate, TableCandidateError, TableCandidateLineage,
+    TableCellCandidate, TableConflictEvidence, fidelity_kind, table_candidate_vid, table_cell_vid,
+    table_conflict_vid,
+};
 pub use vid::{
     Vid, entity_vid, paper_revision_vid, paper_vid, reference_vid, revision_section_vid,
     source_manifestation_vid,
