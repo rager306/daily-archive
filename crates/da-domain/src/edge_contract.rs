@@ -65,8 +65,9 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             // revision owns its Section tree AND its Reference bibliography
             // entries without cloning the globally deduped Reference nodes
             // (MEM471). section_count must filter by Section label (D248).
-            target_labels: &["Section", "Reference"],
-            rationale: "Immutable article revision has this revision-scoped Section/Reference as a structural part (ADR-058 PIR-011, additive revision-owned edges).",
+            // M400 S01: the revision also owns its FigureCandidate nodes.
+            target_labels: &["Section", "Reference", "FigureCandidate"],
+            rationale: "Immutable article revision has this revision-scoped Section/Reference/FigureCandidate as a structural part (ADR-058 PIR-011, additive revision-owned edges).",
         },
         EdgeContract {
             edge_constant: structure::HAS_REVISION,
@@ -79,6 +80,12 @@ pub fn edge_contracts() -> Vec<EdgeContract> {
             source_label: "PaperRevision",
             target_labels: &["SourceManifestation"],
             rationale: "Article revision is represented by this captured source manifestation (ADR-058).",
+        },
+        EdgeContract {
+            edge_constant: structure::GROUNDED_IN,
+            source_label: "FigureCandidate",
+            target_labels: &["Section"],
+            rationale: "Figure candidate is grounded in this revision-scoped Section (M400 S01 candidate evidence, never graph truth).",
         },
         EdgeContract {
             edge_constant: structure::HAS_TOPIC,

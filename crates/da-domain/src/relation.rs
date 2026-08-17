@@ -160,6 +160,10 @@ pub mod structure {
     /// Method A predecessor_of Method B means A builds on / extends / improves B.
     /// Enables graph algorithms on the Method influence graph.
     pub const PREDECESSOR_OF: &str = "predecessor_of";
+
+    /// FigureCandidate → Section (M400 S01): the revision-scoped Section this
+    /// candidate is grounded in. Candidate evidence, never graph truth (D127).
+    pub const GROUNDED_IN: &str = "groundedIn";
 }
 
 /// Bibliographic edge types — structural metadata, NOT extracted semantic

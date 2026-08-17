@@ -76,6 +76,11 @@ pub use figure_context::{
 };
 pub mod figure_context_stage;
 pub use figure_context_stage::FigureContextStage;
+pub mod figure_materialize;
+pub use figure_materialize::{
+    DIAGNOSTIC_APPLIED, DIAGNOSTIC_UNCHANGED_REPLAY, FigureCandidateMaterializer,
+    FigureMaterializationError, FigureMaterializationResult,
+};
 pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;
