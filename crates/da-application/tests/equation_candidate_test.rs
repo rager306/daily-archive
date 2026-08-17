@@ -17,6 +17,7 @@ mod common;
 use std::sync::Arc;
 
 use common::mock_graph_store::MockGraphStore;
+use da_adapters::SamyamaGraphStore;
 use da_application::equation_materialize::{
     DIAGNOSTIC_APPLIED, DIAGNOSTIC_UNCHANGED_REPLAY, EQUATION_CANDIDATE_LABEL,
     EquationCandidateMaterializer, EquationMaterializationError,
@@ -29,7 +30,7 @@ use da_domain::equation_candidate::EquationCandidate;
 use da_domain::relation::structure;
 use da_domain::vid::revision_section_vid;
 use da_ports::clock::FixedClock;
-use da_ports::graph_store::DirectGraphStore;
+use da_ports::graph_store::{DirectGraphStore, GraphStore};
 use da_ports::parser::{CharSpan, ExtractedFormula, FormulaRepresentation, ParsedArticle, Section};
 
 const PAPER_ID: &str = "2507.19457";
@@ -587,4 +588,360 @@ async fn materialization_result_roundtrips() {
         serde_json::from_str(&json).unwrap();
     assert_eq!(decoded, result);
     assert!(!decoded.import_eligible);
+}
+
+// ────────────────────────────────────────────────────────────────
+// T04: same-process semantic graph task (equation_candidate.tasks.cypher)
+// ────────────────────────────────────────────────────────────────
+
+/// One parsed task from `data/graph_tasks/equation_candidate.tasks.cypher`.
+/// Mirrors the canonical `// @query` suite format (da-cli graph_tasks).
+struct SuiteTask {
+    title: String,
+    cypher: String,
+    min_rows: usize,
+    expect_rows: Option<usize>,
+    expect_value: Option<f64>,
+    expect_min_value: Option<f64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Verdict {
+    Pass,
+    Empty,
+    Error,
+}
+
+/// Minimal parser for the `// @query` suite format. This lives in the test
+/// because da-application cannot depend on da-cli (onion): it must
+/// independently validate the committed suite file.
+fn parse_suite(source: &str) -> Vec<SuiteTask> {
+    let mut tasks = Vec::new();
+    let mut current: Option<SuiteTask> = None;
+    let mut body: Vec<String> = Vec::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("// @query") {
+            if let Some(mut task) = current.take() {
+                task.cypher = body.join("\n").trim().to_string();
+                tasks.push(task);
+            }
+            body.clear();
+            let title = rest
+                .trim()
+                .split('|')
+                .next()
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+            current = Some(SuiteTask {
+                title,
+                cypher: String::new(),
+                min_rows: 1,
+                expect_rows: None,
+                expect_value: None,
+                expect_min_value: None,
+            });
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("// @class") {
+            let _ = rest; // class directive is preserved for finalize; the test gates on verdicts
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("// @expect_rows") {
+            if let Some(task) = current.as_mut() {
+                task.expect_rows = rest.trim().parse().ok();
+            }
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("// @expect_value") {
+            if let Some(task) = current.as_mut() {
+                task.expect_value = rest.trim().parse().ok();
+            }
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("// @expect_min_value") {
+            if let Some(task) = current.as_mut() {
+                task.expect_min_value = rest.trim().parse().ok();
+            }
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("// @min_rows") {
+            if let Some(task) = current.as_mut() {
+                task.min_rows = rest.trim().parse().unwrap_or(1);
+            }
+            continue;
+        }
+        if trimmed.is_empty() || trimmed.starts_with("//") {
+            continue;
+        }
+        if current.is_some() {
+            body.push(line.to_string());
+        }
+    }
+    if let Some(mut task) = current {
+        task.cypher = body.join("\n").trim().to_string();
+        tasks.push(task);
+    }
+    tasks
+}
+
+/// Mirrors `GraphTask::classify` (da-cli): min_rows, count-of-zero, then
+/// the exact expect bounds.
+fn classify(task: &SuiteTask, rows: usize, first_cell_number: Option<f64>) -> Verdict {
+    if rows < task.min_rows {
+        return Verdict::Empty;
+    }
+    if task.expect_value.is_none() {
+        // Single numeric cell equal to 0 is not presence.
+        if rows == 1 && first_cell_number == Some(0.0) {
+            return Verdict::Empty;
+        }
+    }
+    if let Some(expected) = task.expect_rows
+        && rows != expected
+    {
+        return Verdict::Empty;
+    }
+    if let Some(expected) = task.expect_value {
+        match first_cell_number {
+            Some(actual) if actual == expected => {}
+            _ => return Verdict::Empty,
+        }
+    }
+    if let Some(min_value) = task.expect_min_value {
+        match first_cell_number {
+            Some(actual) if actual >= min_value => {}
+            _ => return Verdict::Empty,
+        }
+    }
+    Verdict::Pass
+}
+
+fn cell_number(value: &serde_json::Value) -> Option<f64> {
+    match value {
+        serde_json::Value::Number(n) => n.as_f64(),
+        serde_json::Value::String(s) => s.parse::<f64>().ok(),
+        _ => None,
+    }
+}
+
+async fn run_task(
+    store: &SamyamaGraphStore,
+    task: &SuiteTask,
+) -> (Verdict, usize, Option<f64>, Option<String>) {
+    match store.query_readonly("daily_archive", &task.cypher).await {
+        Ok(result) => {
+            let rows = result.records.len();
+            let first = result
+                .records
+                .first()
+                .and_then(|record| record.first())
+                .and_then(cell_number);
+            (classify(task, rows, first), rows, first, None)
+        }
+        Err(error) => (Verdict::Error, 0, None, Some(error.to_string())),
+    }
+}
+
+/// Seed a revision plane on the real in-memory Samyama engine exactly as the
+/// production revision use case does (same as `seed_revision_plane` but for
+/// `SamyamaGraphStore`).
+async fn seed_revision_plane_samyama(
+    store: &Arc<SamyamaGraphStore>,
+    revision: u32,
+    section_count: usize,
+) -> String {
+    let uc = RevisionMaterializationUseCase::new(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        Arc::new(FixedClock::from_timestamp(1_700_000_000)),
+    );
+    let out = uc
+        .materialize(&revision_request(revision, section_count))
+        .await
+        .expect("revision materialization");
+    out.revision_vid
+}
+
+/// T04: the same-process semantic graph task returns grounded Equation
+/// candidates with exact revision/section lineage, fails when required
+/// formulas are missing, ungrounded, or unlocked, and keeps D127 false in a
+/// durable task report.
+#[tokio::test]
+async fn equation_graph_task() {
+    // 1. Load the committed suite file (repo-root relative).
+    let suite_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/graph_tasks/equation_candidate.tasks.cypher");
+    let source =
+        std::fs::read_to_string(&suite_path).expect("read equation_candidate.tasks.cypher");
+    let tasks = parse_suite(&source);
+    assert!(
+        tasks.len() >= 10,
+        "expected >= 10 semantic tasks, parsed {}",
+        tasks.len()
+    );
+    for task in &tasks {
+        assert!(
+            !task.cypher.trim().is_empty(),
+            "task {:?} has empty cypher body",
+            task.title
+        );
+    }
+
+    // 2. Materialize the revision plane (2 revisions) and one candidate per
+    //    revision on the real in-memory engine.
+    let store = Arc::new(SamyamaGraphStore::new());
+    let v1 = seed_revision_plane_samyama(&store, 1, 3).await;
+    let v2 = seed_revision_plane_samyama(&store, 2, 3).await;
+    let materializer =
+        EquationCandidateMaterializer::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let first = materializer
+        .materialize(&equation_candidate(&v1))
+        .await
+        .expect("candidate v1");
+    let second = materializer
+        .materialize(&equation_candidate(&v2))
+        .await
+        .expect("candidate v2");
+    assert!(first.applied && second.applied);
+    assert!(!first.import_eligible && !second.import_eligible);
+
+    // 3. Execute every task same-process; every one must PASS on the
+    //    grounded graph.
+    let mut results = Vec::new();
+    for task in &tasks {
+        let (verdict, rows, first_cell, error) = run_task(store.as_ref(), task).await;
+        results.push((
+            task.title.clone(),
+            verdict.clone(),
+            rows,
+            first_cell,
+            error.clone(),
+        ));
+        assert_eq!(
+            verdict,
+            Verdict::Pass,
+            "task {:?} did not pass on grounded graph: rows={rows} first={first_cell:?} error={error:?}\ncypher: {}",
+            task.title,
+            task.cypher
+        );
+    }
+
+    // 4. Durable task report: persisted JSON preserves D127 false.
+    let report = serde_json::json!({
+        "schema_version": "equation-candidate-graph-task.v1",
+        "source": "data/graph_tasks/equation_candidate.tasks.cypher",
+        "candidates": 2,
+        "import_eligible": false,
+        "failed": false,
+        "tasks": results.iter().map(|(title, verdict, rows, first_cell, _)| serde_json::json!({
+            "title": title,
+            "verdict": format!("{verdict:?}").to_uppercase(),
+            "rows": rows,
+            "first_cell_number": first_cell,
+        })).collect::<Vec<_>>(),
+    });
+    let dir = tempfile::tempdir().expect("tempdir for durable report");
+    let report_path = dir.path().join("equation_candidate_report.json");
+    std::fs::write(&report_path, serde_json::to_vec_pretty(&report).unwrap())
+        .expect("write durable report");
+    let persisted: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&report_path).expect("read durable report"))
+            .expect("parse durable report");
+    assert_eq!(persisted["import_eligible"], serde_json::json!(false));
+    assert_eq!(persisted["failed"], serde_json::json!(false));
+    assert_eq!(persisted["candidates"], serde_json::json!(2));
+    assert_eq!(
+        persisted["tasks"].as_array().map(|rows| rows.len()),
+        Some(tasks.len())
+    );
+
+    // 5. Negative: an empty graph has no revision/section identity, so the
+    //    grounded-lineage and lock-presence tasks must fail (EMPTY).
+    let empty = Arc::new(SamyamaGraphStore::new());
+    let mut empty_passes = 0;
+    for task in &tasks {
+        let (verdict, _, _, _) = run_task(empty.as_ref(), task).await;
+        if verdict == Verdict::Pass {
+            empty_passes += 1;
+        }
+    }
+    assert!(
+        empty_passes < tasks.len(),
+        "suite must fail on a graph with no revision/section identity"
+    );
+
+    // 6. Negative: an orphan candidate whose revision/section identity points
+    //    at nodes that do not exist breaks the lineage tasks. The materializer
+    //    refuses to write such a node, so this simulates drifted external
+    //    evidence directly on the store.
+    let ghost = Arc::new(SamyamaGraphStore::new());
+    let node = ghost.create_node("EquationCandidate").await.unwrap();
+    ghost
+        .set_node_property_string(node, "vid", "vid:candidate:ghost".into())
+        .await
+        .unwrap();
+    ghost
+        .set_node_property_string(
+            node,
+            "revision_vid",
+            "vid:revision:arxiv:2507.19457:v9".into(),
+        )
+        .await
+        .unwrap();
+    ghost
+        .set_node_property_string(node, "section_vid", "vid:section:ghost:9".into())
+        .await
+        .unwrap();
+    ghost
+        .set_node_property_bool(node, "import_eligible", false)
+        .await
+        .unwrap();
+    ghost
+        .set_node_property_bool(node, "authoritative", false)
+        .await
+        .unwrap();
+    let mut lineage_failed = false;
+    for task in &tasks {
+        if task.title.contains("Grounded equation candidates")
+            || task.title.contains("grounded formula")
+            || task.title.contains("revision identity")
+            || task.title.contains("section identity")
+        {
+            let (verdict, _, _, _) = run_task(ghost.as_ref(), task).await;
+            if verdict != Verdict::Pass {
+                lineage_failed = true;
+            }
+        }
+    }
+    assert!(
+        lineage_failed,
+        "grounded-lineage tasks must fail for a candidate with missing revision/section identity"
+    );
+
+    // 7. Negative: an import-unlocked candidate (drifted external evidence,
+    //    never materializer output) must fail the D127 lock tasks.
+    let unlocked = Arc::new(SamyamaGraphStore::new());
+    let node = unlocked.create_node("EquationCandidate").await.unwrap();
+    unlocked
+        .set_node_property_string(node, "vid", "vid:candidate:unlocked".into())
+        .await
+        .unwrap();
+    unlocked
+        .set_node_property_bool(node, "import_eligible", true)
+        .await
+        .unwrap();
+    let mut lock_failed = false;
+    for task in &tasks {
+        if task.title.contains("import") {
+            let (verdict, _, _, _) = run_task(unlocked.as_ref(), task).await;
+            if verdict != Verdict::Pass {
+                lock_failed = true;
+            }
+        }
+    }
+    assert!(
+        lock_failed,
+        "D127 lock tasks must fail for an import-unlocked candidate"
+    );
 }
