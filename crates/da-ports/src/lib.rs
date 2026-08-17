@@ -59,7 +59,8 @@ pub use pdf_classification::{
 };
 
 pub use parser::{
-    CharSpan, CitationAnchor, CitationEntry, ExtractedTable, ParserPort, Section, TableCell,
+    CharSpan, CitationAnchor, CitationEntry, ExtractedFormula, ExtractedTable,
+    FormulaMissingReason, FormulaRepresentation, ParserPort, Section, TableCell,
     TableMissingReason,
 };
 pub use promotion::{PromotionCommitError, PromotionCommitSink, PromotionDecision};
@@ -104,6 +105,8 @@ mod serde_roundtrip_tests {
             pdf_hash: "abc123".into(),
             tables: vec![],
             table_missingness: Some(TableMissingReason::NoTableElements),
+            formulas: vec![],
+            formula_missingness: None,
         });
     }
 
@@ -142,6 +145,8 @@ mod serde_roundtrip_tests {
                 missingness: None,
             }],
             table_missingness: None,
+            formulas: vec![],
+            formula_missingness: None,
         });
     }
 
@@ -165,10 +170,10 @@ mod serde_roundtrip_tests {
         assert_eq!(json, "\"no_table_elements\"");
     }
 
-    /// M400 S02 T01 (R085): legacy ParsedArticle JSON without `tables` /
-    /// `table_missingness` must deserialize with typed defaults — empty Vec
-    /// and None missingness — so cached fixtures and older payloads stay
-    /// decodable.
+    /// M400 S03 T01 (R085): legacy ParsedArticle JSON without `tables` /
+    /// `table_missingness` / `formulas` / `formula_missingness` must
+    /// deserialize with typed defaults — empty Vecs and None missingness — so
+    /// cached fixtures and older payloads stay decodable.
     #[test]
     fn roundtrip_parsed_article_legacy_omits_tables() {
         let json = r#"{"paper_id":"2507.19457","title":"GEPA","abstract_text":"a","body_text":"b","sections":[],"citations":[],"layout_json":null,"tei_xml":null,"pdf_hash":"abc123"}"#;
@@ -180,6 +185,73 @@ mod serde_roundtrip_tests {
             article.table_missingness.is_none(),
             "legacy payload does not claim typed missingness"
         );
+        assert!(article.formulas.is_empty(), "legacy JSON has no formulas");
+        assert!(
+            article.formula_missingness.is_none(),
+            "legacy payload does not claim formula typed missingness"
+        );
+    }
+
+    /// M400 S03 T01: a ParsedArticle carrying extracted TEI formulas survives
+    /// roundtrip with formula_id, label, coordinates, representation, section
+    /// identity, span and digest intact.
+    #[test]
+    fn roundtrip_parsed_article_with_formulas() {
+        roundtrip_json(&ParsedArticle {
+            paper_id: "2507.19457".into(),
+            title: "GEPA".into(),
+            abstract_text: "a".into(),
+            body_text: "b".into(),
+            sections: vec![],
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            pdf_hash: "abc123".into(),
+            tables: vec![],
+            table_missingness: None,
+            formulas: vec![ExtractedFormula {
+                formula_id: "formula_0".into(),
+                section_path_id: Some("2".into()),
+                section_ordinal: Some(1),
+                label: Some("(1)".into()),
+                coordinates: Some("90,120,428,140;1".into()),
+                representation: FormulaRepresentation::PlainText("x = 1".into()),
+                span: Some(CharSpan { start: 41, end: 46 }),
+                source_digest: "c".repeat(64),
+                missingness: None,
+            }],
+            formula_missingness: None,
+        });
+    }
+
+    /// M400 S03 T01: ExtractedFormula + FormulaRepresentation +
+    /// FormulaMissingReason wire formats are stable (serde tag snake_case).
+    #[test]
+    fn roundtrip_formula_types() {
+        roundtrip_json(&ExtractedFormula {
+            formula_id: "formula_3".into(),
+            section_path_id: None,
+            section_ordinal: None,
+            label: None,
+            coordinates: None,
+            representation: FormulaRepresentation::MathML(
+                "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>x</mi></math>".into(),
+            ),
+            span: None,
+            source_digest: "d".repeat(64),
+            missingness: None,
+        });
+        roundtrip_json(&FormulaRepresentation::TeXMath("x = \\gamma".into()));
+        roundtrip_json(&FormulaRepresentation::PlainText("y = mx + b".into()));
+        roundtrip_json(&FormulaMissingReason::NoFormulaElements);
+        roundtrip_json(&FormulaMissingReason::Malformed(
+            "empty formula content".into(),
+        ));
+        let json = serde_json::to_string(&FormulaMissingReason::NoFormulaElements).unwrap();
+        assert_eq!(json, "\"no_formula_elements\"");
+        let repr = serde_json::to_string(&FormulaRepresentation::MathML("<m/>".into())).unwrap();
+        assert_eq!(repr, "{\"math_ml\":\"<m/>\"}");
+        assert_eq!(FormulaRepresentation::PlainText("t".into()).as_str(), "t");
     }
 
     #[test]

@@ -1416,6 +1416,8 @@ mod tests {
                 tei_xml: None,
                 tables: Vec::new(),
                 table_missingness: None,
+                formulas: Vec::new(),
+                formula_missingness: None,
                 pdf_hash: source_sha.clone(),
             };
             let entities = Vec::<ExtractedEntity>::new();

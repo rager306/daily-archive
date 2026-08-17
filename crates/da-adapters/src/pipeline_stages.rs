@@ -36,7 +36,7 @@ impl GrobidParseStage {
                 stage_id: "grobid_parse".into(),
                 implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
                 configuration_fingerprint:
-                    "consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note"
+                    "consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula"
                         .into(),
                 prompt_fingerprint: None,
                 model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),
@@ -505,6 +505,8 @@ mod tests {
                 tei_xml: None,
                 tables: Vec::new(),
                 table_missingness: None,
+                formulas: Vec::new(),
+                formula_missingness: None,
                 pdf_hash: "a".repeat(64),
             })
         }
@@ -600,6 +602,8 @@ mod tests {
             tei_xml: None,
             tables: Vec::new(),
             table_missingness: None,
+            formulas: Vec::new(),
+            formula_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let output = stage
@@ -680,6 +684,8 @@ mod tests {
             tei_xml: None,
             tables: Vec::new(),
             table_missingness: None,
+            formulas: Vec::new(),
+            formula_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let output = stage

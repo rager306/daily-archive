@@ -361,6 +361,8 @@ impl ParserPort for HtmlParser {
             tei_xml: None,
             tables: Vec::new(),
             table_missingness: None,
+            formulas: Vec::new(),
+            formula_missingness: None,
             pdf_hash: Self::simple_hash(&html),
         })
     }

@@ -43,6 +43,8 @@ fn parsed() -> ParsedArticle {
         tei_xml: None,
         tables: Vec::new(),
         table_missingness: None,
+        formulas: Vec::new(),
+        formula_missingness: None,
         pdf_hash: "src".into(),
     }
 }

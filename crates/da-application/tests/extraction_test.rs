@@ -49,6 +49,8 @@ fn make_parsed() -> ParsedArticle {
         tei_xml: None,
         tables: Vec::new(),
         table_missingness: None,
+        formulas: Vec::new(),
+        formula_missingness: None,
         pdf_hash: "hash_2401.00001".to_string(),
     }
 }

@@ -214,7 +214,7 @@ async fn main() -> Result<()> {
                         stage_id: "grobid_parse".into(),
                         implementation_fingerprint: "GrobidParser@tei-navigation-v3".into(),
                         configuration_fingerprint:
-                            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note"
+                            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
                                 .into(),
                         prompt_fingerprint: None,
                         model_fingerprint: Some("grobid/grobid:0.9.0-crf".into()),

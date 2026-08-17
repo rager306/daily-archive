@@ -67,6 +67,8 @@ fn parsed_article(
         pdf_hash,
         tables: Vec::new(),
         table_missingness: None,
+        formulas: Vec::new(),
+        formula_missingness: None,
     }
 }
 

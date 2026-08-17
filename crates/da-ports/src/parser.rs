@@ -38,6 +38,18 @@ pub struct ParsedArticle {
     /// payload / HTML parser) or extraction ran and found tables.
     #[serde(default)]
     pub table_missingness: Option<TableMissingReason>,
+    /// Deterministic TEI formula structures (M400 S03 T01). `#[serde(default)]`
+    /// keeps legacy cached/fixture JSON decodable (R085) — legacy payloads
+    /// without the field deserialize to an empty Vec.
+    #[serde(default)]
+    pub formulas: Vec<ExtractedFormula>,
+    /// Typed missingness when the source TEI has no formula structure at all
+    /// (R087 — no silent loss: an empty `formulas` Vec alone cannot
+    /// distinguish "document genuinely has no formulas" from "parser did not
+    /// populate formulas"). `None` means the parser does not extract formulas
+    /// (legacy payload / HTML parser) or extraction ran and found formulas.
+    #[serde(default)]
+    pub formula_missingness: Option<FormulaMissingReason>,
 }
 
 /// A source char span `[start, end)` (end exclusive) inside a section's
@@ -102,6 +114,105 @@ pub struct TableCell {
 
 fn default_one() -> u32 {
     1
+}
+
+/// Typed missingness reason for TEI formula structure (M400 S03 T01).
+///
+/// `ParsedArticle.formula_missingness` records the article-level reason when
+/// no `<formula>` element exists in the source TEI; `ExtractedFormula.missingness`
+/// records per-formula reasons when a `<formula>` element was found but its
+/// content is unusable. Either way the parser is fail-closed: representations
+/// are never invented and neither source is overwritten.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FormulaMissingReason {
+    /// The source TEI contains no `<formula>` element at all.
+    NoFormulaElements,
+    /// A `<formula>` element was found but its content is unusable
+    /// (e.g. empty with no MathML/LaTeX/text representation).
+    Malformed(String),
+}
+
+/// The representation of a TEI `<formula>` element (M400 S03 T01).
+///
+/// GROBID emits formulas as `<formula xml:id="…">` with the PDF-layout text
+/// approximation, optionally a MathML `<math>` subtree (math extraction
+/// enabled) or a `<texMath>` element (other TEI producers). Exactly one
+/// variant is populated per formula; the parser never invents a
+/// representation where the source had none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FormulaRepresentation {
+    /// Raw MathML subtree (`<math …>…</math>`) from the TEI.
+    #[serde(rename = "math_ml")]
+    MathML(String),
+    /// LaTeX source from a `<texMath>` element.
+    #[serde(rename = "tex_math")]
+    TeXMath(String),
+    /// Stripped visible text — the PDF-layout approximation GROBID emits
+    /// when math parsing is unavailable or disabled.
+    #[serde(rename = "plain_text")]
+    PlainText(String),
+}
+
+impl FormulaRepresentation {
+    /// The representation content (MathML XML, LaTeX source, or plain text).
+    pub fn as_str(&self) -> &str {
+        match self {
+            FormulaRepresentation::MathML(s)
+            | FormulaRepresentation::TeXMath(s)
+            | FormulaRepresentation::PlainText(s) => s,
+        }
+    }
+}
+
+/// A deterministic TEI formula structure (M400 S03 T01).
+///
+/// GROBID emits formulas as `<formula xml:id="formula_0">…<label>(1)</label>
+/// </formula>` inline inside `<p>` elements within the `<body>` (coordinates
+/// requested via `teiCoordinates=["…","formula"]`). Section identity mirrors
+/// the section extractor exactly: a formula maps to the `path_id` of the
+/// section text window that contains it, or `None` when it sits outside every
+/// section window (top-level gap / trailing region).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExtractedFormula {
+    /// Stable formula identifier: the `xml:id` of the `<formula>` element
+    /// (e.g. "formula_0"), falling back to the deterministic ordinal key
+    /// "formula-{index}".
+    pub formula_id: String,
+    /// `path_id` of the section whose text window contains this formula.
+    /// `None` when the formula is outside every section window — typed
+    /// missingness at ingest, never guessed.
+    #[serde(default)]
+    pub section_path_id: Option<String>,
+    /// 0-based ordinal of that section in `ParsedArticle.sections` (section
+    /// titles repeat, so the ordinal disambiguates, mirroring
+    /// `ExtractedEntity.section_ordinal`). `None` together with
+    /// `section_path_id`.
+    #[serde(default)]
+    pub section_ordinal: Option<usize>,
+    /// Equation number/label from the `<label>` child (e.g. "(1)"), if any.
+    #[serde(default)]
+    pub label: Option<String>,
+    /// GROBID `coords` attribute on the `<formula>` element when emitted
+    /// (requested via `teiCoordinates=["…","formula"]`), else None. Format
+    /// "x1,y1,x2,y2;page" (page is the last value).
+    #[serde(default)]
+    pub coordinates: Option<String>,
+    /// The formula's representation (MathML / LaTeX / plain text).
+    pub representation: FormulaRepresentation,
+    /// Source char span of the formula's visible content inside the
+    /// containing section's stripped text. `None` when the formula is not
+    /// inside any section text window (typed missingness, never guessed).
+    #[serde(default)]
+    pub span: Option<CharSpan>,
+    /// Deterministic SHA-256 digest of formula_id + label + coordinates +
+    /// representation kind + representation content — the formula's
+    /// source-digest evidence (R087).
+    pub source_digest: String,
+    /// Typed missingness when this formula's content is unusable (e.g. empty
+    /// with no representation) — fail-closed, never invented representations.
+    #[serde(default)]
+    pub missingness: Option<FormulaMissingReason>,
 }
 
 /// A deterministic TEI table structure (M400 S02 T01).

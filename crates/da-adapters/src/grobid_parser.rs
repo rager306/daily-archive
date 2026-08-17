@@ -5,8 +5,8 @@
 
 use async_trait::async_trait;
 use da_ports::parser::{
-    CharSpan, ExtractedTable, ParseResult, ParsedArticle, ParserError, ParserPort, TableCell,
-    TableMissingReason,
+    CharSpan, ExtractedFormula, ExtractedTable, FormulaMissingReason, FormulaRepresentation,
+    ParseResult, ParsedArticle, ParserError, ParserPort, TableCell, TableMissingReason,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -19,8 +19,12 @@ pub struct GrobidProfile {
 }
 
 impl GrobidProfile {
-    /// Coordinate groups always requested by this adapter.
-    pub const TEI_COORDINATES: &'static str = "figure,table,note";
+    /// Coordinate groups always requested by this adapter. `formula` was
+    /// added in M400 S03 T01 so GROBID emits `coords` on `<formula>`
+    /// elements; the resulting `configuration_fingerprint` change rotates the
+    /// parse-stage cache identity (D204 — never mix profiles/coordinates
+    /// under one cache key).
+    pub const TEI_COORDINATES: &'static str = "figure,table,note,formula";
 
     pub const fn rich() -> Self {
         Self {
@@ -93,8 +97,12 @@ struct RawRefAnchor {
     window_ordinal: usize,
 }
 
-/// Borrowed TEI table-parse context shared by every table in one document.
-struct TableParseContext<'a> {
+/// Borrowed TEI section-parse context shared by every table and formula in
+/// one document: the body slice, its offset within the full TEI, the section
+/// text windows (with resolved `path_id`), and the ordinal of each section
+/// path (M400 S02 T01 tables; M400 S03 T01 formulas reuse the same windows so
+/// section identity stays consistent across both extractors).
+struct SectionParseContext<'a> {
     body: Option<&'a str>,
     body_start: usize,
     windows: &'a [(usize, usize, Option<String>)],
@@ -1180,7 +1188,7 @@ impl GrobidParser {
         let (windows, body_start) = match body {
             Some(b) => {
                 let body_start = b.as_ptr() as usize - tei.as_ptr() as usize;
-                (Self::table_windows(b), body_start)
+                (Self::section_windows(b), body_start)
             }
             None => (Vec::new(), 0),
         };
@@ -1223,7 +1231,7 @@ impl GrobidParser {
                 content,
                 abs,
                 close,
-                &TableParseContext {
+                &SectionParseContext {
                     body,
                     body_start,
                     windows: &windows,
@@ -1247,9 +1255,12 @@ impl GrobidParser {
     /// `extract_sections` exactly (nested div walk or flat `<head>` scan with
     /// the same path collision resolution). Windows cover the body with no
     /// gaps: regions outside any section (pre-first-div/head region,
-    /// inter-sibling gaps, trailing region) carry `None` so a table there is
-    /// honestly reported as not-section-resolved instead of being guessed.
-    fn table_windows(body: &str) -> Vec<(usize, usize, Option<String>)> {
+    /// inter-sibling gaps, trailing region) carry `None` so a table or
+    /// formula there is honestly reported as not-section-resolved instead of
+    /// being guessed. Shared by table extraction (M400 S02 T01) and formula
+    /// extraction (M400 S03 T01) so both land on the exact section paths the
+    /// section pass produced.
+    fn section_windows(body: &str) -> Vec<(usize, usize, Option<String>)> {
         let mut out = Vec::new();
         if Self::has_nested_divs(body) {
             let divs = Self::find_child_divs(body);
@@ -1259,9 +1270,9 @@ impl GrobidParser {
                 out.push((0, first.content_start, None));
             }
             let mut used = HashSet::new();
-            Self::walk_table_windows(body, "", &mut used, &mut out);
+            Self::walk_section_windows(body, "", &mut used, &mut out);
         } else {
-            Self::flat_table_windows(body, &mut out);
+            Self::flat_section_windows(body, &mut out);
         }
         out
     }
@@ -1271,7 +1282,7 @@ impl GrobidParser {
     /// coverage). Each div's direct text window (after `</head>` up to the
     /// first nested `<div>`) carries the div's resolved path; inter-sibling
     /// gaps and the trailing region belong to no section (`None`).
-    fn walk_table_windows(
+    fn walk_section_windows(
         body: &str,
         parent_path: &str,
         used_paths: &mut HashSet<String>,
@@ -1324,7 +1335,7 @@ impl GrobidParser {
                 out.push((gap_start, next_start, None));
             }
 
-            Self::walk_table_windows(div_content, &path_id, used_paths, out);
+            Self::walk_section_windows(div_content, &path_id, used_paths, out);
         }
     }
 
@@ -1334,7 +1345,7 @@ impl GrobidParser {
     /// resolved with the same collision algorithm as `uniquify_flat_paths` —
     /// windows without content (empty title AND text) are skipped exactly
     /// like the section pass.
-    fn flat_table_windows(body: &str, out: &mut Vec<(usize, usize, Option<String>)>) {
+    fn flat_section_windows(body: &str, out: &mut Vec<(usize, usize, Option<String>)>) {
         let mut raw: Vec<(usize, usize, String, bool)> = Vec::new();
         let mut pos = 0usize;
         while let Some(head_start) = body[pos..].find("<head") {
@@ -1426,7 +1437,7 @@ impl GrobidParser {
         content: &str,
         abs_start: usize,
         abs_end: usize,
-        context: &TableParseContext<'_>,
+        context: &SectionParseContext<'_>,
         index: usize,
     ) -> ExtractedTable {
         // Enclosing <figure type="table"> context: caption head + xml:id + coords.
@@ -1731,6 +1742,272 @@ impl GrobidParser {
         hex::encode(hasher.finalize())
     }
 
+    // ─── M400 S03 T01: deterministic TEI formula extraction ───
+
+    /// Extract deterministic TEI formula structures (M400 S03 T01).
+    ///
+    /// GROBID emits formulas as `<formula xml:id="formula_0">…<label>(1)</label>
+    /// </formula>` inline inside `<p>` elements within the `<body>` (coordinates
+    /// requested via `teiCoordinates=["figure","table","note","formula"]`).
+    /// Section identity mirrors `extract_sections` exactly — the same section
+    /// windows shared with table extraction (`section_windows`), so a formula
+    /// maps to the same `path_id` the section extractor produced for its
+    /// containing text window. Formulas outside every section window (top-level
+    /// gaps / trailing region) get `section_path_id: None` — typed missingness,
+    /// never guessed into a neighbour.
+    ///
+    /// Returns the extracted formulas plus the article-level typed missingness:
+    /// `Some(NoFormulaElements)` when the TEI contains no `<formula>` element at
+    /// all (R087 — an empty Vec alone cannot distinguish that from a parser
+    /// that did not populate formulas).
+    fn extract_formulas(tei: &str) -> (Vec<ExtractedFormula>, Option<FormulaMissingReason>) {
+        let body = Self::tei_body(tei);
+        let (windows, body_start) = match body {
+            Some(b) => {
+                let body_start = b.as_ptr() as usize - tei.as_ptr() as usize;
+                (Self::section_windows(b), body_start)
+            }
+            None => (Vec::new(), 0),
+        };
+
+        // 0-based ordinal of each section path (section titles repeat, so
+        // formulas need the ordinal to disambiguate — mirrors
+        // ExtractedEntity.section_ordinal, MEM685).
+        let sections = Self::extract_sections(tei);
+        let mut ordinal_by_path: HashMap<String, usize> = HashMap::new();
+        for (idx, section) in sections.iter().enumerate() {
+            if let Some(path) = section.path_id.as_deref() {
+                ordinal_by_path.entry(path.to_string()).or_insert(idx);
+            }
+        }
+
+        let mut formulas = Vec::new();
+        let mut formula_count = 0usize;
+        let mut pos = 0usize;
+        while let Some(rel) = tei[pos..].find("<formula") {
+            let abs = pos + rel;
+            // Skip closing tags and non-element matches.
+            if tei[abs..].starts_with("</formula") {
+                pos = abs + 1;
+                continue;
+            }
+            let tag_end = match tei[abs..].find('>') {
+                Some(e) => abs + e,
+                None => break,
+            };
+            let close = match tei[tag_end..].find("</formula>") {
+                Some(e) => tag_end + e,
+                None => break,
+            };
+            formula_count += 1;
+            let open_tag = &tei[abs..=tag_end];
+            let content = &tei[tag_end + 1..close];
+            let formula = Self::build_formula(
+                body,
+                body_start,
+                &windows,
+                &ordinal_by_path,
+                open_tag,
+                content,
+                abs,
+                formula_count,
+            );
+            formulas.push(formula);
+            pos = close + "</formula>".len();
+        }
+
+        let missingness = if formula_count == 0 {
+            Some(FormulaMissingReason::NoFormulaElements)
+        } else {
+            None
+        };
+        (formulas, missingness)
+    }
+
+    /// Build one `ExtractedFormula` from a `<formula ...>…</formula>` element
+    /// (TEI-absolute `abs_start`). Section identity comes from the containing
+    /// window (`windows` are body-relative); the source span is computed
+    /// against the containing section's stripped text.
+    #[allow(clippy::too_many_arguments)]
+    fn build_formula(
+        body: Option<&str>,
+        body_start: usize,
+        windows: &[(usize, usize, Option<String>)],
+        ordinal_by_path: &HashMap<String, usize>,
+        open_tag: &str,
+        content: &str,
+        abs_start: usize,
+        index: usize,
+    ) -> ExtractedFormula {
+        let formula_id =
+            Self::extract_attr(open_tag, "xml:id").unwrap_or_else(|| format!("formula-{index}"));
+
+        let label = Self::extract_formula_label(content);
+
+        let coordinates = Self::extract_attr(open_tag, "coords");
+
+        let (representation, missingness) = Self::formula_representation(content);
+
+        // Section window containing this formula (body-relative coordinates).
+        let formula_rel = abs_start.saturating_sub(body_start);
+        let window = windows
+            .iter()
+            .find(|(s, e, _)| *s <= formula_rel && formula_rel < *e);
+        let section_path = window.and_then(|(_, _, path)| path.clone());
+        let section_ordinal = section_path
+            .as_ref()
+            .and_then(|path| ordinal_by_path.get(path).copied());
+        // Spans are only computable against a real section text window; a
+        // None window (gap) has no section text to anchor against.
+        let span_window = window.and_then(
+            |(s, e, path)| {
+                if path.is_some() { Some((*s, *e)) } else { None }
+            },
+        );
+
+        let span = match span_window {
+            Some((w_start, w_end)) => body.and_then(|body| {
+                let content_abs = abs_start + open_tag.len();
+                let content_rel = content_abs.saturating_sub(body_start);
+                if content_rel < w_start || content_rel >= w_end {
+                    return None;
+                }
+                let start = Self::stripped_text_offset(body, w_start, content_rel, w_end);
+                let end = start + Self::visible_char_count(content) as u32;
+                Some(CharSpan { start, end })
+            }),
+            None => None,
+        };
+
+        let source_digest = Self::formula_digest(
+            &formula_id,
+            label.as_deref(),
+            coordinates.as_deref(),
+            &representation,
+        );
+
+        ExtractedFormula {
+            formula_id,
+            section_path_id: section_path,
+            section_ordinal,
+            label,
+            coordinates,
+            representation,
+            span,
+            source_digest,
+            missingness,
+        }
+    }
+
+    /// Extract the equation number/label from the formula's `<label>` child
+    /// (e.g. "(1)"), if any. GROBID emits the label after the formula's text
+    /// content; other TEI producers may place it before.
+    fn extract_formula_label(content: &str) -> Option<String> {
+        let ls = content.find("<label")?;
+        let tag_end = content[ls..].find('>').map(|e| ls + e)?;
+        let inner_start = tag_end + 1;
+        let close_rel = content[inner_start..].find("</label>")?;
+        let label = Self::strip_xml_tags(&content[inner_start..inner_start + close_rel]);
+        if label.is_empty() { None } else { Some(label) }
+    }
+
+    /// Determine the formula's representation (M400 S03 T01): the raw MathML
+    /// subtree when a `<math>` element is present, the LaTeX source from a
+    /// `<texMath>` element (other TEI producers), else the stripped visible
+    /// text (GROBID's PDF-layout approximation when math parsing is
+    /// unavailable or disabled). Exactly one variant is populated. Fail-closed:
+    /// a `<formula>` whose content yields no representation produces
+    /// `PlainText("")` plus typed missingness `Malformed` — never an invented
+    /// representation.
+    fn formula_representation(
+        content: &str,
+    ) -> (FormulaRepresentation, Option<FormulaMissingReason>) {
+        // Raw MathML subtree (tags included), e.g.
+        // `<math xmlns="…"><mi>x</mi></math>`.
+        if let Some(math_start) = content.find("<math") {
+            let after = &content[math_start..];
+            return match after.find("</math>") {
+                Some(close_rel) => (
+                    FormulaRepresentation::MathML(
+                        content[math_start..math_start + close_rel + "</math>".len()].to_string(),
+                    ),
+                    None,
+                ),
+                None => (
+                    FormulaRepresentation::PlainText(String::new()),
+                    Some(FormulaMissingReason::Malformed(
+                        "math element without closing tag".to_string(),
+                    )),
+                ),
+            };
+        }
+        // `<texMath>…</texMath>` (other TEI producers): the LaTeX source.
+        if let Some(tex_start) = content.find("<texMath") {
+            let after = &content[tex_start..];
+            if let Some(close_rel) = after.find("</texMath>") {
+                let raw = &content[tex_start..tex_start + close_rel];
+                let source = Self::strip_xml_tags(raw);
+                if !source.is_empty() {
+                    return (FormulaRepresentation::TeXMath(source), None);
+                }
+                return (
+                    FormulaRepresentation::PlainText(String::new()),
+                    Some(FormulaMissingReason::Malformed(
+                        "empty texMath content".to_string(),
+                    )),
+                );
+            }
+            return (
+                FormulaRepresentation::PlainText(String::new()),
+                Some(FormulaMissingReason::Malformed(
+                    "texMath element without closing tag".to_string(),
+                )),
+            );
+        }
+        // GROBID PDF-layout approximation (no math extraction) or plain text.
+        let text = Self::strip_xml_tags(content);
+        if text.is_empty() {
+            (
+                FormulaRepresentation::PlainText(String::new()),
+                Some(FormulaMissingReason::Malformed(
+                    "empty formula content".to_string(),
+                )),
+            )
+        } else {
+            (FormulaRepresentation::PlainText(text), None)
+        }
+    }
+
+    /// Deterministic SHA-256 formula digest over formula_id + label +
+    /// coordinates + representation kind + representation content. Location
+    /// (span/section) is intentionally excluded so the digest is pure
+    /// source-content evidence; materialization binds revision + section into
+    /// the graph VID (R087).
+    fn formula_digest(
+        formula_id: &str,
+        label: Option<&str>,
+        coords: Option<&str>,
+        representation: &FormulaRepresentation,
+    ) -> String {
+        use sha2::{Digest, Sha256};
+        let mut hasher = Sha256::new();
+        hasher.update(formula_id.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(label.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        hasher.update(coords.unwrap_or("").as_bytes());
+        hasher.update(b"\n");
+        let kind = match representation {
+            FormulaRepresentation::MathML(_) => "math_ml",
+            FormulaRepresentation::TeXMath(_) => "tex_math",
+            FormulaRepresentation::PlainText(_) => "plain_text",
+        };
+        hasher.update(kind.as_bytes());
+        hasher.update(b"\n");
+        hasher.update(representation.as_str().as_bytes());
+        hex::encode(hasher.finalize())
+    }
+
     /// Extract the analytic title from a biblStruct entry.
     fn extract_citation_title(entry: &str) -> Option<String> {
         let analytic = entry
@@ -1825,6 +2102,7 @@ impl ParserPort for GrobidParser {
         let sections = Self::extract_sections(&tei_xml);
         let citations = Self::extract_citations(&tei_xml);
         let (tables, table_missingness) = Self::extract_tables(&tei_xml);
+        let (formulas, formula_missingness) = Self::extract_formulas(&tei_xml);
 
         let sections_with_path_id = sections.iter().filter(|s| s.path_id.is_some()).count();
         let max_depth = sections
@@ -1834,6 +2112,7 @@ impl ParserPort for GrobidParser {
             .max()
             .unwrap_or(0);
         let table_cells: usize = tables.iter().map(|t| t.cells.len()).sum();
+        let formula_reprs: usize = formulas.iter().filter(|f| f.missingness.is_none()).count();
 
         tracing::info!(
             paper_id,
@@ -1847,6 +2126,9 @@ impl ParserPort for GrobidParser {
             tables = tables.len(),
             table_cells,
             table_missingness = ?table_missingness,
+            formulas = formulas.len(),
+            formula_reprs,
+            formula_missingness = ?formula_missingness,
             pdf_hash = %pdf_hash,
             "GROBID parsed: extraction complete"
         );
@@ -1870,6 +2152,8 @@ impl ParserPort for GrobidParser {
             pdf_hash,
             tables,
             table_missingness,
+            formulas,
+            formula_missingness,
         })
     }
 }
@@ -1891,11 +2175,11 @@ mod tests {
         assert_eq!(GrobidProfile::rich().name(), "rich");
         assert_eq!(
             GrobidProfile::rich().configuration_fingerprint(),
-            "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note"
+            "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula"
         );
         assert_eq!(
             GrobidProfile::structural().configuration_fingerprint(),
-            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note"
+            "profile=structural;consolidateHeader=0;consolidateCitations=0;teiCoordinates=figure,table,note,formula"
         );
         assert_ne!(
             GrobidProfile::rich().configuration_fingerprint(),
@@ -2653,6 +2937,224 @@ mod tests {
         // Table id extraction must not confuse `id=` inside `xml:id=`.
         assert_eq!(table.table_id, "tab_0");
     }
+
+    // ─── M400 S03 T01: deterministic TEI formula extraction ───
+
+    /// Flat TEI: a `<formula>` inline inside a `<p>` in the Results window
+    /// maps to section "1"; label, coordinates, PlainText representation and
+    /// the source span are resolved, and the digest is 64-hex. The span must
+    /// point at the formula's visible content (text + label) in the section's
+    /// stripped text.
+    #[test]
+    fn test_extract_formulas_flat_section_resolved() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p>We optimize <formula xml:id="formula_0" coords="90,120,428,140;1">E = mc2<label>(1)</label></formula>.</p></body></text></TEI>"##;
+        let (formulas, missingness) = GrobidParser::extract_formulas(tei);
+        assert_eq!(
+            missingness, None,
+            "formula found → no article-level missingness"
+        );
+        assert_eq!(formulas.len(), 1);
+        let formula = &formulas[0];
+        assert_eq!(formula.formula_id, "formula_0");
+        assert_eq!(formula.section_path_id.as_deref(), Some("1"));
+        assert_eq!(formula.section_ordinal, Some(0));
+        assert_eq!(formula.label.as_deref(), Some("(1)"));
+        assert_eq!(formula.coordinates.as_deref(), Some("90,120,428,140;1"));
+        assert_eq!(
+            formula.representation,
+            FormulaRepresentation::PlainText("E = mc2(1)".into()),
+            "no <math>/<texMath> → stripped visible text"
+        );
+        assert_eq!(formula.missingness, None);
+        assert_eq!(formula.source_digest.len(), 64);
+        // Spans must land on the section's stripped text.
+        let sections = GrobidParser::extract_sections(tei);
+        let sec = &sections[0];
+        assert_eq!(sec.path_id.as_deref(), Some("1"));
+        let span = formula.span.expect("resolved formula carries a span");
+        let slice = &sec.text[span.start as usize..span.end as usize];
+        assert_eq!(slice.trim(), "E = mc2(1)");
+        assert_eq!(sec.title, "Results");
+    }
+
+    /// A `<math>` subtree inside the formula becomes the MathML
+    /// representation (raw subtree, tags included); the label is still
+    /// extracted from the `<label>` child.
+    #[test]
+    fn test_extract_formulas_mathml_representation() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>x</mi><mo>=</mo><mn>1</mn></math><label>(2)</label></formula></p></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 1);
+        let formula = &formulas[0];
+        assert_eq!(
+            formula.representation,
+            FormulaRepresentation::MathML(
+                "<math xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>x</mi><mo>=</mo><mn>1</mn></math>"
+                    .into()
+            )
+        );
+        assert_eq!(formula.label.as_deref(), Some("(2)"));
+        assert_eq!(formula.missingness, None);
+        // The span covers the MathML text nodes plus the label in the
+        // section's stripped text ("x=1(2)").
+        let sections = GrobidParser::extract_sections(tei);
+        let span = formula.span.expect("span present");
+        let slice = &sections[0].text[span.start as usize..span.end as usize];
+        assert_eq!(slice.trim(), "x=1(2)");
+    }
+
+    /// A `<texMath>` element (other TEI producers) becomes the TeXMath
+    /// representation with the LaTeX source content.
+    #[test]
+    fn test_extract_formulas_texmath_representation() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0"><texMath>x = \gamma</texMath></formula></p></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 1);
+        assert_eq!(
+            formulas[0].representation,
+            FormulaRepresentation::TeXMath("x = \\gamma".into())
+        );
+        assert_eq!(formulas[0].missingness, None);
+    }
+
+    /// Nested TEI: a formula in a div's direct content maps to that div's
+    /// path; spans are verified against that section's stripped text.
+    #[test]
+    fn test_extract_formulas_nested_section_mapping_and_spans() {
+        let tei = r##"<TEI><text><body><div n="1"><head>Introduction</head><p>Equation <formula xml:id="formula_0">y = mx + b</formula> here.</p><div n="1.1"><head>Setup</head><p>x</p></div></div></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 1);
+        let formula = &formulas[0];
+        assert_eq!(formula.section_path_id.as_deref(), Some("1"));
+        assert_eq!(formula.section_ordinal, Some(0));
+        let sections = GrobidParser::extract_sections(tei);
+        let sec = sections
+            .iter()
+            .find(|s| s.path_id.as_deref() == Some("1"))
+            .expect("section 1");
+        let span = formula
+            .span
+            .expect("nested resolved formula carries a span");
+        let slice = &sec.text[span.start as usize..span.end as usize];
+        assert_eq!(slice.trim(), "y = mx + b");
+    }
+
+    /// A formula in a top-level gap (outside every section text window) is
+    /// reported with `section_path_id: None`, no span and no ordinal — typed
+    /// missingness, never guessed into a neighbour section.
+    #[test]
+    fn test_extract_formulas_gap_path_unresolved() {
+        let tei = r##"<TEI><text><body><div n="1"><head>Intro</head><p>Alpha</p><div n="1.1"><head>Sub</head><p>x</p></div></div><p>Gap formula <formula xml:id="formula_0">gap</formula> here.</p><div n="2"><head>Methods</head><p>Beta</p></div></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 1);
+        let formula = &formulas[0];
+        assert!(
+            formula.section_path_id.is_none(),
+            "inter-div gap belongs to no section"
+        );
+        assert!(formula.section_ordinal.is_none());
+        assert!(
+            formula.span.is_none(),
+            "no section text window → no source span"
+        );
+        assert_eq!(
+            formula.representation,
+            FormulaRepresentation::PlainText("gap".into())
+        );
+    }
+
+    /// TEI without any `<formula>` element: article-level typed missingness
+    /// `NoFormulaElements` (R087 — an empty Vec alone cannot distinguish this
+    /// from a parser that did not populate formulas).
+    #[test]
+    fn test_extract_formulas_no_formulas_typed_missingness() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p>No formulas here.</p></body></text></TEI>"##;
+        let (formulas, missingness) = GrobidParser::extract_formulas(tei);
+        assert!(formulas.is_empty());
+        assert_eq!(missingness, Some(FormulaMissingReason::NoFormulaElements));
+
+        // No body at all → also typed missingness, not a crash.
+        let header_only = r##"<TEI><teiHeader><title>No body</title></teiHeader></TEI>"##;
+        let (formulas, missingness) = GrobidParser::extract_formulas(header_only);
+        assert!(formulas.is_empty());
+        assert_eq!(missingness, Some(FormulaMissingReason::NoFormulaElements));
+    }
+
+    /// A `<formula>` element with empty content is fail-closed: typed
+    /// per-formula missingness `Malformed` with an empty PlainText
+    /// representation — never an invented representation. Unclosed `<math>`
+    /// is also malformed.
+    #[test]
+    fn test_extract_formulas_malformed_empty() {
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p><formula xml:id="formula_0"></formula></p></body></text></TEI>"##;
+        let (formulas, article_missingness) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 1);
+        assert_eq!(article_missingness, None, "a <formula> element was found");
+        let formula = &formulas[0];
+        assert_eq!(
+            formula.representation,
+            FormulaRepresentation::PlainText(String::new())
+        );
+        assert_eq!(
+            formula.missingness,
+            Some(FormulaMissingReason::Malformed(
+                "empty formula content".into()
+            ))
+        );
+
+        // Unclosed <math> is fail-closed malformed too.
+        let tei = r##"<TEI><text><body><head n="1">Intro</head><p><formula xml:id="formula_0"><math><mi>x</mi></formula></p></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(
+            formulas[0].missingness,
+            Some(FormulaMissingReason::Malformed(
+                "math element without closing tag".into()
+            ))
+        );
+    }
+
+    /// Extraction is deterministic: the same TEI yields identical formulas;
+    /// a changed formula text changes the representation and the digest.
+    #[test]
+    fn test_extract_formulas_digest_determinism() {
+        let tei_a = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0">E = mc2</formula></p></body></text></TEI>"##;
+        let tei_b = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0">E = mc2!</formula></p></body></text></TEI>"##;
+        let (formulas_a, _) = GrobidParser::extract_formulas(tei_a);
+        let (formulas_a2, _) = GrobidParser::extract_formulas(tei_a);
+        let (formulas_b, _) = GrobidParser::extract_formulas(tei_b);
+        assert_eq!(
+            formulas_a, formulas_a2,
+            "identical TEI → identical formulas"
+        );
+        assert_eq!(formulas_a[0].source_digest, formulas_a2[0].source_digest);
+        assert_ne!(
+            formulas_a[0].source_digest, formulas_b[0].source_digest,
+            "changed formula text must change the source digest"
+        );
+    }
+
+    /// Without an `xml:id`, the formula id falls back to the deterministic
+    /// ordinal key "formula-{index}".
+    #[test]
+    fn test_extract_formulas_ordinal_fallback_without_xml_id() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula>a</formula> <formula>b</formula></p></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        assert_eq!(formulas.len(), 2);
+        assert_eq!(formulas[0].formula_id, "formula-1");
+        assert_eq!(formulas[1].formula_id, "formula-2");
+    }
+
+    /// The `coords` attribute on the `<formula>` element is preserved and
+    /// participates in the digest; `xml:id` extraction must not confuse
+    /// `id=` inside `xml:id=`.
+    #[test]
+    fn test_extract_formulas_coordinates_preserved() {
+        let tei = r##"<TEI><text><body><head n="1">Results</head><p><formula xml:id="formula_0" coords="90,120,428,140;1">a</formula></p></body></text></TEI>"##;
+        let (formulas, _) = GrobidParser::extract_formulas(tei);
+        let formula = &formulas[0];
+        assert_eq!(formula.coordinates.as_deref(), Some("90,120,428,140;1"));
+        assert_eq!(formula.formula_id, "formula_0");
+    }
 }
 
 #[cfg(test)]
@@ -2890,6 +3392,105 @@ mod real_tei_tests {
                 .iter()
                 .map(|t| t.table_id.clone())
                 .collect::<Vec<_>>()
+        );
+    }
+
+    /// M400 S03 T01 real-TEI pin (hub 2507.19457): the 24 `<formula>`
+    /// elements must extract with their GROBID `xml:id` (formula_0..formula_24
+    /// with formula_2 absent — GROBID numbering), PlainText representations
+    /// (this corpus has no math extraction), deterministic 64-hex digests, and
+    /// every resolved section identity must exist among the section
+    /// extractor's paths with the matching ordinal.
+    #[test]
+    fn test_real_grobid_tei_formulas_2507_19457() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../data/article_corpora/m033-grobid-probe-v1/per-paper/2507.19457/grobid.tei.xml"
+        );
+        let tei = match std::fs::read_to_string(path) {
+            Ok(t) => t,
+            Err(_) => {
+                eprintln!("skipping real TEI test (file not found): {path}");
+                return;
+            }
+        };
+        let (formulas, missingness) = GrobidParser::extract_formulas(&tei);
+        let (formulas_again, _) = GrobidParser::extract_formulas(&tei);
+        assert_eq!(
+            formulas, formulas_again,
+            "formula extraction must be deterministic across runs"
+        );
+        assert_eq!(missingness, None, "hub TEI has <formula> elements");
+        assert_eq!(
+            formulas.len(),
+            24,
+            "hub TEI expected 24 formulas, got {}",
+            formulas.len()
+        );
+        let expected_ids: std::collections::HashSet<String> = (0..=24u32)
+            .filter(|i| *i != 2)
+            .map(|i| format!("formula_{i}"))
+            .collect();
+        let actual_ids: std::collections::HashSet<String> =
+            formulas.iter().map(|f| f.formula_id.clone()).collect();
+        assert_eq!(
+            actual_ids, expected_ids,
+            "hub TEI formula ids must be formula_0..formula_24 minus formula_2"
+        );
+        // Only formula_0 carries an equation number label in this corpus.
+        assert_eq!(
+            formulas.iter().filter(|f| f.label.is_some()).count(),
+            1,
+            "hub TEI expected exactly one labeled formula"
+        );
+        assert_eq!(
+            formulas[0].label.as_deref(),
+            Some("(1)"),
+            "formula_0 label is the equation number (1)"
+        );
+        // Representations are the GROBID PDF-layout approximation (no
+        // <math>/<texMath> extraction in this corpus) and every digest is a
+        // 64-hex SHA-256.
+        for formula in &formulas {
+            assert!(
+                matches!(formula.representation, FormulaRepresentation::PlainText(_)),
+                "hub TEI formulas are PlainText representations"
+            );
+            assert_eq!(formula.missingness, None);
+            assert_eq!(formula.source_digest.len(), 64);
+            assert!(formula.source_digest.bytes().all(|b| b.is_ascii_hexdigit()));
+        }
+        // Section identity consistency: every resolved path exists among the
+        // section extractor's paths and the ordinal points at that section.
+        let sections = GrobidParser::extract_sections(&tei);
+        let section_paths: std::collections::HashSet<&str> = sections
+            .iter()
+            .filter_map(|s| s.path_id.as_deref())
+            .collect();
+        for formula in &formulas {
+            if let Some(path) = formula.section_path_id.as_deref() {
+                assert!(
+                    section_paths.contains(path),
+                    "formula '{}' path '{path}' must exist among section paths",
+                    formula.formula_id
+                );
+                let ordinal = formula.section_ordinal.expect("ordinal with path");
+                assert_eq!(
+                    sections[ordinal].path_id.as_deref(),
+                    Some(path),
+                    "formula '{}' ordinal must point at its section",
+                    formula.formula_id
+                );
+            }
+        }
+        println!(
+            "hub TEI formulas: {} formulas, labels={}, resolved_paths={}",
+            formulas.len(),
+            formulas.iter().filter(|f| f.label.is_some()).count(),
+            formulas
+                .iter()
+                .filter(|f| f.section_path_id.is_some())
+                .count()
         );
     }
 
