@@ -1,34 +1,37 @@
-# Continue — M399-a2hxn7 complete
+# Continue — M400-xijx04 complete
 
 ## Last action
 
-M399-a2hxn7 “ACAP runtime guards and promotion control” is fully complete and validated (`verdict: pass`). All four slices and 13/13 tasks are closed:
+M400-xijx04 “Revision grounded multimodal evidence” is complete and validated (`verdict: pass`). All 5 slices and 18/18 tasks are closed:
 
-- S01 runtime ACAP admission guards;
-- S02 unified candidate promotion protocol;
-- S03 generic durable scheduler with fenced recovery;
-- S04 same-process control-plane evidence and Governor hardening.
+- S01 revision-grounded FigureCandidate evidence;
+- S02 TEI table-cell fidelity with typed disagreement;
+- S03 EquationCandidate formula provenance;
+- S04 canonical production pipeline and idempotent replay journey;
+- S05 Governor contracts, review-register closure, final closeout evidence.
 
-PIR-014, PIR-015, and PIR-016 are resolved. R093 is validated. Final milestone completion commit: `3d0c86f7`. D127 remains locked and optimizer auto-promotion remains disabled.
+PIR-018, PIR-019, and PIR-020 are resolved. R094 is validated. Final completion commit: `ae47e942`. D127 remains locked; optimizer/deployment auto-promotion remains disabled.
 
 ## Next action
 
-No active milestone. The next recommended milestone is the previously researched **revision-grounded multimodal candidate evidence** wave for R094 / PIR-018, PIR-019, and PIR-020:
+No active milestone. The next planned wave is **M401 agent readiness** for R095 / PIR-017 and PIR-021:
 
-- revision-scoped Figure/Table/Equation candidate evidence;
-- TEI table-cell and equation formula provenance;
-- no synthetic visual structure, no graph-truth promotion, and no import unlock.
+- read-only verified SymFSM loop (`ContextBundle`, explicit state transitions, evidence paths, graph writes forbidden);
+- honest remote persistent GraphStore read plane (`DA_GRAPH_MODE=remote` currently returns `NotConfigured`);
+- snapshot identity handshake and same-source cross-process contract suite;
+- Governor rules for verified agent evidence and honest remote graph mode.
 
-Create a new milestone ID with `gsd_milestone_generate_id`, save research, plan S01, then continue auto mode.
+Before creating the milestone, run a fresh GitNexus / codebase-memory architecture-and-debt audit. `codebase-memory-mcp` may need reconnect/reindex.
 
 ## Verification snapshot
 
-- Final M399 source revision: `sha256:3560a3e47e7c5b8d6992aa30343ca2cb4b3ff7c978c6dd7171349055e3955928`.
-- S04 control-plane UAT: PASS (`acap_control_plane_test` 3/3; integrated ledger; Governor YAML 59 rules / 12 dimensions; self-test 44/44 including 7 ACAP cases; active phase violations=0).
-- S03 scheduler UAT: PASS (integration recovery 11/11; domain scheduler 31/31; runner unit 10/10; focused D127 crash-recovery case 1/1).
-- S02 promotion UAT: PASS (domain promotion 25/25; application promotion 14/14; shared-surface contract 8/8; Governor 37/37).
-- Governor active has no blocking reverse-ADR violation; only medium `resource_target_bloat` build-cache guidance remains.
+- `multimodal_pipeline_test`: 2/2 PASS (ACAP admission + canonical journey).
+- Governor self-test: 65/65 PASS, including 18 multimodal cases.
+- Governor `--phase active --check-only`: violations=0; only pre-existing medium `resource_target_bloat` guidance remains.
+- Architecture guardrail: PASS (50 per-crate test suites).
+- Review register: PIR-018 resolved 4/4, PIR-019 4/4, PIR-020 3.5/3.5; R094 validated with D127 unlock count zero.
+- Closeout report: `artifacts/m400-s05-multimodal-closeout.md`.
 
 ## Do not
 
-Hand-edit `.gsd` planning artifacts or `gsd.db`. Unlock D127 without explicit user approval. Enable optimizer/deployment auto-promotion. Run workspace-wide cargo tests (rocksdb trap). Treat the target-size warning as a product failure.
+Hand-edit `.gsd` planning artifacts or `gsd.db`. Unlock D127 without explicit user approval. Enable optimizer/deployment auto-promotion. Run workspace-wide cargo tests (rocksdb trap). Use mutating Governor `--phase active` in task verification (use `--check-only`). Treat the target-size warning as a product failure.
