@@ -10,7 +10,7 @@ use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, PipelineCacheError, SourceIdentity, StageCacheKey, StageOutcome,
 };
 use da_ports::pipeline_stage::{PipelineStageExecutor, StageExecutionError, StageExecutionRequest};
-use kg_pipeline::Pipeline;
+use kg_pipeline::{Pipeline, PipelineBuilder};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
@@ -486,12 +486,25 @@ fn payload_sha256(payload: &[u8]) -> String {
 /// gated and do not advance the run's FSM state — their transitions surface in
 /// reports as `skipped`. Gating keys on the canonical id so alias smuggling
 /// cannot bypass the FSM.
+///
+/// Canonical multimodal compute stages (M400 S04) map to the intermediate ACAP
+/// layers: `figure_context` establishes document structure (`Structured`),
+/// `figure_analysis` typed visual extraction (`Extracted`), `table_fidelity`
+/// typed conflict evidence (`EvidenceLinked`), and `equation_extraction`
+/// formula representation (`Embedded`). `candidate_materialization` is
+/// deliberately NOT gated: like revision/extraction materialization it is a
+/// cross-cutting graph materialization helper whose candidate-only truth
+/// boundary (D127) is declared in the DATA contract, not in the ACAP FSM.
 fn acap_state_for_stage(stage_id: &str) -> Option<ArticleContextState> {
     use ArticleContextState::*;
     match stage_id {
         "acquisition" => Some(SourceRegistered),
         "catalog" => Some(SourceVerified),
         "parse" => Some(Parsed),
+        "figure_context" => Some(Structured),
+        "figure_analysis" => Some(Extracted),
+        "table_fidelity" => Some(EvidenceLinked),
+        "equation_extraction" => Some(Embedded),
         "extraction_compute" => Some(Extracted),
         "embedding" => Some(Embedded),
         "summary" => Some(Summarized),
@@ -518,6 +531,146 @@ fn source_entry_evidence(source: &SourceIdentity) -> Option<String> {
         return Some(format!("acquisition:{fingerprint}"));
     }
     None
+}
+
+/// Canonical multimodal production topology (M400 S04 T02).
+///
+/// Wires the five canonical multimodal stages (figure_context, figure_analysis,
+/// table_fidelity, equation_extraction, candidate_materialization) plus their
+/// parse prerequisites into one DAG. Step names follow the working example
+/// topology (`pipeline_figures.rs`): `parse` and `figures` (figure_detect — a
+/// parse-family alias in the DATA contract) are separate steps, figure_context
+/// consumes both, and candidate materialization converges on analysis + fidelity
+/// + equations. Every stage id is validated against the DATA registry so alias
+///   smuggling cannot inject a non-canonical stage into the composition.
+#[derive(Debug)]
+pub struct MultimodalComposition {
+    pub pipeline_id: String,
+    pub topology: Pipeline,
+    /// Unique canonical stage ids in topology order (deduplicated).
+    pub canonical_stages: Vec<String>,
+}
+
+impl MultimodalComposition {
+    /// Canonical multimodal topology validated against the DATA registry.
+    pub fn canonical(
+        stage_registry: &StageIdRegistry,
+        pipeline_id: &str,
+    ) -> Result<Self, PipelineOrchestratorError> {
+        let required = [
+            "parse",
+            "figure_context",
+            "figure_analysis",
+            "table_fidelity",
+            "equation_extraction",
+            "candidate_materialization",
+        ];
+        for id in required {
+            stage_registry
+                .parse_canonical(id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        // Executor-key aliases used by the topology (figure_detect is a
+        // parse-family alias per the DATA contract).
+        for alias in ["grobid_parse", "figure_detect"] {
+            stage_registry
+                .resolve(alias)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        let topology = PipelineBuilder::new(pipeline_id)
+            .step("parse", "grobid_parse", &[])
+            .step("figures", "figure_detect", &[])
+            .step("context", "figure_context", &["parse", "figures"])
+            .step("analysis", "figure_analysis", &["context"])
+            .step("fidelity", "table_fidelity", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .step(
+                "materialize",
+                "candidate_materialization",
+                &["analysis", "fidelity", "equations"],
+            )
+            .build()
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut canonical_stages = Vec::new();
+        for step in &topology.steps {
+            let canonical = stage_registry
+                .resolve(&step.stage)
+                .map_err(PipelineOrchestratorError::StageIdentity)?
+                .as_str()
+                .to_owned();
+            if seen.insert(canonical.clone()) {
+                canonical_stages.push(canonical);
+            }
+        }
+        Ok(Self {
+            pipeline_id: pipeline_id.to_owned(),
+            topology,
+            canonical_stages,
+        })
+    }
+}
+
+/// Exact cache-identity fingerprint binding for a multimodal production
+/// composition (M400 S04 T02). Every field is derived from live stage
+/// contracts and the env/config surfaces that produced them — never a
+/// hardcoded runtime value. The summary makes the effective-input contract of
+/// a production run observable: source, GROBID profile, detector, schema
+/// registry, model route, and output schema identity all rotate the cache key.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct MultimodalFingerprintSummary {
+    /// Checksum-bound source identity (article id + acquisition fingerprint).
+    pub source: String,
+    /// GROBID consolidation policy configuration fingerprint.
+    pub grobid_profile: String,
+    /// Figure detector fingerprint (model_fingerprint of figure_detect).
+    pub detector: String,
+    /// Figure schema registry version + per-schema identities.
+    pub schema_registry: String,
+    /// Model route binding (route id | protocol | model | fallback).
+    pub model_route: String,
+    /// Per canonical stage output schema fingerprints.
+    pub output_schemas: BTreeMap<String, String>,
+    /// Candidate-only graph truth boundary (D127): never true for candidates.
+    pub import_eligible: bool,
+}
+
+impl MultimodalFingerprintSummary {
+    /// Bind fingerprints from the live stage contracts of a composed run.
+    pub fn bind(
+        source: &SourceIdentity,
+        grobid_profile: &str,
+        contracts: &BTreeMap<String, da_ports::pipeline_stage::StageContract>,
+    ) -> Self {
+        let detector = contracts
+            .get("figure_detect")
+            .and_then(|contract| contract.model_fingerprint.clone())
+            .unwrap_or_else(|| "detector:unbound".into());
+        let schema_registry = contracts
+            .get("figure_analysis")
+            .map(|contract| contract.configuration_fingerprint.clone())
+            .unwrap_or_else(|| "schema_registry:unbound".into());
+        let model_route = contracts
+            .get("figure_analysis")
+            .and_then(|contract| contract.model_fingerprint.clone())
+            .unwrap_or_else(|| "model_route:unbound".into());
+        let output_schemas = contracts
+            .iter()
+            .map(|(stage, contract)| (stage.clone(), contract.output_schema_fingerprint.clone()))
+            .collect::<BTreeMap<_, _>>();
+        Self {
+            source: format!(
+                "article={};acq={}",
+                source.article_id, source.acquisition_fingerprint
+            ),
+            grobid_profile: grobid_profile.to_owned(),
+            detector,
+            schema_registry,
+            model_route,
+            output_schemas,
+            import_eligible: false,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -736,6 +889,7 @@ mod tests {
             failure_class: "terminal".into(),
             conditional: false,
             graph_truth_boundary: false,
+            candidate_only: false,
         }
     }
 
@@ -766,6 +920,25 @@ mod tests {
                 stage_contract("summary", &[]),
                 stage_contract("checkpoint", &[]),
                 stage_contract("readiness", &[]),
+            ],
+            import_eligible: false,
+        };
+        Arc::new(ledger.registry().unwrap())
+    }
+
+    /// Registry covering the canonical multimodal stage identities (M400 S04):
+    /// the four gated compute stages plus the ungated candidate materialization
+    /// helper.
+    fn multimodal_registry() -> Arc<StageIdRegistry> {
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                stage_contract("parse", &["grobid_parse", "figure_detect"]),
+                stage_contract("figure_context", &["figure_context_artifact"]),
+                stage_contract("figure_analysis", &[]),
+                stage_contract("table_fidelity", &[]),
+                stage_contract("equation_extraction", &[]),
+                stage_contract("candidate_materialization", &[]),
             ],
             import_eligible: false,
         };
@@ -1367,6 +1540,208 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn canonical_multimodal_chain_admits_gated_stages_and_skips_materialization() {
+        // The canonical multimodal run (M400 S04): parse -> figure_context ->
+        // figure_analysis -> table_fidelity -> equation_extraction ->
+        // candidate_materialization. The four compute stages are gated and
+        // admitted monotonically with durable evidence; candidate
+        // materialization is a cross-cutting graph helper (candidate-only
+        // truth boundary, D127) and is deliberately not gated.
+        let cache = Arc::new(MemoryCache::default());
+        let ids = [
+            "parse",
+            "figure_context",
+            "figure_analysis",
+            "table_fidelity",
+            "equation_extraction",
+            "candidate_materialization",
+        ];
+        let mut orchestrator = PipelineOrchestrator::new(cache, clock(), multimodal_registry());
+        for id in ids {
+            let stage = Arc::new(FakeStage::success(id, format!("{id}-out").as_bytes()));
+            orchestrator = orchestrator.with_executor(id, stage).unwrap();
+        }
+        let chain = PipelineBuilder::new("canonical-multimodal")
+            .step("parse", "parse", &[])
+            .step("context", "figure_context", &["parse"])
+            .step("analysis", "figure_analysis", &["context"])
+            .step("fidelity", "table_fidelity", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .step(
+                "materialize",
+                "candidate_materialization",
+                &["analysis", "fidelity", "equations"],
+            )
+            .build()
+            .unwrap();
+        let report = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(report.completed);
+        assert_eq!(report.stages.len(), 6, "one record per step");
+        for (index, record) in report.stages.iter().enumerate() {
+            assert!(matches!(
+                record.disposition,
+                StageDisposition::Executed { .. }
+            ));
+            if index == 5 {
+                assert!(
+                    record.admission.is_none(),
+                    "candidate materialization is a cross-cutting helper, not gated"
+                );
+            } else {
+                let admission = record
+                    .admission
+                    .as_ref()
+                    .expect("gated multimodal stage carries admission");
+                assert!(
+                    admission.admitted,
+                    "stage {} must be admitted",
+                    record.stage_id
+                );
+                assert!(admission.error.is_none());
+                assert!(
+                    !admission.evidence_ref.is_empty(),
+                    "admission carries durable evidence"
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn multimodal_regression_fails_closed_without_executing_stage() {
+        // figure_analysis establishes Extracted; a later figure_context step
+        // targeting Structured regresses the FSM and must fail closed with a
+        // typed admission error before the executor runs.
+        let cache = Arc::new(MemoryCache::default());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let analysis = Arc::new(FakeStage::success("figure_analysis", b"analysis"));
+        let context = Arc::new(FakeStage::success("figure_context", b"context"));
+        let pipeline = PipelineBuilder::new("multimodal-regression")
+            .step("parse", "parse", &[])
+            .step("analysis", "figure_analysis", &["parse"])
+            .step("context", "figure_context", &["parse"])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), multimodal_registry())
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("figure_analysis", analysis.clone())
+            .unwrap()
+            .with_executor("figure_context", context.clone())
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        let blocked = &report.stages[2];
+        assert!(matches!(
+            blocked.disposition,
+            StageDisposition::Failed {
+                retryable: false,
+                ..
+            }
+        ));
+        let error = blocked
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.from, ArticleContextState::Extracted);
+        assert_eq!(error.to, ArticleContextState::Structured);
+        assert_eq!(context.calls(), 0, "blocked stage must not execute");
+    }
+
+    #[tokio::test]
+    async fn multimodal_mid_fsm_entry_fails_closed() {
+        // A run cannot start at figure_analysis: its ACAP target (Extracted)
+        // is above the Parsed entry layer, so the entry gate blocks before
+        // the executor runs even with durable source evidence present.
+        let cache = Arc::new(MemoryCache::default());
+        let analysis = Arc::new(FakeStage::success("figure_analysis", b"analysis"));
+        let pipeline = PipelineBuilder::new("multimodal-mid-entry")
+            .step("analysis", "figure_analysis", &[])
+            .build()
+            .unwrap();
+        let report = PipelineOrchestrator::new(cache, clock(), multimodal_registry())
+            .with_executor("figure_analysis", analysis.clone())
+            .unwrap()
+            .run(&pipeline, source("pdf-v1"))
+            .await
+            .unwrap();
+        assert!(!report.completed);
+        let error = report.stages[0]
+            .admission
+            .as_ref()
+            .unwrap()
+            .error
+            .as_ref()
+            .expect("typed error");
+        assert_eq!(error.error_class(), "admission:illegal_transition");
+        assert_eq!(error.from, ArticleContextState::SourceRegistered);
+        assert_eq!(error.to, ArticleContextState::Extracted);
+        assert_eq!(analysis.calls(), 0, "blocked entry must not execute");
+    }
+
+    #[tokio::test]
+    async fn canonical_multimodal_replay_hits_cache_without_duplicate_records() {
+        // Identical replay of the canonical multimodal run: every stage is a
+        // cache hit, executors never re-run, exactly one record per step.
+        let cache = Arc::new(MemoryCache::default());
+        let ids = [
+            "parse",
+            "figure_context",
+            "figure_analysis",
+            "table_fidelity",
+            "equation_extraction",
+            "candidate_materialization",
+        ];
+        let mut orchestrator = PipelineOrchestrator::new(cache, clock(), multimodal_registry());
+        let mut executors = Vec::new();
+        for id in ids {
+            let stage = Arc::new(FakeStage::success(id, format!("{id}-out").as_bytes()));
+            orchestrator = orchestrator.with_executor(id, stage.clone()).unwrap();
+            executors.push(stage);
+        }
+        let chain = PipelineBuilder::new("canonical-multimodal-replay")
+            .step("parse", "parse", &[])
+            .step("context", "figure_context", &["parse"])
+            .step("analysis", "figure_analysis", &["context"])
+            .step("fidelity", "table_fidelity", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .step(
+                "materialize",
+                "candidate_materialization",
+                &["analysis", "fidelity", "equations"],
+            )
+            .build()
+            .unwrap();
+        let first = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(first.completed);
+        let second = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(second.completed);
+        assert_eq!(second.stages.len(), 6, "no duplicate stage records");
+        for record in &second.stages {
+            assert!(matches!(
+                record.disposition,
+                StageDisposition::CacheHit { .. }
+            ));
+            assert!(
+                record.cache_key_sha256.is_some(),
+                "replay cache hit carries its durable cache key"
+            );
+        }
+        for executor in &executors {
+            assert_eq!(
+                executor.calls(),
+                1,
+                "replay must not re-execute stage executors"
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn cached_output_cannot_bypass_mid_fsm_entry_gate() {
         // Replay attack via cache: a cached summary output exists for the exact
         // canonical key, but the run starts mid-FSM. The gate must block BEFORE
@@ -1737,5 +2112,114 @@ mod tests {
             summary_admission.evidence_ref, "test-key-readiness",
             "evidence ref is the last durable record; FSM state is unaffected by skipped stages"
         );
+    }
+
+    #[test]
+    fn canonical_multimodal_topology_validates_and_deduplicates_stages() {
+        let registry = multimodal_registry();
+        let composition = MultimodalComposition::canonical(&registry, "canonical-multimodal")
+            .expect("canonical multimodal topology");
+        assert_eq!(composition.topology.steps.len(), 7);
+        assert_eq!(
+            composition.canonical_stages,
+            vec![
+                "parse",
+                "figure_context",
+                "figure_analysis",
+                "table_fidelity",
+                "equation_extraction",
+                "candidate_materialization",
+            ]
+        );
+        // figure_detect is a parse-family alias: its step resolves to parse.
+        let figures = composition
+            .topology
+            .steps
+            .iter()
+            .find(|step| step.name == "figures")
+            .expect("figures step");
+        assert_eq!(registry.resolve(&figures.stage).unwrap().as_str(), "parse");
+        // materialize converges on analysis + fidelity + equations.
+        let materialize = composition
+            .topology
+            .steps
+            .iter()
+            .find(|step| step.name == "materialize")
+            .expect("materialize step");
+        assert_eq!(
+            materialize.depends_on,
+            vec!["analysis", "fidelity", "equations"]
+        );
+    }
+
+    #[test]
+    fn canonical_multimodal_topology_rejects_unknown_stage() {
+        // A registry missing one required canonical stage must fail closed:
+        // the composition can never silently drop a multimodal stage.
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                stage_contract("parse", &["grobid_parse", "figure_detect"]),
+                stage_contract("figure_context", &[]),
+                stage_contract("figure_analysis", &[]),
+                stage_contract("table_fidelity", &[]),
+                stage_contract("equation_extraction", &[]),
+            ],
+            import_eligible: false,
+        };
+        let registry = Arc::new(ledger.registry().unwrap());
+        let error = MultimodalComposition::canonical(&registry, "bad").unwrap_err();
+        assert!(matches!(error, PipelineOrchestratorError::StageIdentity(_)));
+    }
+
+    #[test]
+    fn multimodal_fingerprint_summary_binds_exact_contract_identity() {
+        let source = source("pdf-v1");
+        let contracts = BTreeMap::from([
+            (
+                "figure_detect".to_string(),
+                StageContract {
+                    stage_id: "figure_detect".into(),
+                    implementation_fingerprint: "detector-impl".into(),
+                    configuration_fingerprint: "render_dpi=150".into(),
+                    prompt_fingerprint: None,
+                    model_fingerprint: Some("pdffigures2-0.0.12-SNAPSHOT".into()),
+                    output_schema_fingerprint: "DetectedVisualArtifact[]@serde-v1".into(),
+                },
+            ),
+            (
+                "figure_analysis".to_string(),
+                StageContract {
+                    stage_id: "figure_analysis".into(),
+                    implementation_fingerprint: "FigureAnalysisUseCase@v1".into(),
+                    configuration_fingerprint: "schema_registry=figure-schemas.v1".into(),
+                    prompt_fingerprint: Some("prompt-sha".into()),
+                    model_fingerprint: Some(
+                        "route|anthropic_messages|vision|fallback=false".into(),
+                    ),
+                    output_schema_fingerprint: "FigureAnalysis@serde-v1".into(),
+                },
+            ),
+        ]);
+        let summary = MultimodalFingerprintSummary::bind(
+            &source,
+            "profile=rich;consolidateHeader=1;consolidateCitations=1;teiCoordinates=figure,table,note,formula",
+            &contracts,
+        );
+        assert_eq!(summary.source, "article=2507.19457;acq=catalog-v1");
+        assert_eq!(summary.detector, "pdffigures2-0.0.12-SNAPSHOT");
+        assert!(summary.schema_registry.contains("figure-schemas.v1"));
+        assert!(summary.model_route.contains("anthropic_messages"));
+        assert_eq!(
+            summary.output_schemas["figure_analysis"],
+            "FigureAnalysis@serde-v1"
+        );
+        assert!(!summary.import_eligible, "D127 stays false");
+        // Unbound stages degrade to explicit markers, never silent empty.
+        let empty =
+            MultimodalFingerprintSummary::bind(&source, "profile=structural", &BTreeMap::new());
+        assert_eq!(empty.detector, "detector:unbound");
+        assert_eq!(empty.model_route, "model_route:unbound");
+        assert!(empty.output_schemas.is_empty());
     }
 }

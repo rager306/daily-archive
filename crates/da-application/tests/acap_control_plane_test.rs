@@ -255,6 +255,7 @@ fn stage_contract(id: &str, aliases: &[&str]) -> PipelineStageContract {
         failure_class: "terminal".into(),
         conditional: false,
         graph_truth_boundary: false,
+        candidate_only: false,
     }
 }
 

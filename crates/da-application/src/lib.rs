@@ -28,8 +28,8 @@ pub use assurance::{
 pub use catalog_reconcile::CatalogReconcileUseCase;
 pub use ingest::IngestUseCase;
 pub use pipeline::{
-    PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
-    StageRunRecord,
+    MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
+    PipelineOrchestratorError, PipelineRunReport, StageDisposition, StageRunRecord,
 };
 pub use revision_classification::{RevisionClassifyError, RevisionClassifyUseCase};
 pub use revision_materialization::{

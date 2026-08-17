@@ -28,7 +28,7 @@ stages:
     conditional: false
     graph_truth_boundary: false
   - id: parse
-    aliases: [grobid_parse, html_parse, parsed_artifact, document_context, figure_detect, figure_context, figure_context_artifact]
+    aliases: [grobid_parse, html_parse, parsed_artifact, document_context, figure_detect]
     owner: adapter
     input_semantics: [canonical_source_asset]
     output_semantics: [parsed_article]
@@ -36,10 +36,63 @@ stages:
     context_adds: [title, abstract, ordered_sections, citations, structural_spans]
     context_losses: [pixels, unselected_layout_signals]
     hard_invariants: [source_checksum_in_cache_key, parser_profile_in_config_fingerprint, output_schema_bound]
-    consumers: [revision_materialization, extraction_compute, embedding]
+    consumers: [revision_materialization, extraction_compute, embedding, figure_context, table_fidelity, equation_extraction]
     cache_mode: pure_compute
     failure_class: retryable_sidecar_or_terminal_parse_error
     conditional: false
+    graph_truth_boundary: false
+  - id: figure_context
+    aliases: [figure_context_artifact]
+    owner: application
+    input_semantics: [parsed_article, detected_visual_artifacts]
+    output_semantics: [grounded_figure_semantic_context]
+    depends_on: [parse]
+    context_adds: [caption, section_identity, reference_excerpts, artifact_identity]
+    context_losses: [unselected_layout_signals]
+    hard_invariants: [candidate_not_authoritative, revision_section_grounding, output_schema_bound, import_eligible_false]
+    consumers: [figure_analysis, candidate_materialization, assurance]
+    cache_mode: pure_compute
+    failure_class: terminal_grounding_or_policy_error
+    conditional: true
+    graph_truth_boundary: false
+  - id: figure_analysis
+    owner: application
+    input_semantics: [grounded_figure_semantic_context, figure_image_asset]
+    output_semantics: [typed_figure_candidate_payload]
+    depends_on: [figure_context]
+    context_adds: [schema_selection, model_route, typed_visual_evidence, confidence]
+    context_losses: [raw_pixels]
+    hard_invariants: [candidate_not_authoritative, schema_registry_bound, model_route_bound, import_eligible_false]
+    consumers: [candidate_materialization, assurance]
+    cache_mode: pure_compute
+    failure_class: retryable_llm_or_terminal_schema_error
+    conditional: true
+    graph_truth_boundary: false
+  - id: table_fidelity
+    owner: application
+    input_semantics: [parsed_article_tei_tables, visual_table_payload]
+    output_semantics: [typed_table_fidelity_report]
+    depends_on: [parse]
+    context_adds: [cell_provenance, typed_conflicts, coverage, source_spans]
+    context_losses: [unmentioned_cells]
+    hard_invariants: [candidate_only_fidelity, typed_findings, import_eligible_false]
+    consumers: [candidate_materialization, assurance]
+    cache_mode: pure_compute
+    failure_class: terminal_fidelity_or_identity_error
+    conditional: true
+    graph_truth_boundary: false
+  - id: equation_extraction
+    owner: adapter
+    input_semantics: [parsed_article_tei_formulas]
+    output_semantics: [typed_equation_candidate_inputs]
+    depends_on: [parse]
+    context_adds: [representation_kind, source_spans, section_identity, coordinates]
+    context_losses: [none]
+    hard_invariants: [candidate_not_authoritative, typed_missingness, import_eligible_false]
+    consumers: [candidate_materialization, assurance]
+    cache_mode: pure_compute
+    failure_class: retryable_sidecar_or_terminal_extraction_error
+    conditional: true
     graph_truth_boundary: false
   - id: revision_materialization
     owner: application
@@ -55,7 +108,7 @@ stages:
     conditional: false
     graph_truth_boundary: true
   - id: extraction_compute
-    aliases: [extract, rule_extract, figure_analysis]
+    aliases: [extract, rule_extract]
     owner: adapter
     input_semantics: [parsed_article]
     output_semantics: [extracted_entity_candidates]
@@ -82,6 +135,20 @@ stages:
     failure_class: terminal_graph_error
     conditional: false
     graph_truth_boundary: true
+  - id: candidate_materialization
+    owner: application
+    input_semantics: [revision_scoped_graph_content, typed_candidate_payloads]
+    output_semantics: [candidate_evidence_graph]
+    depends_on: [revision_materialization, figure_context, figure_analysis, table_fidelity, equation_extraction]
+    context_adds: [candidate_nodes, typed_conflict_evidence, replay_diagnostics, lineage_edges]
+    context_losses: [none]
+    hard_invariants: [candidate_not_graph_truth, authoritative_false, import_eligible_false, replay_idempotent, grounding_never_invented, D127_false]
+    consumers: [assurance, query]
+    cache_mode: graph_materialize
+    failure_class: terminal_graph_error
+    conditional: true
+    graph_truth_boundary: false
+    candidate_only: true
   - id: embedding
     aliases: [embed, paper_embed]
     owner: adapter

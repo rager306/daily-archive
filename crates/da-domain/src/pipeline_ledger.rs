@@ -60,6 +60,13 @@ pub struct PipelineStageContract {
     pub failure_class: String,
     pub conditional: bool,
     pub graph_truth_boundary: bool,
+    /// Candidate-only graph truth boundary: the stage materializes candidate
+    /// evidence into the graph, but every written node is hard-locked
+    /// non-authoritative (`authoritative=false`, `import_eligible=false`) —
+    /// never graph truth (D127 / ADR-053). Requires
+    /// `cache_mode == GraphMaterialize` and `graph_truth_boundary == false`.
+    #[serde(default)]
+    pub candidate_only: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -182,9 +189,24 @@ impl PipelineStageLedger {
                     stage.id
                 ));
             }
-            if stage.cache_mode == StageCacheMode::GraphMaterialize && !stage.graph_truth_boundary {
+            if stage.candidate_only && stage.cache_mode != StageCacheMode::GraphMaterialize {
                 return Err(format!(
-                    "graph materialize stage {} must declare truth boundary",
+                    "candidate-only stage {} must be graph_materialize",
+                    stage.id
+                ));
+            }
+            if stage.candidate_only && stage.graph_truth_boundary {
+                return Err(format!(
+                    "candidate-only stage {} cannot declare graph truth",
+                    stage.id
+                ));
+            }
+            if stage.cache_mode == StageCacheMode::GraphMaterialize
+                && !stage.graph_truth_boundary
+                && !stage.candidate_only
+            {
+                return Err(format!(
+                    "graph materialize stage {} must declare graph truth or candidate-only boundary",
                     stage.id
                 ));
             }
@@ -260,6 +282,7 @@ mod tests {
             failure_class: "terminal".into(),
             conditional: false,
             graph_truth_boundary: truth,
+            candidate_only: false,
         }
     }
     #[test]
@@ -349,5 +372,100 @@ mod tests {
             import_eligible: false,
         };
         assert!(l.validate().is_err());
+    }
+
+    #[test]
+    fn candidate_only_materialization_is_not_graph_truth() {
+        // A candidate materialization stage writes into the graph with
+        // graph_materialize cache mode but declares a candidate-only boundary:
+        // the materialized nodes are locked non-authoritative (D127), so the
+        // stage is validated and round-trips with candidate_only preserved.
+        let mut materialize = stage(
+            "candidate_materialization",
+            &[],
+            StageCacheMode::GraphMaterialize,
+            false,
+        );
+        materialize.candidate_only = true;
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![materialize],
+            import_eligible: false,
+        };
+        ledger.validate().unwrap();
+        let q: PipelineStageLedger =
+            serde_json::from_slice(&serde_json::to_vec(&ledger).unwrap()).unwrap();
+        assert!(q.stages[0].candidate_only);
+        assert!(!q.stages[0].graph_truth_boundary);
+    }
+
+    #[test]
+    fn candidate_only_cannot_declare_graph_truth() {
+        // A stage cannot be both candidate-only and graph truth: the two
+        // boundaries are mutually exclusive.
+        let mut stage = stage(
+            "candidate_materialization",
+            &[],
+            StageCacheMode::GraphMaterialize,
+            true,
+        );
+        stage.candidate_only = true;
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![stage],
+            import_eligible: false,
+        };
+        assert!(
+            ledger
+                .validate()
+                .unwrap_err()
+                .contains("cannot declare graph truth")
+        );
+    }
+
+    #[test]
+    fn candidate_only_requires_graph_materialize_cache_mode() {
+        // Candidate materialization writes graph evidence, so a pure-compute
+        // candidate-only stage is invalid.
+        let mut stage = stage(
+            "candidate_materialization",
+            &[],
+            StageCacheMode::PureCompute,
+            false,
+        );
+        stage.candidate_only = true;
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![stage],
+            import_eligible: false,
+        };
+        assert!(
+            ledger
+                .validate()
+                .unwrap_err()
+                .contains("must be graph_materialize")
+        );
+    }
+
+    #[test]
+    fn graph_materialize_requires_declared_boundary() {
+        // Every graph materialization must declare which boundary it writes:
+        // graph truth or candidate-only. An undeclared materialize is invalid.
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![stage(
+                "undecided",
+                &[],
+                StageCacheMode::GraphMaterialize,
+                false,
+            )],
+            import_eligible: false,
+        };
+        assert!(
+            ledger
+                .validate()
+                .unwrap_err()
+                .contains("graph truth or candidate-only")
+        );
     }
 }

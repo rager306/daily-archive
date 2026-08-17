@@ -30,7 +30,7 @@ mod tests {
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../data/ontology/pipeline_stage_contracts.yaml");
         let ledger = load_pipeline_stage_ledger(&path).unwrap();
-        assert_eq!(ledger.stages.len(), 14);
+        assert_eq!(ledger.stages.len(), 19);
         assert!(!ledger.import_eligible);
         let registry = ledger.registry().unwrap();
         assert_eq!(registry.resolve("grobid_parse").unwrap().as_str(), "parse");
@@ -43,6 +43,48 @@ mod tests {
         assert_eq!(
             registry.resolve("cluster_detection").unwrap().as_str(),
             "cluster"
+        );
+        // Detection stays in the parse plane (resolved via alias); the
+        // multimodal stages are canonical identities, never aliases of
+        // parse/extraction_compute.
+        assert_eq!(registry.resolve("figure_detect").unwrap().as_str(), "parse");
+        assert_eq!(
+            registry
+                .resolve("figure_context_artifact")
+                .unwrap()
+                .as_str(),
+            "figure_context"
+        );
+        for canonical in [
+            "figure_context",
+            "figure_analysis",
+            "table_fidelity",
+            "equation_extraction",
+            "candidate_materialization",
+        ] {
+            assert_eq!(
+                registry.parse_canonical(canonical).unwrap().as_str(),
+                canonical
+            );
+        }
+        assert_ne!(
+            registry.resolve("figure_analysis").unwrap().as_str(),
+            "extraction_compute"
+        );
+        // Candidate materialization declares the candidate-only graph truth
+        // boundary: graph_materialize cache mode, never graph truth (D127).
+        let candidate = ledger
+            .stage(
+                &registry
+                    .parse_canonical("candidate_materialization")
+                    .unwrap(),
+            )
+            .unwrap();
+        assert!(candidate.candidate_only);
+        assert!(!candidate.graph_truth_boundary);
+        assert_eq!(
+            candidate.cache_mode,
+            da_domain::StageCacheMode::GraphMaterialize
         );
     }
 
