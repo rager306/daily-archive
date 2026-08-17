@@ -44,8 +44,8 @@ fn test_schema_check_counts_match() {
         "expected 25 materialized labels, got:\n{stdout}"
     );
     assert!(
-        stdout.contains("42 declared node types"),
-        "expected 42 registered schemas, got:\n{stdout}"
+        stdout.contains("43 declared node types"),
+        "expected 43 registered schemas, got:\n{stdout}"
     );
 }
 

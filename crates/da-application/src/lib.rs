@@ -86,6 +86,11 @@ pub use table_materialize::{
     TableCandidateMaterializer, TableMaterializationError, TableMaterializationResult,
     structural_table_from_extracted,
 };
+pub mod equation_materialize;
+pub use equation_materialize::{
+    EQUATION_CANDIDATE_LABEL, EquationCandidateMaterializer, EquationMaterializationError,
+    EquationMaterializationResult, equation_candidate_input_from_extracted,
+};
 pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod enrich;

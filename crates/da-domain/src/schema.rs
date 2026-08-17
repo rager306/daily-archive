@@ -65,6 +65,7 @@ pub fn all_node_schemas() -> Vec<Box<dyn NodeSchemaDef>> {
         Box::new(crate::table_candidate::TableCandidateSchema),
         Box::new(crate::table_candidate::TableCellSchema),
         Box::new(crate::table_candidate::TableConflictSchema),
+        Box::new(crate::equation_candidate::EquationCandidateSchema),
     ]
 }
 
@@ -138,9 +139,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_node_schemas_has_thirty_six_types() {
+    fn test_all_node_schemas_has_forty_three_types() {
         let schemas = all_node_schemas();
-        assert_eq!(schemas.len(), 42); // + QualitySignal, + 6 revision/candidate plane types
+        assert_eq!(schemas.len(), 43); // + QualitySignal, + 7 revision/candidate plane types
         let labels: Vec<&str> = schemas.iter().map(|s| s.label()).collect();
         // Publication plane
         assert!(labels.contains(&"Paper"));

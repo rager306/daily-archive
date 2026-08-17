@@ -582,7 +582,7 @@ mod tests {
     #[test]
     fn test_schema_resource_uses_all_authoritative_ontology_labels() {
         let labels = data_ontology_labels();
-        assert_eq!(labels.len(), 42);
+        assert_eq!(labels.len(), 43);
         assert!(labels.contains(&"Paper".to_string()));
         assert!(labels.contains(&"Conflict".to_string()));
         // M400 candidate planes + ADR-058 revision plane are registered DATA.

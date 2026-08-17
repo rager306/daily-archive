@@ -18,6 +18,7 @@ pub mod domain;
 pub mod edge_contract;
 pub mod entity;
 pub mod entity_resolution;
+pub mod equation_candidate;
 pub mod eval;
 pub mod evidence;
 pub mod evidence_bundle;
@@ -77,6 +78,10 @@ pub use edge_contract::{
     validate_compiled_edge_endpoint,
 };
 pub use entity::{ENTITY_TYPES, Entity, EntitySchema, EntityType};
+pub use equation_candidate::{
+    EQUATION_CANDIDATE_SCHEMA_VERSION, EquationCandidate, EquationCandidateError,
+    EquationCandidateInput, EquationRepresentationKind, equation_candidate_vid,
+};
 pub use eval::{
     ExtractionMetrics, GoldEntity, MultiPaperGoldIndex, PredictedEntity, list_false_positives,
     promote_candidates,
