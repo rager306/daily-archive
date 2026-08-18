@@ -1,7 +1,8 @@
 # ADR-061: Read-only Identity Graph Plane and Agent FSM
 
 ## Status
-**Accepted (M401-itcqhx/S01, 2026-08-18; extended by M401-itcqhx/S03)** —
+**Accepted (M401-itcqhx/S01, 2026-08-18; extended by M401-itcqhx/S03 and
+M401-itcqhx/S04)** —
 implemented by
 kg-storage `ReadOnlyServer` / `RemoteGraphStore` over the shared RESP2 codec
 (`kg-storage::resp`), composed by `da serve-graph`, and pinned by the
@@ -12,6 +13,14 @@ only), `da_application::agent_run::AgentRunUseCase` (S02 FSM walk),
 `da_adapters::RemoteAgentReadPlane` (adapter-side `max_rows` truncation), and
 the in-process real-remote integration test
 `crates/da-application/tests/agent_run_remote_test.rs`.
+S04 (2026-08-18) ships the operator CLI journey on top: `da agent-run`
+(parse plan, fingerprint the expected `.sgsnap`, run through
+`RemoteAgentReadPlane`, post-run raw capture with a fail-closed
+`sha256:result:<hex>` ref check, atomic write of a CLI-owned v1 envelope
+report) plus the offline `--verify` contract (D273) for S05 Governor.
+Wiring into the `da` binary (`mod agent_run` + `Commands::AgentRun`
+dispatch) is the S04 CLI entry point; the real cross-process journey test
+`crates/da-cli/tests/agent_run_journey_test.rs` is in S04/T05.
 
 Supersedes the vendor `samyama::RespServer` composition for the daemon path
 (decisions D145, D146, D148) and refines the typed environment contract
@@ -232,3 +241,40 @@ and no write path.
 - `cargo clippy -p da-domain -p da-ports -p da-application -p da-adapters
   --all-targets --no-deps -- -D warnings` and
   `bash scripts/verify_rust_architecture.sh` — green at slice end.
+
+## Acceptance evidence (M401-itcqhx/S04)
+
+The S04 CLI journey ships the operator surface over the S01 plane + S03 use
+case. Wiring (`mod agent_run` + `Commands::AgentRun` dispatch) is in
+`crates/da-cli/src/main.rs`; the module itself is `crates/da-cli/src/agent_run.rs`.
+
+- `cargo test -p da-application --lib agent_run` + `-p da-adapters --lib
+  agent_read_plane` — the four digest functions (plan/evidence/claims/verify)
+  and `result_ref` are now public so CLI capture and `--verify` share one
+  digest math and S05 Governor shells out instead of re-hashing serde JSON in
+  Python (T01; D273).
+- `cargo test -p da-cli --lib agent_run` — parse plan → fingerprint expected
+  `.sgsnap` → run `AgentRunUseCase` through `RemoteAgentReadPlane` → post-run
+  raw capture (fail-closed `sha256:result:<hex>` ref check, MEM874) → atomic
+  write of the CLI-owned v1 envelope (`da.agent-run.report.v1`, D272) with
+  `tracing::info!` (path, terminal_state, error_class, bytes) and the stdout
+  one-liner `report: <path> terminal_state: <state>` (T02).
+- `cargo test -p da-cli --lib agent_run` (`--verify`) — offline independent
+  report check that recomputes plan → identity → evidence → claims →
+  verification → `result_ref` from the written envelope on disk without
+  touching network or graph store; prints `PASS` or `FAIL: <first failing
+  check>` (T03; D273 S05 Governor shell-out contract).
+- `cargo check -p da-cli` + `cargo clippy -p da-cli --all-targets --no-deps
+  -- -D warnings` — `Commands::AgentRun` dispatch wired into the `da` binary,
+  CHANGELOG and ADR-061 record the S04 journey (T04).
+- `cargo test -p da-cli --test agent_run_journey_test` — **real cross-process
+  journey**: process A = `da serve-graph` with a `.sgsnap` preload; process B
+  = the real `da agent-run` binary (`CARGO_BIN_EXE_da`) exercising clap +
+  fingerprint + capture + atomic write + `--verify` together on TCP (T05).
+
+Env contract (D274): endpoint comes from `--endpoint` or
+`DA_REMOTE_GRAPH_ENDPOINT` only — no new env keys, no daemon auto-start; the
+historical `DA_GRAPH_ENDPOINT` wart is deliberately not honored. D127
+(`import_eligible=false`), no-RocksDB, no auto-start and no write authority
+are unchanged; `FailedVisible` is a typed result inside the report (R087),
+never a silent process error.

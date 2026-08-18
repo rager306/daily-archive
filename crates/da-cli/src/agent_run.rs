@@ -56,7 +56,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use clap::Args;
+use clap::{Args, Subcommand};
 use da_adapters::{RemoteAgentReadPlane, result_ref};
 use da_application::{
     AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
@@ -77,6 +77,29 @@ pub const DEFAULT_GRAPH: &str = "daily_archive";
 pub const DEFAULT_MAX_ROWS_PER_QUERY: u64 = 50;
 /// Default synthesis chars budget for the use case.
 pub const DEFAULT_MAX_SYNTHESIS_CHARS: u64 = 4000;
+
+/// `da agent-run` top-level clap subcommand (T04 wiring). Keeps the run
+/// path (`Run`) and the offline `--verify` report check (`Verify`) as two
+/// sibling variants so `main` can reach both `run` and `verify_report`
+/// (T02/T03) from one CLI entry point.
+#[derive(Debug, Clone, Subcommand)]
+pub enum AgentRunCommand {
+    /// Run one durable agent-run against a live read-only serve-graph (T02).
+    Run(AgentRunArgs),
+    /// Offline --verify of a written v1 envelope (T03; D273 S05 Governor
+    /// contract). Recomputes the evidence chain from disk without touching
+    /// the network or graph store. Prints PASS or FAIL: <first check>.
+    Verify(AgentRunVerifyArgs),
+}
+
+/// Arguments for the offline `--verify` subcommand (T03). Only a report
+/// path is needed — the check never touches the network or graph store.
+#[derive(Debug, Clone, Args)]
+pub struct AgentRunVerifyArgs {
+    /// Path to a written v1 envelope report to check offline.
+    #[arg(long)]
+    pub report: PathBuf,
+}
 
 /// `da agent-run` clap arguments (T02 run path).
 #[derive(Debug, Clone, Args)]
@@ -558,6 +581,19 @@ mod tests {
         path
     }
 
+    /// JSON serde roundtrip, defined locally so this shared test module
+    /// compiles in BOTH the lib target (`da_cli`) and the bin target
+    /// (`da`, where `crate::roundtrip_json` from lib.rs is not in scope).
+    fn roundtrip_json<T>(value: &T)
+    where
+        T: serde::Serialize + serde::de::DeserializeOwned,
+    {
+        let json1 = serde_json::to_string(value).expect("serialize failed");
+        let back: T = serde_json::from_str(&json1).expect("deserialize failed");
+        let json2 = serde_json::to_string(&back).expect("re-serialize failed");
+        assert_eq!(json1, json2, "roundtrip JSON mismatch");
+    }
+
     fn sample_plan() -> Vec<AgentPlanQuery> {
         vec![
             AgentPlanQuery {
@@ -652,7 +688,7 @@ mod tests {
 
     #[test]
     fn envelope_serde_roundtrip() {
-        crate::roundtrip_json(&sample_envelope());
+        roundtrip_json(&sample_envelope());
     }
 
     #[test]

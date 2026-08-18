@@ -1,5 +1,52 @@
 # Changelog
 
+### M401 S04 durable agent CLI journey (R095, da-cli half)
+
+- Public evidence-chain verifier (T01): the four digest functions
+  (`plan_digest` / `evidence_digest` / `claims_digest` /
+  `verification_digest`) in `da_application::agent_run` are now `pub` and
+  re-exported via `da-application` lib.rs; `result_ref` in
+  `da_adapters::agent_read_plane` was already public. Thin wrappers keep the
+  digest math in one place so CLI capture and `--verify` cannot drift, and so
+  S05 Governor shells out instead of re-hashing canonical serde JSON in
+  Python (D273).
+- `da agent-run` operator composition (T02): `crates/da-cli/src/agent_run.rs`
+  parses a plan file (`[{query, purpose}]`), fingerprints the expected
+  `.sgsnap` into a semantic `GraphIdentity` (`ContentDigest::try_from`,
+  never `of_text` — R091/D269), runs `AgentRunUseCase` through
+  `RemoteAgentReadPlane` (read-only plane, zero write authority, D127), then
+  does a **post-run raw capture** re-reading every evidence-producing plan
+  query and embedding the raw `{graph, query, columns, records}` rows into a
+  CLI-owned v1 envelope (`da.agent-run.report.v1`, D272) with a **fail-closed**
+  `sha256:result:<hex>` ref check (MEM874). The report is written atomically
+  (tmp + rename in the same directory) with `tracing::info!` (path,
+  terminal_state, error_class, bytes) and the stdout one-liner
+  `report: <path> terminal_state: <state>` (ADR-052). `FailedVisible` is a
+  typed result inside the report (R087), never a silent process error.
+  Exit codes: 0 = report written atomically; 2 = configuration error (no
+  report); 3 = runtime error (capture disagree / atomic write failed).
+- `agent-run --verify` offline report check (T03): re-reads a written v1
+  envelope from disk and recomputes the full durable evidence chain
+  (plan → identity → evidence → claims → verification → `result_ref`)
+  without touching network or graph store, reusing the same public digest
+  functions / `result_ref` the run path used (T01) — so capture and verify
+  cannot drift. Prints `PASS` or `FAIL: <first failing check>` (D273: S05
+  Governor shell-out contract).
+- CLI wiring, CHANGELOG and ADR-061 (T04): `mod agent_run` +
+  `Commands::AgentRun` dispatch wired into `crates/da-cli/src/main.rs`
+  (mirrors `graph_query`), so operators can invoke the run path and
+  `--verify`. Env contract (D274): endpoint from `--endpoint` or
+  `DA_REMOTE_GRAPH_ENDPOINT` only — no new env keys, no daemon auto-start;
+  the historical `DA_GRAPH_ENDPOINT` wart is deliberately not honored.
+  ADR-061 records the S04 CLI journey, envelope v1, the `--verify` contract
+  and the env contract as the written shell-out target for S05 Governor.
+- Cross-process journey (T05): `crates/da-cli/tests/agent_run_journey_test.rs`
+  spawns the real `da` binary (`CARGO_BIN_EXE_da`) against a live
+  `da serve-graph` (`.sgsnap` preload) — exercising clap + fingerprint +
+  capture + atomic write + `--verify` together on TCP (MEM876). D127
+  (`import_eligible=false`), no-RocksDB, no auto-start and no write authority
+  stay unchanged.
+
 ### M401 S03 verified agent read plane use case (R095, da-application half)
 
 - Read-plane port + R091 identity seam (T02): `da_ports::AgentReadPlane` exposes only domain types (`GraphIdentity` for identity, `AgentQueryEvidence` for bounded queries — zero `DirectGraphStore`, zero write method) so the use case never imports kg-storage `SnapshotIdentity`/`QueryResult` into its core loop (R040 onion). `snapshot_to_graph_identity` wraps the **existing** `semantic_sha256` hex via `ContentDigest::try_from` — never `of_text` (which would SHA-256 the hex string again and break expected == actual lineage). Typed `AgentReadPlaneError` classifier (Identity/Query/Transport/Storage) keeps kg-storage variants out of the core loop.

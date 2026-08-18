@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 mod acquire_arxiv;
+mod agent_run;
 mod analyze;
 mod batch_ids;
 mod graph_ping;
@@ -204,6 +205,14 @@ enum Commands {
 
     /// Execute one provider-neutral scalar read query in embedded or remote mode.
     GraphQuery(graph_query::GraphQueryArgs),
+
+    /// Durable read-only agent CLI journey (S04): parse plan, fingerprint
+    /// the expected .sgsnap, run the verified AgentRunUseCase through a live
+    /// read-only serve-graph daemon, capture raw evidence and write an atomic
+    /// JSON envelope report (Run). The Verify subcommand recomputes the
+    /// evidence chain offline from a written report.
+    #[command(subcommand)]
+    AgentRun(agent_run::AgentRunCommand),
 
     /// Query accepted ADR-058 article revision history from a snapshot.
     RevisionQuery {
@@ -508,6 +517,27 @@ fn main() {
                 }
             });
         }
+        Commands::AgentRun(command) => match command {
+            agent_run::AgentRunCommand::Run(args) => {
+                rt.block_on(async {
+                    if let Err(error) = agent_run::run(args).await {
+                        eprintln!("{error}");
+                        std::process::exit(error.exit_code());
+                    }
+                });
+            }
+            agent_run::AgentRunCommand::Verify(args) => {
+                match agent_run::verify_report(&args.report) {
+                    Ok(outcome) => {
+                        println!("PASS terminal_state: {}", outcome.terminal_state);
+                    }
+                    Err(error) => {
+                        eprintln!("{error}");
+                        std::process::exit(error.exit_code());
+                    }
+                }
+            }
+        },
         Commands::RevisionQuery {
             id,
             selector,
