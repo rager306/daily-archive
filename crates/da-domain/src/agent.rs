@@ -31,14 +31,19 @@
 //! `REVIEW` is a documented forward-extension point for graph-readiness
 //! post-checks and multi-agent swarm waves (S05/future). Do not add REVIEW here.
 //!
-//! # Identity and evidence
+//! # Identity, budget and evidence
 //!
 //! `GraphIdentity` (T02) is a domain-local value (semantic digest + tenant +
 //! node/edge counts) so the S03 port layer can map `kg-storage
 //! SnapshotIdentity` onto it without inverting the onion; `da-domain` has no
-//! `kg-storage` dependency. `AgentQueryEvidence` (T03) records truncation
-//! explicitly (`truncated: bool`) — never implied by empty rows (R087).
+//! `kg-storage` dependency. `AgentBudget` (T02) is a fail-closed spend bound
+//! (`max_queries`, `max_evidence_entries`, `max_synthesis_chars`): every
+//! `record_*` refusal happens **before** counters advance, so a runaway loop
+//! becomes a typed visible failure. `AgentQueryEvidence` (T03) records
+//! truncation explicitly (`truncated: bool`) — never implied by empty rows
+//! (R087).
 
+use crate::assurance::ContentDigest;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -275,6 +280,278 @@ pub fn admit_transition(
             AgentState::Created,
             target,
         )),
+    }
+}
+
+/// Domain-local read-plane identity for an agent run (R091 lineage, T02).
+///
+/// S03 maps `kg-storage SnapshotIdentity` onto this value type and checks
+/// expected vs actual before any query. The value stays domain-local:
+/// `da-domain` has no `kg-storage` dependency, so no `physical_sha256` or
+/// gzip-decode surface leaks into the domain — only the semantic digest,
+/// tenant, and node/edge counts the agent line actually reasons about.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GraphIdentity {
+    /// Semantic digest of the read-plane graph the agent plans against.
+    pub semantic_digest: ContentDigest,
+    /// Tenant scope the graph belongs to. Must be non-empty (validated by
+    /// [`GraphIdentity::validate`]) — an empty tenant would silently merge
+    /// read planes across tenants.
+    pub tenant: String,
+    /// Node count reported by the read plane.
+    pub nodes: u64,
+    /// Edge count reported by the read plane.
+    pub edges: u64,
+}
+
+impl GraphIdentity {
+    pub fn new(
+        semantic_digest: ContentDigest,
+        tenant: impl Into<String>,
+        nodes: u64,
+        edges: u64,
+    ) -> Self {
+        Self {
+            semantic_digest,
+            tenant: tenant.into(),
+            nodes,
+            edges,
+        }
+    }
+
+    /// Fail-closed identity check: an empty tenant is invalid (R091) —
+    /// rejecting it here prevents a silent cross-tenant merge later.
+    pub fn validate(&self) -> Result<(), GraphIdentityError> {
+        if self.tenant.trim().is_empty() {
+            Err(GraphIdentityError::EmptyTenant)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Cheap equality probe for pre-checks. Not a substitute for
+    /// [`verify_identity`], which names both sides on mismatch.
+    pub fn matches(&self, other: &GraphIdentity) -> bool {
+        self == other
+    }
+}
+
+impl std::fmt::Display for GraphIdentity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "GraphIdentity{{semantic_digest: {}, tenant: {:?}, nodes: {}, edges: {}}}",
+            self.semantic_digest.as_str(),
+            self.tenant,
+            self.nodes,
+            self.edges
+        )
+    }
+}
+
+/// Typed read-plane identity errors (R087/R091, T02).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Error)]
+pub enum GraphIdentityError {
+    /// The identity carries an empty tenant. Rejected by
+    /// [`GraphIdentity::validate`] before any query.
+    #[error("agent graph identity requires a non-empty tenant")]
+    EmptyTenant,
+    /// Expected vs actual read-plane identity differ. The reason names both
+    /// sides fully: semantic digest, tenant, node and edge counts. The two
+    /// identities are boxed so the error stays small (clippy
+    /// `result_large_err`); Deref keeps them fully usable.
+    #[error("agent graph identity mismatch: expected {expected}, actual {actual}")]
+    IdentityMismatch {
+        expected: Box<GraphIdentity>,
+        actual: Box<GraphIdentity>,
+    },
+}
+
+impl GraphIdentityError {
+    /// Bridge onto the typed admission surface: the refusal becomes a
+    /// blocked decision with `error_class = agent_failure:identity_mismatch`
+    /// (the S03/T03 verification guard calls this before admitting
+    /// `Verification -> Verified`).
+    pub fn into_admission(
+        self,
+        evidence_ref: impl Into<String>,
+        from: AgentState,
+        to: AgentState,
+    ) -> AgentAdmissionError {
+        AgentAdmissionError::new(
+            AgentFailureCode::IdentityMismatch,
+            self.to_string(),
+            evidence_ref,
+            from,
+            to,
+        )
+    }
+}
+
+/// Compare the identity an agent planned against with the identity of the
+/// graph it actually read (R091 lineage). Equal identities admit; any
+/// divergence (digest, tenant, or counts) is a typed
+/// [`GraphIdentityError::IdentityMismatch`] naming both sides — never a
+/// silent empty result (R087). Both sides are validated first: two invalid
+/// (empty-tenant) identities must not bless each other.
+pub fn verify_identity(
+    expected: &GraphIdentity,
+    actual: &GraphIdentity,
+) -> Result<(), GraphIdentityError> {
+    expected.validate()?;
+    actual.validate()?;
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(GraphIdentityError::IdentityMismatch {
+            expected: Box::new(expected.clone()),
+            actual: Box::new(actual.clone()),
+        })
+    }
+}
+
+/// Fail-closed agent run budget (R095, T02).
+///
+/// Bounds query, evidence-entry and synthesis-character spend so a runaway
+/// plan-read-synthesize loop becomes a typed visible refusal
+/// ([`AgentBudgetError`]) before counters advance — the `BudgetOverflow`
+/// guard on the agent line (R087). Pure domain value; the orchestrator
+/// (S03/S04) holds one per run and calls the `record_*` methods at the exact
+/// moment spend happens, before admitting the transition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentBudget {
+    pub max_queries: u64,
+    pub max_evidence_entries: u64,
+    pub max_synthesis_chars: u64,
+    pub spent_queries: u64,
+    pub spent_evidence_entries: u64,
+    pub spent_synthesis_chars: u64,
+}
+
+impl AgentBudget {
+    pub fn new(max_queries: u64, max_evidence_entries: u64, max_synthesis_chars: u64) -> Self {
+        Self {
+            max_queries,
+            max_evidence_entries,
+            max_synthesis_chars,
+            spent_queries: 0,
+            spent_evidence_entries: 0,
+            spent_synthesis_chars: 0,
+        }
+    }
+
+    pub fn remaining_queries(&self) -> u64 {
+        self.max_queries.saturating_sub(self.spent_queries)
+    }
+
+    pub fn remaining_evidence_entries(&self) -> u64 {
+        self.max_evidence_entries
+            .saturating_sub(self.spent_evidence_entries)
+    }
+
+    pub fn remaining_synthesis_chars(&self) -> u64 {
+        self.max_synthesis_chars
+            .saturating_sub(self.spent_synthesis_chars)
+    }
+
+    /// Record one read-plane query. Fail-closed: refuses
+    /// ([`AgentBudgetError::QueryOverflow`]) when the limit is reached and
+    /// leaves `spent_queries` unchanged.
+    pub fn record_query(&mut self) -> Result<(), AgentBudgetError> {
+        let next = self
+            .spent_queries
+            .checked_add(1)
+            .ok_or(AgentBudgetError::QueryOverflow {
+                max: self.max_queries,
+                spent: self.spent_queries,
+            })?;
+        if next > self.max_queries {
+            return Err(AgentBudgetError::QueryOverflow {
+                max: self.max_queries,
+                spent: self.spent_queries,
+            });
+        }
+        self.spent_queries = next;
+        Ok(())
+    }
+
+    /// Record `entries` evidence entries (one query may yield many).
+    /// Fail-closed: a batch that would overshoot the limit is refused
+    /// atomically — no partial credit, `spent_evidence_entries` unchanged.
+    pub fn record_evidence(&mut self, entries: u64) -> Result<(), AgentBudgetError> {
+        let next = self.spent_evidence_entries.checked_add(entries).ok_or(
+            AgentBudgetError::EvidenceOverflow {
+                max: self.max_evidence_entries,
+                spent: self.spent_evidence_entries,
+            },
+        )?;
+        if next > self.max_evidence_entries {
+            return Err(AgentBudgetError::EvidenceOverflow {
+                max: self.max_evidence_entries,
+                spent: self.spent_evidence_entries,
+            });
+        }
+        self.spent_evidence_entries = next;
+        Ok(())
+    }
+
+    /// Record `chars` synthesis characters. Fail-closed: refuses before
+    /// `spent_synthesis_chars` advances.
+    pub fn record_synthesis_chars(&mut self, chars: u64) -> Result<(), AgentBudgetError> {
+        let next = self.spent_synthesis_chars.checked_add(chars).ok_or(
+            AgentBudgetError::SynthesisOverflow {
+                max: self.max_synthesis_chars,
+                spent: self.spent_synthesis_chars,
+            },
+        )?;
+        if next > self.max_synthesis_chars {
+            return Err(AgentBudgetError::SynthesisOverflow {
+                max: self.max_synthesis_chars,
+                spent: self.spent_synthesis_chars,
+            });
+        }
+        self.spent_synthesis_chars = next;
+        Ok(())
+    }
+}
+
+/// Typed agent budget refusal (R087, T02).
+///
+/// Carries the limit and the spend at refusal time. Every refusal happens
+/// **before** the corresponding counter advances (fail-closed) — a guard
+/// failure is visible, never a silent empty result.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Error)]
+pub enum AgentBudgetError {
+    #[error(
+        "agent query budget overflow: {spent}/{max} queries already spent; refusing before counters advance"
+    )]
+    QueryOverflow { max: u64, spent: u64 },
+    #[error(
+        "agent evidence budget overflow: {spent}/{max} evidence entries already spent; refusing before counters advance"
+    )]
+    EvidenceOverflow { max: u64, spent: u64 },
+    #[error(
+        "agent synthesis budget overflow: {spent}/{max} synthesis chars already spent; refusing before counters advance"
+    )]
+    SynthesisOverflow { max: u64, spent: u64 },
+}
+
+impl AgentBudgetError {
+    /// Bridge onto the typed admission surface: the refusal becomes a
+    /// blocked decision with `error_class = agent_failure:budget_overflow`.
+    pub fn into_admission(
+        self,
+        evidence_ref: impl Into<String>,
+        from: AgentState,
+        to: AgentState,
+    ) -> AgentAdmissionError {
+        AgentAdmissionError::new(
+            AgentFailureCode::BudgetOverflow,
+            self.to_string(),
+            evidence_ref,
+            from,
+            to,
+        )
     }
 }
 
@@ -533,6 +810,344 @@ mod tests {
             blocked.error.unwrap().error_class(),
             "agent_failure:illegal_transition"
         );
+    }
+
+    // ── GraphIdentity (T02) ──
+
+    #[test]
+    fn graph_identity_validate_rejects_empty_tenant() {
+        let digest = ContentDigest::of_text("plan-graph-v1");
+        let valid = GraphIdentity::new(digest.clone(), "tenant-a", 10, 4);
+        assert!(valid.validate().is_ok());
+
+        for blank in ["", "   "] {
+            let invalid = GraphIdentity::new(digest.clone(), blank, 10, 4);
+            let err = invalid.validate().unwrap_err();
+            assert_eq!(err, GraphIdentityError::EmptyTenant);
+            assert!(err.to_string().contains("non-empty tenant"));
+        }
+    }
+
+    #[test]
+    fn verify_identity_accepts_identical_read_planes() {
+        let expected = GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 10, 4);
+        let actual = GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 10, 4);
+        assert!(verify_identity(&expected, &actual).is_ok());
+        assert!(expected.matches(&actual));
+    }
+
+    #[test]
+    fn verify_identity_mismatch_names_both_sides() {
+        let expected = GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 10, 4);
+        let actual = GraphIdentity::new(ContentDigest::of_text("g2"), "tenant-b", 12, 5);
+        let err = verify_identity(&expected, &actual).unwrap_err();
+        assert_eq!(
+            err,
+            GraphIdentityError::IdentityMismatch {
+                expected: Box::new(expected.clone()),
+                actual: Box::new(actual.clone()),
+            }
+        );
+        // Typed access to both sides stays available through Deref.
+        let mismatch = verify_identity(&expected, &actual).unwrap_err();
+        let GraphIdentityError::IdentityMismatch {
+            expected: e,
+            actual: a,
+        } = &mismatch
+        else {
+            panic!("expected IdentityMismatch");
+        };
+        assert_eq!(**e, expected);
+        assert_eq!(**a, actual);
+        let reason = err.to_string();
+        // Both sides fully named: semantic digest, tenant, node/edge counts.
+        assert!(
+            reason.contains(expected.semantic_digest.as_str()),
+            "reason must name expected digest"
+        );
+        assert!(
+            reason.contains(actual.semantic_digest.as_str()),
+            "reason must name actual digest"
+        );
+        assert!(
+            reason.contains("tenant-a"),
+            "reason must name expected tenant"
+        );
+        assert!(
+            reason.contains("tenant-b"),
+            "reason must name actual tenant"
+        );
+        assert!(
+            reason.contains("nodes: 10"),
+            "reason must name expected node count"
+        );
+        assert!(
+            reason.contains("nodes: 12"),
+            "reason must name actual node count"
+        );
+        assert!(
+            reason.contains("edges: 4"),
+            "reason must name expected edge count"
+        );
+        assert!(
+            reason.contains("edges: 5"),
+            "reason must name actual edge count"
+        );
+
+        // Bridge: the mismatch is a typed blocked admission decision with the
+        // stable agent_failure:identity_mismatch class (slice verification).
+        let admission =
+            err.into_admission("ev-verify", AgentState::Verification, AgentState::Verified);
+        assert_eq!(admission.code, AgentFailureCode::IdentityMismatch);
+        assert_eq!(admission.error_class(), "agent_failure:identity_mismatch");
+        assert_eq!(admission.from, AgentState::Verification);
+        assert_eq!(admission.to, AgentState::Verified);
+        assert_eq!(admission.evidence_ref, "ev-verify");
+        assert!(admission.reason.contains("tenant-a"));
+        assert!(admission.reason.contains("tenant-b"));
+    }
+
+    #[test]
+    fn identity_mismatch_is_visible_for_each_dimension() {
+        // A divergence in any single dimension is a visible typed mismatch.
+        let base = GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 10, 4);
+        let cases = [
+            GraphIdentity::new(ContentDigest::of_text("g2"), "tenant-a", 10, 4),
+            GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-b", 10, 4),
+            GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 11, 4),
+            GraphIdentity::new(ContentDigest::of_text("g1"), "tenant-a", 10, 5),
+        ];
+        for case in cases {
+            assert_eq!(
+                verify_identity(&base, &case).unwrap_err(),
+                GraphIdentityError::IdentityMismatch {
+                    expected: Box::new(base.clone()),
+                    actual: Box::new(case.clone()),
+                },
+                "divergence must be a typed mismatch"
+            );
+        }
+    }
+
+    #[test]
+    fn verify_identity_refuses_invalid_identities_even_when_equal() {
+        // Two empty-tenant identities are equal but must not bless each other.
+        let bogus = GraphIdentity::new(ContentDigest::of_text("g1"), "", 10, 4);
+        assert_eq!(
+            verify_identity(&bogus, &bogus).unwrap_err(),
+            GraphIdentityError::EmptyTenant
+        );
+    }
+
+    // ── AgentBudget (T02) ──
+
+    #[test]
+    fn budget_admits_spend_up_to_limit_and_exhausts() {
+        let mut budget = AgentBudget::new(3, 10, 1000);
+        for _ in 0..3 {
+            assert!(budget.record_query().is_ok());
+        }
+        assert_eq!(budget.spent_queries, 3);
+        assert_eq!(budget.remaining_queries(), 0);
+        assert!(budget.record_query().is_err());
+        assert_eq!(budget.spent_queries, 3, "refusal must not advance counters");
+    }
+
+    #[test]
+    fn budget_refuses_query_overflow_with_typed_error() {
+        let mut budget = AgentBudget::new(2, 10, 1000);
+        budget.record_query().unwrap();
+        budget.record_query().unwrap();
+        let before = budget.spent_queries;
+        let err = budget.record_query().unwrap_err();
+        assert_eq!(err, AgentBudgetError::QueryOverflow { max: 2, spent: 2 });
+        assert_eq!(
+            budget.spent_queries, before,
+            "fail-closed: counters unchanged"
+        );
+
+        // Bridge: typed blocked admission decision with agent_failure:budget_overflow.
+        let admission = err.into_admission("ev-q", AgentState::Searching, AgentState::Reading);
+        assert_eq!(admission.code, AgentFailureCode::BudgetOverflow);
+        assert_eq!(admission.error_class(), "agent_failure:budget_overflow");
+        assert_eq!(admission.from, AgentState::Searching);
+        assert_eq!(admission.to, AgentState::Reading);
+        assert_eq!(admission.evidence_ref, "ev-q");
+        assert!(admission.reason.contains("2/2"));
+    }
+
+    #[test]
+    fn budget_refuses_evidence_overflow_atomically() {
+        let mut budget = AgentBudget::new(10, 5, 1000);
+        budget.record_evidence(3).unwrap();
+        budget.record_evidence(2).unwrap();
+        assert_eq!(budget.spent_evidence_entries, 5);
+
+        // Overshooting single batch refused atomically: no partial credit.
+        let before = budget.spent_evidence_entries;
+        let err = budget.record_evidence(1).unwrap_err();
+        assert_eq!(err, AgentBudgetError::EvidenceOverflow { max: 5, spent: 5 });
+        assert_eq!(budget.spent_evidence_entries, before);
+
+        let mut budget = AgentBudget::new(10, 5, 1000);
+        budget.record_evidence(4).unwrap();
+        let before = budget.spent_evidence_entries;
+        assert!(budget.record_evidence(2).is_err());
+        assert_eq!(
+            budget.spent_evidence_entries, before,
+            "no partial credit on an overshooting batch"
+        );
+        assert_eq!(budget.remaining_evidence_entries(), 1);
+    }
+
+    #[test]
+    fn budget_refuses_synthesis_overflow_before_counter_advances() {
+        let mut budget = AgentBudget::new(10, 10, 100);
+        budget.record_synthesis_chars(60).unwrap();
+        let before = budget.spent_synthesis_chars;
+        let err = budget.record_synthesis_chars(41).unwrap_err();
+        assert_eq!(
+            err,
+            AgentBudgetError::SynthesisOverflow {
+                max: 100,
+                spent: 60
+            }
+        );
+        assert_eq!(
+            budget.spent_synthesis_chars, before,
+            "fail-closed: counters unchanged"
+        );
+    }
+
+    #[test]
+    fn zero_max_budget_refuses_everything_fail_closed() {
+        let mut budget = AgentBudget::new(0, 0, 0);
+        assert_eq!(
+            budget.record_query().unwrap_err(),
+            AgentBudgetError::QueryOverflow { max: 0, spent: 0 }
+        );
+        assert_eq!(budget.spent_queries, 0);
+        assert_eq!(
+            budget.record_evidence(1).unwrap_err(),
+            AgentBudgetError::EvidenceOverflow { max: 0, spent: 0 }
+        );
+        assert_eq!(budget.spent_evidence_entries, 0);
+        assert_eq!(
+            budget.record_synthesis_chars(1).unwrap_err(),
+            AgentBudgetError::SynthesisOverflow { max: 0, spent: 0 }
+        );
+        assert_eq!(budget.spent_synthesis_chars, 0);
+    }
+
+    #[test]
+    fn budget_counters_cannot_be_driven_past_limits_by_tampering() {
+        // Even with public spent fields tampered past the limit, record_*
+        // still refuses — the guard reads the counters, never trusts a
+        // monotonic caller (fail-closed under adversarial state).
+        let mut budget = AgentBudget::new(5, 5, 500);
+        budget.spent_queries = 5; // at limit
+        assert_eq!(
+            budget.record_query().unwrap_err(),
+            AgentBudgetError::QueryOverflow { max: 5, spent: 5 }
+        );
+        budget.spent_queries = 99; // past limit (tampered)
+        assert_eq!(
+            budget.record_query().unwrap_err(),
+            AgentBudgetError::QueryOverflow { max: 5, spent: 99 }
+        );
+        assert_eq!(budget.spent_queries, 99, "refusal leaves state untouched");
+        assert_eq!(budget.remaining_queries(), 0);
+    }
+
+    // ── Serde stability (ADR-051 §4.4, T02 subset; full sweep in T04) ──
+
+    #[test]
+    fn graph_identity_and_budget_serde_roundtrip() {
+        crate::roundtrip_json(&GraphIdentity::new(
+            ContentDigest::of_text("g1"),
+            "tenant-a",
+            10,
+            4,
+        ));
+        crate::roundtrip_json(&AgentBudget::new(3, 10, 1000));
+        crate::roundtrip_json(&AgentBudgetError::QueryOverflow { max: 3, spent: 3 });
+        crate::roundtrip_json(&AgentBudgetError::SynthesisOverflow {
+            max: 100,
+            spent: 60,
+        });
+        crate::roundtrip_json(&GraphIdentityError::EmptyTenant);
+        crate::roundtrip_json(&GraphIdentityError::IdentityMismatch {
+            expected: Box::new(GraphIdentity::new(
+                ContentDigest::of_text("g1"),
+                "tenant-a",
+                10,
+                4,
+            )),
+            actual: Box::new(GraphIdentity::new(
+                ContentDigest::of_text("g2"),
+                "tenant-b",
+                12,
+                5,
+            )),
+        });
+        // Wire spellings are binding for S04's JSON report.
+        let json = serde_json::to_string(&GraphIdentity::new(
+            ContentDigest::of_text("g1"),
+            "tenant-a",
+            10,
+            4,
+        ))
+        .unwrap();
+        assert!(json.contains("\"tenant\":\"tenant-a\""));
+        assert!(json.contains("\"nodes\":10"));
+        assert!(json.contains("\"edges\":4"));
+    }
+
+    // ── Property tests (ADR-051 P1, T02 budget invariants) ──
+
+    proptest! {
+        #[test]
+        fn budget_refusals_are_atomic_and_counters_stay_within_limits(
+            max in 0u64..64u64,
+            batch in 1u64..16u64,
+        ) {
+            let mut budget = AgentBudget::new(max, max, max);
+            for _ in 0..200usize {
+                let before = budget.spent_queries;
+                match budget.record_query() {
+                    Ok(()) => prop_assert_eq!(budget.spent_queries, before + 1),
+                    Err(_) => {
+                        prop_assert_eq!(
+                            budget.spent_queries, before,
+                            "refusal must not advance counters"
+                        );
+                        prop_assert!(before >= max);
+                    }
+                }
+                prop_assert!(budget.spent_queries <= max);
+            }
+
+            let mut budget = AgentBudget::new(max, max, max);
+            for _ in 0..200usize {
+                let before = budget.spent_evidence_entries;
+                match budget.record_evidence(batch) {
+                    Ok(()) => {
+                        prop_assert_eq!(budget.spent_evidence_entries, before + batch)
+                    }
+                    Err(_) => {
+                        prop_assert_eq!(
+                            budget.spent_evidence_entries, before,
+                            "refusal must not advance counters"
+                        );
+                        prop_assert!(
+                            before + batch > max,
+                            "refusal implies the batch would overshoot"
+                        );
+                    }
+                }
+                prop_assert!(budget.spent_evidence_entries <= max);
+            }
+        }
     }
 
     // ── Property tests (ADR-051 P1) ──
