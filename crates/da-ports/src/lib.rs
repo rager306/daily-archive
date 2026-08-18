@@ -4,6 +4,7 @@
 //! These traits define the boundaries between our application and external systems.
 
 pub mod acquisition;
+pub mod agent_read_plane;
 pub mod algorithms;
 pub mod assurance;
 pub mod cache_payload;
@@ -27,6 +28,10 @@ pub mod tex_source;
 pub use acquisition::{
     AcquisitionError, EnsuredAsset, EnsuredAssets, EnsuredPrimary, MockSourceAcquisition,
     ResolvedArticleRef, SourceAcquisitionPort,
+};
+pub use agent_read_plane::{
+    AgentReadPlane, AgentReadPlaneError, AgentReadPlaneResult, AgentSynthesizer,
+    snapshot_to_graph_identity,
 };
 pub use algorithms::GraphAlgorithms;
 pub use assurance::{AssuranceReportStore, AssuranceStoreError};
