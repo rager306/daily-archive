@@ -1,0 +1,651 @@
+//! `da agent-run` — durable read-only agent CLI journey (R095, D272–D274).
+//!
+//! This module is the operator composition for the S03 verified agent use
+//! case against a **live read-only graph daemon** (`da serve-graph`, S01):
+//!
+//! 1. Parse a plan file: JSON array of `{query, purpose}` (structural parse
+//!    failure is a *configuration* error → exit 2 with **no report**;
+//!    semantic plan problems are handed to the use case → typed
+//!    `agent_failure:invalid_plan` **inside** the report, R087).
+//! 2. Fingerprint the expected `.sgsnap` artifact via
+//!    [`fingerprint_snapshot`] → [`SnapshotIdentity`] → domain
+//!    [`GraphIdentity`] (semantic hex through `ContentDigest::try_from`,
+//!    never `of_text` — R091/D269).
+//! 3. Run `AgentRunUseCase` through `RemoteAgentReadPlane` (read-only
+//!    plane, zero write authority, D127 remains locked).
+//! 4. **Post-run raw capture** — re-read every plan query that produced
+//!    evidence through the same `RemoteGraphStore`, embed the raw
+//!    `{graph, query, columns, records}` rows into the CLI-owned envelope
+//!    (D272) and **fail closed** if the recomputed `sha256:result:<hex>`
+//!    disagrees with the recorded `AgentQueryEvidence::result_ref`
+//!    (MEM874; never write an internally inconsistent report).
+//! 5. **Atomic write** (tmp + rename in the same directory) with
+//!    `tracing::info!` on write (path, terminal_state, error_class, bytes)
+//!    and a stdout one-liner `report: <path> terminal_state: <state>`.
+//!
+//! ## Exit codes
+//!
+//! - `0` — the report was written atomically. `FailedVisible` is a **typed
+//!   result inside the report**, not a process error (R087 philosophy).
+//! - `2` — configuration error (missing endpoint, malformed plan/snapshot,
+//!   `max_rows_per_query == 0`, bad report path).
+//! - `3` — runtime error (transport failure during run/capture, capture
+//!   disagrees with the run, atomic write failed).
+//!
+//! ## Env contract (D274)
+//!
+//! Endpoint comes from `--endpoint` or [`RemoteGraphConfig::ENV_ENDPOINT`]
+//! (`DA_REMOTE_GRAPH_ENDPOINT`) only — no new env keys, no daemon
+//! auto-start (missing endpoint is a configuration error, mirroring
+//! `graph_query`). The historical `DA_GRAPH_ENDPOINT` wart is deliberately
+//! **not** honored here.
+//!
+//! This module ships the run path (T02). `--verify` (T03), wiring into
+//! `main` (T04), and the cross-process journey test (T05) are sibling
+//! tasks in the same slice.
+
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+use clap::Args;
+use da_adapters::{RemoteAgentReadPlane, result_ref};
+use da_application::{
+    AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
+};
+use da_domain::{AgentBudget, AgentState, GraphIdentity};
+use da_ports::{AgentReadPlane, GraphStore};
+use kg_storage::snapshot_identity::{SnapshotIdentity, fingerprint_snapshot};
+use kg_storage::{RemoteGraphConfig, RemoteGraphStore};
+use serde::{Deserialize, Serialize};
+
+/// CLI-owned durable report format (D272). Bumped only on breaking field
+/// changes — additive fields go behind `#[serde(default)]`.
+pub const REPORT_FORMAT: &str = "da.agent-run.report.v1";
+/// Default read-plane graph name when `--graph` is omitted.
+pub const DEFAULT_GRAPH: &str = "daily_archive";
+/// Default per-query row bound (D274). Zero is rejected by clap fail-closed.
+pub const DEFAULT_MAX_ROWS_PER_QUERY: u64 = 50;
+/// Default synthesis chars budget for the use case.
+pub const DEFAULT_MAX_SYNTHESIS_CHARS: u64 = 4000;
+
+/// `da agent-run` clap arguments (T02 run path).
+#[derive(Debug, Clone, Args)]
+pub struct AgentRunArgs {
+    /// Path to the plan file: a JSON array of `[{ "query": "<read-only cypher>", "purpose": "<why>" }]`.
+    #[arg(long)]
+    pub plan: PathBuf,
+    /// Read-plane graph name.
+    #[arg(long, default_value = DEFAULT_GRAPH)]
+    pub graph: String,
+    /// Remote host:port. Falls back to DA_REMOTE_GRAPH_ENDPOINT. Missing
+    /// endpoint is a configuration error (no daemon auto-start).
+    #[arg(long)]
+    pub endpoint: Option<String>,
+    /// The `.sgsnap` artifact the daemon was preloaded with (R091 lineage).
+    /// Fingerprinted to the expected graph identity the run plans against.
+    #[arg(long)]
+    pub expected_snapshot: PathBuf,
+    /// Durable run-entry evidence ref. Defaults to
+    /// `sha256:snapshot:<semantic_hex>` (deterministically anchors the run
+    /// to the expected artifact). Override for downstream chains.
+    #[arg(long)]
+    pub entry_evidence_ref: Option<String>,
+    /// Report output path (atomic tmp+rename in the same directory).
+    #[arg(long)]
+    pub output: PathBuf,
+    /// Adapter-side row cut per query. Zero fails closed
+    /// (`agent_failure:invalid_plan`), never serves past the bound.
+    #[arg(long, default_value_t = DEFAULT_MAX_ROWS_PER_QUERY, value_parser = clap::value_parser!(u64).range(1..))]
+    pub max_rows_per_query: u64,
+    /// Max queries for the run budget. Defaults to plan length (fail-closed
+    /// floor: a longer plan is `agent_failure:invalid_plan`).
+    #[arg(long)]
+    pub max_queries: Option<u64>,
+    /// Max evidence entries for the run budget. Defaults to plan length.
+    #[arg(long)]
+    pub max_evidence_entries: Option<u64>,
+    /// Max synthesis chars for the run budget.
+    #[arg(long, default_value_t = DEFAULT_MAX_SYNTHESIS_CHARS)]
+    pub max_synthesis_chars: u64,
+}
+
+/// Typed CLI error with the documented exit-code contract (0/2/3; see
+/// module doc). `FailedVisible` never maps to an error — it is a typed
+/// result inside the written report.
+#[derive(Debug)]
+pub enum AgentRunCliError {
+    /// Configuration error → exit 2 (no report written).
+    Configuration(String),
+    /// Runtime error → exit 3 (report could not be guaranteed consistent).
+    Runtime(String),
+}
+
+impl std::fmt::Display for AgentRunCliError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Configuration(message) => {
+                write!(f, "invalid agent-run configuration: {message}")
+            }
+            Self::Runtime(message) => write!(f, "agent-run failed: {message}"),
+        }
+    }
+}
+
+impl std::error::Error for AgentRunCliError {}
+
+impl AgentRunCliError {
+    pub fn exit_code(&self) -> i32 {
+        match self {
+            Self::Configuration(_) => 2,
+            Self::Runtime(_) => 3,
+        }
+    }
+}
+
+/// Operator-owned `expected_snapshot` block in the envelope: physical path
+/// plus the semantic identity the run plans against (R091 as-of context).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExpectedSnapshot {
+    /// Operator-supplied artifact path, for provenance.
+    pub path: String,
+    /// Semantic SHA-256 hex (byte-identical to `SnapshotIdentity.semantic_sha256`).
+    pub semantic_hex: String,
+    /// Tenant scope of the expected graph.
+    pub tenant: String,
+    /// Node count of the expected graph.
+    pub nodes: u64,
+    /// Edge count of the expected graph.
+    pub edges: u64,
+}
+
+/// One captured raw query result embedded in the envelope (D272). Kept so
+/// `sha256:result:<hex>` is independently recomputable from disk and claims
+/// can be re-grounded offline.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QueryResultRecord {
+    pub graph: String,
+    pub query: String,
+    pub columns: Vec<String>,
+    pub records: Vec<Vec<serde_json::Value>>,
+}
+
+/// CLI-owned durable agent-run envelope (D272).
+///
+/// Additive surface: the pinned S03 [`AgentRunReport`] is embedded verbatim
+/// under `run` (never re-shaped), plus plan, expected identity and raw
+/// result records. `import_eligible` never appears (D127 / MEM642).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentRunEnvelope {
+    pub format: String,
+    pub tool: String,
+    pub version: String,
+    /// RFC3339 UTC as-of timestamp (as-of context for the run).
+    pub timestamp_utc: String,
+    pub endpoint: String,
+    pub graph: String,
+    pub plan: Vec<AgentPlanQuery>,
+    pub expected_snapshot: ExpectedSnapshot,
+    /// Pinned S03 report: terminal FSM state, decisions, bundle, budget,
+    /// identities, typed error.
+    pub run: AgentRunReport,
+    /// Raw result records captured post-run, 1:1 with `run.bundle.evidence`.
+    #[serde(default)]
+    pub result_records: Vec<QueryResultRecord>,
+}
+
+/// Execute one `da agent-run` (T02).
+///
+/// Orchestrates plan parse → expected fingerprint → use-case run →
+/// post-run raw capture (fail-closed ref check) → atomic write.
+pub async fn run(args: AgentRunArgs) -> Result<(), AgentRunCliError> {
+    let plan = parse_plan(&args.plan)?;
+    let (snapshot, expected_identity) = fingerprint_expected(&args.expected_snapshot)?;
+    let endpoint = resolve_endpoint(&args)?;
+
+    let config = RemoteGraphConfig::new(endpoint.clone()).map_err(|error| {
+        AgentRunCliError::Configuration(format!("invalid endpoint {endpoint:?}: {error}"))
+    })?;
+    let store = RemoteGraphStore::new(config).map_err(|error| {
+        AgentRunCliError::Configuration(format!("invalid remote graph config: {error}"))
+    })?;
+
+    let plane = RemoteAgentReadPlane::new(store.clone());
+    let plane_arc: Arc<dyn AgentReadPlane> = Arc::new(plane);
+    let use_case = AgentRunUseCase::new(plane_arc, Arc::new(DeterministicSynthesizer));
+
+    let max_queries = args.max_queries.unwrap_or(plan.len() as u64);
+    let max_evidence_entries = args.max_evidence_entries.unwrap_or(plan.len() as u64);
+    let entry_evidence_ref = args
+        .entry_evidence_ref
+        .clone()
+        .unwrap_or_else(|| format!("sha256:snapshot:{}", snapshot.semantic_sha256));
+
+    let request = AgentRunRequest {
+        entry_evidence_ref,
+        expected_identity: expected_identity.clone(),
+        graph: args.graph.clone(),
+        plan: plan.clone(),
+        budget: AgentBudget::new(max_queries, max_evidence_entries, args.max_synthesis_chars),
+        max_rows_per_query: args.max_rows_per_query,
+    };
+
+    let report = use_case.run(&request).await;
+
+    // Post-run raw capture. Fail closed if any recomputed result ref
+    // disagrees with the recorded evidence ref (README: never write an
+    // internally inconsistent report).
+    let result_records = capture_result_records(&store, &args.graph, &report).await?;
+
+    let expected_snapshot = ExpectedSnapshot {
+        path: args.expected_snapshot.display().to_string(),
+        semantic_hex: expected_identity.semantic_digest.as_str().to_string(),
+        tenant: expected_identity.tenant.clone(),
+        nodes: expected_identity.nodes,
+        edges: expected_identity.edges,
+    };
+
+    let envelope = AgentRunEnvelope {
+        format: REPORT_FORMAT.into(),
+        tool: "da".into(),
+        version: env!("CARGO_PKG_VERSION").into(),
+        timestamp_utc: chrono::Utc::now().to_rfc3339(),
+        endpoint,
+        graph: args.graph.clone(),
+        plan,
+        expected_snapshot,
+        run: report,
+        result_records,
+    };
+
+    write_envelope_atomic(&args.output, &envelope)
+}
+
+/// Parse the plan file: a JSON array of `{query, purpose}`. Structural
+/// failure is a **configuration** error (exit 2, no report); semantic plan
+/// validity is the use case's job (`agent_failure:invalid_plan` in-report).
+fn parse_plan(path: &Path) -> Result<Vec<AgentPlanQuery>, AgentRunCliError> {
+    let text = std::fs::read_to_string(path).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "read plan {}: {error}; expected a JSON array of {{\"query\",\"purpose\"}}",
+            path.display()
+        ))
+    })?;
+    serde_json::from_str::<Vec<AgentPlanQuery>>(&text).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "parse plan {}: {error}; expected a JSON array of {{\"query\",\"purpose\"}}",
+            path.display()
+        ))
+    })
+}
+
+/// Fingerprint the expected `.sgsnap` into a [`SnapshotIdentity`] and the
+/// domain [`GraphIdentity`] the run plans against (R091/D269). Any failure
+/// is a configuration error.
+fn fingerprint_expected(
+    path: &Path,
+) -> Result<(SnapshotIdentity, GraphIdentity), AgentRunCliError> {
+    let bytes = std::fs::read(path).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "read expected snapshot {}: {error}",
+            path.display()
+        ))
+    })?;
+    let snapshot = fingerprint_snapshot(&bytes).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "fingerprint expected snapshot {}: {error}",
+            path.display()
+        ))
+    })?;
+    let identity = da_ports::snapshot_to_graph_identity(&snapshot).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "map expected snapshot {} to graph identity: {error}",
+            path.display()
+        ))
+    })?;
+    Ok((snapshot, identity))
+}
+
+/// Resolve the read-plane endpoint from `--endpoint` or
+/// `DA_REMOTE_GRAPH_ENDPOINT` only (D274). A missing endpoint is a
+/// configuration error — daemon auto-start is forbidden.
+fn resolve_endpoint(args: &AgentRunArgs) -> Result<String, AgentRunCliError> {
+    args.endpoint
+        .clone()
+        .or_else(|| std::env::var(RemoteGraphConfig::ENV_ENDPOINT).ok())
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| {
+            AgentRunCliError::Configuration(
+                "agent-run requires --endpoint or DA_REMOTE_GRAPH_ENDPOINT; daemon auto-start is forbidden".into(),
+            )
+        })
+}
+
+/// Post-run raw capture: re-read every plan query that produced evidence
+/// through the same read-only store, embed the raw rows, and **fail closed**
+/// if any recomputed `sha256:result:<hex>` disagrees with the recorded
+/// `result_ref` (MEM874 — never write an internally inconsistent report).
+async fn capture_result_records(
+    store: &RemoteGraphStore,
+    graph: &str,
+    report: &AgentRunReport,
+) -> Result<Vec<QueryResultRecord>, AgentRunCliError> {
+    let mut records = Vec::with_capacity(report.bundle.evidence.len());
+    for evidence in &report.bundle.evidence {
+        let result = store
+            .query_readonly(graph, &evidence.query)
+            .await
+            .map_err(|error| {
+                AgentRunCliError::Runtime(format!(
+                    "post-run capture failed for query {:?}: {error}",
+                    evidence.query
+                ))
+            })?;
+        let recomputed = result_ref(graph, &evidence.query, &result);
+        if recomputed != evidence.result_ref {
+            return Err(AgentRunCliError::Runtime(format!(
+                "capture disagrees with the run: recomputed result_ref {recomputed} != recorded {} for query {:?}; refusing to write an internally inconsistent report",
+                evidence.result_ref, evidence.query
+            )));
+        }
+        records.push(QueryResultRecord {
+            graph: graph.to_string(),
+            query: evidence.query.clone(),
+            columns: result.columns.clone(),
+            records: result.records.clone(),
+        });
+    }
+    Ok(records)
+}
+
+/// Write the envelope atomically (tmp + rename in the same directory,
+/// matching the `gold_corpus` manifest pattern), then emit the stdout
+/// one-liner and a structured write decision log.
+fn write_envelope_atomic(path: &Path, envelope: &AgentRunEnvelope) -> Result<(), AgentRunCliError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|error| {
+            AgentRunCliError::Runtime(format!("create {}: {error}", parent.display()))
+        })?;
+    }
+    let bytes = serde_json::to_vec_pretty(envelope).map_err(|error| {
+        AgentRunCliError::Runtime(format!("serialize agent run report: {error}"))
+    })?;
+    let temporary = path.with_extension("tmp");
+    std::fs::write(&temporary, &bytes).map_err(|error| {
+        AgentRunCliError::Runtime(format!("write {}: {error}", temporary.display()))
+    })?;
+    std::fs::rename(&temporary, path).map_err(|error| {
+        AgentRunCliError::Runtime(format!(
+            "commit agent run report {} -> {}: {error}",
+            temporary.display(),
+            path.display()
+        ))
+    })?;
+
+    let terminal_state = terminal_state_str(envelope.run.terminal_state);
+    let error_class = envelope.run.error.as_ref().map(|error| error.error_class());
+    tracing::info!(
+        report_path = %path.display(),
+        terminal_state = %terminal_state,
+        error_class = ?error_class,
+        bytes = bytes.len(),
+        "agent run report written atomically"
+    );
+    println!(
+        "report: {} terminal_state: {}",
+        path.display(),
+        terminal_state
+    );
+    Ok(())
+}
+
+/// Render an `AgentState` as the serde snake-case wire string, for the
+/// stdout one-liner / structured logs.
+pub fn terminal_state_str(state: AgentState) -> &'static str {
+    use AgentState::*;
+    match state {
+        Created => "created",
+        Planning => "planning",
+        Searching => "searching",
+        Reading => "reading",
+        Synthesis => "synthesis",
+        Verification => "verification",
+        Verified => "verified",
+        FailedVisible => "failed_visible",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use da_domain::{AgentQueryEvidence, ContentDigest};
+    use kg_storage::QueryResult;
+    use serde_json::json;
+
+    fn write_temp(name: &str, contents: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join("da-agent-run-tests");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join(format!("{}-{name}", std::process::id()));
+        std::fs::write(&path, contents).unwrap();
+        path
+    }
+
+    fn sample_plan() -> Vec<AgentPlanQuery> {
+        vec![
+            AgentPlanQuery {
+                query: "MATCH (n:Paper) RETURN count(n) as count".into(),
+                purpose: "count papers".into(),
+            },
+            AgentPlanQuery {
+                query: "MATCH (n:Paper {year: 2024}) RETURN n.title LIMIT 5".into(),
+                purpose: "recent papers".into(),
+            },
+        ]
+    }
+
+    fn sample_envelope() -> AgentRunEnvelope {
+        let identity = GraphIdentity::new(ContentDigest::of_text("seed"), "test_tenant", 3, 2);
+        AgentRunEnvelope {
+            format: REPORT_FORMAT.into(),
+            tool: "da".into(),
+            version: "test".into(),
+            timestamp_utc: "2026-08-17T00:00:00Z".into(),
+            endpoint: "127.0.0.1:16379".into(),
+            graph: DEFAULT_GRAPH.into(),
+            plan: sample_plan(),
+            expected_snapshot: ExpectedSnapshot {
+                path: "artifacts/test.sgsnap".into(),
+                semantic_hex: identity.semantic_digest.as_str().to_string(),
+                tenant: identity.tenant.clone(),
+                nodes: identity.nodes,
+                edges: identity.edges,
+            },
+            run: AgentRunReport {
+                terminal_state: AgentState::Verified,
+                decisions: vec![],
+                bundle: da_domain::ContextBundle::new(identity.clone()),
+                budget: AgentBudget::new(10, 10, 4000),
+                expected_identity: identity.clone(),
+                actual_identity: Some(identity),
+                error: None,
+            },
+            result_records: vec![QueryResultRecord {
+                graph: DEFAULT_GRAPH.into(),
+                query: "MATCH (n:Paper) RETURN count(n) as count".into(),
+                columns: vec!["count".into()],
+                records: vec![vec![json!(42)]],
+            }],
+        }
+    }
+
+    /// Reconstruct a `QueryResult` from a captured record's owned fields so
+    /// the capture ref can be recomputed (mirrors `--verify`'s path).
+    fn record_to_query_result(record: &QueryResultRecord) -> QueryResult {
+        QueryResult {
+            columns: record.columns.clone(),
+            records: record.records.clone(),
+        }
+    }
+
+    #[test]
+    fn parse_plan_valid_json() {
+        let path = write_temp(
+            "plan-valid.json",
+            r#"[{"query":"MATCH (n) RETURN count(n)","purpose":"scale"}]"#,
+        );
+        let plan = parse_plan(&path).expect("valid plan parses");
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].query, "MATCH (n) RETURN count(n)");
+        assert_eq!(plan[0].purpose, "scale");
+    }
+
+    #[test]
+    fn parse_plan_malformed_is_config_error() {
+        let path = write_temp("plan-bad.json", r#"{"query":"not-an-array"}"#);
+        match parse_plan(&path) {
+            Err(AgentRunCliError::Configuration(_)) => {}
+            other => panic!("malformed plan must be a Configuration error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_plan_empty_array_is_valid() {
+        let path = write_temp("plan-empty.json", "[]");
+        assert_eq!(parse_plan(&path).expect("empty plan parses").len(), 0);
+    }
+
+    #[test]
+    fn parse_plan_missing_file_is_config_error() {
+        match parse_plan(Path::new("/nonexistent/plan.json")) {
+            Err(AgentRunCliError::Configuration(_)) => {}
+            other => panic!("missing plan must be Configuration, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn envelope_serde_roundtrip() {
+        crate::roundtrip_json(&sample_envelope());
+    }
+
+    #[test]
+    fn envelope_never_contains_import_eligible() {
+        // D127 / MEM642 guard: no nested field is named import_eligible.
+        let json = serde_json::to_string(&sample_envelope()).unwrap();
+        assert!(!json.contains("import_eligible"));
+        assert!(!json.contains("import_eligible\":true"));
+    }
+
+    #[test]
+    fn report_format_is_stable() {
+        assert_eq!(sample_envelope().format, REPORT_FORMAT);
+        assert_eq!(REPORT_FORMAT, "da.agent-run.report.v1");
+    }
+
+    #[test]
+    fn atomic_write_commits_and_removes_tmp() {
+        let dir = std::env::temp_dir()
+            .join("da-agent-run-tests")
+            .join(format!("out-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("report.json");
+        let _ = std::fs::remove_file(&path);
+        let tmp = path.with_extension("tmp");
+        let _ = std::fs::remove_file(&tmp);
+
+        write_envelope_atomic(&path, &sample_envelope()).expect("atomic write succeeds");
+
+        assert!(path.exists(), "report committed");
+        assert!(!tmp.exists(), "temp file removed after rename");
+        let bytes = std::fs::read(&path).unwrap();
+        let back: AgentRunEnvelope = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(back, sample_envelope());
+        assert_eq!(back.run.terminal_state, AgentState::Verified);
+    }
+
+    #[test]
+    fn atomic_write_creates_parent_dir() {
+        let dir = std::env::temp_dir()
+            .join("da-agent-run-tests")
+            .join(format!("nested-{}", std::process::id()));
+        let path = dir.join("deep").join("sub").join("report.json");
+        write_envelope_atomic(&path, &sample_envelope()).expect("creates parents");
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn terminal_state_str_matches_serde_snake_case() {
+        for (state, expected) in [
+            (AgentState::Verified, "verified"),
+            (AgentState::FailedVisible, "failed_visible"),
+            (AgentState::Created, "created"),
+            (AgentState::Planning, "planning"),
+            (AgentState::Searching, "searching"),
+            (AgentState::Reading, "reading"),
+            (AgentState::Synthesis, "synthesis"),
+            (AgentState::Verification, "verification"),
+        ] {
+            assert_eq!(terminal_state_str(state), expected, "state {state:?}");
+            let wire = serde_json::to_string(&state).unwrap();
+            assert_eq!(wire.trim_matches('"'), expected, "serde wire for {state:?}");
+        }
+    }
+
+    #[test]
+    fn captured_result_ref_is_deterministic_and_recomputable() {
+        // The ref over the full record (graph, query, columns, records) is
+        // stable across the run path and the recompute path (MEM874).
+        let graph = DEFAULT_GRAPH;
+        let query = "MATCH (n:Paper) RETURN count(n) as count";
+        let result = QueryResult {
+            columns: vec!["count".into()],
+            records: vec![vec![json!(42)]],
+        };
+        let ref_a = result_ref(graph, query, &result);
+        let record = QueryResultRecord {
+            graph: graph.into(),
+            query: query.into(),
+            columns: result.columns.clone(),
+            records: result.records.clone(),
+        };
+        let ref_b = result_ref(graph, query, &record_to_query_result(&record));
+        assert_eq!(ref_a, ref_b);
+        assert!(ref_a.starts_with("sha256:result:"), "ref prefix: {ref_a}");
+
+        // The `AgentQueryEvidence` recorded by the run must ground onto that
+        // same ref (the capture comparison is against this exact value).
+        let evidence = AgentQueryEvidence::new(query, ref_a.clone(), 1, false, 1);
+        assert_eq!(evidence.result_ref, ref_a);
+    }
+
+    #[test]
+    fn resolve_endpoint_missing_is_config_error() {
+        // Safely guard against a real env var leaking into the unit test.
+        let prior = std::env::var(RemoteGraphConfig::ENV_ENDPOINT).ok();
+        unsafe { std::env::remove_var(RemoteGraphConfig::ENV_ENDPOINT) };
+        let args = AgentRunArgs {
+            plan: PathBuf::from("p.json"),
+            graph: DEFAULT_GRAPH.into(),
+            endpoint: None,
+            expected_snapshot: PathBuf::from("s.sgsnap"),
+            entry_evidence_ref: None,
+            output: PathBuf::from("out.json"),
+            max_rows_per_query: 50,
+            max_queries: None,
+            max_evidence_entries: None,
+            max_synthesis_chars: 4000,
+        };
+        let r = resolve_endpoint(&args);
+        match r {
+            Err(AgentRunCliError::Configuration(_)) => {}
+            other => panic!("missing endpoint must be Configuration, got {other:?}"),
+        }
+        if let Some(value) = prior {
+            unsafe { std::env::set_var(RemoteGraphConfig::ENV_ENDPOINT, value) };
+        }
+    }
+
+    #[test]
+    fn agent_run_cli_error_exit_codes() {
+        assert_eq!(AgentRunCliError::Configuration("x".into()).exit_code(), 2);
+        assert_eq!(AgentRunCliError::Runtime("x".into()).exit_code(), 3);
+    }
+}
