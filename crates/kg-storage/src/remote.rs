@@ -8,6 +8,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
+use crate::resp::{RespValue, encode_command, parse_resp};
 use crate::{
     GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric, VectorSearchResult,
     validate_readonly_cypher,
@@ -202,121 +203,6 @@ fn remote_io_error(endpoint: &str, phase: &str, error: std::io::Error) -> GraphS
     GraphStoreError::Storage(format!(
         "remote graph {phase} failed at {endpoint}: {error}"
     ))
-}
-
-fn encode_command(args: &[&str]) -> Vec<u8> {
-    let mut output = format!("*{}\r\n", args.len()).into_bytes();
-    for argument in args {
-        output.extend_from_slice(format!("${}\r\n", argument.len()).as_bytes());
-        output.extend_from_slice(argument.as_bytes());
-        output.extend_from_slice(b"\r\n");
-    }
-    output
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum RespValue {
-    Simple(String),
-    Error(String),
-    Integer(i64),
-    Bulk(String),
-    Null,
-    Array(Vec<RespValue>),
-}
-
-fn parse_resp(input: &[u8]) -> Result<Option<(RespValue, usize)>, String> {
-    parse_at(input, 0)
-}
-
-fn parse_at(input: &[u8], position: usize) -> Result<Option<(RespValue, usize)>, String> {
-    let Some(prefix) = input.get(position).copied() else {
-        return Ok(None);
-    };
-    match prefix {
-        b'+' | b'-' | b':' => {
-            let Some((line, next)) = read_line(input, position + 1) else {
-                return Ok(None);
-            };
-            let text = std::str::from_utf8(line)
-                .map_err(|error| format!("remote graph RESP is not UTF-8: {error}"))?;
-            let value = match prefix {
-                b'+' => RespValue::Simple(text.into()),
-                b'-' => RespValue::Error(text.into()),
-                b':' => RespValue::Integer(text.parse().map_err(|error| {
-                    format!("remote graph RESP invalid integer {text:?}: {error}")
-                })?),
-                _ => unreachable!(),
-            };
-            Ok(Some((value, next)))
-        }
-        b'$' => {
-            let Some((line, mut next)) = read_line(input, position + 1) else {
-                return Ok(None);
-            };
-            let length: i64 = std::str::from_utf8(line)
-                .map_err(|error| format!("remote graph RESP bulk length UTF-8: {error}"))?
-                .parse()
-                .map_err(|error| format!("remote graph RESP invalid bulk length: {error}"))?;
-            if length == -1 {
-                return Ok(Some((RespValue::Null, next)));
-            }
-            if length < -1 {
-                return Err(format!("remote graph RESP invalid bulk length {length}"));
-            }
-            let length = length as usize;
-            let Some(end) = next.checked_add(length) else {
-                return Err("remote graph RESP bulk length overflow".into());
-            };
-            if input.len() < end + 2 {
-                return Ok(None);
-            }
-            if &input[end..end + 2] != b"\r\n" {
-                return Err("remote graph RESP bulk missing CRLF".into());
-            }
-            let value = std::str::from_utf8(&input[next..end])
-                .map_err(|error| format!("remote graph RESP bulk is not UTF-8: {error}"))?;
-            next = end + 2;
-            Ok(Some((RespValue::Bulk(value.into()), next)))
-        }
-        b'*' => {
-            let Some((line, mut next)) = read_line(input, position + 1) else {
-                return Ok(None);
-            };
-            let length: usize = std::str::from_utf8(line)
-                .map_err(|error| format!("remote graph RESP array length UTF-8: {error}"))?
-                .parse()
-                .map_err(|error| format!("remote graph RESP invalid array length: {error}"))?;
-            let mut values = Vec::with_capacity(length);
-            for _ in 0..length {
-                let Some((value, after)) = parse_at(input, next)? else {
-                    return Ok(None);
-                };
-                values.push(value);
-                next = after;
-            }
-            Ok(Some((RespValue::Array(values), next)))
-        }
-        b'_' => {
-            if input.get(position..position + 3) == Some(b"_\r\n") {
-                Ok(Some((RespValue::Null, position + 3)))
-            } else if input.len() < position + 3 {
-                Ok(None)
-            } else {
-                Err("remote graph RESP invalid null frame".into())
-            }
-        }
-        other => Err(format!(
-            "remote graph RESP unsupported prefix 0x{other:02x}"
-        )),
-    }
-}
-
-fn read_line(input: &[u8], start: usize) -> Option<(&[u8], usize)> {
-    input
-        .get(start..)?
-        .windows(2)
-        .position(|window| window == b"\r\n")
-        .map(|offset| (&input[start..start + offset], start + offset + 2))
 }
 
 fn query_result_from_resp(response: RespValue) -> GraphResult<QueryResult> {

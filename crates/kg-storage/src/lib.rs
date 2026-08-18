@@ -14,8 +14,10 @@ pub mod error;
 pub mod graph_mode;
 pub mod mock;
 pub mod mutation;
+pub mod read_only_server;
 pub mod readonly;
 pub mod remote;
+pub mod resp;
 pub mod snapshot_identity;
 pub mod traits;
 
@@ -31,8 +33,14 @@ pub use mutation::{
     InstrumentedGraphStore, MutationCounters, MutationDisposition, MutationFamily,
     MutationFamilyCounters,
 };
+pub use read_only_server::{
+    DEFAULT_MAX_CONNECTIONS, DEFAULT_MAX_FRAME_BYTES, DEFAULT_MAX_RESPONSE_BYTES,
+    DEFAULT_OPERATION_TIMEOUT, DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT, ReadOnlyServer,
+    ReadOnlyServerConfig,
+};
 pub use readonly::validate_readonly_cypher;
 pub use remote::{RemoteGraphConfig, RemoteGraphStore};
+pub use resp::{RespValue, encode_command, encode_value, parse_resp};
 pub use snapshot_identity::{
     SnapshotIdentity, SnapshotIdentityError, SnapshotIdentityLimits, fingerprint_snapshot,
     fingerprint_snapshot_with_limits,
