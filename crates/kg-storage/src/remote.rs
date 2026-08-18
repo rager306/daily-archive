@@ -1,6 +1,7 @@
 //! Bounded Samyama RESP read-plane adapter.
 //! All mutation, index, vector and snapshot capabilities fail closed.
 
+use std::collections::BTreeMap;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -8,7 +9,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::time::timeout;
 
+use crate::error::{EnvParseError, env_optional_string, env_u64, env_usize};
 use crate::resp::{RespValue, encode_command, parse_resp};
+use crate::snapshot_identity::SnapshotIdentity;
 use crate::{
     GraphResult, GraphStore, GraphStoreError, QueryResult, VectorMetric, VectorSearchResult,
     validate_readonly_cypher,
@@ -26,6 +29,54 @@ pub struct RemoteGraphConfig {
 }
 
 impl RemoteGraphConfig {
+    /// Env key: remote endpoint `host:port` (default [`DEFAULT_REMOTE_ENDPOINT`]).
+    pub const ENV_ENDPOINT: &'static str = "DA_REMOTE_GRAPH_ENDPOINT";
+    /// Env key: per-operation timeout in whole seconds (default [`DEFAULT_TIMEOUT`]; zero rejected).
+    pub const ENV_TIMEOUT_SECONDS: &'static str = "DA_REMOTE_GRAPH_TIMEOUT_SECONDS";
+    /// Env key: max response bytes (default [`DEFAULT_MAX_RESPONSE_BYTES`]; zero rejected).
+    pub const ENV_MAX_RESPONSE_BYTES: &'static str = "DA_REMOTE_GRAPH_MAX_RESPONSE_BYTES";
+
+    /// Read the documented `DA_REMOTE_GRAPH_*` keys from the process
+    /// environment. Unset keys fall back to defaults; present values are
+    /// parsed strictly — blank, non-numeric, zero and overflow are rejected
+    /// with a typed [`EnvParseError`] instead of a silent default.
+    pub fn from_env() -> Result<Self, EnvParseError> {
+        Self::from_env_map(&std::env::vars().collect::<BTreeMap<_, _>>())
+    }
+
+    /// Testable map-backed variant of [`Self::from_env`].
+    pub fn from_env_map(map: &BTreeMap<String, String>) -> Result<Self, EnvParseError> {
+        let endpoint = env_optional_string(map, Self::ENV_ENDPOINT)?
+            .unwrap_or_else(|| DEFAULT_REMOTE_ENDPOINT.to_string());
+        let timeout_secs =
+            env_u64(map, Self::ENV_TIMEOUT_SECONDS)?.unwrap_or(DEFAULT_TIMEOUT.as_secs());
+        let max_response_bytes =
+            env_usize(map, Self::ENV_MAX_RESPONSE_BYTES)?.unwrap_or(DEFAULT_MAX_RESPONSE_BYTES);
+        if timeout_secs == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_TIMEOUT_SECONDS,
+                value: "0".into(),
+            });
+        }
+        if max_response_bytes == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_MAX_RESPONSE_BYTES,
+                value: "0".into(),
+            });
+        }
+        let config = Self {
+            endpoint,
+            timeout: Duration::from_secs(timeout_secs),
+            max_response_bytes,
+        };
+        config.validate().map_err(|error| EnvParseError::Invalid {
+            key: Self::ENV_ENDPOINT,
+            value: config.endpoint.clone(),
+            reason: error.to_string(),
+        })?;
+        Ok(config)
+    }
+
     pub fn new(endpoint: impl Into<String>) -> Result<Self, GraphStoreError> {
         let endpoint = endpoint.into();
         let endpoint = endpoint.trim();
@@ -138,6 +189,36 @@ impl RemoteGraphStore {
         validate_readonly_cypher(cypher)?;
         let response = self.command(&["GRAPH.RO_QUERY", graph, cypher]).await?;
         query_result_from_resp(response)
+    }
+
+    /// Fetch the server's `DA.IDENTITY` as a typed [`SnapshotIdentity`] (T02).
+    pub async fn identity(&self) -> GraphResult<SnapshotIdentity> {
+        let response = self.command(&["DA.IDENTITY"]).await?;
+        match response {
+            RespValue::Bulk(json) | RespValue::Simple(json) => SnapshotIdentity::from_json(&json)
+                .map_err(|error| {
+                    GraphStoreError::Storage(format!(
+                        "remote graph DA.IDENTITY returned invalid SnapshotIdentity JSON: {error}"
+                    ))
+                }),
+            RespValue::Error(message) => Err(GraphStoreError::Storage(message)),
+            other => Err(GraphStoreError::Storage(format!(
+                "remote graph DA.IDENTITY expected a bulk JSON string, got {other:?}"
+            ))),
+        }
+    }
+
+    /// Verify the remote graph matches an expected snapshot identity (T02).
+    /// A mismatch is a typed [`GraphStoreError::IdentityMismatch`] carrying
+    /// both sides (semantic SHA, tenant, node/edge counts) so the caller sees
+    /// the actual divergence — never an empty result.
+    pub async fn verify_identity(&self, expected: &SnapshotIdentity) -> GraphResult<()> {
+        let actual = self.identity().await?;
+        if &actual == expected {
+            Ok(())
+        } else {
+            Err(GraphStoreError::identity_mismatch(expected, &actual))
+        }
     }
 
     fn unsupported(operation: &str) -> GraphStoreError {
@@ -390,6 +471,119 @@ mod tests {
         assert!(matches!(
             store.create_property_index("Paper", "vid").await,
             Err(GraphStoreError::NotImplemented(_))
+        ));
+    }
+
+    // ---- T02: RemoteGraphConfig::from_env typed environment contract ----
+
+    #[test]
+    fn remote_config_from_env_parses_all_keys_and_defaults() {
+        let mut map = BTreeMap::new();
+        map.insert(
+            RemoteGraphConfig::ENV_ENDPOINT.to_string(),
+            "10.0.0.5:19999".to_string(),
+        );
+        map.insert(
+            RemoteGraphConfig::ENV_TIMEOUT_SECONDS.to_string(),
+            "42".to_string(),
+        );
+        map.insert(
+            RemoteGraphConfig::ENV_MAX_RESPONSE_BYTES.to_string(),
+            "1048576".to_string(),
+        );
+        let config = RemoteGraphConfig::from_env_map(&map).expect("parse");
+        assert_eq!(config.endpoint, "10.0.0.5:19999");
+        assert_eq!(config.timeout, Duration::from_secs(42));
+        assert_eq!(config.max_response_bytes, 1_048_576);
+
+        // Unset keys fall back to documented defaults.
+        let defaults = RemoteGraphConfig::from_env_map(&BTreeMap::new()).expect("defaults");
+        assert_eq!(defaults.endpoint, DEFAULT_REMOTE_ENDPOINT);
+        assert_eq!(defaults.timeout, DEFAULT_TIMEOUT);
+        assert_eq!(defaults.max_response_bytes, DEFAULT_MAX_RESPONSE_BYTES);
+    }
+
+    #[test]
+    fn remote_config_from_env_rejects_blank_non_numeric_zero_overflow_and_invalid_endpoint() {
+        // Blank (whitespace-only) endpoint.
+        let blank = [(
+            RemoteGraphConfig::ENV_ENDPOINT.to_string(),
+            "   ".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert_eq!(
+            RemoteGraphConfig::from_env_map(&blank).unwrap_err(),
+            EnvParseError::Blank {
+                key: RemoteGraphConfig::ENV_ENDPOINT
+            }
+        );
+
+        // Non-numeric, zero, overflow on every numeric key.
+        for (key, raw) in [
+            (RemoteGraphConfig::ENV_TIMEOUT_SECONDS, "1.5"),
+            (RemoteGraphConfig::ENV_MAX_RESPONSE_BYTES, "-8"),
+        ] {
+            let map = [(key.to_string(), raw.to_string())]
+                .into_iter()
+                .collect::<BTreeMap<_, _>>();
+            assert_eq!(
+                RemoteGraphConfig::from_env_map(&map).unwrap_err(),
+                EnvParseError::NonNumeric {
+                    key,
+                    value: raw.to_string()
+                },
+                "{key}"
+            );
+        }
+
+        for (key, raw) in [
+            (RemoteGraphConfig::ENV_TIMEOUT_SECONDS, "0"),
+            (RemoteGraphConfig::ENV_MAX_RESPONSE_BYTES, "0"),
+        ] {
+            let map = [(key.to_string(), raw.to_string())]
+                .into_iter()
+                .collect::<BTreeMap<_, _>>();
+            assert_eq!(
+                RemoteGraphConfig::from_env_map(&map).unwrap_err(),
+                EnvParseError::Zero {
+                    key,
+                    value: raw.to_string()
+                },
+                "{key}"
+            );
+        }
+
+        // Overflow: digits that do not fit the target type.
+        let overflow = [(
+            RemoteGraphConfig::ENV_MAX_RESPONSE_BYTES.to_string(),
+            "99999999999999999999999999".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert!(matches!(
+            RemoteGraphConfig::from_env_map(&overflow).unwrap_err(),
+            EnvParseError::Overflow {
+                key: RemoteGraphConfig::ENV_MAX_RESPONSE_BYTES,
+                ..
+            }
+        ));
+
+        // Invalid endpoint (no port) surfaces as a typed Invalid error
+        // naming the endpoint key — never a silent default.
+        let invalid = [(
+            RemoteGraphConfig::ENV_ENDPOINT.to_string(),
+            "noport".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert!(matches!(
+            RemoteGraphConfig::from_env_map(&invalid).unwrap_err(),
+            EnvParseError::Invalid {
+                key: RemoteGraphConfig::ENV_ENDPOINT,
+                value,
+                ..
+            } if value == "noport"
         ));
     }
 }

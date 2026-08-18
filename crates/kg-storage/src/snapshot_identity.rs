@@ -27,6 +27,18 @@ pub struct SnapshotIdentity {
     pub edge_count: u64,
 }
 
+impl SnapshotIdentity {
+    /// Serialize to the canonical JSON payload served by `DA.IDENTITY` (T02).
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
+
+    /// Parse the `DA.IDENTITY` JSON payload back into a typed identity (T02).
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SnapshotIdentityLimits {
     pub max_decompressed_bytes: usize,

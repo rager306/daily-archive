@@ -102,4 +102,20 @@ mod serde_roundtrip_tests {
         roundtrip_json(&VectorMetric::L2);
         roundtrip_json(&VectorMetric::Dot);
     }
+
+    /// T02 — `DA.IDENTITY` payload must survive the JSON wire roundtrip
+    /// byte-for-byte so the remote client decodes exactly what the server
+    /// computed from the exported graph bytes.
+    #[test]
+    fn roundtrip_snapshot_identity() {
+        roundtrip_json(&SnapshotIdentity {
+            physical_sha256: "phys-1".into(),
+            semantic_sha256: "sem-1".into(),
+            semantic_algorithm: crate::snapshot_identity::SEMANTIC_SNAPSHOT_ALGORITHM.into(),
+            snapshot_format_version: 2,
+            tenant: "daily_archive".into(),
+            node_count: 1399,
+            edge_count: 4211,
+        });
+    }
 }

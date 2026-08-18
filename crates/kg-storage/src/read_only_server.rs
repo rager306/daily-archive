@@ -13,6 +13,7 @@
 //! each dispatched command, and `max_connections` bounds concurrent clients
 //! with a fail-closed busy response when saturated.
 
+use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -21,9 +22,12 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Semaphore;
 use tokio::time::timeout;
 
-use crate::error::{GraphResult, GraphStoreError};
+use crate::error::{
+    EnvParseError, GraphResult, GraphStoreError, env_optional_string, env_u16, env_u64, env_usize,
+};
 use crate::readonly::validate_readonly_cypher;
 use crate::resp::{RespValue, encode_value, parse_resp};
+use crate::snapshot_identity::{SnapshotIdentity, fingerprint_snapshot};
 use crate::traits::{GraphStore, QueryResult};
 
 /// Structured connection/command events when kg-storage is built with
@@ -55,7 +59,9 @@ pub const DEFAULT_OPERATION_TIMEOUT: Duration = Duration::from_secs(10);
 pub const DEFAULT_MAX_CONNECTIONS: usize = 100;
 
 /// Bounded server configuration. The typed environment contract
-/// (`ReadOnlyServerConfig::from_env`) lands in T02.
+/// ([`ReadOnlyServerConfig::from_env`]) resolves documented `DA_SERVE_GRAPH_*`
+/// keys with defaults when unset and rejects blank, non-numeric, zero and
+/// overflow values fail-closed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReadOnlyServerConfig {
     pub host: String,
@@ -76,6 +82,81 @@ impl ReadOnlyServerConfig {
             operation_timeout: DEFAULT_OPERATION_TIMEOUT,
             max_connections: DEFAULT_MAX_CONNECTIONS,
         }
+    }
+
+    /// Env key: bind host (default [`DEFAULT_SERVER_HOST`]).
+    pub const ENV_HOST: &'static str = "DA_SERVE_GRAPH_HOST";
+    /// Env key: bind port (default [`DEFAULT_SERVER_PORT`]; zero rejected).
+    pub const ENV_PORT: &'static str = "DA_SERVE_GRAPH_PORT";
+    /// Env key: inbound frame cap in bytes (default [`DEFAULT_MAX_FRAME_BYTES`]; zero rejected).
+    pub const ENV_MAX_FRAME_BYTES: &'static str = "DA_SERVE_GRAPH_MAX_FRAME_BYTES";
+    /// Env key: outbound response cap in bytes (default [`DEFAULT_MAX_RESPONSE_BYTES`]; zero rejected).
+    pub const ENV_MAX_RESPONSE_BYTES: &'static str = "DA_SERVE_GRAPH_MAX_RESPONSE_BYTES";
+    /// Env key: per-command operation timeout in whole seconds (default [`DEFAULT_OPERATION_TIMEOUT`]; zero rejected).
+    pub const ENV_OPERATION_TIMEOUT_SECONDS: &'static str =
+        "DA_SERVE_GRAPH_OPERATION_TIMEOUT_SECONDS";
+    /// Env key: concurrent-connection cap (default [`DEFAULT_MAX_CONNECTIONS`]; zero rejected).
+    pub const ENV_MAX_CONNECTIONS: &'static str = "DA_SERVE_GRAPH_MAX_CONNECTIONS";
+
+    /// Read the documented `DA_SERVE_GRAPH_*` keys from the process
+    /// environment. Unset keys fall back to defaults; present values are
+    /// parsed strictly — blank, non-numeric, zero and overflow are rejected
+    /// with a typed [`EnvParseError`] instead of a silent default.
+    pub fn from_env() -> Result<Self, EnvParseError> {
+        Self::from_env_map(&std::env::vars().collect::<BTreeMap<_, _>>())
+    }
+
+    /// Testable map-backed variant of [`Self::from_env`].
+    pub fn from_env_map(map: &BTreeMap<String, String>) -> Result<Self, EnvParseError> {
+        let host = env_optional_string(map, Self::ENV_HOST)?
+            .unwrap_or_else(|| DEFAULT_SERVER_HOST.to_string());
+        let port = env_u16(map, Self::ENV_PORT)?.unwrap_or(DEFAULT_SERVER_PORT);
+        let max_frame_bytes =
+            env_usize(map, Self::ENV_MAX_FRAME_BYTES)?.unwrap_or(DEFAULT_MAX_FRAME_BYTES);
+        let max_response_bytes =
+            env_usize(map, Self::ENV_MAX_RESPONSE_BYTES)?.unwrap_or(DEFAULT_MAX_RESPONSE_BYTES);
+        let operation_timeout_secs = env_u64(map, Self::ENV_OPERATION_TIMEOUT_SECONDS)?
+            .unwrap_or(DEFAULT_OPERATION_TIMEOUT.as_secs());
+        let max_connections =
+            env_usize(map, Self::ENV_MAX_CONNECTIONS)?.unwrap_or(DEFAULT_MAX_CONNECTIONS);
+        if port == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_PORT,
+                value: "0".into(),
+            });
+        }
+        if max_frame_bytes == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_MAX_FRAME_BYTES,
+                value: "0".into(),
+            });
+        }
+        if max_response_bytes == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_MAX_RESPONSE_BYTES,
+                value: "0".into(),
+            });
+        }
+        if operation_timeout_secs == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_OPERATION_TIMEOUT_SECONDS,
+                value: "0".into(),
+            });
+        }
+        if max_connections == 0 {
+            return Err(EnvParseError::Zero {
+                key: Self::ENV_MAX_CONNECTIONS,
+                value: "0".into(),
+            });
+        }
+        Ok(Self {
+            host,
+            port,
+            max_frame_bytes,
+            max_response_bytes,
+            operation_timeout: Duration::from_secs(operation_timeout_secs),
+            max_connections,
+        })
     }
 
     pub fn validate(&self) -> GraphResult<()> {
@@ -151,6 +232,29 @@ impl ReadOnlyServer {
     /// Replace the DA.IDENTITY payload at runtime (e.g. after a preload).
     pub fn set_identity(&self, json: Option<String>) {
         *self.inner.identity.lock().unwrap() = json;
+    }
+
+    /// Compute the deterministic [`SnapshotIdentity`] from the store's
+    /// exported graph bytes (T02). The identity is therefore bound to the
+    /// exact graph state this server serves — a second process can verify
+    /// semantic identity against it via the remote client.
+    pub async fn compute_identity(&self) -> GraphResult<SnapshotIdentity> {
+        let bytes = self.inner.store.export_snapshot().await?;
+        fingerprint_snapshot(&bytes).map_err(|error| {
+            GraphStoreError::Storage(format!(
+                "failed to compute snapshot identity from exported graph bytes: {error}"
+            ))
+        })
+    }
+
+    /// Builder: compute DA.IDENTITY from the store's exported graph bytes
+    /// now and pre-set the JSON payload before serving (T02).
+    pub async fn with_identity_from_store(self) -> GraphResult<Self> {
+        let identity = self.compute_identity().await?;
+        let json = identity.to_json().map_err(|error| {
+            GraphStoreError::Storage(format!("failed to serialize snapshot identity: {error}"))
+        })?;
+        Ok(self.with_identity(json))
     }
 
     /// Bind the listener. Port 0 picks an ephemeral port (tests, T03 uses
@@ -1089,6 +1193,202 @@ mod tests {
         assert_eq!(defaults.port, 16379);
     }
 
+    /// A deterministic, valid gzip sgsnap fixture: 2 nodes, 1 edge.
+    /// Served via MockGraphStore::set_snapshot_data so the server's
+    /// export_snapshot() returns genuine sgsnap bytes for fingerprinting.
+    fn canned_sgsnap() -> Vec<u8> {
+        use flate2::{Compression, write::GzEncoder};
+        use std::io::Write;
+
+        let header = serde_json::json!({
+            "format": "sgsnap", "version": 2, "tenant": "daily_archive",
+            "node_count": 2, "edge_count": 1,
+            "labels": [], "edge_types": [],
+            "created_at": "2026-08-18T00:00:00Z", "samyama_version": "x"
+        });
+        let records = vec![
+            serde_json::json!({"t":"n","id":1,"labels":["Paper"],"props":{"vid":"paper-a","title":"A"}}),
+            serde_json::json!({"t":"n","id":2,"labels":["Entity"],"props":{"vid":"entity-b","name":"B"}}),
+            serde_json::json!({"t":"e","id":3,"src":1,"tgt":2,"type":"MENTIONS","props":{"confidence":0.9}}),
+        ];
+        let text = std::iter::once(header)
+            .chain(records)
+            .map(|value| serde_json::to_string(&value).unwrap())
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(text.as_bytes()).unwrap();
+        encoder.finish().unwrap()
+    }
+
+    #[test]
+    fn server_config_from_env_parses_all_keys_and_defaults() {
+        let mut map = BTreeMap::new();
+        map.insert(
+            ReadOnlyServerConfig::ENV_HOST.to_string(),
+            " 0.0.0.0 ".to_string(),
+        );
+        map.insert(
+            ReadOnlyServerConfig::ENV_PORT.to_string(),
+            "17000".to_string(),
+        );
+        map.insert(
+            ReadOnlyServerConfig::ENV_MAX_FRAME_BYTES.to_string(),
+            "2048".to_string(),
+        );
+        map.insert(
+            ReadOnlyServerConfig::ENV_MAX_RESPONSE_BYTES.to_string(),
+            "4096".to_string(),
+        );
+        map.insert(
+            ReadOnlyServerConfig::ENV_OPERATION_TIMEOUT_SECONDS.to_string(),
+            "7".to_string(),
+        );
+        map.insert(
+            ReadOnlyServerConfig::ENV_MAX_CONNECTIONS.to_string(),
+            "12".to_string(),
+        );
+        let config = ReadOnlyServerConfig::from_env_map(&map).expect("parse");
+        assert_eq!(config.host, "0.0.0.0");
+        assert_eq!(config.port, 17000);
+        assert_eq!(config.max_frame_bytes, 2048);
+        assert_eq!(config.max_response_bytes, 4096);
+        assert_eq!(config.operation_timeout, Duration::from_secs(7));
+        assert_eq!(config.max_connections, 12);
+        assert!(config.validate().is_ok());
+
+        // Empty map: every documented key falls back to its default.
+        let defaults = ReadOnlyServerConfig::from_env_map(&BTreeMap::new()).expect("defaults");
+        assert_eq!(
+            defaults,
+            ReadOnlyServerConfig::new(DEFAULT_SERVER_HOST, DEFAULT_SERVER_PORT)
+        );
+    }
+
+    #[test]
+    fn server_config_from_env_rejects_blank_non_numeric_zero_and_overflow() {
+        use crate::error::EnvParseError;
+
+        let blank = [(
+            ReadOnlyServerConfig::ENV_HOST.to_string(),
+            "   ".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert_eq!(
+            ReadOnlyServerConfig::from_env_map(&blank).unwrap_err(),
+            EnvParseError::Blank {
+                key: ReadOnlyServerConfig::ENV_HOST
+            }
+        );
+
+        for (key, raw) in [
+            (ReadOnlyServerConfig::ENV_PORT, "not-a-port"),
+            (ReadOnlyServerConfig::ENV_MAX_FRAME_BYTES, "1.5"),
+            (ReadOnlyServerConfig::ENV_MAX_RESPONSE_BYTES, "-8"),
+            (ReadOnlyServerConfig::ENV_OPERATION_TIMEOUT_SECONDS, "10s"),
+            (ReadOnlyServerConfig::ENV_MAX_CONNECTIONS, "many"),
+        ] {
+            let map = [(key.to_string(), raw.to_string())]
+                .into_iter()
+                .collect::<BTreeMap<_, _>>();
+            assert!(
+                matches!(
+                    ReadOnlyServerConfig::from_env_map(&map).unwrap_err(),
+                    EnvParseError::NonNumeric { key: k, .. } if k == key
+                ),
+                "{key} with {raw:?}"
+            );
+        }
+
+        for (key, raw) in [
+            (ReadOnlyServerConfig::ENV_PORT, "0"),
+            (ReadOnlyServerConfig::ENV_MAX_FRAME_BYTES, "0"),
+            (ReadOnlyServerConfig::ENV_MAX_RESPONSE_BYTES, "0"),
+            (ReadOnlyServerConfig::ENV_OPERATION_TIMEOUT_SECONDS, "0"),
+            (ReadOnlyServerConfig::ENV_MAX_CONNECTIONS, "0"),
+        ] {
+            let map = [(key.to_string(), raw.to_string())]
+                .into_iter()
+                .collect::<BTreeMap<_, _>>();
+            assert_eq!(
+                ReadOnlyServerConfig::from_env_map(&map).unwrap_err(),
+                EnvParseError::Zero {
+                    key,
+                    value: "0".into()
+                },
+                "{key}"
+            );
+        }
+
+        // u16 overflow for port; usize overflow for byte caps.
+        let overflow_port = [(
+            ReadOnlyServerConfig::ENV_PORT.to_string(),
+            "65536".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        assert!(matches!(
+            ReadOnlyServerConfig::from_env_map(&overflow_port).unwrap_err(),
+            EnvParseError::Overflow {
+                key: ReadOnlyServerConfig::ENV_PORT,
+                ..
+            }
+        ));
+    }
+
+    #[tokio::test]
+    async fn compute_identity_from_exported_graph_bytes_is_deterministic() {
+        let store = Arc::new(RecordingStore::new());
+        store.inner.set_snapshot_data(canned_sgsnap());
+        let server = ReadOnlyServer::new(test_config(), store).expect("config");
+        let identity = server.compute_identity().await.expect("compute identity");
+        assert_eq!(identity.tenant, "daily_archive");
+        assert_eq!(identity.node_count, 2);
+        assert_eq!(identity.edge_count, 1);
+        assert_eq!(identity.snapshot_format_version, 2);
+        assert_eq!(
+            identity.semantic_algorithm,
+            crate::snapshot_identity::SEMANTIC_SNAPSHOT_ALGORITHM
+        );
+        assert!(!identity.semantic_sha256.is_empty());
+        assert!(!identity.physical_sha256.is_empty());
+        // Deterministic: recomputation over identical exported bytes matches.
+        let again = server.compute_identity().await.expect("recompute");
+        assert_eq!(identity, again);
+    }
+
+    #[tokio::test]
+    async fn identity_command_serves_identity_computed_from_store_bytes() {
+        let store = Arc::new(RecordingStore::new());
+        store.inner.set_snapshot_data(canned_sgsnap());
+        let server = ReadOnlyServer::new(test_config(), store).expect("config");
+        let server = server.with_identity_from_store().await.expect("compute");
+        let listener = server.bind().await.unwrap();
+        let endpoint = listener.local_addr().unwrap().to_string();
+        let task = tokio::spawn(async move {
+            let _ = server.serve_listener(listener).await;
+        });
+        let mut stream = connect(&endpoint).await;
+        stream
+            .write_all(&encode_command(&["DA.IDENTITY"]))
+            .await
+            .unwrap();
+        let frame = read_one_frame(&mut stream).await;
+        let (value, consumed) = parse_resp(&frame).expect("parse").expect("frame");
+        assert_eq!(consumed, frame.len());
+        let RespValue::Bulk(json) = value else {
+            panic!("expected bulk identity, got {value:?}");
+        };
+        let identity: SnapshotIdentity = serde_json::from_str(&json).expect("identity JSON");
+        assert_eq!(identity.node_count, 2);
+        assert_eq!(identity.edge_count, 1);
+        assert_eq!(identity.tenant, "daily_archive");
+        task.abort();
+        let _ = task.await;
+    }
+
     #[tokio::test]
     async fn read_only_server_refuses_when_saturated() {
         let store = Arc::new(RecordingStore::new());
@@ -1150,6 +1450,57 @@ mod tests {
             .to_string();
         assert!(error.contains("CREATE"), "{error}");
         assert_eq!(store.read_calls(), 1, "server store must stay untouched");
+
+        task.abort();
+        let _ = task.await;
+    }
+
+    /// T02 read-plane identity contract end to end: the real remote client
+    /// fetches DA.IDENTITY, verifies a matching expected identity, and gets a
+    /// typed, visible mismatch for a wrong expected identity.
+    #[tokio::test]
+    async fn remote_identity_verification_is_typed_and_visible() {
+        use crate::remote::{RemoteGraphConfig, RemoteGraphStore};
+
+        let store = Arc::new(RecordingStore::new());
+        store.inner.set_snapshot_data(canned_sgsnap());
+        let server = ReadOnlyServer::new(test_config(), store).expect("config");
+        let expected = server.compute_identity().await.expect("compute");
+        let server = server.with_identity(expected.to_json().unwrap());
+        let listener = server.bind().await.unwrap();
+        let endpoint = listener.local_addr().unwrap().to_string();
+        let task = tokio::spawn(async move {
+            let _ = server.serve_listener(listener).await;
+        });
+
+        let client = RemoteGraphStore::new(RemoteGraphConfig::new(endpoint).unwrap()).unwrap();
+
+        // identity() decodes the server's JSON into a typed SnapshotIdentity.
+        let actual = client.identity().await.expect("identity");
+        assert_eq!(actual, expected);
+
+        // Matching expected identity verifies cleanly.
+        client.verify_identity(&expected).await.expect("verify ok");
+
+        // A wrong expected identity is a typed, visible mismatch — never an
+        // empty result. The error names both semantic SHAs and counts.
+        let wrong = SnapshotIdentity {
+            semantic_sha256: "deadbeef".into(),
+            ..expected.clone()
+        };
+        let error = client.verify_identity(&wrong).await.expect_err("mismatch");
+        match &error {
+            GraphStoreError::IdentityMismatch(detail) => {
+                assert_eq!(detail.expected_semantic_sha256, "deadbeef");
+                assert_eq!(detail.actual_semantic_sha256, expected.semantic_sha256);
+                assert_eq!(detail.expected_nodes, 2);
+                assert_eq!(detail.actual_nodes, 2);
+            }
+            other => panic!("expected IdentityMismatch, got {other:?}"),
+        }
+        let message = error.to_string();
+        assert!(message.contains("deadbeef"), "{message}");
+        assert!(message.contains(&expected.semantic_sha256), "{message}");
 
         task.abort();
         let _ = task.await;
