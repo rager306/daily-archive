@@ -150,7 +150,12 @@ fn truncate_rows(records: &[Vec<serde_json::Value>], max_rows: u64) -> (usize, b
 /// columns, records). Truncation never changes the record's identity, so a
 /// recomputation reproduces the same ref under unchanged data, and claims
 /// ground onto the durable record hash — not the adapter-side cut.
-fn result_ref(graph: &str, cypher: &str, result: &QueryResult) -> String {
+///
+/// Public (S04 T01): the CLI uses this **both** at capture (recompute from
+/// raw envelope rows and compare with `AgentQueryEvidence::result_ref`) and
+/// at `--verify`, so the canonical form can never drift between the two
+/// paths (D273: Governor shells out instead of re-hashing serde JSON).
+pub fn result_ref(graph: &str, cypher: &str, result: &QueryResult) -> String {
     let canonical = serde_json::json!({
         "graph": graph,
         "query": cypher,
@@ -481,6 +486,45 @@ mod tests {
         assert_eq!(truncated.rows, 1);
         task.abort();
         let _ = task.await;
+    }
+
+    #[test]
+    fn result_ref_is_recomputable_from_persisted_envelope_rows() {
+        // S04 T01: the CLI envelope persists exactly {graph, query, columns,
+        // records}; rebuilding the QueryResult from those JSON pieces and
+        // recomputing through the public `result_ref` must reproduce the
+        // same durable ref (capture and --verify share one canonical form).
+        let result = QueryResult {
+            columns: vec!["p.vid".into(), "p.title".into()],
+            records: vec![
+                vec![serde_json::json!("2507.19457"), serde_json::json!("GEPA")],
+                vec![serde_json::json!("2507.19458"), serde_json::json!("Other")],
+            ],
+        };
+        let graph = "hub";
+        let cypher = "MATCH (p:Paper) RETURN p.vid, p.title";
+        let expected = result_ref(graph, cypher, &result);
+
+        let persisted = serde_json::json!({
+            "graph": graph,
+            "query": cypher,
+            "columns": result.columns,
+            "records": result.records,
+        });
+        let rebuilt = QueryResult {
+            columns: serde_json::from_value(persisted["columns"].clone()).unwrap(),
+            records: serde_json::from_value(persisted["records"].clone()).unwrap(),
+        };
+        assert_eq!(
+            expected,
+            result_ref(graph, cypher, &rebuilt),
+            "recompute from persisted rows reproduces the capture ref"
+        );
+        assert!(expected.starts_with("sha256:result:"));
+        // A single changed row changes the ref (tamper sensitivity).
+        let mut tampered = rebuilt;
+        tampered.records[0][1] = serde_json::json!("forged");
+        assert_ne!(expected, result_ref(graph, cypher, &tampered));
     }
 
     #[tokio::test]

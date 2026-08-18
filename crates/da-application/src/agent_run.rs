@@ -27,6 +27,12 @@
 //! orchestrator itself (entry ref → plan digest → `da.identity:<digest>` →
 //! evidence digest → claims digest → verification digest).
 //!
+//! The public [`verify_run_evidence_chain`] helper independently recomputes
+//! the durable evidence chain (plan → identity → evidence → claims →
+//! verification) from persisted plan + report data, so S04 CLI capture and
+//! `--verify` — and the S05 Governor shell-out (D273) — can never drift
+//! from the digest math.
+//!
 //! # Failure semantics (R087)
 //!
 //! Every failure path ends at `FailedVisible` with a typed
@@ -592,6 +598,242 @@ fn verification_digest(bundle: &ContextBundle, actual: &GraphIdentity) -> String
     )
 }
 
+/// Independent recomputation of a finished run's durable evidence chain
+/// (S04 T01 — the public evidence-chain verifier).
+///
+/// `plan` and `report` are exactly the serde-stable pair S04 persists in
+/// the CLI envelope (plan JSON + [`AgentRunReport`]). Every evidence ref
+/// that is a deterministic function of persisted data is recomputed here —
+/// plan digest, `da.identity:<digest>`, evidence digest, claims digest,
+/// verification digest — and compared with the recorded FSM decision
+/// history. Blocked refs that are adapter-internal failure records
+/// (`query:<purpose>`, `synthesis:claims`, a raw `sha256:result:<hex>`)
+/// are not recomputable from the report; those steps are checked for
+/// decision/error consistency instead. Also verified: claim grounding on
+/// the happy path, expected/actual identity equality, the bundle identity
+/// lineage, and the `terminal_state` ↔ `error` contract (R087).
+///
+/// Returns the first failing check as `Err("<check name>")` so
+/// `da agent-run --verify` (S04) can print PASS/FAIL with the first
+/// failure (D273: Governor shells out to this verifier, never re-hashes
+/// canonical serde JSON in Python).
+pub fn verify_run_evidence_chain(
+    plan: &[AgentPlanQuery],
+    report: &AgentRunReport,
+) -> Result<(), String> {
+    let decisions = &report.decisions;
+    let failed = report.terminal_state == AgentState::FailedVisible;
+
+    // R087 contract: Verified carries no error, FailedVisible always
+    // carries the typed refusal.
+    if failed != report.error.is_some() {
+        return Err(format!(
+            "terminal_state/error: terminal_state {} is inconsistent with error {}",
+            if failed { "FailedVisible" } else { "Verified" },
+            if report.error.is_some() {
+                "present"
+            } else {
+                "absent"
+            }
+        ));
+    }
+
+    let check = |index: usize, name: &str, expected: &str| -> Result<(), String> {
+        match decisions.get(index) {
+            Some(decision) if decision.evidence_ref == expected => Ok(()),
+            Some(decision) => Err(format!(
+                "{name}: recorded evidence_ref {} does not match the independently recomputed {expected}",
+                decision.evidence_ref
+            )),
+            None => Err(format!("{name}: decision missing from the report history")),
+        }
+    };
+    // A blocked decision's ref is a failure record — verify the decision and
+    // its error agree (tamper consistency) and the error names this step.
+    let check_blocked = |index: usize,
+                         name: &str,
+                         from: AgentState,
+                         to: AgentState|
+     -> Result<(), String> {
+        let decision = decisions
+            .get(index)
+            .ok_or_else(|| format!("{name}: decision missing from the report history"))?;
+        let error = decision.error.as_ref().ok_or_else(|| {
+            format!("{name}: expected a blocked decision but the step was admitted")
+        })?;
+        if decision.evidence_ref != error.evidence_ref {
+            return Err(format!(
+                "{name}: decision evidence_ref {} disagrees with its error evidence_ref {}",
+                decision.evidence_ref, error.evidence_ref
+            ));
+        }
+        if error.from != from || error.to != to {
+            return Err(format!(
+                "{name}: recorded error transition {:?} -> {:?} is not the expected {from:?} -> {to:?}",
+                error.from, error.to
+            ));
+        }
+        Ok(())
+    };
+    // The failure sink is always the last decision on a failed report; every
+    // forward step is at a fixed index, so a run that sinks early ends the
+    // walk there.
+    let sink_is_next = |step: usize| failed && step + 1 == decisions.len();
+    let sink_check = || -> Result<(), String> {
+        let sink = decisions.last().expect("failed report has a sink decision");
+        let error = report
+            .error
+            .as_ref()
+            .expect("failed report carries the typed error");
+        if !sink.admitted || sink.error.is_some() {
+            return Err(
+                "failure sink: the terminal admission must be admitted and error-free".into(),
+            );
+        }
+        if sink.evidence_ref != error.evidence_ref {
+            return Err(format!(
+                "failure sink: recorded evidence_ref {} does not match the terminal error evidence_ref {}",
+                sink.evidence_ref, error.evidence_ref
+            ));
+        }
+        Ok(())
+    };
+
+    // Step 0: Created -> Planning. The entry ref is request-owned (not
+    // recomputable from plan + report alone); the record itself must be an
+    // admitted, error-free admission with a non-empty durable ref.
+    match decisions.first() {
+        Some(decision)
+            if decision.admitted
+                && decision.error.is_none()
+                && !decision.evidence_ref.is_empty() => {}
+        Some(decision) => {
+            return Err(format!(
+                "Created -> Planning: unexpected entry decision (admitted={}, error={:?})",
+                decision.admitted,
+                decision.error.as_ref().map(|error| error.error_class())
+            ));
+        }
+        None => return Err("Created -> Planning: decision missing from the report history".into()),
+    }
+    let mut step = 1usize;
+
+    // Step 1: Planning -> Searching — the plan digest (also the ref of an
+    // invalid-plan refusal: the error records the same digest).
+    let plan_ref = plan_digest(plan);
+    check(step, "plan digest", &plan_ref)?;
+    step += 1;
+    if sink_is_next(step) {
+        return sink_check();
+    }
+
+    // Step 2: Searching -> Reading — the observed identity ref
+    // (`da.identity:<semantic digest>`, or `da.identity:unavailable` when
+    // the plane was never reachable); both admitted and blocked steps carry
+    // exactly this ref.
+    let identity_ref = match &report.actual_identity {
+        Some(identity) => format!("da.identity:{}", identity.semantic_digest.as_str()),
+        None => "da.identity:unavailable".to_string(),
+    };
+    check(step, "identity ref", &identity_ref)?;
+    step += 1;
+    if sink_is_next(step) {
+        return sink_check();
+    }
+
+    // Step 3: Reading -> Synthesis — the evidence digest when admitted; a
+    // budget/transport refusal ref (`query:<purpose>` / result hash) is a
+    // failure record checked for decision/error consistency.
+    if matches!(decisions.get(step), Some(decision) if decision.error.is_some()) {
+        check_blocked(
+            step,
+            "evidence refusal record",
+            AgentState::Reading,
+            AgentState::Synthesis,
+        )?;
+    } else {
+        let evidence_ref = evidence_digest(&report.bundle);
+        check(step, "evidence digest", &evidence_ref)?;
+    }
+    step += 1;
+    if sink_is_next(step) {
+        return sink_check();
+    }
+
+    // Step 4: Synthesis -> Verification — the claims digest when admitted;
+    // the synthesis-budget refusal record (`synthesis:claims`) otherwise.
+    if matches!(decisions.get(step), Some(decision) if decision.error.is_some()) {
+        check_blocked(
+            step,
+            "claims refusal record",
+            AgentState::Synthesis,
+            AgentState::Verification,
+        )?;
+    } else {
+        let claims_ref = claims_digest(&report.bundle);
+        check(step, "claims digest", &claims_ref)?;
+    }
+    step += 1;
+    if sink_is_next(step) {
+        return sink_check();
+    }
+
+    // Step 5: Verification -> Verified — the verification digest over the
+    // bundle plus the identity observed at verification; a
+    // read_plane_unavailable refusal records `da.identity:unavailable`.
+    let verification_ref = match &report.error {
+        Some(error)
+            if error.code == AgentFailureCode::ReadPlaneUnavailable
+                && error.from == AgentState::Verification
+                && error.to == AgentState::Verified =>
+        {
+            "da.identity:unavailable".to_string()
+        }
+        _ => match &report.actual_identity {
+            Some(identity) => verification_digest(&report.bundle, identity),
+            None => "da.identity:unavailable".to_string(),
+        },
+    };
+    check(step, "verification digest", &verification_ref)?;
+    step += 1;
+    if sink_is_next(step) {
+        return sink_check();
+    }
+
+    // Cross-checks (S04 verify contract).
+    if report.terminal_state == AgentState::Verified {
+        match &report.actual_identity {
+            Some(actual) if actual == &report.expected_identity => {}
+            Some(actual) => {
+                return Err(format!(
+                    "identity equality: a Verified run observed identity {} but planned against {}",
+                    actual.semantic_digest.as_str(),
+                    report.expected_identity.semantic_digest.as_str()
+                ));
+            }
+            None => return Err("identity equality: a Verified run has no actual identity".into()),
+        }
+        if !report.bundle.all_claims_grounded() {
+            return Err("claim grounding: a Verified run has a dangling claim".into());
+        }
+    }
+    if let Some(error) = &report.error
+        && error.code == AgentFailureCode::MissingEvidence
+        && report.bundle.all_claims_grounded()
+    {
+        return Err(
+            "claim grounding: missing_evidence recorded but every claim is grounded".into(),
+        );
+    }
+    if report.bundle.expected_identity != report.expected_identity {
+        return Err(
+            "bundle identity: report bundle expected_identity disagrees with the run expected_identity"
+                .into(),
+        );
+    }
+    Ok(())
+}
+
 /// Build the terminal `FailedVisible` report: records the failure-sink
 /// admission (`from → FailedVisible`, always admitted by topology) and
 /// carries the terminal typed error (R087).
@@ -662,6 +904,8 @@ mod tests {
         query_calls: AtomicU64,
         identity_error: Option<String>,
         query_error: Option<String>,
+        identity_calls: AtomicU64,
+        fail_identity_on_call: Option<u64>,
     }
 
     impl FakeAgentReadPlane {
@@ -672,6 +916,8 @@ mod tests {
                 query_calls: AtomicU64::new(0),
                 identity_error: None,
                 query_error: None,
+                identity_calls: AtomicU64::new(0),
+                fail_identity_on_call: None,
             }
         }
 
@@ -682,6 +928,27 @@ mod tests {
                 query_calls: AtomicU64::new(0),
                 identity_error: Some(message.to_string()),
                 query_error: None,
+                identity_calls: AtomicU64::new(0),
+                fail_identity_on_call: None,
+            }
+        }
+
+        /// Pre-flight identity succeeds, the verification-time identity
+        /// (second call) is refused — the `read_plane_unavailable` path at
+        /// `Verification → Verified` (R091 double check).
+        fn with_late_identity_error(
+            identity: GraphIdentity,
+            results: Vec<AgentQueryEvidence>,
+            message: &str,
+        ) -> Self {
+            Self {
+                identity,
+                results,
+                query_calls: AtomicU64::new(0),
+                identity_error: Some(message.to_string()),
+                query_error: None,
+                identity_calls: AtomicU64::new(0),
+                fail_identity_on_call: Some(2),
             }
         }
 
@@ -696,6 +963,8 @@ mod tests {
                 query_calls: AtomicU64::new(0),
                 identity_error: None,
                 query_error: Some(message.to_string()),
+                identity_calls: AtomicU64::new(0),
+                fail_identity_on_call: None,
             }
         }
 
@@ -707,8 +976,17 @@ mod tests {
     #[async_trait]
     impl AgentReadPlane for FakeAgentReadPlane {
         async fn identity(&self) -> AgentReadPlaneResult<GraphIdentity> {
-            if let Some(message) = &self.identity_error {
-                return Err(AgentReadPlaneError::Transport(message.clone()));
+            let call = self.identity_calls.fetch_add(1, Ordering::Relaxed) + 1;
+            let fail_now = match self.fail_identity_on_call {
+                Some(fail_on) => call == fail_on,
+                None => self.identity_error.is_some(),
+            };
+            if fail_now {
+                return Err(AgentReadPlaneError::Transport(
+                    self.identity_error
+                        .clone()
+                        .unwrap_or_else(|| "identity unavailable".into()),
+                ));
             }
             Ok(self.identity.clone())
         }
@@ -1097,5 +1375,237 @@ mod tests {
         let json = serde_json::to_string(&report).unwrap();
         assert!(json.contains("\"terminal_state\":\"failed_visible\""));
         assert!(json.contains("\"code\":\"invalid_plan\""));
+    }
+
+    // ---- S04 T01: public evidence-chain verifier ----
+
+    /// Assert the chain recomputes cleanly, with the failing check named.
+    fn expect_chain_ok(plan: &[AgentPlanQuery], report: &AgentRunReport) {
+        if let Err(check) = verify_run_evidence_chain(plan, report) {
+            panic!("evidence chain must verify on this report: {check}");
+        }
+    }
+
+    #[tokio::test]
+    async fn verify_chain_recomputes_happy_path_from_persisted_data() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let request = sample_request();
+        let report = use_case.run(&request).await;
+        assert_eq!(report.terminal_state, AgentState::Verified);
+
+        // Persist exactly what S04 puts in the envelope (plan JSON + report
+        // JSON, serde-stable), then recompute from the deserialized copies —
+        // the S05 shell-out contract (D273).
+        let plan: Vec<AgentPlanQuery> =
+            serde_json::from_str(&serde_json::to_string(&request.plan).unwrap()).unwrap();
+        let report: AgentRunReport =
+            serde_json::from_str(&serde_json::to_string(&report).unwrap()).unwrap();
+        expect_chain_ok(&plan, &report);
+    }
+
+    #[tokio::test]
+    async fn verify_chain_detects_plan_tampering() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let mut request = sample_request();
+        let report = use_case.run(&request).await;
+        // The envelope's persisted plan no longer matches the run's plan.
+        request.plan[0].query = "MATCH (p:Paper) RETURN p.vid".into();
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(err.starts_with("plan digest"), "first failing check: {err}");
+    }
+
+    #[tokio::test]
+    async fn verify_chain_detects_evidence_tampering() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let request = sample_request();
+        let mut report = use_case.run(&request).await;
+        report.bundle.evidence[0].result_ref = "sha256:tampered".into();
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(
+            err.starts_with("evidence digest"),
+            "first failing check: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn verify_chain_detects_claim_tampering_on_verified_run() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let request = sample_request();
+        let mut report = use_case.run(&request).await;
+        report.bundle.claims[0].text = "forged claim text".into();
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(
+            err.starts_with("claims digest"),
+            "first failing check: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn verify_chain_detects_identity_and_history_tampering() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let request = sample_request();
+        // Observed identity swapped -> identity ref (and later verify digest)
+        // no longer recompute.
+        let mut report = use_case.run(&request).await;
+        report.actual_identity = Some(other_identity());
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(
+            err.starts_with("identity ref"),
+            "first failing check: {err}"
+        );
+
+        // Recorded decision history tampered -> plan digest mismatch. A
+        // fresh plane is needed: the fake consumes one canned result per
+        // query call.
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let mut report = use_case.run(&request).await;
+        report.decisions[1].evidence_ref = "sha256:plan:deadbeef".into();
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(err.starts_with("plan digest"), "first failing check: {err}");
+    }
+
+    #[tokio::test]
+    async fn verify_chain_detects_forged_failure_sink() {
+        let use_case = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DeterministicSynthesizer),
+        );
+        let mut request = sample_request();
+        request.budget = AgentBudget::new(2, 1, 1000); // evidence overflow at Reading
+        let mut report = use_case.run(&request).await;
+        report.decisions.last_mut().unwrap().evidence_ref = "sha256:forged".into();
+        let err = verify_run_evidence_chain(&request.plan, &report).unwrap_err();
+        assert!(
+            err.starts_with("failure sink"),
+            "first failing check: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn verify_chain_recomputes_blocked_reports() {
+        // Pre-flight identity mismatch: zero queries, 4 decisions.
+        let report = use_case(FakeAgentReadPlane::happy(other_identity(), happy_results()))
+            .run(&sample_request())
+            .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::IdentityMismatch)
+        );
+        expect_chain_ok(&sample_request().plan, &report);
+
+        // Read plane never reachable: identity unavailable, zero queries.
+        let report = use_case(FakeAgentReadPlane::with_identity_error(
+            test_identity(),
+            "connection refused",
+        ))
+        .run(&sample_request())
+        .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::ReadPlaneUnavailable)
+        );
+        assert!(report.actual_identity.is_none());
+        expect_chain_ok(&sample_request().plan, &report);
+
+        // Evidence budget overflow at Reading: refusal before counters advance.
+        let mut request = sample_request();
+        request.budget = AgentBudget::new(2, 1, 1000);
+        let report = use_case(FakeAgentReadPlane::happy(test_identity(), happy_results()))
+            .run(&request)
+            .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::BudgetOverflow)
+        );
+        expect_chain_ok(&request.plan, &report);
+
+        // Query transport failure at Reading: partial evidence, refusal record.
+        let report = use_case(FakeAgentReadPlane::with_query_error(
+            test_identity(),
+            happy_results(),
+            "connection lost mid-query",
+        ))
+        .run(&sample_request())
+        .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::ReadPlaneUnavailable)
+        );
+        expect_chain_ok(&sample_request().plan, &report);
+
+        // Synthesis chars budget overflow: claims refused atomically.
+        let mut request = sample_request();
+        request.budget = AgentBudget::new(2, 4, 0);
+        let report = use_case(FakeAgentReadPlane::happy(test_identity(), happy_results()))
+            .run(&request)
+            .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::BudgetOverflow)
+        );
+        expect_chain_ok(&request.plan, &report);
+
+        // Dangling claims at verification: missing_evidence.
+        let report = AgentRunUseCase::new(
+            Arc::new(FakeAgentReadPlane::happy(test_identity(), happy_results())),
+            Arc::new(DanglingSynthesizer),
+        )
+        .run(&sample_request())
+        .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::MissingEvidence)
+        );
+        expect_chain_ok(&sample_request().plan, &report);
+
+        // Verification-time identity refusal: `da.identity:unavailable` at
+        // Verification -> Verified (R091 double check).
+        let report = use_case(FakeAgentReadPlane::with_late_identity_error(
+            test_identity(),
+            happy_results(),
+            "connection lost at verification",
+        ))
+        .run(&sample_request())
+        .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::ReadPlaneUnavailable)
+        );
+        assert_eq!(
+            report.error.as_ref().unwrap().from,
+            AgentState::Verification
+        );
+        assert_eq!(report.actual_identity, Some(test_identity()));
+        expect_chain_ok(&sample_request().plan, &report);
+
+        // Invalid plan (over budget): refuses before any query.
+        let mut request = sample_request();
+        request.budget = AgentBudget::new(1, 4, 1000);
+        let report = use_case(FakeAgentReadPlane::happy(test_identity(), happy_results()))
+            .run(&request)
+            .await;
+        assert_eq!(
+            report.error.as_ref().map(|e| e.code),
+            Some(AgentFailureCode::InvalidPlan)
+        );
+        expect_chain_ok(&request.plan, &report);
     }
 }

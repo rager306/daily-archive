@@ -37,7 +37,7 @@ pub mod tex_archive;
 #[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
 
-pub use agent_read_plane::RemoteAgentReadPlane;
+pub use agent_read_plane::{RemoteAgentReadPlane, result_ref};
 pub use anthropic_llm::AnthropicLlmClient;
 pub use anthropic_multimodal::{
     AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
