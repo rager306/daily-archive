@@ -28,7 +28,11 @@ serde_yaml = { workspace = true }
 sha2 = { workspace = true }
 hex = { workspace = true }
 kg-ontology = { workspace = true }
-kg-storage = { workspace = true, features = ["algorithms"] }
+# algorithms: compose tests (Mock → GraphView → PPR). samyama: serve-graph
+# composes kg-storage ReadOnlyServer over SamyamaGraphStore (M401/S01).
+# tracing: server_trace! structured events from ReadOnlyServer (ADR-052 —
+# kg-storage has zero unconditional tracing dependency).
+kg-storage = { workspace = true, features = ["algorithms", "samyama", "tracing"] }
 kg-pipeline = { workspace = true }
 samyama-graph-algorithms = { workspace = true }
 # Composition-root wiring for personalized PageRank (M302). Feature ppr pulls

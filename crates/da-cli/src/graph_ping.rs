@@ -95,11 +95,7 @@ mod tests {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
         drop(listener);
-        let serve_args = ServeGraphArgs {
-            host: "127.0.0.1".into(),
-            port,
-            snapshot: None,
-        };
+        let serve_args = ServeGraphArgs::test_defaults("127.0.0.1", port, None);
         let task = tokio::spawn(async move {
             let _ = run_in_memory_server(&serve_args).await;
         });

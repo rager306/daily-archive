@@ -385,8 +385,9 @@ enum Commands {
     /// Builds a GraphView projection from the graph store and prints results.
     Analyze(analyze::AnalyzeArgs),
 
-    /// Start in-memory Samyama RespServer (PING health). No RocksDB, no D127.
-    /// Does not change DA_GRAPH_MODE / open_graph_store. Opt-in only.
+    /// Start in-memory read-only RESP graph plane (kg-storage ReadOnlyServer).
+    /// Accepted: PING ECHO INFO DA.IDENTITY GRAPH.RO_QUERY; mutations rejected
+    /// server-side. No RocksDB, no DirectGraphStore, no D127, no auto-start.
     ServeGraph(serve_graph::ServeGraphArgs),
 
     /// RESP health probe against a running serve-graph (PING → PONG).
