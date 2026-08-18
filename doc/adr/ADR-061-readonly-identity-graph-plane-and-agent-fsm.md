@@ -1,10 +1,17 @@
 # ADR-061: Read-only Identity Graph Plane and Agent FSM
 
 ## Status
-**Accepted (M401-itcqhx/S01, 2026-08-18)** — implemented by
+**Accepted (M401-itcqhx/S01, 2026-08-18; extended by M401-itcqhx/S03)** —
+implemented by
 kg-storage `ReadOnlyServer` / `RemoteGraphStore` over the shared RESP2 codec
 (`kg-storage::resp`), composed by `da serve-graph`, and pinned by the
 cross-process contract test `crates/da-cli/tests/remote_read_plane_test.rs`.
+S03 (2026-08-18) extends the plane contract with the verified agent runner:
+`da_ports::AgentReadPlane` (identity + bounded read-only query, domain types
+only), `da_application::agent_run::AgentRunUseCase` (S02 FSM walk),
+`da_adapters::RemoteAgentReadPlane` (adapter-side `max_rows` truncation), and
+the in-process real-remote integration test
+`crates/da-application/tests/agent_run_remote_test.rs`.
 
 Supersedes the vendor `samyama::RespServer` composition for the daemon path
 (decisions D145, D146, D148) and refines the typed environment contract
@@ -124,9 +131,22 @@ Enforced by composition and type:
 
 S01 delivers the first half of R095: an honest read-only plane with semantic
 identity, so a future agent can plan-read-synthesize-verify over the graph
-without write authority. The agent command FSM (S02) and use-case wiring
-(S03) build on this plane in later slices; this ADR pins only the plane
-contract.
+without write authority. S03 (2026-08-18) delivers the second half: the
+verified agent runner on top of the plane. `da_ports::AgentReadPlane`
+exposes only domain types (`GraphIdentity` + `AgentQueryEvidence` — zero
+`DirectGraphStore`, zero write method), with `snapshot_to_graph_identity`
+as the R091 seam that wraps the **existing** `semantic_sha256` hex via
+`ContentDigest::try_from` (never `of_text`, which would re-hash the hex
+string and break expected == actual lineage). `AgentRunUseCase` walks the
+S02 FSM (`Created → Planning → Searching → Reading → Synthesis →
+Verification → Verified`, sink `FailedVisible`) with a pre-flight identity
+check **before any query**, per-query budget gating, grounded deterministic
+synthesis, and a final `verify_verification` guard; every failure is a typed
+`agent_failure:<code>` visible refusal (R087), never a happy empty result.
+`RemoteAgentReadPlane` (da-adapters) applies `max_rows` truncation
+adapter-side with an explicit `truncated` bool, so the universal kg-storage
+server stays agent-agnostic (ADR-050). S03 adds no CLI (S04), no env keys,
+and no write path.
 
 ## Alternatives rejected
 
@@ -176,3 +196,39 @@ contract.
   identity returns a typed `IdentityMismatch` naming both sides (T04).
 - `bash scripts/verify_rust_architecture.sh` — fmt + clippy +
   hexagonal invariants + per-crate tests green.
+
+## Acceptance evidence (M401-itcqhx/S03)
+
+- `cargo test -p da-domain --lib agent` — the two additive failure codes
+  (`invalid_plan`, `read_plane_unavailable`) with serde snake_case wire
+  spellings and the `as_str` == serde-wire proptest property (T01).
+- `cargo test -p da-ports --lib agent_read_plane` — the R091 seam
+  (`snapshot_to_graph_identity` preserves `semantic_sha256` byte-for-byte
+  via `ContentDigest::try_from`, never `of_text`) and the typed
+  `AgentReadPlaneError` classifier from `GraphStoreError` (T02).
+- `cargo test -p da-application --lib agent_run` — legal walk to `Verified`
+  with the full six-step FSM history and evidence-ref chain; wrong identity
+  fails pre-flight with zero queries executed; dangling claim →
+  `missing_evidence`; query/evidence/synthesis budget overflows fail closed
+  with counters unchanged; explicit `truncated` passthrough; empty,
+  over-budget, zero-`max_rows`, and mutating plans → `invalid_plan`;
+  identity/query transport failure → `read_plane_unavailable`; serde
+  roundtrip and wire-shape stability (T03).
+- `cargo test -p da-adapters --lib agent_read_plane` — adapter-side
+  truncation with the explicit `truncated` bool (server really serves every
+  row), `result_ref` determinism over the full result record, `max_rows == 0`
+  fail-closed before any connection, typed query/transport/identity errors
+  over the real wire (T04).
+- `cargo test -p da-application --test agent_run_remote_test` — the **real
+  remote read plane** (in-process `ReadOnlyServer` over real TCP + pre-set
+  `DA.IDENTITY`, consumed through `RemoteAgentReadPlane`/`RemoteGraphStore`):
+  happy expected == served identity → legal walk to `Verified` with every
+  plan query on the wire, grounded deterministic claims, budget spent within
+  bounds, and a serde-stable report (`terminal_state: verified`); tampered
+  expected identity → pre-flight `identity_mismatch` with zero queries
+  executed and both sides named; mutating plan cypher → `invalid_plan` with
+  zero server interaction (D127 discipline). No `CARGO_BIN_EXE_da` (S04 owns
+  the cross-process binary journey) (T05).
+- `cargo clippy -p da-domain -p da-ports -p da-application -p da-adapters
+  --all-targets --no-deps -- -D warnings` and
+  `bash scripts/verify_rust_architecture.sh` — green at slice end.
