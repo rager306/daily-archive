@@ -61,8 +61,9 @@ pub mod vocabulary;
 pub mod yaml_schema_adapter;
 
 pub use agent::{
-    AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentBudgetError, AgentFailureCode,
-    AgentState, GraphIdentity, GraphIdentityError, admit_transition as agent_admit_transition,
+    AgentAdmissionDecision, AgentAdmissionError, AgentBudget, AgentBudgetError, AgentClaim,
+    AgentFailureCode, AgentGroundingError, AgentQueryEvidence, AgentState, ContextBundle,
+    GraphIdentity, GraphIdentityError, admit_transition as agent_admit_transition,
     verify_identity as agent_verify_identity,
 };
 pub use article::{

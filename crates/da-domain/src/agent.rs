@@ -555,6 +555,221 @@ impl AgentBudgetError {
     }
 }
 
+/// One read-plane query result recorded as agent evidence (R095, T03).
+///
+/// Grounds synthesis claims: a claim's `evidence_ref` must match an entry's
+/// `result_ref`. Truncation is an **explicit** `truncated: bool` — it is
+/// never implied by `rows == 0` (R087): an empty result with `truncated:
+/// false` is a genuine empty answer, while `truncated: true` records that
+/// rows were cut off at the read plane. Pure domain value, no I/O.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentQueryEvidence {
+    /// The read-plane query text that produced this result.
+    pub query: String,
+    /// Durable reference to the query result record (result hash / manifest
+    /// key / checksum). Claims ground onto this value.
+    pub result_ref: String,
+    /// Number of rows returned.
+    pub rows: u64,
+    /// Explicit truncation flag (R087): rows were cut off. Never derived
+    /// from `rows == 0`.
+    pub truncated: bool,
+    /// Query duration in milliseconds, as reported by the read plane.
+    pub duration_ms: u64,
+}
+
+impl AgentQueryEvidence {
+    pub fn new(
+        query: impl Into<String>,
+        result_ref: impl Into<String>,
+        rows: u64,
+        truncated: bool,
+        duration_ms: u64,
+    ) -> Self {
+        Self {
+            query: query.into(),
+            result_ref: result_ref.into(),
+            rows,
+            truncated,
+            duration_ms,
+        }
+    }
+}
+
+/// One synthesis claim produced by the agent (R095, T03).
+///
+/// Every claim must be grounded: `evidence_ref` names the durable result
+/// record ([`AgentQueryEvidence::result_ref`]) already present in the
+/// [`ContextBundle`]. A claim whose ref is blank or not present in the
+/// bundle is a dangling claim — the verification guard refuses it as
+/// [`AgentFailureCode::MissingEvidence`] (R087), never a silent empty
+/// result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentClaim {
+    /// The claim text (answer fragment).
+    pub text: String,
+    /// Durable evidence reference grounding this claim. Must match an
+    /// [`AgentQueryEvidence::result_ref`] already in the bundle.
+    pub evidence_ref: String,
+}
+
+impl AgentClaim {
+    pub fn new(text: impl Into<String>, evidence_ref: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            evidence_ref: evidence_ref.into(),
+        }
+    }
+}
+
+/// Typed grounding refusal for agent claims (R087, T03).
+///
+/// Produced by [`ContextBundle::grounding_error`]; both variants bridge onto
+/// [`AgentFailureCode::MissingEvidence`] via [`into_admission`] so a dangling
+/// claim becomes a typed visible failure with
+/// `error_class = agent_failure:missing_evidence`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Error)]
+pub enum AgentGroundingError {
+    /// A claim carries a blank evidence reference.
+    #[error(
+        "agent claim #{claim_index} carries an empty evidence reference; every synthesis claim must name query evidence"
+    )]
+    EmptyEvidenceRef { claim_index: usize },
+    /// A claim references a result record not present in the bundle.
+    #[error(
+        "agent claim #{claim_index} references evidence {evidence_ref:?} that is not in the bundle; every synthesis claim must ground onto query evidence already recorded"
+    )]
+    DanglingEvidenceRef {
+        claim_index: usize,
+        evidence_ref: String,
+    },
+}
+
+impl AgentGroundingError {
+    /// Bridge onto the typed admission surface: the refusal becomes a
+    /// blocked decision with `error_class = agent_failure:missing_evidence`.
+    pub fn into_admission(
+        self,
+        evidence_ref: impl Into<String>,
+        from: AgentState,
+        to: AgentState,
+    ) -> AgentAdmissionError {
+        AgentAdmissionError::new(
+            AgentFailureCode::MissingEvidence,
+            self.to_string(),
+            evidence_ref,
+            from,
+            to,
+        )
+    }
+}
+
+/// Agent context bundle grounding synthesis claims to query evidence and
+/// binding the run to the read-plane identity it planned against
+/// (R095/R091, T03).
+///
+/// Built up during the run: `expected_identity` is set at planning time (the
+/// graph the agent plans against), evidence entries are appended as queries
+/// return, claims are appended during synthesis. At `Verification → Verified`
+/// the caller (S03) passes the actual read-plane identity (from a
+/// `DA.IDENTITY` handshake) to [`ContextBundle::verify_verification`], which
+/// admits only when the identity matches **and** every claim is grounded.
+/// Pure domain value, fail-closed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContextBundle {
+    /// Identity of the graph the agent planned against (R091 lineage).
+    pub expected_identity: GraphIdentity,
+    /// Query evidence already in the bundle, in arrival order.
+    pub evidence: Vec<AgentQueryEvidence>,
+    /// Synthesis claims produced so far.
+    pub claims: Vec<AgentClaim>,
+}
+
+impl ContextBundle {
+    pub fn new(expected_identity: GraphIdentity) -> Self {
+        Self {
+            expected_identity,
+            evidence: Vec::new(),
+            claims: Vec::new(),
+        }
+    }
+
+    pub fn add_evidence(&mut self, evidence: AgentQueryEvidence) {
+        self.evidence.push(evidence);
+    }
+
+    pub fn add_claim(&mut self, claim: AgentClaim) {
+        self.claims.push(claim);
+    }
+
+    /// Typed grounding check (R087): every claim's `evidence_ref` must be
+    /// non-empty and must match an evidence entry's `result_ref` already in
+    /// the bundle. A dangling claim is a typed [`AgentGroundingError`],
+    /// never a silent empty result.
+    pub fn grounding_error(&self) -> Result<(), AgentGroundingError> {
+        for (index, claim) in self.claims.iter().enumerate() {
+            if claim.evidence_ref.trim().is_empty() {
+                return Err(AgentGroundingError::EmptyEvidenceRef { claim_index: index });
+            }
+            if !self
+                .evidence
+                .iter()
+                .any(|entry| entry.result_ref == claim.evidence_ref)
+            {
+                return Err(AgentGroundingError::DanglingEvidenceRef {
+                    claim_index: index,
+                    evidence_ref: claim.evidence_ref.clone(),
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Boolean probe matching the slice contract: `false` for a dangling
+    /// claim evidence ref. Prefer [`grounding_error`] for the typed reason.
+    pub fn all_claims_grounded(&self) -> bool {
+        self.grounding_error().is_ok()
+    }
+
+    /// T03 identity verification guard for `Verification → Verified`
+    /// (R087/R091). Admits only when:
+    ///
+    /// 1. the step carries a durable evidence reference (else
+    ///    [`AgentFailureCode::MissingEvidence`]);
+    /// 2. the graph the agent planned against is the graph it actually read
+    ///    — [`verify_identity`] names both sides on mismatch
+    ///    ([`AgentFailureCode::IdentityMismatch`]);
+    /// 3. every synthesis claim is grounded in query evidence already in the
+    ///    bundle ([`AgentFailureCode::MissingEvidence`]).
+    ///
+    /// Pure and fail-closed: a blocked guard never yields a silent empty
+    /// result, it yields this typed blocked decision.
+    pub fn verify_verification(
+        &self,
+        actual_identity: &GraphIdentity,
+        evidence_ref: &str,
+    ) -> AgentAdmissionDecision {
+        let from = AgentState::Verification;
+        let to = AgentState::Verified;
+        if evidence_ref.trim().is_empty() {
+            return AgentAdmissionDecision::blocked(AgentAdmissionError::new(
+                AgentFailureCode::MissingEvidence,
+                "verification admission requires a durable evidence reference",
+                evidence_ref.to_string(),
+                from,
+                to,
+            ));
+        }
+        if let Err(err) = verify_identity(&self.expected_identity, actual_identity) {
+            return AgentAdmissionDecision::blocked(err.into_admission(evidence_ref, from, to));
+        }
+        if let Err(err) = self.grounding_error() {
+            return AgentAdmissionDecision::blocked(err.into_admission(evidence_ref, from, to));
+        }
+        AgentAdmissionDecision::admitted(evidence_ref.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1101,6 +1316,210 @@ mod tests {
         assert!(json.contains("\"tenant\":\"tenant-a\""));
         assert!(json.contains("\"nodes\":10"));
         assert!(json.contains("\"edges\":4"));
+    }
+
+    // ── ContextBundle / AgentQueryEvidence / AgentClaim (T03) ──
+
+    fn test_identity(label: &str, tenant: &str, nodes: u64, edges: u64) -> GraphIdentity {
+        GraphIdentity::new(ContentDigest::of_text(label), tenant, nodes, edges)
+    }
+
+    fn bundle_with_evidence() -> ContextBundle {
+        let mut bundle = ContextBundle::new(test_identity("g1", "tenant-a", 10, 4));
+        bundle.add_evidence(AgentQueryEvidence::new(
+            "match method:GRPO",
+            "sha256:q1",
+            3,
+            false,
+            12,
+        ));
+        bundle.add_evidence(AgentQueryEvidence::new(
+            "match method:GEPA",
+            "sha256:q2",
+            0,
+            true, // explicit truncation: rows==0 but truncated=true (R087)
+            8,
+        ));
+        bundle
+    }
+
+    #[test]
+    fn query_evidence_records_truncation_explicitly_never_implied_by_rows() {
+        // rows==0 with truncated==false is a genuine empty answer; the flag
+        // is explicit and preserved through the wire format (R087).
+        let empty_not_truncated = AgentQueryEvidence::new("match:none", "sha256:e0", 0, false, 4);
+        let json = serde_json::to_string(&empty_not_truncated).unwrap();
+        assert!(json.contains("\"truncated\":false"));
+        assert!(json.contains("\"rows\":0"));
+        crate::roundtrip_json(&empty_not_truncated);
+
+        let truncated_empty = AgentQueryEvidence::new("match:many", "sha256:t0", 0, true, 9);
+        let json = serde_json::to_string(&truncated_empty).unwrap();
+        assert!(json.contains("\"truncated\":true"));
+        crate::roundtrip_json(&truncated_empty);
+
+        let full = AgentQueryEvidence::new("match:GRPO", "sha256:q1", 3, false, 12);
+        let json = serde_json::to_string(&full).unwrap();
+        // Query evidence records query, result_ref, rows, truncated, duration_ms.
+        assert!(json.contains("\"query\":\"match:GRPO\""));
+        assert!(json.contains("\"result_ref\":\"sha256:q1\""));
+        assert!(json.contains("\"rows\":3"));
+        assert!(json.contains("\"truncated\":false"));
+        assert!(json.contains("\"duration_ms\":12"));
+        crate::roundtrip_json(&full);
+    }
+
+    #[test]
+    fn context_bundle_grounds_claims_against_recorded_evidence() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new(
+            "GRPO is used for RL fine-tuning",
+            "sha256:q1",
+        ));
+        assert!(bundle.all_claims_grounded());
+        assert!(bundle.grounding_error().is_ok());
+    }
+
+    #[test]
+    fn all_claims_grounded_is_false_for_a_dangling_claim_ref() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("dangling claim", "sha256:does-not-exist"));
+        assert!(!bundle.all_claims_grounded());
+        let err = bundle.grounding_error().unwrap_err();
+        assert_eq!(
+            err,
+            AgentGroundingError::DanglingEvidenceRef {
+                claim_index: 0,
+                evidence_ref: "sha256:does-not-exist".into(),
+            }
+        );
+
+        // Bridge: a dangling claim is a typed blocked admission decision with
+        // error_class = agent_failure:missing_evidence (slice verification).
+        let admission =
+            err.into_admission("ev-verify", AgentState::Verification, AgentState::Verified);
+        assert_eq!(admission.code, AgentFailureCode::MissingEvidence);
+        assert_eq!(admission.error_class(), "agent_failure:missing_evidence");
+        assert_eq!(admission.from, AgentState::Verification);
+        assert_eq!(admission.to, AgentState::Verified);
+        assert!(admission.reason.contains("sha256:does-not-exist"));
+    }
+
+    #[test]
+    fn all_claims_grounded_is_false_for_an_empty_claim_ref() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("blank-ref claim", ""));
+        bundle.add_claim(AgentClaim::new("grounded claim", "sha256:q1"));
+        assert!(!bundle.all_claims_grounded());
+        assert_eq!(
+            bundle.grounding_error().unwrap_err(),
+            AgentGroundingError::EmptyEvidenceRef { claim_index: 0 }
+        );
+    }
+
+    #[test]
+    fn verify_verification_admits_grounded_and_identity_matched() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("claim A", "sha256:q1"));
+        bundle.add_claim(AgentClaim::new("claim B", "sha256:q2"));
+        // The graph the agent planned against is the graph it read.
+        let actual = test_identity("g1", "tenant-a", 10, 4);
+        let decision = bundle.verify_verification(&actual, "sha256:verify-run-1");
+        assert!(
+            decision.admitted,
+            "Verification -> Verified must admit when grounded and identity matches"
+        );
+        assert_eq!(decision.evidence_ref, "sha256:verify-run-1");
+        assert!(decision.error.is_none());
+    }
+
+    #[test]
+    fn verify_verification_blocks_identity_mismatch_naming_both_sides() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("claim A", "sha256:q1"));
+        // The agent read a different graph than it planned against
+        // (R091 lineage): different digest, tenant, and counts.
+        let actual = test_identity("g2", "tenant-b", 12, 5);
+        let decision = bundle.verify_verification(&actual, "sha256:verify-run-1");
+        assert!(!decision.admitted);
+        let error = decision.error.expect("blocked decision carries error");
+        assert_eq!(error.code, AgentFailureCode::IdentityMismatch);
+        assert_eq!(error.error_class(), "agent_failure:identity_mismatch");
+        assert_eq!(error.from, AgentState::Verification);
+        assert_eq!(error.to, AgentState::Verified);
+        assert_eq!(error.evidence_ref, "sha256:verify-run-1");
+        // Both sides named: expected and actual digest, tenant, counts.
+        assert!(error.reason.contains("tenant-a"), "names expected tenant");
+        assert!(error.reason.contains("tenant-b"), "names actual tenant");
+        assert!(error.reason.contains("nodes: 10"), "names expected nodes");
+        assert!(error.reason.contains("nodes: 12"), "names actual nodes");
+        assert!(error.reason.contains("edges: 4"), "names expected edges");
+        assert!(error.reason.contains("edges: 5"), "names actual edges");
+    }
+
+    #[test]
+    fn verify_verification_blocks_dangling_claim_as_missing_evidence() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("ungrounded claim", "sha256:nope"));
+        let actual = test_identity("g1", "tenant-a", 10, 4);
+        let decision = bundle.verify_verification(&actual, "sha256:verify-run-1");
+        assert!(!decision.admitted);
+        let error = decision.error.expect("blocked decision carries error");
+        assert_eq!(error.code, AgentFailureCode::MissingEvidence);
+        assert_eq!(error.error_class(), "agent_failure:missing_evidence");
+        assert!(error.reason.contains("sha256:nope"));
+    }
+
+    #[test]
+    fn verify_verification_requires_durable_evidence_ref() {
+        let bundle = bundle_with_evidence();
+        let actual = test_identity("g1", "tenant-a", 10, 4);
+        for blank in ["", "   "] {
+            let decision = bundle.verify_verification(&actual, blank);
+            assert!(!decision.admitted, "blank {blank:?}");
+            assert_eq!(
+                decision.error.unwrap().code,
+                AgentFailureCode::MissingEvidence
+            );
+        }
+    }
+
+    #[test]
+    fn verify_verification_vacuous_without_claims_but_identity_bound() {
+        // Zero claims is vacuously grounded; the guard still enforces the
+        // R091 lineage (identity) and the durable evidence ref.
+        let bundle = bundle_with_evidence();
+        let actual = test_identity("g1", "tenant-a", 10, 4);
+        let decision = bundle.verify_verification(&actual, "sha256:verify-run-1");
+        assert!(decision.admitted);
+        // Identity still enforced with no claims present.
+        let wrong = test_identity("g2", "tenant-a", 10, 4);
+        let decision = bundle.verify_verification(&wrong, "sha256:verify-run-1");
+        assert_eq!(
+            decision.error.unwrap().code,
+            AgentFailureCode::IdentityMismatch
+        );
+    }
+
+    // ── Serde stability (ADR-051 §4.4, T03 subset; full sweep in T04) ──
+
+    #[test]
+    fn context_bundle_serde_roundtrip() {
+        let mut bundle = bundle_with_evidence();
+        bundle.add_claim(AgentClaim::new("claim A", "sha256:q1"));
+        crate::roundtrip_json(&bundle);
+        let json = serde_json::to_string(&bundle).unwrap();
+        assert!(json.contains("\"expected_identity\""));
+        assert!(json.contains("\"result_ref\":\"sha256:q2\""));
+        assert!(json.contains("\"truncated\":true"));
+        assert!(json.contains("\"duration_ms\":12"));
+
+        crate::roundtrip_json(&AgentClaim::new("claim", "sha256:q1"));
+        crate::roundtrip_json(&AgentGroundingError::EmptyEvidenceRef { claim_index: 0 });
+        crate::roundtrip_json(&AgentGroundingError::DanglingEvidenceRef {
+            claim_index: 1,
+            evidence_ref: "sha256:nope".into(),
+        });
     }
 
     // ── Property tests (ADR-051 P1, T02 budget invariants) ──
