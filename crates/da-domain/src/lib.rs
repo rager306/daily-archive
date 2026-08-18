@@ -8,6 +8,7 @@
 //! ADR-040 §11: Schema enforcement lives here, not in DDL.
 
 pub mod acquisition_batch;
+pub mod agent;
 pub mod article;
 pub mod assurance;
 pub mod catalog;
@@ -59,6 +60,10 @@ pub mod vid;
 pub mod vocabulary;
 pub mod yaml_schema_adapter;
 
+pub use agent::{
+    AgentAdmissionDecision, AgentAdmissionError, AgentFailureCode, AgentState,
+    admit_transition as agent_admit_transition,
+};
 pub use article::{
     Author, AuthorSchema, Category, CategorySchema, Concept, ConceptSchema, Institution,
     InstitutionSchema, Reference, ReferenceSchema, Section, SectionSchema, Topic, TopicSchema,
