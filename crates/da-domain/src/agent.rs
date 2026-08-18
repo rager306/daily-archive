@@ -773,7 +773,6 @@ impl ContextBundle {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use proptest::prelude::*;
 
     const ALL_STATES: [AgentState; 8] = [
         AgentState::Created,
@@ -1025,6 +1024,28 @@ mod tests {
             blocked.error.unwrap().error_class(),
             "agent_failure:illegal_transition"
         );
+    }
+
+    #[test]
+    fn agent_admission_error_serde_roundtrip() {
+        // Direct roundtrip of the error shape (not only transitively inside a
+        // decision): S04 persists run reports, so the wire spelling of every
+        // field is binding — rename_all drift here becomes a silent report
+        // break.
+        let err = AgentAdmissionError::new(
+            AgentFailureCode::BudgetOverflow,
+            "budget exhausted",
+            "ev-1",
+            AgentState::Searching,
+            AgentState::Reading,
+        );
+        crate::roundtrip_json(&err);
+        let json = serde_json::to_string(&err).unwrap();
+        assert!(json.contains("\"code\":\"budget_overflow\""));
+        assert!(json.contains("\"from\":\"searching\""));
+        assert!(json.contains("\"to\":\"reading\""));
+        assert!(json.contains("\"evidence_ref\":\"ev-1\""));
+        assert!(json.contains("\"reason\":\"budget exhausted\""));
     }
 
     // ── GraphIdentity (T02) ──
@@ -1286,6 +1307,7 @@ mod tests {
         ));
         crate::roundtrip_json(&AgentBudget::new(3, 10, 1000));
         crate::roundtrip_json(&AgentBudgetError::QueryOverflow { max: 3, spent: 3 });
+        crate::roundtrip_json(&AgentBudgetError::EvidenceOverflow { max: 5, spent: 5 });
         crate::roundtrip_json(&AgentBudgetError::SynthesisOverflow {
             max: 100,
             spent: 60,
@@ -1521,8 +1543,43 @@ mod tests {
             evidence_ref: "sha256:nope".into(),
         });
     }
+}
 
-    // ── Property tests (ADR-051 P1, T02 budget invariants) ──
+// ─── ADR-051 P1: Property tests (T04) ───
+// Extracted into the workspace `proptest_tests` module convention so
+// `cargo test -p da-domain --lib proptest` actually discovers the agent FSM
+// matrix and budget atomicity invariants (same pattern as entity.rs /
+// vid.rs / confidence.rs / relation.rs — the filter matches the module
+// path, not the test names).
+
+#[cfg(test)]
+mod proptest_tests {
+    use super::*;
+    use proptest::prelude::*;
+
+    const ALL_STATES: [AgentState; 8] = [
+        AgentState::Created,
+        AgentState::Planning,
+        AgentState::Searching,
+        AgentState::Reading,
+        AgentState::Synthesis,
+        AgentState::Verification,
+        AgentState::Verified,
+        AgentState::FailedVisible,
+    ];
+
+    const ALL_FAILURE_CODES: [AgentFailureCode; 6] = [
+        AgentFailureCode::IllegalTransition,
+        AgentFailureCode::MissingEntryState,
+        AgentFailureCode::TerminalSink,
+        AgentFailureCode::MissingEvidence,
+        AgentFailureCode::BudgetOverflow,
+        AgentFailureCode::IdentityMismatch,
+    ];
+
+    fn arb_failure_code() -> impl Strategy<Value = AgentFailureCode> {
+        (0usize..ALL_FAILURE_CODES.len()).prop_map(|i| ALL_FAILURE_CODES[i])
+    }
 
     proptest! {
         #[test]
@@ -1569,13 +1626,23 @@ mod tests {
         }
     }
 
-    // ── Property tests (ADR-051 P1) ──
-
     proptest! {
         #[test]
         fn only_declared_forward_or_failure_agent_transitions_are_legal(a in 0usize..8, b in 0usize..8) {
             let expected = b == 7 || (a < 6 && b == a + 1);
             prop_assert_eq!(ALL_STATES[a].can_transition_to(ALL_STATES[b]), expected);
+        }
+    }
+
+    // T04 bonus property: the stable `as_str` token matches the serde
+    // snake_case wire spelling for every failure code — drift here would
+    // silently break S04 report consumers reading `agent_failure:<code>`.
+    proptest! {
+        #[test]
+        fn failure_code_as_str_matches_serde_wire(code in arb_failure_code()) {
+            let json = serde_json::to_string(&code).unwrap();
+            let wire = json.trim_matches('"');
+            prop_assert_eq!(code.as_str(), wire);
         }
     }
 }
