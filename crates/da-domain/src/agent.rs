@@ -141,7 +141,11 @@ impl AgentState {
 /// renders the stable token `agent_failure:<code>` that run reports and logs
 /// carry. Codes are agent-specific (not a reuse of
 /// `TransitionAdmissionCode`) so `BudgetOverflow` and `IdentityMismatch`
-/// stay visible on the agent line.
+/// stay visible on the agent line. `InvalidPlan` and `ReadPlaneUnavailable`
+/// are run-fatal codes constructed by the run orchestrator (S03 use case)
+/// for a plan that cannot execute or a read plane that cannot be reached;
+/// they render through the same `agent_failure:<code>` namespace so report
+/// consumers (S04) stay on one token set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AgentFailureCode {
@@ -162,6 +166,14 @@ pub enum AgentFailureCode {
     /// Expected vs actual read-plane identity differ (semantic digest,
     /// tenant, or node/edge counts); both sides are named in the reason.
     IdentityMismatch,
+    /// The agent plan cannot execute: empty, over-budget, or containing a
+    /// query that fails read-only cypher validation (run-fatal, S03).
+    /// Constructed by the run orchestrator, never by a transition admission.
+    InvalidPlan,
+    /// The read plane is unavailable: transport failure, identity
+    /// unavailable, or a response-limit error (run-fatal, S03). Constructed
+    /// by the run orchestrator, never by a transition admission.
+    ReadPlaneUnavailable,
 }
 
 impl AgentFailureCode {
@@ -174,6 +186,8 @@ impl AgentFailureCode {
             Self::MissingEvidence => "missing_evidence",
             Self::BudgetOverflow => "budget_overflow",
             Self::IdentityMismatch => "identity_mismatch",
+            Self::InvalidPlan => "invalid_plan",
+            Self::ReadPlaneUnavailable => "read_plane_unavailable",
         }
     }
 }
@@ -959,6 +973,11 @@ mod tests {
             AgentFailureCode::IdentityMismatch.as_str(),
             "identity_mismatch"
         );
+        assert_eq!(AgentFailureCode::InvalidPlan.as_str(), "invalid_plan");
+        assert_eq!(
+            AgentFailureCode::ReadPlaneUnavailable.as_str(),
+            "read_plane_unavailable"
+        );
     }
 
     #[test]
@@ -997,12 +1016,22 @@ mod tests {
             AgentFailureCode::MissingEvidence,
             AgentFailureCode::BudgetOverflow,
             AgentFailureCode::IdentityMismatch,
+            AgentFailureCode::InvalidPlan,
+            AgentFailureCode::ReadPlaneUnavailable,
         ] {
             crate::roundtrip_json(&code);
         }
         assert_eq!(
             serde_json::to_string(&AgentFailureCode::BudgetOverflow).unwrap(),
             "\"budget_overflow\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AgentFailureCode::InvalidPlan).unwrap(),
+            "\"invalid_plan\""
+        );
+        assert_eq!(
+            serde_json::to_string(&AgentFailureCode::ReadPlaneUnavailable).unwrap(),
+            "\"read_plane_unavailable\""
         );
     }
 
@@ -1568,13 +1597,15 @@ mod proptest_tests {
         AgentState::FailedVisible,
     ];
 
-    const ALL_FAILURE_CODES: [AgentFailureCode; 6] = [
+    const ALL_FAILURE_CODES: [AgentFailureCode; 8] = [
         AgentFailureCode::IllegalTransition,
         AgentFailureCode::MissingEntryState,
         AgentFailureCode::TerminalSink,
         AgentFailureCode::MissingEvidence,
         AgentFailureCode::BudgetOverflow,
         AgentFailureCode::IdentityMismatch,
+        AgentFailureCode::InvalidPlan,
+        AgentFailureCode::ReadPlaneUnavailable,
     ];
 
     fn arb_failure_code() -> impl Strategy<Value = AgentFailureCode> {
