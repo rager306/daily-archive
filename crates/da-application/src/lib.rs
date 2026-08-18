@@ -4,6 +4,7 @@
 //! ADR-037 §4: Data flows (ingest, extraction, agent, ETL scheduler).
 //! ADR-040 §11.3: Migration framework.
 
+pub mod agent_run;
 pub mod article_load;
 pub mod artifact_stage;
 pub mod assurance;
@@ -16,6 +17,9 @@ pub mod revision_query;
 pub mod revision_readiness;
 pub mod tex_inspect;
 
+pub use agent_run::{
+    AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
+};
 pub use article_load::{
     ArticleLoadError, ArticleLoadUseCase, LoadContentOutcome, LoadContentPipeline,
     LoadContentRequest, LoadExtractOutcome, LoadIngestOutcome,
