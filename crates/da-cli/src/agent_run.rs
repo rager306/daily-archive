@@ -178,6 +178,17 @@ impl AgentRunCliError {
             Self::Runtime(_) | Self::VerifyFailed(_) => 3,
         }
     }
+
+    /// Expose the first failing check for a `--verify` mismatch so `main`
+    /// can print the documented `FAIL: <check>` contract (D273 Governor
+    /// shell-out surface). `None` for config/runtime errors, which `main`
+    /// reports via the normal error path instead.
+    pub fn verify_failed_check(&self) -> Option<&str> {
+        match self {
+            Self::VerifyFailed(check) => Some(check),
+            Self::Configuration(_) | Self::Runtime(_) => None,
+        }
+    }
 }
 
 /// Result of a successful `--verify` (T03): the envelope's evidence chain

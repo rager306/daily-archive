@@ -532,7 +532,14 @@ fn main() {
                         println!("PASS terminal_state: {}", outcome.terminal_state);
                     }
                     Err(error) => {
-                        eprintln!("{error}");
+                        // Documented --verify contract (D273): print
+                        // `FAIL: <first failing check>` for a chain mismatch,
+                        // or the plain error for a config problem.
+                        if let Some(check) = error.verify_failed_check() {
+                            eprintln!("FAIL: {check}");
+                        } else {
+                            eprintln!("{error}");
+                        }
                         std::process::exit(error.exit_code());
                     }
                 }
