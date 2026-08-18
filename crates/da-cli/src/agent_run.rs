@@ -40,9 +40,18 @@
 //! `graph_query`). The historical `DA_GRAPH_ENDPOINT` wart is deliberately
 //! **not** honored here.
 //!
-//! This module ships the run path (T02). `--verify` (T03), wiring into
-//! `main` (T04), and the cross-process journey test (T05) are sibling
-//! tasks in the same slice.
+//! `--verify` (T03) is an **offline** independent report check: it re-reads
+//! a written envelope from disk and recomputes the full durable evidence
+//! chain (plan → identity → evidence → claims → verification →
+//! `result_ref`) without touching the network or the graph store. It never
+//! re-hashes canonical serde JSON — it reuses the same public digest
+//! functions and `result_ref` the run path used (T01), so capture and
+//! verify cannot drift (D273: S05 Governor shells out to this verifier
+//! instead of re-hashing in Python).
+//!
+//! This module ships the run path (T02) and `--verify` (T03). Wiring into
+//! `main` (T04) and the cross-process journey test (T05) are sibling tasks
+//! in the same slice.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -51,11 +60,12 @@ use clap::Args;
 use da_adapters::{RemoteAgentReadPlane, result_ref};
 use da_application::{
     AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
+    verify_run_evidence_chain,
 };
 use da_domain::{AgentBudget, AgentState, GraphIdentity};
 use da_ports::{AgentReadPlane, GraphStore};
 use kg_storage::snapshot_identity::{SnapshotIdentity, fingerprint_snapshot};
-use kg_storage::{RemoteGraphConfig, RemoteGraphStore};
+use kg_storage::{QueryResult, RemoteGraphConfig, RemoteGraphStore};
 use serde::{Deserialize, Serialize};
 
 /// CLI-owned durable report format (D272). Bumped only on breaking field
@@ -114,10 +124,14 @@ pub struct AgentRunArgs {
 /// result inside the written report.
 #[derive(Debug)]
 pub enum AgentRunCliError {
-    /// Configuration error → exit 2 (no report written).
+    /// Configuration error → exit 2 (no report written / verify could not
+    /// read a valid v1 envelope).
     Configuration(String),
     /// Runtime error → exit 3 (report could not be guaranteed consistent).
     Runtime(String),
+    /// `--verify` chain mismatch → exit 3 (the first failing check is the
+    /// message; D273 Governor shell-out contract).
+    VerifyFailed(String),
 }
 
 impl std::fmt::Display for AgentRunCliError {
@@ -127,6 +141,7 @@ impl std::fmt::Display for AgentRunCliError {
                 write!(f, "invalid agent-run configuration: {message}")
             }
             Self::Runtime(message) => write!(f, "agent-run failed: {message}"),
+            Self::VerifyFailed(check) => write!(f, "agent-run verify failed: {check}"),
         }
     }
 }
@@ -137,9 +152,22 @@ impl AgentRunCliError {
     pub fn exit_code(&self) -> i32 {
         match self {
             Self::Configuration(_) => 2,
-            Self::Runtime(_) => 3,
+            Self::Runtime(_) | Self::VerifyFailed(_) => 3,
         }
     }
+}
+
+/// Result of a successful `--verify` (T03): the envelope's evidence chain
+/// recomputes cleanly from disk. A verify **failure** is returned as
+/// [`AgentRunCliError::VerifyFailed`] whose message is the first failing
+/// check (so the CLI prints `PASS` on `Ok` and `FAIL: <check>` on that
+/// error; D273). `terminal_state` is the snake-case FSM state for the
+/// one-liner.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VerifyOutcome {
+    /// Terminal FSM state of the verified report, snake-case (matches
+    /// [`terminal_state_str`] / the serde wire form).
+    pub terminal_state: &'static str,
 }
 
 /// Operator-owned `expected_snapshot` block in the envelope: physical path
@@ -258,6 +286,107 @@ pub async fn run(args: AgentRunArgs) -> Result<(), AgentRunCliError> {
     };
 
     write_envelope_atomic(&args.output, &envelope)
+}
+
+/// Independent `--verify` report check (T03): re-read a written envelope
+/// from disk and recompute the full durable evidence chain **offline** —
+/// plan → identity → evidence → claims → verification → `result_ref` —
+/// without touching the network or the graph store.
+///
+/// This is the S05 Governor contract surface (D273): it never re-hashes
+/// canonical serde JSON in Python, and it cannot drift from the run path
+/// because it reuses the same public digest functions and `result_ref`
+/// (T01). Fails closed:
+///
+/// - a missing/unreadable/malformed report, or a `format` that is not
+///   [`REPORT_FORMAT`], is a **configuration** error (exit 2) — `--verify`
+///   cannot check an envelope that isn't a valid v1 report;
+/// - any evidence-chain or `result_ref` mismatch is a
+///   [`AgentRunCliError::VerifyFailed`] (exit 3) whose message is the
+///   **first failing check** (so `main` prints `PASS` on `Ok` and
+///   `FAIL: <check>` on that error).
+///
+/// A `failed_visible` report is still a valid report: `--verify` checks
+/// internal consistency, not run success, so a correctly-recorded typed
+/// failure PASSes (R087 — `FailedVisible` is a persisted typed result,
+/// not a process error).
+pub fn verify_report(path: &Path) -> Result<VerifyOutcome, AgentRunCliError> {
+    let text = std::fs::read_to_string(path).map_err(|error| {
+        AgentRunCliError::Configuration(format!("read report {}: {error}", path.display()))
+    })?;
+    let envelope: AgentRunEnvelope = serde_json::from_str(&text).map_err(|error| {
+        AgentRunCliError::Configuration(format!(
+            "parse report {}: {error}; expected a {} envelope",
+            path.display(),
+            REPORT_FORMAT
+        ))
+    })?;
+    if envelope.format != REPORT_FORMAT {
+        return Err(AgentRunCliError::Configuration(format!(
+            "report {} has format {:?}, expected {}",
+            path.display(),
+            envelope.format,
+            REPORT_FORMAT
+        )));
+    }
+
+    // 1. As-of context consistency: the envelope's expected-snapshot block
+    //    must agree with the run's planned identity (R091).
+    let expected = &envelope.run.expected_identity;
+    if envelope.expected_snapshot.semantic_hex != expected.semantic_digest.as_str()
+        || envelope.expected_snapshot.tenant != expected.tenant
+        || envelope.expected_snapshot.nodes != expected.nodes
+        || envelope.expected_snapshot.edges != expected.edges
+    {
+        return Err(AgentRunCliError::VerifyFailed(format!(
+            "expected_snapshot: envelope identity block ({} / {:?} / {} / {}) disagrees with the run expected_identity ({} / {:?} / {} / {})",
+            envelope.expected_snapshot.semantic_hex,
+            envelope.expected_snapshot.tenant,
+            envelope.expected_snapshot.nodes,
+            envelope.expected_snapshot.edges,
+            expected.semantic_digest.as_str(),
+            expected.tenant,
+            expected.nodes,
+            expected.edges,
+        )));
+    }
+
+    // 2. `result_ref` recompute (MEM874): every persisted raw row must
+    //    re-hash to the recorded evidence `result_ref`, 1:1.
+    if envelope.result_records.len() != envelope.run.bundle.evidence.len() {
+        return Err(AgentRunCliError::VerifyFailed(format!(
+            "evidence/result_records: {} evidence entries but {} captured records",
+            envelope.run.bundle.evidence.len(),
+            envelope.result_records.len()
+        )));
+    }
+    for (record, evidence) in envelope
+        .result_records
+        .iter()
+        .zip(envelope.run.bundle.evidence.iter())
+    {
+        let result = QueryResult {
+            columns: record.columns.clone(),
+            records: record.records.clone(),
+        };
+        let recomputed = result_ref(&record.graph, &record.query, &result);
+        if recomputed != evidence.result_ref {
+            return Err(AgentRunCliError::VerifyFailed(format!(
+                "result_ref: recomputed {recomputed} != recorded {} for query {:?}",
+                evidence.result_ref, record.query
+            )));
+        }
+    }
+
+    // 3. Full decision/evidence chain recomputation (plan → identity →
+    //    evidence → claims → verification) against the recorded FSM history.
+    if let Err(check) = verify_run_evidence_chain(&envelope.plan, &envelope.run) {
+        return Err(AgentRunCliError::VerifyFailed(check));
+    }
+
+    Ok(VerifyOutcome {
+        terminal_state: terminal_state_str(envelope.run.terminal_state),
+    })
 }
 
 /// Parse the plan file: a JSON array of `{query, purpose}`. Structural
@@ -417,8 +546,8 @@ pub fn terminal_state_str(state: AgentState) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use da_application::{claims_digest, evidence_digest, plan_digest, verification_digest};
     use da_domain::{AgentQueryEvidence, ContentDigest};
-    use kg_storage::QueryResult;
     use serde_json::json;
 
     fn write_temp(name: &str, contents: &str) -> PathBuf {
@@ -647,5 +776,211 @@ mod tests {
     fn agent_run_cli_error_exit_codes() {
         assert_eq!(AgentRunCliError::Configuration("x".into()).exit_code(), 2);
         assert_eq!(AgentRunCliError::Runtime("x".into()).exit_code(), 3);
+        assert_eq!(AgentRunCliError::VerifyFailed("x".into()).exit_code(), 3);
+    }
+
+    /// A single-query plan + result pair, aligned so plan / evidence /
+    /// claims / records all reference the same query. Mirrors the FSM a
+    /// real Verified run records (T03 fixture).
+    fn verified_pair() -> (Vec<AgentPlanQuery>, QueryResult) {
+        let plan = vec![AgentPlanQuery {
+            query: "MATCH (n:Paper) RETURN count(n) as count".into(),
+            purpose: "count papers".into(),
+        }];
+        let result = QueryResult {
+            columns: vec!["count".into()],
+            records: vec![vec![json!(42)]],
+        };
+        (plan, result)
+    }
+
+    /// Build a fully-consistent Verified envelope with the complete
+    /// decision history, so `verify_report` recomputes cleanly.
+    fn verified_envelope() -> AgentRunEnvelope {
+        let (plan, result) = verified_pair();
+        let identity = GraphIdentity::new(ContentDigest::of_text("seed"), "test_tenant", 3, 2);
+        let query = plan[0].query.clone();
+        let result_ref_val = result_ref(DEFAULT_GRAPH, &query, &result);
+
+        let mut bundle = da_domain::ContextBundle::new(identity.clone());
+        bundle.add_evidence(AgentQueryEvidence::new(
+            query.clone(),
+            result_ref_val.clone(),
+            1,
+            false,
+            1,
+        ));
+        bundle.add_claim(da_domain::AgentClaim::new(
+            "42 papers",
+            result_ref_val.clone(),
+        ));
+
+        let actual = identity.clone();
+        let decisions = vec![
+            da_domain::AgentAdmissionDecision::admitted("sha256:snapshot:abc"),
+            da_domain::AgentAdmissionDecision::admitted(plan_digest(&plan)),
+            da_domain::AgentAdmissionDecision::admitted(format!(
+                "da.identity:{}",
+                identity.semantic_digest.as_str()
+            )),
+            da_domain::AgentAdmissionDecision::admitted(evidence_digest(&bundle)),
+            da_domain::AgentAdmissionDecision::admitted(claims_digest(&bundle)),
+            da_domain::AgentAdmissionDecision::admitted(verification_digest(&bundle, &actual)),
+        ];
+
+        AgentRunEnvelope {
+            format: REPORT_FORMAT.into(),
+            tool: "da".into(),
+            version: "test".into(),
+            timestamp_utc: "2026-08-17T00:00:00Z".into(),
+            endpoint: "127.0.0.1:16379".into(),
+            graph: DEFAULT_GRAPH.into(),
+            plan,
+            expected_snapshot: ExpectedSnapshot {
+                path: "artifacts/test.sgsnap".into(),
+                semantic_hex: identity.semantic_digest.as_str().to_string(),
+                tenant: identity.tenant.clone(),
+                nodes: identity.nodes,
+                edges: identity.edges,
+            },
+            run: AgentRunReport {
+                terminal_state: AgentState::Verified,
+                decisions,
+                bundle,
+                budget: AgentBudget::new(10, 10, 4000),
+                expected_identity: identity.clone(),
+                actual_identity: Some(actual),
+                error: None,
+            },
+            result_records: vec![QueryResultRecord {
+                graph: DEFAULT_GRAPH.into(),
+                query: query.clone(),
+                columns: result.columns.clone(),
+                records: result.records.clone(),
+            }],
+        }
+    }
+
+    fn write_envelope_to(path: &Path, envelope: &AgentRunEnvelope) {
+        let bytes = serde_json::to_vec(envelope).unwrap();
+        std::fs::write(path, &bytes).unwrap();
+    }
+
+    #[test]
+    fn verify_passes_on_consistent_verified_envelope() {
+        let path = write_temp("verify-pass.json", "{}");
+        write_envelope_to(&path, &verified_envelope());
+        let outcome = verify_report(&path).expect("consistent envelope verifies");
+        assert_eq!(outcome.terminal_state, "verified");
+    }
+
+    #[test]
+    fn verify_fails_on_tampered_result_ref() {
+        // The da-cli-specific check: a persisted raw row that no longer
+        // re-hashes to the recorded evidence result_ref must fail closed
+        // (MEM874).
+        let mut envelope = verified_envelope();
+        envelope.result_records[0].records = vec![vec![json!(99)]];
+        let path = write_temp("verify-result-tamper.json", "{}");
+        write_envelope_to(&path, &envelope);
+        match verify_report(&path) {
+            Err(AgentRunCliError::VerifyFailed(message)) => {
+                assert!(
+                    message.starts_with("result_ref"),
+                    "first failing check: {message}"
+                );
+            }
+            other => panic!("tampered result_ref must be VerifyFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_fails_on_tampered_plan() {
+        // The evidence-chain check: a plan that no longer matches the
+        // recorded plan digest surfaces the first failing check.
+        let mut envelope = verified_envelope();
+        envelope.plan[0].query = "MATCH (x:X) RETURN x".into();
+        let path = write_temp("verify-plan-tamper.json", "{}");
+        write_envelope_to(&path, &envelope);
+        match verify_report(&path) {
+            Err(AgentRunCliError::VerifyFailed(message)) => {
+                assert!(
+                    message.starts_with("plan digest"),
+                    "first failing check: {message}"
+                );
+            }
+            other => panic!("tampered plan must be VerifyFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_fails_on_expected_snapshot_identity_mismatch() {
+        // Envelope as-of block must agree with the run's planned identity.
+        let mut envelope = verified_envelope();
+        envelope.expected_snapshot.nodes += 1;
+        let path = write_temp("verify-snapshot-tamper.json", "{}");
+        write_envelope_to(&path, &envelope);
+        match verify_report(&path) {
+            Err(AgentRunCliError::VerifyFailed(message)) => {
+                assert!(
+                    message.starts_with("expected_snapshot"),
+                    "first failing check: {message}"
+                );
+            }
+            other => panic!("snapshot mismatch must be VerifyFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_fails_on_evidence_record_count_mismatch() {
+        let mut envelope = verified_envelope();
+        envelope.result_records.clear();
+        let path = write_temp("verify-count-tamper.json", "{}");
+        write_envelope_to(&path, &envelope);
+        match verify_report(&path) {
+            Err(AgentRunCliError::VerifyFailed(message)) => {
+                assert!(
+                    message.starts_with("evidence/result_records"),
+                    "first failing check: {message}"
+                );
+            }
+            other => panic!("count mismatch must be VerifyFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_missing_report_is_config_error() {
+        match verify_report(Path::new("/nonexistent/report.json")) {
+            Err(AgentRunCliError::Configuration(_)) => {}
+            other => panic!("missing report must be Configuration, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_malformed_json_is_config_error() {
+        let path = write_temp("verify-bad-json.json", r#"{not: json"#);
+        match verify_report(&path) {
+            Err(AgentRunCliError::Configuration(_)) => {}
+            other => panic!("malformed report must be Configuration, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn verify_wrong_format_is_config_error() {
+        let path = write_temp("verify-wrong-format.json", "{}");
+        write_envelope_to(&path, &{
+            let mut envelope = verified_envelope();
+            envelope.format = "da.agent-run.report.v2".into();
+            envelope
+        });
+        match verify_report(&path) {
+            Err(AgentRunCliError::Configuration(message)) => {
+                assert!(
+                    message.contains("has format"),
+                    "format check message: {message}"
+                );
+            }
+            other => panic!("wrong format must be Configuration, got {other:?}"),
+        }
     }
 }
