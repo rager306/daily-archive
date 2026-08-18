@@ -3,6 +3,7 @@
 //! ADR-037 §2: Adapters implement Ports using infrastructure.
 //! ADR-040 §1: Samyama Graph (Tier 1) + external services.
 
+pub mod agent_read_plane;
 pub mod anthropic_llm;
 pub mod anthropic_multimodal;
 pub mod arxiv_acquisition;
@@ -36,6 +37,7 @@ pub mod tex_archive;
 #[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
 
+pub use agent_read_plane::RemoteAgentReadPlane;
 pub use anthropic_llm::AnthropicLlmClient;
 pub use anthropic_multimodal::{
     AnthropicMultimodalClient, AnthropicMultimodalRoute, AnthropicRouteAuth,
