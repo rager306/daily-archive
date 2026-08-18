@@ -26,8 +26,8 @@ explicit human go (D127).
 | **Governor CLI** | **Done** — YAML rules, trajectory, dead-code scan |
 | OpenAlex enrichment | **Done** — `da enrich` |
 | Import / graph write | **Locked** (`import_eligible=false`, D127) |
-| **Wave 3 health path** | **Done (M307–M310)** — `da serve-graph` (in-memory RESP, optional `--snapshot`), `da graph-ping` |
-| Cross-process GraphStore | **Scalar read plane in progress (M378)** — bounded RESP health/query adapter; vectors/index/snapshot/HOT writes explicitly unsupported |
+| **Wave 3 health path** | **Done (M307–M310; M401/S01)** — `da serve-graph` (kg-storage ReadOnlyServer: bounded RESP2, read-only allowlist, DA.IDENTITY semantic handshake, optional `--snapshot`), `da graph-ping` |
+| Cross-process GraphStore | **Read-only identity plane done (M401/S01, ADR-061)** — bounded RESP read plane over `Arc<dyn GraphStore>`; PING/ECHO/INFO/DA.IDENTITY/GRAPH.RO_QUERY only; vectors/index/snapshot/HOT writes explicitly rejected server-side |
 | RuVector GNN (Tier 2) | Port traits ready; adapter pending |
 | Agent layer (RuVector/SONA) | Vendored, port traits defined |
 
@@ -250,7 +250,7 @@ cargo run -p da-cli --example revision_readiness_canary -- \
 ./target/debug/da load-snapshot --input data/samyama/batch.sgsnap
 ./target/debug/da graph-stats
 
-# Wave 3 multi-process HEALTH (in-memory RespServer — no RocksDB)
+# Wave 3 multi-process READ-ONLY plane (kg-storage ReadOnlyServer — ADR-061)
 # Terminal A: serve (optional --snapshot to preload .sgsnap into this process)
 ./target/debug/da serve-graph --host 127.0.0.1 --port 16379
 # or: da serve-graph --snapshot data/samyama/batch.sgsnap --port 16379
@@ -266,6 +266,20 @@ cargo run -p da-cli -- graph-query --mode remote --endpoint 127.0.0.1:16379 \
 DA_GRAPH_MODE=remote DA_GRAPH_ENDPOINT=127.0.0.1:16379 \
   cargo run -p da-cli -- health
 # Note: default port 16379 (not Redis 6379, not vendor SAMYAMA_RESP_PORT 6380)
+#
+# Read-plane contract (ADR-061): the server accepts ONLY
+#   PING | ECHO | INFO | DA.IDENTITY | GRAPH.RO_QUERY
+# (GRAPH.RO_QUERY after server-side read-only Cypher validation). Every
+# mutating/admin command (GRAPH.QUERY CREATE, GRAPH.DELETE, INDEX.*, VECTOR.*,
+# IMPORT/SNAPSHOT.*, ADMIN.*, CONFIG, FLUSHALL, …) is rejected with a typed
+# -ERR BEFORE the store is touched — rejected writes cannot change counts.
+# DA.IDENTITY returns a deterministic SnapshotIdentity JSON (semantic SHA-256
+# of the exported graph bytes + tenant + node/edge counts), so a second
+# process can verify it is talking to the intended preload. Wrong expected
+# identity → typed IdentityMismatch naming both sides. No RocksDB, no
+# DirectGraphStore client, no auto-start, D127 remains locked.
+# Cross-process contract test (process A = real daemon, process B = client):
+#   cargo test -p da-cli --test remote_read_plane_test
 ```
 
 ### Sidecars
@@ -391,8 +405,8 @@ Derived checkpoint artifacts are accepted only with ordered producer reports
 allowed by `data/ontology/snapshot_derivation_policy.yaml`. Every physical
 output must equal the next input and the final output must equal the actual
 snapshot bytes. There is no boolean derived-snapshot waiver.
-| `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | In-memory RESP server (M308/M309; no RocksDB; D127 locked) |
-| `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph; M378 scalar remote query adapter is separate from HOT writes |
+| `da serve-graph [--snapshot f.sgsnap] [--port 16379]` | Read-only identity RESP plane (kg-storage ReadOnlyServer, ADR-061; PING/ECHO/INFO/DA.IDENTITY/GRAPH.RO_QUERY only; no RocksDB; D127 locked) |
+| `da graph-ping [--port 16379]` | RESP PING → PONG against serve-graph; bounded remote read adapter is separate from HOT writes |
 | `da graph-stats` | Node/edge counts |
 | `da analyze --algorithm ppr --seed …` | Graph algorithms on process-local store (Wave 1–2) |
 | `da schema-init` | Initialize all 26 graph indexes |

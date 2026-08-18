@@ -30,6 +30,7 @@ listed here — see `legacy/doc/adr/`.
 | [058](ADR-058-article-revision-expression-ontology.md) | Article Revision Expression Ontology | Accepted | 2026-08-11 |
 | [059](ADR-059-prompt-execution-optimizer-fsm.md) | Provider-neutral Prompt Execution and Optimizer Candidate FSM | Accepted | 2026-08-12 |
 | [060](ADR-060-scientific-figure-understanding-pipeline.md) | Two-stage Figure Understanding Pipeline (classify → per-type extract) | Partially implemented (M388) | 2026-08-12 |
+| [061](ADR-061-readonly-identity-graph-plane-and-agent-fsm.md) | Read-only Identity Graph Plane and Agent FSM (kg-storage bounded RESP server, DA.IDENTITY semantic handshake) | Accepted (M401-itcqhx/S01) | 2026-08-18 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
@@ -75,6 +76,9 @@ ADR-044 (schema lifecycle)   ──hosted──► ADR-050 (ontology crate)
 ADR-046/047/048/049 (data)   ──moved──► ADR-050 (YAML ontology files)
 ADR-037 (paper versions)      ──specified──► ADR-058 (revision expressions)
 ADR-056 (source revision)     ──projected──► ADR-058 (revision-aware graph)
+ADR-060 (figure understanding) ──preceded──► ADR-061 (read-only plane for agent reads)
+ADR-061 (read plane)          ──supersedes D145/D146/D148──► vendor RespServer no longer used for the daemon path
+ADR-061 (read plane)          ──refines D149/D150──► typed DA_SERVE_GRAPH_* / DA_REMOTE_GRAPH_* / DA_GRAPH_ENDPOINT env contract
 ```
 
 ## Template
