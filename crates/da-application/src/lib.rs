@@ -19,7 +19,7 @@ pub mod tex_inspect;
 
 pub use agent_run::{
     AgentPlanQuery, AgentRunReport, AgentRunRequest, AgentRunUseCase, DeterministicSynthesizer,
-    verify_run_evidence_chain,
+    claims_digest, evidence_digest, plan_digest, verification_digest, verify_run_evidence_chain,
 };
 pub use article_load::{
     ArticleLoadError, ArticleLoadUseCase, LoadContentOutcome, LoadContentPipeline,

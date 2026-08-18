@@ -553,7 +553,11 @@ fn validate_plan(request: &AgentRunRequest) -> Result<(), String> {
 /// Durable evidence ref for `Planning → Searching`: a digest over the
 /// canonical plan JSON (stable field order). The orchestrator produces it —
 /// never a caller-supplied string.
-fn plan_digest(plan: &[AgentPlanQuery]) -> String {
+///
+/// Public (S04 T01) so CLI capture and `--verify` recompute the same
+/// canonical serde shape and never drift from the orchestrator's math (D273:
+/// S05 Governor shells out instead of re-hashing in Python).
+pub fn plan_digest(plan: &[AgentPlanQuery]) -> String {
     let canonical = serde_json::to_string(plan)
         .expect("agent plan serialization is infallible (plain String fields)");
     format!(
@@ -564,7 +568,9 @@ fn plan_digest(plan: &[AgentPlanQuery]) -> String {
 
 /// Durable evidence ref for `Reading → Synthesis`: a digest over the
 /// canonical evidence list (query, result_ref, rows, truncated, duration).
-fn evidence_digest(bundle: &ContextBundle) -> String {
+///
+/// Public (S04 T01): see [`plan_digest`].
+pub fn evidence_digest(bundle: &ContextBundle) -> String {
     let canonical = serde_json::to_string(&bundle.evidence)
         .expect("evidence serialization is infallible (plain fields)");
     format!(
@@ -575,7 +581,9 @@ fn evidence_digest(bundle: &ContextBundle) -> String {
 
 /// Durable evidence ref for `Synthesis → Verification`: a digest over the
 /// canonical claims list.
-fn claims_digest(bundle: &ContextBundle) -> String {
+///
+/// Public (S04 T01): see [`plan_digest`].
+pub fn claims_digest(bundle: &ContextBundle) -> String {
     let canonical = serde_json::to_string(&bundle.claims)
         .expect("claims serialization is infallible (plain fields)");
     format!(
@@ -587,7 +595,9 @@ fn claims_digest(bundle: &ContextBundle) -> String {
 /// Durable evidence ref for `Verification → Verified`: a digest over the
 /// bundle plus the actual identity observed at verification (R091 lineage
 /// bound into the final admission).
-fn verification_digest(bundle: &ContextBundle, actual: &GraphIdentity) -> String {
+///
+/// Public (S04 T01): see [`plan_digest`].
+pub fn verification_digest(bundle: &ContextBundle, actual: &GraphIdentity) -> String {
     let canonical = serde_json::json!({
         "bundle": bundle,
         "actual_identity": actual,
@@ -1380,6 +1390,42 @@ mod tests {
     // ---- S04 T01: public evidence-chain verifier ----
 
     /// Assert the chain recomputes cleanly, with the failing check named.
+    /// S04 T01 public-surface lock: the re-exported digest helpers compute
+    /// exactly the evidence refs the orchestrator records, so CLI capture
+    /// and `--verify` (which recompute from persisted data) cannot drift.
+    /// Referenced through the crate-root re-export path on purpose.
+    #[tokio::test]
+    async fn public_digest_reexports_match_recorded_evidence_refs() {
+        let report = use_case(FakeAgentReadPlane::happy(test_identity(), happy_results()))
+            .run(&sample_request())
+            .await;
+        assert_eq!(report.terminal_state, AgentState::Verified);
+
+        let plan = &sample_request().plan;
+        let bundle = &report.bundle;
+        let identity = test_identity();
+
+        // Re-exported surface (crate root), not the local `super::*` imports.
+        assert_eq!(crate::plan_digest(plan), report.decisions[1].evidence_ref);
+        assert_eq!(
+            crate::evidence_digest(bundle),
+            report.decisions[3].evidence_ref
+        );
+        assert_eq!(
+            crate::claims_digest(bundle),
+            report.decisions[4].evidence_ref
+        );
+        assert_eq!(
+            crate::verification_digest(bundle, &identity),
+            report.decisions[5].evidence_ref
+        );
+        // Scheme prefixes lock the canonical shape.
+        assert!(crate::plan_digest(plan).starts_with("sha256:plan:"));
+        assert!(crate::evidence_digest(bundle).starts_with("sha256:evidence:"));
+        assert!(crate::claims_digest(bundle).starts_with("sha256:claims:"));
+        assert!(crate::verification_digest(bundle, &identity).starts_with("sha256:verify:"));
+    }
+
     fn expect_chain_ok(plan: &[AgentPlanQuery], report: &AgentRunReport) {
         if let Err(check) = verify_run_evidence_chain(plan, report) {
             panic!("evidence chain must verify on this report: {check}");
