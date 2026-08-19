@@ -564,6 +564,27 @@ pub fn is_due(task: &PendingTask, now: i64) -> bool {
 }
 
 impl PendingTask {
+    /// Create a new pending task for a given task type (M410 S02). Used by
+    /// the content producers to enqueue non-enrich tasks such as Extract.
+    pub fn new_for(task_type: TaskType, arxiv_id: &str, policy: &RetryPolicy, now: i64) -> Self {
+        Self {
+            arxiv_id: arxiv_id.to_string(),
+            task_type,
+            added_at: now,
+            retry_count: 0,
+            last_retry: None,
+            next_retry: policy.next_retry_ts(0, now),
+            status: TaskStatus::Pending,
+            schema_version: 2,
+            priority: task_type.priority(),
+            lease: None,
+            dependencies: Vec::new(),
+            resource_class: TaskResourceClass::Standard,
+            attempts: Vec::new(),
+            logical_result: None,
+        }
+    }
+
     /// Create a new pending task for OpenAlex enrichment.
     pub fn new_openalex_enrich(arxiv_id: &str, policy: &RetryPolicy, now: i64) -> Self {
         Self {

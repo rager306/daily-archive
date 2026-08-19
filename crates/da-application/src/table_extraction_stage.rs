@@ -512,7 +512,7 @@ mod tests {
     }
 
     fn stage() -> TableExtractionStage {
-        TableExtractionStage::new(&sha(9), sha(1))
+        TableExtractionStage::new(sha(9), sha(1))
     }
 
     #[tokio::test]

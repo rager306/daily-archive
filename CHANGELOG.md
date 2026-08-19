@@ -1,5 +1,36 @@
 # Changelog
 
+### M410 Extract becomes a real scheduler task (R096)
+
+- `ExtractSchedulerExecutor` (da-application `scheduler_executors.rs`): a real
+  `SchedulerTaskExecutor` for the `Extract` task type. It rebuilds a
+  `ParsedArticle` from the materialized revision plane (Paper → `hasPart` →
+  Section title/text with deterministic ordering) through
+  `GraphParsedArticleProvider` and runs the injected `ExtractionUseCase`
+  (rule extractor by default). Honest inputs only: a missing paper or empty
+  section plane is a typed `Retryable` (`parsed_plane_not_materialized`),
+  never a fabricated parse.
+- Domain: `PendingTask::new_for(task_type, ...)` generalizes task
+  construction beyond OpenAlex enrichment (priority and resource class derive
+  from the task type).
+- Application: `GraphScheduler::add_pending_task_to(store, policy, task_type,
+  arxiv_id, now)` generalizes the producer; `add_pending_extract_to` is the
+  static composition-root form. The existing `add_pending`/`add_pending_to`
+  (OpenAlex) are unchanged in behavior.
+- Producer: `da load` (inline path, `--stages ingest` prepare) enqueues
+  exactly one Extract task per article after a successful prepare —
+  idempotent by the existing one-node-per-(task_type, arxiv_id) lifecycle;
+  failures warn `scheduler_extract_enqueue_failed` without failing the load.
+  Journey/inline-extract loads do not enqueue (extraction already happened).
+- `da scheduler-run` now registers the Extract executor alongside OpenAlex
+  enrichment; dispatch stays closed (unregistered types still fail without
+  claiming).
+- Tests: 4 executor/provider unit tests (graph-seeded sections, missing
+  paper), 31 domain scheduler tests, 14 application scheduler tests all
+  green; clippy clean across da-domain/da-application/da-cli; flagless soak
+  unchanged (no enqueue failures, journey event intact). Governor pins the
+  executor and producer markers. D127 remains locked.
+
 ### M409 Figure candidates join the operator journey (R096, R094)
 
 - `figure_candidate_assembly` (da-application): the M400 production shim —

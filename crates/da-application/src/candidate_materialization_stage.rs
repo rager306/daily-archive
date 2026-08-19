@@ -307,9 +307,3 @@ impl PipelineStageExecutor for CandidateMaterializationStage {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-}

@@ -1981,7 +1981,12 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
     let graph_store: Arc<dyn da_ports::graph_store::DirectGraphStore> = shared_store.clone();
     let openalex: Arc<dyn da_ports::openalex::OpenAlexClient> =
         Arc::new(OpenAlexHttpAdapter::new());
+    let extract_executor = da_application::ExtractSchedulerExecutor::new(
+        graph_store.clone(),
+        Box::new(da_adapters::RuleBasedExtractor::new()),
+    );
     let report = SchedulerRunner::new(graph_store, openalex)
+        .with_executor(Arc::new(extract_executor))
         .run_due()
         .await?;
 

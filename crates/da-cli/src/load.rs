@@ -428,6 +428,28 @@ impl LoadContentPipeline for CliContentPipeline {
             });
         }
 
+        // M410 S02: enqueue a background Extract task when the content was
+        // NOT extracted inline (a `--stages ingest` prepare). The scheduler
+        // worker runs `ExtractSchedulerExecutor` against the materialized
+        // revision plane. Idempotent: one task per (Extract, arxiv_id).
+        if !req.include_extract && !req.enable_import {
+            let now = self.clock.now().timestamp();
+            if let Err(error) = da_application::GraphScheduler::add_pending_extract_to(
+                self.store.as_ref(),
+                &da_domain::scheduler::RetryPolicy::default(),
+                req.paper_id,
+                now,
+            )
+            .await
+            {
+                tracing::warn!(
+                    article_id = req.paper_id,
+                    error = %error,
+                    event = "scheduler_extract_enqueue_failed"
+                );
+            }
+        }
+
         let snapshot_path = if self.export_per_unit {
             if let Some(out) = req.snapshot_output {
                 if let Some(parent) = out.parent() {

@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn artifact_roundtrips_through_serde() {
         // ADR-051 §4.4: the wire artifact must roundtrip losslessly.
-        let stage = EquationExtractionStage::new(&sha(9), sha(7));
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
         let parsed = parsed_with_formulas("p1", 2);
         let out = futures_executor_block_on(stage, parsed.clone());
         let artifact: EquationExtractionArtifact =
@@ -259,7 +259,7 @@ mod tests {
 
     #[tokio::test]
     async fn two_formulas_become_two_grounded_candidates() {
-        let stage = EquationExtractionStage::new(&sha(9), sha(7));
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
         let parsed = parsed_with_formulas("p1", 2);
         let out = stage
             .execute(request("p1", &parsed))
@@ -282,7 +282,7 @@ mod tests {
 
     #[tokio::test]
     async fn parser_not_attempted_is_a_typed_no_claim() {
-        let stage = EquationExtractionStage::new(&sha(9), sha(7));
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
         let mut parsed = parsed_with_formulas("p1", 0);
         parsed.formula_missingness =
             Some(da_ports::parser::FormulaMissingReason::NoFormulaElements);
@@ -303,7 +303,7 @@ mod tests {
 
     #[tokio::test]
     async fn identity_mismatch_fails_closed() {
-        let stage = EquationExtractionStage::new(&sha(9), sha(7));
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
         let parsed = parsed_with_formulas("other", 1);
         let err = stage.execute(request("p1", &parsed)).await.unwrap_err();
         assert!(matches!(
@@ -315,8 +315,8 @@ mod tests {
 
     #[test]
     fn contract_rotates_with_revision_identity() {
-        let a = EquationExtractionStage::new(&sha(9), sha(7));
-        let b = EquationExtractionStage::new(&sha(10), sha(7));
+        let a = EquationExtractionStage::new(sha(9), sha(7));
+        let b = EquationExtractionStage::new(sha(10), sha(7));
         assert_ne!(a.configuration_fingerprint(), b.configuration_fingerprint());
     }
 }

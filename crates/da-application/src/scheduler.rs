@@ -9,7 +9,7 @@
 //! API (`GraphScheduler::new(...).load_due_tasks()`) remains as a thin
 //! wrapper for future Phase 3+ server-mode ownership patterns.
 
-use da_domain::scheduler::{PendingTask, RetryPolicy};
+use da_domain::scheduler::{PendingTask, RetryPolicy, TaskType};
 use da_ports::graph_store::DirectGraphStore;
 
 use chrono::DateTime;
@@ -41,7 +41,30 @@ impl GraphScheduler {
         self
     }
 
-    /// Add a paper to the pending queue (creates SchedulerTask node).
+    /// Add a paper to the pending queue (extract task, M410 S02).
+    pub async fn add_pending_extract(&self, arxiv_id: &str) -> anyhow::Result<()> {
+        let now = self.clock.now().timestamp();
+        Self::add_pending_task_to(
+            &*self.graph_store,
+            &self.policy,
+            TaskType::Extract,
+            arxiv_id,
+            now,
+        )
+        .await
+    }
+
+    /// Static form for composition roots that hold an `Arc` store (M410 S02).
+    pub async fn add_pending_extract_to(
+        store: &dyn DirectGraphStore,
+        policy: &RetryPolicy,
+        arxiv_id: &str,
+        now: i64,
+    ) -> anyhow::Result<()> {
+        Self::add_pending_task_to(store, policy, TaskType::Extract, arxiv_id, now).await
+    }
+
+    /// Add a paper to the pending queue (for the OpenAlex enrichment task).
     pub async fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
         let now = self.clock.now().timestamp();
         Self::add_pending_to(&*self.graph_store, &self.policy, arxiv_id, now).await
@@ -75,7 +98,20 @@ impl GraphScheduler {
         arxiv_id: &str,
         now: i64,
     ) -> anyhow::Result<()> {
-        let task = PendingTask::new_openalex_enrich(arxiv_id, policy, now);
+        // OpenAlex is the enrich producer; the generic path below covers all
+        // task types (M410 S02).
+        Self::add_pending_task_to(store, policy, TaskType::OpenAlexEnrich, arxiv_id, now).await
+    }
+
+    /// Add any task type to the pending queue on a given store.
+    pub async fn add_pending_task_to(
+        store: &dyn DirectGraphStore,
+        policy: &RetryPolicy,
+        task_type: TaskType,
+        arxiv_id: &str,
+        now: i64,
+    ) -> anyhow::Result<()> {
+        let task = PendingTask::new_for(task_type, arxiv_id, policy, now);
         // PIR-008 / M398-S04: SchedulerTask DateTime properties are written as
         // canonical RFC3339 UTC strings; integer timestamps are the legacy
         // read-only wire form (read back via read_datetime_secs below).

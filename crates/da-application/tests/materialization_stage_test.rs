@@ -129,7 +129,7 @@ async fn revision_stage_creates_then_reuses_with_zero_new_writes() {
     let first_report: RevisionMaterializationReport =
         serde_json::from_slice(&first.payload).expect("report decodes");
     assert!(first_report.result.nodes_created > 0, "first run creates");
-    assert_eq!(first_report.result.import_eligible, false);
+    assert!(!first_report.result.import_eligible);
     assert_eq!(
         first.metadata.get("import_eligible").map(String::as_str),
         Some("false")
@@ -196,7 +196,7 @@ async fn revision_stage_stamps_d134_retrieval_flags_on_every_label() {
 
     let report: RevisionMaterializationReport =
         serde_json::from_slice(&first.payload).expect("report decodes");
-    let paper_vid = report.result.paper_vid.clone();
+    let _paper_vid = report.result.paper_vid.clone();
     let revision_vid = report.result.revision_vid.clone();
     let manifestation_sha = manifestations()[0].sha256.clone();
 
@@ -255,7 +255,7 @@ async fn extraction_stage_materializes_entities_after_revision_plane_exists() {
         serde_json::from_slice(&first.payload).expect("report decodes");
     assert_eq!(first_report.entities_created, 2);
     assert!(first_report.mentions_edges > 0);
-    assert_eq!(first_report.import_eligible, false);
+    assert!(!first_report.import_eligible);
     let nodes_after_first = store.node_count_total();
 
     let second = stage
