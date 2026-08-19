@@ -151,3 +151,16 @@ dimensions:
       - "data/ontology/edge_contracts.yaml: hasSummary edge"
       - "D194 audit: Layer A-C done, D-J pending"
     artifact_ref: "crates/da-domain/src/article.rs"
+
+  - id: agent_read_plane
+    description: "Read-only agent plane with verified envelopes (PIR-017/PIR-021, ADR-061)"
+    status_logic:
+      enforced: "data/read_only_agent_contract/agent_run_verified.positive.json exists AND data/read_only_agent_contract/agent_run_tampered.negative.json exists AND crates/da-cli/tests/read_only_agent_contract_verify_test.rs exists"
+      not_started: "always (fallback)"
+    evidence:
+      - "Rust offline verifier pinned: da agent-run verify exit 0 PASS / exit 3 FAIL (D273)"
+      - "Governor DATA contract scripts/governor/checks/read_only_agent_contract.yaml"
+      - "Committed genuine envelopes (positive + tampered negative)"
+      - "D127 locked: envelope carries no import_eligible key"
+      - "serve-graph path does not instantiate vendor RespServer"
+    artifact_ref: "scripts/governor/checks/read_only_agent_contract.yaml"

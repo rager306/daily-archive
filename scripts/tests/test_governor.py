@@ -2480,6 +2480,112 @@ def test_equation_context_coverage_invalid_yaml_is_flagged():
     assert flags[0].flag == "equation_context_coverage_invalid"
 
 
+def _copy_read_only_agent_contract(root: Path) -> None:
+    """Copy the committed read-only agent contract + envelopes + markers."""
+    repo = _scripts_dir.parent
+    rels = [
+        "scripts/governor/checks/read_only_agent_contract.yaml",
+        "data/read_only_agent_contract/agent_run_verified.positive.json",
+        "data/read_only_agent_contract/agent_run_tampered.negative.json",
+        "crates/da-cli/src/agent_run.rs",
+        "crates/da-application/src/agent_run.rs",
+        "crates/kg-storage/src/read_only_server.rs",
+        "crates/da-cli/src/serve_graph.rs",
+        "crates/da-domain/src/agent.rs",
+    ]
+    for rel in rels:
+        _write(root / rel, (repo / rel).read_text(encoding="utf-8"))
+
+
+def test_read_only_agent_contract_pass_on_clean_fixtures():
+    """Committed positive + negative envelopes and markers satisfy the contract."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    assert service._check_read_only_agent_contract() == []
+
+
+def test_read_only_agent_contract_missing_fixture_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    (service.root / "data/read_only_agent_contract/agent_run_tampered.negative.json").unlink()
+    flags = service._check_read_only_agent_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "read_only_agent_contract_fixture_missing"
+    assert "negative" in flags[0].evidence
+
+
+def test_read_only_agent_contract_positive_fixture_must_be_clean():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    # Inject an import_eligible key into the positive envelope (D127 unlock).
+    path = service.root / "data/read_only_agent_contract/agent_run_verified.positive.json"
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    envelope["import_eligible"] = True
+    _write(path, json.dumps(envelope))
+    flags = service._check_read_only_agent_contract()
+    broken = [f for f in flags if f.flag == "read_only_agent_contract_broken"]
+    assert len(broken) == 1
+    assert "import_eligible" in broken[0].evidence
+
+
+def test_read_only_agent_contract_negative_fixture_must_be_structurally_clean():
+    """The tampered negative is still a valid v1 envelope: Python stays clean, Rust FAILs."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    # Break the negative envelope's structure: drop the run block entirely.
+    path = service.root / "data/read_only_agent_contract/agent_run_tampered.negative.json"
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    del envelope["run"]
+    _write(path, json.dumps(envelope))
+    flags = service._check_read_only_agent_contract()
+    broken = [f for f in flags if f.flag == "read_only_agent_contract_broken"]
+    assert len(broken) == 1
+    assert "missing_required_field:run" in broken[0].evidence
+
+
+def test_read_only_agent_contract_fixture_must_be_object_not_array():
+    """A fixture is a single envelope object — `_candidate_contract_flags` (arrays) is NOT reused."""
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    path = service.root / "data/read_only_agent_contract/agent_run_verified.positive.json"
+    envelope = json.loads(path.read_text(encoding="utf-8"))
+    _write(path, json.dumps([envelope]))
+    flags = service._check_read_only_agent_contract()
+    invalid = [f for f in flags if f.flag == "read_only_agent_contract_fixture_invalid"]
+    assert len(invalid) == 1
+    assert "single envelope object" in invalid[0].evidence
+
+
+def test_read_only_agent_contract_source_marker_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    # Drop the serve-graph enforcement markers.
+    _write(service.root / "crates/da-cli/src/serve_graph.rs",
+           "// no markers here\n")
+    flags = service._check_read_only_agent_contract()
+    marker = [f for f in flags
+              if f.flag == "read_only_agent_contract_source_marker_missing"]
+    assert len(marker) == 1
+    assert "serve_graph" in marker[0].evidence
+
+
+def test_read_only_agent_contract_invalid_yaml_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_read_only_agent_contract(service.root)
+    _write(service.root / "scripts/governor/checks/read_only_agent_contract.yaml",
+           "{bad yaml: [")
+    flags = service._check_read_only_agent_contract()
+    assert len(flags) == 1
+    assert flags[0].flag == "read_only_agent_contract_invalid"
+
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -2548,6 +2654,13 @@ def _run_all_tests() -> int:
         test_equation_context_coverage_negative_fixture_must_cover_required_violations,
         test_equation_context_coverage_source_marker_missing_is_flagged,
         test_equation_context_coverage_invalid_yaml_is_flagged,
+        test_read_only_agent_contract_pass_on_clean_fixtures,
+        test_read_only_agent_contract_missing_fixture_is_flagged,
+        test_read_only_agent_contract_positive_fixture_must_be_clean,
+        test_read_only_agent_contract_negative_fixture_must_be_structurally_clean,
+        test_read_only_agent_contract_fixture_must_be_object_not_array,
+        test_read_only_agent_contract_source_marker_missing_is_flagged,
+        test_read_only_agent_contract_invalid_yaml_is_flagged,
     ]
     passed = 0
     failed = 0

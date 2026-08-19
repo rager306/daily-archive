@@ -167,7 +167,9 @@ def _validate_yaml(rule_repo) -> int:
     except Exception as e:
         print(f"YAML validation FAILED: {e}", file=sys.stderr)
         return 1
-    print(f"YAML validation PASS: {len(rules)} rules, {len(dims)} dimensions")
+    dim_ids = ", ".join(str(d.get("id", "?")) for d in dims)
+    print(f"YAML validation PASS: {len(rules)} rules, "
+          f"{len(dims)} dimensions ({dim_ids})")
     return 0
 
 

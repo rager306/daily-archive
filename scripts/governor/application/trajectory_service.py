@@ -766,6 +766,110 @@ def _candidate_contract_flags(
     return flags
 
 
+def _deep_has_key(node, key: str) -> bool:
+    """True if `key` appears anywhere in a nested dict/list structure.
+
+    Mirrors the Rust verifier's string-level D127 guard
+    (`!json.contains("import_eligible")` in `da agent-run verify`): the lock
+    is about the key being *absent* from the envelope, not about a boolean
+    value. Kept recursive because the committed v1 envelope nests identity /
+    budget / evidence blocks several levels deep.
+    """
+    if isinstance(node, dict):
+        if key in node:
+            return True
+        return any(_deep_has_key(value, key) for value in node.values())
+    if isinstance(node, list):
+        return any(_deep_has_key(item, key) for item in node)
+    return False
+
+
+def _read_only_agent_envelope_violations(
+    envelope: dict, contract: dict
+) -> set[str]:
+    """Structural violations of one read-only agent-run envelope (v1).
+
+    Python validates envelope *structure* only (D275 / D273 / MEM885):
+    format + required top-level fields, terminal-state vocabulary
+    (verified / failed_visible), snapshot identity block, budget fields,
+    identity block (expected/actual), evidence entries carrying query +
+    result_ref, result_records 1:1 with evidence (R087 honesty), and the
+    D127 lock (`import_eligible` absent). Digest math (plan -> identity ->
+    evidence -> claims -> verification -> result_ref) stays in Rust
+    `da agent-run verify`: a structurally clean envelope may still FAIL
+    digest verification there (the tampered negative fixture).
+    """
+    violations: set[str] = set()
+    if not isinstance(envelope, dict):
+        return {"missing_envelope_object"}
+    report = contract.get("report_contract") or {}
+    if str(envelope.get("format")) != str(report.get("format")):
+        violations.add("wrong_format")
+    for field in report.get("required_fields", []):
+        if field not in envelope:
+            violations.add(f"missing_required_field:{field}")
+    run = envelope.get("run") or {}
+    terminal = report.get("terminal_states") or []
+    if str(run.get("terminal_state")) not in terminal:
+        violations.add("invalid_terminal_state")
+    # expected_snapshot identity block.
+    snapshot = envelope.get("expected_snapshot") or {}
+    if not isinstance(snapshot, dict):
+        violations.add("missing_snapshot_block")
+    else:
+        for field in report.get("snapshot_required_fields", []):
+            if field not in snapshot:
+                violations.add(f"missing_snapshot_field:{field}")
+    # run.budget fields.
+    budget = run.get("budget") or {}
+    if not isinstance(budget, dict):
+        violations.add("missing_budget_block")
+    else:
+        for field in report.get("budget_required_fields", []):
+            if field not in budget:
+                violations.add(f"missing_budget_field:{field}")
+    # Identity blocks: run.expected_identity / run.actual_identity and
+    # run.bundle.expected_identity must carry semantic identity.
+    identity_blocks = [run.get("expected_identity"), run.get("actual_identity")]
+    bundle = run.get("bundle") or {}
+    if isinstance(bundle, dict):
+        identity_blocks.append(bundle.get("expected_identity"))
+    for block in identity_blocks:
+        if not isinstance(block, dict):
+            violations.add("missing_identity_block")
+            continue
+        for field in report.get("identity_required_fields", []):
+            if field not in block:
+                violations.add(f"missing_identity_field:{field}")
+    # Evidence entries: each must carry query + result_ref.
+    evidence = bundle.get("evidence") if isinstance(bundle, dict) else None
+    if not isinstance(evidence, list) or not evidence:
+        violations.add("missing_evidence_entries")
+    else:
+        for entry in evidence:
+            if not isinstance(entry, dict):
+                violations.add("missing_evidence_fields")
+                continue
+            for field in report.get("evidence_required_fields", []):
+                if field not in entry:
+                    violations.add(f"missing_evidence_field:{field}")
+        # result_records 1:1 with evidence (R087 honesty).
+        records = envelope.get("result_records")
+        if not isinstance(records, list) or not records:
+            violations.add("missing_result_records")
+        elif len(records) != len(evidence):
+            violations.add("result_evidence_mismatch")
+        else:
+            for record in records:
+                if not isinstance(record, dict) or "query" not in record:
+                    violations.add("missing_result_query")
+                    break
+    # D127 lock: import_eligible must be absent at any nesting depth.
+    if _deep_has_key(envelope, "import_eligible"):
+        violations.add("import_eligible_present")
+    return violations
+
+
 class TrajectoryService:
     """Builds a trajectory report by orchestrating domain + ports."""
 
@@ -858,6 +962,14 @@ class TrajectoryService:
         # revision/section grounding, typed representation and source span
         # with D127 locks (M400 S05 T01).
         drift_flags.extend(self._check_equation_context_coverage())
+
+        # PIR-017/PIR-021: read-only agent plane contract — committed
+        # genuine positive/negative v1 envelopes keep the verified read-only
+        # agent loop enforced: Python validates structure only (D275 / D273 /
+        # MEM885), digest math stays in Rust `da agent-run verify` (pinned by
+        # read_only_agent_contract_verify_test.rs), and D127 stays locked
+        # (no import_eligible key anywhere in the envelope).
+        drift_flags.extend(self._check_read_only_agent_contract())
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
@@ -1798,6 +1910,95 @@ class TrajectoryService:
             "equation_context_coverage",
             _equation_candidate_violations,
         )
+
+    def _check_read_only_agent_contract(self) -> list[DriftFlag]:
+        """Evaluate the data-driven read-only agent plane contract (PIR-017/021).
+
+        Reads `scripts/governor/checks/read_only_agent_contract.yaml` (DATA)
+        and validates the committed genuine positive/negative v1 envelopes
+        produced by `da agent-run verify` (M401 S05 T01): Python checks
+        envelope *structure* only (D275 / D273 / MEM885) — format, required
+        fields, terminal-state vocabulary, snapshot/identity/budget/evidence
+        blocks, result_records 1:1 with evidence, and the D127 lock
+        (`import_eligible` absent) — while digest math (plan -> identity ->
+        evidence -> claims -> verification -> result_ref) stays in Rust and
+        is pinned by
+        `crates/da-cli/tests/read_only_agent_contract_verify_test.rs` (exit
+        0 PASS / exit 3 FAIL). The negative fixture is a *structurally
+        valid* v1 envelope with a tampered raw row, so Python must stay
+        clean and only the Rust verifier FAILs (exit 3).
+        `_candidate_contract_flags` is deliberately NOT reused: it expects a
+        JSON *array* of labelled candidate records, while each fixture here
+        is a single envelope *object*. The Rust enforcement points must keep
+        the named verify / evidence-chain / read-plane / serve-graph / FSM
+        markers.
+        """
+        path = self.root / "scripts/governor/checks/read_only_agent_contract.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="read_only_agent_contract_invalid",
+                severity="high",
+                evidence=f"cannot load {path}: {error}",
+                dimension="agent_read_plane",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "agent_read_plane"))
+        severity = str(contract.get("severity", "high"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        # Fixtures: BOTH the positive (genuine, Rust PASS exit 0) and the
+        # negative (tampered raw row, Rust FAIL exit 3) envelope must be
+        # structurally clean v1 objects. `_candidate_contract_flags` is NOT
+        # reused — it expects a JSON *array* of labelled candidate records,
+        # while each fixture here is a single envelope *object*.
+        for kind, spec in ((contract.get("fixtures") or {}).items()):
+            fixture_path = self.root / str(spec.get("path", ""))
+            if not fixture_path.is_file():
+                _flag("read_only_agent_contract_fixture_missing",
+                      f"{kind} fixture missing: {fixture_path}")
+                continue
+            try:
+                envelope = json.loads(fixture_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                _flag("read_only_agent_contract_fixture_invalid",
+                      f"{kind} fixture unreadable: {error}")
+                continue
+            if not isinstance(envelope, dict):
+                _flag("read_only_agent_contract_fixture_invalid",
+                      f"{kind} fixture must be a single envelope object "
+                      f"(not an array): {type(envelope).__name__}")
+                continue
+            violations = _read_only_agent_envelope_violations(envelope, contract)
+            # D127 string-level lock, mirroring the Rust verifier guard
+            # `!json.contains("import_eligible")` (da-cli/src/agent_run.rs).
+            if "import_eligible" in fixture_path.read_text(encoding="utf-8"):
+                violations.add("import_eligible_present")
+            if violations:
+                _flag("read_only_agent_contract_broken",
+                      f"{kind} fixture {spec.get('id')} must be structurally clean, "
+                      f"got violations: {sorted(violations)}")
+
+        # Source markers: the Rust enforcement points must stay present.
+        for marker_key, entry in (contract.get("source_markers") or {}).items():
+            marker_path = self.root / str(entry.get("path", ""))
+            if not marker_path.is_file():
+                _flag("read_only_agent_contract_source_marker_missing",
+                      f"{marker_key} source missing: {marker_path}")
+                continue
+            text = marker_path.read_text(errors="replace")
+            missing = [p for p in entry.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag("read_only_agent_contract_source_marker_missing",
+                      f"{marker_key} source missing enforcement markers: {missing}")
+        return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:
         """Require valuable pipeline logs without leaking transport into core layers."""
