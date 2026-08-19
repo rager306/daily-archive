@@ -1,5 +1,31 @@
 # Changelog
 
+### MiniMax settings cut (subscription cancelled)
+
+- Removed `MINIMAX_*` keys and shared-key notes from `.env.example`.
+  Product LLM roles remain in `models.yaml` via local 9router only.
+- Dropped direct `api.minimax.io` models and MiniMax-only bindings from
+  `models.yaml`. Quality summary now resolves to `xai/grok-code-fast-1`
+  (same as fallback). Eval policy `data/prompt_eval/inference.yaml` uses
+  `prompt-eval-summary-agnes`.
+- `AnthropicLlmClient::from_env` no longer defaults to MiniMax URL/model.
+  Adapter is still unused by `da summarize` / figure production.
+- Registry tests no longer assert MiniMax bindings; non-ninerouter override
+  rejection is covered by an in-memory anthropic fixture.
+
+### MiniMax settings cut (subscription cancelled)
+
+- Removed `MINIMAX_*` keys and shared-key notes from `.env.example`.
+  Product LLM roles remain in `models.yaml` via local 9router only.
+- Dropped direct `api.minimax.io` models and MiniMax-only bindings from
+  `models.yaml`. Quality summary now resolves to `xai/grok-code-fast-1`
+  (same as fallback). Eval policy `data/prompt_eval/inference.yaml` uses
+  `prompt-eval-summary-agnes`.
+- `AnthropicLlmClient::from_env` no longer defaults to MiniMax URL/model.
+  Adapter is still unused by `da summarize` / figure production.
+- Registry tests no longer assert MiniMax bindings; non-ninerouter override
+  rejection is covered by an in-memory anthropic fixture.
+
 ### M401 S04 durable agent CLI journey (R095, da-cli half)
 
 - Public evidence-chain verifier (T01): the four digest functions

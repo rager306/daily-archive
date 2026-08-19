@@ -1,6 +1,6 @@
 # Models Registry
 #
-# Canonical source of truth for MiniMax model paths and helper bindings.
+# Canonical source of truth for 9router model paths and helper bindings.
 # Used by M049 (models registry), M050 (LLM helper v2 worker pool), and
 # downstream Track A milestones.
 #
@@ -14,40 +14,12 @@
 #   policy_version:  semver of the calling-side policy; bump on behavior changes
 #
 # Validation: cargo test -p da-adapters --lib model_registry (strict typed Rust loader).
-# Last updated: summary-eval 10-paper roles (agnes default fast; M2.7 quality;
-#               grok fallback) via local 9router OpenAI-compatible path.
+# Last updated: MiniMax subscription cancelled; quality/fallback both grok via
+#               local 9router OpenAI-compatible path. No api.minimax.io entries.
 
 schema_version: "v0.1"
 
 models:
-  - id: minimax-m3-512k-anthropic
-    provider: anthropic
-    endpoint: https://api.minimax.io/anthropic/v1/messages
-    model_name: MiniMax-M3-512k
-    tool_version: 2026-05-15
-    policy_version: m049-v0.1
-
-  - id: minimax-m3-openai
-    provider: openai
-    endpoint: https://api.minimax.io/v1/chat/completions
-    model_name: MiniMax-M3
-    tool_version: 2026-05-15
-    policy_version: m049-v0.1
-
-  - id: minimax-m27-highspeed-anthropic
-    provider: anthropic
-    endpoint: https://api.minimax.io/anthropic/v1/messages
-    model_name: MiniMax-M2.7-highspeed
-    tool_version: 2026-05-15
-    policy_version: m060g-v0.1
-
-  - id: minimax-m3-multimodal-anthropic
-    provider: anthropic
-    endpoint: https://api.minimax.io/anthropic/v1/messages
-    model_name: MiniMax-M3
-    tool_version: 2026-05-15
-    policy_version: m060g-v0.1
-
   # --- Local 9router (OpenAI-compatible) — primary LLM surface ---
   # Base: NINEROUTER_URL=http://127.0.0.1:20128  (env may override host/port)
   - id: ninerouter-agnes-2-0-flash-openai
@@ -87,20 +59,6 @@ models:
     tool_version: 2026-07-24
     policy_version: summary-roles-v0.1
 
-  - id: ninerouter-minimax-m27-highspeed-openai
-    provider: openai
-    endpoint: http://127.0.0.1:20128/v1/chat/completions
-    model_name: minimax/MiniMax-M2.7-highspeed
-    tool_version: 2026-07-22
-    policy_version: summary-roles-v0.1
-
-  - id: ninerouter-minimax-m3-openai
-    provider: openai
-    endpoint: http://127.0.0.1:20128/v1/chat/completions
-    model_name: minimax/MiniMax-M3
-    tool_version: 2026-08-12
-    policy_version: prompt-eval-v0.1
-
   - id: ninerouter-grok-code-fast-1-openai
     provider: openai
     endpoint: http://127.0.0.1:20128/v1/chat/completions
@@ -132,63 +90,33 @@ models:
 bindings:
   # bindings map a usage purpose to a model id
   # used by M050 worker pool and downstream helper code
-  - binding_id: article-artifact-classify
-    model_id: minimax-m3-512k-anthropic
-    description: "Bounded structured classification of paper artifacts (R051 helper)"
-
-  - binding_id: article-evidence-summarize
-    model_id: minimax-m3-512k-anthropic
-    description: "Diagnostic-only evidence summarization, no promotion authority"
-
-  - binding_id: rlm-trajectory-capture
-    model_id: minimax-m3-512k-anthropic
-    description: "RLM trajectory capture with deterministic work_id (M052)"
-
   - binding_id: figure-qa-primary
     model_id: ninerouter-qwen3-vl-235b-openai
     description: "Primary figure analysis model via 9router OpenAI-compatible multimodal route"
 
-  - binding_id: prompt-eval-summary-minimax-m3
-    model_id: ninerouter-minimax-m3-openai
-    description: "Evaluation-only summary baseline/candidate binding via exact 9router minimax/MiniMax-M3"
-
-  - binding_id: prompt-eval-figure-minimax-m3
-    model_id: ninerouter-minimax-m3-openai
-    description: "Evaluation-only visual baseline/candidate binding via exact 9router minimax/MiniMax-M3"
-
   - binding_id: figure-qa-luna
     model_id: ninerouter-luna-openai
     description: "Figure analysis via cx/gpt-5.6-luna (fast vision, structured JSON)"
+
   - binding_id: prompt-eval-summary-agnes
     model_id: ninerouter-agnes-2-0-flash-openai
     description: "Evaluation-only summary binding via agnes-ai/agnes-2.0-flash (production summary route)"
-
-  - binding_id: prompt-eval-summary-minimax-m27
-    model_id: ninerouter-minimax-m27-highspeed-openai
-    description: "Evaluation-only summary binding via minimax/MiniMax-M2.7-highspeed (non-vision)"
 
   - binding_id: prompt-eval-figure-qwen-vl
     model_id: ninerouter-qwen3-vl-235b-openai
     description: "Evaluation-only figure binding via novita/qwen3-vl-235b (production figure route)"
 
-  - binding_id: figure-qa-judge-fast
-    model_id: minimax-m27-highspeed-anthropic
-    description: "Diagnostic-only figure QA judge fast path using MiniMax-M2.7-highspeed"
-
-  - binding_id: figure-qa-judge-quality
-    model_id: minimax-m3-multimodal-anthropic
-    description: "Diagnostic-only figure QA judge quality path using MiniMax-M3 multimodal"
-
   # --- Paper summary roles (10-paper eval; optional ETL stage, import_eligible=false) ---
-  # Default NOW: agnes for tests + fast volume. Quality = MiniMax M2.7 (subscription).
-  # Fallback = grok-code-fast-1. DSPy prompt/program optimization on agnes: later check.
+  # Default: agnes for tests + fast volume. Quality and fallback share grok
+  # after MiniMax subscription cancellation. Distinct binding IDs stay so
+  # later same-n eval can retarget quality without renaming product routes.
   - binding_id: paper-summary-generate-default
     model_id: ninerouter-agnes-2-0-flash-openai
     description: "Default paper summary generator for tests and fast volume (agnes-2.0-flash via 9router)"
 
   - binding_id: paper-summary-generate-quality
-    model_id: ninerouter-minimax-m27-highspeed-openai
-    description: "Quality paper summary generator (minimax/MiniMax-M2.7-highspeed via 9router; operator subscription)"
+    model_id: ninerouter-grok-code-fast-1-openai
+    description: "Quality paper summary generator (xai/grok-code-fast-1 via 9router; MiniMax subscription cancelled)"
 
   - binding_id: paper-summary-generate-fallback
     model_id: ninerouter-grok-code-fast-1-openai

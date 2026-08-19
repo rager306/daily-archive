@@ -190,37 +190,10 @@ mod tests {
         assert_eq!(d.model_name, "agnes-ai/agnes-2.0-flash");
         assert_eq!(d.endpoint, "http://127.0.0.1:20128/v1/chat/completions");
         assert_eq!(
-            r.resolve(
-                "prompt-eval-summary-minimax-m3",
-                Some("http://127.0.0.1:20128")
-            )
-            .unwrap()
-            .model_name,
-            "minimax/MiniMax-M3"
-        );
-        assert_eq!(
-            r.resolve(
-                "prompt-eval-figure-minimax-m3",
-                Some("http://127.0.0.1:20128")
-            )
-            .unwrap()
-            .model_name,
-            "minimax/MiniMax-M3"
-        );
-        assert_eq!(
             r.resolve("prompt-eval-summary-agnes", Some("http://127.0.0.1:20128"))
                 .unwrap()
                 .model_name,
             "agnes-ai/agnes-2.0-flash"
-        );
-        assert_eq!(
-            r.resolve(
-                "prompt-eval-summary-minimax-m27",
-                Some("http://127.0.0.1:20128")
-            )
-            .unwrap()
-            .model_name,
-            "minimax/MiniMax-M2.7-highspeed"
         );
         assert_eq!(
             r.resolve("prompt-eval-figure-qwen-vl", Some("http://127.0.0.1:20128"))
@@ -228,6 +201,10 @@ mod tests {
                 .model_name,
             "novita/qwen/qwen3-vl-235b-a22b-instruct"
         );
+        let quality = r.resolve("paper-summary-generate-quality", None).unwrap();
+        let fallback = r.resolve("paper-summary-generate-fallback", None).unwrap();
+        assert_eq!(quality.model_name, "xai/grok-code-fast-1");
+        assert_eq!(fallback.model_name, "xai/grok-code-fast-1");
         for id in [
             "paper-summary-generate-quality",
             "paper-summary-generate-fallback",
@@ -246,8 +223,26 @@ mod tests {
             r.resolve("paper-summary-generate-default", Some("http://example.com"))
                 .is_err()
         );
+        let isolated = ModelRegistry {
+            schema_version: "v0.1".into(),
+            models: vec![ModelRecord {
+                id: "direct-anthropic-fixture".into(),
+                provider: "anthropic".into(),
+                endpoint: "https://api.anthropic.com/v1/messages".into(),
+                model_name: "claude-sonnet-4-5".into(),
+                tool_version: "2026-05-15".into(),
+                policy_version: "test-v0.1".into(),
+            }],
+            bindings: vec![ModelBinding {
+                binding_id: "direct-anthropic-classify".into(),
+                model_id: "direct-anthropic-fixture".into(),
+                description: "In-memory non-ninerouter binding for override rejection".into(),
+            }],
+        };
+        isolated.validate().unwrap();
         assert!(
-            r.resolve("article-artifact-classify", Some("https://proxy.example"))
+            isolated
+                .resolve("direct-anthropic-classify", Some("https://proxy.example"))
                 .is_err()
         );
     }

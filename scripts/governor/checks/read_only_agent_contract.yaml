@@ -1,0 +1,72 @@
+# Read-only agent plane contract — PIR-017 / PIR-021 / R095 / ADR-061, M401 S05.
+#
+# DATA for the Governor `read_only_agent_contract` check. Python validates
+# envelope *structure* only (D275 / D273 / MEM885): field presence,
+# terminal_state vocabulary, identity block, 1:1 evidence↔result_records,
+# and the D127 lock (`import_eligible` must be absent). Digest math
+# (plan → identity → evidence → claims → verification → result_ref) stays
+# in Rust `da agent-run verify` and is pinned by
+# `crates/da-cli/tests/read_only_agent_contract_verify_test.rs`.
+#
+#   - positive: genuine v1 envelope that Rust verify PASSes (exit 0).
+#     Python must also treat it as structurally clean.
+#   - negative: same envelope with a tampered raw row (2→99) so
+#     `result_ref` mismatches. Structurally still a valid v1 envelope —
+#     Python stays clean; Rust verify FAILs (exit 3). Do not reuse
+#     `_candidate_contract_flags` (that helper expects a JSON array of
+#     labelled candidate records).
+#
+# This is DATA — tightening an expectation is an edit here (plus the
+# committed fixture JSON), not a digest recompute in Python.
+
+schema_version: read-only-agent-contract.v1
+policy_id: read-only-agent-contract
+dimension: agent_read_plane
+severity: high
+anchor: "PIR-017, PIR-021, R095, ADR-061, D127, D273, D275"
+
+report_contract:
+  format: da.agent-run.report.v1
+  required_fields: [format, plan, expected_snapshot, run, result_records]
+  terminal_states: [verified, failed_visible]
+  snapshot_required_fields: [semantic_hex, tenant, nodes, edges]
+  identity_required_fields: [semantic_digest, tenant, nodes, edges]
+  budget_required_fields:
+    [max_queries, max_evidence_entries, max_synthesis_chars]
+  evidence_required_fields: [query, result_ref]
+  forbidden_keys: [import_eligible]
+
+fixtures:
+  positive:
+    id: agent_run_verified
+    path: data/read_only_agent_contract/agent_run_verified.positive.json
+    expect: structurally_clean
+  negative:
+    id: agent_run_tampered
+    path: data/read_only_agent_contract/agent_run_tampered.negative.json
+    expect: structurally_clean_digest_fail_in_rust
+
+source_markers:
+  verify_report:
+    path: crates/da-cli/src/agent_run.rs
+    required_patterns:
+      - "fn verify_report"
+      - "import_eligible"
+  evidence_chain:
+    path: crates/da-application/src/agent_run.rs
+    required_patterns:
+      - "fn verify_run_evidence_chain"
+  read_plane:
+    path: crates/kg-storage/src/read_only_server.rs
+    required_patterns:
+      - "fn command_disposition"
+      - "GRAPH.RO_QUERY"
+  serve_graph:
+    path: crates/da-cli/src/serve_graph.rs
+    required_patterns:
+      - "No vendor RespServer"
+      - "GRAPH.RO_QUERY"
+  agent_fsm:
+    path: crates/da-domain/src/agent.rs
+    required_patterns:
+      - "FailedVisible"

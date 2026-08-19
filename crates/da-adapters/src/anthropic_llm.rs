@@ -1,4 +1,4 @@
-//! Anthropic-compatible LLM client adapter (MiniMax, Claude, etc.)
+//! Anthropic-compatible LLM client adapter (Claude and compatible gateways).
 //!
 //! Implements `da_ports::LLMClient` via Anthropic Messages API.
 //! Used for: summary generation (ADR-053 Layer B), structured extraction,
@@ -6,8 +6,11 @@
 //!
 //! Configuration via env:
 //! - `ANTHROPIC_API_KEY`: API key
-//! - `ANTHROPIC_BASE_URL`: API endpoint (default: MiniMax Anthropic-compatible)
-//! - `ANTHROPIC_MODEL`: model name (default: MiniMax-M2.7-highspeed)
+//! - `ANTHROPIC_BASE_URL`: API endpoint (default: api.anthropic.com)
+//! - `ANTHROPIC_MODEL`: model name (default: claude-sonnet-4-5)
+//!
+//! Product summary/figure routes resolve through `models.yaml` + 9router.
+//! This adapter is not constructed by `da summarize` / figure production.
 
 use async_trait::async_trait;
 use da_ports::llm_client::{
@@ -15,7 +18,7 @@ use da_ports::llm_client::{
 };
 use serde::Deserialize;
 
-/// Anthropic-compatible LLM client (MiniMax, Claude, etc.)
+/// Anthropic-compatible LLM client (Claude and compatible gateways).
 pub struct AnthropicLlmClient {
     client: reqwest::Client,
     api_key: String,
@@ -47,13 +50,13 @@ struct AnthropicUsage {
 }
 
 impl AnthropicLlmClient {
-    /// Create from env vars. Falls back to MiniMax defaults.
+    /// Create from env vars. Falls back to Anthropic public defaults.
     pub fn from_env() -> Self {
         let api_key = std::env::var("ANTHROPIC_API_KEY").unwrap_or_default();
         let base_url = std::env::var("ANTHROPIC_BASE_URL")
-            .unwrap_or_else(|_| "https://api.minimax.io/anthropic".to_string());
-        let model = std::env::var("ANTHROPIC_MODEL")
-            .unwrap_or_else(|_| "MiniMax-M2.7-highspeed".to_string());
+            .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
+        let model =
+            std::env::var("ANTHROPIC_MODEL").unwrap_or_else(|_| "claude-sonnet-4-5".to_string());
         Self {
             client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(300))

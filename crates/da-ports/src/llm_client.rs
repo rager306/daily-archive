@@ -49,7 +49,7 @@ pub struct ChatResponse {
 }
 
 /// LLM client port.
-/// 9router (OpenAI-compatible) and MiniMax (Anthropic-compatible) implement this.
+/// 9router (OpenAI-compatible) and Anthropic-compatible adapters implement this.
 #[async_trait]
 pub trait LLMClient: Send + Sync {
     async fn chat(&self, messages: &[ChatMessage], opts: &ChatOptions) -> LLMResult<ChatResponse>;
