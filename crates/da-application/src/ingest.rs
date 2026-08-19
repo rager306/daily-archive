@@ -1105,7 +1105,7 @@ impl IngestUseCase {
     }
 }
 
-fn embedding_fingerprint(vector: &[f32]) -> String {
+pub fn embedding_fingerprint(vector: &[f32]) -> String {
     let mut hasher = Sha256::new();
     hasher.update((vector.len() as u64).to_le_bytes());
     for value in vector {

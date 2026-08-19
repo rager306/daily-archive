@@ -1,5 +1,33 @@
 # Changelog
 
+### M404 Operator journey path in da load (R096)
+
+- New `crates/da-cli/src/load_journey.rs` composition root: `run_journey_content`
+  drives the canonical article journey (M403 `ArticleJourneyComposition`)
+  through `PipelineOrchestrator` with the REAL production executors behind
+  injectable `JourneyPorts` (GROBID parser, rule extractor, FD embedder — no
+  new env keys). The parse stage keeps the **load-v1 fingerprint contract**
+  (`da_adapters::GrobidParser@load-v1` + profile + `ParsedArticle.v1`), so
+  the operator's existing content-addressed parse cache keeps hitting.
+- Stage payloads are recovered by reconstructing the exact orchestrator
+  cache keys from the run report — the orchestrator stays the single writer.
+- Embedding vector attach replicates the legacy `embedding_sha256`
+  idempotence guard (`da_application::embedding_fingerprint`, now public):
+  same sha is a no-op, different sha fails closed.
+- `da load --journey` (opt-in, default off) routes single-locator content
+  through the journey. Fails closed on HTML primaries, versionless sources,
+  `--no-cache`, and `--enable-import` (the orchestrated path keeps D127
+  locked). Embed credentials gate mirrors ingest (M321). Journey summary is
+  a structured `da_load_journey_completed` event (ADR-052).
+- Integration proof `crates/da-cli/tests/load_journey_test.rs`: fake ports
+  over real Samyama + real `FilePipelineCache` in a tempdir: first run
+  materializes Paper/Sections/Entities and stamps the vector; identical
+  replay = [cache_hit, executed, cache_hit, executed, cache_hit] with zero
+  duplicate nodes; LoadCacheRecord statuses hit/bypass are honest; D127
+  scans clean.
+- Governor pins the journey module and CLI markers. D127 remains locked;
+  optimizer auto-promotion remains disabled.
+
 ### M403 Canonical article journey through orchestrator (R096)
 
 - `StageIdRegistry::cache_mode` resolves the ledger cache mode after alias

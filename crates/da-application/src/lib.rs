@@ -36,7 +36,7 @@ pub use catalog_reconcile::CatalogReconcileUseCase;
 pub use extraction_materialization_stage::{
     ExtractionMaterializationReport, ExtractionMaterializationStage,
 };
-pub use ingest::IngestUseCase;
+pub use ingest::{IngestUseCase, embedding_fingerprint};
 pub use pipeline::{
     ArticleJourneyComposition, MultimodalComposition, MultimodalFingerprintSummary,
     PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,

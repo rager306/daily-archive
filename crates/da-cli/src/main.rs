@@ -9,6 +9,7 @@ mod graph_ping;
 mod graph_query;
 mod health_report;
 mod load;
+mod load_journey;
 // The lib target exposes this module as public API and its tests exercise the
 // production composition; the duplicate bin-module compilation does not call
 // every public composition constructor directly.

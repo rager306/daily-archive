@@ -8,6 +8,7 @@ pub mod gold_graph;
 pub mod graph_tasks;
 pub mod health_report;
 pub mod load;
+pub mod load_journey;
 pub mod logging;
 pub mod materialization_progress;
 pub mod production;

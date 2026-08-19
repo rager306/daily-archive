@@ -103,6 +103,13 @@ pub struct LoadArgs {
     /// When omitted, current wall clock is used.
     #[arg(long)]
     pub materialization_time: Option<String>,
+
+    /// Run the content stages through the canonical article journey
+    /// (PipelineOrchestrator with ACAP gating, cache-honest compute and
+    /// always-run idempotent materialization). Opt-in while soaking; the
+    /// default path is unchanged. Requires a revision-bound PDF source.
+    #[arg(long, default_value_t = false)]
+    pub journey: bool,
 }
 
 /// Content pipeline with optional shared process-local store (hub batch).
@@ -119,6 +126,100 @@ struct CliContentPipeline {
     /// DATA-governed navigation noise titles for honest conservation
     /// observations (context_conservation_policy.yaml).
     navigation_noise_titles: BTreeSet<String>,
+    /// Journey mode ports (M404): when set, run_content routes through the
+    /// canonical orchestrated article journey instead of the inline stages.
+    journey: Option<crate::load_journey::JourneyPorts>,
+}
+
+impl CliContentPipeline {
+    /// Journey-mode content branch (M404 S02): route the request through the
+    /// canonical orchestrated article journey. Fails closed on HTML primaries,
+    /// versionless sources, missing cache, and D127 unlock attempts — the
+    /// orchestrated path keeps import locked.
+    async fn run_content_journey(
+        &self,
+        req: LoadContentRequest<'_>,
+    ) -> Result<LoadContentOutcome, String> {
+        let Some(ports) = &self.journey else {
+            return Err("journey ports missing".into());
+        };
+        if req.enable_import {
+            return Err(
+                "journey mode keeps D127 locked; --enable-import is not available on the orchestrated path"
+                    .into(),
+            );
+        }
+        let is_html = req
+            .primary_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
+        if is_html {
+            return Err(
+                "journey mode requires a PDF primary asset; use the default path for HTML sources"
+                    .into(),
+            );
+        }
+        let Some(revision_context) = revision_context_from_load(&req)? else {
+            return Err(
+                "journey mode requires a revision-bound catalog asset (versioned arXiv or classified context); use the default path for versionless sources"
+                    .into(),
+            );
+        };
+        let Some(cache) = self.cache.clone() else {
+            return Err("journey mode requires the pipeline cache; remove --no-cache".into());
+        };
+        let source = source_identity_for_assets(req.paper_id, req.primary_path, false, req.assets)?;
+        let primary_path = req.primary_path.display().to_string();
+        let source_code =
+            infer_source_code(&primary_path).unwrap_or_else(|| req.source_code.to_string());
+        let (mut outcome, report) = crate::load_journey::run_journey_content(
+            ports,
+            &self.store,
+            cache,
+            self.clock.clone(),
+            self.stage_registry.clone(),
+            req.paper_id,
+            req.primary_path,
+            source,
+            &source_code,
+            revision_context.revision,
+            revision_context.manifestations,
+        )
+        .await?;
+        let hits = report
+            .stages
+            .iter()
+            .filter(|record| {
+                matches!(
+                    record.disposition,
+                    da_application::StageDisposition::CacheHit { .. }
+                )
+            })
+            .count();
+        tracing::info!(
+            article_id = req.paper_id,
+            pipeline_id = %report.pipeline_id,
+            stages = report.stages.len(),
+            cache_hits = hits,
+            completed = report.completed,
+            event = "da_load_journey_completed"
+        );
+        if self.export_per_unit
+            && let Some(out) = req.snapshot_output
+        {
+            if let Some(parent) = out.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let bytes = GraphStore::export_snapshot(self.store.as_ref())
+                .await
+                .map_err(|e| format!("export snapshot: {e}"))?;
+            std::fs::write(out, &bytes)
+                .map_err(|e| format!("write snapshot {}: {e}", out.display()))?;
+            outcome.ingest.snapshot_path = Some(out.display().to_string());
+        }
+        Ok(outcome)
+    }
 }
 
 #[async_trait::async_trait]
@@ -129,6 +230,9 @@ impl LoadContentPipeline for CliContentPipeline {
                 "primary asset missing: {}",
                 req.primary_path.display()
             ));
+        }
+        if self.journey.is_some() {
+            return self.run_content_journey(req).await;
         }
         self.stage_registry.parse_canonical("parse")?;
         self.stage_registry.parse_canonical("embedding")?;
@@ -933,6 +1037,14 @@ fn make_content_pipeline(
         clock: context.clock,
         stage_registry: context.stage_registry,
         navigation_noise_titles: load_policy_noise_titles()?,
+        journey: if args.journey {
+            // Parity with the ingest embed gate (M321): the journey embedding
+            // stage needs FD_API credentials on cache misses.
+            require_embed_credentials()?;
+            Some(crate::load_journey::JourneyPorts::from_env())
+        } else {
+            None
+        },
     })
 }
 
@@ -2072,6 +2184,7 @@ mod tests {
             cache_root: PathBuf::from("artifacts/pipeline_cache"),
             no_cache: false,
             materialization_time: None,
+            journey: false,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(
