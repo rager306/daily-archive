@@ -181,14 +181,30 @@ source_markers:
       - "StageIdRegistry"
       - "acap_layer"
       - "fn acap_layer"
+      - "fn cache_mode"
       - "cannot declare FailedVisible as acap_layer"
   admission_orchestrator:
     path: crates/da-application/src/pipeline.rs
     required_patterns:
       - "stage_registry"
       - ".acap_layer("
+      - "pipeline_stage_graph_materialize_rerun_over_cached_report"
+      - "ArticleJourneyComposition"
     forbidden_patterns:
       - "fn acap_state_for_stage"
+  article_journey:
+    path: crates/da-application/tests/article_journey_test.rs
+    required_patterns:
+      - "ArticleJourneyComposition"
+      - "GraphMaterialize"
+      - "cache_hit"
+      - "import_eligible = true"
+  materialization_stages:
+    path: crates/da-application/src/extraction_materialization_stage.rs
+    required_patterns:
+      - "always-run-idempotent"
+      - "import_eligible"
+      - "materializer_only"
   pipeline_ledger_yaml:
     path: data/ontology/pipeline_stage_contracts.yaml
     required_patterns:

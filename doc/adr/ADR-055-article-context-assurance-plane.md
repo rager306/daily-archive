@@ -150,6 +150,13 @@ Every cache key binds source checksum, dependency output checksums, implementati
 
 Cache records are immutable evidence. Changed vectors or graph facts require an explicit rebuild/upsert path; stale duplication is forbidden.
 
+**M403 refinement (runtime enforcement):** a stage whose ledger `cache_mode`
+is `graph_materialize` never accepts a cache hit as a skip. The cached report
+is lineage evidence only; the orchestrator downgrades the hit and re-executes
+the idempotent materializer so graph content survives a reset store
+(`pipeline_stage_graph_materialize_rerun_over_cached_report`). Compute stages
+(`pure_compute`) remain ordinary cache hits.
+
 ## Meta and prompt system
 
 Prompts are versioned data, not ad hoc strings embedded in use cases. A prompt registry entry declares:
@@ -391,6 +398,13 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
     spine. Orchestrator lookup is registry-only. Residuals above stay
     `no_claim` until honest enrich/finalize ledger stages exist. D127 and
     optimizer locks unchanged.
+13. **M403 canonical article journey delivered.** `StageIdRegistry` exposes
+    ledger `cache_mode`; graph-materialize stages always re-execute over their
+    cached reports. Real `RevisionMaterializationStage` and
+    `ExtractionMaterializationStage` executors wrap the existing use cases.
+    `ArticleJourneyComposition` composes parse → revision → extract →
+    materialize → embed; a same-process real-Samyama journey proves first-run
+    writes, replay with zero duplicate nodes and D127 false.
 
 ## LLM Reading Notes
 

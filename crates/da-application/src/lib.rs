@@ -9,10 +9,12 @@ pub mod article_load;
 pub mod artifact_stage;
 pub mod assurance;
 pub mod catalog_reconcile;
+pub mod extraction_materialization_stage;
 pub mod ingest;
 pub mod pipeline;
 pub mod revision_classification;
 pub mod revision_materialization;
+pub mod revision_materialization_stage;
 pub mod revision_query;
 pub mod revision_readiness;
 pub mod tex_inspect;
@@ -31,15 +33,22 @@ pub use assurance::{
     MaterializedSectionObservation,
 };
 pub use catalog_reconcile::CatalogReconcileUseCase;
+pub use extraction_materialization_stage::{
+    ExtractionMaterializationReport, ExtractionMaterializationStage,
+};
 pub use ingest::IngestUseCase;
 pub use pipeline::{
-    MultimodalComposition, MultimodalFingerprintSummary, PipelineOrchestrator,
-    PipelineOrchestratorError, PipelineRunReport, StageDisposition, StageRunRecord,
+    ArticleJourneyComposition, MultimodalComposition, MultimodalFingerprintSummary,
+    PipelineOrchestrator, PipelineOrchestratorError, PipelineRunReport, StageDisposition,
+    StageRunRecord,
 };
 pub use revision_classification::{RevisionClassifyError, RevisionClassifyUseCase};
 pub use revision_materialization::{
     RevisionContentContext, RevisionManifestationInput, RevisionMaterializationError,
     RevisionMaterializationRequest, RevisionMaterializationResult, RevisionMaterializationUseCase,
+};
+pub use revision_materialization_stage::{
+    RevisionMaterializationReport, RevisionMaterializationStage,
 };
 pub use revision_query::{
     ArticleRevisionView, RevisionManifestationView, RevisionQueryError, RevisionQueryResponse,

@@ -4,7 +4,9 @@
 //! article-specific effective-input keys and stage outcomes. Concrete parser,
 //! LLM, JAR and filesystem adapters are injected through ports.
 
-use da_domain::{AdmissionDecision, ArticleContextState, StageIdRegistry, admit_stage_transition};
+use da_domain::{
+    AdmissionDecision, ArticleContextState, StageCacheMode, StageIdRegistry, admit_stage_transition,
+};
 use da_ports::clock::Clock;
 use da_ports::pipeline_cache::{
     CacheLookup, PipelineCache, PipelineCacheError, SourceIdentity, StageCacheKey, StageOutcome,
@@ -289,6 +291,32 @@ impl PipelineOrchestrator {
                     (legacy, resolved)
                 }
                 lookup => (lookup, None),
+            };
+
+            // ── Graph-materialize stages always execute (MEM678) ───────────
+            // A cached report for a graph-materialize stage is lineage
+            // evidence, never a substitute for applying idempotent writes: a
+            // persisted cache plus a reset store must not silently skip graph
+            // content. The hit payload is still shape-validated, then the
+            // lookup is downgraded to Miss so the executor re-runs and the
+            // fresh report overwrites the stored one.
+            let stage_cache_mode = self
+                .stage_registry
+                .cache_mode(&canonical_stage_id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+            let lookup = match lookup {
+                CacheLookup::Hit(hit) if stage_cache_mode == StageCacheMode::GraphMaterialize => {
+                    executor.validate_cached_payload(&hit.payload)?;
+                    tracing::info!(
+                        article_id = %source.article_id,
+                        pipeline_id = %pipeline.id,
+                        step = %step.name,
+                        stage = %canonical_stage_id,
+                        event = "pipeline_stage_graph_materialize_rerun_over_cached_report"
+                    );
+                    CacheLookup::Miss
+                }
+                other => other,
             };
 
             match lookup {
@@ -579,7 +607,74 @@ impl MultimodalComposition {
     }
 }
 
-/// Exact cache-identity fingerprint binding for a multimodal production
+/// Canonical article journey topology (M403 S03).
+///
+/// One orchestrated run over the linear article spine: parse →
+/// revision_materialization → extraction_compute → extraction_materialization
+/// → embedding. Every stage id is validated against the DATA registry so alias
+/// smuggling cannot inject a non-canonical stage. Graph-materialize stages
+/// (revision/extraction materialization) always re-execute per the
+/// orchestrator's `cache_mode` semantics; compute stages are cache-honest.
+#[derive(Debug)]
+pub struct ArticleJourneyComposition {
+    pub pipeline_id: String,
+    pub topology: Pipeline,
+    /// Unique canonical stage ids in topology order (deduplicated).
+    pub canonical_stages: Vec<String>,
+}
+
+impl ArticleJourneyComposition {
+    /// Canonical article journey topology validated against the DATA registry.
+    pub fn canonical(
+        stage_registry: &StageIdRegistry,
+        pipeline_id: &str,
+    ) -> Result<Self, PipelineOrchestratorError> {
+        for id in [
+            "parse",
+            "revision_materialization",
+            "extraction_compute",
+            "extraction_materialization",
+            "embedding",
+        ] {
+            stage_registry
+                .parse_canonical(id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        let topology = PipelineBuilder::new(pipeline_id)
+            .step("parse", "parse", &[])
+            .step("revision", "revision_materialization", &["parse"])
+            .step("extract", "extraction_compute", &["parse"])
+            // The materializer consumes the parse payload (graph content
+            // grounding) plus the extraction compute output; step-level
+            // dependency on `parse` supplies it while the ledger keeps the
+            // canonical stage-level dependencies.
+            .step(
+                "materialize",
+                "extraction_materialization",
+                &["revision", "extract", "parse"],
+            )
+            .step("embed", "embedding", &["parse"])
+            .build()
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut canonical_stages = Vec::new();
+        for step in &topology.steps {
+            let canonical = stage_registry
+                .resolve(&step.stage)
+                .map_err(PipelineOrchestratorError::StageIdentity)?
+                .as_str()
+                .to_owned();
+            if seen.insert(canonical.clone()) {
+                canonical_stages.push(canonical);
+            }
+        }
+        Ok(Self {
+            pipeline_id: pipeline_id.to_owned(),
+            topology,
+            canonical_stages,
+        })
+    }
+}
 /// composition (M400 S04 T02). Every field is derived from live stage
 /// contracts and the env/config surfaces that produced them — never a
 /// hardcoded runtime value. The summary makes the effective-input contract of
@@ -1836,6 +1931,62 @@ mod tests {
                 "spine replay must not re-execute stage executors"
             );
         }
+    }
+
+    #[tokio::test]
+    async fn graph_materialize_stage_reruns_over_cached_report_while_compute_stays_hit() {
+        // M403 S01: a GraphMaterialize stage (ledger cache_mode) never accepts
+        // a cache hit as a skip — the idempotent executor re-runs on replay so
+        // graph content survives a reset store, while a PureCompute stage on
+        // the same run stays a plain CacheHit.
+        let cache = Arc::new(MemoryCache::default());
+        let mut graph_stage_contract = stage_contract("revision_materialization", &[]);
+        graph_stage_contract.cache_mode = da_domain::StageCacheMode::GraphMaterialize;
+        graph_stage_contract.graph_truth_boundary = true;
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![stage_contract("parse", &[]), graph_stage_contract],
+            import_eligible: false,
+        };
+        let registry = Arc::new(ledger.registry().unwrap());
+        let parse = Arc::new(FakeStage::success("parse", b"parsed"));
+        let revision = Arc::new(FakeStage::success("revision_materialization", b"report"));
+        let chain = PipelineBuilder::new("graph-rerun")
+            .step("parse", "parse", &[])
+            .step("revision", "revision_materialization", &["parse"])
+            .build()
+            .unwrap();
+        let orchestrator = PipelineOrchestrator::new(cache, clock(), registry)
+            .with_executor("parse", parse.clone())
+            .unwrap()
+            .with_executor("revision_materialization", revision.clone())
+            .unwrap();
+        let first = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(first.completed);
+        assert!(matches!(
+            first.stages[1].disposition,
+            StageDisposition::Executed { .. }
+        ));
+        let second = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(second.completed);
+        assert!(matches!(
+            second.stages[0].disposition,
+            StageDisposition::CacheHit { .. }
+        ));
+        assert!(matches!(
+            second.stages[1].disposition,
+            StageDisposition::Executed { .. }
+        ));
+        assert_eq!(
+            parse.calls(),
+            1,
+            "compute stage stays a cache hit on replay"
+        );
+        assert_eq!(
+            revision.calls(),
+            2,
+            "graph-materialize stage re-executes over the cached report"
+        );
     }
 
     #[tokio::test]

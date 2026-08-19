@@ -91,6 +91,7 @@ pub struct StageIdRegistry {
     canonical: BTreeSet<StageId>,
     resolved: BTreeMap<String, StageId>,
     acap_layers: BTreeMap<StageId, ArticleContextState>,
+    cache_modes: BTreeMap<StageId, StageCacheMode>,
 }
 
 impl StageIdRegistry {
@@ -123,15 +124,18 @@ impl StageIdRegistry {
             }
         }
         let mut acap_layers = BTreeMap::new();
+        let mut cache_modes = BTreeMap::new();
         for stage in &ledger.stages {
             if let Some(layer) = stage.acap_layer {
                 acap_layers.insert(StageId(stage.id.clone()), layer);
             }
+            cache_modes.insert(StageId(stage.id.clone()), stage.cache_mode);
         }
         Ok(Self {
             canonical,
             resolved,
             acap_layers,
+            cache_modes,
         })
     }
 
@@ -161,6 +165,18 @@ impl StageIdRegistry {
     pub fn acap_layer(&self, raw: &str) -> Result<Option<ArticleContextState>, String> {
         let id = self.resolve(raw)?;
         Ok(self.acap_layers.get(&id).copied())
+    }
+
+    /// Ledger cache mode declared for `raw` after alias resolve.
+    ///
+    /// Unknown ids error. The ledger requires `cache_mode` on every stage, so
+    /// the lookup is total over known ids.
+    pub fn cache_mode(&self, raw: &str) -> Result<StageCacheMode, String> {
+        let id = self.resolve(raw)?;
+        self.cache_modes
+            .get(&id)
+            .copied()
+            .ok_or_else(|| format!("pipeline stage {raw} declares no cache mode"))
     }
 }
 
@@ -524,6 +540,39 @@ mod tests {
         );
         assert_eq!(registry.acap_layer("readiness").unwrap(), None);
         assert!(registry.acap_layer("missing").is_err());
+    }
+
+    #[test]
+    fn registry_resolves_cache_mode_after_alias() {
+        let mut parse = stage("parse", &[], StageCacheMode::PureCompute, false);
+        parse.aliases = vec!["grobid_parse".into()];
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                parse,
+                stage(
+                    "revision_materialization",
+                    &[],
+                    StageCacheMode::GraphMaterialize,
+                    true,
+                ),
+            ],
+            import_eligible: false,
+        };
+        let registry = ledger.registry().unwrap();
+        assert_eq!(
+            registry.cache_mode("parse").unwrap(),
+            StageCacheMode::PureCompute
+        );
+        assert_eq!(
+            registry.cache_mode("grobid_parse").unwrap(),
+            StageCacheMode::PureCompute
+        );
+        assert_eq!(
+            registry.cache_mode("revision_materialization").unwrap(),
+            StageCacheMode::GraphMaterialize
+        );
+        assert!(registry.cache_mode("missing").is_err());
     }
 
     #[test]

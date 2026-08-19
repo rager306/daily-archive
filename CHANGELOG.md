@@ -1,5 +1,36 @@
 # Changelog
 
+### M403 Canonical article journey through orchestrator (R096)
+
+- `StageIdRegistry::cache_mode` resolves the ledger cache mode after alias
+  resolve. `PipelineOrchestrator` never accepts a cache hit as a skip for
+  `graph_materialize` stages: the hit payload is shape-validated, then the
+  idempotent executor always re-runs and the fresh report overwrites the
+  stored one (`pipeline_stage_graph_materialize_rerun_over_cached_report`).
+  Compute stages stay ordinary cache hits. This closes the reset-store
+  hazard where a persisted cache plus a reset in-memory store would silently
+  skip graph content (MEM678 discipline).
+- Real stage executors: `RevisionMaterializationStage` wraps
+  `RevisionMaterializationUseCase`; `ExtractionMaterializationStage` wraps
+  `ExtractionUseCase::materializer_only` with the canonical
+  `decode_extracted_entities` wire. Payloads are typed serde reports;
+  metadata carries nodes_created/reused and `import_eligible=false`.
+- `ArticleJourneyComposition::canonical` composes parse →
+  revision_materialization → extraction_compute → extraction_materialization
+  → embedding against the DATA registry. Same-process real-Samyama journey
+  test proves: first run materializes Paper/PaperRevision/Sections/Entities
+  with MENTIONS edges; identical replay keeps compute stages CacheHit,
+  materialize stages Executed idempotent, zero duplicate nodes, D127 false
+  everywhere.
+- Multimodal journey test updated to the stricter invariant:
+  `candidate_materialization` (also `graph_materialize` in the ledger)
+  re-executes on replay instead of CacheHit.
+- Governor `acap_runtime_control_plane` pins the new markers: registry
+  `fn cache_mode`, orchestrator rerun event + `ArticleJourneyComposition`,
+  journey test and materialization-stage markers. ADR-055 cache contract
+  records the always-run refinement.
+- D127 remains locked. Optimizer auto-promotion remains disabled.
+
 ### M402 ACAP ledger isomorphism and linear article spine gate (R096, D276)
 
 - DATA binding: optional `acap_layer` on `PipelineStageContract`;

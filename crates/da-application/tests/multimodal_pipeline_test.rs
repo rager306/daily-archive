@@ -567,21 +567,37 @@ async fn canonical_multimodal_journey_proves_admission_cache_materialization_que
     assert!(second.completed);
     assert_eq!(second.stages.len(), 7, "replay must not duplicate records");
     for record in &second.stages {
-        assert!(
-            matches!(record.disposition, StageDisposition::CacheHit { .. }),
-            "replay hits cache for {}",
-            record.stage_id
-        );
+        // M403 S01: graph-materialize stages (candidate_materialization over
+        // the real DATA ledger) always re-execute idempotently — the cached
+        // report is lineage evidence, never a skip. Compute stages stay
+        // plain cache hits.
+        let expected_rerun = record.stage_id == "candidate_materialization";
+        let executed = matches!(record.disposition, StageDisposition::Executed { .. });
+        let cache_hit = matches!(record.disposition, StageDisposition::CacheHit { .. });
+        if expected_rerun {
+            assert!(
+                executed,
+                "graph-materialize stage always re-executes for {}",
+                record.stage_id
+            );
+        } else {
+            assert!(cache_hit, "replay hits cache for {}", record.stage_id);
+        }
         assert!(
             record.cache_key_sha256.is_some(),
-            "replay cache hit carries its durable cache key"
+            "replay record carries its durable cache key"
         );
     }
     for stage in &stages {
+        let expected_calls = if stage.contract.stage_id == "candidate_materialization" {
+            2
+        } else {
+            1
+        };
         assert_eq!(
             stage.calls(),
-            1,
-            "replay must not re-execute {}",
+            expected_calls,
+            "replay call count for {}",
             stage.contract.stage_id
         );
     }
