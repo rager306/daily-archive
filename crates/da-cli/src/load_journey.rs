@@ -36,6 +36,8 @@ use da_adapters::{
     FdApiEmbedder, GrobidParseStage, GrobidParser, GrobidProfile, ParsedArticleEmbeddingStage,
     RuleBasedExtractor, RuleExtractionStage, SamyamaGraphStore,
 };
+use da_application::candidate_materialization_stage::CandidateMaterializationStage;
+use da_application::equation_extraction_stage::EquationExtractionStage;
 use da_application::extraction_materialization_stage::ExtractionMaterializationReport;
 use da_application::extraction_materialization_stage::ExtractionMaterializationStage;
 use da_application::revision_materialization::RevisionManifestationInput;
@@ -153,9 +155,14 @@ pub async fn run_journey_content(
     source_code: &str,
     revision: u32,
     manifestations: Vec<RevisionManifestationInput>,
+    with_equations: bool,
 ) -> Result<(LoadContentOutcome, PipelineRunReport), String> {
-    let journey = ArticleJourneyComposition::canonical(&stage_registry, "da-load-journey")
-        .map_err(|error| error.to_string())?;
+    let journey = if with_equations {
+        ArticleJourneyComposition::with_equations(&stage_registry, "da-load-journey")
+    } else {
+        ArticleJourneyComposition::canonical(&stage_registry, "da-load-journey")
+    }
+    .map_err(|error| error.to_string())?;
 
     let retry_after = (chrono::Utc::now() + chrono::Duration::minutes(10)).to_rfc3339();
     let grobid_profile = ports_profile();
@@ -180,6 +187,19 @@ pub async fn run_journey_content(
     let extraction_stage =
         ExtractionMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
 
+    // M407: the equation branch is pure TEI compute plus candidate-only
+    // graph evidence; revision identity is computable upfront (pure VID), so
+    // the stage contracts stay stable before the run.
+    let revision_vid = da_domain::paper_revision_vid(source_code, paper_id, revision)
+        .map_err(|error| format!("journey revision vid: {error}"))?
+        .to_string();
+    let equation_stage = EquationExtractionStage::new(
+        revision_vid.clone(),
+        source.pdf_sha256.clone().unwrap_or_default(),
+    );
+    let candidate_stage =
+        CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+
     // Snapshot the exact contracts BEFORE the executors move into the
     // orchestrator: these fingerprints reconstruct the cache keys below.
     let parse_contract = parse_stage.contract();
@@ -187,7 +207,7 @@ pub async fn run_journey_content(
     let revision_contract = revision_stage.contract();
     let extraction_contract = extraction_stage.contract();
 
-    let orchestrator =
+    let mut orchestrator =
         PipelineOrchestrator::new(cache.clone(), clock.clone(), stage_registry.clone())
             .with_executor("parse", Arc::new(parse_stage))
             .map_err(|error| error.to_string())?
@@ -199,6 +219,13 @@ pub async fn run_journey_content(
             .map_err(|error| error.to_string())?
             .with_executor("embedding", Arc::new(embed_stage))
             .map_err(|error| error.to_string())?;
+    if with_equations {
+        orchestrator = orchestrator
+            .with_executor("equation_extraction", Arc::new(equation_stage))
+            .map_err(|error| error.to_string())?
+            .with_executor("candidate_materialization", Arc::new(candidate_stage))
+            .map_err(|error| error.to_string())?;
+    }
 
     let report = orchestrator
         .run(&journey.topology, source.clone())

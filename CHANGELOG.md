@@ -1,5 +1,32 @@
 # Changelog
 
+### M407 Equation candidates join the operator journey (R096, R094)
+
+- `EquationExtractionStage` (da-application): pure cacheable compute over
+  the parse payload — every GROBID TEI `ExtractedFormula` becomes a
+  revision-grounded `EquationCandidate` via the M400 conversion. Typed
+  missingness: a parser that never attempted formulas emits an explicit
+  `parser_reported:*` no-claim artifact, never a silent zero. Contract
+  fingerprints rotate with revision identity and source sha. `EquationCandidate`
+  was already serde; a roundtrip test pins the wire (ADR-051 §4.4).
+- `CandidateMaterializationStage`: candidate-only graph-materialize executor
+  over `EquationCandidateMaterializer`. First run creates candidate nodes;
+  identical re-run reports `unchanged` with zero new writes. The figure and
+  table families are typed `not_attempted` rows with explicit deferred
+  reasons — no fabricated candidates (figures need the LLM route; tables
+  need detection-driven visual reconstruction that does not exist as
+  production code).
+- `ArticleJourneyComposition::with_equations` extends the canonical topology
+  (parse → revision → extract → materialize → embed → equations →
+  candidates); `da load --equations` (opt-in, default off) wires the branch.
+  The revision VID is computed upfront (pure `paper_revision_vid`) so stage
+  contracts stay stable before the run.
+- Integration proof: one run materializes revision, entities and equation
+  candidates; replay dispositions
+  `[hit, executed, hit, executed, hit, hit, executed]` with zero duplicate
+  candidates and D127 scans clean. Governor pins both new stage markers.
+  Flagless soaks unchanged. D127 remains locked.
+
 ### M406 Journey becomes the default operator path (R096)
 
 - Second live soak on `2606.11189v1` (39 sections, 729 table cells, 61

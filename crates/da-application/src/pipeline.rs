@@ -624,6 +624,61 @@ pub struct ArticleJourneyComposition {
 }
 
 impl ArticleJourneyComposition {
+    /// Canonical journey plus the equation candidate branch (M407 S03):
+    /// equation_extraction (pure compute over the parse payload) followed by
+    /// candidate_materialization (candidate-only graph evidence). Figure and
+    /// table families stay typed not_attempted inside the stage until their
+    /// production inputs exist.
+    pub fn with_equations(
+        stage_registry: &StageIdRegistry,
+        pipeline_id: &str,
+    ) -> Result<Self, PipelineOrchestratorError> {
+        for id in [
+            "parse",
+            "revision_materialization",
+            "extraction_compute",
+            "extraction_materialization",
+            "embedding",
+            "equation_extraction",
+            "candidate_materialization",
+        ] {
+            stage_registry
+                .parse_canonical(id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        let topology = PipelineBuilder::new(pipeline_id)
+            .step("parse", "parse", &[])
+            .step("revision", "revision_materialization", &["parse"])
+            .step("extract", "extraction_compute", &["parse"])
+            .step(
+                "materialize",
+                "extraction_materialization",
+                &["revision", "extract", "parse"],
+            )
+            .step("embed", "embedding", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .step("candidates", "candidate_materialization", &["equations"])
+            .build()
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut canonical_stages = Vec::new();
+        for step in &topology.steps {
+            let canonical = stage_registry
+                .resolve(&step.stage)
+                .map_err(PipelineOrchestratorError::StageIdentity)?
+                .as_str()
+                .to_owned();
+            if seen.insert(canonical.clone()) {
+                canonical_stages.push(canonical);
+            }
+        }
+        Ok(Self {
+            pipeline_id: pipeline_id.to_owned(),
+            topology,
+            canonical_stages,
+        })
+    }
+
     /// Canonical article journey topology validated against the DATA registry.
     pub fn canonical(
         stage_registry: &StageIdRegistry,

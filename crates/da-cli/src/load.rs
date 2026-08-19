@@ -104,6 +104,12 @@ pub struct LoadArgs {
     #[arg(long)]
     pub materialization_time: Option<String>,
 
+    /// Extend the journey with the equation candidate branch (TEI-only
+    /// compute plus candidate-only graph evidence). Opt-in while the figure
+    /// and table families remain typed not_attempted.
+    #[arg(long, default_value_t = false)]
+    pub equations: bool,
+
     /// Run the content stages through the canonical article journey
     /// (PipelineOrchestrator with ACAP gating, cache-honest compute and
     /// always-run idempotent materialization). Default ON for eligible
@@ -131,6 +137,8 @@ struct CliContentPipeline {
     /// Journey mode ports (M404): when set, run_content routes through the
     /// canonical orchestrated article journey instead of the inline stages.
     journey: Option<crate::load_journey::JourneyPorts>,
+    /// Equation candidate branch (M407): extends the journey topology.
+    equations: bool,
 }
 
 /// Typed reasons the orchestrated journey is skipped for a load request
@@ -197,6 +205,7 @@ impl CliContentPipeline {
             &source_code,
             revision_context.revision,
             revision_context.manifestations,
+            self.equations,
         )
         .await?;
         let hits = report
@@ -1073,6 +1082,7 @@ fn make_content_pipeline(
         journey: args
             .journey
             .then(crate::load_journey::JourneyPorts::from_env),
+        equations: args.equations,
     })
 }
 
@@ -2243,6 +2253,7 @@ mod tests {
             no_cache: false,
             materialization_time: None,
             journey: true,
+            equations: false,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(

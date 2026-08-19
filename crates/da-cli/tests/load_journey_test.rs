@@ -140,6 +140,35 @@ impl Embedder for FakeEmbedder {
 #[allow(dead_code)]
 fn _aliases(_: Option<EmbedderError>, _: Option<ExtractorError>, _: Option<ParserError>) {}
 
+fn parsed_article_with_formulas() -> ParsedArticle {
+    let mut parsed = parsed_article();
+    parsed.formulas = (0..2)
+        .map(|i| da_ports::parser::ExtractedFormula {
+            formula_id: format!("formula_{i}"),
+            section_path_id: Some("1".into()),
+            section_ordinal: Some(1),
+            label: Some(format!("({i})")),
+            coordinates: Some("10,20,30,40;5".into()),
+            representation: da_ports::parser::FormulaRepresentation::TeXMath("L=x".into()),
+            span: Some(da_ports::parser::CharSpan { start: 1, end: 4 }),
+            source_digest: sha(7),
+            missingness: None,
+        })
+        .collect();
+    parsed
+}
+
+struct FormulaParser;
+
+#[async_trait]
+impl ParserPort for FormulaParser {
+    async fn parse_pdf(&self, _pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
+        let mut parsed = parsed_article_with_formulas();
+        parsed.paper_id = paper_id.to_string();
+        Ok(parsed)
+    }
+}
+
 fn source() -> SourceIdentity {
     SourceIdentity {
         article_id: PAPER_ID.into(),
@@ -213,6 +242,7 @@ async fn run_journey(
         "arxiv",
         1,
         manifestations(),
+        false,
     )
     .await
 }
@@ -370,4 +400,102 @@ async fn journey_content_completes_and_replays_over_file_cache() {
             "no {label} is import-eligible"
         );
     }
+}
+
+#[tokio::test]
+async fn journey_with_equations_materializes_candidates_and_replays() {
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache_dir = tempdir("cache-eq");
+    let cache = Arc::new(FilePipelineCache::new(cache_dir.clone()));
+    let ports = JourneyPorts {
+        parser: Arc::new(FormulaParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+    };
+    let pdf_dir = tempdir("pdf-eq");
+    let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
+    std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
+
+    async fn run(
+        store: &Arc<SamyamaGraphStore>,
+        cache: Arc<FilePipelineCache>,
+        ports: &JourneyPorts,
+        pdf_path: &std::path::Path,
+    ) -> Result<(da_application::LoadContentOutcome, PipelineRunReport), String> {
+        da_cli::load_journey::run_journey_content(
+            ports,
+            store,
+            cache,
+            clock(),
+            ledger_registry(),
+            PAPER_ID,
+            pdf_path,
+            source(),
+            "arxiv",
+            1,
+            manifestations(),
+            true,
+        )
+        .await
+    };
+
+    let (outcome, report) = run(&store, cache.clone(), &ports, &pdf_path)
+        .await
+        .expect("equations journey");
+    assert!(report.completed);
+    assert_eq!(
+        report.stages.len(),
+        7,
+        "extended topology: five base + two equation steps"
+    );
+    assert!(outcome.ingest.revision_vid.is_some());
+    assert_eq!(
+        query_count(&store, "MATCH (e:EquationCandidate) RETURN count(e) AS eqs").await,
+        2,
+        "equation candidates materialized"
+    );
+    // Candidate authority locks (D127 + candidate-only).
+    assert_eq!(
+        query_count(
+            &store,
+            "MATCH (e:EquationCandidate) WHERE e.import_eligible = true RETURN count(e) AS unlocked"
+        )
+        .await,
+        0
+    );
+
+    // Identical replay: compute stages cache-hit; graph stages re-run
+    // idempotently with zero duplicate candidates.
+    let (_, report2) = run(&store, cache, &ports, &pdf_path)
+        .await
+        .expect("equations replay");
+    assert!(report2.completed);
+    let dispositions: Vec<&str> = report2
+        .stages
+        .iter()
+        .map(|record| match record.disposition {
+            StageDisposition::Executed { .. } => "executed",
+            StageDisposition::CacheHit { .. } => "cache_hit",
+            StageDisposition::RetrySuppressed { .. } => "retry_suppressed",
+            StageDisposition::Failed { .. } => "failed",
+        })
+        .collect();
+    assert_eq!(
+        dispositions,
+        vec![
+            "cache_hit",
+            "executed",
+            "cache_hit",
+            "executed",
+            "cache_hit",
+            "cache_hit",
+            "executed"
+        ],
+        "compute (parse/extract/embed/equations) replays from cache; graph stages always re-run"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (e:EquationCandidate) RETURN count(e) AS eqs").await,
+        2,
+        "no duplicate equation candidates"
+    );
 }

@@ -11,6 +11,9 @@ use std::sync::Arc;
 
 use chrono::{TimeZone, Utc};
 use common::mock_graph_store::MockGraphStore;
+use da_application::candidate_materialization_stage::CandidateMaterializationReport;
+use da_application::candidate_materialization_stage::CandidateMaterializationStage;
+use da_application::equation_extraction_stage::EquationExtractionArtifact;
 use da_application::revision_materialization::RevisionManifestationInput;
 use da_application::{
     ExtractionMaterializationReport, ExtractionMaterializationStage, RevisionMaterializationReport,
@@ -316,4 +319,161 @@ async fn stages_fail_closed_on_missing_dependencies_and_identity_mismatch() {
             ..
         } if error_class == "article_identity_mismatch"
     ));
+}
+
+// ── M407 S02: candidate materialization over the equation family ────────────
+
+fn equation_candidate(revision_vid: &str) -> da_domain::equation_candidate::EquationCandidate {
+    let formula = da_ports::parser::ExtractedFormula {
+        formula_id: "formula_0".into(),
+        section_path_id: Some("1".into()),
+        section_ordinal: Some(1),
+        label: Some("(1)".into()),
+        coordinates: Some("10,20,30,40;5".into()),
+        representation: da_ports::parser::FormulaRepresentation::TeXMath("L=x".into()),
+        span: Some(da_ports::parser::CharSpan { start: 1, end: 4 }),
+        source_digest: format!("{:064x}", 7),
+        missingness: None,
+    };
+    let sections: Vec<da_ports::parser::Section> = (0..3)
+        .map(|ordinal| da_ports::parser::Section {
+            title: format!("Section {ordinal}"),
+            text: format!("text {ordinal}"),
+            level: 1,
+            path_id: Some(format!("{ordinal}")),
+            section_id: Some(format!("sec-{ordinal}")),
+            ..Default::default()
+        })
+        .collect();
+    let input = da_application::equation_materialize::equation_candidate_input_from_extracted(
+        &formula,
+        revision_vid,
+        &format!("{:064x}", 7),
+        &sections,
+    )
+    .expect("conversion");
+    da_domain::equation_candidate::EquationCandidate::new(input).expect("candidate")
+}
+
+fn equations_payload(candidates: Vec<da_domain::equation_candidate::EquationCandidate>) -> Vec<u8> {
+    serde_json::to_vec(&EquationExtractionArtifact {
+        candidates,
+        missingness: None,
+    })
+    .expect("artifact serializes")
+}
+
+#[tokio::test]
+async fn candidate_stage_writes_equations_then_replays_unchanged() {
+    // The revision plane must exist first (candidates ground into its
+    // sections), mirroring the journey topology.
+    let store = Arc::new(MockGraphStore::new());
+    let revision = RevisionMaterializationStage::new(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        clock(),
+        "arxiv",
+        PAPER_ID,
+        1,
+        manifestations(),
+    );
+    let parse_payload = serde_json::to_vec(&parsed_article()).expect("parsed serialize");
+    let revision_out = revision
+        .execute(request(&[("parse", parse_payload)]))
+        .await
+        .expect("revision plane");
+    let revision_report: RevisionMaterializationReport =
+        serde_json::from_slice(&revision_out.payload).expect("revision report");
+    let revision_vid = revision_report.result.revision_vid.clone();
+
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let payload = equations_payload(vec![
+        equation_candidate(&revision_vid),
+        equation_candidate(&revision_vid),
+    ]);
+    let first = stage
+        .execute(request(&[("equations", payload.clone())]))
+        .await
+        .expect("first candidate materialization");
+    let first_report: CandidateMaterializationReport =
+        serde_json::from_slice(&first.payload).expect("report decodes");
+    let equation_row = first_report
+        .families
+        .iter()
+        .find(|row| row.family == "equation")
+        .expect("equation row");
+    assert_eq!(equation_row.status, "applied");
+    assert_eq!(equation_row.candidates, 2);
+    assert!(equation_row.nodes_created > 0);
+    assert!(!first_report.import_eligible);
+    let nodes_after_first = store.node_count_total();
+
+    // Identical replay: unchanged, zero new writes.
+    let second = stage
+        .execute(request(&[("equations", payload)]))
+        .await
+        .expect("replay candidate materialization");
+    let second_report: CandidateMaterializationReport =
+        serde_json::from_slice(&second.payload).expect("report decodes");
+    let replay_row = second_report
+        .families
+        .iter()
+        .find(|row| row.family == "equation")
+        .expect("equation row");
+    assert_eq!(replay_row.status, "unchanged");
+    assert_eq!(replay_row.nodes_created, 0, "replay creates nothing");
+    assert_eq!(
+        store.node_count_total(),
+        nodes_after_first,
+        "replay leaves the graph unchanged"
+    );
+
+    // Deferred families are typed, never fabricated.
+    for family in ["figure", "table"] {
+        let row = second_report
+            .families
+            .iter()
+            .find(|row| row.family == family)
+            .expect("family row");
+        assert_eq!(row.status, "not_attempted");
+        assert_eq!(row.candidates, 0);
+        assert!(row.reason.as_deref().unwrap_or("").starts_with("deferred"));
+    }
+    assert_eq!(
+        second.metadata.get("import_eligible").map(String::as_str),
+        Some("false")
+    );
+    stage
+        .validate_cached_payload(&second.payload)
+        .expect("report is a valid cached payload");
+}
+
+#[tokio::test]
+async fn candidate_stage_empty_artifact_is_typed_not_attempted() {
+    let store = Arc::new(MockGraphStore::new());
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let payload = serde_json::to_vec(&EquationExtractionArtifact {
+        candidates: vec![],
+        missingness: Some("parser_reported:NoFormulaElements".into()),
+    })
+    .expect("artifact serializes");
+    let out = stage
+        .execute(request(&[("equations", payload)]))
+        .await
+        .expect("empty candidate run");
+    let report: CandidateMaterializationReport =
+        serde_json::from_slice(&out.payload).expect("report decodes");
+    let equation_row = report
+        .families
+        .iter()
+        .find(|row| row.family == "equation")
+        .expect("equation row");
+    assert_eq!(equation_row.status, "not_attempted");
+    assert!(
+        equation_row
+            .reason
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("parser_reported:")
+    );
+    assert_eq!(store.node_count_total(), 0, "nothing written");
 }
