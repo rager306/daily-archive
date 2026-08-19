@@ -106,9 +106,11 @@ pub struct LoadArgs {
 
     /// Run the content stages through the canonical article journey
     /// (PipelineOrchestrator with ACAP gating, cache-honest compute and
-    /// always-run idempotent materialization). Opt-in while soaking; the
-    /// default path is unchanged. Requires a revision-bound PDF source.
-    #[arg(long, default_value_t = false)]
+    /// always-run idempotent materialization). Default ON for eligible
+    /// revision-bound PDF sources; ineligible requests fall back to the
+    /// legacy inline path with a typed `da_load_journey_fallback` warn.
+    /// Pass --no-journey to force the legacy path.
+    #[arg(long, default_value_t = true)]
     pub journey: bool,
 }
 
@@ -131,6 +133,30 @@ struct CliContentPipeline {
     journey: Option<crate::load_journey::JourneyPorts>,
 }
 
+/// Typed reasons the orchestrated journey is skipped for a load request
+/// (M406 S02). Pure classification: the wiring logs the token as a
+/// `da_load_journey_fallback` warn and continues on the legacy inline path.
+fn journey_skip_reason(
+    is_html: bool,
+    has_revision_context: bool,
+    has_cache: bool,
+    enable_import: bool,
+) -> Option<&'static str> {
+    if is_html {
+        return Some("html_primary");
+    }
+    if !has_revision_context {
+        return Some("versionless_source");
+    }
+    if !has_cache {
+        return Some("cache_disabled");
+    }
+    if enable_import {
+        return Some("import_unlock_legacy_only");
+    }
+    None
+}
+
 impl CliContentPipeline {
     /// Journey-mode content branch (M404 S02): route the request through the
     /// canonical orchestrated article journey. Fails closed on HTML primaries,
@@ -143,23 +169,9 @@ impl CliContentPipeline {
         let Some(ports) = &self.journey else {
             return Err("journey ports missing".into());
         };
-        if req.enable_import {
-            return Err(
-                "journey mode keeps D127 locked; --enable-import is not available on the orchestrated path"
-                    .into(),
-            );
-        }
-        let is_html = req
-            .primary_path
-            .extension()
-            .and_then(|e| e.to_str())
-            .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
-        if is_html {
-            return Err(
-                "journey mode requires a PDF primary asset; use the default path for HTML sources"
-                    .into(),
-            );
-        }
+        // Preconditions (html/versionless/no-cache/import-unlock) are
+        // classified by `journey_skip_reason` at the run_content gate with a
+        // visible fallback; reaching here means the request is eligible.
         let Some(revision_context) = revision_context_from_load(&req)? else {
             return Err(
                 "journey mode requires a revision-bound catalog asset (versioned arXiv or classified context); use the default path for versionless sources"
@@ -232,7 +244,28 @@ impl LoadContentPipeline for CliContentPipeline {
             ));
         }
         if self.journey.is_some() {
-            return self.run_content_journey(req).await;
+            let is_html = req
+                .primary_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| e.eq_ignore_ascii_case("html") || e.eq_ignore_ascii_case("htm"));
+            let has_revision = match revision_context_from_load(&req) {
+                Ok(context) => context.is_some(),
+                Err(error) => return Err(error),
+            };
+            match journey_skip_reason(
+                is_html,
+                has_revision,
+                self.cache.is_some(),
+                req.enable_import,
+            ) {
+                None => return self.run_content_journey(req).await,
+                Some(reason) => tracing::warn!(
+                    article_id = req.paper_id,
+                    reason,
+                    event = "da_load_journey_fallback"
+                ),
+            }
         }
         self.stage_registry.parse_canonical("parse")?;
         self.stage_registry.parse_canonical("embedding")?;
@@ -1037,14 +1070,9 @@ fn make_content_pipeline(
         clock: context.clock,
         stage_registry: context.stage_registry,
         navigation_noise_titles: load_policy_noise_titles()?,
-        journey: if args.journey {
-            // Parity with the ingest embed gate (M321): the journey embedding
-            // stage needs FD_API credentials on cache misses.
-            require_embed_credentials()?;
-            Some(crate::load_journey::JourneyPorts::from_env())
-        } else {
-            None
-        },
+        journey: args
+            .journey
+            .then(crate::load_journey::JourneyPorts::from_env),
     })
 }
 
@@ -1497,6 +1525,36 @@ fn resolve_provider(hint: &str, locator: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
+    use super::journey_skip_reason;
+
+    #[test]
+    fn journey_skip_reason_classifies_every_ineligible_case() {
+        // M406 S02: typed tokens for the visible fallback. Eligible PDF with
+        // revision context, cache and locked import orchestrates (None).
+        assert_eq!(journey_skip_reason(false, true, true, false), None);
+        assert_eq!(
+            journey_skip_reason(true, true, true, false),
+            Some("html_primary")
+        );
+        assert_eq!(
+            journey_skip_reason(false, false, true, false),
+            Some("versionless_source")
+        );
+        assert_eq!(
+            journey_skip_reason(false, true, false, false),
+            Some("cache_disabled")
+        );
+        assert_eq!(
+            journey_skip_reason(false, true, true, true),
+            Some("import_unlock_legacy_only")
+        );
+        // Precedence: html wins over the rest.
+        assert_eq!(
+            journey_skip_reason(true, false, false, true),
+            Some("html_primary")
+        );
+    }
+
     use super::*;
 
     #[test]
@@ -2184,7 +2242,7 @@ mod tests {
             cache_root: PathBuf::from("artifacts/pipeline_cache"),
             no_cache: false,
             materialization_time: None,
-            journey: false,
+            journey: true,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(

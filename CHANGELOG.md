@@ -1,5 +1,25 @@
 # Changelog
 
+### M406 Journey becomes the default operator path (R096)
+
+- Second live soak on `2606.11189v1` (39 sections, 729 table cells, 61
+  formulas): `da load --journey` completes, retrieval-eligible Paper count 1,
+  identical replay `cache_hits=3`. The journey generalizes beyond the first
+  soak paper.
+- `da load` now runs the orchestrated journey **by default** for eligible
+  revision-bound PDF sources (`--no-journey` opts out). Ineligible requests
+  fall back to the legacy inline path with a typed visible
+  `da_load_journey_fallback` warn instead of errors: `html_primary`,
+  `versionless_source`, `cache_disabled`, `import_unlock_legacy_only`
+  (pure `journey_skip_reason` classification, unit-tested red-first).
+- The FD credential gate moved out of pipeline construction: flagless
+  replays with warm cache no longer require FD_API_KEY; a cold embedding
+  miss fails with the embedder's typed error. Ensure-only loads never
+  construct journey ports.
+- Both live soaks rerun **without the flag** orchestrate (journey events,
+  cache_hits=3). Governor markers repinned to the fallback surface.
+  D127 remains locked.
+
 ### M405 Live soak of the operator journey and D134 fix (R096)
 
 - Live soak on the pinned versioned catalog article 2506.07853v1 with real
