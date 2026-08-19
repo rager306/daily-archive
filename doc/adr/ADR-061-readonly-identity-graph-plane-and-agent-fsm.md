@@ -1,8 +1,8 @@
 # ADR-061: Read-only Identity Graph Plane and Agent FSM
 
 ## Status
-**Accepted (M401-itcqhx/S01, 2026-08-18; extended by M401-itcqhx/S03 and
-M401-itcqhx/S04)** —
+**Accepted (M401-itcqhx/S01, 2026-08-18; extended by M401-itcqhx/S03,
+M401-itcqhx/S04, and closed by M401-itcqhx/S05)** —
 implemented by
 kg-storage `ReadOnlyServer` / `RemoteGraphStore` over the shared RESP2 codec
 (`kg-storage::resp`), composed by `da serve-graph`, and pinned by the
@@ -21,6 +21,11 @@ report) plus the offline `--verify` contract (D273) for S05 Governor.
 Wiring into the `da` binary (`mod agent_run` + `Commands::AgentRun`
 dispatch) is the S04 CLI entry point; the real cross-process journey test
 `crates/da-cli/tests/agent_run_journey_test.rs` is in S04/T05.
+S05 (2026-08-19) closes the milestone: committed positive/negative envelopes
+are pinned by the Rust verifier, Governor DATA contract
+`read_only_agent_contract` (dimension `agent_read_plane`) structurally
+enforces the same envelope + D127 lock + source markers, and the review
+register marks PIR-017 and PIR-021 `resolved`.
 
 Supersedes the vendor `samyama::RespServer` composition for the daemon path
 (decisions D145, D146, D148) and refines the typed environment contract
@@ -29,7 +34,7 @@ no-auto-start rule are **not** weakened.
 
 ## Context
 
-R095 (primary-user-loop, active): the agent needs a **read-only**
+R095 (primary-user-loop; S05 closes the loop): the agent needs a **read-only**
 plan-read-synthesize-verify loop over the graph **without graph write
 authority**. Before M401, the only multi-process surface was the vendor
 `RespServer` (M308/M309) whose `handle_graph_ro_query` **delegated without
@@ -181,7 +186,8 @@ and no write path.
   daemon path); **refines:** D149/D150 (typed `DA_SERVE_GRAPH_*` /
   `DA_REMOTE_GRAPH_*` / `DA_GRAPH_ENDPOINT` env contract).
 - **Does not change:** D127 (`import_eligible=false`), no-RocksDB, no
-  auto-start, no DirectGraphStore exposure.
+  auto-start, no DirectGraphStore exposure. S05 adds no listen surface,
+  no env keys (D274), and no digest recompute in Python (D273).
 
 ## Acceptance evidence (M401-itcqhx/S01)
 
@@ -278,3 +284,42 @@ historical `DA_GRAPH_ENDPOINT` wart is deliberately not honored. D127
 (`import_eligible=false`), no-RocksDB, no auto-start and no write authority
 are unchanged; `FailedVisible` is a typed result inside the report (R087),
 never a silent process error.
+
+## Acceptance evidence (M401-itcqhx/S05)
+
+S05 is the closeout slice. It does not add a listen surface. It pins the
+S01–S04 contract as Governor DATA plus committed envelopes, then records
+PIR-017 and PIR-021 as resolved.
+
+- `cargo test -p da-cli --test read_only_agent_contract_verify_test` —
+  committed genuine envelopes: positive
+  `data/read_only_agent_contract/agent_run_verified.positive.json` verifies
+  offline (`da agent-run verify` exit 0 + `PASS`); tampered negative
+  `agent_run_tampered.negative.json` fails closed (exit 3 + `FAIL`). Digest
+  math (`plan → identity → evidence → claims → verification → result_ref`)
+  stays in Rust (D273 / MEM885). The positive envelope has no
+  `import_eligible` key (D127).
+- Governor DATA `read_only_agent_contract` (dimension `agent_read_plane`,
+  13th): Python structurally validates both envelopes (format
+  `da.agent-run.report.v1`, `terminal_state` ∈ {verified, failed_visible},
+  identity / budget / evidence, `result_records` 1:1, recursive D127 lock)
+  and five source markers (`verify_report`, `verify_run_evidence_chain`,
+  `command_disposition` / `GRAPH.RO_QUERY`, serve-graph "No vendor
+  RespServer", `FailedVisible`). The negative envelope is structurally
+  clean by design and is broken only by the Rust digest. The multimodal
+  helper `_candidate_contract_flags` is not reused (it expects a JSON array
+  of labelled records).
+- `PYTHONPATH=scripts uv run --with pyyaml python -m governor --validate-yaml`
+  — PASS, 59 ADR rules, 13 dimensions including `agent_read_plane`.
+- `PYTHONPATH=scripts uv run --with pyyaml python -m governor --self-test`
+  — includes the `read_only_agent_contract` cases and stays green.
+- `PYTHONPATH=scripts uv run --with pyyaml python -m governor --phase active
+  --check-only` — no new high violations from this contract (pre-existing
+  `resource_target_bloat` remains allowed).
+- Review register: PIR-017 (read-only verified agent loop, maturity 3.5)
+  and PIR-021 (honest multi-process read plane, maturity 4) are
+  `status=resolved` in `doc/review/pipeline-integrity-review.jsonl` with
+  runtime refs (`read_only_agent_contract_verify_test`,
+  `agent_run_journey_test`, `remote_read_plane_test`) plus Governor rule
+  `read_only_agent_contract`. README baseline is recomputed from the JSONL
+  (Resolved 22 / Open 0), not incremented from the stale M397 7→9 table.

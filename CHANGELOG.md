@@ -1,5 +1,37 @@
 # Changelog
 
+### M401 S05 Governor and review-register closure (R095, PIR-017, PIR-021)
+
+- Rust offline verify pin (T01): committed genuine envelopes
+  `data/read_only_agent_contract/agent_run_verified.positive.json`
+  (`da agent-run verify` exit 0 + `PASS`) and
+  `agent_run_tampered.negative.json` (exit 3 + `FAIL`) pinned by
+  `cargo test -p da-cli --test read_only_agent_contract_verify_test`.
+  Digest math stays in Rust `da agent-run verify` (D273 / MEM885);
+  Python never recomputes canonical serde JSON.
+- Governor DATA contract (T02): high check `read_only_agent_contract`
+  structurally validates both envelopes (format `da.agent-run.report.v1`,
+  `terminal_state` ∈ {verified, failed_visible}, identity / budget /
+  evidence blocks, `result_records` 1:1 with evidence, D127 lock — no
+  `import_eligible` at any depth) plus five source markers. New dimension
+  `agent_read_plane` (13th). The negative envelope is structurally clean
+  by design and fails only on the Rust digest. `_candidate_contract_flags`
+  is not reused (that helper expects a JSON array of labelled records).
+  `governor --validate-yaml` PASS 59 rules / 13 dimensions;
+  `--self-test` 72/72; `--phase active --check-only` reports no new high
+  flags (pre-existing `resource_target_bloat` remains allowed).
+- Review register (T03): PIR-017 (read-only verified agent loop) and
+  PIR-021 (honest multi-process read plane) marked `resolved` (maturity
+  3.5 / 4) with runtime + Governor refs. README baseline recomputed from
+  the JSONL as Resolved 22 / Open 0 — not incremented from the stale
+  M397 table 7→9.
+- Docs and slice-end regression (T04): this CHANGELOG section and ADR-061
+  record the S05 Governor contract and review-register closure. D127 stays
+  locked; `da serve-graph` still does not instantiate vendor `RespServer`;
+  no new env keys (D274); no new listen surface or metrics endpoint.
+  S01–S04 operator surfaces (`remote_read_plane_test`,
+  `agent_run_remote_test`, `agent_run_journey_test`) stay green.
+
 ### MiniMax settings cut (subscription cancelled)
 
 - Removed `MINIMAX_*` keys and shared-key notes from `.env.example`.
