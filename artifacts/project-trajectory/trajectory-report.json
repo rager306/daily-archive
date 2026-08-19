@@ -1,7 +1,7 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
   "phase": "preflight",
-  "verdict": "drift_risk",
+  "verdict": "on_track",
   "dimensions": {
     "schema_readiness": {
       "description": "Typed knowledge schema (node labels, property types, edge contracts)",
@@ -119,30 +119,30 @@
         "data/ontology/edge_contracts.yaml: hasSummary edge",
         "D194 audit: Layer A-C done, D-J pending"
       ]
+    },
+    "agent_read_plane": {
+      "description": "Read-only agent plane with verified envelopes (PIR-017/PIR-021, ADR-061)",
+      "status": "enforced",
+      "evidence": [
+        "Rust offline verifier pinned: da agent-run verify exit 0 PASS / exit 3 FAIL (D273)",
+        "Governor DATA contract scripts/governor/checks/read_only_agent_contract.yaml",
+        "Committed genuine envelopes (positive + tampered negative)",
+        "D127 locked: envelope carries no import_eligible key",
+        "serve-graph path does not instantiate vendor RespServer"
+      ]
     }
   },
-  "drift_flags": [
-    {
-      "flag": "gsd_planning_projection_degraded",
-      "severity": "medium",
-      "evidence": "active milestone M401-itcqhx slice S05 has no PLAN tasks — run gsd_plan_slice before execute"
-    },
-    {
-      "flag": "resource_target_bloat",
-      "severity": "medium",
-      "evidence": "target/ is 46.8GB (41GB free on disk) — consider 'cargo clean' before workspace builds Recommendation: Remove incremental cache: rm -rf target/debug/incremental (19.9GB); Dependencies cache large (25.3GB) — cargo clean -p <crate> to prune specific deps; Debug profile 46.8GB — run 'cargo clean' before workspace builds"
-    }
-  ],
+  "drift_flags": [],
   "reverse_adr_audit_details": {
     "status": "clear",
     "violations": [],
     "violations_count": 0
   },
   "next_actions": [
-    "target/ bloated: prune debug incremental/examples before workspace cargo."
+    "No drift detected. Continue current milestone."
   ],
   "milestone_context": {
-    "latest_milestone_id": "401",
-    "latest_milestone_title": "itcqhx-m401-itcqhx"
+    "latest_milestone_id": "410",
+    "latest_milestone_title": "l6cvke-extract-becomes-a-real-scheduler-task"
   }
 }
