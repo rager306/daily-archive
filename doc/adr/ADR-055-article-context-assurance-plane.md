@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-09
 
-**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053; D127, D136, D202-D215; R084-R090
+**Related:** ADR-040, ADR-049, ADR-050, ADR-051, ADR-052, ADR-053; D127, D136, D202-D215, D276; R084-R090, R096
 
 ## Context
 
@@ -58,6 +58,48 @@ The canonical progression is:
 `source_registered -> source_verified -> parsed -> structured -> extracted -> evidence_linked -> embedded -> materialized -> enriched -> resolved -> summarized -> finalized -> task_accepted -> accepted_checkpoint`.
 
 Any state may transition to `failed_visible`. A skipped state requires a typed reason. Retry preserves the semantic cache key. A downstream state cannot claim completion when a required predecessor is absent. The FSM records observations; it does not fabricate work for optional layers.
+
+### Runtime stage-to-layer binding (M402 / D276)
+
+Runtime admission binds a pipeline stage to an ACAP layer through optional
+`acap_layer` on `PipelineStageContract` in
+`data/ontology/pipeline_stage_contracts.yaml`. `StageIdRegistry::acap_layer`
+is the only lookup; `PipelineOrchestrator` has no hardcoded stage-id match.
+A missing layer is a typed skip, not a silent pass. Multimodal stages may
+share a layer with the linear spine (`figure_context` and
+`revision_materialization` both establish `structured`). Governor pins the
+map in `acap_runtime_control_plane.yaml` (`ledger_layers`).
+
+| Stage | `acap_layer` |
+|---|---|
+| `acquisition` | `source_registered` |
+| `catalog` | `source_verified` |
+| `parse` | `parsed` |
+| `revision_materialization` | `structured` |
+| `figure_context` | `structured` |
+| `extraction_compute` | `extracted` |
+| `figure_analysis` | `extracted` |
+| `extraction_materialization` | `evidence_linked` |
+| `table_fidelity` | `evidence_linked` |
+| `embedding` | `embedded` |
+| `equation_extraction` | `embedded` |
+| `resolution` | `resolved` |
+| `summary` | `summarized` |
+| `checkpoint` | `accepted_checkpoint` |
+
+Residuals with **no honest ledger stage yet** (typed `no_claim`, not invented
+mappings):
+
+- `materialized` — graph-truth writes are split across
+  `revision_materialization` (`structured`) and `extraction_materialization`
+  (`evidence_linked`); there is no separate materialized stage.
+- `enriched` — OpenAlex enrich is a use case / scheduler task, not a ledger
+  stage.
+- `finalized` / `task_accepted` — no ledger stage; checkpoint is
+  `accepted_checkpoint`.
+
+`candidate_materialization`, `readiness`, `cluster`, `assurance` and `query`
+remain ungated helpers. Do not invent `acap_layer` values for them.
 
 ## Layer model and scorecard
 
@@ -344,6 +386,11 @@ Rollout is incremental. `bootstrap` layers produce `no_claim` when evidence is a
     before a first-class finalize/task/checkpoint command can accept a snapshot.
 11. Only then may bounded related-article and optimizer candidate experiments run
     under their independent admission gates.
+12. **M402 data-driven ACAP layer binding delivered.** Pipeline ledger YAML
+    declares `acap_layer` for gated stages including the linear materialization
+    spine. Orchestrator lookup is registry-only. Residuals above stay
+    `no_claim` until honest enrich/finalize ledger stages exist. D127 and
+    optimizer locks unchanged.
 
 ## LLM Reading Notes
 

@@ -239,6 +239,21 @@ fn fixed_clock(secs: i64) -> Arc<dyn Clock> {
     Arc::new(FixedClock(Utc.timestamp_opt(secs, 0).unwrap()))
 }
 
+fn test_acap_layer(id: &str) -> Option<ArticleContextState> {
+    use ArticleContextState::*;
+    match id {
+        "acquisition" => Some(SourceRegistered),
+        "catalog" => Some(SourceVerified),
+        "parse" => Some(Parsed),
+        "extraction_compute" => Some(Extracted),
+        "embedding" => Some(Embedded),
+        "resolution" => Some(Resolved),
+        "summary" => Some(Summarized),
+        "checkpoint" => Some(AcceptedCheckpoint),
+        _ => None,
+    }
+}
+
 fn stage_contract(id: &str, aliases: &[&str]) -> PipelineStageContract {
     PipelineStageContract {
         id: id.into(),
@@ -256,6 +271,7 @@ fn stage_contract(id: &str, aliases: &[&str]) -> PipelineStageContract {
         conditional: false,
         graph_truth_boundary: false,
         candidate_only: false,
+        acap_layer: test_acap_layer(id),
     }
 }
 

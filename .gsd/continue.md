@@ -1,37 +1,52 @@
-# Continue — M400-xijx04 complete
+# Continue — M402-jqs0xg code delivered (GSD seal pending Attempt)
 
 ## Last action
 
-M400-xijx04 “Revision grounded multimodal evidence” is complete and validated (`verdict: pass`). All 5 slices and 18/18 tasks are closed:
+M402-jqs0xg “ACAP ledger isomorphism and linear article spine gate” is
+**implemented and verified** in this free-form session. GSD
+`gsd_task_complete` cannot seal rows (no running Attempt). Do not treat
+`/gsd auto` as the only remaining work.
 
-- S01 revision-grounded FigureCandidate evidence;
-- S02 TEI table-cell fidelity with typed disagreement;
-- S03 EquationCandidate formula provenance;
-- S04 canonical production pipeline and idempotent replay journey;
-- S05 Governor contracts, review-register closure, final closeout evidence.
+Delivered:
 
-PIR-018, PIR-019, and PIR-020 are resolved. R094 is validated. Final completion commit: `ae47e942`. D127 remains locked; optimizer/deployment auto-promotion remains disabled.
+- S01: optional `acap_layer` on `PipelineStageContract`; registry lookup;
+  YAML layers for the twelve historically gated stages; orchestrator
+  dropped `acap_state_for_stage`.
+- S02: `revision_materialization` → `structured`,
+  `extraction_materialization` → `evidence_linked`; linear spine journey
+  admits and cache-hit replays (`linear_article_spine_admits_materialization_and_replays_from_cache`).
+- S03: Governor `ledger_layers` + forbidden `fn acap_state_for_stage`;
+  ADR-055 amended (D276); residuals `materialized` / `enriched` /
+  `finalized` / `task_accepted` are typed `no_claim`.
+
+R096 recorded. D127 remains locked. Optimizer auto-promotion remains disabled.
 
 ## Next action
 
-No active milestone. The next planned wave is **M401 agent readiness** for R095 / PIR-017 and PIR-021:
+Highest-leverage remaining gap from the pipeline audit:
 
-- read-only verified SymFSM loop (`ContextBundle`, explicit state transitions, evidence paths, graph writes forbidden);
-- honest remote persistent GraphStore read plane (`DA_GRAPH_MODE=remote` currently returns `NotConfigured`);
-- snapshot identity handshake and same-source cross-process contract suite;
-- Governor rules for verified agent evidence and honest remote graph mode.
+1. **One production journey** `acquire → catalog → parse → revision_materialize → extract_{compute,materialize} → [multimodal] → summary → assurance → checkpoint` through `PipelineOrchestrator` (operator continuity).
+2. Table / equation / candidate as real `PipelineStageExecutor`s (M400 proved candidates; they are not in `compose_multimodal_production`).
+3. Scheduler executors for Ingest / Reparse / Extract / Embed / GraphWrite (only OpenAlexEnrich is wired).
+4. P1 full remote GraphStore (`DA_GRAPH_MODE=remote` is still `NotConfigured`).
 
-Before creating the milestone, run a fresh GitNexus / codebase-memory architecture-and-debt audit. `codebase-memory-mcp` may need reconnect/reindex.
+To seal M402 in GSD later: skip-delivered + runtime UAT + sha256 validate
+(M306 pattern / MEM567), or `/gsd auto M402-jqs0xg` if Attempt claim is available.
 
 ## Verification snapshot
 
-- `multimodal_pipeline_test`: 2/2 PASS (ACAP admission + canonical journey).
-- Governor self-test: 65/65 PASS, including 18 multimodal cases.
-- Governor `--phase active --check-only`: violations=0; only pre-existing medium `resource_target_bloat` guidance remains.
-- Architecture guardrail: PASS (50 per-crate test suites).
-- Review register: PIR-018 resolved 4/4, PIR-019 4/4, PIR-020 3.5/3.5; R094 validated with D127 unlock count zero.
-- Closeout report: `artifacts/m400-s05-multimodal-closeout.md`.
+- `cargo test -p da-domain --lib pipeline_ledger`: 11 PASS
+- `cargo test -p da-adapters --lib pipeline_ledger`: 2 PASS
+- `cargo test -p da-application --lib pipeline`: 39 PASS (includes spine)
+- `cargo test -p da-application --test acap_control_plane_test`: 3 PASS
+- `cargo test -p da-application --test multimodal_pipeline_test`: 2 PASS
+- Governor self-test: 74/74 PASS
+- Governor `--phase preflight` and `--phase active --check-only`: violations=0
 
 ## Do not
 
-Hand-edit `.gsd` planning artifacts or `gsd.db`. Unlock D127 without explicit user approval. Enable optimizer/deployment auto-promotion. Run workspace-wide cargo tests (rocksdb trap). Use mutating Governor `--phase active` in task verification (use `--check-only`). Treat the target-size warning as a product failure.
+Hand-edit `.gsd` planning artifacts or `gsd.db`. Unlock D127 without
+explicit user approval. Enable optimizer/deployment auto-promotion.
+Invent `acap_layer` for `materialized` / `enriched` / `finalized` /
+`task_accepted`. Run workspace-wide cargo tests (rocksdb trap). Use
+mutating Governor `--phase active` in task verification.

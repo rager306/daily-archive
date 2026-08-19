@@ -1811,6 +1811,44 @@ class TrajectoryService:
             if missing:
                 _flag("acap_runtime_control_plane_source_marker_missing",
                       f"{marker_key} source missing enforcement markers: {missing}")
+            forbidden_hits = [p for p in entry.get("forbidden_patterns", []) if p in text]
+            if forbidden_hits:
+                _flag("acap_runtime_control_plane_source_marker_missing",
+                      f"{marker_key} source still contains forbidden markers: {forbidden_hits}")
+
+        # Optional DATA map: present only on the production contract. Isolated
+        # fixture tests omit it so they do not need a full pipeline ledger.
+        ledger_layers = contract.get("ledger_layers") or {}
+        if ledger_layers:
+            ledger_path = self.root / str(ledger_layers.get("path", ""))
+            if not ledger_path.is_file():
+                _flag("acap_runtime_control_plane_ledger_layers_missing",
+                      f"pipeline ledger missing: {ledger_path}")
+            else:
+                try:
+                    ledger = yaml.safe_load(ledger_path.read_text(encoding="utf-8")) or {}
+                except (OSError, yaml.YAMLError) as error:
+                    _flag("acap_runtime_control_plane_ledger_layers_missing",
+                          f"cannot load pipeline ledger {ledger_path}: {error}")
+                else:
+                    stages = {
+                        str(stage.get("id")): stage
+                        for stage in (ledger.get("stages") or [])
+                        if isinstance(stage, dict) and stage.get("id")
+                    }
+                    for stage_id, expected in (ledger_layers.get("required") or {}).items():
+                        actual = (stages.get(str(stage_id)) or {}).get("acap_layer")
+                        if actual != expected:
+                            _flag(
+                                "acap_runtime_control_plane_ledger_layers_missing",
+                                f"stage {stage_id} acap_layer={actual!r} expected {expected!r}",
+                            )
+                    for stage_id in ledger_layers.get("forbidden") or []:
+                        if (stages.get(str(stage_id)) or {}).get("acap_layer") is not None:
+                            _flag(
+                                "acap_runtime_control_plane_ledger_layers_missing",
+                                f"residual stage {stage_id} must not declare acap_layer",
+                            )
         return flags
 
     def _check_visual_candidates_require_graph_lineage(self) -> list[DriftFlag]:

@@ -5,6 +5,8 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::assurance::ArticleContextState;
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct StageId(String);
@@ -67,6 +69,13 @@ pub struct PipelineStageContract {
     /// `cache_mode == GraphMaterialize` and `graph_truth_boundary == false`.
     #[serde(default)]
     pub candidate_only: bool,
+    /// Optional ACAP FSM layer this stage establishes when admitted.
+    /// `None` means the stage is outside the FSM (typed skip). `FailedVisible`
+    /// is rejected by [`PipelineStageLedger::validate`] — failure is a sink,
+    /// not a declared layer. Unknown tokens fail serde because the field is
+    /// a closed [`ArticleContextState`].
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acap_layer: Option<ArticleContextState>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -81,6 +90,7 @@ pub struct PipelineStageLedger {
 pub struct StageIdRegistry {
     canonical: BTreeSet<StageId>,
     resolved: BTreeMap<String, StageId>,
+    acap_layers: BTreeMap<StageId, ArticleContextState>,
 }
 
 impl StageIdRegistry {
@@ -112,9 +122,16 @@ impl StageIdRegistry {
                 }
             }
         }
+        let mut acap_layers = BTreeMap::new();
+        for stage in &ledger.stages {
+            if let Some(layer) = stage.acap_layer {
+                acap_layers.insert(StageId(stage.id.clone()), layer);
+            }
+        }
         Ok(Self {
             canonical,
             resolved,
+            acap_layers,
         })
     }
 
@@ -135,6 +152,15 @@ impl StageIdRegistry {
 
     pub fn contains(&self, raw: &str) -> bool {
         self.resolved.contains_key(raw)
+    }
+
+    /// ACAP layer declared for `raw` after alias resolve.
+    ///
+    /// Unknown ids error. A known stage with no `acap_layer` returns `Ok(None)`
+    /// (ungated helper / typed skip).
+    pub fn acap_layer(&self, raw: &str) -> Result<Option<ArticleContextState>, String> {
+        let id = self.resolve(raw)?;
+        Ok(self.acap_layers.get(&id).copied())
     }
 }
 
@@ -207,6 +233,12 @@ impl PipelineStageLedger {
             {
                 return Err(format!(
                     "graph materialize stage {} must declare graph truth or candidate-only boundary",
+                    stage.id
+                ));
+            }
+            if stage.acap_layer == Some(ArticleContextState::FailedVisible) {
+                return Err(format!(
+                    "pipeline stage {} cannot declare FailedVisible as acap_layer",
                     stage.id
                 ));
             }
@@ -283,6 +315,7 @@ mod tests {
             conditional: false,
             graph_truth_boundary: truth,
             candidate_only: false,
+            acap_layer: None,
         }
     }
     #[test]
@@ -466,6 +499,75 @@ mod tests {
                 .validate()
                 .unwrap_err()
                 .contains("graph truth or candidate-only")
+        );
+    }
+
+    #[test]
+    fn registry_resolves_acap_layer_after_alias_and_skips_unset() {
+        let mut parse = stage("parse", &[], StageCacheMode::PureCompute, false);
+        parse.aliases = vec!["grobid_parse".into()];
+        parse.acap_layer = Some(ArticleContextState::Parsed);
+        let readiness = stage("readiness", &["parse"], StageCacheMode::PureCompute, false);
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![parse, readiness],
+            import_eligible: false,
+        };
+        let registry = ledger.registry().unwrap();
+        assert_eq!(
+            registry.acap_layer("parse").unwrap(),
+            Some(ArticleContextState::Parsed)
+        );
+        assert_eq!(
+            registry.acap_layer("grobid_parse").unwrap(),
+            Some(ArticleContextState::Parsed)
+        );
+        assert_eq!(registry.acap_layer("readiness").unwrap(), None);
+        assert!(registry.acap_layer("missing").is_err());
+    }
+
+    #[test]
+    fn rejects_failed_visible_as_acap_layer() {
+        let mut parse = stage("parse", &[], StageCacheMode::PureCompute, false);
+        parse.acap_layer = Some(ArticleContextState::FailedVisible);
+        let ledger = PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![parse],
+            import_eligible: false,
+        };
+        assert!(
+            ledger
+                .validate()
+                .unwrap_err()
+                .contains("cannot declare FailedVisible as acap_layer")
+        );
+    }
+
+    #[test]
+    fn unknown_acap_layer_token_fails_serde() {
+        let err = serde_json::from_str::<PipelineStageContract>(
+            r#"{
+                "id": "parse",
+                "owner": "application",
+                "input_semantics": ["input"],
+                "output_semantics": ["output"],
+                "depends_on": [],
+                "context_adds": ["grounding"],
+                "context_losses": [],
+                "hard_invariants": ["D127=false"],
+                "consumers": ["next"],
+                "cache_mode": "pure_compute",
+                "failure_class": "terminal",
+                "conditional": false,
+                "graph_truth_boundary": false,
+                "acap_layer": "not_a_real_state"
+            }"#,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(
+            err.contains("not_a_real_state") || err.contains("unknown variant"),
+            "{err}"
         );
     }
 }

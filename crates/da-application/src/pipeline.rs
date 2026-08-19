@@ -175,13 +175,17 @@ impl PipelineOrchestrator {
 
             // ── ACAP admission gate (PIR-014) ────────────────────────────────
             // Computed once per step, before cache-hit acceptance and before
-            // executor execution, from the prior stage state and the canonical
-            // stage id. Both cache paths (canonical hit and legacy alias
-            // fallback) and execution sit behind the same decision; a blocked
-            // transition fails closed with a typed reason and a durable
-            // evidence reference, and the executor never runs. Stages outside
-            // the ACAP FSM mapping are not gated (report surface: skipped).
-            let target_state = acap_state_for_stage(&canonical_stage_id);
+            // executor execution, from the prior stage state and the DATA
+            // `acap_layer` declared on the canonical stage. Both cache paths
+            // (canonical hit and legacy alias fallback) and execution sit
+            // behind the same decision; a blocked transition fails closed
+            // with a typed reason and a durable evidence reference, and the
+            // executor never runs. Stages with no declared layer are not
+            // gated (report surface: skipped).
+            let target_state = self
+                .stage_registry
+                .acap_layer(&canonical_stage_id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
             let admission = target_state.map(|target| {
                 let evidence_ref = prior_evidence
                     .clone()
@@ -476,42 +480,6 @@ impl PipelineOrchestrator {
 
 fn payload_sha256(payload: &[u8]) -> String {
     hex::encode(Sha256::digest(payload))
-}
-
-/// Canonical pipeline stage id -> ACAP FSM state (PIR-014 runtime gate).
-///
-/// Stages with an unambiguous ACAP layer are gated; stages outside the FSM
-/// (derived diagnostics such as readiness/assurance/query, cross-cutting
-/// materialization helpers, and candidate structures like cluster) are not
-/// gated and do not advance the run's FSM state — their transitions surface in
-/// reports as `skipped`. Gating keys on the canonical id so alias smuggling
-/// cannot bypass the FSM.
-///
-/// Canonical multimodal compute stages (M400 S04) map to the intermediate ACAP
-/// layers: `figure_context` establishes document structure (`Structured`),
-/// `figure_analysis` typed visual extraction (`Extracted`), `table_fidelity`
-/// typed conflict evidence (`EvidenceLinked`), and `equation_extraction`
-/// formula representation (`Embedded`). `candidate_materialization` is
-/// deliberately NOT gated: like revision/extraction materialization it is a
-/// cross-cutting graph materialization helper whose candidate-only truth
-/// boundary (D127) is declared in the DATA contract, not in the ACAP FSM.
-fn acap_state_for_stage(stage_id: &str) -> Option<ArticleContextState> {
-    use ArticleContextState::*;
-    match stage_id {
-        "acquisition" => Some(SourceRegistered),
-        "catalog" => Some(SourceVerified),
-        "parse" => Some(Parsed),
-        "figure_context" => Some(Structured),
-        "figure_analysis" => Some(Extracted),
-        "table_fidelity" => Some(EvidenceLinked),
-        "equation_extraction" => Some(Embedded),
-        "extraction_compute" => Some(Extracted),
-        "embedding" => Some(Embedded),
-        "summary" => Some(Summarized),
-        "resolution" => Some(Resolved),
-        "checkpoint" => Some(AcceptedCheckpoint),
-        _ => None,
-    }
 }
 
 /// Durable entry evidence for the first gated stage, derived from the
@@ -873,6 +841,27 @@ mod tests {
         ))
     }
 
+    fn test_acap_layer(id: &str) -> Option<da_domain::ArticleContextState> {
+        use da_domain::ArticleContextState::*;
+        match id {
+            "acquisition" => Some(SourceRegistered),
+            "catalog" => Some(SourceVerified),
+            "parse" => Some(Parsed),
+            "figure_context" => Some(Structured),
+            "figure_analysis" => Some(Extracted),
+            "table_fidelity" => Some(EvidenceLinked),
+            "equation_extraction" => Some(Embedded),
+            "revision_materialization" => Some(Structured),
+            "extraction_compute" => Some(Extracted),
+            "extraction_materialization" => Some(EvidenceLinked),
+            "embedding" => Some(Embedded),
+            "summary" => Some(Summarized),
+            "resolution" => Some(Resolved),
+            "checkpoint" => Some(AcceptedCheckpoint),
+            _ => None,
+        }
+    }
+
     fn stage_contract(id: &str, aliases: &[&str]) -> da_domain::PipelineStageContract {
         da_domain::PipelineStageContract {
             id: id.into(),
@@ -890,6 +879,7 @@ mod tests {
             conditional: false,
             graph_truth_boundary: false,
             candidate_only: false,
+            acap_layer: test_acap_layer(id),
         }
     }
 
@@ -939,6 +929,26 @@ mod tests {
                 stage_contract("table_fidelity", &[]),
                 stage_contract("equation_extraction", &[]),
                 stage_contract("candidate_materialization", &[]),
+            ],
+            import_eligible: false,
+        };
+        Arc::new(ledger.registry().unwrap())
+    }
+
+    /// Registry for the linear article materialization spine (M402 S02):
+    /// parse establishes Parsed, revision_materialization Structured,
+    /// extraction_compute Extracted, extraction_materialization EvidenceLinked.
+    fn spine_registry() -> Arc<StageIdRegistry> {
+        let ledger = da_domain::PipelineStageLedger {
+            schema_version: "pipeline-stage-contracts.v1".into(),
+            stages: vec![
+                stage_contract("parse", &[]),
+                stage_contract("revision_materialization", &[]),
+                stage_contract("extraction_compute", &[]),
+                stage_contract("extraction_materialization", &[]),
+                stage_contract("embedding", &[]),
+                stage_contract("summary", &[]),
+                stage_contract("checkpoint", &[]),
             ],
             import_eligible: false,
         };
@@ -1737,6 +1747,93 @@ mod tests {
                 executor.calls(),
                 1,
                 "replay must not re-execute stage executors"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn linear_article_spine_admits_materialization_and_replays_from_cache() {
+        // Linear article spine (M402 S02): parse -> revision_materialization ->
+        // extraction_compute -> extraction_materialization -> embedding ->
+        // summary -> checkpoint. Every stage is gated from DATA; first run
+        // admits monotonically with durable evidence; identical replay is
+        // CacheHit, one record per step, executors not rerun.
+        let cache = Arc::new(MemoryCache::default());
+        let ids = [
+            "parse",
+            "revision_materialization",
+            "extraction_compute",
+            "extraction_materialization",
+            "embedding",
+            "summary",
+            "checkpoint",
+        ];
+        let mut orchestrator = PipelineOrchestrator::new(cache, clock(), spine_registry());
+        let mut executors = Vec::new();
+        for id in ids {
+            let stage = Arc::new(FakeStage::success(id, format!("{id}-out").as_bytes()));
+            orchestrator = orchestrator.with_executor(id, stage.clone()).unwrap();
+            executors.push(stage);
+        }
+        let chain = PipelineBuilder::new("linear-article-spine")
+            .step("parse", "parse", &[])
+            .step("revision", "revision_materialization", &["parse"])
+            .step("extract", "extraction_compute", &["parse"])
+            .step(
+                "materialize",
+                "extraction_materialization",
+                &["revision", "extract"],
+            )
+            .step("embed", "embedding", &["parse"])
+            .step("summary", "summary", &["revision"])
+            .step("checkpoint", "checkpoint", &["summary"])
+            .build()
+            .unwrap();
+        let first = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(first.completed, "spine must complete: {first:?}");
+        assert_eq!(first.stages.len(), 7, "one record per spine step");
+        for (index, record) in first.stages.iter().enumerate() {
+            assert!(
+                matches!(record.disposition, StageDisposition::Executed { .. }),
+                "stage {} must execute on first run",
+                record.stage_id
+            );
+            let admission = record
+                .admission
+                .as_ref()
+                .expect("spine stage is gated from DATA");
+            assert!(
+                admission.admitted,
+                "stage {} must be admitted",
+                record.stage_id
+            );
+            assert!(admission.error.is_none());
+            if index == 0 {
+                assert_eq!(admission.evidence_ref, "source:sha256:pdf-v1");
+            } else {
+                assert!(
+                    admission.evidence_ref.starts_with("test-key-"),
+                    "downstream evidence references the prior stage cache key"
+                );
+            }
+        }
+        assert_eq!(first.stages[1].stage_id, "revision_materialization");
+        assert_eq!(first.stages[3].stage_id, "extraction_materialization");
+        let second = orchestrator.run(&chain, source("pdf-v1")).await.unwrap();
+        assert!(second.completed);
+        assert_eq!(second.stages.len(), 7, "replay keeps one record per step");
+        for record in &second.stages {
+            assert!(
+                matches!(record.disposition, StageDisposition::CacheHit { .. }),
+                "spine replay must be cache hit for {}",
+                record.stage_id
+            );
+        }
+        for executor in &executors {
+            assert_eq!(
+                executor.calls(),
+                1,
+                "spine replay must not re-execute stage executors"
             );
         }
     }

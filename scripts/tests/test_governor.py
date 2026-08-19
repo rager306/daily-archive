@@ -9,6 +9,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import yaml
+
 # Ensure scripts/ is on path.
 _scripts_dir = Path(__file__).resolve().parent.parent
 if str(_scripts_dir) not in sys.path:
@@ -1998,6 +2000,61 @@ def test_acap_runtime_control_plane_invalid_yaml_is_flagged():
     flags = service._check_acap_runtime_control_plane()
     assert flags[0].flag == "acap_runtime_control_plane_invalid"
 
+
+def test_acap_runtime_control_plane_forbidden_orchestrator_match_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    contract_path = service.root / "scripts/governor/checks/acap_runtime_control_plane.yaml"
+    payload = yaml.safe_load(contract_path.read_text())
+    payload["source_markers"]["admission_orchestrator"] = {
+        "path": "crates/da-application/src/pipeline.rs",
+        "required_patterns": ["stage_registry"],
+        "forbidden_patterns": ["fn acap_state_for_stage"],
+    }
+    contract_path.write_text(yaml.safe_dump(payload, sort_keys=False))
+    _write(
+        service.root / "crates/da-application/src/pipeline.rs",
+        "fn acap_state_for_stage(id: &str) -> Option<ArticleContextState> { None }\n",
+    )
+    flags = service._check_acap_runtime_control_plane()
+    marker = [f for f in flags if f.flag == "acap_runtime_control_plane_source_marker_missing"]
+    assert any("forbidden" in f.evidence for f in marker), [f.evidence for f in marker]
+
+
+def test_acap_runtime_control_plane_ledger_layers_mismatch_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _write_acap_runtime_control_plane_contract(service.root)
+    contract_path = service.root / "scripts/governor/checks/acap_runtime_control_plane.yaml"
+    payload = yaml.safe_load(contract_path.read_text())
+    payload["ledger_layers"] = {
+        "path": "data/ontology/pipeline_stage_contracts.yaml",
+        "required": {
+            "parse": "parsed",
+            "revision_materialization": "structured",
+        },
+        "forbidden": ["candidate_materialization"],
+    }
+    contract_path.write_text(yaml.safe_dump(payload, sort_keys=False))
+    _write(
+        service.root / "data/ontology/pipeline_stage_contracts.yaml",
+        "schema_version: pipeline-stage-contracts.v1\n"
+        "import_eligible: false\n"
+        "stages:\n"
+        "  - id: parse\n"
+        "    acap_layer: parsed\n"
+        "  - id: revision_materialization\n"
+        "    acap_layer: extracted\n"
+        "  - id: candidate_materialization\n"
+        "    acap_layer: materialized\n",
+    )
+    flags = service._check_acap_runtime_control_plane()
+    missing = [f for f in flags if f.flag == "acap_runtime_control_plane_ledger_layers_missing"]
+    evidence = " ".join(f.evidence for f in missing)
+    assert "revision_materialization" in evidence, evidence
+    assert "candidate_materialization" in evidence, evidence
+
 def _write_html_structure_contract(root: Path) -> Path:
     """Write the HTML structure honesty contract + fixtures into a temp root."""
     contract = root / "scripts/governor/checks/html_structure_honesty.yaml"
@@ -2625,6 +2682,8 @@ def _run_all_tests() -> int:
         test_acap_runtime_control_plane_negative_fixture_must_cover_required_violations,
         test_acap_runtime_control_plane_source_marker_missing_is_flagged,
         test_acap_runtime_control_plane_invalid_yaml_is_flagged,
+        test_acap_runtime_control_plane_forbidden_orchestrator_match_is_flagged,
+        test_acap_runtime_control_plane_ledger_layers_mismatch_is_flagged,
         test_html_structure_honesty_pass_on_clean_fixtures,
         test_html_structure_honesty_missing_fixture_is_flagged,
         test_html_structure_honesty_positive_fixture_must_have_full_identity,

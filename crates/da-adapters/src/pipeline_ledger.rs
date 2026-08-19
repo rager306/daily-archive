@@ -44,6 +44,26 @@ mod tests {
             registry.resolve("cluster_detection").unwrap().as_str(),
             "cluster"
         );
+        assert_eq!(
+            registry.acap_layer("parse").unwrap(),
+            Some(da_domain::ArticleContextState::Parsed)
+        );
+        assert_eq!(
+            registry.acap_layer("grobid_parse").unwrap(),
+            Some(da_domain::ArticleContextState::Parsed)
+        );
+        assert_eq!(
+            registry.acap_layer("candidate_materialization").unwrap(),
+            None
+        );
+        assert_eq!(
+            registry.acap_layer("revision_materialization").unwrap(),
+            Some(da_domain::ArticleContextState::Structured)
+        );
+        assert_eq!(
+            registry.acap_layer("extraction_materialization").unwrap(),
+            Some(da_domain::ArticleContextState::EvidenceLinked)
+        );
         // Detection stays in the parse plane (resolved via alias); the
         // multimodal stages are canonical identities, never aliases of
         // parse/extraction_compute.

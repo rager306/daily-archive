@@ -179,9 +179,52 @@ source_markers:
     required_patterns:
       - "PipelineStageLedger"
       - "StageIdRegistry"
+      - "acap_layer"
+      - "fn acap_layer"
+      - "cannot declare FailedVisible as acap_layer"
+  admission_orchestrator:
+    path: crates/da-application/src/pipeline.rs
+    required_patterns:
+      - "stage_registry"
+      - ".acap_layer("
+    forbidden_patterns:
+      - "fn acap_state_for_stage"
+  pipeline_ledger_yaml:
+    path: data/ontology/pipeline_stage_contracts.yaml
+    required_patterns:
+      - "id: revision_materialization"
+      - "id: extraction_materialization"
+      - "acap_layer: structured"
+      - "acap_layer: evidence_linked"
+      - "acap_layer: parsed"
   scheduler_domain:
     path: crates/da-domain/src/scheduler.rs
     required_patterns:
       - "logical_result_vid"
       - "AttemptOutcome"
       - "PendingTask"
+
+# DATA binding: gated stages declare acap_layer; residuals stay unset (M402).
+ledger_layers:
+  path: data/ontology/pipeline_stage_contracts.yaml
+  required:
+    acquisition: source_registered
+    catalog: source_verified
+    parse: parsed
+    figure_context: structured
+    figure_analysis: extracted
+    table_fidelity: evidence_linked
+    equation_extraction: embedded
+    revision_materialization: structured
+    extraction_compute: extracted
+    extraction_materialization: evidence_linked
+    embedding: embedded
+    summary: summarized
+    resolution: resolved
+    checkpoint: accepted_checkpoint
+  forbidden:
+    - candidate_materialization
+    - readiness
+    - cluster
+    - assurance
+    - query

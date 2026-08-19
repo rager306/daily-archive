@@ -24,7 +24,7 @@ listed here — see `legacy/doc/adr/`.
 | [052](ADR-052-structured-logging-tracing-dual-layer.md) | Structured Logging — Tracing Dual-Layer JSON+Stderr | Accepted | 2026-08-05 |
 | [053](ADR-053-article-preparation-multi-layer-document-model.md) | Article Preparation 2.0 — Multi-Layer Document Model for Agent Readiness | Proposed | 2026-08-05 |
 | [054](ADR-054-mcp-server-knowledge-base-access.md) | MCP Server for Knowledge Base External Access | Proposed | 2026-08-07 |
-| [055](ADR-055-article-context-assurance-plane.md) | Article Context Assurance Plane | Accepted | 2026-08-09 |
+| [055](ADR-055-article-context-assurance-plane.md) | Article Context Assurance Plane | Accepted (amended M402/D276: data-driven `acap_layer`) | 2026-08-09 |
 | [056](ADR-056-universal-article-acquisition-load-plane.md) | Universal Article Acquisition and Load Plane | Accepted | 2026-08-10 |
 | [057](ADR-057-non-article-knowledge-unit-ontology.md) | Non-Article Knowledge Unit Ontology (Textbook / Chapter) | Proposed | 2026-08-11 |
 | [058](ADR-058-article-revision-expression-ontology.md) | Article Revision Expression Ontology | Accepted | 2026-08-11 |

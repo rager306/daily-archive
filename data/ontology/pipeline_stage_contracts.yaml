@@ -14,6 +14,7 @@ stages:
     failure_class: retryable_or_terminal_source_error
     conditional: false
     graph_truth_boundary: false
+    acap_layer: source_registered
   - id: catalog
     owner: adapter
     input_semantics: [checksum_bound_source_assets]
@@ -27,6 +28,7 @@ stages:
     failure_class: terminal_checksum_or_identity_conflict
     conditional: false
     graph_truth_boundary: false
+    acap_layer: source_verified
   - id: parse
     aliases: [grobid_parse, html_parse, parsed_artifact, document_context, figure_detect]
     owner: adapter
@@ -41,6 +43,7 @@ stages:
     failure_class: retryable_sidecar_or_terminal_parse_error
     conditional: false
     graph_truth_boundary: false
+    acap_layer: parsed
   - id: figure_context
     aliases: [figure_context_artifact]
     owner: application
@@ -55,6 +58,7 @@ stages:
     failure_class: terminal_grounding_or_policy_error
     conditional: true
     graph_truth_boundary: false
+    acap_layer: structured
   - id: figure_analysis
     owner: application
     input_semantics: [grounded_figure_semantic_context, figure_image_asset]
@@ -68,6 +72,7 @@ stages:
     failure_class: retryable_llm_or_terminal_schema_error
     conditional: true
     graph_truth_boundary: false
+    acap_layer: extracted
   - id: table_fidelity
     owner: application
     input_semantics: [parsed_article_tei_tables, visual_table_payload]
@@ -81,6 +86,7 @@ stages:
     failure_class: terminal_fidelity_or_identity_error
     conditional: true
     graph_truth_boundary: false
+    acap_layer: evidence_linked
   - id: equation_extraction
     owner: adapter
     input_semantics: [parsed_article_tei_formulas]
@@ -94,6 +100,7 @@ stages:
     failure_class: retryable_sidecar_or_terminal_extraction_error
     conditional: true
     graph_truth_boundary: false
+    acap_layer: embedded
   - id: revision_materialization
     owner: application
     input_semantics: [parsed_article, revision_content_context]
@@ -107,6 +114,7 @@ stages:
     failure_class: terminal_identity_or_graph_error
     conditional: false
     graph_truth_boundary: true
+    acap_layer: structured
   - id: extraction_compute
     aliases: [extract, rule_extract]
     owner: adapter
@@ -121,6 +129,7 @@ stages:
     failure_class: terminal_extractor_error
     conditional: false
     graph_truth_boundary: false
+    acap_layer: extracted
   - id: extraction_materialization
     aliases: [entity_papers_artifact]
     owner: application
@@ -135,6 +144,7 @@ stages:
     failure_class: terminal_graph_error
     conditional: false
     graph_truth_boundary: true
+    acap_layer: evidence_linked
   - id: candidate_materialization
     owner: application
     input_semantics: [revision_scoped_graph_content, typed_candidate_payloads]
@@ -163,6 +173,7 @@ stages:
     failure_class: retryable_embedder_or_terminal_dimension_error
     conditional: true
     graph_truth_boundary: false
+    acap_layer: embedded
   - id: summary
     aliases: [summaries_artifact]
     owner: application
@@ -177,6 +188,7 @@ stages:
     failure_class: terminal_grounding_or_policy_error
     conditional: true
     graph_truth_boundary: true
+    acap_layer: summarized
   - id: readiness
     owner: application
     input_semantics: [revision_scoped_graph_content, grounded_revision_summary]
@@ -217,6 +229,7 @@ stages:
     failure_class: terminal_policy_or_identity_conflict
     conditional: true
     graph_truth_boundary: false
+    acap_layer: resolved
   - id: assurance
     owner: application
     input_semantics: [pipeline_stage_evidence]
@@ -243,6 +256,7 @@ stages:
     failure_class: terminal_lineage_or_gate_error
     conditional: false
     graph_truth_boundary: false
+    acap_layer: accepted_checkpoint
   - id: query
     owner: application
     input_semantics: [sealed_checkpoint_package, revision_scoped_graph_content]

@@ -1,5 +1,26 @@
 # Changelog
 
+### M402 ACAP ledger isomorphism and linear article spine gate (R096, D276)
+
+- DATA binding: optional `acap_layer` on `PipelineStageContract`;
+  `StageIdRegistry::acap_layer` after alias resolve; `FailedVisible` rejected
+  as a layer; unknown tokens fail serde.
+- YAML ledger declares layers for the twelve historically gated stages plus
+  `revision_materialization` (`structured`) and `extraction_materialization`
+  (`evidence_linked`). `candidate_materialization` stays ungated.
+- `PipelineOrchestrator` dropped the hardcoded `acap_state_for_stage` match.
+  Linear spine journey `parse → revision_materialization → extraction_compute
+  → extraction_materialization → embedding → summary → checkpoint` admits and
+  cache-hit replays (39 pipeline lib tests). Multimodal regression and
+  candidate-helper skip stay green.
+- Governor `acap_runtime_control_plane` pins `acap_layer`, forbids
+  `fn acap_state_for_stage` in the orchestrator, and checks `ledger_layers`
+  required/forbidden maps. Self-test 74/74. `--phase preflight` and
+  `--phase active --check-only`: violations=0.
+- ADR-055 amended: residuals `materialized` / `enriched` / `finalized` /
+  `task_accepted` are typed `no_claim`, not invented mappings.
+- D127 remains locked. Optimizer auto-promotion remains disabled.
+
 ### M401 S05 Governor and review-register closure (R095, PIR-017, PIR-021)
 
 - Rust offline verify pin (T01): committed genuine envelopes
