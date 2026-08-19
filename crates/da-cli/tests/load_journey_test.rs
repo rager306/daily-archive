@@ -244,6 +244,8 @@ async fn run_journey(
         manifestations(),
         false,
         false,
+        false,
+        None,
     )
     .await
 }
@@ -529,6 +531,8 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
             manifestations(),
             true,
             false,
+            false,
+            None,
         )
         .await
     };
@@ -624,6 +628,8 @@ async fn journey_with_tables_runs_detection_anchored_branch() {
             manifestations(),
             true,
             true,
+            false,
+            None,
         )
         .await
     };
@@ -722,8 +728,308 @@ async fn journey_tables_without_detector_fails_closed_at_composition() {
         manifestations(),
         true,
         true,
+        false,
+        None,
     )
     .await
     .expect_err("tables without detector must fail closed");
     assert!(err.contains("detector"), "{err}");
+}
+
+// ── M409 S03: per-image figure branch ───────────────────────────────────────
+
+struct FakeLlm;
+
+#[async_trait]
+impl da_ports::multimodal_llm::MultimodalLlmPort for FakeLlm {
+    fn route(&self) -> da_ports::multimodal_llm::ModelRouteDescriptor {
+        da_ports::multimodal_llm::ModelRouteDescriptor {
+            route_id: "fake-figure-analysis".into(),
+            protocol: da_ports::multimodal_llm::ModelWireProtocol::OpenAiChatCompletions,
+            model: "fake".into(),
+            endpoint_fingerprint: "fake".into(),
+            supports_images: true,
+            supports_structured_output: true,
+            may_fallback: false,
+        }
+    }
+
+    async fn complete_structured(
+        &self,
+        request: da_ports::multimodal_llm::MultimodalLlmRequest,
+    ) -> da_ports::multimodal_llm::MultimodalLlmResult<
+        da_ports::multimodal_llm::MultimodalLlmResponse,
+    > {
+        let structured = serde_json::to_value(da_domain::figure_analysis::FigureAnalysis {
+            candidate_id: "cand".into(),
+            artifact_id: "Figure3".into(),
+            visual_type: da_domain::figure_analysis::VisualAnalysisType::Plot,
+            description: "fake plot".into(),
+            components: vec![],
+            relationships: vec![],
+            findings: vec![],
+            citations: vec![da_domain::figure_analysis::FigureAnalysisCitation {
+                section_id: "sec-1".into(),
+                path_id: "1".into(),
+                quote: "Overview of the GEPA system".into(),
+            }],
+            confidence: 0.9,
+            provenance: da_domain::figure_analysis::FigureAnalysisProvenance {
+                image_sha256: sha(9),
+                context_sha256: sha(3),
+                route_id: "fake".into(),
+                protocol: "openai_chat_completions".into(),
+                requested_model: "fake".into(),
+                resolved_model: "fake".into(),
+                prompt_sha256: sha(5),
+                output_schema_sha256: sha(6),
+                schema_id: "plot".into(),
+                stage1_visual_type: "plot".into(),
+                prompt_task_sha256: sha(7),
+                route_policy_sha256: sha(8),
+                model_binding_sha256: sha(9),
+                input_sha256: sha(10),
+                output_sha256: sha(11),
+                input_tokens: None,
+                output_tokens: None,
+                latency_ms: 1,
+            },
+            typed_payload: None,
+            authoritative: false,
+            import_eligible: false,
+        })
+        .expect("serialize");
+        Ok(da_ports::multimodal_llm::MultimodalLlmResponse {
+            structured_output: structured,
+            route: self.route(),
+            resolved_model: "fake".into(),
+            input_tokens: None,
+            output_tokens: None,
+            latency_ms: 1,
+            prompt_lineage: Some(da_domain::prompt_optimization::PromptExecutionLineage {
+                run_id: sha(1),
+                task_id: "figure_analysis".into(),
+                task_spec_sha256: da_domain::ContentDigest::of_text(&sha(5)),
+                rendered_prompt_sha256: da_domain::ContentDigest::of_text(&sha(6)),
+                output_schema_sha256: da_domain::ContentDigest::of_text(&sha(7)),
+                route_policy_sha256: da_domain::ContentDigest::of_text(&sha(8)),
+                endpoint_sha256: da_domain::ContentDigest::of_text(&sha(9)),
+                model_binding_sha256: da_domain::ContentDigest::of_text(&sha(10)),
+                provider: "fake".into(),
+                model: "fake".into(),
+                input_sha256: da_domain::ContentDigest::of_text(&sha(11)),
+                output_sha256: da_domain::ContentDigest::of_text(&sha(12)),
+                input_tokens: 1,
+                output_tokens: 1,
+                latency_ms: 1,
+                temperature_milli: 0,
+                max_output_tokens: 1024,
+                estimated_cost_microunits: None,
+                authoritative: false,
+                import_eligible: false,
+            }),
+        })
+    }
+}
+
+struct FigureDetector;
+
+#[async_trait]
+impl da_ports::figure_detection::FigureDetectionPort for FigureDetector {
+    fn detector_fingerprint(&self) -> &str {
+        "fake-figure-detector-v1"
+    }
+
+    async fn detect(
+        &self,
+        request: da_ports::figure_detection::FigureDetectionRequest,
+    ) -> da_ports::figure_detection::FigureDetectionPortResult<
+        da_ports::figure_detection::FigureDetectionResult,
+    > {
+        // Write a real (tiny) PNG next to the PDF so the analysis stage can
+        // read the image asset back.
+        let dir = request.canonical_article_dir.join("figures");
+        std::fs::create_dir_all(&dir).expect("figures dir");
+        // 1x1 PNG (deterministic bytes).
+        let png: &[u8] = &[
+            0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78,
+            0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+        ];
+        std::fs::write(dir.join("Figure3.png"), png).expect("png write");
+        let png_sha = {
+            use sha2::{Digest, Sha256};
+            hex::encode(Sha256::digest(png))
+        };
+        Ok(da_ports::figure_detection::FigureDetectionResult {
+            detector_fingerprint: "fake-figure-detector-v1".into(),
+            metadata_path: dir.join("manifest.json"),
+            detector_metadata_sha256: sha(4),
+            manifest_sha256: sha(4),
+            artifacts: vec![
+                da_domain::figure::DetectedVisualArtifact {
+                    artifact_id: "Figure3".into(),
+                    kind: da_domain::figure::VisualArtifactKind::Figure,
+                    detector_name: "fake-figure-detector".into(),
+                    detector_fingerprint: "fake-figure-detector-v1".into(),
+                    source_pdf_sha256: sha(7),
+                    page_index: 3,
+                    region: da_domain::figure::BoundingBox72Dpi {
+                        x1: 10.0,
+                        y1: 20.0,
+                        x2: 500.0,
+                        y2: 300.0,
+                    },
+                    caption_region: da_domain::figure::BoundingBox72Dpi {
+                        x1: 0.0,
+                        y1: 0.0,
+                        x2: 1.0,
+                        y2: 1.0,
+                    },
+                    caption: "Figure 3: Overview of the GEPA system.".into(),
+                    image_text: vec![],
+                    render_dpi: 72,
+                    asset_path: "figures/Figure3.png".into(),
+                    asset_sha256: png_sha,
+                    metadata_sha256: sha(4),
+                },
+                da_domain::figure::DetectedVisualArtifact {
+                    artifact_id: "Table1".into(),
+                    kind: da_domain::figure::VisualArtifactKind::Table,
+                    detector_name: "fake-figure-detector".into(),
+                    detector_fingerprint: "fake-figure-detector-v1".into(),
+                    source_pdf_sha256: sha(7),
+                    page_index: 3,
+                    region: da_domain::figure::BoundingBox72Dpi {
+                        x1: 10.0,
+                        y1: 20.0,
+                        x2: 500.0,
+                        y2: 300.0,
+                    },
+                    caption_region: da_domain::figure::BoundingBox72Dpi {
+                        x1: 0.0,
+                        y1: 0.0,
+                        x2: 1.0,
+                        y2: 1.0,
+                    },
+                    caption: "Table 1: results.".into(),
+                    image_text: vec![],
+                    render_dpi: 72,
+                    asset_path: "figures/Table1.png".into(),
+                    asset_sha256: sha(9),
+                    metadata_sha256: sha(4),
+                },
+            ],
+            duration_ms: 1,
+            revision_vid: request.revision_vid,
+        })
+    }
+}
+
+fn parsed_with_figure_caption() -> ParsedArticle {
+    let mut parsed = parsed_article_with_tables_and_formulas();
+    parsed.sections[1].text = format!(
+        "{} Figure 3: Overview of the GEPA system.",
+        parsed.sections[1].text
+    );
+    parsed
+}
+
+struct FigureParser;
+
+#[async_trait]
+impl ParserPort for FigureParser {
+    async fn parse_pdf(&self, _pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
+        let mut parsed = parsed_with_figure_caption();
+        parsed.paper_id = paper_id.to_string();
+        Ok(parsed)
+    }
+}
+
+#[tokio::test]
+async fn journey_with_figures_runs_per_image_branch() {
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache_dir = tempdir("cache-fig");
+    let cache = Arc::new(FilePipelineCache::new(cache_dir.clone()));
+    let ports = JourneyPorts {
+        parser: Arc::new(FigureParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: Some(Arc::new(FigureDetector)),
+    };
+    let branch = da_cli::load_journey::FigureBranchSettings {
+        model: Arc::new(FakeLlm),
+        prompt_fingerprint: sha(5),
+        schema_fingerprint: sha(6),
+        context_schema: "FigureSemanticContext@serde-v2-summary-provenance".into(),
+    };
+    let pdf_dir = tempdir("pdf-fig");
+    let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
+    std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
+
+    let run = async |store: &Arc<SamyamaGraphStore>, cache: Arc<FilePipelineCache>| {
+        da_cli::load_journey::run_journey_content(
+            &ports,
+            store,
+            cache,
+            clock(),
+            ledger_registry(),
+            PAPER_ID,
+            &pdf_path,
+            source(),
+            "arxiv",
+            1,
+            manifestations(),
+            true,
+            true,
+            true,
+            Some(branch.clone()),
+        )
+        .await
+    };
+
+    let (outcome, report) = run(&store, cache.clone()).await.expect("figures journey");
+    assert!(report.completed);
+    assert_eq!(report.stages.len(), 8, "with_figures topology: eight steps");
+    assert!(outcome.ingest.revision_vid.is_some());
+    assert_eq!(
+        query_count(&store, "MATCH (f:FigureCandidate) RETURN count(f) AS figs").await,
+        1,
+        "figure candidate materialized through the per-image branch"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (t:TableCandidate) RETURN count(t) AS tabs").await,
+        1,
+        "table candidates still materialize"
+    );
+    for label in ["FigureCandidate", "TableCandidate", "EquationCandidate"] {
+        assert_eq!(
+            query_count(
+                &store,
+                &format!(
+                    "MATCH (c:{label}) WHERE c.import_eligible = true RETURN count(c) AS unlocked"
+                )
+            )
+            .await,
+            0,
+            "no {label} unlocks import"
+        );
+    }
+
+    // Identical replay: parse figures tables embed equations and both
+    // per-image mini steps cache-hit; graph stages re-execute idempotently.
+    let (_, report2) = run(&store, cache).await.expect("figures replay");
+    assert!(report2.completed);
+    assert_eq!(
+        query_count(&store, "MATCH (f:FigureCandidate) RETURN count(f) AS figs").await,
+        1,
+        "no duplicate figure candidates"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (t:TableCandidate) RETURN count(t) AS tabs").await,
+        1,
+        "no duplicate table candidates"
+    );
 }

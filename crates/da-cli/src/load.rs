@@ -117,6 +117,11 @@ pub struct LoadArgs {
     #[arg(long, default_value_t = false)]
     pub tables: bool,
 
+    /// Figure candidate branch (M409): per-image context and analysis behind
+    /// the LLM route. Requires the detector and a configured model route;
+    /// otherwise a typed skip and the tables journey runs.
+    #[arg(long, default_value_t = false)]
+    pub figures: bool,
     /// Run the content stages through the canonical article journey
     /// (PipelineOrchestrator with ACAP gating, cache-honest compute and
     /// always-run idempotent materialization). Default ON for eligible
@@ -149,6 +154,8 @@ struct CliContentPipeline {
     /// Table candidate branch (M408): extends the journey topology when the
     /// detector is configured.
     tables: bool,
+    /// Figure candidate branch (M409).
+    figures: bool,
 }
 
 /// Typed reasons the orchestrated journey is skipped for a load request
@@ -211,6 +218,19 @@ impl CliContentPipeline {
                 event = "da_load_journey_tables_skipped"
             );
         }
+        let with_figures = self.figures
+            && ports.detector.is_some()
+            && crate::load_journey::resolve_figure_branch_from_env().is_some();
+        if self.figures && !with_figures {
+            tracing::warn!(
+                article_id = req.paper_id,
+                reason = "figures_route_unconfigured",
+                event = "da_load_journey_figures_skipped"
+            );
+        }
+        let figure_branch = with_figures
+            .then(crate::load_journey::resolve_figure_branch_from_env)
+            .flatten();
         let (mut outcome, report) = crate::load_journey::run_journey_content(
             ports,
             &self.store,
@@ -223,8 +243,10 @@ impl CliContentPipeline {
             &source_code,
             revision_context.revision,
             revision_context.manifestations,
-            self.equations || self.tables,
+            self.equations || self.tables || self.figures,
             with_tables,
+            with_figures,
+            figure_branch,
         )
         .await?;
         let hits = report
@@ -1103,6 +1125,7 @@ fn make_content_pipeline(
             .then(crate::load_journey::JourneyPorts::from_env),
         equations: args.equations,
         tables: args.tables,
+        figures: args.figures,
     })
 }
 
@@ -2275,6 +2298,7 @@ mod tests {
             journey: true,
             equations: false,
             tables: false,
+            figures: false,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(

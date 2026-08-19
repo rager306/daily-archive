@@ -746,6 +746,65 @@ impl ArticleJourneyComposition {
         })
     }
 
+    /// Journey v4: figures branch (M409 S03). Eight steps: detection sits in
+    /// the parse layer, context and per-image analysis run outside this
+    /// static topology (the driver runs fresh mini-pipelines per artifact),
+    /// and candidate materialization happens in the driver with all three
+    /// family payloads. ACAP order stays monotonic.
+    pub fn with_figures(
+        stage_registry: &StageIdRegistry,
+        pipeline_id: &str,
+    ) -> Result<Self, PipelineOrchestratorError> {
+        for id in [
+            "parse",
+            "revision_materialization",
+            "extraction_compute",
+            "extraction_materialization",
+            "table_fidelity",
+            "embedding",
+            "equation_extraction",
+        ] {
+            stage_registry
+                .parse_canonical(id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        stage_registry
+            .resolve("figure_detect")
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let topology = PipelineBuilder::new(pipeline_id)
+            .step("parse", "parse", &[])
+            .step("figures", "figure_detect", &["parse"])
+            .step("revision", "revision_materialization", &["parse"])
+            .step("extract", "extraction_compute", &["parse"])
+            .step(
+                "materialize",
+                "extraction_materialization",
+                &["revision", "extract", "parse"],
+            )
+            .step("tables", "table_fidelity", &["parse", "figures"])
+            .step("embed", "embedding", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .build()
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut canonical_stages = Vec::new();
+        for step in &topology.steps {
+            let canonical = stage_registry
+                .resolve(&step.stage)
+                .map_err(PipelineOrchestratorError::StageIdentity)?
+                .as_str()
+                .to_owned();
+            if seen.insert(canonical.clone()) {
+                canonical_stages.push(canonical);
+            }
+        }
+        Ok(Self {
+            pipeline_id: pipeline_id.to_owned(),
+            topology,
+            canonical_stages,
+        })
+    }
+
     /// Canonical article journey topology validated against the DATA registry.
     pub fn canonical(
         stage_registry: &StageIdRegistry,

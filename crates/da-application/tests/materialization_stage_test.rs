@@ -642,3 +642,137 @@ async fn candidate_stage_without_tables_dep_keeps_typed_deferred_row() {
             .contains("deferred")
     );
 }
+
+// ── M409 S02: figure family in candidate materialization ───────────────────
+
+fn figure_candidate(revision_vid: &str) -> da_domain::figure_candidate::FigureCandidate {
+    let section_vid = da_domain::vid::revision_section_vid(revision_vid, 1)
+        .expect("section vid")
+        .to_string();
+    let vid = da_domain::figure_candidate::figure_candidate_vid(
+        revision_vid,
+        "Figure3",
+        "pdffigures2-0.0.12",
+        &format!("{:064x}", 9),
+        &section_vid,
+    )
+    .expect("vid");
+    let candidate = da_domain::figure_candidate::FigureCandidate {
+        vid: vid.clone(),
+        revision_vid: revision_vid.into(),
+        artifact_id: "Figure3".into(),
+        kind: da_domain::VisualArtifactKind::Figure,
+        detector_name: "pdffigures2".into(),
+        detector_fingerprint: "pdffigures2-0.0.12".into(),
+        detector_metadata_sha256: format!("{:064x}", 4),
+        source_pdf_sha256: format!("{:064x}", 7),
+        image_sha256: format!("{:064x}", 9),
+        asset_path: "figures/Figure3.png".into(),
+        page_index: 3,
+        section_vid,
+        section_title: "Section 1".into(),
+        section_ordinal: 1,
+        caption: "Figure 3: results.".into(),
+        candidate_metadata_sha256: format!("{:064x}", 6),
+        authoritative: false,
+        import_eligible: false,
+        schema_version: 1,
+        materialization_diagnostics: None,
+    };
+    assert_eq!(candidate.recompute_vid().expect("recompute"), vid);
+    candidate
+}
+
+fn figures_payload(candidates: Vec<da_domain::figure_candidate::FigureCandidate>) -> Vec<u8> {
+    serde_json::to_vec(&candidates).expect("candidates serialize")
+}
+
+#[tokio::test]
+async fn candidate_stage_writes_figures_then_replays_unchanged() {
+    let store = Arc::new(MockGraphStore::new());
+    let revision = RevisionMaterializationStage::new(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        clock(),
+        "arxiv",
+        PAPER_ID,
+        1,
+        manifestations(),
+    );
+    let parse_payload = serde_json::to_vec(&parsed_article()).expect("parsed serialize");
+    let revision_out = revision
+        .execute(request(&[("parse", parse_payload)]))
+        .await
+        .expect("revision plane");
+    let revision_report: RevisionMaterializationReport =
+        serde_json::from_slice(&revision_out.payload).expect("revision report");
+    let revision_vid = revision_report.result.revision_vid.clone();
+
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let deps = [
+        ("equations", equations_payload(vec![])),
+        (
+            "figures",
+            figures_payload(vec![figure_candidate(&revision_vid)]),
+        ),
+    ];
+    let first = stage.execute(request(&deps)).await.expect("figure run");
+    let first_report: CandidateMaterializationReport =
+        serde_json::from_slice(&first.payload).expect("report decodes");
+    let figure_row = first_report
+        .families
+        .iter()
+        .find(|row| row.family == "figure")
+        .expect("figure row");
+    assert_eq!(figure_row.status, "applied");
+    assert_eq!(figure_row.candidates, 1);
+    assert!(figure_row.nodes_created > 0);
+    let nodes_after_first = store.node_count_total();
+
+    let deps2 = [
+        ("equations", equations_payload(vec![])),
+        (
+            "figures",
+            figures_payload(vec![figure_candidate(&revision_vid)]),
+        ),
+    ];
+    let second = stage.execute(request(&deps2)).await.expect("figure replay");
+    let second_report: CandidateMaterializationReport =
+        serde_json::from_slice(&second.payload).expect("report decodes");
+    let replay_row = second_report
+        .families
+        .iter()
+        .find(|row| row.family == "figure")
+        .expect("figure row");
+    assert_eq!(replay_row.status, "unchanged");
+    assert_eq!(replay_row.nodes_created, 0);
+    assert_eq!(
+        store.node_count_total(),
+        nodes_after_first,
+        "figure replay leaves the graph unchanged"
+    );
+}
+
+#[tokio::test]
+async fn candidate_stage_without_figures_dep_keeps_typed_deferred_row() {
+    let store = Arc::new(MockGraphStore::new());
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let out = stage
+        .execute(request(&[("equations", equations_payload(vec![]))]))
+        .await
+        .expect("run without figures dep");
+    let report: CandidateMaterializationReport =
+        serde_json::from_slice(&out.payload).expect("report decodes");
+    let figure_row = report
+        .families
+        .iter()
+        .find(|row| row.family == "figure")
+        .expect("figure row");
+    assert_eq!(figure_row.status, "not_attempted");
+    assert!(
+        figure_row
+            .reason
+            .as_deref()
+            .unwrap_or("")
+            .contains("deferred")
+    );
+}

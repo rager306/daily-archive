@@ -77,6 +77,7 @@ pub use promotion::{
     PromotionAction, PromotionService, PromotionServiceError, PromotionTransitionRequest,
 };
 pub mod figure_analysis;
+pub mod figure_candidate_assembly;
 pub use figure_analysis::{
     FIGURE_ANALYSIS_PROMPT_VERSION, FIGURE_ANALYSIS_SCHEMA_VERSION, FigureAnalysisUseCase,
     FigureAnalysisUseCaseError,

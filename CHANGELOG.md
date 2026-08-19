@@ -1,5 +1,38 @@
 # Changelog
 
+### M409 Figure candidates join the operator journey (R096, R094)
+
+- `figure_candidate_assembly` (da-application): the M400 production shim —
+  `figure_candidate_from_analysis` converts `FigureSemanticContext` plus the
+  typed `FigureAnalysis` into a `FigureCandidate`, and `locate_figure_section`
+  grounds figures by an exact case-insensitive caption substring match in the
+  containing section (the same text-window discipline GROBID uses for TEI
+  tables). Missing or ambiguous captions are typed errors — a candidate is
+  never grounded on a guess. `candidate_metadata_sha256` is deterministic
+  (digest over the canonical JSON with metadata and diagnostics blanked);
+  VID recomputes from revision-bound lineage; authority and import locks are
+  hard-false.
+- `CandidateMaterializationStage` v3 gains the figure family over
+  `FigureCandidateMaterializer`; all three families (equation, figure,
+  table) materialize together with per-family idempotence; absent
+  dependencies keep typed deferred rows.
+- `ArticleJourneyComposition::with_figures` (eight static steps) plus the
+  per-image driver behind `da load --figures`: detection and context and
+  analysis run per artifact through fresh orchestrator mini-pipelines that
+  share the cache (context/analysis replay as cache hits); payloads are
+  recovered via reconstructed cache keys; candidates assemble and
+  materialize in a final combined stage run. `MultimodalProductionSettings`
+  resolves the LLM route from the DATA registries; without a route the CLI
+  warns `da_load_journey_figures_skipped figures_route_unconfigured` and
+  runs the tables journey.
+- Integration proof: fake detector writes a real PNG, fake LLM port returns
+  a lineage-carrying typed analysis; one run materializes revision,
+  entities, equation, figure and table candidates; replay keeps
+  parse/figures/embed/equations/tables and both per-image mini steps as
+  cache hits with zero duplicate candidates. Live checks: flagless soak
+  unchanged; `--figures` without a route is a typed skip. D127 remains
+  locked.
+
 ### M408 Table candidates join the operator journey (R096, R094)
 
 - `TableExtractionStage` (da-application): pure cacheable compute joining
