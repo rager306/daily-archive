@@ -1,5 +1,27 @@
 # Changelog
 
+### M405 Live soak of the operator journey and D134 fix (R096)
+
+- Live soak on the pinned versioned catalog article 2506.07853v1 with real
+  GROBID and FD_API: `da load --journey` completes (catalog-hit ensure, 28s
+  live parse, revision plane 24 nodes/23 edges, 3 entities, live embed),
+  writes a durable snapshot and load report, and emits
+  `da_load_journey_completed`. Identical replay: parse/extraction/embedding
+  are `cache_hit` (run drops from ~32s to ~0.04s — load-v1 parse fingerprint
+  continuity proven live) while graph stages always re-execute.
+- **Defect found live and fixed (D134):** the revision materialization plane
+  created Paper/PaperRevision/Section/SourceManifestation nodes WITHOUT
+  `retrieval_eligible` — a retrieval query over the journey graph returned
+  zero Papers. `find_or_create_node` now stamps the flag with the ingest
+  parity policy: content planes (Paper, PaperRevision, Section) true;
+  SourceManifestation (evidence plane) false. Regression test
+  `revision_stage_stamps_d134_retrieval_flags_on_every_label` (red first,
+  then green); post-fix soak confirms `count(Paper where
+  retrieval_eligible=true) == 1`.
+- Governor pins the D134 markers on the revision materialization source.
+  Soak artifacts: `artifacts/loads/journey_soak_2506.07853v1.{sgsnap,json,
+identity.json}`. D127 remains locked.
+
 ### M404 Operator journey path in da load (R096)
 
 - New `crates/da-cli/src/load_journey.rs` composition root: `run_journey_content`

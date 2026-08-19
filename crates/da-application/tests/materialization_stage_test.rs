@@ -160,6 +160,66 @@ async fn revision_stage_creates_then_reuses_with_zero_new_writes() {
 }
 
 #[tokio::test]
+async fn revision_stage_stamps_d134_retrieval_flags_on_every_label() {
+    // D134 (MEM480 parity with the legacy ingest path): every materialized
+    // node carries retrieval_eligible. Paper/PaperRevision/Section are live
+    // for retrieval; SourceManifestation is evidence-plane and stays false
+    // (mirroring the ingest source surrogate). Caught live by the M405 soak:
+    // `MATCH (n:Paper) WHERE n.retrieval_eligible = true` returned 0.
+    let store = Arc::new(MockGraphStore::new());
+    let stage = RevisionMaterializationStage::new(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        clock(),
+        "arxiv",
+        PAPER_ID,
+        1,
+        manifestations(),
+    );
+    let parse_payload = serde_json::to_vec(&parsed_article()).expect("parsed serialize");
+    let first = stage
+        .execute(request(&[("parse", parse_payload)]))
+        .await
+        .expect("revision materialization");
+
+    async fn flag_of(store: &MockGraphStore, label: &str, key: &str, value: &str) -> Option<bool> {
+        let node = store
+            .find_node_by_string_property(label, key, value)
+            .await
+            .unwrap_or_else(|| panic!("no {label} node found by {key}={value}"));
+        store
+            .get_node_property_bool(node, "retrieval_eligible")
+            .await
+    }
+
+    let report: RevisionMaterializationReport =
+        serde_json::from_slice(&first.payload).expect("report decodes");
+    let paper_vid = report.result.paper_vid.clone();
+    let revision_vid = report.result.revision_vid.clone();
+    let manifestation_sha = manifestations()[0].sha256.clone();
+
+    assert_eq!(
+        flag_of(&store, "Paper", "arxiv_id", PAPER_ID).await,
+        Some(true),
+        "Paper is retrieval-live (D134)"
+    );
+    assert_eq!(
+        flag_of(&store, "PaperRevision", "vid", &revision_vid).await,
+        Some(true),
+        "PaperRevision content is retrieval-live (D134)"
+    );
+    assert_eq!(
+        flag_of(&store, "Section", "section_id", "sec-0").await,
+        Some(true),
+        "Sections are retrieval-live (D134)"
+    );
+    assert_eq!(
+        flag_of(&store, "SourceManifestation", "sha256", &manifestation_sha).await,
+        Some(false),
+        "SourceManifestation is evidence-plane, not retrieval-live"
+    );
+}
+
+#[tokio::test]
 async fn extraction_stage_materializes_entities_after_revision_plane_exists() {
     let store = Arc::new(MockGraphStore::new());
     // Seed the revision plane first: extraction links entities to the Paper.

@@ -438,6 +438,20 @@ impl RevisionMaterializationUseCase {
                 operation: "create node",
                 source,
             })?;
+        // D134 (MEM480 parity with the legacy ingest path): every materialized
+        // node carries retrieval_eligible. Content planes (Paper,
+        // PaperRevision, Section) are retrieval-live; SourceManifestation is
+        // evidence-plane and stays false (mirroring the ingest source
+        // surrogate). Caught live by the M405 soak: a retrieval-eligible Paper
+        // count query returned 0 over the journey graph.
+        let retrieval_live = !matches!(label, "SourceManifestation");
+        self.graph_store
+            .set_node_property_bool(node, "retrieval_eligible", retrieval_live)
+            .await
+            .map_err(|source| RevisionMaterializationError::Graph {
+                operation: "stamp retrieval_eligible",
+                source,
+            })?;
         result.nodes_created += 1;
         Ok(node)
     }
