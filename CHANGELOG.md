@@ -1,5 +1,35 @@
 # Changelog
 
+### M408 Table candidates join the operator journey (R096, R094)
+
+- `TableExtractionStage` (da-application): pure cacheable compute joining
+  GROBID TEI tables with pdffigures2 detection artifacts. Join policy is
+  deterministic and fail-visible: same-page box IoU ≥ 0.5, best match wins,
+  one artifact anchors at most one TEI table; unmatched tables are typed
+  `tei_only` rows with a reason (page, overlap, coordinates, section
+  ordinal); a missing detection dependency is a typed `detection_absent`
+  artifact with zero candidates. The visual fidelity side stays `None` —
+  `FigureTablePayload` is an LLM product (ADR-060) and is never fabricated;
+  `compare_table_fidelity(None, Some(structural))` emits the typed
+  visual-missingness report.
+- `CandidateMaterializationStage` gains the table family over
+  `TableCandidateMaterializer` (impl v2): real applied/unchanged rows when
+  the tables dependency is wired, typed deferred row when it is not;
+  equation and table families materialize together with per-family
+  idempotence.
+- `ArticleJourneyComposition::with_tables` (nine steps, ACAP-monotonic:
+  detection sits in the parse layer right after parse, tables at
+  evidence_linked next to extraction materialization) behind `da load
+  --tables`. `JourneyPorts.detector` resolves `PDFFIGURES2_JAR`; without
+  it the CLI warns `da_load_journey_tables_skipped` with reason
+  `tables_detection_unconfigured` and runs the equations journey, while
+  the composition itself fails closed if a tables run is requested without
+  a detector (defense in depth).
+- Integration proof: one run materializes revision, entities, equation and
+  table candidates; replay dispositions keep only graph stages executing
+  `[hit, hit, executed, hit, executed, hit, hit, hit, executed]`; no
+  candidate unlocks import. Flagless soaks unchanged. D127 remains locked.
+
 ### M407 Equation candidates join the operator journey (R096, R094)
 
 - `EquationExtractionStage` (da-application): pure cacheable compute over

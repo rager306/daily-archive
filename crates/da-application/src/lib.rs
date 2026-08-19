@@ -19,6 +19,7 @@ pub mod revision_materialization;
 pub mod revision_materialization_stage;
 pub mod revision_query;
 pub mod revision_readiness;
+pub mod table_extraction_stage;
 pub mod tex_inspect;
 
 pub use agent_run::{

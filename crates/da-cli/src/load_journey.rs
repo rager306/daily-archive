@@ -33,8 +33,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use da_adapters::{
-    FdApiEmbedder, GrobidParseStage, GrobidParser, GrobidProfile, ParsedArticleEmbeddingStage,
-    RuleBasedExtractor, RuleExtractionStage, SamyamaGraphStore,
+    FdApiEmbedder, FigureDetectionStage, GrobidParseStage, GrobidParser, GrobidProfile,
+    ParsedArticleEmbeddingStage, PdfFigures2Adapter, RuleBasedExtractor, RuleExtractionStage,
+    SamyamaGraphStore,
 };
 use da_application::candidate_materialization_stage::CandidateMaterializationStage;
 use da_application::equation_extraction_stage::EquationExtractionStage;
@@ -43,6 +44,7 @@ use da_application::extraction_materialization_stage::ExtractionMaterializationS
 use da_application::revision_materialization::RevisionManifestationInput;
 use da_application::revision_materialization_stage::RevisionMaterializationReport;
 use da_application::revision_materialization_stage::RevisionMaterializationStage;
+use da_application::table_extraction_stage::TableExtractionStage;
 use da_application::{
     ArticleJourneyComposition, LoadContentOutcome, LoadExtractOutcome, LoadIngestOutcome,
     PipelineOrchestrator, PipelineRunReport, StageDisposition, embedding_fingerprint,
@@ -51,6 +53,7 @@ use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
 use da_ports::clock::Clock;
 use da_ports::embedder::Embedder;
 use da_ports::extractor::Extractor;
+use da_ports::figure_detection::{FigureDetectionPort, FigureDetectionRequest};
 use da_ports::graph_store::DirectGraphStore;
 use da_ports::parser::{ParsedArticle, ParserPort};
 use da_ports::pipeline_cache::{CacheLookup, PipelineCache, SourceIdentity, StageCacheKey};
@@ -61,17 +64,23 @@ pub struct JourneyPorts {
     pub parser: Arc<dyn ParserPort>,
     pub extractor: Arc<dyn Extractor>,
     pub embedder: Arc<dyn Embedder>,
+    /// Optional visual detector (PDFFIGURES2_JAR surface). `None` keeps the
+    /// table branch skipped with a typed reason.
+    pub detector: Option<Arc<dyn FigureDetectionPort>>,
 }
 
 impl JourneyPorts {
     /// Resolve every port from the existing env/config surfaces. No new env
-    /// keys: GROBID_* and FD_API_* surfaces are reused exactly as the legacy
-    /// load path resolves them.
+    /// keys: GROBID_*, FD_API_* and PDFFIGURES2_JAR are reused exactly as
+    /// the legacy load path resolves them.
     pub fn from_env() -> Self {
         Self {
             parser: Arc::new(GrobidParser::from_env()),
             extractor: Arc::new(RuleBasedExtractor::new()),
             embedder: Arc::new(FdApiEmbedder::from_env()),
+            detector: PdfFigures2Adapter::from_env()
+                .ok()
+                .map(|adapter| Arc::new(adapter) as Arc<dyn FigureDetectionPort>),
         }
     }
 }
@@ -156,8 +165,11 @@ pub async fn run_journey_content(
     revision: u32,
     manifestations: Vec<RevisionManifestationInput>,
     with_equations: bool,
+    with_tables: bool,
 ) -> Result<(LoadContentOutcome, PipelineRunReport), String> {
-    let journey = if with_equations {
+    let journey = if with_tables {
+        ArticleJourneyComposition::with_tables(&stage_registry, "da-load-journey")
+    } else if with_equations {
         ArticleJourneyComposition::with_equations(&stage_registry, "da-load-journey")
     } else {
         ArticleJourneyComposition::canonical(&stage_registry, "da-load-journey")
@@ -197,6 +209,10 @@ pub async fn run_journey_content(
         revision_vid.clone(),
         source.pdf_sha256.clone().unwrap_or_default(),
     );
+    let table_stage = TableExtractionStage::new(
+        revision_vid.clone(),
+        source.pdf_sha256.clone().unwrap_or_default(),
+    );
     let candidate_stage =
         CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
 
@@ -219,11 +235,35 @@ pub async fn run_journey_content(
             .map_err(|error| error.to_string())?
             .with_executor("embedding", Arc::new(embed_stage))
             .map_err(|error| error.to_string())?;
-    if with_equations {
+    if with_equations || with_tables {
+        orchestrator = orchestrator
+            .with_executor("candidate_materialization", Arc::new(candidate_stage))
+            .map_err(|error| error.to_string())?;
+    }
+    if with_equations || with_tables {
         orchestrator = orchestrator
             .with_executor("equation_extraction", Arc::new(equation_stage))
+            .map_err(|error| error.to_string())?;
+    }
+    if with_tables {
+        let Some(detector) = ports.detector.clone() else {
+            return Err("tables branch requires a configured detector".into());
+        };
+        let figures_stage = FigureDetectionStage::new(
+            detector,
+            FigureDetectionRequest {
+                article_id: paper_id.to_string(),
+                source_pdf_path: pdf_path.to_path_buf(),
+                source_pdf_sha256: source.pdf_sha256.clone().unwrap_or_default(),
+                canonical_article_dir: pdf_path.parent().map(Path::to_path_buf).unwrap_or_default(),
+                revision_vid: Some(revision_vid.clone()),
+            },
+            &retry_after,
+        );
+        orchestrator = orchestrator
+            .with_executor("figure_detect", Arc::new(figures_stage))
             .map_err(|error| error.to_string())?
-            .with_executor("candidate_materialization", Arc::new(candidate_stage))
+            .with_executor("table_fidelity", Arc::new(table_stage))
             .map_err(|error| error.to_string())?;
     }
 

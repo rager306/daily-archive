@@ -106,9 +106,16 @@ pub struct LoadArgs {
 
     /// Extend the journey with the equation candidate branch (TEI-only
     /// compute plus candidate-only graph evidence). Opt-in while the figure
-    /// and table families remain typed not_attempted.
+    /// family remains typed not_attempted.
     #[arg(long, default_value_t = false)]
     pub equations: bool,
+
+    /// Extend the journey with the detection-anchored table branch
+    /// (pdffigures2 lineage, TEI structure, typed visual missingness).
+    /// Requires PDFFIGURES2_JAR; without it the branch is skipped with a
+    /// typed warn and the equations journey runs.
+    #[arg(long, default_value_t = false)]
+    pub tables: bool,
 
     /// Run the content stages through the canonical article journey
     /// (PipelineOrchestrator with ACAP gating, cache-honest compute and
@@ -139,6 +146,9 @@ struct CliContentPipeline {
     journey: Option<crate::load_journey::JourneyPorts>,
     /// Equation candidate branch (M407): extends the journey topology.
     equations: bool,
+    /// Table candidate branch (M408): extends the journey topology when the
+    /// detector is configured.
+    tables: bool,
 }
 
 /// Typed reasons the orchestrated journey is skipped for a load request
@@ -193,6 +203,14 @@ impl CliContentPipeline {
         let primary_path = req.primary_path.display().to_string();
         let source_code =
             infer_source_code(&primary_path).unwrap_or_else(|| req.source_code.to_string());
+        let with_tables = self.tables && ports.detector.is_some();
+        if self.tables && ports.detector.is_none() {
+            tracing::warn!(
+                article_id = req.paper_id,
+                reason = "tables_detection_unconfigured",
+                event = "da_load_journey_tables_skipped"
+            );
+        }
         let (mut outcome, report) = crate::load_journey::run_journey_content(
             ports,
             &self.store,
@@ -205,7 +223,8 @@ impl CliContentPipeline {
             &source_code,
             revision_context.revision,
             revision_context.manifestations,
-            self.equations,
+            self.equations || self.tables,
+            with_tables,
         )
         .await?;
         let hits = report
@@ -1083,6 +1102,7 @@ fn make_content_pipeline(
             .journey
             .then(crate::load_journey::JourneyPorts::from_env),
         equations: args.equations,
+        tables: args.tables,
     })
 }
 
@@ -2254,6 +2274,7 @@ mod tests {
             materialization_time: None,
             journey: true,
             equations: false,
+            tables: false,
         };
         assert_eq!(resolve_stages(&args, true).unwrap(), LoadStageSet::Ensure);
         assert_eq!(

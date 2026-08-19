@@ -679,6 +679,73 @@ impl ArticleJourneyComposition {
         })
     }
 
+    /// Journey v3: equations plus the detection-anchored table branch
+    /// (M408 S03). ACAP-monotonic step order: the parse-family detection
+    /// step runs immediately after parse (both Parsed), tables sit at the
+    /// evidence_linked layer next to extraction materialization, equations
+    /// and embedding share the embedded layer, candidates stay ungated.
+    #[allow(clippy::too_many_lines)]
+    pub fn with_tables(
+        stage_registry: &StageIdRegistry,
+        pipeline_id: &str,
+    ) -> Result<Self, PipelineOrchestratorError> {
+        for id in [
+            "parse",
+            "figure_context",
+            "revision_materialization",
+            "extraction_compute",
+            "extraction_materialization",
+            "table_fidelity",
+            "embedding",
+            "equation_extraction",
+            "candidate_materialization",
+        ] {
+            stage_registry
+                .parse_canonical(id)
+                .map_err(PipelineOrchestratorError::StageIdentity)?;
+        }
+        stage_registry
+            .resolve("figure_detect")
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let topology = PipelineBuilder::new(pipeline_id)
+            .step("parse", "parse", &[])
+            .step("figures", "figure_detect", &["parse"])
+            .step("revision", "revision_materialization", &["parse"])
+            .step("extract", "extraction_compute", &["parse"])
+            .step(
+                "materialize",
+                "extraction_materialization",
+                &["revision", "extract", "parse"],
+            )
+            .step("tables", "table_fidelity", &["parse", "figures"])
+            .step("embed", "embedding", &["parse"])
+            .step("equations", "equation_extraction", &["parse"])
+            .step(
+                "candidates",
+                "candidate_materialization",
+                &["equations", "tables"],
+            )
+            .build()
+            .map_err(PipelineOrchestratorError::StageIdentity)?;
+        let mut seen = std::collections::BTreeSet::new();
+        let mut canonical_stages = Vec::new();
+        for step in &topology.steps {
+            let canonical = stage_registry
+                .resolve(&step.stage)
+                .map_err(PipelineOrchestratorError::StageIdentity)?
+                .as_str()
+                .to_owned();
+            if seen.insert(canonical.clone()) {
+                canonical_stages.push(canonical);
+            }
+        }
+        Ok(Self {
+            pipeline_id: pipeline_id.to_owned(),
+            topology,
+            canonical_stages,
+        })
+    }
+
     /// Canonical article journey topology validated against the DATA registry.
     pub fn canonical(
         stage_registry: &StageIdRegistry,

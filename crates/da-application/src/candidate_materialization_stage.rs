@@ -26,10 +26,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::equation_extraction_stage::EquationExtractionArtifact;
 use crate::equation_materialize::EquationCandidateMaterializer;
+use crate::table_extraction_stage::TableCandidateArtifact;
+use crate::table_materialize::TableCandidateMaterializer;
 
 pub const CANDIDATE_MATERIALIZATION_IMPL_FINGERPRINT: &str =
-    "CandidateMaterializationStage@equation-family-v1";
-pub const CANDIDATE_MATERIALIZATION_CONFIG_FINGERPRINT: &str = "equation-family-only-v1";
+    "CandidateMaterializationStage@equation-table-families-v2";
+pub const CANDIDATE_MATERIALIZATION_CONFIG_FINGERPRINT: &str = "equation-table-families-v2";
 pub const CANDIDATE_MATERIALIZATION_OUTPUT_SCHEMA: &str = "CandidateMaterializationReport@serde-v1";
 
 /// Per-family outcome row inside the combined report.
@@ -52,24 +54,34 @@ pub struct CandidateMaterializationReport {
     pub import_eligible: bool,
 }
 
-/// Canonical dependency name for the equation artifact payload.
+/// Canonical dependency names for the family artifact payloads.
 const DEFAULT_EQUATION_DEPENDENCY: &str = "equations";
+const DEFAULT_TABLES_DEPENDENCY: &str = "tables";
 
 pub struct CandidateMaterializationStage {
     materializer: EquationCandidateMaterializer,
+    table_materializer: TableCandidateMaterializer,
     equation_dependency: String,
+    tables_dependency: String,
 }
 
 impl CandidateMaterializationStage {
     pub fn new(graph_store: Arc<dyn DirectGraphStore>) -> Self {
         Self {
-            materializer: EquationCandidateMaterializer::new(graph_store),
+            materializer: EquationCandidateMaterializer::new(graph_store.clone()),
+            table_materializer: TableCandidateMaterializer::new(graph_store),
             equation_dependency: DEFAULT_EQUATION_DEPENDENCY.into(),
+            tables_dependency: DEFAULT_TABLES_DEPENDENCY.into(),
         }
     }
 
     pub fn with_equation_dependency(mut self, dependency: impl Into<String>) -> Self {
         self.equation_dependency = dependency.into();
+        self
+    }
+
+    pub fn with_tables_dependency(mut self, dependency: impl Into<String>) -> Self {
+        self.tables_dependency = dependency.into();
         self
     }
 }
@@ -144,17 +156,77 @@ impl PipelineStageExecutor for CandidateMaterializationStage {
         } else {
             None
         };
+        let equation_row = CandidateFamilyRow {
+            family: "equation".into(),
+            status: equation_status.into(),
+            reason: equation_reason,
+            candidates: artifact.candidates.len(),
+            nodes_created,
+            edges_created,
+        };
+
+        // ── Table family (M408 S02) ────────────────────────────────────────
+        // Without the tables dependency the row keeps its typed deferred
+        // reason; with it, TableCandidates materialize through the M400
+        // materializer with the same create/unchanged idempotence contract.
+        let table_row =
+            match request.dependency_payloads.get(&self.tables_dependency) {
+                None => CandidateFamilyRow {
+                    family: "table".into(),
+                    status: "not_attempted".into(),
+                    reason: Some("deferred: tables dependency not wired in this topology".into()),
+                    candidates: 0,
+                    nodes_created: 0,
+                    edges_created: 0,
+                },
+                Some(payload) => {
+                    let artifact: TableCandidateArtifact = serde_json::from_slice(payload)
+                        .map_err(|error| StageExecutionError::Terminal {
+                            error_class: "table_artifact_deserialization".into(),
+                            message: error.to_string(),
+                        })?;
+                    let mut table_nodes = 0usize;
+                    let mut table_edges = 0usize;
+                    let mut table_applied = false;
+                    for candidate in &artifact.candidates {
+                        let outcome = self
+                            .table_materializer
+                            .materialize(candidate)
+                            .await
+                            .map_err(|error| StageExecutionError::Terminal {
+                                error_class: "table_candidate_materialization_failed".into(),
+                                message: error.to_string(),
+                            })?;
+                        table_nodes += outcome.nodes_created;
+                        table_edges += outcome.edges_created;
+                        table_applied |= outcome.applied;
+                    }
+                    let status = if artifact.candidates.is_empty() {
+                        "not_attempted"
+                    } else if table_applied {
+                        "applied"
+                    } else {
+                        "unchanged"
+                    };
+                    let reason = if artifact.candidates.is_empty() {
+                        artifact.missingness.clone()
+                    } else {
+                        None
+                    };
+                    CandidateFamilyRow {
+                        family: "table".into(),
+                        status: status.into(),
+                        reason,
+                        candidates: artifact.candidates.len(),
+                        nodes_created: table_nodes,
+                        edges_created: table_edges,
+                    }
+                }
+            };
 
         let report = CandidateMaterializationReport {
             families: vec![
-                CandidateFamilyRow {
-                    family: "equation".into(),
-                    status: equation_status.into(),
-                    reason: equation_reason,
-                    candidates: artifact.candidates.len(),
-                    nodes_created,
-                    edges_created,
-                },
+                equation_row,
                 CandidateFamilyRow {
                     family: "figure".into(),
                     status: "not_attempted".into(),
@@ -163,17 +235,7 @@ impl PipelineStageExecutor for CandidateMaterializationStage {
                     nodes_created: 0,
                     edges_created: 0,
                 },
-                CandidateFamilyRow {
-                    family: "table".into(),
-                    status: "not_attempted".into(),
-                    reason: Some(
-                        "deferred: table family requires detection-driven visual reconstruction"
-                            .into(),
-                    ),
-                    candidates: 0,
-                    nodes_created: 0,
-                    edges_created: 0,
-                },
+                table_row,
             ],
             import_eligible: false,
         };

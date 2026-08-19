@@ -243,6 +243,7 @@ async fn run_journey(
         1,
         manifestations(),
         false,
+        false,
     )
     .await
 }
@@ -256,6 +257,7 @@ async fn journey_content_completes_and_replays_over_file_cache() {
         parser: Arc::new(FakeParser),
         extractor: Arc::new(FakeExtractor),
         embedder: Arc::new(FakeEmbedder),
+        detector: None,
     };
 
     // Parse contract keeps the legacy load-v1 fingerprints so the operator's
@@ -402,6 +404,96 @@ async fn journey_content_completes_and_replays_over_file_cache() {
     }
 }
 
+struct FakeDetector;
+
+#[async_trait]
+impl da_ports::figure_detection::FigureDetectionPort for FakeDetector {
+    fn detector_fingerprint(&self) -> &str {
+        "fake-detector-v1"
+    }
+
+    async fn detect(
+        &self,
+        request: da_ports::figure_detection::FigureDetectionRequest,
+    ) -> da_ports::figure_detection::FigureDetectionPortResult<
+        da_ports::figure_detection::FigureDetectionResult,
+    > {
+        Ok(da_ports::figure_detection::FigureDetectionResult {
+            detector_fingerprint: "fake-detector-v1".into(),
+            metadata_path: std::path::PathBuf::from("figures/manifest.json"),
+            detector_metadata_sha256: sha(4),
+            manifest_sha256: sha(4),
+            artifacts: vec![table_artifact_fixture()],
+            duration_ms: 1,
+            revision_vid: request.revision_vid,
+        })
+    }
+}
+
+fn table_artifact_fixture() -> da_domain::figure::DetectedVisualArtifact {
+    da_domain::figure::DetectedVisualArtifact {
+        artifact_id: "Table1".into(),
+        kind: da_domain::figure::VisualArtifactKind::Table,
+        detector_name: "fake".into(),
+        detector_fingerprint: "fake-detector-v1".into(),
+        source_pdf_sha256: sha(7),
+        page_index: 3,
+        region: da_domain::figure::BoundingBox72Dpi {
+            x1: 10.0,
+            y1: 20.0,
+            x2: 500.0,
+            y2: 300.0,
+        },
+        caption_region: da_domain::figure::BoundingBox72Dpi {
+            x1: 0.0,
+            y1: 0.0,
+            x2: 1.0,
+            y2: 1.0,
+        },
+        caption: "Table 1: results.".into(),
+        image_text: vec![],
+        render_dpi: 72,
+        asset_path: "figures/Table1.png".into(),
+        asset_sha256: sha(9),
+        metadata_sha256: sha(4),
+    }
+}
+
+fn parsed_article_with_tables_and_formulas() -> ParsedArticle {
+    let mut parsed = parsed_article_with_formulas();
+    parsed.tables = vec![da_ports::parser::ExtractedTable {
+        table_id: "tab_0".into(),
+        section_path_id: Some("1".into()),
+        section_ordinal: Some(1),
+        caption: "Table 1 :".into(),
+        coordinates: Some("10,20,500,300;3".into()),
+        cells: vec![da_ports::parser::TableCell {
+            row: 0,
+            column: 0,
+            colspan: 1,
+            rowspan: 1,
+            text: "v".into(),
+            coordinates: None,
+            span: None,
+            digest: sha(5),
+        }],
+        source_digest: sha(3),
+        missingness: None,
+    }];
+    parsed
+}
+
+struct TableParser;
+
+#[async_trait]
+impl ParserPort for TableParser {
+    async fn parse_pdf(&self, _pdf_path: &str, paper_id: &str) -> ParseResult<ParsedArticle> {
+        let mut parsed = parsed_article_with_tables_and_formulas();
+        parsed.paper_id = paper_id.to_string();
+        Ok(parsed)
+    }
+}
+
 #[tokio::test]
 async fn journey_with_equations_materializes_candidates_and_replays() {
     let store = Arc::new(SamyamaGraphStore::new());
@@ -411,6 +503,7 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
         parser: Arc::new(FormulaParser),
         extractor: Arc::new(FakeExtractor),
         embedder: Arc::new(FakeEmbedder),
+        detector: None,
     };
     let pdf_dir = tempdir("pdf-eq");
     let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
@@ -435,6 +528,7 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
             1,
             manifestations(),
             true,
+            false,
         )
         .await
     };
@@ -498,4 +592,138 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
         2,
         "no duplicate equation candidates"
     );
+}
+
+#[tokio::test]
+async fn journey_with_tables_runs_detection_anchored_branch() {
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache_dir = tempdir("cache-tb");
+    let cache = Arc::new(FilePipelineCache::new(cache_dir.clone()));
+    let ports = JourneyPorts {
+        parser: Arc::new(TableParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: Some(Arc::new(FakeDetector)),
+    };
+    let pdf_dir = tempdir("pdf-tb");
+    let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
+    std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
+
+    let run = async |store: &Arc<SamyamaGraphStore>, cache: Arc<FilePipelineCache>| {
+        da_cli::load_journey::run_journey_content(
+            &ports,
+            store,
+            cache,
+            clock(),
+            ledger_registry(),
+            PAPER_ID,
+            &pdf_path,
+            source(),
+            "arxiv",
+            1,
+            manifestations(),
+            true,
+            true,
+        )
+        .await
+    };
+
+    let (outcome, report) = run(&store, cache.clone()).await.expect("tables journey");
+    assert!(report.completed);
+    assert_eq!(report.stages.len(), 9, "with_tables topology: nine steps");
+    assert!(outcome.ingest.revision_vid.is_some());
+    assert_eq!(
+        query_count(&store, "MATCH (e:EquationCandidate) RETURN count(e) AS eqs").await,
+        2,
+        "equation candidates still materialize"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (t:TableCandidate) RETURN count(t) AS tabs").await,
+        1,
+        "detection-anchored table candidate materialized"
+    );
+    for label in ["TableCandidate", "EquationCandidate"] {
+        assert_eq!(
+            query_count(
+                &store,
+                &format!(
+                    "MATCH (c:{label}) WHERE c.import_eligible = true RETURN count(c) AS unlocked"
+                )
+            )
+            .await,
+            0,
+            "no {label} unlocks import"
+        );
+    }
+
+    // Identical replay: compute (parse/figures/extract/embed/equations/tables)
+    // cache-hits; graph stages re-run idempotently.
+    let (_, report2) = run(&store, cache).await.expect("tables replay");
+    assert!(report2.completed);
+    let dispositions: Vec<&str> = report2
+        .stages
+        .iter()
+        .map(|record| match record.disposition {
+            StageDisposition::Executed { .. } => "executed",
+            StageDisposition::CacheHit { .. } => "cache_hit",
+            StageDisposition::RetrySuppressed { .. } => "retry_suppressed",
+            StageDisposition::Failed { .. } => "failed",
+        })
+        .collect();
+    assert_eq!(
+        dispositions,
+        vec![
+            "cache_hit", // parse
+            "cache_hit", // figures (detection)
+            "executed",  // revision
+            "cache_hit", // extract
+            "executed",  // materialize
+            "cache_hit", // tables
+            "cache_hit", // embed
+            "cache_hit", // equations
+            "executed",  // candidates
+        ],
+        "only graph-materialize stages re-execute on replay"
+    );
+    assert_eq!(
+        query_count(&store, "MATCH (t:TableCandidate) RETURN count(t) AS tabs").await,
+        1,
+        "no duplicate table candidates"
+    );
+}
+
+#[tokio::test]
+async fn journey_tables_without_detector_fails_closed_at_composition() {
+    // The CLI layer turns an unconfigured detector into a typed skip and
+    // runs the equations journey; the composition itself refuses a tables
+    // run without a detector (defense in depth).
+    let ports = JourneyPorts {
+        parser: Arc::new(TableParser),
+        extractor: Arc::new(FakeExtractor),
+        embedder: Arc::new(FakeEmbedder),
+        detector: None,
+    };
+    let store = Arc::new(SamyamaGraphStore::new());
+    let cache = Arc::new(FilePipelineCache::new(tempdir("cache-nodet")));
+    let pdf_dir = tempdir("pdf-nodet");
+    let pdf_path = pdf_dir.join(format!("{PAPER_ID}v1.pdf"));
+    std::fs::write(&pdf_path, b"%PDF-fixture").expect("pdf fixture");
+    let err = da_cli::load_journey::run_journey_content(
+        &ports,
+        &store,
+        cache,
+        clock(),
+        ledger_registry(),
+        PAPER_ID,
+        &pdf_path,
+        source(),
+        "arxiv",
+        1,
+        manifestations(),
+        true,
+        true,
+    )
+    .await
+    .expect_err("tables without detector must fail closed");
+    assert!(err.contains("detector"), "{err}");
 }

@@ -477,3 +477,168 @@ async fn candidate_stage_empty_artifact_is_typed_not_attempted() {
     );
     assert_eq!(store.node_count_total(), 0, "nothing written");
 }
+
+// ── M408 S02: table family in candidate materialization ────────────────────
+
+fn table_candidate(revision_vid: &str) -> da_domain::table_candidate::TableCandidate {
+    let lineage = da_domain::table_candidate::TableCandidateLineage {
+        revision_vid: revision_vid.into(),
+        artifact_id: "Table1".into(),
+        detector_name: "pdffigures2".into(),
+        detector_fingerprint: "pdffigures2-0.0.12".into(),
+        image_sha256: format!("{:064x}", 9),
+        asset_path: "figures/Table1.png".into(),
+        page_index: 3,
+        section_vid: da_domain::vid::revision_section_vid(revision_vid, 1)
+            .expect("section vid")
+            .to_string(),
+        section_title: "Section 1".into(),
+        section_ordinal: 1,
+        caption: "Table 1: results.".into(),
+        source_pdf_sha256: format!("{:064x}", 7),
+    };
+    let extracted = da_ports::parser::ExtractedTable {
+        table_id: "tab_0".into(),
+        section_path_id: Some("1".into()),
+        section_ordinal: Some(1),
+        caption: "Table 1 :".into(),
+        coordinates: Some("10,20,500,300;3".into()),
+        cells: vec![da_ports::parser::TableCell {
+            row: 0,
+            column: 0,
+            colspan: 1,
+            rowspan: 1,
+            text: "v".into(),
+            coordinates: None,
+            span: None,
+            digest: format!("{:064x}", 5),
+        }],
+        source_digest: format!("{:064x}", 3),
+        missingness: None,
+    };
+    let structural = da_application::table_materialize::structural_table_from_extracted(&extracted);
+    let report = da_domain::table_fidelity::compare_table_fidelity(None, Some(&structural))
+        .expect("fidelity");
+    da_domain::table_candidate::TableCandidate::assemble(
+        &lineage,
+        None,
+        &structural,
+        &report,
+        Some("10,20,500,300;3".into()),
+    )
+    .expect("assemble")
+}
+
+fn tables_payload(candidates: Vec<da_domain::table_candidate::TableCandidate>) -> Vec<u8> {
+    serde_json::to_vec(
+        &da_application::table_extraction_stage::TableCandidateArtifact {
+            candidates,
+            join_rows: vec![],
+            missingness: None,
+        },
+    )
+    .expect("artifact serializes")
+}
+
+#[tokio::test]
+async fn candidate_stage_writes_tables_then_replays_unchanged() {
+    let store = Arc::new(MockGraphStore::new());
+    let revision = RevisionMaterializationStage::new(
+        store.clone() as Arc<dyn DirectGraphStore>,
+        clock(),
+        "arxiv",
+        PAPER_ID,
+        1,
+        manifestations(),
+    );
+    let parse_payload = serde_json::to_vec(&parsed_article()).expect("parsed serialize");
+    let revision_out = revision
+        .execute(request(&[("parse", parse_payload)]))
+        .await
+        .expect("revision plane");
+    let revision_report: RevisionMaterializationReport =
+        serde_json::from_slice(&revision_out.payload).expect("revision report");
+    let revision_vid = revision_report.result.revision_vid.clone();
+
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let equation = equations_payload(vec![equation_candidate(&revision_vid)]);
+    let tables = tables_payload(vec![table_candidate(&revision_vid)]);
+    let deps = [("equations", equation), ("tables", tables)];
+    let first = stage
+        .execute(request(&deps))
+        .await
+        .expect("combined candidate run");
+    let first_report: CandidateMaterializationReport =
+        serde_json::from_slice(&first.payload).expect("report decodes");
+    let table_row = first_report
+        .families
+        .iter()
+        .find(|row| row.family == "table")
+        .expect("table row");
+    assert_eq!(table_row.status, "applied");
+    assert_eq!(table_row.candidates, 1);
+    assert!(table_row.nodes_created > 0);
+    let equation_row = first_report
+        .families
+        .iter()
+        .find(|row| row.family == "equation")
+        .expect("equation row");
+    assert_eq!(equation_row.status, "applied");
+    let nodes_after_first = store.node_count_total();
+
+    let equation2 = equations_payload(vec![equation_candidate(&revision_vid)]);
+    let tables2 = tables_payload(vec![table_candidate(&revision_vid)]);
+    let deps2 = [("equations", equation2), ("tables", tables2)];
+    let second = stage
+        .execute(request(&deps2))
+        .await
+        .expect("combined replay");
+    let second_report: CandidateMaterializationReport =
+        serde_json::from_slice(&second.payload).expect("report decodes");
+    for family in ["table", "equation"] {
+        let row = second_report
+            .families
+            .iter()
+            .find(|row| row.family == family)
+            .expect("row");
+        assert_eq!(row.status, "unchanged", "{family} replay unchanged");
+        assert_eq!(row.nodes_created, 0);
+    }
+    assert_eq!(
+        store.node_count_total(),
+        nodes_after_first,
+        "combined replay leaves the graph unchanged"
+    );
+    // Figure family stays honestly deferred.
+    let figure_row = second_report
+        .families
+        .iter()
+        .find(|row| row.family == "figure")
+        .expect("figure row");
+    assert_eq!(figure_row.status, "not_attempted");
+}
+
+#[tokio::test]
+async fn candidate_stage_without_tables_dep_keeps_typed_deferred_row() {
+    let store = Arc::new(MockGraphStore::new());
+    let stage = CandidateMaterializationStage::new(store.clone() as Arc<dyn DirectGraphStore>);
+    let out = stage
+        .execute(request(&[("equations", equations_payload(vec![]))]))
+        .await
+        .expect("run without tables dep");
+    let report: CandidateMaterializationReport =
+        serde_json::from_slice(&out.payload).expect("report decodes");
+    let table_row = report
+        .families
+        .iter()
+        .find(|row| row.family == "table")
+        .expect("table row");
+    assert_eq!(table_row.status, "not_attempted");
+    assert!(
+        table_row
+            .reason
+            .as_deref()
+            .unwrap_or("")
+            .contains("deferred")
+    );
+}
