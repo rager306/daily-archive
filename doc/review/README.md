@@ -4,25 +4,25 @@ This directory contains a compact, source-bound review of the daily-archive Rust
 
 ## Current baseline
 
-Assessed at `git:caab43ed`, immediately after closing GSD milestone **M397-a3bxv7**.
+Recomputed from `pipeline-integrity-review.jsonl` on **2026-08-19** after M401 S05 closed PIR-017 and PIR-021. Do **not** increment the printed M397 table (Resolved 7 / Open 15) — later waves already resolved PIR-006..PIR-016 and PIR-018..PIR-020 in the JSONL while this README stayed stale.
 
 | Status | Count | Findings |
 |---|---:|---|
-| Resolved | 7 | PIR-001..PIR-005, PIR-013, PIR-022 |
-| Open | 15 | PIR-006..PIR-012, PIR-014..PIR-021 |
+| Resolved | 22 | PIR-001..PIR-022 |
+| Open | 0 | — |
 
-M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. It did **not** repair temporal AST defects, make ACAP a live guard, integrate multimodal evidence into the graph, open a remote read plane or rebuild/seal the 200-paper corpus.
+M397 closed canonical composition, StageId, cache source/profile/schema identity, revision-owned corpus materialization and cross-command equivalence. Subsequent waves closed the remaining register rows: M398 temporal AST (PIR-006..PIR-012), M399 live ACAP/promotion/scheduler (PIR-014..PIR-016), M400 multimodal graph candidates (PIR-018..PIR-020), M401 honest multi-process read plane plus read-only verified agent loop (PIR-017, PIR-021). A 200-paper corpus rebuild/seal is still an operational follow-up, not a finding in this register.
 
 ## Long-horizon execution map
 
 | Wave | Title | Owns | Status |
 |---|---|---|---|
-| M398-cz4pzx | Temporal AST correctness | PIR-006..PIR-012 | planned-active, run through GSD auto/headless |
-| M399-assurance-fsm | Live assurance and promotion FSM | PIR-014, PIR-015, PIR-016 | backlog, depends on M398 |
-| M400-multimodal-graph | Multimodal graph bridge | PIR-018, PIR-019, PIR-020 | backlog, depends on M399 |
-| M401-agent-readiness | Remote read plane and read-only agent | PIR-017, PIR-021 | backlog, depends on M400 |
+| M398-cz4pzx | Temporal AST correctness | PIR-006..PIR-012 | complete |
+| M399-assurance-fsm | Live assurance and promotion FSM | PIR-014, PIR-015, PIR-016 | complete |
+| M400-multimodal-graph | Multimodal graph bridge | PIR-018, PIR-019, PIR-020 | complete |
+| M401-agent-readiness | Remote read plane and read-only agent | PIR-017, PIR-021 | complete |
 
-A revision-aware corpus rebuild and honest ontology acceptance are operational follow-ups after M398; they are not claimed by the current register.
+A revision-aware corpus rebuild and honest ontology acceptance remain operational follow-ups; they are not claimed by the current register.
 
 ## Files
 

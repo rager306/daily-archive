@@ -4,9 +4,9 @@ subject: daily-archive Rust pipeline integrity and agent readiness
 created_at: '2026-08-14'
 language: ru
 status: active
-source_revision: git:caab43ed
-last_assessed_at: '2026-08-14'
-assessment_baseline: post-M397-a3bxv7; M398-cz4pzx planned
+source_revision: git:caaea4a6
+last_assessed_at: '2026-08-19'
+assessment_baseline: recomputed from JSONL after M401-itcqhx/S05 T03; PIR-017 and PIR-021 resolved; 22 resolved / 0 open
 format:
   primary: jsonl
   rationale: One atomic finding per line supports streaming LLM review, stable diffs, independent schema validation, and status tracking.
@@ -33,28 +33,30 @@ standards:
   - ADR-058 article revision expression ontology
   - ADR-059 prompt optimizer FSM
   - ADR-060 scientific figure understanding
+  - ADR-061 readonly identity graph plane and agent FSM
   - data/ontology/pipeline_stage_contracts.yaml
   - scripts/governor/checks/article_context_assurance.yaml
+  - scripts/governor/checks/read_only_agent_contract.yaml
 long_horizon:
   waves:
     - id: M398-cz4pzx
       title: Temporal AST correctness
       owns: [PIR-006, PIR-007, PIR-008, PIR-009, PIR-010, PIR-011, PIR-012]
-      status: planned-active
+      status: complete
     - id: M399-assurance-fsm
       title: Live assurance and promotion FSM
       owns: [PIR-014, PIR-015, PIR-016]
-      status: backlog
+      status: complete
       depends_on: M398-cz4pzx
     - id: M400-multimodal-graph
       title: Multimodal graph bridge
       owns: [PIR-018, PIR-019, PIR-020]
-      status: backlog
+      status: complete
       depends_on: M399-assurance-fsm
     - id: M401-agent-readiness
       title: Remote read plane and read-only agent
       owns: [PIR-017, PIR-021]
-      status: backlog
+      status: complete
       depends_on: M400-multimodal-graph
   execution_mode: GSD auto/headless
   interconnection_rule: Later waves may not claim earlier-wave invariants; each wave validates its own acceptance evidence before closeout.
