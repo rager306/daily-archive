@@ -1,5 +1,20 @@
 # Changelog
 
+### M415 Figure grounding accepts caption evidence
+
+- Corpus probe P-B: 2606.11169 Figure4 was rejected because the model cited
+  panel-caption text ("(c) Partitioning...") that exists in the figure image
+  and in `context.caption` but in no section/neighbor/reference text.
+  `validate_citations` now includes the caption in the citable quote pool;
+  attribution ids stay exact existing section pairs - only the text pool
+  widens, never the id set.
+- Removed two hardcode leftovers in the same use case: the stale
+  "at most 160 characters" prompt instruction (contradicted ADR-062 and
+  DATA v3; the model saw both) and the undocumented `max_tokens: 4096`
+  fallback (now `MAX_OUTPUT_TOKENS_FALLBACK = 8192`, documented as
+  non-bridge fallback; the production bridge uses DATA task
+  `max_output_tokens`). Prompt version bumped to figure-analysis-grounded-v2
+  so stage cache identity advances. D127 remains locked.
 ### M414 Equation grounding gaps become typed missingness
 
 - Corpus probe (M413) showed `equation_input_conversion` firing terminal when

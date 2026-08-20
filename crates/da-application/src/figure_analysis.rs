@@ -18,8 +18,12 @@ use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use thiserror::Error;
 
-pub const FIGURE_ANALYSIS_PROMPT_VERSION: &str = "figure-analysis-grounded-v1";
+pub const FIGURE_ANALYSIS_PROMPT_VERSION: &str = "figure-analysis-grounded-v2";
 pub const FIGURE_ANALYSIS_SCHEMA_VERSION: &str = "FigureAnalysisDraft@v1";
+
+/// Fallback output-token bound for non-bridge MultimodalLlmPort impls.
+/// The production bridge uses the DATA task `max_output_tokens` instead.
+const MAX_OUTPUT_TOKENS_FALLBACK: usize = 8_192;
 
 pub struct FigureAnalysisUseCase {
     model: Arc<dyn MultimodalLlmPort>,
@@ -104,7 +108,7 @@ impl FigureAnalysisUseCase {
         let context_bytes = serde_json::to_vec(context)?;
         let context_sha256 = sha256(&context_bytes);
         let user_context = format!(
-            "Analyze the attached scientific visual using only the grounded context below. Stage-1 type hint: {} (schema_id={}). Every citation quote MUST be a verbatim substring copied from the supplied section or reference excerpt, at most 160 characters, with its existing section_id and path_id. Never reconstruct or extend a quote from prior knowledge.\n\n{}",
+            "Analyze the attached scientific visual using only the grounded context below. Stage-1 type hint: {} (schema_id={}). Every citation quote MUST be a verbatim substring copied from a supplied section text, reference excerpt, or the figure caption, attributed with an existing section_id and path_id from the context; the output schema's maxLength is the hard cap. Never reconstruct or extend a quote from prior knowledge.\n\n{}",
             classification.visual_type.as_wire(),
             selection.schema_id,
             serde_json::to_string_pretty(context)?
@@ -117,7 +121,11 @@ impl FigureAnalysisUseCase {
                 image,
                 output_schema: selection.json_schema.clone(),
                 tool_name: "record_figure_analysis".into(),
-                max_tokens: 4_096,
+                // Fallback for non-bridge MultimodalLlmPort implementations.
+                // The production bridge (PromptMultimodalBridge) ignores this
+                // field and uses the DATA task max_output_tokens (8192 as of
+                // figure-analysis.v3); keep the fallback in step with DATA.
+                max_tokens: MAX_OUTPUT_TOKENS_FALLBACK,
                 temperature: 0.0,
             })
             .await?;
@@ -590,6 +598,15 @@ fn validate_citations(
             reference.excerpt.as_str(),
         )
     }));
+    // The figure caption is grounded context (pipeline contract context_adds):
+    // panel text often exists nowhere else in the article. A caption quote
+    // attributes to an existing section pair (the figure's containing
+    // section); only the quote-substring pool widens, never the id set.
+    sources.push((
+        context.containing_section.section_id.as_str(),
+        context.containing_section.path_id.as_str(),
+        context.caption.as_str(),
+    ));
     for citation in citations {
         let grounded = sources.iter().any(|(section_id, path_id, text)| {
             *section_id == citation.section_id
@@ -666,6 +683,7 @@ mod tests {
         output: serde_json::Value,
         route: ModelRouteDescriptor,
         last_schema_id_hint: std::sync::Mutex<Option<String>>,
+        last_user_context: std::sync::Mutex<Option<String>>,
     }
 
     impl FakeModel {
@@ -674,6 +692,7 @@ mod tests {
                 output,
                 route,
                 last_schema_id_hint: std::sync::Mutex::new(None),
+                last_user_context: std::sync::Mutex::new(None),
             }
         }
     }
@@ -717,6 +736,7 @@ mod tests {
                 Some("other".into())
             };
             *self.last_schema_id_hint.lock().unwrap() = hint;
+            *self.last_user_context.lock().unwrap() = Some(request.user_context.clone());
             Ok(MultimodalLlmResponse {
                 structured_output: self.output.clone(),
                 route: self.route.clone(),
@@ -825,6 +845,42 @@ mod tests {
             bytes: b"png".to_vec(),
             sha256: sha256(b"png"),
         }
+    }
+
+    #[tokio::test]
+    async fn caption_quote_grounds_under_containing_section_pair() {
+        // Panel text often exists only in the figure caption; the caption is
+        // grounded context (context_adds) and must be citable verbatim.
+        let fake = Arc::new(FakeModel::new(output("GEPA flowchart"), route()));
+        let analysis = FigureAnalysisUseCase::new(fake)
+            .analyze(image(), &context())
+            .await
+            .unwrap();
+        assert_eq!(analysis.citations.len(), 1);
+        assert_eq!(analysis.citations[0].quote, "GEPA flowchart");
+    }
+
+    #[tokio::test]
+    async fn prompt_names_caption_and_carries_no_numeric_cap() {
+        let fake = Arc::new(FakeModel::new(output("mutates prompts"), route()));
+        FigureAnalysisUseCase::new(fake.clone())
+            .analyze(image(), &context())
+            .await
+            .unwrap();
+        let prompt = fake
+            .last_user_context
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("prompt captured");
+        assert!(
+            prompt.contains("figure caption"),
+            "prompt must name the caption as a citable source: {prompt}"
+        );
+        assert!(
+            !prompt.contains("160 characters"),
+            "stale numeric cap leaked into the prompt: {prompt}"
+        );
     }
 
     #[tokio::test]
