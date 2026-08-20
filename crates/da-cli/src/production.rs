@@ -509,6 +509,27 @@ fn sha256_hex(bytes: &[u8]) -> String {
     hex::encode(Sha256::digest(bytes))
 }
 
+/// Optional `DA_FIGURE_MODEL_BINDING` override of the DATA route binding.
+/// Empty/unset keeps the ledger binding (`figure-qa-primary` today).
+/// Unknown ids fail later at `ModelRegistry::resolve` — never silently
+/// fall back to a different model.
+fn figure_model_binding_id_from(data_binding: &str, override_binding: Option<&str>) -> String {
+    match override_binding
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => value.to_string(),
+        None => data_binding.to_string(),
+    }
+}
+
+fn figure_model_binding_id(data_binding: &str) -> String {
+    figure_model_binding_id_from(
+        data_binding,
+        std::env::var("DA_FIGURE_MODEL_BINDING").ok().as_deref(),
+    )
+}
+
 /// Resolve the multimodal LLM port from the DATA prompt-task registry, the
 /// model registry and the route credential/endpoint env surfaces
 /// (mirrors `analyze_figure.rs`).
@@ -546,8 +567,9 @@ fn resolve_multimodal_model_from_env() -> Result<Arc<dyn MultimodalLlmPort>, Str
         .as_deref()
         .and_then(|key| std::env::var(key).ok())
         .filter(|value| !value.trim().is_empty());
+    let binding_id = figure_model_binding_id(&route.model_binding_id);
     let resolved_model = model_registry
-        .resolve(&route.model_binding_id, endpoint_override.as_deref())
+        .resolve(&binding_id, endpoint_override.as_deref())
         .map_err(|error| error.to_string())?;
     let credential = std::env::var(&route.credential_env).ok();
     let timeout_seconds = std::env::var("DA_LLM_TIMEOUT_SECONDS")
@@ -611,6 +633,30 @@ fn resolve_analysis_schema_fingerprint() -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn figure_binding_override_empty_keeps_data_route() {
+        assert_eq!(
+            super::figure_model_binding_id_from("figure-qa-primary", None),
+            "figure-qa-primary"
+        );
+        assert_eq!(
+            super::figure_model_binding_id_from("figure-qa-primary", Some("")),
+            "figure-qa-primary"
+        );
+        assert_eq!(
+            super::figure_model_binding_id_from("figure-qa-primary", Some("  ")),
+            "figure-qa-primary"
+        );
+    }
+
+    #[test]
+    fn figure_binding_override_selects_luna_without_changing_data() {
+        assert_eq!(
+            super::figure_model_binding_id_from("figure-qa-primary", Some("figure-qa-luna")),
+            "figure-qa-luna"
+        );
+    }
 
     #[test]
     fn context_loads_registry_cache_and_fixed_clock() {

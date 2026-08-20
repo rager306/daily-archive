@@ -1,5 +1,14 @@
 # Changelog
 
+### Figure route: optional DA_FIGURE_MODEL_BINDING (Luna soak)
+
+- `resolve_multimodal_model_from_env` honors optional `DA_FIGURE_MODEL_BINDING`
+  (empty/unset keeps DATA `figure-qa-primary`). Unknown ids fail closed at
+  `ModelRegistry::resolve` — no silent fallback. Luna soak:
+  `DA_FIGURE_MODEL_BINDING=figure-qa-luna`.
+- `.env.example` documents the override and `PDFFIGURES2_JAR` (local detector
+  path, not a secret). Default YAML route is unchanged.
+
 ### M411 Ingest becomes a real scheduler task (R096)
 
 - `CatalogPdfLocator` port (da-ports) plus `FilesystemCatalogPdfLocator`
