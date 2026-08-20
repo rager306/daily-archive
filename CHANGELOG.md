@@ -1,5 +1,14 @@
 # Changelog
 
+### Figure context cache binds artifact identity
+
+- `FigureContextStage` configuration fingerprint now includes `artifact_id=`.
+  Live `--figures` on 2506.07853v1: Luna completed Figure1, then Figure2 died
+  at `figure_analysis_contract` because `figure_context` cache-hit Figure1's
+  payload (same source + parse + figures deps, no per-figure identity).
+- Regression: distinct artifact ids produce distinct fingerprints. Governor
+  pins `artifact_id={artifact_id}` in the stage source. D127 remains locked.
+
 ### M412 Reparse becomes a real scheduler task
 
 - `ReparseSchedulerExecutor`: a real `SchedulerTaskExecutor` for `Reparse`
