@@ -129,6 +129,7 @@ pub struct LoadArgs {
     /// legacy inline path with a typed `da_load_journey_fallback` warn.
     /// Pass --no-journey to force the legacy path.
     #[arg(long, default_value_t = true)]
+    #[arg(long = "no-journey", action = clap::ArgAction::SetFalse)]
     pub journey: bool,
 }
 
@@ -1352,7 +1353,7 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         .or_else(|| default_snapshot_path(locator));
     let snap_ref = snap.as_deref();
     let store = Arc::new(open_graph_store_for_load());
-    let pipe = make_content_pipeline(store, true, args)?;
+    let pipe = make_content_pipeline(store.clone(), true, args)?;
 
     let mut report = match provider.as_str() {
         "arxiv" => {
@@ -1394,6 +1395,32 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
             ));
         }
     };
+
+    // M411 S02: ensure-only prepare enqueues one Ingest task so the
+    // scheduler worker can run IngestSchedulerExecutor against the catalog
+    // PDF. Journey/inline ingest already materialize — do not enqueue.
+    if report.ok
+        && !policy.stages.includes_ingest()
+        && !policy.dry_run
+        && !args.enable_import
+        && let Some(arxiv_id) = report.unit_key.as_deref()
+    {
+        let now = chrono::Utc::now().timestamp();
+        if let Err(error) = da_application::GraphScheduler::add_pending_ingest_to(
+            store.as_ref(),
+            &da_domain::scheduler::RetryPolicy::default(),
+            arxiv_id,
+            now,
+        )
+        .await
+        {
+            tracing::warn!(
+                article_id = arxiv_id,
+                error = %error,
+                event = "scheduler_ingest_enqueue_failed"
+            );
+        }
+    }
 
     if let Some(time) =
         crate::production::parse_materialization_time(args.materialization_time.as_deref())?

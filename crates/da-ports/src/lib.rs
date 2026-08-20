@@ -41,7 +41,7 @@ pub use cache_payload::{
 };
 pub use catalog::{
     CatalogInventoryError, CatalogInventoryPort, CatalogInventorySnapshot, CatalogMutationPort,
-    CatalogWriteDisposition,
+    CatalogPdfLocator, CatalogWriteDisposition,
 };
 pub use clock::{Clock, FixedClock, SystemClock};
 pub use embedder::Embedder;

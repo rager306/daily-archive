@@ -117,11 +117,13 @@ pub mod influence_flower;
 pub use influence_flower::{
     InfluenceFlower, InfluenceFlowerError, InfluencePetal, build_author_flower,
 };
+pub mod catalog_pdf_locator;
+pub use catalog_pdf_locator::FilesystemCatalogPdfLocator;
 pub mod scheduler;
 pub mod scheduler_executors;
 pub mod scheduler_runner;
 pub use scheduler::GraphScheduler;
-pub use scheduler_executors::ExtractSchedulerExecutor;
+pub use scheduler_executors::{ExtractSchedulerExecutor, IngestSchedulerExecutor};
 pub use scheduler_runner::{
     SchedulerExecuteOutcome, SchedulerRunReport, SchedulerRunner, SchedulerTaskDisposition,
     SchedulerTaskExecutor, SchedulerTaskOutcome,

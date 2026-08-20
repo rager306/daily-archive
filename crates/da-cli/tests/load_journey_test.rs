@@ -535,7 +535,7 @@ async fn journey_with_equations_materializes_candidates_and_replays() {
             None,
         )
         .await
-    };
+    }
 
     let (outcome, report) = run(&store, cache.clone(), &ports, &pdf_path)
         .await
@@ -756,7 +756,7 @@ impl da_ports::multimodal_llm::MultimodalLlmPort for FakeLlm {
 
     async fn complete_structured(
         &self,
-        request: da_ports::multimodal_llm::MultimodalLlmRequest,
+        _request: da_ports::multimodal_llm::MultimodalLlmRequest,
     ) -> da_ports::multimodal_llm::MultimodalLlmResult<
         da_ports::multimodal_llm::MultimodalLlmResponse,
     > {

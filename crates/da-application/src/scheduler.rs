@@ -64,6 +64,29 @@ impl GraphScheduler {
         Self::add_pending_task_to(store, policy, TaskType::Extract, arxiv_id, now).await
     }
 
+    /// Add a paper to the pending queue (ingest task, M411 S02).
+    pub async fn add_pending_ingest(&self, arxiv_id: &str) -> anyhow::Result<()> {
+        let now = self.clock.now().timestamp();
+        Self::add_pending_task_to(
+            &*self.graph_store,
+            &self.policy,
+            TaskType::Ingest,
+            arxiv_id,
+            now,
+        )
+        .await
+    }
+
+    /// Static form for composition roots that hold an `Arc` store (M411 S02).
+    pub async fn add_pending_ingest_to(
+        store: &dyn DirectGraphStore,
+        policy: &RetryPolicy,
+        arxiv_id: &str,
+        now: i64,
+    ) -> anyhow::Result<()> {
+        Self::add_pending_task_to(store, policy, TaskType::Ingest, arxiv_id, now).await
+    }
+
     /// Add a paper to the pending queue (for the OpenAlex enrichment task).
     pub async fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
         let now = self.clock.now().timestamp();

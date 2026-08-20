@@ -1,5 +1,23 @@
 # Changelog
 
+### M411 Ingest becomes a real scheduler task (R096)
+
+- `CatalogPdfLocator` port (da-ports) plus `FilesystemCatalogPdfLocator`
+  (da-application): walks `DA_CATALOG_ROOT` for `source/<id>.pdf` or the
+  highest `source/<id>vN.pdf`. Never invents a path; a miss is `None`.
+- `IngestSchedulerExecutor`: a real `SchedulerTaskExecutor` for `Ingest`.
+  Locator miss is typed `Retryable` (`catalog_pdf_not_found`); a hit runs
+  the injected `IngestUseCase` (GROBID + embedder at the CLI composition
+  root). No fabricated parse.
+- Producer: `GraphScheduler::add_pending_ingest_to`; `da load --stages ensure`
+  after a successful prepare enqueues one idempotent Ingest task (warn
+  `scheduler_ingest_enqueue_failed` on failure). Inline ingest / journey
+  loads do not enqueue.
+- `da scheduler-run` registers the Ingest executor alongside Extract and
+  OpenAlex; dispatch stays closed.
+- Tests: 3 locator unit tests, 2 executor tests (hit / miss); clippy clean.
+  D127 remains locked.
+
 ### M410 Extract becomes a real scheduler task (R096)
 
 - `ExtractSchedulerExecutor` (da-application `scheduler_executors.rs`): a real

@@ -12,6 +12,12 @@ pub trait CatalogInventoryPort: Send + Sync {
     fn inventory(&self) -> Result<CatalogInventorySnapshot, CatalogInventoryError>;
 }
 
+/// Locate an already-catalogued PDF for an arXiv id. Never invents a path:
+/// `None` means the catalog has no `source/<id>.pdf` (or versioned sibling).
+pub trait CatalogPdfLocator: Send + Sync {
+    fn locate(&self, arxiv_id: &str) -> Option<std::path::PathBuf>;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CatalogWriteDisposition {
     Applied,

@@ -1985,8 +1985,15 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
         graph_store.clone(),
         Box::new(da_adapters::RuleBasedExtractor::new()),
     );
+    let ingest_executor = da_application::IngestSchedulerExecutor::new(
+        Arc::new(da_application::FilesystemCatalogPdfLocator::from_env()),
+        Box::new(da_adapters::GrobidParser::from_env()),
+        Box::new(da_adapters::FdApiEmbedder::from_env()),
+        graph_store.clone(),
+    );
     let report = SchedulerRunner::new(graph_store, openalex)
         .with_executor(Arc::new(extract_executor))
+        .with_executor(Arc::new(ingest_executor))
         .run_due()
         .await?;
 

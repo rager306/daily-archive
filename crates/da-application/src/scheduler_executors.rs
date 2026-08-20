@@ -18,11 +18,14 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
+use da_ports::CatalogPdfLocator;
+use da_ports::embedder::Embedder;
 use da_ports::extractor::Extractor;
 use da_ports::graph_store::DirectGraphStore;
-use da_ports::parser::{ParsedArticle, Section};
+use da_ports::parser::{ParsedArticle, ParserPort, Section};
 
 use crate::extraction::ExtractionUseCase;
+use crate::ingest::IngestUseCase;
 use crate::{SchedulerExecuteOutcome, SchedulerTaskExecutor};
 use da_domain::scheduler::{PendingTask, TaskType};
 
@@ -151,6 +154,60 @@ impl SchedulerTaskExecutor for ExtractSchedulerExecutor {
             },
             Err(error) => SchedulerExecuteOutcome::Retryable {
                 error_class: "extraction_failed".into(),
+                message: format!("{}: {error:#}", task.arxiv_id),
+            },
+        }
+    }
+}
+
+/// Executor for the `Ingest` task type: parse+embed+materialize a catalog PDF.
+pub struct IngestSchedulerExecutor {
+    locator: Arc<dyn CatalogPdfLocator>,
+    use_case: IngestUseCase,
+}
+
+impl IngestSchedulerExecutor {
+    pub fn new(
+        locator: Arc<dyn CatalogPdfLocator>,
+        parser: Box<dyn ParserPort>,
+        embedder: Box<dyn Embedder>,
+        graph_store: Arc<dyn DirectGraphStore>,
+    ) -> Self {
+        let use_case = IngestUseCase::from_shared(parser, embedder, graph_store);
+        Self { locator, use_case }
+    }
+}
+
+#[async_trait]
+impl SchedulerTaskExecutor for IngestSchedulerExecutor {
+    fn task_type(&self) -> TaskType {
+        TaskType::Ingest
+    }
+
+    async fn execute(&self, task: &PendingTask) -> SchedulerExecuteOutcome {
+        let Some(pdf_path) = self.locator.locate(&task.arxiv_id) else {
+            return SchedulerExecuteOutcome::Retryable {
+                error_class: "catalog_pdf_not_found".into(),
+                message: format!(
+                    "no catalog source PDF for {} (locator miss, not invented)",
+                    task.arxiv_id
+                ),
+            };
+        };
+        match self
+            .use_case
+            .ingest_pdf(pdf_path.to_str().unwrap_or_default(), &task.arxiv_id)
+            .await
+        {
+            Ok(result) => SchedulerExecuteOutcome::Completed {
+                summary: format!(
+                    "ingested {} (sections={} body_chars={})",
+                    result.paper_id, result.section_count, result.body_chars
+                ),
+                evidence_refs: Vec::new(),
+            },
+            Err(error) => SchedulerExecuteOutcome::Retryable {
+                error_class: "ingest_failed".into(),
                 message: format!("{}: {error:#}", task.arxiv_id),
             },
         }
@@ -308,6 +365,130 @@ mod tests {
                 assert_eq!(error_class, "parsed_plane_not_materialized")
             }
             other => panic!("expected Retryable, got {other:?}"),
+        }
+    }
+
+    fn ingest_pending_task(arxiv_id: &str) -> PendingTask {
+        use da_domain::scheduler::{TaskPriority, TaskStatus};
+        PendingTask {
+            arxiv_id: arxiv_id.to_string(),
+            task_type: TaskType::Ingest,
+            added_at: 0,
+            retry_count: 0,
+            last_retry: None,
+            next_retry: 0,
+            status: TaskStatus::Pending,
+            schema_version: 2,
+            priority: TaskPriority::High,
+            lease: None,
+            dependencies: vec![],
+            resource_class: da_domain::scheduler::TaskResourceClass::Standard,
+            attempts: vec![],
+            logical_result: None,
+        }
+    }
+
+    struct FixedLocator(Option<std::path::PathBuf>);
+    impl CatalogPdfLocator for FixedLocator {
+        fn locate(&self, _arxiv_id: &str) -> Option<std::path::PathBuf> {
+            self.0.clone()
+        }
+    }
+
+    struct DummyParser;
+    #[async_trait]
+    impl ParserPort for DummyParser {
+        async fn parse_pdf(
+            &self,
+            _pdf_path: &str,
+            paper_id: &str,
+        ) -> da_ports::parser::ParseResult<ParsedArticle> {
+            Ok(ParsedArticle {
+                paper_id: paper_id.to_string(),
+                title: format!("Title {paper_id}"),
+                abstract_text: "abs".into(),
+                body_text: "x".repeat(32),
+                sections: vec![Section {
+                    title: "Intro".into(),
+                    text: "body".into(),
+                    level: 1,
+                    ..Default::default()
+                }],
+                citations: Vec::new(),
+                layout_json: None,
+                tei_xml: None,
+                tables: Vec::new(),
+                table_missingness: None,
+                formulas: Vec::new(),
+                formula_missingness: None,
+                pdf_hash: "hash".into(),
+            })
+        }
+    }
+
+    struct DummyEmbedder;
+    #[async_trait]
+    impl da_ports::embedder::Embedder for DummyEmbedder {
+        async fn embed(&self, _text: &str) -> da_ports::embedder::EmbedResult<Vec<f32>> {
+            Ok(vec![0.1; 8])
+        }
+        async fn embed_batch(
+            &self,
+            texts: &[&str],
+        ) -> da_ports::embedder::EmbedResult<Vec<Vec<f32>>> {
+            Ok(texts.iter().map(|_| vec![0.1; 8]).collect())
+        }
+        fn dimensions(&self) -> usize {
+            8
+        }
+        fn model_id(&self) -> &str {
+            "dummy"
+        }
+    }
+
+    #[test]
+    fn ingest_executor_retries_when_catalog_pdf_missing() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        let store = kg_storage::MockGraphStore::new();
+        let executor = IngestSchedulerExecutor::new(
+            std::sync::Arc::new(FixedLocator(None)),
+            Box::new(DummyParser),
+            Box::new(DummyEmbedder),
+            std::sync::Arc::new(store),
+        );
+        let task = ingest_pending_task("2506.07853");
+        match rt.block_on(executor.execute(&task)) {
+            SchedulerExecuteOutcome::Retryable { error_class, .. } => {
+                assert_eq!(error_class, "catalog_pdf_not_found");
+            }
+            other => panic!("expected Retryable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn ingest_executor_completes_on_locator_hit() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        let dir = tempfile::tempdir().unwrap();
+        let pdf = dir.path().join("source").join("2506.07853.pdf");
+        std::fs::create_dir_all(pdf.parent().unwrap()).unwrap();
+        std::fs::write(&pdf, b"%PDF-1.4 test").unwrap();
+        let store = kg_storage::MockGraphStore::new();
+        let executor = IngestSchedulerExecutor::new(
+            std::sync::Arc::new(FixedLocator(Some(pdf))),
+            Box::new(DummyParser),
+            Box::new(DummyEmbedder),
+            std::sync::Arc::new(store),
+        );
+        let task = ingest_pending_task("2506.07853");
+        match rt.block_on(executor.execute(&task)) {
+            SchedulerExecuteOutcome::Completed { summary, .. } => {
+                assert!(summary.contains("2506.07853"), "{summary}");
+            }
+            other => panic!("expected Completed, got {other:?}"),
         }
     }
 }
