@@ -842,18 +842,33 @@ pub async fn get_references(
     }
     let escaped = params.arxiv_id.replace(['\'', '"', '`'], "");
 
-    let mut columns: Vec<String> = Vec::new();
+    // M426: unified schema so records always match columns. Backward rows
+    // carry cited_* values with null citing_*; forward rows the reverse.
+    // Engine errors propagate as tool errors — never silently empty.
+    let unified_columns: Vec<String> = [
+        "cited_title",
+        "cited_arxiv_id",
+        "cited_context",
+        "cited_intent",
+        "citing_arxiv_id",
+        "citing_title",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
     let mut records: Vec<Vec<serde_json::Value>> = Vec::new();
 
     // Backward: citations this paper points to (Paper -CITES-> Citation).
     if direction == "backward" || direction == "both" {
         let cypher = "MATCH (p:Paper {arxiv_id: '###'})-[:CITES]->(c:Citation) RETURN c.title AS cited_title, c.arxiv_id AS cited_arxiv_id, c.context AS cited_context, c.intent AS cited_intent LIMIT 200"
             .replace("###", &escaped);
-        if let Ok(out) = run_readonly(store, &cypher).await {
-            if columns.is_empty() {
-                columns = out.columns.clone();
+        let out = run_readonly(store, &cypher).await?;
+        for row in out.records {
+            let mut unified = vec![serde_json::Value::Null; unified_columns.len()];
+            for (i, value) in row.into_iter().enumerate().take(4) {
+                unified[i] = value;
             }
-            records.extend(out.records);
+            records.push(unified);
         }
     }
 
@@ -861,23 +876,25 @@ pub async fn get_references(
     if direction == "forward" || direction == "both" {
         let cypher = "MATCH (p:Paper {arxiv_id: '###'})<-[:CITES]-(citer) RETURN citer.arxiv_id AS citing_arxiv_id, citer.title AS citing_title LIMIT 200"
             .replace("###", &escaped);
-        if let Ok(out) = run_readonly(store, &cypher).await {
-            if columns.is_empty() {
-                columns = out.columns.clone();
+        let out = run_readonly(store, &cypher).await?;
+        for row in out.records {
+            let mut unified = vec![serde_json::Value::Null; unified_columns.len()];
+            // citing_* columns sit at unified indexes 4 and 5.
+            for (i, value) in row.into_iter().enumerate() {
+                unified[4 + i.min(1)] = value;
             }
-            // forward rows have different columns; concat as-is.
-            records.extend(out.records);
+            records.push(unified);
         }
     }
 
-    // Default columns when no rows (helpful for the caller).
-    if columns.is_empty() {
-        columns = if direction == "forward" {
-            vec!["citing_arxiv_id".to_string(), "citing_title".to_string()]
-        } else {
-            vec!["cited_title".to_string(), "cited_openalex_id".to_string()]
-        };
-    }
+    // Columns for the requested direction (empty result still typed).
+    let columns = if direction == "forward" {
+        unified_columns[4..].to_vec()
+    } else if direction == "backward" {
+        unified_columns[..4].to_vec()
+    } else {
+        unified_columns.clone()
+    };
 
     let row_count = records.len();
     Ok(CypherOutput {
@@ -1236,6 +1253,57 @@ mod tests {
         assert!(result.is_err(), "empty arxiv_id must be rejected");
     }
 
+    /// M426: reverse hasPart pattern + ORDER BY proven on the real engine.
+    #[tokio::test]
+    async fn test_get_sections_samyama_returns_ordered_sections() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", "2506.07853".to_string())
+            .await
+            .unwrap();
+        let sections = [
+            ("Intro", "1", 1),
+            ("Background", "1.1", 2),
+            ("Method", "2", 1),
+        ];
+        for (title, path, level) in sections {
+            let s = store.create_node("Section").await.unwrap();
+            store
+                .set_node_property_string(s, "title", title.to_string())
+                .await
+                .unwrap();
+            store
+                .set_node_property_string(s, "path_id", path.to_string())
+                .await
+                .unwrap();
+            store
+                .set_node_property_int(s, "level", level as i64)
+                .await
+                .unwrap();
+            store.create_edge(paper, s, "hasPart").await.unwrap();
+        }
+        let result = get_sections(
+            &store,
+            GetSectionsParams {
+                arxiv_id: "2506.07853".to_string(),
+            },
+        )
+        .await
+        .expect("get_sections must run on the real engine");
+        assert_eq!(
+            result.row_count, 3,
+            "all seeded sections returned: {result:?}"
+        );
+        let paths: Vec<String> = result
+            .records
+            .iter()
+            .filter_map(|row| row.get(1).and_then(|v| v.as_str()).map(String::from))
+            .collect();
+        assert_eq!(paths, vec!["1", "1.1", "2"], "lexical path_id order");
+    }
+
     // ─── M366 S01: search_papers (ADR-054 Wave 2 subset, thin slice) ───
 
     #[tokio::test]
@@ -1522,6 +1590,61 @@ mod tests {
         assert_eq!(result.char_count, 0);
     }
 
+    /// M426: Paper-hasSummary-Summary traversal proven on the real engine,
+    /// including the any-granularity fallback.
+    #[tokio::test]
+    async fn test_get_summary_samyama_finds_seeded_summary() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", "2507.19457".to_string())
+            .await
+            .unwrap();
+        let summary = store.create_node("Summary").await.unwrap();
+        store
+            .set_node_property_string(summary, "text", "Grounded extractive summary.".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(summary, "granularity", "section".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_int(summary, "char_count", 28)
+            .await
+            .unwrap();
+        store
+            .create_edge(paper, summary, "hasSummary")
+            .await
+            .unwrap();
+        // Exact granularity match.
+        let exact = get_summary(
+            &store,
+            GetSummaryParams {
+                arxiv_id: "2507.19457".to_string(),
+                granularity: Some("section".to_string()),
+            },
+        )
+        .await
+        .expect("get_summary must run on the real engine");
+        assert!(exact.found, "seeded summary must be found: {exact:?}");
+        assert_eq!(exact.text, "Grounded extractive summary.");
+        assert_eq!(exact.granularity, "section");
+        // Fallback: different requested granularity still finds the summary.
+        let fallback = get_summary(
+            &store,
+            GetSummaryParams {
+                arxiv_id: "2507.19457".to_string(),
+                granularity: Some("abstract".to_string()),
+            },
+        )
+        .await
+        .expect("fallback must run");
+        assert!(fallback.found, "any-granularity fallback must find it");
+        assert_eq!(fallback.granularity, "section");
+    }
+
     /// M425: engine-contract + tool-parity regression — search_papers must
     /// return exactly what its raw Cypher returns on the real engine. This
     /// is the test shape that exposed two production bugs the Mock could
@@ -1645,5 +1768,83 @@ mod tests {
         .await
         .expect("invalid direction should return empty, not error");
         assert_eq!(result.row_count, 0);
+    }
+
+    /// M426: backward CITES proven on the real engine; both-direction output
+    /// must keep records matching columns (unified schema, null-padded).
+    #[tokio::test]
+    async fn test_get_references_samyama_backward_and_both_schema() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", "2212.14024".to_string())
+            .await
+            .unwrap();
+        let citation = store.create_node("Citation").await.unwrap();
+        store
+            .set_node_property_string(citation, "arxiv_id", "1706.03762".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(citation, "title", "Attention Is All You Need".to_string())
+            .await
+            .unwrap();
+        store.create_edge(paper, citation, "CITES").await.unwrap();
+        let citer = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(citer, "arxiv_id", "2501.00001".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(citer, "title", "A Citing Work".to_string())
+            .await
+            .unwrap();
+        store.create_edge(citer, paper, "CITES").await.unwrap();
+
+        let backward = get_references(
+            &store,
+            GetReferencesParams {
+                arxiv_id: "2212.14024".to_string(),
+                direction: "backward".to_string(),
+            },
+        )
+        .await
+        .expect("backward references must run on the real engine");
+        assert_eq!(
+            backward.row_count, 1,
+            "seeded citation returned: {backward:?}"
+        );
+        assert!(backward.columns.contains(&"cited_arxiv_id".to_string()));
+        assert_eq!(
+            backward
+                .records
+                .iter()
+                .find_map(|r| r.iter().find(|v| v.as_str() == Some("1706.03762")))
+                .and_then(|v| v.as_str()),
+            Some("1706.03762")
+        );
+
+        let both = get_references(
+            &store,
+            GetReferencesParams {
+                arxiv_id: "2212.14024".to_string(),
+                direction: "both".to_string(),
+            },
+        )
+        .await
+        .expect("both-direction references must run");
+        assert_eq!(both.row_count, 2, "backward + forward rows: {both:?}");
+        for row in &both.records {
+            assert_eq!(
+                row.len(),
+                both.columns.len(),
+                "every row must match the unified schema: {row:?} vs {:?}",
+                both.columns
+            );
+        }
+        // The unified schema must expose both cited_* and citing_* columns.
+        assert!(both.columns.iter().any(|c| c.starts_with("cited_")));
+        assert!(both.columns.iter().any(|c| c.starts_with("citing_")));
     }
 }

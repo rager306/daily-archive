@@ -1,5 +1,20 @@
 # Changelog
 
+### M426 Remaining query tools on the real engine
+
+- Finished the M425 sweep: `get_sections` (reverse `hasPart` pattern +
+  `ORDER BY path_id`) and `get_summary` (Paper-hasSummary-Summary with
+  any-granularity fallback) now have seeded tests against the real
+  in-process Samyama engine. Both tools were correct — they simply had
+  no real coverage before.
+- `get_references` fixed twice over: (1) `if let Ok` swallowed engine
+  errors, so a query failure silently looked like "no references" —
+  errors now propagate as tool errors; (2) `direction=both`
+  concatenated backward (4-column `cited_*`) and forward (2-column
+  `citing_*`) rows into one output where records no longer matched
+  columns — replaced with a unified 6-column schema with null padding,
+  and fallback columns now match the actual query aliases. D127 locked.
+
 ### M425 Real-engine query tool tests fix search case bug
 
 - Moving da-mcp query-path tests from MockGraphStore (no Cypher) to the
