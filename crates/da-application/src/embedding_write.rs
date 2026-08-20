@@ -100,6 +100,7 @@ async fn stamp_sha(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use da_ports::graph_store::GraphStoreError;
 
     #[tokio::test]
     async fn add_replace_noop_semantics_unchanged() {
