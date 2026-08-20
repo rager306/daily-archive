@@ -246,6 +246,7 @@ mod tests {
                 })
                 .collect(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: sha(7),
         }
     }

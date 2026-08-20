@@ -50,6 +50,14 @@ pub struct ParsedArticle {
     /// (legacy payload / HTML parser) or extraction ran and found formulas.
     #[serde(default)]
     pub formula_missingness: Option<FormulaMissingReason>,
+    /// Typed page-text missingness from pdf-inspector classification (M422).
+    ///
+    /// `None` = not stamped (parser did not classify; legacy JSON).
+    /// `Some(empty)` = classified and no page needs OCR.
+    /// `Some(non-empty)` = those 1-indexed pages are garbled/scanned/no-text.
+    /// GROBID `body_text` is **not** rewritten — this is detection, not repair.
+    #[serde(default)]
+    pub page_text_missingness: Option<Vec<PageTextMissing>>,
 }
 
 /// A source char span `[start, end)` (end exclusive) inside a section's
@@ -59,6 +67,42 @@ pub struct ParsedArticle {
 pub struct CharSpan {
     pub start: u32,
     pub end: u32,
+}
+
+/// One 1-indexed page whose text layer is not honestly extractable (M422).
+///
+/// Built from [`da_domain::PdfClassification::pages_needing_ocr`] plus
+/// [`da_domain::PdfClassification::ocr_reasons_by_page`]. Reasons may be
+/// empty when the classifier listed the page without a reason vector.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PageTextMissing {
+    /// 1-indexed page number (matches pdf-inspector / GROBID coords).
+    pub page: u32,
+    /// Machine-readable OCR reason identifiers (may be empty).
+    #[serde(default)]
+    pub reasons: Vec<String>,
+}
+
+/// Map a pdf-inspector classification onto typed page-text missingness.
+///
+/// Every page in `pages_needing_ocr` appears exactly once. Reasons come
+/// from `ocr_reasons_by_page` when present; otherwise the page is stamped
+/// with an empty reason list (never invented).
+pub fn page_text_missingness_from(
+    classification: &da_domain::PdfClassification,
+) -> Vec<PageTextMissing> {
+    classification
+        .pages_needing_ocr
+        .iter()
+        .copied()
+        .map(|page| {
+            let reasons = classification
+                .ocr_reason_for_page(page)
+                .map(|r| r.to_vec())
+                .unwrap_or_default();
+            PageTextMissing { page, reasons }
+        })
+        .collect()
 }
 
 /// Typed missingness reason for TEI table structure (M400 S02 T01).
@@ -343,5 +387,47 @@ pub trait ParserPort: Send + Sync {
         Err(ParserError::Unavailable(
             "HTML parsing not supported by this parser".to_string(),
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use da_domain::{PageOcrReasons, PdfClassification, PdfType};
+
+    fn classification(pages: Vec<u32>, reasons: Vec<PageOcrReasons>) -> PdfClassification {
+        PdfClassification {
+            pdf_type: PdfType::Mixed,
+            page_count: 10,
+            pages_needing_ocr: pages,
+            ocr_reasons_by_page: reasons,
+            confidence: 0.9,
+            has_encoding_issues: false,
+        }
+    }
+
+    #[test]
+    fn page_text_missingness_from_maps_pages_and_reasons() {
+        let stamped = page_text_missingness_from(&classification(
+            vec![3, 7],
+            vec![PageOcrReasons {
+                page: 3,
+                reasons: vec!["suspected_garbled_text".into()],
+            }],
+        ));
+        assert_eq!(stamped.len(), 2);
+        assert_eq!(stamped[0].page, 3);
+        assert_eq!(stamped[0].reasons, ["suspected_garbled_text".to_string()]);
+        assert_eq!(stamped[1].page, 7);
+        assert!(
+            stamped[1].reasons.is_empty(),
+            "missing reason vector is empty, never invented"
+        );
+    }
+
+    #[test]
+    fn page_text_missingness_from_clean_classification_is_empty() {
+        let stamped = page_text_missingness_from(&classification(vec![], vec![]));
+        assert!(stamped.is_empty());
     }
 }

@@ -2167,6 +2167,7 @@ impl ParserPort for GrobidParser {
             table_missingness,
             formulas,
             formula_missingness,
+            page_text_missingness: None,
         })
     }
 }

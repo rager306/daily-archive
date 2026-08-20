@@ -429,6 +429,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: sha(7),
         }
     }

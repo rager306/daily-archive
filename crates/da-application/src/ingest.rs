@@ -15,7 +15,7 @@ use da_domain::{
 use da_ports::PdfClassificationPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
-use da_ports::parser::ParserPort;
+use da_ports::parser::{PageTextMissing, ParserPort, page_text_missingness_from};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -61,6 +61,10 @@ pub struct IngestResult {
     /// Typed triage outcome (M388 S04). Always set; default NotConfigured.
     #[serde(default)]
     pub pdf_triage: PdfTriageStatus,
+    /// Typed page-text missingness stamped from pdf-inspector (M422).
+    /// `None` = not classified. `Some(empty)` = classified, no OCR pages.
+    #[serde(default)]
+    pub page_text_missingness: Option<Vec<PageTextMissing>>,
 }
 
 impl IngestUseCase {
@@ -312,7 +316,19 @@ impl IngestUseCase {
             .parser
             .as_ref()
             .context("ingest_pdf unavailable on materializer-only IngestUseCase")?;
-        let parsed = parser.parse_pdf(pdf_path, paper_id).await?;
+        let mut parsed = parser.parse_pdf(pdf_path, paper_id).await?;
+        if let Some(classification) = &pdf_classification {
+            parsed.page_text_missingness = Some(page_text_missingness_from(classification));
+            tracing::info!(
+                paper_id,
+                page_text_missingness = parsed
+                    .page_text_missingness
+                    .as_ref()
+                    .map(|v| v.len())
+                    .unwrap_or(0),
+                "Stamped page-text missingness from classification"
+            );
+        }
         tracing::info!(
             paper_id,
             title = %parsed.title,
@@ -1162,6 +1178,7 @@ impl IngestUseCase {
             import_eligible: eligible,
             pdf_classification,
             pdf_triage,
+            page_text_missingness: parsed.page_text_missingness.clone(),
         })
     }
 

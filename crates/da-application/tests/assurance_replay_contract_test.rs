@@ -45,6 +45,7 @@ fn parsed() -> ParsedArticle {
         table_missingness: None,
         formulas: Vec::new(),
         formula_missingness: None,
+        page_text_missingness: None,
         pdf_hash: "src".into(),
     }
 }
@@ -65,6 +66,7 @@ fn ingest() -> da_application::ingest::IngestResult {
         import_eligible: false,
         pdf_classification: None,
         pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
+        page_text_missingness: None,
     }
 }
 

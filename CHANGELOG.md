@@ -1,5 +1,17 @@
 # Changelog
 
+### M422 Stamp garbled pages onto ParsedArticle
+
+- pdf-inspector already detects garbled pages (M419/M420) but
+  `ParsedArticle` still pretended GROBID `body_text` was complete.
+  Wave 2-b does **not** invent ToUnicode repair. It stamps typed
+  `page_text_missingness` from `PdfClassification`.
+- `None` = not classified (legacy JSON / no classifier). `Some(empty)` =
+  classified with zero OCR pages. `Some(non-empty)` = those 1-indexed
+  pages. Helper `page_text_missingness_from`. GROBID/HTML constructors
+  leave the field unset. Ingest stamps after parse; `body_text` is not
+  rewritten. Governor pins `page_text_missingness_stamp`. D127 locked.
+
 ### M421 Remote mode opens the existing RESP read plane
 
 - `DA_GRAPH_MODE=remote` no longer lies that the client is unshipped.

@@ -69,6 +69,7 @@ fn parsed_article(
         table_missingness: None,
         formulas: Vec::new(),
         formula_missingness: None,
+        page_text_missingness: None,
     }
 }
 

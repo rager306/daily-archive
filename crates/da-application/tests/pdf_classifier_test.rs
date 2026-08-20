@@ -59,6 +59,7 @@ impl ParserPort for MockParser {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "hash".into(),
         })
     }
@@ -152,6 +153,13 @@ async fn ingest_calls_classifier_before_parser() {
         assert_eq!(c.pdf_type, PdfType::Text);
         assert_eq!(c.page_count, 10);
         assert!((c.confidence - 0.95).abs() < f32::EPSILON);
+        let missing = result
+            .page_text_missingness
+            .expect("classified clean PDF stamps Some(empty), not unset");
+        assert!(
+            missing.is_empty(),
+            "zero OCR pages must stamp Some(empty), not invent pages"
+        );
     }
 }
 
@@ -182,6 +190,10 @@ async fn ingest_without_classifier_works() {
             "without classifier, pdf_classification must be None"
         );
         assert_eq!(result.pdf_triage, PdfTriageStatus::NotConfigured);
+        assert!(
+            result.page_text_missingness.is_none(),
+            "without classifier, page-text missingness stays unset"
+        );
     }
 }
 
@@ -319,6 +331,17 @@ async fn ingest_default_bundled_policy_continues_on_high_garbled_ratio() {
         .expect("bundled fail_open=true + percent=100 must continue");
     assert_eq!(result.pdf_triage, PdfTriageStatus::Classified);
     assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
+    let missing = result
+        .page_text_missingness
+        .expect("classified mixed PDF stamps Some, not unset");
+    assert_eq!(
+        missing.iter().map(|p| p.page).collect::<Vec<_>>(),
+        vec![1, 2, 3, 4, 5]
+    );
+    assert_eq!(
+        result.body_chars, 4,
+        "GROBID body_text must not be rewritten by the stamp"
+    );
 }
 
 #[tokio::test]

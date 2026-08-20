@@ -350,6 +350,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "source-sha".into(),
         }
     }
@@ -370,6 +371,7 @@ mod tests {
             import_eligible: false,
             pdf_classification: None::<PdfClassification>,
             pdf_triage: da_domain::PdfTriageStatus::NotConfigured,
+            page_text_missingness: None,
         }
     }
 

@@ -1894,6 +1894,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let payload = serde_json::to_vec(&parsed).unwrap();
@@ -1998,6 +1999,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -2065,6 +2067,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -2133,6 +2136,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(
@@ -2207,6 +2211,7 @@ mod tests {
             table_missingness: None,
             formulas: Vec::new(),
             formula_missingness: None,
+            page_text_missingness: None,
             pdf_hash: "a".repeat(64),
         };
         let extractor = RuleBasedExtractor::with_config(

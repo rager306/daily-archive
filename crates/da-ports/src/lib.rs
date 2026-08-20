@@ -67,8 +67,8 @@ pub use pdf_classification::{
 
 pub use parser::{
     CharSpan, CitationAnchor, CitationEntry, ExtractedFormula, ExtractedTable,
-    FormulaMissingReason, FormulaRepresentation, ParserPort, Section, TableCell,
-    TableMissingReason,
+    FormulaMissingReason, FormulaRepresentation, PageTextMissing, ParserPort, Section, TableCell,
+    TableMissingReason, page_text_missingness_from,
 };
 pub use promotion::{PromotionCommitError, PromotionCommitSink, PromotionDecision};
 pub use tex_source::{
@@ -114,6 +114,7 @@ mod serde_roundtrip_tests {
             table_missingness: Some(TableMissingReason::NoTableElements),
             formulas: vec![],
             formula_missingness: None,
+            page_text_missingness: None,
         });
     }
 
@@ -154,6 +155,7 @@ mod serde_roundtrip_tests {
             table_missingness: None,
             formulas: vec![],
             formula_missingness: None,
+            page_text_missingness: None,
         });
     }
 
@@ -197,6 +199,10 @@ mod serde_roundtrip_tests {
             article.formula_missingness.is_none(),
             "legacy payload does not claim formula typed missingness"
         );
+        assert!(
+            article.page_text_missingness.is_none(),
+            "legacy payload does not claim page-text missingness"
+        );
     }
 
     /// M400 S03 T01: a ParsedArticle carrying extracted TEI formulas survives
@@ -228,6 +234,7 @@ mod serde_roundtrip_tests {
                 missingness: None,
             }],
             formula_missingness: None,
+            page_text_missingness: None,
         });
     }
 
