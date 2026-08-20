@@ -1,30 +1,31 @@
-# Continue — M428 complete; da-mcp fully swept
+# Continue — M429 implemented (pending GSD seal)
 
 ## Last action
 
-M428-kyglr1 complete (skip-delivered + UAT + sha256:dd04fdf6… validate +
-gates + complete):
-- `76eb217e`: graph_rank — первый seeded структурный тест на реальном
-  движке (hub с 2 входящими CITES ранжируется первым в PageRank; WCC
-  компоненты 3+2). get_method_lineage — третий найденный сайт
-  error-swallowing (`if let Ok` × 2) исправлен на `?`; var-length
-  `predecessor_of*1..N` доказан на движке (цепочка transformer→vit).
-  В tools.rs **ноль** `if let Ok` на engine-вызовах.
-- da-mcp 46 passed; governor closeout ON_TRACK flags=0 (четвёртый подряд).
+M429-zz7b1b S01+S02 implemented (code green; GSD skip-delivered closeout next):
 
-Волна: M420→M428 (8 milestones; 4 продуктовых бага закрыто, 2 мок-фейка,
-вся query-поверхность da-mcp на реальном движке).
+- `write_node_embedding` → `GraphResult<NodeEmbedWrite>`: двойной провал
+  записи и провал sha-штампа больше не глотаются. Красный тест с
+  failing-store double доказал: старый код возвращал `Replaced` при
+  полностью провалившейся записи (фейковый успех); новый — `Err`.
+- Потребители: ingest фейлит материализацию с контекстом; entity-loop
+  логирует видимый `entity_embedding_write_failed` и продолжает
+  (политика как у embed-ошибок).
+- STUB-AUDIT fake-fixed; governor пин `embedding_write_honest`
+  (required `GraphResult<NodeEmbedWrite>`, forbidden `let _ = graph_store`).
+- da-application lib 304; batch_ingest 20; embedding 5; clippy clean;
+  governor ON_TRACK flags=0.
+
+Волна: M420→M429 (9 milestones; 5 продуктовых багов).
 
 ## Next action (priority)
 
-1. da-mcp исчерпан. Кандидаты следующей волны:
-   a) аудит da-application stages на pin-паттерны того же класса
-      (`if let Ok`, пришпиленные пустые результаты);
-   b) процессный разрыв из STATE/AUDIT/QUEUE;
-   c) ToUnicode repair upstream.
+1. GSD skip-delivered closeout for M429.
+2. Продолжить волну: grep-скан da-cli/da-adapters на `let _ =` /
+   `.ok()` на критичных путях того же класса.
 
 ## Do not
 
-Unlock D127. Pin a fake. `if let Ok` на engine-вызовах — после фикса
-одного сайта grep-ить весь crate, не только жалобный сайт (урок M428).
-toLower(missing_prop) → coalesce.
+Unlock D127. Pin a fake. `if let Ok` / `let _ =` на engine/store
+вызовах. Governor-пины писать по фактической сигнатуре (алиас
+GraphResult, не развёрнутый Result).
