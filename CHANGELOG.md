@@ -1,5 +1,24 @@
 # Changelog
 
+### M418 Content-node embeddings use sanctioned replace
+
+- The ingest.rs content-node guard still hard-failed on a changed embedding
+  ("replacement is not supported safely") - a placeholder its own test said
+  existed "until storage upsert is available". M416 delivered that upsert
+  (replace_vector, D277); M418 routes the guard through it.
+- New shared helper `embedding_write::write_node_embedding(store, label,
+  node_id, vector)`: add on first attach, sanctioned same-node replace only
+  when `embedding_fingerprint` changed, no-op on equal replay. Entity
+  (M417) now delegates to it (`EntityEmbedWrite` is a type alias); the
+  content-node path replaces in place with a `node_embedding_replaced` event
+  instead of bailing.
+- The obsolete fails-closed test is rewritten to assert the sanctioned
+  replace: changed vector succeeds, sha advances, equal replay performs no
+  further writes.
+- Vector writers are now uniform: journey Paper (EmbedStale enqueue), Entity
+  (direct replace), content nodes (direct replace). Governor pins both call
+  sites. D127 remains locked.
+
 ### M417 S01 Entity embeddings become add-or-replace
 
 - The Entity-embedding write in extraction.rs used unconditional `add_vector`.

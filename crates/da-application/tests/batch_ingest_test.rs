@@ -373,7 +373,7 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
 }
 
 #[tokio::test]
-async fn changed_embedding_fails_closed_until_storage_upsert_is_available() {
+async fn changed_embedding_replaces_via_sanctioned_upsert() {
     let (ingest, store) = make_ingest(vec![]);
     let parsed = ParsedArticle {
         paper_id: "2401.00001".into(),
@@ -394,17 +394,22 @@ async fn changed_embedding_fails_closed_until_storage_upsert_is_available() {
         .materialize_parsed(&parsed, vec![0.1; 1024], None, None, None)
         .await
         .unwrap();
-    let error = ingest
+    // M416 delivered the storage upsert (replace_vector, D277): a changed
+    // embedder replaces the content-node vector in place instead of failing.
+    ingest
         .materialize_parsed(&parsed, vec![0.2; 1024], None, None, None)
         .await
-        .unwrap_err();
-
-    assert!(
-        error
-            .to_string()
-            .contains("replacement is not supported safely")
-    );
-    assert_eq!(store.vector_add_call_count(), 1);
+        .expect("changed embedding replaces instead of bailing");
+    // The second write path went through the sanctioned replace (counted by
+    // the instrumented mock: add on first attach, replace on the change).
+    assert_eq!(store.vector_add_call_count(), 2);
+    // Equal-sha replay is a no-op: a third materialize with the same vector
+    // performs no further add/replace.
+    ingest
+        .materialize_parsed(&parsed, vec![0.2; 1024], None, None, None)
+        .await
+        .unwrap();
+    assert_eq!(store.vector_add_call_count(), 2);
 }
 
 #[tokio::test]

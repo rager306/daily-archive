@@ -825,81 +825,21 @@ fn extract_metric_value(text: &str, metric: &str) -> Option<f64> {
     None
 }
 
-/// Result of a sanctioned entity-vector write (M417 S01). Mirrors the Paper
-/// path: add on first attach, replace only when the model output changed,
-/// no-op on an equal fingerprint replay (keeps graph writes replay-idempotent).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EntityEmbedWrite {
-    #[allow(dead_code)]
-    Added,
-    Replaced,
-    Unchanged,
-}
+/// Result of a sanctioned entity-vector write (M417 S01). Shared semantics
+/// live in [`crate::embedding_write`]; this alias keeps the Entity-flavored
+/// name at the extraction call sites and tests.
+pub type EntityEmbedWrite = crate::embedding_write::NodeEmbedWrite;
 
-/// Add-or-replace an Entity node's embedding, mirroring the Paper journey
-/// path. Compares `embedding_fingerprint` voice the stored `embedding_sha256`
-/// property; replaces via `replace_vector` (M416) only on change, adds when
-/// absent, and reports `Unchanged` on an equal replay so repeated extraction
-/// never churns the vector store.
+/// Add-or-replace an Entity node's embedding via the shared helper
+/// ( [`crate::embedding_write::write_node_embedding`] ): add on first attach,
+/// sanctioned `replace_vector` (M416) only when the fingerprint changed,
+/// no-op on an equal replay so repeated extraction never churns the store.
 async fn write_entity_embedding(
     graph_store: &dyn da_ports::graph_store::DirectGraphStore,
     node_id: u64,
     vector: Vec<f32>,
 ) -> EntityEmbedWrite {
-    let fingerprint = crate::ingest::embedding_fingerprint(&vector);
-    let existing = graph_store
-        .get_node_property_string(node_id, "embedding_sha256")
-        .await;
-    match existing {
-        Some(stored) if stored == fingerprint => EntityEmbedWrite::Unchanged,
-        Some(_stored) => {
-            match graph_store
-                .replace_vector("Entity", "embedding", node_id, vector.clone())
-                .await
-            {
-                Ok(()) => {
-                    let _ = graph_store
-                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
-                        .await;
-                    EntityEmbedWrite::Replaced
-                }
-                Err(_absent) => {
-                    // A sha stamp without a stored vector (partial state): add.
-                    let _ = graph_store
-                        .add_vector("Entity", "embedding", node_id, vector.clone())
-                        .await;
-                    let _ = graph_store
-                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
-                        .await;
-                    EntityEmbedWrite::Replaced
-                }
-            }
-        }
-        None => {
-            match graph_store
-                .add_vector("Entity", "embedding", node_id, vector.clone())
-                .await
-            {
-                Ok(()) => {
-                    let _ = graph_store
-                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
-                        .await;
-                    EntityEmbedWrite::Added
-                }
-                Err(_conflict) => {
-                    // A vector without a sha stamp (legacy data): replace it
-                    // with the new model output and stamp the sha.
-                    let _ = graph_store
-                        .replace_vector("Entity", "embedding", node_id, vector.clone())
-                        .await;
-                    let _ = graph_store
-                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
-                        .await;
-                    EntityEmbedWrite::Replaced
-                }
-            }
-        }
-    }
+    crate::embedding_write::write_node_embedding(graph_store, "Entity", node_id, vector).await
 }
 
 #[cfg(test)]

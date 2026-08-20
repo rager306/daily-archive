@@ -770,28 +770,23 @@ impl IngestUseCase {
             tracing::info!(paper_id, nav_edges, "Section navigation edges created");
         }
 
-        // 5. HOT PATH: add the vector exactly once for this content.
-        // Samyama's current HNSW `add` appends duplicate node IDs, so exact
-        // replay must be suppressed and changed embeddings fail closed until
-        // the storage adapter provides a real upsert contract.
-        let embedding_sha256 = embedding_fingerprint(&vector);
-        match self
-            .graph_store
-            .get_node_property_string(content_node_id, "embedding_sha256")
-            .await
+        // 5. HOT PATH: add-or-replace the vector for this content.
+        // M416 delivered the sanctioned same-node upsert (replace_vector,
+        // D277): an equal-sha replay is a no-op and a changed embedding
+        // (embedder-model change) replaces in place instead of failing.
+        match crate::embedding_write::write_node_embedding(
+            self.graph_store.as_ref(),
+            content_label,
+            content_node_id,
+            vector.clone(),
+        )
+        .await
         {
-            Some(existing) if existing == embedding_sha256 => {}
-            Some(existing) => anyhow::bail!(
-                "embedding replacement is not supported safely for paper {paper_id}: existing={existing}, requested={embedding_sha256}"
-            ),
-            None => {
-                self.graph_store
-                    .add_vector(content_label, "embedding", content_node_id, vector.clone())
-                    .await?;
-                self.graph_store
-                    .set_node_property_string(content_node_id, "embedding_sha256", embedding_sha256)
-                    .await?;
+            crate::embedding_write::NodeEmbedWrite::Added => {}
+            crate::embedding_write::NodeEmbedWrite::Replaced => {
+                tracing::info!(paper_id, content_label, event = "node_embedding_replaced");
             }
+            crate::embedding_write::NodeEmbedWrite::Unchanged => {}
         }
 
         // 6. Create CITES edges for citations with resolvable arxiv_ids
