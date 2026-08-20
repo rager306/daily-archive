@@ -1,31 +1,30 @@
-# Continue — M429 implemented (pending GSD seal)
+# Continue — M430 implemented (pending GSD seal)
 
 ## Last action
 
-M429-zz7b1b S01+S02 implemented (code green; GSD skip-delivered closeout next):
+M430-tfnwt4 S01 implemented (code green; GSD skip-delivered closeout next):
 
-- `write_node_embedding` → `GraphResult<NodeEmbedWrite>`: двойной провал
-  записи и провал sha-штампа больше не глотаются. Красный тест с
-  failing-store double доказал: старый код возвращал `Replaced` при
-  полностью провалившейся записи (фейковый успех); новый — `Err`.
-- Потребители: ingest фейлит материализацию с контекстом; entity-loop
-  логирует видимый `entity_embedding_write_failed` и продолжает
-  (политика как у embed-ошибок).
-- STUB-AUDIT fake-fixed; governor пин `embedding_write_honest`
-  (required `GraphResult<NodeEmbedWrite>`, forbidden `let _ = graph_store`).
-- da-application lib 304; batch_ingest 20; embedding 5; clippy clean;
-  governor ON_TRACK flags=0.
+- Sвип класса swallow в da-cli/da-adapters: большинство `let _ =` /
+  `.ok()` — легитимные cleanup (temp, env, test-await); scheduler
+  executors честные (typed outcomes). Реальных багов не нашлось.
+- Замер clippy --tests выявил 3 тест-код находки: 2 ignored seed
+  Results в embed-stale тесте (fake-pass риск) .unwrap()ed,
+  1 TempDir::keep discard. Фикс + per-crate clippy --tests pre-commit
+  hook. Все 11 crates зелёные под --lib --tests -D warnings.
+- AGENTS.md + STUB-AUDIT записаны. M429 урок закрыт: тест-модули
+  теперь верифицируются коммитом.
 
-Волна: M420→M429 (9 milestones; 5 продуктовых багов).
+Волна: M420→M430 (10 milestones; 5 продуктовых багов + процессный разрыв).
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M429.
-2. Продолжить волну: grep-скан da-cli/da-adapters на `let _ =` /
-   `.ok()` на критичных путях того же класса.
+1. GSD skip-delivered closeout for M430.
+2. Следующий кандидат: flag REVIEW CLI / deeper проверка — например
+   канареечный pill на `clippy --tests` уже работает; можно продвинуть
+   governor на правильный тест-модульный контакт или волну типа
+   `cargo test --workspace`-standby.
 
 ## Do not
 
-Unlock D127. Pin a fake. `if let Ok` / `let _ =` на engine/store
-вызовах. Governor-пины писать по фактической сигнатуре (алиас
-GraphResult, не развёрнутый Result).
+Unlock D127. Pin a fake. `if let Ok` / `let _ =` на store/engine.
+`--workspace` clippy/test (rocksdb-пересборка).

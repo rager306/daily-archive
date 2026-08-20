@@ -47,7 +47,7 @@ mod tests {
         let path = dir.path().join("figure_quote_policy.yaml");
         std::fs::write(&path, content).unwrap();
         // Leak the tempdir path: tests are short-lived and the OS reclaims it.
-        dir.keep();
+        let _ = dir.keep();
         path
     }
 

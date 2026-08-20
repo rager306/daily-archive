@@ -27,6 +27,19 @@ repos:
         types: [rust]
         stages: [pre-commit]
 
+      # M430: clippy --lib does NOT compile test modules — a test-only import
+      # break (M429 lesson) passed the lib hook and failed only under
+      # `cargo test`. Per-crate --tests compiles test code without the
+      # workspace-wide rocksdb test-profile rebuild (MEM468/MEM514 stay
+      # honored: no --workspace, no --all-targets, no cargo run).
+      - id: cargo-clippy-tests
+        name: cargo clippy tests (test modules compile; per-crate, no rocksdb trap)
+        entry: cargo clippy -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline -p da-domain -p da-ports -p da-application -p da-adapters -p da-cli -p da-mcp --lib --tests --no-deps -- -D warnings
+        language: system
+        pass_filenames: false
+        types: [rust]
+        stages: [pre-commit]
+
       - id: governor-trajectory
         name: governor CLI (ADR invariants + artifact gates)
         entry: bash -c 'PYTHONPATH=scripts python3 -m governor --phase preflight --check-only'

@@ -255,7 +255,10 @@ adapted it for Rust — it is the authoritative trajectory checker.)
 
 First line of defense before CI. Covers kg-* + da-* in cargo-fmt and
 cargo-clippy-lib (no `--all-targets`, avoids rocksdb rebuild), plus
-governor-trajectory (ADR invariants + artifact gates) and docs-drift-check.
+cargo-clippy-tests (per-crate `--lib --tests`, M430: clippy --lib does
+NOT compile test modules — a test-only break passed the lib hook and
+failed under `cargo test`, the M429 lesson), governor-trajectory
+(ADR invariants + artifact gates) and docs-drift-check.
 Run automatically on `git commit`.
 
 ### GitNexus (code intelligence)

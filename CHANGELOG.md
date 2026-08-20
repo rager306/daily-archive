@@ -1,5 +1,20 @@
 # Changelog
 
+### M430 Pre-commit compiles test modules
+
+- M429 exposed that the pre-commit clippy hook compiled only lib targets:
+  a test-only import break passed the hook and failed later under
+  `cargo test`. M430 measures the gap first: only three test-code
+  findings existed workspace-wide. Two were fake-pass risks (the
+  embed-stale test ignored its `add_vector` and sha-stamp seed Results,
+  so a seed failure would pass the test on an empty store) and one was a
+  `TempDir::keep` must-use discard.
+- Fixed the three findings; added a per-crate `cargo-clippy-tests`
+  pre-commit hook (`--lib --tests`, no `--workspace`/`--all-targets`, so
+  the rocksdb test-profile rebuild trap stays avoided per MEM468/MEM514).
+  Test modules are now commit-verified. AGENTS.md and STUB-AUDIT updated.
+  D127 locked.
+
 ### M429 Embedding write stops faking success
 
 - `write_node_embedding` swallowed every store error (`let _ =`): when

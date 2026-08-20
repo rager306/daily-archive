@@ -862,8 +862,11 @@ mod tests {
         let sha_a = crate::ingest::embedding_fingerprint(&a);
         let store = kg_storage::MockGraphStore::new();
         let paper = rt.block_on(seed_embeddable_paper(&store, "2506.07853"));
-        rt.block_on(store.add_vector("Paper", "embedding", paper, a.clone()));
-        rt.block_on(store.set_node_property_string(paper, "embedding_sha256", sha_a.clone()));
+        // M430: seed failures must fail the test, not fake-pass on an empty store.
+        rt.block_on(store.add_vector("Paper", "embedding", paper, a.clone()))
+            .expect("seed add_vector");
+        rt.block_on(store.set_node_property_string(paper, "embedding_sha256", sha_a.clone()))
+            .expect("seed sha stamp");
         let task = embed_stale_pending_task("2506.07853");
 
         // Same embedder output -> no-op Completed, sha unchanged.
