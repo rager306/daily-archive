@@ -55,6 +55,7 @@ use da_application::{
     ArticleJourneyComposition, LoadContentOutcome, LoadExtractOutcome, LoadIngestOutcome,
     PipelineOrchestrator, PipelineRunReport, StageDisposition, embedding_fingerprint,
 };
+use da_domain::figure_analysis::FigureQuotePolicy;
 use da_domain::{LoadCacheRecord, StageCacheMode, StageIdRegistry};
 use da_ports::clock::Clock;
 use da_ports::embedder::Embedder;
@@ -188,6 +189,16 @@ pub fn resolve_figure_branch_from_env() -> Option<FigureBranchSettings> {
         schema_fingerprint: settings.analysis_schema_fingerprint.clone(),
         context_schema: settings.context_output_schema.clone(),
     })
+}
+
+/// Load the figure quote policy window (ADR-062). `DA_FIGURE_QUOTE_POLICY`
+/// overrides the path; default `data/ontology/figure_quote_policy.yaml`.
+pub fn load_figure_quote_policy_from_env() -> Result<FigureQuotePolicy, String> {
+    let path = std::env::var("DA_FIGURE_QUOTE_POLICY")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "data/ontology/figure_quote_policy.yaml".to_string());
+    da_adapters::load_figure_quote_policy(std::path::Path::new(&path))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -525,6 +536,17 @@ pub async fn run_journey_content(
         let mut figure_candidates = Vec::new();
         let mut figure_records: Vec<LoadCacheRecord> = Vec::new();
         let article_dir = pdf_path.parent().map(Path::to_path_buf).unwrap_or_default();
+        let quote_policy = match load_figure_quote_policy_from_env() {
+            Ok(policy) => policy,
+            Err(error) => {
+                tracing::warn!(
+                    article_id = paper_id,
+                    error = %error,
+                    event = "da_load_journey_figures_quote_policy_unresolved"
+                );
+                return Err(format!("figure quote policy unresolved: {error}"));
+            }
+        };
         for artifact in artifacts
             .iter()
             .filter(|a| a.kind == da_domain::VisualArtifactKind::Figure)
@@ -589,7 +611,8 @@ pub async fn run_journey_content(
                 &retry_after,
             )
             .with_context_dependency("context")
-            .with_contract_versions(&branch.prompt_fingerprint, &branch.schema_fingerprint);
+            .with_contract_versions(&branch.prompt_fingerprint, &branch.schema_fingerprint)
+            .with_quote_policy(quote_policy.clone());
             let context_contract = context_stage.contract();
             let analysis_contract = analysis_stage.contract();
 

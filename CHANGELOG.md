@@ -6,11 +6,18 @@
   carried only the JSON path. `OpenAiMultimodalPromptAdapter` now names the
   validation kind (e.g. `MaxLength { limit: 160 }`), the schema location, and
   a char-bounded instance preview (never a full model payload).
-- DATA prompt task `figure_analysis` states the quote rule explicitly
-  (non-empty verbatim excerpt, hard 160-char cap, word-boundary truncation)
-  and bumps `figure-analysis.v1` -> `figure-analysis.v2`, advancing prompt
-  lineage and cache identity. Schema strictness unchanged; fail-closed kept.
-- Governor pins the diagnostics marker. D127 remains locked.
+- First green multi-figure Luna run on 2506.07853v1 (3/3 figures analyzed,
+  candidates materialized, journey completed, import locked).
+- ADR-062 (user decision): static caps replaced by a measured policy window.
+  `figure_quote_policy.yaml` defines `soft_target_chars: 1500` (guideline,
+  measured, never a gate) and `absolute_max_chars: 4000` (equals the schema
+  `maxLength`; beyond it validation stays terminal). Prompt states no number;
+  the schema is the ceiling. `FigureAnalysisStage::with_quote_policy` binds
+  policy identity into the cache key and emits `figure_quote_measured` /
+  `figure_quote_soft_target_exceeded` plus `max_quote_chars` metadata, so
+  corpus probes tune the window from DATA without code changes.
+- Governor pins the window markers and the policy DATA fields.
+  D127 remains locked.
 
 ### Figure context cache binds artifact identity
 

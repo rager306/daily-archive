@@ -1,0 +1,15 @@
+# Figure quote policy (ADR-062 dynamic window).
+#
+# citations[].quote is a verbatim evidence excerpt. Figures differ in how much
+# text a faithful citation needs, so the cap is a window, not one number:
+#   soft_target_chars  - guideline for the model; exceeding it is measured and
+#                        logged (figure_quote_soft_target_exceeded), never a
+#                        rejection by itself.
+#   absolute_max_chars - hard ceiling; equals the JSON-schema maxLength in
+#                        prompt_tasks.yaml and figure_schemas.yaml. Beyond it
+#                        validation stays terminal (fail-closed).
+# Tune soft_target_chars from measured corpus distributions; keep the schema
+# ceiling in sync with absolute_max_chars when it changes.
+schema_version: 1
+soft_target_chars: 1500
+absolute_max_chars: 4000

@@ -5,6 +5,7 @@ use crate::figure_schema::FigureSchemaService;
 use crate::{FigureAnalysisUseCase, FigureAnalysisUseCaseError};
 use async_trait::async_trait;
 use da_domain::FigureSemanticContext;
+use da_domain::figure_analysis::FigureQuotePolicy;
 use da_ports::multimodal_llm::{
     ModelWireProtocol, MultimodalImage, MultimodalLlmError, MultimodalLlmPort,
 };
@@ -91,6 +92,8 @@ pub struct FigureAnalysisStage {
     contract: StageContract,
     /// Stage1 planned schema when context is known at construction (M393).
     selected_schema: Option<(String, String)>,
+    /// Quote window policy (ADR-062): soft guideline plus measured observability.
+    quote_policy: Option<FigureQuotePolicy>,
 }
 
 impl FigureAnalysisStage {
@@ -123,6 +126,7 @@ impl FigureAnalysisStage {
             context_dependency: "context".into(),
             retry_after: retry_after.into(),
             selected_schema: None,
+            quote_policy: None,
             contract: StageContract {
                 stage_id: "figure_analysis".into(),
                 implementation_fingerprint:
@@ -153,6 +157,13 @@ impl FigureAnalysisStage {
     ) -> Self {
         self.contract.prompt_fingerprint = Some(prompt_fingerprint.into());
         self.contract.output_schema_fingerprint = schema_fingerprint.into();
+        self
+    }
+
+    /// Bind the quote window policy: soft target is measured, never a gate;
+    /// the policy identity advances the cache key so tuning is observable.
+    pub fn with_quote_policy(mut self, policy: FigureQuotePolicy) -> Self {
+        self.quote_policy = Some(policy);
         self
     }
 
@@ -187,6 +198,9 @@ impl PipelineStageExecutor for FigureAnalysisStage {
                 ";selected_schema_id={schema_id};stage1_type={stage1_type}"
             ));
         }
+        if let Some(policy) = &self.quote_policy {
+            fingerprint.push_str(&format!(";{}", policy.fingerprint()));
+        }
         contract.configuration_fingerprint = fingerprint;
         contract
     }
@@ -216,23 +230,53 @@ impl PipelineStageExecutor for FigureAnalysisStage {
                 error_class: "figure_analysis_serialization".into(),
                 message: error.to_string(),
             })?;
+        let citation_count = analysis.citations.len();
+        let max_quote_chars = analysis
+            .citations
+            .iter()
+            .map(|citation| citation.quote.chars().count())
+            .max()
+            .unwrap_or(0);
+        tracing::info!(
+            artifact_id = %analysis.artifact_id,
+            citation_count,
+            max_quote_chars,
+            event = "figure_quote_measured"
+        );
+        let artifact_id = analysis.artifact_id;
+        let mut metadata = BTreeMap::from([
+            ("candidate_id".into(), analysis.candidate_id),
+            ("artifact_id".into(), artifact_id.clone()),
+            (
+                "visual_type".into(),
+                format!("{:?}", analysis.visual_type).to_lowercase(),
+            ),
+            (
+                "component_count".into(),
+                analysis.components.len().to_string(),
+            ),
+            ("citation_count".into(), citation_count.to_string()),
+            ("max_quote_chars".into(), max_quote_chars.to_string()),
+            ("route_id".into(), analysis.provenance.route_id),
+            ("resolved_model".into(), analysis.provenance.resolved_model),
+            ("authoritative".into(), "false".into()),
+            ("import_eligible".into(), "false".into()),
+        ]);
+        if let Some(policy) = &self.quote_policy {
+            let exceeded = max_quote_chars > policy.soft_target_chars as usize;
+            metadata.insert("quote_soft_target_exceeded".into(), exceeded.to_string());
+            if exceeded {
+                tracing::warn!(
+                    artifact_id = %artifact_id,
+                    max_quote_chars,
+                    soft_target_chars = policy.soft_target_chars,
+                    absolute_max_chars = policy.absolute_max_chars,
+                    event = "figure_quote_soft_target_exceeded"
+                );
+            }
+        }
         Ok(StageExecutionOutput {
-            metadata: BTreeMap::from([
-                ("candidate_id".into(), analysis.candidate_id),
-                ("artifact_id".into(), analysis.artifact_id),
-                (
-                    "visual_type".into(),
-                    format!("{:?}", analysis.visual_type).to_lowercase(),
-                ),
-                (
-                    "component_count".into(),
-                    analysis.components.len().to_string(),
-                ),
-                ("route_id".into(), analysis.provenance.route_id),
-                ("resolved_model".into(), analysis.provenance.resolved_model),
-                ("authoritative".into(), "false".into()),
-                ("import_eligible".into(), "false".into()),
-            ]),
+            metadata,
             payload: output,
         })
     }
@@ -427,6 +471,51 @@ mod tests {
         );
         let decoded: FigureSemanticContext = serde_json::from_slice(&output.payload).unwrap();
         assert_eq!(decoded, context());
+    }
+
+    #[test]
+    fn quote_policy_advances_cache_identity() {
+        let bare = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        );
+        let windowed = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        )
+        .with_quote_policy(FigureQuotePolicy {
+            soft_target_chars: 1500,
+            absolute_max_chars: 4000,
+        });
+        assert_ne!(bare.contract(), windowed.contract());
+        assert!(
+            windowed
+                .contract()
+                .configuration_fingerprint
+                .contains("quote_policy=soft=1500,abs=4000"),
+            "{}",
+            windowed.contract().configuration_fingerprint
+        );
+    }
+
+    #[tokio::test]
+    async fn metadata_carries_measured_quote_stats() {
+        let stage = FigureAnalysisStage::new(
+            Arc::new(FakeModel { fail: false }),
+            image(),
+            "2026-08-08T01:00:00Z",
+        )
+        .with_quote_policy(FigureQuotePolicy {
+            soft_target_chars: 5,
+            absolute_max_chars: 4000,
+        });
+        let output = stage.execute(request()).await.unwrap();
+        // FakeModel emits one citation quote "mutates prompts" (15 chars).
+        assert_eq!(output.metadata["citation_count"], "1");
+        assert_eq!(output.metadata["max_quote_chars"], "15");
+        assert_eq!(output.metadata["quote_soft_target_exceeded"], "true");
     }
 
     #[tokio::test]

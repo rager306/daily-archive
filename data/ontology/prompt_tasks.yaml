@@ -102,7 +102,7 @@ output_schemas:
             properties:
               section_id: {type: string, minLength: 1}
               path_id: {type: string, minLength: 1}
-              quote: {type: string, minLength: 1, maxLength: 160}
+              quote: {type: string, minLength: 1, maxLength: 4000}
         confidence: {type: number, minimum: 0.0, maximum: 1.0}
 tasks:
   - task_id: article_summary
@@ -124,7 +124,7 @@ tasks:
   - task_id: figure_analysis
     version: figure-analysis.v2
     system_template: >-
-      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority. Every citations[].quote must be a non-empty verbatim excerpt from the article text, hard-capped at 160 characters: if the natural excerpt is longer, truncate it at a word boundary to fit the cap instead of exceeding it or returning null.
+      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority. Every citations[].quote must be a non-empty verbatim excerpt from the article text; keep each quote as short as faithful evidence allows — the output schema's maxLength is the hard ceiling, so never exceed it and never return null.
     user_template: >-
       Analyze the attached scientific figure using this canonical grounded context: {grounded_context}
     output_schema_id: figure-analysis-candidate.v1

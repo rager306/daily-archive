@@ -787,6 +787,46 @@ impl FigureTypedPayload {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FigureQuotePolicy {
+    /// Guideline cap the model is nudged toward. Exceeding it is legal and
+    /// measured, never a rejection by itself (ADR-062 dynamic window).
+    pub soft_target_chars: u32,
+    /// Hard schema ceiling. JSON-schema maxLength equals this value;
+    /// beyond it validation stays terminal (fail-closed).
+    pub absolute_max_chars: u32,
+}
+
+impl FigureQuotePolicy {
+    /// 1 <= soft <= absolute; absolute bounded so candidates stay storable.
+    pub fn validate(&self) -> Result<(), String> {
+        if self.soft_target_chars == 0 {
+            return Err("figure quote soft target must be positive".into());
+        }
+        if self.soft_target_chars > self.absolute_max_chars {
+            return Err(format!(
+                "figure quote soft target {} exceeds absolute max {}",
+                self.soft_target_chars, self.absolute_max_chars
+            ));
+        }
+        if self.absolute_max_chars > 8_000 {
+            return Err(format!(
+                "figure quote absolute max {} above storable bound 8000",
+                self.absolute_max_chars
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn fingerprint(&self) -> String {
+        format!(
+            "quote_policy=soft={},abs={}",
+            self.soft_target_chars, self.absolute_max_chars
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FigureAnalysis {
     pub candidate_id: String,
     pub artifact_id: String,
@@ -937,6 +977,45 @@ pub enum FigureAnalysisError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn figure_quote_policy_accepts_valid_window() {
+        let policy = FigureQuotePolicy {
+            soft_target_chars: 1500,
+            absolute_max_chars: 4000,
+        };
+        assert_eq!(policy.validate(), Ok(()));
+    }
+
+    #[test]
+    fn figure_quote_policy_rejects_inverted_or_absurd_windows() {
+        let inverted = FigureQuotePolicy {
+            soft_target_chars: 4000,
+            absolute_max_chars: 1500,
+        };
+        assert!(inverted.validate().is_err());
+        let zero_soft = FigureQuotePolicy {
+            soft_target_chars: 0,
+            absolute_max_chars: 4000,
+        };
+        assert!(zero_soft.validate().is_err());
+        let absurd_ceiling = FigureQuotePolicy {
+            soft_target_chars: 1500,
+            absolute_max_chars: 9000,
+        };
+        assert!(absurd_ceiling.validate().is_err());
+    }
+
+    #[test]
+    fn figure_quote_policy_denies_unknown_fields() {
+        let text = serde_yaml::to_string(&FigureQuotePolicy {
+            soft_target_chars: 1500,
+            absolute_max_chars: 4000,
+        })
+        .unwrap();
+        let patched = format!("{text}extra_field: 1\n");
+        assert!(serde_yaml::from_str::<FigureQuotePolicy>(&patched).is_err());
+    }
 
     fn candidate() -> FigureAnalysis {
         FigureAnalysis {
