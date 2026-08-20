@@ -219,19 +219,18 @@ impl CliContentPipeline {
                 event = "da_load_journey_tables_skipped"
             );
         }
-        let with_figures = self.figures
-            && ports.detector.is_some()
-            && crate::load_journey::resolve_figure_branch_from_env().is_some();
+        let figure_branch = crate::load_journey::resolve_figure_branch_from_env();
+        let with_figures = self.figures && ports.detector.is_some() && figure_branch.is_some();
         if self.figures && !with_figures {
             tracing::warn!(
                 article_id = req.paper_id,
                 reason = "figures_route_unconfigured",
+                detector_configured = ports.detector.is_some(),
+                route_configured = figure_branch.is_some(),
                 event = "da_load_journey_figures_skipped"
             );
         }
-        let figure_branch = with_figures
-            .then(crate::load_journey::resolve_figure_branch_from_env)
-            .flatten();
+        let figure_branch = with_figures.then_some(figure_branch).flatten();
         let (mut outcome, report) = crate::load_journey::run_journey_content(
             ports,
             &self.store,

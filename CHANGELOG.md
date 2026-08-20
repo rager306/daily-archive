@@ -1,5 +1,18 @@
 # Changelog
 
+### Figure soak: GROBID section locator plus Luna binding retarget
+
+- `da load --figures` mini-pipeline used `FigureSectionLocator::SectionId(sec-{ordinal})`
+  while GROBID stamps `sec-{head n=}` (path component). Caption grounding already
+  returned the real section_id; the driver now passes that id through. Regression:
+  GROBID-style `sec-4` at ordinal 2 is not rewritten as `sec-2`.
+- `DA_FIGURE_MODEL_BINDING` retargets a copy of the DATA route binding so
+  PromptMultimodalBridge still sees route.binding == resolved.binding. Without
+  this, Luna override failed closed as `figure prompt bridge contract mismatch`.
+- Bridge mismatch errors now name the failing field. Pipeline terminal_failure
+  logs the error message; figure-route skip logs detector/route bits and the
+  unresolved `from_env` error.
+
 ### Figure route: optional DA_FIGURE_MODEL_BINDING (Luna soak)
 
 - `resolve_multimodal_model_from_env` honors optional `DA_FIGURE_MODEL_BINDING`

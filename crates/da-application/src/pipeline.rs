@@ -471,6 +471,7 @@ impl PipelineOrchestrator {
                                 stage = %canonical_stage_id,
                                 resolved_from = resolved_from.as_deref().unwrap_or(""),
                                 error_class = %error_class,
+                                error = %message,
                                 event = "pipeline_stage_terminal_failure"
                             );
                             records.push(StageRunRecord {

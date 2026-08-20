@@ -325,6 +325,25 @@ mod tests {
     }
 
     #[test]
+    fn grobid_path_section_id_is_returned_not_sec_ordinal() {
+        let mut parsed = parsed();
+        parsed.sections.push(Section {
+            title: "Discussion".into(),
+            text: "see Figure 7: Temporal FRBR model. in this section".into(),
+            level: 1,
+            path_id: Some("4".into()),
+            section_id: Some("sec-4".into()),
+            ..Default::default()
+        });
+        let (section_id, path_id, ordinal) =
+            locate_figure_section("Figure 7: Temporal FRBR model.", &parsed).expect("located");
+        assert_eq!(section_id, "sec-4");
+        assert_eq!(path_id, "4");
+        assert_eq!(ordinal, 2);
+        assert_ne!(section_id, format!("sec-{ordinal}"));
+    }
+
+    #[test]
     fn missing_caption_is_a_typed_error() {
         let err = locate_figure_section("Figure 99: missing", &parsed()).unwrap_err();
         assert_eq!(

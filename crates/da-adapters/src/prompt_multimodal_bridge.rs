@@ -33,14 +33,40 @@ impl PromptMultimodalBridge {
         route.validate()?;
         model.validate()?;
         schema.validate()?;
-        if task.task_id != "figure_analysis"
-            || task.route_policy_id != route.route_policy_id
-            || task.output_schema_id != schema.output_schema_id
-            || route.model_binding_id != model.binding_id
-            || !route.supports_images
-            || model.protocol != "openai_chat_completions"
-        {
-            return Err("figure prompt bridge contract mismatch".into());
+        if task.task_id != "figure_analysis" {
+            return Err(format!(
+                "figure prompt bridge contract mismatch: task_id={}",
+                task.task_id
+            ));
+        }
+        if task.route_policy_id != route.route_policy_id {
+            return Err(format!(
+                "figure prompt bridge contract mismatch: task.route={} route.id={}",
+                task.route_policy_id, route.route_policy_id
+            ));
+        }
+        if task.output_schema_id != schema.output_schema_id {
+            return Err(format!(
+                "figure prompt bridge contract mismatch: task.schema={} schema.id={}",
+                task.output_schema_id, schema.output_schema_id
+            ));
+        }
+        if route.model_binding_id != model.binding_id {
+            return Err(format!(
+                "figure prompt bridge contract mismatch: route.binding={} model.binding={}",
+                route.model_binding_id, model.binding_id
+            ));
+        }
+        if !route.supports_images {
+            return Err(
+                "figure prompt bridge contract mismatch: route.supports_images=false".into(),
+            );
+        }
+        if model.protocol != "openai_chat_completions" {
+            return Err(format!(
+                "figure prompt bridge contract mismatch: protocol={}",
+                model.protocol
+            ));
         }
         Ok(Self {
             executor,

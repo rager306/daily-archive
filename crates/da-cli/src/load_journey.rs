@@ -172,18 +172,21 @@ fn output_sha_of(report: &PipelineRunReport, step_name: &str) -> Result<String, 
 /// registries plus the route env surfaces (same resolver the production
 /// multimodal composition uses). `None` means the route is unconfigured.
 pub fn resolve_figure_branch_from_env() -> Option<FigureBranchSettings> {
-    use da_adapters::prompt_task_registry::load_prompt_task_registry;
-    let settings = crate::production::MultimodalProductionSettings::from_env().ok()?;
-    let prompt_fingerprint = settings.analysis_prompt_fingerprint.clone();
-    let schema_fingerprint = settings.analysis_schema_fingerprint.clone();
-    let context_schema = settings.context_output_schema.clone();
-    let model = settings.model.clone();
-    let _ = load_prompt_task_registry;
+    let settings = match crate::production::MultimodalProductionSettings::from_env() {
+        Ok(settings) => settings,
+        Err(error) => {
+            tracing::warn!(
+                error = %error,
+                event = "da_load_journey_figures_route_unresolved"
+            );
+            return None;
+        }
+    };
     Some(FigureBranchSettings {
-        model,
-        prompt_fingerprint,
-        schema_fingerprint,
-        context_schema,
+        model: settings.model.clone(),
+        prompt_fingerprint: settings.analysis_prompt_fingerprint.clone(),
+        schema_fingerprint: settings.analysis_schema_fingerprint.clone(),
+        context_schema: settings.context_output_schema.clone(),
     })
 }
 
@@ -526,7 +529,7 @@ pub async fn run_journey_content(
             .iter()
             .filter(|a| a.kind == da_domain::VisualArtifactKind::Figure)
         {
-            let (_section_id, _path_id, ordinal) =
+            let (section_id, _path_id, _ordinal) =
                 match locate_figure_section(&artifact.caption, &parsed) {
                     Ok(grounded) => grounded,
                     Err(error) => {
@@ -567,7 +570,7 @@ pub async fn run_journey_content(
             };
             let context_stage = FigureContextStage::new(
                 artifact.artifact_id.clone(),
-                FigureSectionLocator::SectionId(format!("sec-{ordinal}")),
+                FigureSectionLocator::SectionId(section_id),
                 None,
             )
             .with_dependencies("parse", "figures")

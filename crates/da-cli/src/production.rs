@@ -571,6 +571,11 @@ fn resolve_multimodal_model_from_env() -> Result<Arc<dyn MultimodalLlmPort>, Str
     let resolved_model = model_registry
         .resolve(&binding_id, endpoint_override.as_deref())
         .map_err(|error| error.to_string())?;
+    // Bridge requires route.model_binding_id == resolved.binding_id.
+    // An env override selects another DATA binding; keep the route policy
+    // id/credentials and retarget only the binding field.
+    let mut route = route;
+    route.model_binding_id = binding_id;
     let credential = std::env::var(&route.credential_env).ok();
     let timeout_seconds = std::env::var("DA_LLM_TIMEOUT_SECONDS")
         .ok()
