@@ -38,6 +38,10 @@ pub mod tex_archive;
 
 #[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
+#[cfg(feature = "pdf-classifier")]
+pub mod region_text;
+#[cfg(feature = "pdf-classifier")]
+pub use region_text::PdfInspectorRegionText;
 
 pub use agent_read_plane::{RemoteAgentReadPlane, result_ref};
 pub use anthropic_llm::AnthropicLlmClient;

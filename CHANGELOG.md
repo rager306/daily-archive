@@ -1,5 +1,16 @@
 # Changelog
 
+### M419 S02 region-text grounding fallback for figures
+
+- Figures whose caption grounding failed were skipped with a typed warn.
+  New RegionTextPort (da-ports) + PdfInspectorRegionText adapter (feature
+  pdf-classifier) wraps pdf-inspector extract_text_in_regions_mem; on
+  caption-grounding failure the journey extracts the figure region's own
+  PDF text and grounds to the UNIQUE section containing it (min 16 chars,
+  case-insensitive; zero or 2+ matches keep the typed skip - grounding
+  never guesses). needs_ocr text is refused. Event
+  figure_grounded_via_region_text; governor pins the fallback. D127 locked.
+
 ### M419 S01 pdf-inspector triage materialized onto Paper
 
 - The pdf-inspector classification (pdf_type, pages_needing_ocr,

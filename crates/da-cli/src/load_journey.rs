@@ -573,13 +573,29 @@ pub async fn run_journey_content(
                 match locate_figure_section(&artifact.caption, &parsed) {
                     Ok(grounded) => grounded,
                     Err(error) => {
-                        tracing::warn!(
-                            article_id = paper_id,
-                            artifact_id = %artifact.artifact_id,
-                            reason = %error,
-                            event = "da_load_journey_figure_grounding_skipped"
-                        );
-                        continue;
+                        // M419 S02: caption grounding failed — try the figure
+                        // region's own PDF text and ground to the unique
+                        // section containing it; otherwise keep the typed skip.
+                        let fallback = try_region_text_grounding(pdf_path, artifact, &parsed);
+                        match fallback {
+                            Some((section_id, path_id)) => {
+                                tracing::info!(
+                                    article_id = paper_id,
+                                    artifact_id = %artifact.artifact_id,
+                                    event = "figure_grounded_via_region_text"
+                                );
+                                (section_id, path_id, 0)
+                            }
+                            None => {
+                                tracing::warn!(
+                                    article_id = paper_id,
+                                    artifact_id = %artifact.artifact_id,
+                                    reason = %error,
+                                    event = "da_load_journey_figure_grounding_skipped"
+                                );
+                                continue;
+                            }
+                        }
                     }
                 };
             let image_path = article_dir.join(&artifact.asset_path);
@@ -818,4 +834,146 @@ pub async fn run_journey_content(
 /// surface, exactly like the legacy path default.
 fn ports_profile() -> GrobidProfile {
     GrobidParser::from_env().profile()
+}
+
+/// Minimum region-text length considered sufficient grounding evidence.
+/// Shorter fragments match too many sections to be trustworthy.
+/// Exercised by tests and pdf-classifier builds; unused in the default
+/// feature-off binary build.
+#[allow(dead_code)]
+const MIN_REGION_TEXT_CHARS: usize = 16;
+
+/// Ground a figure to the UNIQUE section whose text contains `region_text`
+/// (case-insensitive). Returns `(section_id, path_id)` of that section.
+/// None when the text is too short, matches zero sections, or is ambiguous
+/// (2+ matches) — grounding must never guess.
+#[allow(dead_code)]
+pub fn ground_section_by_region_text(
+    parsed: &ParsedArticle,
+    region_text: &str,
+) -> Option<(String, String)> {
+    let needle = region_text.trim().to_lowercase();
+    if needle.chars().count() < MIN_REGION_TEXT_CHARS {
+        return None;
+    }
+    let mut matched = parsed.sections.iter().filter_map(|section| {
+        section
+            .text
+            .to_lowercase()
+            .contains(&needle)
+            .then(|| {
+                Some((
+                    section.section_id.clone()?,
+                    section.path_id.clone().unwrap_or_default(),
+                ))
+            })
+            .flatten()
+    });
+    let first = matched.next()?;
+    matched.next().is_none().then_some(first)
+}
+
+/// IO side of the fallback: extract the figure region's PDF text via the
+/// pdf-inspector adapter and apply [`ground_section_by_region_text`].
+/// Only built with the `pdf-classifier` feature; otherwise always None.
+#[allow(unused_variables)]
+fn try_region_text_grounding(
+    pdf_path: &Path,
+    artifact: &da_domain::figure::DetectedVisualArtifact,
+    parsed: &ParsedArticle,
+) -> Option<(String, String)> {
+    #[cfg(feature = "pdf-classifier")]
+    {
+        let bytes = std::fs::read(pdf_path).ok()?;
+        let region = artifact.region;
+        let outcome = da_adapters::PdfInspectorRegionText::new().extract_text_in_region(
+            &bytes,
+            artifact.page_index,
+            [
+                region.x1 as f32,
+                region.y1 as f32,
+                region.x2 as f32,
+                region.y2 as f32,
+            ],
+        )?;
+        if outcome.needs_ocr {
+            return None;
+        }
+        ground_section_by_region_text(parsed, &outcome.text)
+    }
+    #[cfg(not(feature = "pdf-classifier"))]
+    {
+        None
+    }
+}
+
+#[cfg(test)]
+mod region_grounding_tests {
+    use super::ground_section_by_region_text;
+    use da_ports::parser::ParsedArticle;
+
+    fn parsed(sections: &[(&str, &str, &str, &str)]) -> ParsedArticle {
+        ParsedArticle {
+            paper_id: "p".into(),
+            title: "T".into(),
+            abstract_text: String::new(),
+            body_text: String::new(),
+            sections: sections
+                .iter()
+                .map(|(id, path, _title, text)| da_ports::parser::Section {
+                    title: id.to_string(),
+                    text: text.to_string(),
+                    level: 1,
+                    path_id: Some(path.to_string()),
+                    section_id: Some(id.to_string()),
+                    ..Default::default()
+                })
+                .collect(),
+            citations: vec![],
+            layout_json: None,
+            tei_xml: None,
+            tables: Vec::new(),
+            table_missingness: None,
+            formulas: Vec::new(),
+            formula_missingness: None,
+            pdf_hash: String::new(),
+        }
+    }
+
+    #[test]
+    fn unique_containing_section_grounds() {
+        let p = parsed(&[
+            ("sec-1", "1", "A", "intro text about baselines"),
+            (
+                "sec-4",
+                "4",
+                "D",
+                "results discuss the partitioning ratio here",
+            ),
+        ]);
+        let got = ground_section_by_region_text(&p, "the partitioning ratio");
+        assert_eq!(got, Some(("sec-4".into(), "4".into())));
+    }
+
+    #[test]
+    fn ambiguous_or_missing_matches_refuse_to_guess() {
+        let p = parsed(&[
+            ("sec-1", "1", "A", "shared phrase about partitioning"),
+            (
+                "sec-2",
+                "2",
+                "B",
+                "also mentions shared phrase about partitioning",
+            ),
+        ]);
+        assert_eq!(
+            ground_section_by_region_text(&p, "shared phrase about partitioning"),
+            None
+        );
+        assert_eq!(
+            ground_section_by_region_text(&p, "text that appears nowhere"),
+            None
+        );
+        assert_eq!(ground_section_by_region_text(&p, "  too short  "), None);
+    }
 }
