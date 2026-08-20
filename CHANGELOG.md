@@ -1,5 +1,17 @@
 # Changelog
 
+### M413 Figure analysis schema violation diagnostics and prompt honesty
+
+- Live Luna soak on 2506.07853v1 violated `citations[].quote` while the error
+  carried only the JSON path. `OpenAiMultimodalPromptAdapter` now names the
+  validation kind (e.g. `MaxLength { limit: 160 }`), the schema location, and
+  a char-bounded instance preview (never a full model payload).
+- DATA prompt task `figure_analysis` states the quote rule explicitly
+  (non-empty verbatim excerpt, hard 160-char cap, word-boundary truncation)
+  and bumps `figure-analysis.v1` -> `figure-analysis.v2`, advancing prompt
+  lineage and cache identity. Schema strictness unchanged; fail-closed kept.
+- Governor pins the diagnostics marker. D127 remains locked.
+
 ### Figure context cache binds artifact identity
 
 - `FigureContextStage` configuration fingerprint now includes `artifact_id=`.

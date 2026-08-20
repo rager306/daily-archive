@@ -122,9 +122,9 @@ tasks:
     eval_suite_id: article-summary-eval.v1
     optimizer_enabled: false
   - task_id: figure_analysis
-    version: figure-analysis.v1
+    version: figure-analysis.v2
     system_template: >-
-      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority.
+      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority. Every citations[].quote must be a non-empty verbatim excerpt from the article text, hard-capped at 160 characters: if the natural excerpt is longer, truncate it at a word boundary to fit the cap instead of exceeding it or returning null.
     user_template: >-
       Analyze the attached scientific figure using this canonical grounded context: {grounded_context}
     output_schema_id: figure-analysis-candidate.v1

@@ -223,8 +223,11 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
             .map_err(|e| PromptExecutionError::Contract(e.to_string()))?;
         if let Err(error) = validator.validate(&instance) {
             return Err(PromptExecutionError::Schema(format!(
-                "figure output schema violation at {}",
-                error.instance_path()
+                "figure output schema violation at {} kind={:?} schema_at={} {}",
+                error.instance_path(),
+                error.kind(),
+                error.schema_path(),
+                bounded_instance_preview(error.instance()),
             )));
         }
         let output_bytes = serde_json::to_vec(&instance)
@@ -281,6 +284,19 @@ impl PromptExecutionPort for OpenAiMultimodalPromptAdapter {
         })
     }
 }
+/// Char-safe bounded preview of a violating instance for diagnostics.
+/// Never prints unbounded model payloads into logs or errors.
+fn bounded_instance_preview(value: &serde_json::Value) -> String {
+    const PREVIEW_CHARS: usize = 120;
+    let text = value.to_string();
+    let total = text.chars().count();
+    if total <= PREVIEW_CHARS {
+        return format!("instance={text} ({total} chars)");
+    }
+    let head: String = text.chars().take(PREVIEW_CHARS).collect();
+    format!("instance={head}… ({total} chars total)")
+}
+
 fn placeholders(template: &str) -> Result<BTreeSet<String>, PromptExecutionError> {
     let mut out = BTreeSet::new();
     let mut rest = template;
@@ -406,6 +422,100 @@ mod tests {
         assert!(!response.lineage.authoritative && !response.lineage.import_eligible);
         server.await.unwrap();
     }
+    #[tokio::test]
+    async fn schema_violation_names_kind_path_and_bounded_preview() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut data = vec![0u8; 65536];
+            let n = stream.read(&mut data).await.unwrap();
+            let _text = String::from_utf8_lossy(&data[..n]);
+            // quote violates maxLength 5 at nested path /quote
+            let content = r#"{"ok":true,"quote":"aaaaaaaaaa"}"#;
+            let body = serde_json::json!({"choices":[{"message":{"content":content}}],"usage":{"prompt_tokens":20,"completion_tokens":6}}).to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let mut value = request(format!("http://{address}/v1/chat/completions"));
+        value.output_schema.schema = serde_json::json!({
+            "type":"object",
+            "additionalProperties": false,
+            "required":["ok"],
+            "properties":{
+                "ok":{"type":"boolean"},
+                "quote":{"type":"string","maxLength":5}
+            }
+        });
+        let adapter = OpenAiMultimodalPromptAdapter::new(None, 5).unwrap();
+        let err = adapter.execute(value).await.unwrap_err();
+        let PromptExecutionError::Schema(message) = &err else {
+            panic!("expected Schema error, got {err:?}");
+        };
+        assert!(message.contains("/quote"), "path missing: {message}");
+        assert!(message.contains("MaxLength"), "kind missing: {message}");
+        assert!(message.contains("limit: 5"), "limit missing: {message}");
+        assert!(
+            message.contains("chars"),
+            "instance preview missing: {message}"
+        );
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn overlong_instance_preview_is_truncated() {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut data = vec![0u8; 262144];
+            let n = stream.read(&mut data).await.unwrap();
+            let _text = String::from_utf8_lossy(&data[..n]);
+            let long_quote = "q".repeat(10_000);
+            let content = serde_json::json!({"ok":true,"quote":long_quote}).to_string();
+            let body = serde_json::json!({"choices":[{"message":{"content":content}}],"usage":{"prompt_tokens":20,"completion_tokens":6}}).to_string();
+            let response = format!(
+                "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        let mut value = request(format!("http://{address}/v1/chat/completions"));
+        value.output_schema.schema = serde_json::json!({
+            "type":"object",
+            "additionalProperties": false,
+            "required":["ok"],
+            "properties":{
+                "ok":{"type":"boolean"},
+                "quote":{"type":"string","maxLength":5}
+            }
+        });
+        let adapter = OpenAiMultimodalPromptAdapter::new(None, 5).unwrap();
+        let err = adapter.execute(value).await.unwrap_err();
+        let PromptExecutionError::Schema(message) = &err else {
+            panic!("expected Schema error, got {err:?}");
+        };
+        assert!(
+            message.len() < 600,
+            "message must stay bounded, got {} bytes",
+            message.len()
+        );
+        assert!(
+            message.contains("10002 chars total"),
+            "total char count missing: {message}"
+        );
+        assert!(
+            !message.contains(&"q".repeat(200)),
+            "full payload leaked: {message}"
+        );
+        server.await.unwrap();
+    }
+
     #[tokio::test]
     async fn missing_or_corrupt_media_fails_before_network() {
         let adapter = OpenAiMultimodalPromptAdapter::new(None, 1).unwrap();
