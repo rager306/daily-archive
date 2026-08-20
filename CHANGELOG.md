@@ -1,5 +1,20 @@
 # Changelog
 
+### M427 Hybrid search on the real engine
+
+- `search_papers_hybrid` was the last untested da-mcp path: unit tests
+  covered the RRF index in isolation, but nothing exercised the tool
+  routing (mode=hybrid with an embedder), the fetch Cypher, the fusion
+  output, or the documented no-embedder full-mode fallback against a
+  real engine — and the MCP server does pass an embedder, so hybrid is
+  a production path.
+- Seeded Samyama test proves the whole chain: three topical papers,
+  hybrid query finds the attention paper with a numeric score column;
+  embedder=None falls back to full mode and still finds the diffusion
+  paper; empty store returns zero rows without error. The path was
+  correct — this milestone converts untested production code into
+  proven code. D127 locked.
+
 ### M426 Remaining query tools on the real engine
 
 - Finished the M425 sweep: `get_sections` (reverse `hasPart` pattern +
