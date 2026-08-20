@@ -386,7 +386,7 @@ impl ExtractionUseCase {
                         Ok(vec) => {
                             match write_entity_embedding(self.graph_store.as_ref(), nid, vec).await
                             {
-                                EntityEmbedWrite::Added => {
+                                Ok(EntityEmbedWrite::Added) => {
                                     tracing::info!(
                                         node_id = nid,
                                         label = %ext.label,
@@ -394,7 +394,7 @@ impl ExtractionUseCase {
                                     );
                                     embeddings_written += 1;
                                 }
-                                EntityEmbedWrite::Replaced => {
+                                Ok(EntityEmbedWrite::Replaced) => {
                                     tracing::info!(
                                         node_id = nid,
                                         label = %ext.label,
@@ -402,11 +402,24 @@ impl ExtractionUseCase {
                                     );
                                     embeddings_written += 1;
                                 }
-                                EntityEmbedWrite::Unchanged => {
+                                Ok(EntityEmbedWrite::Unchanged) => {
                                     tracing::info!(
                                         node_id = nid,
                                         label = %ext.label,
                                         event = "entity_embedding_unchanged"
+                                    );
+                                }
+                                // M429: a store write failure is visible and
+                                // typed, but one entity must not abort the
+                                // whole extraction (policy-consistent with
+                                // the embed-failure warn arm below).
+                                Err(e) => {
+                                    tracing::warn!(
+                                        node_id = nid,
+                                        label = %ext.label,
+                                        error = %e,
+                                        event = "entity_embedding_write_failed",
+                                        "Entity embedding write failed"
                                     );
                                 }
                             }
@@ -838,7 +851,7 @@ async fn write_entity_embedding(
     graph_store: &dyn da_ports::graph_store::DirectGraphStore,
     node_id: u64,
     vector: Vec<f32>,
-) -> EntityEmbedWrite {
+) -> da_ports::graph_store::GraphResult<EntityEmbedWrite> {
     crate::embedding_write::write_node_embedding(graph_store, "Entity", node_id, vector).await
 }
 
@@ -870,14 +883,18 @@ mod tests {
         let store = kg_storage::MockGraphStore::new();
         let node = store.create_node("Entity").await.unwrap();
         // First attach: no stored vector -> Added, vector stored + sha stamped.
-        let w1 = write_entity_embedding(&store, node, vec![0.1, 0.2]).await;
+        let w1 = write_entity_embedding(&store, node, vec![0.1, 0.2])
+            .await
+            .unwrap();
         assert_eq!(w1, EntityEmbedWrite::Added);
         let sha1 = store
             .get_node_property_string(node, "embedding_sha256")
             .await
             .expect("sha stamped on first attach");
         // Same vector again -> no rewrite (replay idempotent).
-        let w2 = write_entity_embedding(&store, node, vec![0.1, 0.2]).await;
+        let w2 = write_entity_embedding(&store, node, vec![0.1, 0.2])
+            .await
+            .unwrap();
         assert_eq!(w2, EntityEmbedWrite::Unchanged);
         let sha2 = store
             .get_node_property_string(node, "embedding_sha256")
@@ -885,7 +902,9 @@ mod tests {
             .unwrap();
         assert_eq!(sha1, sha2, "unchanged replay must not rewrite the sha");
         // Changed model output -> Replaced on the same node.
-        let w3 = write_entity_embedding(&store, node, vec![7.0, 8.0]).await;
+        let w3 = write_entity_embedding(&store, node, vec![7.0, 8.0])
+            .await
+            .unwrap();
         assert_eq!(w3, EntityEmbedWrite::Replaced);
         let sha3 = store
             .get_node_property_string(node, "embedding_sha256")

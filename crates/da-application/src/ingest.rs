@@ -869,6 +869,9 @@ impl IngestUseCase {
         // M416 delivered the sanctioned same-node upsert (replace_vector,
         // D277): an equal-sha replay is a no-op and a changed embedding
         // (embedder-model change) replaces in place instead of failing.
+        // M429: a failed write fails the ingest — the materialization
+        // contract requires the embedding; success must never claim a node
+        // that lacks it.
         match crate::embedding_write::write_node_embedding(
             self.graph_store.as_ref(),
             content_label,
@@ -876,7 +879,11 @@ impl IngestUseCase {
             vector.clone(),
         )
         .await
-        {
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "content embedding write failed for {content_label} {content_node_id}: {e}"
+            )
+        })? {
             crate::embedding_write::NodeEmbedWrite::Added => {}
             crate::embedding_write::NodeEmbedWrite::Replaced => {
                 tracing::info!(paper_id, content_label, event = "node_embedding_replaced");

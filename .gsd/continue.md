@@ -1,30 +1,30 @@
-# Continue — M428 implemented (pending GSD seal)
+# Continue — M428 complete; da-mcp fully swept
 
 ## Last action
 
-M428-kyglr1 S01 implemented (code green; GSD skip-delivered closeout next):
+M428-kyglr1 complete (skip-delivered + UAT + sha256:dd04fdf6… validate +
+gates + complete):
+- `76eb217e`: graph_rank — первый seeded структурный тест на реальном
+  движке (hub с 2 входящими CITES ранжируется первым в PageRank; WCC
+  компоненты 3+2). get_method_lineage — третий найденный сайт
+  error-swallowing (`if let Ok` × 2) исправлен на `?`; var-length
+  `predecessor_of*1..N` доказан на движке (цепочка transformer→vit).
+  В tools.rs **ноль** `if let Ok` на engine-вызовах.
+- da-mcp 46 passed; governor closeout ON_TRACK flags=0 (четвёртый подряд).
 
-- `graph_rank`: первый seeded структурный тест на реальном движке — hub
-  (2 входящие CITES) ранжируется первым в PageRank; WCC даёт компоненты
-  3+2. Алгоритм был корректен — непроверенный код стал проверенным.
-- `get_method_lineage`: два `if let Ok` (тот же класс M426) больше не
-  глотают ошибки движка — Err наружу; var-length `predecessor_of*1..N`
-  доказан поддержкой движка (цепочка transformer→vit). В tools.rs ноль
-  `if let Ok` на engine-вызовах.
-- da-mcp 46 passed; clippy clean.
-
-Волна: M420→M428 (8 milestones; 4 бага: CI-поиск, full-mode фильтр,
-references swallowing+schema, lineage swallowing; 2 мок-фейка).
+Волна: M420→M428 (8 milestones; 4 продуктовых бага закрыто, 2 мок-фейка,
+вся query-поверхность da-mcp на реальном движке).
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M428.
-2. da-mcp полностью покрыт и без своллоинга. Кандидаты: процессный
-   разрыв из STATE/AUDIT/QUEUE; либо волна свежего аудита другой
-   плоскости (da-application stages на pin-паттерны).
+1. da-mcp исчерпан. Кандидаты следующей волны:
+   a) аудит da-application stages на pin-паттерны того же класса
+      (`if let Ok`, пришпиленные пустые результаты);
+   b) процессный разрыв из STATE/AUDIT/QUEUE;
+   c) ToUnicode repair upstream.
 
 ## Do not
 
-Unlock D127. Pin a fake. `if let Ok` на engine-вызовах.
-toLower(missing_prop) → coalesce. Validate требует структурные
-evidence-строки с gsd_uat_exec на каждый запланированный класс.
+Unlock D127. Pin a fake. `if let Ok` на engine-вызовах — после фикса
+одного сайта grep-ить весь crate, не только жалобный сайт (урок M428).
+toLower(missing_prop) → coalesce.

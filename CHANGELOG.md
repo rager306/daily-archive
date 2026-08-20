@@ -1,5 +1,21 @@
 # Changelog
 
+### M429 Embedding write stops faking success
+
+- `write_node_embedding` swallowed every store error (`let _ =`): when
+  both the primary write and its fallback failed it still returned
+  `Replaced` — callers emitted `node_embedding_replaced` events for
+  writes that never happened — and a failed `embedding_sha256` stamp
+  returned `Added` with the sha silently drifting from the stored vector
+  (permanently disabling the Unchanged fast-path correctness).
+- Now `Result<NodeEmbedWrite, GraphStoreError>`: dual-write and
+  sha-stamp failures propagate (proven by a failing-store double:
+  the old code returned Replaced, the new code returns Err). Ingest
+  fails the materialization on a content-vector write failure; the
+  entity loop logs a visible `entity_embedding_write_failed` warn per
+  entity (policy-consistent with embed failures). Governor pins
+  `embedding_write_honest`. D127 locked.
+
 ### M428 Graph rank and method lineage sweep
 
 - `graph_rank` gained its first seeded structural test on the real
