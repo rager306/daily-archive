@@ -1395,9 +1395,10 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         }
     };
 
-    // M411 S02: ensure-only prepare enqueues one Ingest task so the
-    // scheduler worker can run IngestSchedulerExecutor against the catalog
-    // PDF. Journey/inline ingest already materialize — do not enqueue.
+    // M411 S02 / M412 S02: ensure-only prepare enqueues one catalog-PDF
+    // task. `--no-cache` is the parser-change intent (ADR-056 Reparse);
+    // plain ensure still enqueues Ingest. Journey/inline ingest already
+    // materialize — do not enqueue.
     if report.ok
         && !policy.stages.includes_ingest()
         && !policy.dry_run
@@ -1405,9 +1406,25 @@ async fn run_single(args: &LoadArgs, locator: &str) -> Result<(), String> {
         && let Some(arxiv_id) = report.unit_key.as_deref()
     {
         let now = chrono::Utc::now().timestamp();
-        if let Err(error) = da_application::GraphScheduler::add_pending_ingest_to(
+        let policy_retry = da_domain::scheduler::RetryPolicy::default();
+        if args.no_cache {
+            if let Err(error) = da_application::GraphScheduler::add_pending_reparse_to(
+                store.as_ref(),
+                &policy_retry,
+                arxiv_id,
+                now,
+            )
+            .await
+            {
+                tracing::warn!(
+                    article_id = arxiv_id,
+                    error = %error,
+                    event = "scheduler_reparse_enqueue_failed"
+                );
+            }
+        } else if let Err(error) = da_application::GraphScheduler::add_pending_ingest_to(
             store.as_ref(),
-            &da_domain::scheduler::RetryPolicy::default(),
+            &policy_retry,
             arxiv_id,
             now,
         )

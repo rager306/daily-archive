@@ -271,3 +271,33 @@ async fn test_complete_task_marks_completed() {
         "completed task should not appear in due list"
     );
 }
+
+#[tokio::test]
+async fn test_add_pending_reparse_to_is_typed_and_idempotent() {
+    let store = fresh_store();
+    let policy = RetryPolicy::default();
+
+    GraphScheduler::add_pending_reparse_to(&store, &policy, "2506.07853", 1_700_000_000)
+        .await
+        .unwrap();
+    GraphScheduler::add_pending_reparse_to(&store, &policy, "2506.07853", 1_700_000_000)
+        .await
+        .unwrap();
+
+    let nodes = store.get_nodes_by_label("SchedulerTask").await;
+    assert_eq!(
+        nodes.len(),
+        1,
+        "duplicate reparse add must not create a second task"
+    );
+    let task_type = store
+        .get_node_property_string(nodes[0], "task_type")
+        .await
+        .unwrap_or_default();
+    assert_eq!(task_type, "reparse");
+    let arxiv_id = store
+        .get_node_property_string(nodes[0], "arxiv_id")
+        .await
+        .unwrap_or_default();
+    assert_eq!(arxiv_id, "2506.07853");
+}

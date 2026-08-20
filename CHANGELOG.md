@@ -1,5 +1,20 @@
 # Changelog
 
+### M412 Reparse becomes a real scheduler task
+
+- `ReparseSchedulerExecutor`: a real `SchedulerTaskExecutor` for `Reparse`
+  (ADR-056 parser/profile change). Reuses `CatalogPdfLocator` and
+  `IngestUseCase`. Locator miss is typed `Retryable` (`catalog_pdf_not_found`);
+  missing Paper is typed `Retryable` (`paper_not_materialized`) so Reparse is
+  not a disguised first-time Ingest. A hit re-runs ingest on the catalog PDF.
+- Producer: `GraphScheduler::add_pending_reparse_to`; `da load --stages ensure
+  --no-cache` after a successful prepare enqueues one idempotent Reparse task
+  (warn `scheduler_reparse_enqueue_failed` on failure). Plain `--stages ensure`
+  still enqueues Ingest. Inline ingest / journey loads do not enqueue Reparse.
+- `da scheduler-run` registers the Reparse executor alongside Ingest and Extract;
+  dispatch stays closed. Governor pins executor plus producer.
+- Tests: 3 executor tests (hit / PDF miss / Paper miss). D127 remains locked.
+
 ### Figure soak: GROBID section locator plus Luna binding retarget
 
 - `da load --figures` mini-pipeline used `FigureSectionLocator::SectionId(sec-{ordinal})`

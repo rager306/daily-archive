@@ -5,6 +5,11 @@
 //! is registered through `SchedulerRunner::with_executor`. Unknown task
 //! types are never claimed.
 //!
+//! [`ReparseSchedulerExecutor`] re-runs ingest on an already-materialized
+//! Paper after a parser or profile change (ADR-056). Same catalog PDF
+//! locator as Ingest; a missing Paper is typed `Retryable`, not a first-time
+//! ingest in disguise.
+//!
 //! [`ExtractSchedulerExecutor`] makes the `Extract` type executable: it reads
 //! the already-materialized revision plane from the graph (Paper →
 //! `hasPart` → Section title/text) into a [`ParsedArticle`], runs the
@@ -208,6 +213,80 @@ impl SchedulerTaskExecutor for IngestSchedulerExecutor {
             },
             Err(error) => SchedulerExecuteOutcome::Retryable {
                 error_class: "ingest_failed".into(),
+                message: format!("{}: {error:#}", task.arxiv_id),
+            },
+        }
+    }
+}
+
+/// Executor for the `Reparse` task type: re-parse a catalog PDF for a Paper
+/// that is already on the graph (parser/profile change, ADR-056).
+pub struct ReparseSchedulerExecutor {
+    locator: Arc<dyn CatalogPdfLocator>,
+    graph_store: Arc<dyn DirectGraphStore>,
+    use_case: IngestUseCase,
+}
+
+impl ReparseSchedulerExecutor {
+    pub fn new(
+        locator: Arc<dyn CatalogPdfLocator>,
+        parser: Box<dyn ParserPort>,
+        embedder: Box<dyn Embedder>,
+        graph_store: Arc<dyn DirectGraphStore>,
+    ) -> Self {
+        let use_case = IngestUseCase::from_shared(parser, embedder, graph_store.clone());
+        Self {
+            locator,
+            graph_store,
+            use_case,
+        }
+    }
+}
+
+#[async_trait]
+impl SchedulerTaskExecutor for ReparseSchedulerExecutor {
+    fn task_type(&self) -> TaskType {
+        TaskType::Reparse
+    }
+
+    async fn execute(&self, task: &PendingTask) -> SchedulerExecuteOutcome {
+        let Some(pdf_path) = self.locator.locate(&task.arxiv_id) else {
+            return SchedulerExecuteOutcome::Retryable {
+                error_class: "catalog_pdf_not_found".into(),
+                message: format!(
+                    "no catalog source PDF for {} (locator miss, not invented)",
+                    task.arxiv_id
+                ),
+            };
+        };
+        if self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", &task.arxiv_id)
+            .await
+            .is_none()
+        {
+            return SchedulerExecuteOutcome::Retryable {
+                error_class: "paper_not_materialized".into(),
+                message: format!(
+                    "no Paper node for {} (Reparse is not first-time Ingest)",
+                    task.arxiv_id
+                ),
+            };
+        }
+        match self
+            .use_case
+            .ingest_pdf(pdf_path.to_str().unwrap_or_default(), &task.arxiv_id)
+            .await
+        {
+            Ok(result) => SchedulerExecuteOutcome::Completed {
+                summary: format!(
+                    "reparsed {} (sections={} body_chars={})",
+                    result.paper_id, result.section_count, result.body_chars
+                ),
+                evidence_refs: Vec::new(),
+            },
+            Err(error) => SchedulerExecuteOutcome::Retryable {
+                error_class: "reparse_failed".into(),
                 message: format!("{}: {error:#}", task.arxiv_id),
             },
         }
@@ -486,6 +565,97 @@ mod tests {
         let task = ingest_pending_task("2506.07853");
         match rt.block_on(executor.execute(&task)) {
             SchedulerExecuteOutcome::Completed { summary, .. } => {
+                assert!(summary.contains("2506.07853"), "{summary}");
+            }
+            other => panic!("expected Completed, got {other:?}"),
+        }
+    }
+
+    fn reparse_pending_task(arxiv_id: &str) -> PendingTask {
+        use da_domain::scheduler::{TaskPriority, TaskStatus};
+        PendingTask {
+            arxiv_id: arxiv_id.to_string(),
+            task_type: TaskType::Reparse,
+            added_at: 0,
+            retry_count: 0,
+            last_retry: None,
+            next_retry: 0,
+            status: TaskStatus::Pending,
+            schema_version: 2,
+            priority: TaskPriority::High,
+            lease: None,
+            dependencies: vec![],
+            resource_class: da_domain::scheduler::TaskResourceClass::Standard,
+            attempts: vec![],
+            logical_result: None,
+        }
+    }
+
+    fn reparse_executor(
+        locator: FixedLocator,
+        store: kg_storage::MockGraphStore,
+    ) -> ReparseSchedulerExecutor {
+        ReparseSchedulerExecutor::new(
+            std::sync::Arc::new(locator),
+            Box::new(DummyParser),
+            Box::new(DummyEmbedder),
+            std::sync::Arc::new(store),
+        )
+    }
+
+    #[test]
+    fn reparse_executor_retries_when_catalog_pdf_missing() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        let store = kg_storage::MockGraphStore::new();
+        rt.block_on(seed_graph(&store, "2506.07853", &[("Intro", "body")]));
+        let executor = reparse_executor(FixedLocator(None), store);
+        let task = reparse_pending_task("2506.07853");
+        match rt.block_on(executor.execute(&task)) {
+            SchedulerExecuteOutcome::Retryable { error_class, .. } => {
+                assert_eq!(error_class, "catalog_pdf_not_found");
+            }
+            other => panic!("expected Retryable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn reparse_executor_retries_when_paper_missing() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        let dir = tempfile::tempdir().unwrap();
+        let pdf = dir.path().join("source").join("2506.07853.pdf");
+        std::fs::create_dir_all(pdf.parent().unwrap()).unwrap();
+        std::fs::write(&pdf, b"%PDF-1.4 test").unwrap();
+        let store = kg_storage::MockGraphStore::new();
+        let executor = reparse_executor(FixedLocator(Some(pdf)), store);
+        let task = reparse_pending_task("2506.07853");
+        match rt.block_on(executor.execute(&task)) {
+            SchedulerExecuteOutcome::Retryable { error_class, .. } => {
+                assert_eq!(error_class, "paper_not_materialized");
+            }
+            other => panic!("expected Retryable, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn reparse_executor_completes_on_locator_hit_and_existing_paper() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        let dir = tempfile::tempdir().unwrap();
+        let pdf = dir.path().join("source").join("2506.07853.pdf");
+        std::fs::create_dir_all(pdf.parent().unwrap()).unwrap();
+        std::fs::write(&pdf, b"%PDF-1.4 test").unwrap();
+        let store = kg_storage::MockGraphStore::new();
+        rt.block_on(seed_graph(&store, "2506.07853", &[("Intro", "body")]));
+        let executor = reparse_executor(FixedLocator(Some(pdf)), store);
+        let task = reparse_pending_task("2506.07853");
+        match rt.block_on(executor.execute(&task)) {
+            SchedulerExecuteOutcome::Completed { summary, .. } => {
+                assert!(summary.contains("reparsed"), "{summary}");
                 assert!(summary.contains("2506.07853"), "{summary}");
             }
             other => panic!("expected Completed, got {other:?}"),
