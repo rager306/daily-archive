@@ -1,5 +1,24 @@
 # Changelog
 
+### M423 Triage mode canary full vs detect-only
+
+- pdf-inspector exposes `PdfOptions::detect_only()` and `pages()` but the
+  product classifier always ran `ProcessMode::Full`. Switching blind risked
+  the M349 regression again. M423 measures instead: pure domain
+  `TriageModeDiff` (typed per-field agreement, Eq, confidence as a 0.05
+  diagnostic band) plus a feature-gated `pdf_triage_canary` example
+  (`required-features: pdf-classifier`) that runs both modes and emits a
+  JSON verdict (exit 0 agree / 2 divergence).
+- **Measured on hub PDF 2507.19457**: Full reports OCR pages 69+84
+  (`suspected_garbled_text`) and `has_encoding_issues=true` in 5189ms;
+  detect-only reports zero OCR pages and no encoding issues in 309ms.
+  Detect-only is 17x faster but blind to garbled text — garbled detection
+  requires the Full markdown pipeline. Product triage stays Full, now as a
+  measured decision (MEM916).
+- Page scope stays canary-only: `pages()` filters the OCR list while
+  `page_count` stays document-wide, so a filtered list must never feed
+  `PdfTriagePolicy::garbled_ratio`. D127 remains locked.
+
 ### M422 Stamp garbled pages onto ParsedArticle
 
 - pdf-inspector already detects garbled pages (M419/M420) but

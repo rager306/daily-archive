@@ -45,7 +45,20 @@ impl PdfClassificationPort for PdfInspectorClassifier {
 /// has_encoding_issues produced inconsistent pairs (e.g. 0 OCR pages +
 /// encoding_issues=true from document-level markdown detectors).
 fn classify_sync(pdf_bytes: &[u8]) -> ClassificationResult<PdfClassification> {
-    let full = pdf_inspector::process_pdf_mem(pdf_bytes)
+    classify_sync_with_options(pdf_bytes, pdf_inspector::PdfOptions::new())
+}
+
+/// Options-aware synchronous classification (M423 canary surface).
+///
+/// Product triage keeps the `Full` default (PDF markdown runs); the
+/// `pdf_triage_canary` example passes `PdfOptions::detect_only()` (and
+/// optionally `pages(..)`) to *measure* whether a cheaper mode agrees.
+/// Nothing in the ingest path calls this with non-default options.
+pub fn classify_sync_with_options(
+    pdf_bytes: &[u8],
+    options: pdf_inspector::PdfOptions,
+) -> ClassificationResult<PdfClassification> {
+    let full = pdf_inspector::process_pdf_mem_with_options(pdf_bytes, options)
         .map_err(|e| ClassificationError::Failed(format!("pdf-inspector process error: {e}")))?;
 
     Ok(PdfClassification {
@@ -104,6 +117,23 @@ mod tests {
             PdfType::Image
         );
         assert_eq!(map_pdf_type(&pdf_inspector::PdfType::Mixed), PdfType::Mixed);
+    }
+
+    #[test]
+    fn classify_sync_default_is_full_mode_and_options_variant_is_callable() {
+        // The product path must keep PdfOptions::new() (Full). On junk bytes
+        // every entry point fails closed, proving the same pipeline sits
+        // behind both.
+        let junk: &[u8] = b"not a pdf";
+        assert!(classify_sync(junk).is_err(), "junk bytes must fail closed");
+        assert!(
+            classify_sync_with_options(junk, pdf_inspector::PdfOptions::new()).is_err(),
+            "options Full variant fails closed too"
+        );
+        assert!(
+            classify_sync_with_options(junk, pdf_inspector::PdfOptions::detect_only()).is_err(),
+            "detect_only variant fails closed too"
+        );
     }
 
     #[tokio::test]

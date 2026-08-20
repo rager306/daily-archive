@@ -177,6 +177,61 @@ pub struct PdfClassification {
     pub has_encoding_issues: bool,
 }
 
+/// Diagnostic tolerance for comparing confidence scores between two
+/// triage runs of the same document (M423). Confidence is a heuristic
+/// score, not a hard signal; small drift between modes is not a divergence
+/// in what the pipeline will do.
+pub const TRIAGE_CONFIDENCE_EPSILON: f32 = 0.05;
+
+/// Typed per-field agreement between two triage classifications of the
+/// same document (M423) — e.g. pdf-inspector `Full` vs `DetectOnly` modes.
+///
+/// Every blocking field (type, page count, OCR page list, OCR reasons,
+/// encoding flag) is its own boolean so a mode divergence is visible in
+/// exactly the field it affects; confidence is a diagnostic band
+/// ([`TRIAGE_CONFIDENCE_EPSILON`]). All-bool keeps the struct `Eq`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TriageModeDiff {
+    /// Same detected PDF type.
+    pub pdf_type_agrees: bool,
+    /// Same document page count.
+    pub page_count_agrees: bool,
+    /// Same 1-indexed OCR-needing page list.
+    pub ocr_pages_agree: bool,
+    /// Same per-page OCR reasons.
+    pub ocr_reasons_agree: bool,
+    /// Same document-level encoding-issues flag.
+    pub encoding_issues_agree: bool,
+    /// Confidence difference within [`TRIAGE_CONFIDENCE_EPSILON`].
+    pub confidence_within_epsilon: bool,
+}
+
+impl TriageModeDiff {
+    /// Compare two classifications of the same document field by field.
+    pub fn compare(a: &PdfClassification, b: &PdfClassification) -> Self {
+        Self {
+            pdf_type_agrees: a.pdf_type == b.pdf_type,
+            page_count_agrees: a.page_count == b.page_count,
+            ocr_pages_agree: a.pages_needing_ocr == b.pages_needing_ocr,
+            ocr_reasons_agree: a.ocr_reasons_by_page == b.ocr_reasons_by_page,
+            encoding_issues_agree: a.has_encoding_issues == b.has_encoding_issues,
+            confidence_within_epsilon: (a.confidence - b.confidence).abs()
+                <= TRIAGE_CONFIDENCE_EPSILON,
+        }
+    }
+
+    /// True only when every field agrees — safe to treat the two triage
+    /// modes as interchangeable for this document.
+    pub fn agree(&self) -> bool {
+        self.pdf_type_agrees
+            && self.page_count_agrees
+            && self.ocr_pages_agree
+            && self.ocr_reasons_agree
+            && self.encoding_issues_agree
+            && self.confidence_within_epsilon
+    }
+}
+
 impl PdfClassification {
     /// Returns true if no page is flagged for OCR.
     ///
@@ -409,5 +464,90 @@ mod tests {
     #[test]
     fn pdf_triage_status_default_is_not_configured() {
         assert_eq!(PdfTriageStatus::default(), PdfTriageStatus::NotConfigured);
+    }
+
+    fn diff_classification() -> PdfClassification {
+        PdfClassification {
+            pdf_type: PdfType::Text,
+            page_count: 96,
+            pages_needing_ocr: vec![69, 84],
+            ocr_reasons_by_page: vec![PageOcrReasons {
+                page: 69,
+                reasons: vec![OCR_REASON_SUSPECTED_GARBLED_TEXT.to_string()],
+            }],
+            confidence: 0.9,
+            has_encoding_issues: true,
+        }
+    }
+
+    #[test]
+    fn triage_mode_diff_identical_classifications_agree() {
+        let a = diff_classification();
+        let diff = TriageModeDiff::compare(&a, &a);
+        assert!(diff.agree(), "{diff:?}");
+        assert!(diff.pdf_type_agrees);
+        assert!(diff.page_count_agrees);
+        assert!(diff.ocr_pages_agree);
+        assert!(diff.ocr_reasons_agree);
+        assert!(diff.encoding_issues_agree);
+        assert!(diff.confidence_within_epsilon);
+    }
+
+    #[test]
+    fn triage_mode_diff_flips_exactly_the_divergent_field() {
+        let base = diff_classification();
+
+        let mut other = base.clone();
+        other.pdf_type = PdfType::Mixed;
+        let d = TriageModeDiff::compare(&base, &other);
+        assert!(!d.pdf_type_agrees);
+        assert!(d.ocr_pages_agree && d.ocr_reasons_agree && d.encoding_issues_agree);
+        assert!(!d.agree());
+
+        let mut other = base.clone();
+        other.pages_needing_ocr = vec![69];
+        let d = TriageModeDiff::compare(&base, &other);
+        assert!(!d.ocr_pages_agree);
+        assert!(d.pdf_type_agrees && d.ocr_reasons_agree && d.encoding_issues_agree);
+        assert!(!d.agree());
+
+        let mut other = base.clone();
+        other.ocr_reasons_by_page = vec![PageOcrReasons {
+            page: 69,
+            reasons: vec![OCR_REASON_SCANNED.to_string()],
+        }];
+        let d = TriageModeDiff::compare(&base, &other);
+        assert!(!d.ocr_reasons_agree);
+        assert!(d.ocr_pages_agree);
+        assert!(!d.agree());
+
+        let mut other = base.clone();
+        other.has_encoding_issues = false;
+        let d = TriageModeDiff::compare(&base, &other);
+        assert!(!d.encoding_issues_agree);
+        assert!(d.ocr_pages_agree && d.ocr_reasons_agree);
+        assert!(!d.agree());
+
+        let mut other = base.clone();
+        other.page_count = 95;
+        let d = TriageModeDiff::compare(&base, &other);
+        assert!(!d.page_count_agrees);
+        assert!(!d.agree());
+    }
+
+    #[test]
+    fn triage_mode_diff_confidence_is_a_diagnostic_band() {
+        let base = diff_classification();
+        let mut within = base.clone();
+        within.confidence = base.confidence + 0.04;
+        let d = TriageModeDiff::compare(&base, &within);
+        assert!(d.confidence_within_epsilon);
+        assert!(d.agree(), "epsilon-band drift is not a divergence: {d:?}");
+
+        let mut beyond = base.clone();
+        beyond.confidence = base.confidence + 0.2;
+        let d = TriageModeDiff::compare(&base, &beyond);
+        assert!(!d.confidence_within_epsilon);
+        assert!(!d.agree());
     }
 }
