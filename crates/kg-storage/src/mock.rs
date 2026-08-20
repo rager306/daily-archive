@@ -57,6 +57,8 @@ struct MockGraphStoreInner {
     edges: Mutex<Vec<(u64, u64, u64, String)>>,
     counter: AtomicUsize,
     props: Mutex<MockProps>,
+    /// (label, property, node_id) -> vector (vector index state)
+    vectors: Mutex<HashMap<(String, String, u64), Vec<f32>>>,
     /// Edge properties: (edge_id, key) → value
     edge_props: Mutex<HashMap<(u64, String), String>>,
     snapshot_calls: AtomicUsize,
@@ -370,21 +372,47 @@ impl DirectGraphStore for MockGraphStore {
     }
     async fn add_vector(
         &self,
-        _label: &str,
-        _property: &str,
-        _node_id: u64,
-        _vector: Vec<f32>,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
     ) -> Result<(), GraphStoreError> {
+        let mut vectors = self.inner.vectors.lock().unwrap();
+        vectors.insert((label.to_string(), property.to_string(), node_id), vector);
         Ok(())
+    }
+    async fn replace_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError> {
+        let mut vectors = self.inner.vectors.lock().unwrap();
+        let key = (label.to_string(), property.to_string(), node_id);
+        match vectors.entry(key) {
+            std::collections::hash_map::Entry::Vacant(_) => Err(GraphStoreError::Vector(format!(
+                "no stored vector for node {node_id} to replace"
+            ))),
+            std::collections::hash_map::Entry::Occupied(mut slot) => {
+                slot.insert(vector);
+                Ok(())
+            }
+        }
     }
     async fn vector_search_direct(
         &self,
-        _label: &str,
-        _property: &str,
+        label: &str,
+        property: &str,
         _query: &[f32],
         _k: usize,
     ) -> Result<Vec<(u64, f32)>, GraphStoreError> {
-        Ok(vec![])
+        let vectors = self.inner.vectors.lock().unwrap();
+        Ok(vectors
+            .keys()
+            .filter(|(l, p, _)| l == label && p == property)
+            .map(|(_, _, n)| (*n, 0.0))
+            .collect())
     }
     async fn node_count(&self) -> usize {
         self.inner.nodes.lock().unwrap().len()
@@ -544,6 +572,37 @@ impl DirectGraphStore for MockGraphStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn replace_vector_swaps_same_node_and_is_idempotent() {
+        let store = MockGraphStore::new();
+        let node = store.create_node("Paper").await.unwrap();
+        store
+            .add_vector("Paper", "embedding", node, vec![0.1, 0.2])
+            .await
+            .unwrap();
+        store
+            .replace_vector("Paper", "embedding", node, vec![0.9, 0.8])
+            .await
+            .unwrap();
+        // Same node id retains the (label, property) key; search returns it.
+        let hits = store
+            .vector_search_direct("Paper", "embedding", &[0.0; 2], 10)
+            .await
+            .unwrap();
+        assert_eq!(hits, vec![(node, 0.0)]);
+        // Replacing with the current value is a no-op success.
+        store
+            .replace_vector("Paper", "embedding", node, vec![0.9, 0.8])
+            .await
+            .unwrap();
+        // Replacing a never-inserted node errors.
+        let err = store
+            .replace_vector("Paper", "embedding", 999, vec![1.0])
+            .await
+            .unwrap_err();
+        assert!(err.to_string().contains("no stored vector"), "{err}");
+    }
 
     #[tokio::test]
     async fn test_create_node_and_set_property() {

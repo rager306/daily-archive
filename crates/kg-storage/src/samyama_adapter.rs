@@ -475,6 +475,20 @@ impl DirectGraphStore for SamyamaGraphStore {
             .map_err(|e| GraphStoreError::Vector(e.to_string()))
     }
 
+    async fn replace_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError> {
+        let store = self.store_read().await;
+        store
+            .vector_index
+            .replace_vector(label, property, NodeId::new(node_id), &vector)
+            .map_err(|e| GraphStoreError::Vector(e.to_string()))
+    }
+
     async fn vector_search_direct(
         &self,
         label: &str,

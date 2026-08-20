@@ -115,6 +115,17 @@ pub trait DirectGraphStore: GraphStore {
         node_id: u64,
         vector: Vec<f32>,
     ) -> Result<(), GraphStoreError>;
+    /// Replace an existing node's stored vector for (label, property) with a
+    /// new vector, preserving the node id. Sanctioned swap (ADR-037 EmbedStale),
+    /// never a destructive node drop. Idempotent: replacing with the current
+    /// value is a no-op. Returns an error when no vector is stored for the node.
+    async fn replace_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError>;
     async fn vector_search_direct(
         &self,
         label: &str,

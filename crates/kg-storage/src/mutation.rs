@@ -386,6 +386,22 @@ impl DirectGraphStore for InstrumentedGraphStore {
         )
     }
 
+    async fn replace_vector(
+        &self,
+        label: &str,
+        property: &str,
+        node_id: u64,
+        vector: Vec<f32>,
+    ) -> Result<(), GraphStoreError> {
+        let _guard = self.mutation_lock.lock().await;
+        self.finish(
+            MutationFamily::Vector,
+            self.inner
+                .replace_vector(label, property, node_id, vector)
+                .await,
+        )
+    }
+
     async fn vector_search_direct(
         &self,
         label: &str,
