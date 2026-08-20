@@ -400,6 +400,34 @@ impl IngestUseCase {
         self.graph_store
             .set_node_property_string(node_id, "arxiv_id", paper.arxiv_id.clone())
             .await?;
+        // M419 S01: materialize pdf-inspector triage onto the Paper node so
+        // read planes (query/MCP) see document health without the ingest
+        // report. String/bool only; identical values on replay.
+        if let Some(classification) = &pdf_classification {
+            let pages_needing_ocr = classification
+                .pages_needing_ocr
+                .iter()
+                .map(|page| page.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            self.graph_store
+                .set_node_property_string(
+                    node_id,
+                    "pdf_type",
+                    format!("{:?}", classification.pdf_type),
+                )
+                .await?;
+            self.graph_store
+                .set_node_property_string(node_id, "pdf_pages_needing_ocr", pages_needing_ocr)
+                .await?;
+            self.graph_store
+                .set_node_property_bool(
+                    node_id,
+                    "pdf_has_encoding_issues",
+                    classification.has_encoding_issues,
+                )
+                .await?;
+        }
         if revision_context.is_none() {
             self.graph_store
                 .set_node_property_string(node_id, "title", paper.title.clone())

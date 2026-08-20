@@ -373,6 +373,115 @@ async fn parsed_materialization_preserves_full_unicode_section_text_and_checksum
 }
 
 #[tokio::test]
+async fn pdf_triage_is_materialized_onto_paper_node() {
+    use da_domain::pdf_classification::{PdfClassification, PdfTriageStatus, PdfType};
+
+    let classification = || PdfClassification {
+        pdf_type: PdfType::Mixed,
+        page_count: 120,
+        pages_needing_ocr: vec![69, 84],
+        ocr_reasons_by_page: vec![],
+        has_encoding_issues: true,
+        confidence: 0.91,
+    };
+    let parsed = ParsedArticle {
+        paper_id: "2401.00009".into(),
+        title: "Triage paper".into(),
+        abstract_text: String::new(),
+        body_text: String::new(),
+        sections: vec![],
+        citations: vec![],
+        layout_json: None,
+        tei_xml: None,
+        tables: Vec::new(),
+        table_missingness: None,
+        formulas: Vec::new(),
+        formula_missingness: None,
+        pdf_hash: "triage-hash".into(),
+    };
+    let (ingest, store) = make_ingest(vec![]);
+    ingest
+        .materialize_parsed_with_triage(
+            &parsed,
+            vec![0.1; 8],
+            None,
+            None,
+            Some(classification()),
+            PdfTriageStatus::Classified,
+        )
+        .await
+        .unwrap();
+    let paper = store
+        .find_node_by_string_property("Paper", "arxiv_id", "2401.00009")
+        .await
+        .expect("paper node");
+    assert_eq!(
+        store.get_node_property_string(paper, "pdf_type").await,
+        Some("Mixed".into())
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(paper, "pdf_pages_needing_ocr")
+            .await,
+        Some("69,84".into())
+    );
+    assert_eq!(
+        store
+            .get_node_property_bool(paper, "pdf_has_encoding_issues")
+            .await,
+        Some(true)
+    );
+    // Replay with the same classification leaves identical values.
+    ingest
+        .materialize_parsed_with_triage(
+            &parsed,
+            vec![0.1; 8],
+            None,
+            None,
+            Some(classification()),
+            PdfTriageStatus::Classified,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        store
+            .get_node_property_string(paper, "pdf_pages_needing_ocr")
+            .await,
+        Some("69,84".into())
+    );
+    // Unclassified ingest stamps nothing.
+    let parsed2 = ParsedArticle {
+        paper_id: "2401.00010".into(),
+        ..parsed.clone()
+    };
+    ingest
+        .materialize_parsed_with_triage(
+            &parsed2,
+            vec![0.1; 8],
+            None,
+            None,
+            None,
+            PdfTriageStatus::NotConfigured,
+        )
+        .await
+        .unwrap();
+    let paper2 = store
+        .find_node_by_string_property("Paper", "arxiv_id", "2401.00010")
+        .await
+        .expect("paper2 node");
+    assert_eq!(
+        store.get_node_property_string(paper2, "pdf_type").await,
+        None
+    );
+    assert_eq!(
+        store
+            .get_node_property_string(paper2, "pdf_pages_needing_ocr")
+            .await,
+        None
+    );
+}
+
+#[tokio::test]
 async fn changed_embedding_replaces_via_sanctioned_upsert() {
     let (ingest, store) = make_ingest(vec![]);
     let parsed = ParsedArticle {

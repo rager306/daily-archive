@@ -1,5 +1,14 @@
 # Changelog
 
+### M419 S01 pdf-inspector triage materialized onto Paper
+
+- The pdf-inspector classification (pdf_type, pages_needing_ocr,
+  has_encoding_issues) previously lived only in logs and the ingest report;
+  read planes could not see document health. materialize_parsed_with_triage
+  now stamps pdf_type / pdf_pages_needing_ocr (comma-joined) /
+  pdf_has_encoding_issues onto the Paper node - string/bool only, identical
+  on replay. Governor pins the stamp. D127 remains locked.
+
 ### M418 Content-node embeddings use sanctioned replace
 
 - The ingest.rs content-node guard still hard-failed on a changed embedding
