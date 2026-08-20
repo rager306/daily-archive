@@ -1,5 +1,19 @@
 # Changelog
 
+### M414 Equation grounding gaps become typed missingness
+
+- Corpus probe (M413) showed `equation_input_conversion` firing terminal when
+  a formula falls outside every section window, killing the whole journey for
+  3 of 8 probed articles — while the domain already types these cases
+  (UngroundedFormula, MalformedFormula, SectionOrdinalOutOfRange) as
+  extraction missingness.
+- The equation extraction stage now skips ungroundable formulas: warn
+  `equation_candidate_missingness_skipped` per formula, `conversion_skipped`
+  count in stage metadata, and a `conversion:skipped=N` token folded into the
+  artifact missingness (appended to the parser token when both present).
+  Grounded candidates survive; all-skipped still completes with a typed
+  token, never a silent zero. Assembly invariant violations stay terminal.
+  D127 remains locked.
 ### M413 Figure analysis schema violation diagnostics and prompt honesty
 
 - Live Luna soak on 2506.07853v1 violated `citations[].quote` while the error

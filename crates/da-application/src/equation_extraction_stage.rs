@@ -127,17 +127,41 @@ impl PipelineStageExecutor for EquationExtractionStage {
             .formula_missingness
             .map(|reason| format!("parser_reported:{reason:?}"));
         let mut candidates = Vec::with_capacity(parsed.formulas.len());
+        let mut conversion_skipped: usize = 0;
         for formula in &parsed.formulas {
-            let input = crate::equation_materialize::equation_candidate_input_from_extracted(
+            let input = match crate::equation_materialize::equation_candidate_input_from_extracted(
                 formula,
                 &self.revision_vid,
                 &self.source_pdf_sha256,
                 &parsed.sections,
-            )
-            .map_err(|error| StageExecutionError::Terminal {
-                error_class: "equation_input_conversion".into(),
-                message: error.to_string(),
-            })?;
+            ) {
+                Ok(input) => input,
+                // Typed extraction missingness (R087 / domain contract): skip
+                // the ungroundable formula, count it, never kill the journey.
+                Err(
+                    error @ crate::equation_materialize::EquationMaterializationError::UngroundedFormula(_),
+                )
+                | Err(
+                    error @ crate::equation_materialize::EquationMaterializationError::MalformedFormula(_, _),
+                )
+                | Err(
+                    error @ crate::equation_materialize::EquationMaterializationError::SectionOrdinalOutOfRange { .. },
+                ) => {
+                    conversion_skipped += 1;
+                    tracing::warn!(
+                        formula_id = %formula.formula_id,
+                        reason = %error,
+                        event = "equation_candidate_missingness_skipped"
+                    );
+                    continue;
+                }
+                Err(error) => {
+                    return Err(StageExecutionError::Terminal {
+                        error_class: "equation_input_conversion".into(),
+                        message: error.to_string(),
+                    });
+                }
+            };
             let candidate =
                 EquationCandidate::new(input).map_err(|error| StageExecutionError::Terminal {
                     error_class: "equation_candidate_assembly".into(),
@@ -145,6 +169,12 @@ impl PipelineStageExecutor for EquationExtractionStage {
                 })?;
             candidates.push(candidate);
         }
+        let missingness = match (missingness, conversion_skipped) {
+            (None, 0) => None,
+            (Some(token), 0) => Some(token),
+            (None, skipped) => Some(format!("conversion:skipped={skipped}")),
+            (Some(token), skipped) => Some(format!("{token};conversion:skipped={skipped}")),
+        };
         let artifact = EquationExtractionArtifact {
             candidates,
             missingness,
@@ -157,6 +187,7 @@ impl PipelineStageExecutor for EquationExtractionStage {
         Ok(StageExecutionOutput {
             metadata: BTreeMap::from([
                 ("equations".into(), artifact.candidates.len().to_string()),
+                ("conversion_skipped".into(), conversion_skipped.to_string()),
                 (
                     "missingness".into(),
                     artifact
@@ -298,6 +329,76 @@ mod tests {
         assert_eq!(
             out.metadata.get("missingness").map(String::as_str),
             Some(missingness.as_str())
+        );
+    }
+
+    #[tokio::test]
+    async fn ungrounded_formula_is_skipped_not_fatal() {
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
+        let mut parsed = parsed_with_formulas("p1", 2);
+        let mut stray = da_ports::parser::ExtractedFormula {
+            formula_id: "formula_stray".into(),
+            section_path_id: None,
+            section_ordinal: None,
+            label: Some("(9)".into()),
+            coordinates: None,
+            representation: da_ports::parser::FormulaRepresentation::TeXMath("z".into()),
+            span: None,
+            source_digest: sha(3),
+            missingness: None,
+        };
+        stray.section_ordinal = None;
+        stray.section_path_id = None;
+        parsed.formulas.push(stray);
+        let out = stage
+            .execute(request("p1", &parsed))
+            .await
+            .expect("execute completes despite ungrounded formula");
+        let artifact: EquationExtractionArtifact =
+            serde_json::from_slice(&out.payload).expect("decode");
+        assert_eq!(artifact.candidates.len(), 2, "grounded subset survives");
+        assert_eq!(
+            out.metadata.get("conversion_skipped").map(String::as_str),
+            Some("1"),
+            "skip must be counted, never silent"
+        );
+        assert_eq!(out.metadata.get("equations").map(String::as_str), Some("2"));
+    }
+
+    #[tokio::test]
+    async fn all_ungrounded_completes_with_typed_token() {
+        let stage = EquationExtractionStage::new(sha(9), sha(7));
+        let mut parsed = parsed_with_formulas("p1", 0);
+        for i in 0..2 {
+            parsed.formulas.push(da_ports::parser::ExtractedFormula {
+                formula_id: format!("formula_{i}"),
+                section_path_id: None,
+                section_ordinal: None,
+                label: None,
+                coordinates: None,
+                representation: da_ports::parser::FormulaRepresentation::TeXMath("q".into()),
+                span: None,
+                source_digest: sha(4),
+                missingness: None,
+            });
+        }
+        let out = stage
+            .execute(request("p1", &parsed))
+            .await
+            .expect("execute completes with zero grounded candidates");
+        let artifact: EquationExtractionArtifact =
+            serde_json::from_slice(&out.payload).expect("decode");
+        assert!(artifact.candidates.is_empty());
+        let missingness = artifact
+            .missingness
+            .expect("typed token, not a silent zero");
+        assert!(
+            missingness.contains("conversion:skipped=2"),
+            "token was {missingness}"
+        );
+        assert_eq!(
+            out.metadata.get("conversion_skipped").map(String::as_str),
+            Some("2")
         );
     }
 
