@@ -32,18 +32,60 @@ pub struct PdfTriagePolicy {
     pub fail_open: bool,
     pub record_in_ingest_result: bool,
     pub feature_gate: String,
+    #[doc = "Superseded by max_garbled_page_percent; kept for backward-compat wire signals. Always false in DATA."]
     pub encoding_issues_block_grobid: bool,
+    /// DATA threshold: max percent of pages needing OCR before GROBID is
+    /// blocked (0..=100). Default 100 => always continue unless overridden.
+    #[serde(default = "default_garbled_percent")]
+    pub max_garbled_page_percent: u8,
+}
+
+const fn default_garbled_percent() -> u8 {
+    100
+}
+
+/// Typed admission decision derived from a policy + classification.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum PdfTriageDecision {
+    /// Garbled ratio exceeds the threshold.
+    Block { ratio: f64 },
+    /// Proceed to GROBID.
+    Continue,
 }
 
 impl PdfTriagePolicy {
-    pub fn bundled() -> Result<Self, String> {
-        Self::from_yaml(BUNDLED_PDF_TRIAGE_POLICY)
+    pub fn garbled_ratio(&self, pages_needing_ocr: usize, page_count: u32) -> Option<f64> {
+        if page_count == 0 {
+            return None;
+        }
+        Some(pages_needing_ocr as f64 / page_count as f64)
+    }
+
+    /// Pure decision: Block when the OCR-needing ratio exceeds the DATA
+    /// threshold; Continue otherwise (including zero-page/None, never guessed).
+    pub fn decide(&self, classification: &PdfClassification) -> PdfTriageDecision {
+        let Some(ratio) = self.garbled_ratio(
+            classification.pages_needing_ocr.len(),
+            classification.page_count,
+        ) else {
+            return PdfTriageDecision::Continue;
+        };
+        let threshold = self.max_garbled_page_percent as f64 / 100.0;
+        if ratio > threshold {
+            PdfTriageDecision::Block { ratio }
+        } else {
+            PdfTriageDecision::Continue
+        }
     }
 
     pub fn from_yaml(yaml: &str) -> Result<Self, String> {
         let policy: Self = serde_yaml::from_str(yaml).map_err(|e| e.to_string())?;
         policy.validate()?;
         Ok(policy)
+    }
+
+    pub fn bundled() -> Result<Self, String> {
+        Self::from_yaml(BUNDLED_PDF_TRIAGE_POLICY)
     }
 
     pub fn validate(&self) -> Result<(), String> {
@@ -58,6 +100,12 @@ impl PdfTriagePolicy {
         }
         if self.feature_gate.trim().is_empty() {
             return Err("feature_gate must be non-empty".into());
+        }
+        if self.max_garbled_page_percent > 100 {
+            return Err(format!(
+                "max_garbled_page_percent {} out of 0..=100",
+                self.max_garbled_page_percent
+            ));
         }
         Ok(())
     }
@@ -292,6 +340,70 @@ mod tests {
         assert!(!p.import_eligible);
         assert!(!p.encoding_issues_block_grobid);
         assert_eq!(p.feature_gate, "pdf-classifier");
+        assert_eq!(p.max_garbled_page_percent, 100);
+    }
+
+    #[test]
+    fn triage_policy_rejects_ratio_out_of_range_and_garbage() {
+        let mk = |percent: u8| PdfTriagePolicy {
+            schema_version: "pdf-triage-policy.v1".into(),
+            import_eligible: false,
+            fail_open: true,
+            record_in_ingest_result: true,
+            feature_gate: "pdf-classifier".into(),
+            encoding_issues_block_grobid: false,
+            max_garbled_page_percent: percent,
+        };
+        assert!(mk(0).validate().is_ok());
+        assert!(mk(100).validate().is_ok());
+        assert!(mk(101).validate().is_err());
+    }
+
+    #[test]
+    fn triage_decision_matrix_is_typed() {
+        // High garbled ratio above the threshold => Block.
+        let policy = clash_policy(20);
+        let decision = policy.decide(&PdfClassification {
+            pdf_type: PdfType::Mixed,
+            page_count: 10,
+            pages_needing_ocr: vec![1, 2, 3, 4, 5],
+            ocr_reasons_by_page: vec![],
+            has_encoding_issues: true,
+            confidence: 0.9,
+        });
+        assert!(matches!(decision, PdfTriageDecision::Block { ratio: r } if r > 0.2));
+        // Clean doc => Continue.
+        let clean = clash_policy(20).decide(&PdfClassification {
+            pdf_type: PdfType::Text,
+            page_count: 10,
+            pages_needing_ocr: vec![],
+            ocr_reasons_by_page: vec![],
+            has_encoding_issues: false,
+            confidence: 0.95,
+        });
+        assert!(matches!(clean, PdfTriageDecision::Continue));
+        // Zero pages => Continue (never divide by zero / never guess).
+        let zero = clash_policy(20).decide(&PdfClassification {
+            pdf_type: PdfType::Unknown,
+            page_count: 0,
+            pages_needing_ocr: vec![],
+            ocr_reasons_by_page: vec![],
+            has_encoding_issues: false,
+            confidence: 0.0,
+        });
+        assert!(matches!(zero, PdfTriageDecision::Continue));
+    }
+
+    fn clash_policy(percent: u8) -> PdfTriagePolicy {
+        PdfTriagePolicy {
+            schema_version: "pdf-triage-policy.v1".into(),
+            import_eligible: false,
+            fail_open: true,
+            record_in_ingest_result: true,
+            feature_gate: "pdf-classifier".into(),
+            encoding_issues_block_grobid: false,
+            max_garbled_page_percent: percent,
+        }
     }
 
     #[test]

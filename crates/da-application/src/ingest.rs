@@ -9,7 +9,9 @@ use anyhow::Context;
 use da_domain::paper::Paper;
 use da_domain::schema::NodeSchemaDef;
 use da_domain::vid;
-use da_domain::{ImportEligibility, PdfClassification, PdfTriagePolicy, PdfTriageStatus};
+use da_domain::{
+    ImportEligibility, PdfClassification, PdfTriageDecision, PdfTriagePolicy, PdfTriageStatus,
+};
 use da_ports::PdfClassificationPort;
 use da_ports::embedder::Embedder;
 use da_ports::graph_store::DirectGraphStore;
@@ -27,6 +29,9 @@ pub struct IngestUseCase {
     /// Optional PDF classifier (M347). When present, classifies PDF
     /// before GROBID parse to detect scanned/garbled pages.
     pub pdf_classifier: Option<std::sync::Arc<dyn PdfClassificationPort>>,
+    /// Optional override of bundled DATA pdf-triage-policy (M420).
+    /// Tests inject a blocking policy; production uses `PdfTriagePolicy::bundled()`.
+    pub pdf_triage_policy: Option<PdfTriagePolicy>,
     /// D127 import gate (M357). Default: Locked. Eligible requires --enable-import.
     pub eligibility: ImportEligibility,
 }
@@ -84,6 +89,7 @@ impl IngestUseCase {
             graph_store: std::sync::Arc::from(graph_store),
             clock,
             pdf_classifier: None,
+            pdf_triage_policy: None,
             eligibility: ImportEligibility::default(),
         }
     }
@@ -113,6 +119,7 @@ impl IngestUseCase {
             graph_store,
             clock,
             pdf_classifier: None,
+            pdf_triage_policy: None,
             eligibility: ImportEligibility::default(),
         }
     }
@@ -135,6 +142,7 @@ impl IngestUseCase {
             graph_store,
             clock,
             pdf_classifier: None,
+            pdf_triage_policy: None,
             eligibility: ImportEligibility::default(),
         }
     }
@@ -145,6 +153,13 @@ impl IngestUseCase {
         classifier: std::sync::Arc<dyn PdfClassificationPort>,
     ) -> Self {
         self.pdf_classifier = Some(classifier);
+        self
+    }
+
+    /// Override bundled DATA pdf-triage-policy (M420). Production leaves this
+    /// unset and loads `PdfTriagePolicy::bundled()`.
+    pub fn with_pdf_triage_policy(mut self, policy: PdfTriagePolicy) -> Self {
+        self.pdf_triage_policy = Some(policy);
         self
     }
 
@@ -196,15 +211,20 @@ impl IngestUseCase {
             "Source detected"
         );
 
-        // M347/M350/M388: Pre-GROBID PDF classification (optional); typed triage status.
-        let triage_policy = PdfTriagePolicy::bundled().unwrap_or(PdfTriagePolicy {
-            schema_version: "pdf-triage-policy.v1".into(),
-            import_eligible: false,
-            fail_open: true,
-            record_in_ingest_result: true,
-            feature_gate: "pdf-classifier".into(),
-            encoding_issues_block_grobid: false,
-        });
+        // M347/M350/M388/M420: Pre-GROBID PDF classification; DATA triage admission.
+        let triage_policy = self
+            .pdf_triage_policy
+            .clone()
+            .or_else(|| PdfTriagePolicy::bundled().ok())
+            .unwrap_or(PdfTriagePolicy {
+                schema_version: "pdf-triage-policy.v1".into(),
+                import_eligible: false,
+                fail_open: true,
+                record_in_ingest_result: true,
+                feature_gate: "pdf-classifier".into(),
+                encoding_issues_block_grobid: false,
+                max_garbled_page_percent: 100,
+            });
         let mut pdf_classification: Option<PdfClassification> = None;
         let mut pdf_triage = PdfTriageStatus::NotConfigured;
         if let Some(classifier) = &self.pdf_classifier {
@@ -228,6 +248,37 @@ impl IngestUseCase {
                                 pages_needing_ocr = ?classification.pages_needing_ocr,
                                 "PDF not fully text-extractable; GROBID may produce partial results"
                             );
+                        }
+                        match triage_policy.decide(&classification) {
+                            PdfTriageDecision::Block { ratio } => {
+                                tracing::warn!(
+                                    paper_id,
+                                    ratio,
+                                    threshold_percent = triage_policy.max_garbled_page_percent,
+                                    fail_open = triage_policy.fail_open,
+                                    triage_decision = "block",
+                                    "PDF garbled-page ratio exceeds DATA threshold"
+                                );
+                                if !triage_policy.fail_open {
+                                    return Err(anyhow::anyhow!(
+                                        "PDF triage blocked GROBID: garbled ratio {ratio:.3} exceeds max_garbled_page_percent={} (fail_open=false)",
+                                        triage_policy.max_garbled_page_percent
+                                    ));
+                                }
+                                tracing::warn!(
+                                    paper_id,
+                                    ratio,
+                                    triage_decision = "block_continue",
+                                    "PDF triage Block with fail_open=true; continuing to GROBID"
+                                );
+                            }
+                            PdfTriageDecision::Continue => {
+                                tracing::info!(
+                                    paper_id,
+                                    triage_decision = "continue",
+                                    "PDF triage Continue; proceeding to GROBID"
+                                );
+                            }
                         }
                         pdf_classification = Some(classification);
                         pdf_triage = PdfTriageStatus::Classified;

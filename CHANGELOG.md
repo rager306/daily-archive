@@ -1,5 +1,21 @@
 # Changelog
 
+### M420 DATA garbled-page ratio governs GROBID admission
+
+- `PdfTriagePolicy` now carries `max_garbled_page_percent` (u8, 0..=100,
+  serde default 100). Bundled YAML stays permissive (`100` + `fail_open:
+  true`) so the existing corpus is unchanged; operators opt into blocking
+  by lowering the DATA threshold and setting `fail_open: false`.
+- Typed `PdfTriageDecision::{Block { ratio }, Continue}` is a pure domain
+  decision (`decide(&classification)`). Zero-page classifications never
+  divide and never block. `encoding_issues_block_grobid` stays a silent
+  compat field (always false in DATA).
+- Ingest applies the decision after classify and before GROBID. Block +
+  `fail_open=false` bails with a typed error; Block + `fail_open=true`
+  warns (`triage_decision=block_continue`) and continues. Event field
+  `triage_decision` is pinned by governor. Tests inject policy via
+  `IngestUseCase::with_pdf_triage_policy`. D127 remains locked.
+
 ### M419 S02 region-text grounding fallback for figures
 
 - Figures whose caption grounding failed were skipped with a typed warn.

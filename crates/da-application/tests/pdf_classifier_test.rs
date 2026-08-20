@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 use da_application::ingest::IngestUseCase;
-use da_domain::{PdfClassification, PdfTriageStatus, PdfType};
+use da_domain::{PdfClassification, PdfTriagePolicy, PdfTriageStatus, PdfType};
 use da_ports::PdfClassificationPort;
 use da_ports::embedder::{EmbedResult, Embedder};
 use da_ports::parser::{ParseResult, ParsedArticle, ParserPort};
@@ -231,4 +231,159 @@ async fn ingest_classifier_failure_does_not_block_ingest() {
             "fail_open policy must record FailedOpen"
         );
     }
+}
+
+fn blocking_policy(percent: u8) -> PdfTriagePolicy {
+    PdfTriagePolicy {
+        schema_version: "pdf-triage-policy.v1".into(),
+        import_eligible: false,
+        fail_open: false,
+        record_in_ingest_result: true,
+        feature_gate: "pdf-classifier".into(),
+        encoding_issues_block_grobid: false,
+        max_garbled_page_percent: percent,
+    }
+}
+
+fn mixed_classification(pages_needing_ocr: Vec<u32>, page_count: u32) -> PdfClassification {
+    PdfClassification {
+        pdf_type: PdfType::Mixed,
+        page_count,
+        pages_needing_ocr,
+        ocr_reasons_by_page: vec![],
+        confidence: 0.9,
+        has_encoding_issues: true,
+    }
+}
+
+#[tokio::test]
+async fn ingest_blocks_grobid_when_garbled_ratio_exceeds_threshold_and_fail_open_false() {
+    let parser_calls = Arc::new(AtomicUsize::new(0));
+    let classifier = Arc::new(MockClassifier {
+        call_count: Arc::new(AtomicUsize::new(0)),
+        result: mixed_classification(vec![1, 2, 3, 4, 5], 10),
+    });
+    let use_case = IngestUseCase::with_clock(
+        Box::new(MockParser {
+            call_count: parser_calls.clone(),
+        }),
+        Box::new(MockEmbedder),
+        Box::new(MockGraphStore::new()),
+        std::sync::Arc::new(da_ports::clock::SystemClock),
+    )
+    .with_pdf_classifier(classifier)
+    .with_pdf_triage_policy(blocking_policy(20));
+
+    let tmp = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
+
+    let err = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await
+        .expect_err("high garbled ratio + fail_open=false must bail before GROBID");
+    let msg = format!("{err:#}");
+    assert!(
+        msg.contains("PDF triage blocked GROBID"),
+        "typed block message missing: {msg}"
+    );
+    assert_eq!(
+        parser_calls.load(Ordering::SeqCst),
+        0,
+        "GROBID must not run after Block + fail_open=false"
+    );
+}
+
+#[tokio::test]
+async fn ingest_default_bundled_policy_continues_on_high_garbled_ratio() {
+    let parser_calls = Arc::new(AtomicUsize::new(0));
+    let classifier = Arc::new(MockClassifier {
+        call_count: Arc::new(AtomicUsize::new(0)),
+        result: mixed_classification(vec![1, 2, 3, 4, 5], 10),
+    });
+    let use_case = IngestUseCase::with_clock(
+        Box::new(MockParser {
+            call_count: parser_calls.clone(),
+        }),
+        Box::new(MockEmbedder),
+        Box::new(MockGraphStore::new()),
+        std::sync::Arc::new(da_ports::clock::SystemClock),
+    )
+    .with_pdf_classifier(classifier);
+
+    let tmp = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
+
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await
+        .expect("bundled fail_open=true + percent=100 must continue");
+    assert_eq!(result.pdf_triage, PdfTriageStatus::Classified);
+    assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn ingest_zero_page_classification_continues() {
+    let parser_calls = Arc::new(AtomicUsize::new(0));
+    let classifier = Arc::new(MockClassifier {
+        call_count: Arc::new(AtomicUsize::new(0)),
+        result: PdfClassification {
+            pdf_type: PdfType::Unknown,
+            page_count: 0,
+            pages_needing_ocr: vec![],
+            ocr_reasons_by_page: vec![],
+            confidence: 0.0,
+            has_encoding_issues: false,
+        },
+    });
+    let use_case = IngestUseCase::with_clock(
+        Box::new(MockParser {
+            call_count: parser_calls.clone(),
+        }),
+        Box::new(MockEmbedder),
+        Box::new(MockGraphStore::new()),
+        std::sync::Arc::new(da_ports::clock::SystemClock),
+    )
+    .with_pdf_classifier(classifier)
+    .with_pdf_triage_policy(blocking_policy(0));
+
+    let tmp = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
+
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await
+        .expect("page_count=0 never divides and never blocks");
+    assert_eq!(result.pdf_triage, PdfTriageStatus::Classified);
+    assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test]
+async fn ingest_block_with_fail_open_true_continues_to_grobid() {
+    let parser_calls = Arc::new(AtomicUsize::new(0));
+    let classifier = Arc::new(MockClassifier {
+        call_count: Arc::new(AtomicUsize::new(0)),
+        result: mixed_classification(vec![1, 2, 3, 4, 5], 10),
+    });
+    let mut policy = blocking_policy(20);
+    policy.fail_open = true;
+    let use_case = IngestUseCase::with_clock(
+        Box::new(MockParser {
+            call_count: parser_calls.clone(),
+        }),
+        Box::new(MockEmbedder),
+        Box::new(MockGraphStore::new()),
+        std::sync::Arc::new(da_ports::clock::SystemClock),
+    )
+    .with_pdf_classifier(classifier)
+    .with_pdf_triage_policy(policy);
+
+    let tmp = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(tmp.path(), b"fake pdf bytes").unwrap();
+
+    let result = use_case
+        .ingest_pdf(tmp.path().to_str().unwrap(), "2507.19457")
+        .await
+        .expect("Block + fail_open=true must warn and continue");
+    assert_eq!(result.pdf_triage, PdfTriageStatus::Classified);
+    assert_eq!(parser_calls.load(Ordering::SeqCst), 1);
 }

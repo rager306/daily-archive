@@ -150,8 +150,8 @@ pub use load::{
 };
 pub use pdf_classification::{
     OCR_REASON_NO_TEXT, OCR_REASON_SCANNED, OCR_REASON_SUSPECTED_GARBLED_TEXT,
-    OCR_REASON_VECTOR_TEXT, PageOcrReasons, PdfClassification, PdfTriagePolicy, PdfTriageStatus,
-    PdfType,
+    OCR_REASON_VECTOR_TEXT, PageOcrReasons, PdfClassification, PdfTriageDecision, PdfTriagePolicy,
+    PdfTriageStatus, PdfType,
 };
 pub use relation::{CitationSchema, RELATION_TYPES, Relation, RelationType, bibliographic};
 pub use revision_classification::{

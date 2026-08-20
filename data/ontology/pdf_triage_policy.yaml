@@ -8,5 +8,9 @@ fail_open: true
 record_in_ingest_result: true
 # Build feature name for documentation / health surfaces.
 feature_gate: pdf-classifier
-# Soft encoding issues alone never block GROBID (M349).
+# Soft encoding issues alone never block GROBID (M349); superseded by the
+# ratio below. Kept false for backward-compat wire signals.
 encoding_issues_block_grobid: false
+# DATA admission threshold (0..=100): percent of OCR-needing pages above
+# which GROBID is blocked. 100 = continue by default (opt-in via lower value).
+max_garbled_page_percent: 100
