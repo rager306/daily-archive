@@ -32,6 +32,7 @@ listed here — see `legacy/doc/adr/`.
 | [060](ADR-060-scientific-figure-understanding-pipeline.md) | Two-stage Figure Understanding Pipeline (classify → per-type extract) | Partially implemented (M388) | 2026-08-12 |
 | [061](ADR-061-readonly-identity-graph-plane-and-agent-fsm.md) | Read-only Identity Graph Plane and Agent FSM (kg-storage bounded RESP server, DA.IDENTITY semantic handshake) | Accepted (M401-itcqhx/S01) | 2026-08-18 |
 | [062](ADR-062-figure-quote-policy-window.md) | Figure Quote Policy Window (soft target + absolute schema ceiling + measurement loop) | Accepted (M413-1x7x3o) | 2026-08-20 |
+| [063](ADR-063-graphwrite-deferred-by-design.md) | GraphWrite stays deferred-by-design (no honest producer; governor asserts no fake executor) | Accepted (M417-36ebrj/S02, D278) | 2026-08-20 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 
