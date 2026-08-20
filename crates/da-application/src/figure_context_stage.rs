@@ -27,8 +27,9 @@ impl FigureContextStage {
         section_locator: FigureSectionLocator,
         article_summary: Option<ArticleSummaryContext>,
     ) -> Self {
+        let artifact_id = artifact_id.into();
         Self {
-            artifact_id: artifact_id.into(),
+            artifact_id: artifact_id.clone(),
             section_locator,
             article_summary,
             revision_identity: None,
@@ -37,7 +38,9 @@ impl FigureContextStage {
             contract: StageContract {
                 stage_id: "figure_context".into(),
                 implementation_fingerprint: "FigureContextAssembler@explicit-section-v2".into(),
-                configuration_fingerprint: "budget=default-18k;neighbors=prev,next;refs=3".into(),
+                configuration_fingerprint: format!(
+                    "artifact_id={artifact_id};budget=default-18k;neighbors=prev,next;refs=3"
+                ),
                 prompt_fingerprint: None,
                 model_fingerprint: None,
                 output_schema_fingerprint: "FigureSemanticContext@serde-v2-summary-provenance"
@@ -267,6 +270,25 @@ mod tests {
         assert_ne!(
             before.contract().output_schema_fingerprint,
             after.contract().output_schema_fingerprint
+        );
+    }
+
+    #[test]
+    fn artifact_id_is_part_of_configuration_fingerprint() {
+        let one =
+            FigureContextStage::new("Figure1", FigureSectionLocator::PathId("1".into()), None);
+        let two =
+            FigureContextStage::new("Figure2", FigureSectionLocator::PathId("2".into()), None);
+        assert_ne!(
+            one.contract().configuration_fingerprint,
+            two.contract().configuration_fingerprint
+        );
+        assert!(
+            one.contract()
+                .configuration_fingerprint
+                .contains("artifact_id=Figure1"),
+            "{}",
+            one.contract().configuration_fingerprint
         );
     }
 
