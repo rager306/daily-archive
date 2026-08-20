@@ -426,10 +426,28 @@ pub async fn run_journey_content(
         .await
     {
         Some(existing) if existing == embedding_sha => {}
-        Some(existing) => {
-            return Err(format!(
-                "embedding replacement is not supported safely for paper {paper_id}: existing={existing}, requested={embedding_sha}"
-            ));
+        Some(_existing) => {
+            // Sanctioned replacement seam (ADR-037 / D277): a changed embedder
+            // yields a different embedding_sha. Enqueue an idempotent EmbedStale
+            // task so the scheduler re-embeds and applies replace_vector on the
+            // same node; never hard-fail the journey.
+            let now = chrono::Utc::now().timestamp();
+            if let Err(error) = da_application::GraphScheduler::add_pending_embed_stale_to(
+                store.as_ref(),
+                &da_domain::scheduler::RetryPolicy::default(),
+                paper_id,
+                now,
+            )
+            .await
+            {
+                tracing::warn!(
+                    article_id = paper_id,
+                    error = %error,
+                    event = "scheduler_embed_stale_enqueue_failed"
+                );
+            } else {
+                tracing::info!(article_id = paper_id, event = "embed_stale_enqueued");
+            }
         }
         None => {
             store

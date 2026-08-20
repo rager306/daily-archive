@@ -1,5 +1,23 @@
 # Changelog
 
+### M416 EmbedStale becomes a real scheduler task with repo-scoped vector replace
+
+- Samyama vector index was insert-only: a changed embedder model hit
+  `VectorConflict` and the journey guard hard-failed instead of replacing.
+  `VectorIndex::replace` (vendor samyama-graph `fd45131`) now swaps the stored
+  vector for the same node id (persistence updated, HNSW rebuilt); idempotent
+  on equal value, `NodeNotFound` when absent.
+- `DirectGraphStore.replace_vector` across Samyama, Mock, InstrumentedGraphStore
+  and the test mock; Mock now actually stores vectors.
+- `EmbedStaleSchedulerExecutor`: re-embeds the materialized Paper and applies
+  `replace_vector` when the embedding_sha differs; same-sha is a no-op; missing
+  Paper / never-attached vector are typed Retryable.
+- Journey embedding attach parity no longer hard-fails on a sha mismatch: it
+  enqueues one idempotent EmbedStale task (`embed_stale_enqueued`). Same-sha
+  stays a no-op; missing vector still attaches directly.
+- `da scheduler-run` registers the EmbedStale executor. D277 documents the
+  scheduler-path replacement decision. D127 remains locked.
+
 ### M415 Figure grounding accepts caption evidence
 
 - Corpus probe P-B: 2606.11169 Figure4 was rejected because the model cited

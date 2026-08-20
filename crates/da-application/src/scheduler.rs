@@ -110,6 +110,29 @@ impl GraphScheduler {
         Self::add_pending_task_to(store, policy, TaskType::Reparse, arxiv_id, now).await
     }
 
+    /// Add a paper to the pending queue (embed_stale task, M416 S02).
+    pub async fn add_pending_embed_stale(&self, arxiv_id: &str) -> anyhow::Result<()> {
+        let now = self.clock.now().timestamp();
+        Self::add_pending_task_to(
+            &*self.graph_store,
+            &self.policy,
+            TaskType::EmbedStale,
+            arxiv_id,
+            now,
+        )
+        .await
+    }
+
+    /// Static form for composition roots that hold an `Arc` store (M416 S02).
+    pub async fn add_pending_embed_stale_to(
+        store: &dyn DirectGraphStore,
+        policy: &RetryPolicy,
+        arxiv_id: &str,
+        now: i64,
+    ) -> anyhow::Result<()> {
+        Self::add_pending_task_to(store, policy, TaskType::EmbedStale, arxiv_id, now).await
+    }
+
     /// Add a paper to the pending queue (for the OpenAlex enrichment task).
     pub async fn add_pending(&self, arxiv_id: &str) -> anyhow::Result<()> {
         let now = self.clock.now().timestamp();

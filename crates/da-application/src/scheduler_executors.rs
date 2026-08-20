@@ -293,6 +293,129 @@ impl SchedulerTaskExecutor for ReparseSchedulerExecutor {
     }
 }
 
+/// Executor for the `EmbedStale` task type: re-embed a materialized Paper
+/// under a changed embedder model and apply a sanctioned same-node vector
+/// replacement (ADR-037 / D277). Same-sha is a no-op.
+pub struct EmbedStaleSchedulerExecutor {
+    graph_store: Arc<dyn DirectGraphStore>,
+    embedder: Box<dyn Embedder>,
+}
+
+impl EmbedStaleSchedulerExecutor {
+    pub fn new(graph_store: Arc<dyn DirectGraphStore>, embedder: Box<dyn Embedder>) -> Self {
+        Self {
+            graph_store,
+            embedder,
+        }
+    }
+
+    async fn paper_embed_input(&self, arxiv_id: &str) -> Option<(u64, String)> {
+        let paper = self
+            .graph_store
+            .find_node_by_string_property("Paper", "arxiv_id", arxiv_id)
+            .await?;
+        let title = self
+            .graph_store
+            .get_node_property_string(paper, "title")
+            .await
+            .unwrap_or_default();
+        let abstract_text = self
+            .graph_store
+            .get_node_property_string(paper, "abstract_text")
+            .await
+            .unwrap_or_default();
+        let text = if abstract_text.trim().is_empty() {
+            title
+        } else {
+            format!("{title}\n{abstract_text}")
+        };
+        if text.trim().is_empty() {
+            return None;
+        }
+        Some((paper, text))
+    }
+}
+
+#[async_trait]
+impl SchedulerTaskExecutor for EmbedStaleSchedulerExecutor {
+    fn task_type(&self) -> TaskType {
+        TaskType::EmbedStale
+    }
+
+    async fn execute(&self, task: &PendingTask) -> SchedulerExecuteOutcome {
+        let Some((paper_node, text)) = self.paper_embed_input(&task.arxiv_id).await else {
+            return SchedulerExecuteOutcome::Retryable {
+                error_class: "paper_not_materialized".into(),
+                message: format!(
+                    "no embeddable Paper content for {} (EmbedStale needs a materialized Paper)",
+                    task.arxiv_id
+                ),
+            };
+        };
+        let vector = match self.embedder.embed(&text).await {
+            Ok(vector) => vector,
+            Err(error) => {
+                return SchedulerExecuteOutcome::Retryable {
+                    error_class: "embedding_failed".into(),
+                    message: format!("{}: {error:#}", task.arxiv_id),
+                };
+            }
+        };
+        let new_sha = crate::ingest::embedding_fingerprint(&vector);
+        let existing_sha = self
+            .graph_store
+            .get_node_property_string(paper_node, "embedding_sha256")
+            .await;
+        match existing_sha {
+            Some(existing) if existing == new_sha => SchedulerExecuteOutcome::Completed {
+                summary: format!(
+                    "embedding up to date for {} (sha {})",
+                    task.arxiv_id, new_sha
+                ),
+                evidence_refs: Vec::new(),
+            },
+            Some(_existing) => {
+                if let Err(error) = self
+                    .graph_store
+                    .replace_vector("Paper", "embedding", paper_node, vector.clone())
+                    .await
+                {
+                    return SchedulerExecuteOutcome::Retryable {
+                        error_class: "replace_vector_failed".into(),
+                        message: format!("{}: {error}", task.arxiv_id),
+                    };
+                }
+                if let Err(error) = self
+                    .graph_store
+                    .set_node_property_string(paper_node, "embedding_sha256", new_sha.clone())
+                    .await
+                {
+                    return SchedulerExecuteOutcome::Retryable {
+                        error_class: "embedding_sha_stamp_failed".into(),
+                        message: format!("{}: {error}", task.arxiv_id),
+                    };
+                }
+                SchedulerExecuteOutcome::Completed {
+                    summary: format!(
+                        "re-embedded {} under model {} ({})",
+                        task.arxiv_id,
+                        self.embedder.model_id(),
+                        new_sha
+                    ),
+                    evidence_refs: Vec::new(),
+                }
+            }
+            None => SchedulerExecuteOutcome::Retryable {
+                error_class: "embedding_never_attached".into(),
+                message: format!(
+                    "no embedding on Paper {}; run Ingest/Extract journey to attach first",
+                    task.arxiv_id
+                ),
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -660,5 +783,119 @@ mod tests {
             }
             other => panic!("expected Completed, got {other:?}"),
         }
+    }
+
+    fn embed_stale_pending_task(arxiv_id: &str) -> PendingTask {
+        use da_domain::scheduler::{TaskPriority, TaskStatus};
+        PendingTask {
+            arxiv_id: arxiv_id.to_string(),
+            task_type: TaskType::EmbedStale,
+            added_at: 0,
+            retry_count: 0,
+            last_retry: None,
+            next_retry: 0,
+            status: TaskStatus::Pending,
+            schema_version: 2,
+            priority: TaskPriority::Low,
+            lease: None,
+            dependencies: vec![],
+            resource_class: da_domain::scheduler::TaskResourceClass::Standard,
+            attempts: vec![],
+            logical_result: None,
+        }
+    }
+
+    async fn seed_embeddable_paper(store: &kg_storage::MockGraphStore, arxiv_id: &str) -> u64 {
+        use da_ports::graph_store::DirectGraphStore as _;
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", arxiv_id.to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(paper, "title", "ReEmbed Test Title".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(
+                paper,
+                "abstract_text",
+                "some abstract for re-embedding".to_string(),
+            )
+            .await
+            .unwrap();
+        paper
+    }
+
+    struct FixedVecEmbedder {
+        vector: Vec<f32>,
+    }
+    #[async_trait]
+    impl da_ports::embedder::Embedder for FixedVecEmbedder {
+        async fn embed(&self, _text: &str) -> da_ports::embedder::EmbedResult<Vec<f32>> {
+            Ok(self.vector.clone())
+        }
+        async fn embed_batch(
+            &self,
+            _texts: &[&str],
+        ) -> da_ports::embedder::EmbedResult<Vec<Vec<f32>>> {
+            Ok(vec![])
+        }
+        fn dimensions(&self) -> usize {
+            self.vector.len()
+        }
+        fn model_id(&self) -> &str {
+            "fixed-model"
+        }
+    }
+
+    #[test]
+    fn embed_stale_executor_replaces_vector_on_conflict_and_noops_on_same_sha() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .expect("rt");
+        // Seed with vector A and its sha.
+        let a = vec![0.1, 0.2];
+        let b = vec![7.0, 8.0];
+        let sha_a = crate::ingest::embedding_fingerprint(&a);
+        let store = kg_storage::MockGraphStore::new();
+        let paper = rt.block_on(seed_embeddable_paper(&store, "2506.07853"));
+        rt.block_on(store.add_vector("Paper", "embedding", paper, a.clone()));
+        rt.block_on(store.set_node_property_string(paper, "embedding_sha256", sha_a.clone()));
+        let task = embed_stale_pending_task("2506.07853");
+
+        // Same embedder output -> no-op Completed, sha unchanged.
+        let noop = EmbedStaleSchedulerExecutor::new(
+            std::sync::Arc::new(store.clone()),
+            Box::new(FixedVecEmbedder { vector: a.clone() }),
+        );
+        match rt.block_on(noop.execute(&task)) {
+            SchedulerExecuteOutcome::Completed { summary, .. } => {
+                assert!(summary.contains("up to date"), "{summary}");
+            }
+            other => panic!("expected no-op Completed, got {other:?}"),
+        }
+        assert_eq!(
+            rt.block_on(store.get_node_property_string(paper, "embedding_sha256")),
+            Some(sha_a.clone())
+        );
+
+        // Changed embedder output -> sanctioned same-node replace, sha advances.
+        let replace = EmbedStaleSchedulerExecutor::new(
+            std::sync::Arc::new(store.clone()),
+            Box::new(FixedVecEmbedder { vector: b.clone() }),
+        );
+        match rt.block_on(replace.execute(&task)) {
+            SchedulerExecuteOutcome::Completed { summary, .. } => {
+                assert!(summary.contains("re-embedded"), "{summary}");
+            }
+            other => panic!("expected replace Completed, got {other:?}"),
+        }
+        let sha_b = crate::ingest::embedding_fingerprint(&b);
+        assert_eq!(
+            rt.block_on(store.get_node_property_string(paper, "embedding_sha256")),
+            Some(sha_b.clone())
+        );
+        let _ = sha_b;
     }
 }

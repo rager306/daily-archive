@@ -124,7 +124,8 @@ pub mod scheduler_executors;
 pub mod scheduler_runner;
 pub use scheduler::GraphScheduler;
 pub use scheduler_executors::{
-    ExtractSchedulerExecutor, IngestSchedulerExecutor, ReparseSchedulerExecutor,
+    EmbedStaleSchedulerExecutor, ExtractSchedulerExecutor, IngestSchedulerExecutor,
+    ReparseSchedulerExecutor,
 };
 pub use scheduler_runner::{
     SchedulerExecuteOutcome, SchedulerRunReport, SchedulerRunner, SchedulerTaskDisposition,

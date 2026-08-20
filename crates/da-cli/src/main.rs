@@ -1998,10 +1998,15 @@ async fn run_scheduler(queue_dir: &str) -> anyhow::Result<()> {
         Box::new(da_adapters::FdApiEmbedder::from_env()),
         graph_store.clone(),
     );
+    let embed_stale_executor = da_application::EmbedStaleSchedulerExecutor::new(
+        graph_store.clone(),
+        Box::new(da_adapters::FdApiEmbedder::from_env()),
+    );
     let report = SchedulerRunner::new(graph_store, openalex)
         .with_executor(Arc::new(extract_executor))
         .with_executor(Arc::new(ingest_executor))
         .with_executor(Arc::new(reparse_executor))
+        .with_executor(Arc::new(embed_stale_executor))
         .run_due()
         .await?;
 
