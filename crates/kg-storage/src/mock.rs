@@ -32,6 +32,25 @@ pub struct MockProps {
     pub bool_props: HashMap<(u64, String), bool>,
 }
 
+/// Cosine similarity with a zero-norm guard (M424): a zero query or zero
+/// stored vector scores 0.0 instead of NaN. Never panics on length
+/// mismatch (compares the overlapping prefix, like a best-effort mock).
+fn cosine(a: &[f32], b: &[f32]) -> f32 {
+    let n = a.len().min(b.len());
+    let mut dot = 0.0f32;
+    let mut norm_a = 0.0f32;
+    let mut norm_b = 0.0f32;
+    for i in 0..n {
+        dot += a[i] * b[i];
+        norm_a += a[i] * a[i];
+        norm_b += b[i] * b[i];
+    }
+    if norm_a == 0.0 || norm_b == 0.0 {
+        return 0.0;
+    }
+    dot / (norm_a.sqrt() * norm_b.sqrt())
+}
+
 /// Serializable dump of MockGraphStore state for export/import round-trips.
 ///
 /// Used when no canned payload is set via [`MockGraphStore::set_snapshot_data`].
@@ -201,12 +220,39 @@ impl GraphStore for MockGraphStore {
     }
     async fn vector_search(
         &self,
-        _label: &str,
-        _property: &str,
-        _query_vector: &[f32],
-        _k: usize,
+        label: &str,
+        property: &str,
+        query_vector: &[f32],
+        k: usize,
     ) -> GraphResult<Vec<VectorSearchResult>> {
-        Ok(vec![])
+        // M424: honest delegation — seed a vector, find it with a real score.
+        // Previously always empty (tests pinned the fake with zero rows).
+        let hits =
+            DirectGraphStore::vector_search_direct(self, label, property, query_vector, k).await?;
+        let nodes = self.inner.nodes.lock().unwrap();
+        let props = self.inner.props.lock().unwrap();
+        let _ = &nodes; // lock order documented: nodes then props (same as find)
+        Ok(hits
+            .into_iter()
+            .map(|(node_id, score)| {
+                let vid = props
+                    .string_props
+                    .get(&(node_id, "vid".to_string()))
+                    .cloned()
+                    .unwrap_or_else(|| format!("node:{node_id}"));
+                let mut properties = serde_json::Map::new();
+                for ((id, key), value) in props.string_props.iter() {
+                    if *id == node_id {
+                        properties.insert(key.clone(), serde_json::Value::String(value.clone()));
+                    }
+                }
+                VectorSearchResult {
+                    vid,
+                    score,
+                    properties: serde_json::Value::Object(properties),
+                }
+            })
+            .collect())
     }
     async fn export_snapshot(&self) -> GraphResult<Vec<u8>> {
         self.inner.snapshot_calls.fetch_add(1, Ordering::SeqCst);
@@ -404,15 +450,26 @@ impl DirectGraphStore for MockGraphStore {
         &self,
         label: &str,
         property: &str,
-        _query: &[f32],
-        _k: usize,
+        query: &[f32],
+        k: usize,
     ) -> Result<Vec<(u64, f32)>, GraphStoreError> {
+        // M424: brute-force cosine over stored (label, property) vectors,
+        // sorted by score desc with ascending node-id tiebreak (HashMap
+        // iteration order must never leak), truncated to k. Previously the
+        // fake returned constant 0.0 scores in HashMap order with no k bound.
         let vectors = self.inner.vectors.lock().unwrap();
-        Ok(vectors
-            .keys()
-            .filter(|(l, p, _)| l == label && p == property)
-            .map(|(_, _, n)| (*n, 0.0))
-            .collect())
+        let mut hits: Vec<(u64, f32)> = vectors
+            .iter()
+            .filter(|((l, p, _), _)| l == label && p == property)
+            .map(|((_, _, n), v)| (*n, cosine(query, v)))
+            .collect();
+        hits.sort_by(|a, b| {
+            b.1.partial_cmp(&a.1)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then(a.0.cmp(&b.0))
+        });
+        hits.truncate(k);
+        Ok(hits)
     }
     async fn node_count(&self) -> usize {
         self.inner.nodes.lock().unwrap().len()
@@ -585,12 +642,16 @@ mod tests {
             .replace_vector("Paper", "embedding", node, vec![0.9, 0.8])
             .await
             .unwrap();
-        // Same node id retains the (label, property) key; search returns it.
+        // Same node id retains the (label, property) key; an aligned query
+        // scores a real cosine (M424 — no more constant 0.0 fake).
         let hits = store
-            .vector_search_direct("Paper", "embedding", &[0.0; 2], 10)
+            .vector_search_direct("Paper", "embedding", &[1.0, 0.0], 10)
             .await
             .unwrap();
-        assert_eq!(hits, vec![(node, 0.0)]);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].0, node);
+        let expected = 0.9f32 / (0.9f32 * 0.9f32 + 0.8f32 * 0.8f32).sqrt();
+        assert!((hits[0].1 - expected).abs() < 1e-5, "got {}", hits[0].1);
         // Replacing with the current value is a no-op success.
         store
             .replace_vector("Paper", "embedding", node, vec![0.9, 0.8])
@@ -602,6 +663,106 @@ mod tests {
             .await
             .unwrap_err();
         assert!(err.to_string().contains("no stored vector"), "{err}");
+    }
+
+    /// M424: the mock ranks by real cosine — aligned beats orthogonal.
+    #[tokio::test]
+    async fn mock_vector_search_ranks_aligned_above_orthogonal() {
+        let store = MockGraphStore::new();
+        let aligned = store.create_node("Entity").await.unwrap();
+        let orthogonal = store.create_node("Entity").await.unwrap();
+        store
+            .add_vector("Entity", "embedding", aligned, vec![1.0, 0.0])
+            .await
+            .unwrap();
+        store
+            .add_vector("Entity", "embedding", orthogonal, vec![0.0, 1.0])
+            .await
+            .unwrap();
+        let hits = store
+            .vector_search_direct("Entity", "embedding", &[1.0, 0.0], 5)
+            .await
+            .unwrap();
+        assert_eq!(hits.len(), 2);
+        assert_eq!(hits[0].0, aligned, "aligned must rank first");
+        assert!(
+            (hits[0].1 - 1.0).abs() < 1e-6,
+            "aligned score {}",
+            hits[0].1
+        );
+        assert!(hits[1].1.abs() < 1e-6, "orthogonal score {}", hits[1].1);
+    }
+
+    /// M424: k truncation, label filter, and deterministic node-id tiebreak.
+    #[tokio::test]
+    async fn mock_vector_search_truncates_filters_and_tiebreaks() {
+        let store = MockGraphStore::new();
+        let a = store.create_node("Entity").await.unwrap();
+        let b = store.create_node("Entity").await.unwrap();
+        let other = store.create_node("Paper").await.unwrap();
+        // Two identical vectors: tie must break by ascending node id.
+        for id in [a, b] {
+            store
+                .add_vector("Entity", "embedding", id, vec![1.0, 1.0])
+                .await
+                .unwrap();
+        }
+        // Same vector under a different label — must be excluded.
+        store
+            .add_vector("Paper", "embedding", other, vec![1.0, 1.0])
+            .await
+            .unwrap();
+        let hits = store
+            .vector_search_direct("Entity", "embedding", &[1.0, 1.0], 1)
+            .await
+            .unwrap();
+        assert_eq!(hits.len(), 1, "k=1 truncates");
+        assert_eq!(hits[0].0, a, "tiebreak by ascending node id");
+        assert!(
+            hits[0].1 > 0.99,
+            "identical direction scores ~1: {}",
+            hits[0].1
+        );
+        // Paper-labelled vector stays invisible to an Entity search.
+        let all = store
+            .vector_search_direct("Entity", "embedding", &[1.0, 1.0], 10)
+            .await
+            .unwrap();
+        assert_eq!(all.len(), 2);
+        assert!(all.iter().all(|(id, _)| *id != other));
+    }
+
+    /// M424: GraphStore::vector_search returns the seeded node with its vid
+    /// and a real score (was: always empty).
+    #[tokio::test]
+    async fn mock_graph_store_vector_search_returns_seeded_node_with_vid() {
+        let store = MockGraphStore::new();
+        let node = store.create_node("Entity").await.unwrap();
+        store
+            .set_node_property_string(node, "vid", "entity:transformer:1".to_string())
+            .await
+            .unwrap();
+        store
+            .add_vector("Entity", "embedding", node, vec![1.0, 0.0, 0.0])
+            .await
+            .unwrap();
+        let results = store
+            .vector_search("Entity", "embedding", &[1.0, 0.0, 0.0], 5)
+            .await
+            .unwrap();
+        assert_eq!(results.len(), 1, "seeded node must be found");
+        assert_eq!(results[0].vid, "entity:transformer:1");
+        assert!((results[0].score - 1.0).abs() < 1e-6);
+        assert_eq!(
+            results[0].properties.get("vid").and_then(|v| v.as_str()),
+            Some("entity:transformer:1")
+        );
+        // Empty store under another label stays empty.
+        let empty = store
+            .vector_search("Paper", "embedding", &[1.0, 0.0, 0.0], 5)
+            .await
+            .unwrap();
+        assert!(empty.is_empty());
     }
 
     #[tokio::test]

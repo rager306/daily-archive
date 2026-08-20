@@ -1,5 +1,21 @@
 # Changelog
 
+### M424 Honest mock vector search and Rust stub audit
+
+- `MockGraphStore::vector_search_direct` was a fake: constant score 0.0,
+  query ignored, HashMap order, no k bound — and two tests pinned the lie
+  (kg-storage asserted `(node, 0.0)`; da-mcp asserted zero rows on a
+  seeded vector). M424 makes it honest: brute-force cosine with a
+  zero-norm guard, sorted score-desc with ascending node-id tiebreak,
+  truncated to k. `GraphStore::vector_search` on the Mock now returns the
+  seeded node (vid + stored props + real score) instead of always empty;
+  the da-mcp seeded test flips to asserting the real hit (MEM910).
+- `doc/STUB-AUDIT.md` returns as the Rust-era inventory (rust-stub-audit.v1):
+  every current stub/deferral with file:line evidence and disposition
+  (fake-fixed / honest-deferral / external-limitation / test-double).
+  The dangling Python-era reference in ingest.rs now points to ADR-053
+  Layer B and the audit doc. Governor pins the document. D127 locked.
+
 ### M423 Triage mode canary full vs detect-only
 
 - pdf-inspector exposes `PdfOptions::detect_only()` and `pages()` but the

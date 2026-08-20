@@ -1324,9 +1324,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_vector_search_seeded_does_not_error() {
-        // MockGraphStore vector path currently returns 0 rows (stubbed),
-        // but seeding must not error — contract is read-only + no panic.
+    async fn test_vector_search_seeded_returns_the_seeded_node() {
+        // M424: the Mock now ranks by real cosine, so a seeded vector is
+        // actually found (was: a pinned fake asserting zero rows).
         let store = kg_storage::MockGraphStore::new();
         use kg_embeddings::{Embedder, MockEmbedder};
         use kg_storage::DirectGraphStore;
@@ -1353,8 +1353,8 @@ mod tests {
             },
         )
         .await
-        .expect("vector_search should not error with seeded vector");
-        // Mock stub returns 0 rows today — assert no panic and row_count <= k.
+        .expect("vector_search must succeed with a seeded vector");
+        assert_eq!(result.row_count, 1, "seeded node must be found");
         assert!(result.row_count <= 5, "row_count must respect k");
     }
 

@@ -712,10 +712,10 @@ impl IngestUseCase {
             }
         }
 
-        // ADR-053 Layer B: Summary node creation is DEFERRED.
-        // Summary requires real summarization (extractive or LLM), not abstract_copy.
+        // ADR-053 Layer B: Summary node creation is DEFERRED until real
+        // summarization (extractive or LLM) exists — never abstract_copy.
         // Schema (SummarySchema + hasSummary edge) is ready for future wiring.
-        // See STUB-AUDIT.md gap #1 and #12.
+        // Tracked in doc/STUB-AUDIT.md (honest-deferral).
 
         // Section + citation metadata (enables Phase 3 extraction queries)
         let section_count = parsed.sections.len();

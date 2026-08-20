@@ -1,45 +1,31 @@
-# Continue — M423 implemented (pending GSD seal)
+# Continue — M424 implemented (pending GSD seal)
 
 ## Last action
 
-M423-f31d3r S01+S02 implemented (code green; GSD skip-delivered closeout next):
+M424-z0t487 S01+S02 implemented (code green; GSD skip-delivered closeout next):
 
-- S01 domain: `TriageModeDiff` (typed per-field agreement, Eq; confidence
-  is a 0.05 diagnostic band `TRIAGE_CONFIDENCE_EPSILON`). da-domain pdf
-  tests 15 passed.
-- S02 canary: `classify_sync_with_options` (product `classify_sync` stays
-  Full) + `examples/pdf_triage_canary.rs` (required-features
-  pdf-classifier; exit 0 agree / 2 divergence / 1 error; page scope is
-  canary-only with an explicit warning).
+- S01: `MockGraphStore` vector search honest — brute-force cosine
+  (zero-norm guard), score-desc + node-id tiebreak, k-truncate;
+  `GraphStore::vector_search` returns seeded node (vid + props + score).
+  da-mcp seeded test flipped from zero rows to the real hit. kg-storage
+  mock 17 passed; da-mcp vector 3; batch_ingest 20 (regression); clippy
+  kg-storage + da-mcp clean.
+- S02: `doc/STUB-AUDIT.md` (rust-stub-audit.v1) — 13 entries with
+  file:line evidence; ingest.rs dangling Python-era pointer re-pointed to
+  ADR-053 Layer B; governor pin `stub_audit_doc`.
 
-**Measured on hub PDF 2507.19457** (MEM916): Full = OCR pages 69+84
-suspected_garbled_text + encoding_issues=true, 5189ms. DetectOnly = zero
-OCR pages, no encoding issues, 309ms. Detect-only is 17x faster but blind
-to garbled text; product triage stays Full as a measured decision.
-Page-scoped detect-only also returns an empty OCR list — page scope can
-never feed the admission ratio.
-
-Governor pins: `pdf_triage_canary` (example) + `pdf_triage_options_surface`
-(adapter). hub_ocr_probe 2/2 green (regression intact).
+Zero `todo!`/`unimplemented!` in workspace src (scan method in the doc).
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M423 (UAT + sha256 validate + complete).
-   Note: pre-commit runs before the stale exec markers are superseded —
-   the `gsd_exec_false_success_evidence` flag (ids 03dc3c63, 71b30a3a from
-   red-first TDD runs piped through tail/echo) clears once the green state
-   is committed and a fresh preflight runs after the commit.
-2. Wave 2 pdf-inspector followUps are now exhausted honestly: TSR needs an
-   independent cell detector; ToUnicode repair has no pdf-inspector path;
-   detect-only is measured blind. Next candidates: P1 remote GraphStore is
-   DONE (M421); consider ToUnicode/markdown repair upstream or new debt.
+1. GSD skip-delivered closeout for M424 (UAT + sha256 validate + complete).
+2. Кандидаты следующего: MEM499 остаток — mock `query`/`query_readonly`
+   возвращают пустой QueryResult (документированный test-double дрейф);
+   либо свежий audit da-mcp/agent-plane на такие же пришпиленные фейки.
 
 ## Do not
 
-Unlock D127. Switch product triage to detect_only (measured blind, MEM916).
-Feed a page-scoped OCR list into garbled_ratio. Retry TSR without an
-independent cell detector. Soak-wakeup loops. Feature-gated code must pass
-default-build clippy. Governor `forbidden_patterns` are substring scans.
-Pipe cargo test through tail/echo — it masks non-zero exits and trips
-`gsd_exec_false_success_evidence`; capture with `; echo EXIT:$?` on the
-same line, never after a pipe.
+Unlock D127. Pin a fake with a test (MEM910). Unlock D127. Pipe cargo
+test through tail/echo. `#[deprecated]` fails clippy -D warnings in-crate.
+Resource cleanup `rm -rf target/debug/incremental` needs explicit user yes
+(MEM906; governor medium flag, disk only).
