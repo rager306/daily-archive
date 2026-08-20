@@ -1,5 +1,18 @@
 # Changelog
 
+### M428 Graph rank and method lineage sweep
+
+- `graph_rank` gained its first seeded structural test on the real
+  engine: a hub cited by two papers ranks first under PageRank, and WCC
+  reports correct component sizes (3+2). The algorithm path was
+  correct — untested code is now proven.
+- `get_method_lineage` still contained the M426 error-swallowing class:
+  two `if let Ok` blocks turned engine failures into silent empty
+  lineage. Errors now propagate as Err. Variable-length
+  `predecessor_of*1..N` paths are proven supported on the real engine
+  with a seeded transformer→vit chain. Zero `if let Ok` engine calls
+  remain in da-mcp. D127 locked.
+
 ### M427 Hybrid search on the real engine
 
 - `search_papers_hybrid` was the last untested da-mcp path: unit tests

@@ -664,31 +664,31 @@ pub async fn get_method_lineage(
         let cypher = format!(
             "MATCH (m:Method {{name: '{escaped}'}})-[:predecessor_of*1..{depth}]->(ancestor) RETURN ancestor.name, ancestor.vid, ancestor.paper_arxiv_id LIMIT 50"
         );
-        if let Ok(out) = run_readonly(store, &cypher).await {
-            if columns.is_empty() {
-                columns = vec![
-                    "ancestor_name".into(),
-                    "ancestor_vid".into(),
-                    "ancestor_arxiv_id".into(),
-                ];
-            }
-            records.extend(out.records);
+        // M428: engine errors propagate — a query failure must not look like
+        // an empty lineage (same fix class as M426 get_references).
+        let out = run_readonly(store, &cypher).await?;
+        if columns.is_empty() {
+            columns = vec![
+                "ancestor_name".into(),
+                "ancestor_vid".into(),
+                "ancestor_arxiv_id".into(),
+            ];
         }
+        records.extend(out.records);
     }
     if direction == "descendants" || direction == "both" {
         let cypher = format!(
             "MATCH (m:Method {{name: '{escaped}'}})<-[:predecessor_of*1..{depth}]-(descendant) RETURN descendant.name, descendant.vid, descendant.paper_arxiv_id LIMIT 50"
         );
-        if let Ok(out) = run_readonly(store, &cypher).await {
-            if columns.is_empty() {
-                columns = vec![
-                    "descendant_name".into(),
-                    "descendant_vid".into(),
-                    "descendant_arxiv_id".into(),
-                ];
-            }
-            records.extend(out.records);
+        let out = run_readonly(store, &cypher).await?;
+        if columns.is_empty() {
+            columns = vec![
+                "descendant_name".into(),
+                "descendant_vid".into(),
+                "descendant_arxiv_id".into(),
+            ];
         }
+        records.extend(out.records);
     }
     let row_count = records.len();
     Ok(CypherOutput {
@@ -988,6 +988,69 @@ pub async fn get_graph_stats(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// M428: pagerank must rank the seeded hub first; wcc must size the
+    /// components correctly. Proven on the real engine.
+    #[tokio::test]
+    async fn test_graph_rank_pagerank_hub_and_wcc_sizes_on_real_engine() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        // Component 1: hub cited by two papers (hub <- a, hub <- b).
+        let hub = store.create_node("Paper").await.unwrap();
+        let a = store.create_node("Paper").await.unwrap();
+        let b = store.create_node("Paper").await.unwrap();
+        store.create_edge(a, hub, "CITES").await.unwrap();
+        store.create_edge(b, hub, "CITES").await.unwrap();
+        // Component 2: isolated pair.
+        let c = store.create_node("Paper").await.unwrap();
+        let d = store.create_node("Paper").await.unwrap();
+        store.create_edge(c, d, "CITES").await.unwrap();
+
+        let ranked = graph_rank(
+            &store,
+            GraphRankParams {
+                label: "Paper".to_string(),
+                edge_type: Some("CITES".to_string()),
+                algorithm: Some("pagerank".to_string()),
+                limit: Some(5),
+            },
+        )
+        .await
+        .expect("pagerank must run on the real engine");
+        assert!(!ranked.results.is_empty(), "pagerank must return results");
+        assert_eq!(
+            ranked.results[0].node_id, hub,
+            "hub cited by two papers must rank first: {:?}",
+            ranked.results
+        );
+        assert!(ranked.results[0].score > ranked.results[1].score);
+
+        let components = graph_rank(
+            &store,
+            GraphRankParams {
+                label: "Paper".to_string(),
+                edge_type: Some("CITES".to_string()),
+                algorithm: Some("wcc".to_string()),
+                limit: Some(5),
+            },
+        )
+        .await
+        .expect("wcc must run on the real engine");
+        assert_eq!(
+            components.results.len(),
+            2,
+            "two components expected: {:?}",
+            components.results
+        );
+        assert_eq!(
+            components.results[0].score as u32, 3,
+            "largest component size 3"
+        );
+        assert_eq!(
+            components.results[1].score as u32, 2,
+            "second component size 2"
+        );
+    }
 
     #[tokio::test]
     async fn test_get_schema_returns_registered_labels() {
@@ -1580,6 +1643,55 @@ mod tests {
     }
 
     // ─── M366 S04: vector_search (test slices keep kg-embeddings pure) ───
+
+    /// M428: predecessor_of lineage proven on the real engine — ancestors
+    /// via variable-length paths, descendants via the reverse direction.
+    #[tokio::test]
+    async fn test_get_method_lineage_samyama_seeded_chain() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        // Chain: older -> newer means predecessor_of points from newer to
+        // older (transformer is a predecessor of vit).
+        let transformer = store.create_node("Method").await.unwrap();
+        store
+            .set_node_property_string(transformer, "name", "transformer".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(transformer, "vid", "method:transformer:1".to_string())
+            .await
+            .unwrap();
+        let vit = store.create_node("Method").await.unwrap();
+        store
+            .set_node_property_string(vit, "name", "vit".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(vit, "vid", "method:vit:1".to_string())
+            .await
+            .unwrap();
+        // vit's predecessor is transformer: vit -[:predecessor_of]-> transformer.
+        store
+            .create_edge(vit, transformer, "predecessor_of")
+            .await
+            .unwrap();
+        let lineage = get_method_lineage(
+            &store,
+            GetMethodLineageParams {
+                method: "vit".to_string(),
+                direction: Some("ancestors".to_string()),
+                depth: Some(2),
+            },
+        )
+        .await
+        .expect("lineage must run on the real engine");
+        assert_eq!(
+            lineage.row_count, 1,
+            "transformer must be returned as vit's ancestor: {lineage:?}"
+        );
+        let name = lineage.records[0][0].as_str().unwrap_or("");
+        assert_eq!(name, "transformer");
+    }
 
     #[tokio::test]
     async fn test_vector_search_rejects_empty_query() {
