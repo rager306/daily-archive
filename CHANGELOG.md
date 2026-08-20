@@ -18,6 +18,17 @@
   corpus probes tune the window from DATA without code changes.
 - Governor pins the window markers and the policy DATA fields.
   D127 remains locked.
+- Corpus probe (8 versioned catalog articles) moved the bottleneck past quote
+  length (measured quotes 32-150 chars, zero maxLength violations) into three
+  model-contract gaps, fixed in DATA `figure-analysis.v3`: `max_output_tokens`
+  4096 -> 8192 (Luna truncated JSON mid-payload at the token cap), citations
+  `section_id`/`path_id` must be copied verbatim from the grounded context
+  (model invented `sec-1~4:1~4` formats), relationship endpoints must reference
+  declared components.
+- New backlog: `equation_input_conversion` fires terminal when a formula falls
+  outside every section window, killing the whole journey for 3/8 probed
+  articles; typed missingness is the designed home for that case, not a
+  terminal failure (next slice).
 
 ### Figure context cache binds artifact identity
 

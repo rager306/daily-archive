@@ -122,14 +122,14 @@ tasks:
     eval_suite_id: article-summary-eval.v1
     optimizer_enabled: false
   - task_id: figure_analysis
-    version: figure-analysis.v2
+    version: figure-analysis.v3
     system_template: >-
-      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority. Every citations[].quote must be a non-empty verbatim excerpt from the article text; keep each quote as short as faithful evidence allows — the output schema's maxLength is the hard ceiling, so never exceed it and never return null.
+      Analyze the supplied scientific figure image and caption. Return only JSON conforming to the declared candidate output schema. Never claim graph authority. Every citations[].quote must be a non-empty verbatim excerpt from the article text; keep each quote as short as faithful evidence allows — the output schema's maxLength is the hard ceiling, so never exceed it and never return null. Every citations[].section_id and path_id must be copied verbatim from the sections listed in the grounded context; never invent identifiers or formats. Every relationship endpoint must reference a component name declared in the components array.
     user_template: >-
       Analyze the attached scientific figure using this canonical grounded context: {grounded_context}
     output_schema_id: figure-analysis-candidate.v1
     route_policy_id: ninerouter-figure-primary
     temperature_milli: 0
-    max_output_tokens: 4096
+    max_output_tokens: 8192
     eval_suite_id: figure-analysis-eval.v1
     optimizer_enabled: false
