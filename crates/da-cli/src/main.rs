@@ -1252,16 +1252,76 @@ async fn load_snapshot(input: &str) {
 }
 
 async fn graph_stats(snapshot: Option<&std::path::Path>) {
-    let graph = open_graph_store_with_optional_snapshot(snapshot).await;
-    let nodes = graph.node_count().await;
-    let edges = graph.edge_count().await;
-    println!("daily-archive v2 — graph statistics");
-    println!("  Nodes: {}", nodes);
-    println!("  Edges: {}", edges);
-    if nodes == 0 {
-        println!(
-            "  ⚠  Graph is empty (process-local in-memory store).\n     Use `da graph-stats --snapshot <file.sgsnap>` to load from disk in this process.\n     `da load-snapshot` alone does not feed later commands (store dies on exit).\n     Durable write path: `da batch-ingest --output <snapshot.sgsnap>`."
-        );
+    use da_ports::graph_store::GraphStore;
+    use kg_storage::GraphMode;
+
+    match GraphMode::from_env() {
+        Ok(GraphMode::Remote) => {
+            if let Err(error) = graph_query::reject_remote_snapshot(snapshot) {
+                eprintln!("{error}");
+                std::process::exit(error.exit_code());
+            }
+            let store = match graph_query::open_remote_store_from_env() {
+                Ok(store) => store,
+                Err(error) => {
+                    eprintln!("{error}");
+                    std::process::exit(error.exit_code());
+                }
+            };
+            let nodes = match store
+                .query_readonly("daily_archive", graph_query::REMOTE_NODE_COUNT_CYPHER)
+                .await
+            {
+                Ok(result) => match graph_query::count_from_query_result(&result) {
+                    Ok(n) => n,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        std::process::exit(error.exit_code());
+                    }
+                },
+                Err(error) => {
+                    eprintln!("❌ Query failed: {error}");
+                    std::process::exit(1);
+                }
+            };
+            let edges = match store
+                .query_readonly("daily_archive", graph_query::REMOTE_EDGE_COUNT_CYPHER)
+                .await
+            {
+                Ok(result) => match graph_query::count_from_query_result(&result) {
+                    Ok(n) => n,
+                    Err(error) => {
+                        eprintln!("{error}");
+                        std::process::exit(error.exit_code());
+                    }
+                },
+                Err(error) => {
+                    eprintln!("❌ Query failed: {error}");
+                    std::process::exit(1);
+                }
+            };
+            println!("daily-archive v2 — graph statistics");
+            println!("  Nodes: {}", nodes);
+            println!("  Edges: {}", edges);
+            println!("  Plane: remote RESP read (HOT writes unsupported)");
+        }
+        Ok(GraphMode::Embedded) => {
+            let graph = open_graph_store_with_optional_snapshot(snapshot).await;
+            let nodes = graph.node_count().await;
+            let edges = graph.edge_count().await;
+            println!("daily-archive v2 — graph statistics");
+            println!("  Nodes: {}", nodes);
+            println!("  Edges: {}", edges);
+            if nodes == 0 {
+                println!(
+                    "  ⚠  Graph is empty (process-local in-memory store).\n     Use `da graph-stats --snapshot <file.sgsnap>` to load from disk in this process.\n     `da load-snapshot` alone does not feed later commands (store dies on exit).\n     Durable write path: `da batch-ingest --output <snapshot.sgsnap>`."
+                );
+            }
+        }
+        Err(error) => {
+            eprintln!("❌ graph store open failed: {error}");
+            std::process::exit(1);
+        }
     }
 }
 
@@ -1323,11 +1383,35 @@ async fn query_graph(
     println!("Query kind: {kind}");
     println!("Cypher: {cypher}");
 
-    // Execute via SamyamaGraphStore (WARM path — embedded Cypher).
-    // Optional --snapshot imports disk sgsnap into this process first (M334).
+    // Embedded: SamyamaGraphStore (WARM path). Remote: RESP read plane.
+    // Optional --snapshot is embedded-only (M334 / M421).
     use da_ports::graph_store::GraphStore;
-    let store = open_graph_store_with_optional_snapshot(snapshot).await;
-    match store.query_readonly("daily_archive", &cypher).await {
+    use kg_storage::GraphMode;
+    let result = match GraphMode::from_env() {
+        Ok(GraphMode::Remote) => {
+            if let Err(error) = graph_query::reject_remote_snapshot(snapshot) {
+                eprintln!("{error}");
+                std::process::exit(error.exit_code());
+            }
+            let store = match graph_query::open_remote_store_from_env() {
+                Ok(store) => store,
+                Err(error) => {
+                    eprintln!("{error}");
+                    std::process::exit(error.exit_code());
+                }
+            };
+            store.query_readonly("daily_archive", &cypher).await
+        }
+        Ok(GraphMode::Embedded) => {
+            let store = open_graph_store_with_optional_snapshot(snapshot).await;
+            store.query_readonly("daily_archive", &cypher).await
+        }
+        Err(error) => {
+            eprintln!("❌ graph store open failed: {error}");
+            std::process::exit(1);
+        }
+    };
+    match result {
         Ok(result) => {
             println!("Columns: {:?}", result.columns);
             println!("Records: {}", result.records.len());

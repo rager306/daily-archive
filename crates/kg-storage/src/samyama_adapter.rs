@@ -60,18 +60,19 @@ impl SamyamaGraphStore {
 
     /// Open store for an already-resolved [`crate::GraphMode`].
     ///
-    /// `Embedded` → process-local Samyama; `Remote` → typed not-configured error.
+    /// `Embedded` → process-local Samyama; `Remote` → typed writes-unsupported
+    /// (never a fake HOT Samyama store; the RESP read plane is `RemoteGraphStore`).
     pub fn open_for_mode(mode: crate::GraphMode) -> Result<Self, crate::GraphModeError> {
         // M332: refuse mistaken RocksDB path env (persistence not wired for CLI).
         crate::graph_mode::refuse_persistence_path_from_env()?;
         match mode {
             crate::GraphMode::Embedded => Ok(Self::from_env()),
-            crate::GraphMode::Remote => Err(crate::GraphModeError::RemoteNotConfigured),
+            crate::GraphMode::Remote => Err(crate::GraphModeError::RemoteWritesUnsupported),
         }
     }
 
     /// Mode-aware open: `DA_GRAPH_MODE=embedded` (default) → process-local store;
-    /// `remote` → [`crate::GraphModeError::RemoteNotConfigured`] (no fake client).
+    /// `remote` → [`crate::GraphModeError::RemoteWritesUnsupported`] (no fake HOT store).
     /// Non-empty `DA_GRAPH_DATA_PATH` → [`crate::GraphModeError::PersistenceNotConfigured`].
     pub fn try_from_env() -> Result<Self, crate::GraphModeError> {
         Self::open_for_mode(crate::GraphMode::from_env()?)
@@ -810,16 +811,17 @@ mod mode_tests {
     }
 
     #[test]
-    fn open_for_mode_remote_not_configured() {
+    fn open_for_mode_remote_writes_unsupported() {
         // Avoid unwrap_err: SamyamaGraphStore is not Debug.
         let result = SamyamaGraphStore::open_for_mode(GraphMode::Remote);
         let err = match result {
-            Ok(_) => panic!("remote must not open a store"),
+            Ok(_) => panic!("remote must not open a Samyama HOT store"),
             Err(e) => e,
         };
-        assert_eq!(err, GraphModeError::RemoteNotConfigured);
+        assert_eq!(err, GraphModeError::RemoteWritesUnsupported);
         let msg = err.to_string();
-        assert!(msg.contains("not configured"), "{msg}");
-        assert!(msg.contains("embedded"), "{msg}");
+        assert!(msg.contains("writes"), "{msg}");
+        assert!(!msg.contains("not shipped"), "{msg}");
+        assert!(!msg.contains("unshipped"), "{msg}");
     }
 }

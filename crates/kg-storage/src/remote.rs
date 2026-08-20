@@ -29,8 +29,11 @@ pub struct RemoteGraphConfig {
 }
 
 impl RemoteGraphConfig {
-    /// Env key: remote endpoint `host:port` (default [`DEFAULT_REMOTE_ENDPOINT`]).
+    /// Canonical env key: remote endpoint `host:port` (default [`DEFAULT_REMOTE_ENDPOINT`]).
     pub const ENV_ENDPOINT: &'static str = "DA_REMOTE_GRAPH_ENDPOINT";
+    /// Explicit alias of [`Self::ENV_ENDPOINT`]. Used by `da health` / `da graph-query`.
+    /// If both keys are set to different values, resolution fails closed.
+    pub const ENV_ENDPOINT_ALIAS: &'static str = "DA_GRAPH_ENDPOINT";
     /// Env key: per-operation timeout in whole seconds (default [`DEFAULT_TIMEOUT`]; zero rejected).
     pub const ENV_TIMEOUT_SECONDS: &'static str = "DA_REMOTE_GRAPH_TIMEOUT_SECONDS";
     /// Env key: max response bytes (default [`DEFAULT_MAX_RESPONSE_BYTES`]; zero rejected).
@@ -44,9 +47,60 @@ impl RemoteGraphConfig {
         Self::from_env_map(&std::env::vars().collect::<BTreeMap<_, _>>())
     }
 
+    /// Like [`Self::from_env`], but an unset endpoint is a typed error instead
+    /// of the loopback default. CLI remote reads use this so a missing key
+    /// cannot silently talk to `127.0.0.1:16379`.
+    pub fn from_env_require_endpoint() -> Result<Self, EnvParseError> {
+        Self::from_env_map_require_endpoint(&std::env::vars().collect::<BTreeMap<_, _>>())
+    }
+
+    /// Testable map-backed variant of [`Self::from_env_require_endpoint`].
+    pub fn from_env_map_require_endpoint(
+        map: &BTreeMap<String, String>,
+    ) -> Result<Self, EnvParseError> {
+        match Self::resolve_endpoint_from_map(map)? {
+            None => Err(EnvParseError::Invalid {
+                key: Self::ENV_ENDPOINT,
+                value: String::new(),
+                reason: format!(
+                    "unset; set {} (canonical) or alias {}",
+                    Self::ENV_ENDPOINT,
+                    Self::ENV_ENDPOINT_ALIAS
+                ),
+            }),
+            Some(_) => Self::from_env_map(map),
+        }
+    }
+
+    /// Resolve the remote endpoint from a map: canonical key first, then alias.
+    /// Both unset → `Ok(None)` (caller may default). Both set and unequal →
+    /// typed [`EnvParseError::Invalid`] (no silent pick).
+    pub fn resolve_endpoint_from_map(
+        map: &BTreeMap<String, String>,
+    ) -> Result<Option<String>, EnvParseError> {
+        let canonical = env_optional_string(map, Self::ENV_ENDPOINT)?;
+        let alias = env_optional_string(map, Self::ENV_ENDPOINT_ALIAS)?;
+        match (canonical, alias) {
+            (Some(canonical), Some(alias)) if canonical != alias => Err(EnvParseError::Invalid {
+                key: Self::ENV_ENDPOINT,
+                value: canonical,
+                reason: format!(
+                    "conflicts with {}={alias:?}; set only {} (canonical) or the alias {}",
+                    Self::ENV_ENDPOINT_ALIAS,
+                    Self::ENV_ENDPOINT,
+                    Self::ENV_ENDPOINT_ALIAS
+                ),
+            }),
+            (Some(endpoint), Some(_)) | (Some(endpoint), None) | (None, Some(endpoint)) => {
+                Ok(Some(endpoint))
+            }
+            (None, None) => Ok(None),
+        }
+    }
+
     /// Testable map-backed variant of [`Self::from_env`].
     pub fn from_env_map(map: &BTreeMap<String, String>) -> Result<Self, EnvParseError> {
-        let endpoint = env_optional_string(map, Self::ENV_ENDPOINT)?
+        let endpoint = Self::resolve_endpoint_from_map(map)?
             .unwrap_or_else(|| DEFAULT_REMOTE_ENDPOINT.to_string());
         let timeout_secs =
             env_u64(map, Self::ENV_TIMEOUT_SECONDS)?.unwrap_or(DEFAULT_TIMEOUT.as_secs());
@@ -585,5 +639,75 @@ mod tests {
                 ..
             } if value == "noport"
         ));
+    }
+
+    #[test]
+    fn remote_endpoint_alias_is_explicit_and_conflicts_fail_closed() {
+        let alias_only = [(
+            RemoteGraphConfig::ENV_ENDPOINT_ALIAS.to_string(),
+            "10.1.2.3:16379".to_string(),
+        )]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        let config = RemoteGraphConfig::from_env_map(&alias_only).expect("alias");
+        assert_eq!(config.endpoint, "10.1.2.3:16379");
+
+        let equal = [
+            (
+                RemoteGraphConfig::ENV_ENDPOINT.to_string(),
+                "10.1.2.3:16379".to_string(),
+            ),
+            (
+                RemoteGraphConfig::ENV_ENDPOINT_ALIAS.to_string(),
+                "10.1.2.3:16379".to_string(),
+            ),
+        ]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        let config = RemoteGraphConfig::from_env_map(&equal).expect("equal keys");
+        assert_eq!(config.endpoint, "10.1.2.3:16379");
+
+        let conflict = [
+            (
+                RemoteGraphConfig::ENV_ENDPOINT.to_string(),
+                "10.1.2.3:16379".to_string(),
+            ),
+            (
+                RemoteGraphConfig::ENV_ENDPOINT_ALIAS.to_string(),
+                "10.9.9.9:1".to_string(),
+            ),
+        ]
+        .into_iter()
+        .collect::<BTreeMap<_, _>>();
+        let err = RemoteGraphConfig::from_env_map(&conflict).unwrap_err();
+        match err {
+            EnvParseError::Invalid { key, reason, .. } => {
+                assert_eq!(key, RemoteGraphConfig::ENV_ENDPOINT);
+                assert!(
+                    reason.contains(RemoteGraphConfig::ENV_ENDPOINT_ALIAS),
+                    "{reason}"
+                );
+                assert!(reason.contains("conflicts"), "{reason}");
+            }
+            other => panic!("expected Invalid conflict, got {other:?}"),
+        }
+
+        assert_eq!(
+            RemoteGraphConfig::resolve_endpoint_from_map(&BTreeMap::new()).unwrap(),
+            None
+        );
+
+        let missing =
+            RemoteGraphConfig::from_env_map_require_endpoint(&BTreeMap::new()).unwrap_err();
+        match missing {
+            EnvParseError::Invalid { key, reason, .. } => {
+                assert_eq!(key, RemoteGraphConfig::ENV_ENDPOINT);
+                assert!(
+                    reason.contains(RemoteGraphConfig::ENV_ENDPOINT_ALIAS),
+                    "{reason}"
+                );
+            }
+            other => panic!("expected Invalid missing endpoint, got {other:?}"),
+        }
     }
 }

@@ -1,5 +1,20 @@
 # Changelog
 
+### M421 Remote mode opens the existing RESP read plane
+
+- `DA_GRAPH_MODE=remote` no longer lies that the client is unshipped.
+  `RemoteGraphStore` already spoke PING / GRAPH.RO_QUERY / DA.IDENTITY;
+  `open_for_mode(Remote)` now returns typed `RemoteWritesUnsupported`
+  instead of `RemoteNotConfigured`. Missing endpoint is
+  `RemoteEndpointMissing`.
+- Canonical env key is `DA_REMOTE_GRAPH_ENDPOINT`; `DA_GRAPH_ENDPOINT` is
+  an explicit alias. Both set to different values fails closed (no silent
+  pick). `from_env_require_endpoint` refuses the loopback default so a
+  missing key cannot silently talk to 127.0.0.1:16379.
+- `da query` and `da graph-stats` honor remote mode via `RemoteGraphStore`
+  (`query_readonly` / Cypher counts). `--snapshot` stays embedded-only.
+  Ingest/extract/load still refuse HOT writes. D127 remains locked.
+
 ### M420 DATA garbled-page ratio governs GROBID admission
 
 - `PdfTriagePolicy` now carries `max_garbled_page_percent` (u8, 0..=100,

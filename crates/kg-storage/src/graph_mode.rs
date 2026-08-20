@@ -1,8 +1,10 @@
 //! Graph store open mode (Wave 3 entry — M305 / M332).
 //!
 //! Resolves `DA_GRAPH_MODE` into a typed mode. Default is **embedded**
-//! (process-local Samyama). **remote** is declared but not configured —
-//! opening remote returns [`GraphModeError::RemoteNotConfigured`] with no
+//! (process-local Samyama). **remote** is a RESP read plane
+//! ([`crate::RemoteGraphStore`]); opening a Samyama HOT store in remote
+//! mode returns [`GraphModeError::RemoteWritesUnsupported`]. A missing
+//! endpoint is [`GraphModeError::RemoteEndpointMissing`]. There is no
 //! fake success and no server auto-start.
 //!
 //! Env: `DA_GRAPH_MODE=embedded|remote` (case-insensitive). Unset → embedded.
@@ -19,7 +21,8 @@ use std::fmt;
 pub enum GraphMode {
     /// Process-local in-memory Samyama (today's default).
     Embedded,
-    /// Future remote Samyama daemon client. Not configured yet.
+    /// Remote RESP read plane ([`crate::RemoteGraphStore`]).
+    /// HOT DirectGraphStore writes stay unsupported.
     Remote,
 }
 
@@ -53,10 +56,22 @@ impl GraphMode {
 pub enum GraphModeError {
     /// `DA_GRAPH_MODE` set to an unsupported value.
     InvalidMode { value: String },
-    /// Mode is remote but no remote client/URL is configured yet.
-    RemoteNotConfigured,
+    /// Mode is remote and the operator asked for a Samyama HOT store.
+    /// The RESP read plane exists; writes/import/vector are unsupported.
+    RemoteWritesUnsupported,
+    /// Mode is remote but neither `DA_REMOTE_GRAPH_ENDPOINT` nor its alias
+    /// `DA_GRAPH_ENDPOINT` is set.
+    RemoteEndpointMissing,
     /// `DA_GRAPH_DATA_PATH` set but RocksDB persistence is not wired for CLI open.
     PersistenceNotConfigured { path: String },
+}
+
+impl GraphModeError {
+    /// Historical name kept as a constructor for call sites that still
+    /// mean "do not open a Samyama HOT store under remote mode".
+    pub const fn remote_not_configured() -> Self {
+        Self::RemoteWritesUnsupported
+    }
 }
 
 impl fmt::Display for GraphModeError {
@@ -67,13 +82,21 @@ impl fmt::Display for GraphModeError {
                 "invalid {}: {value:?} (expected embedded or remote)",
                 GraphMode::ENV_KEY
             ),
-            Self::RemoteNotConfigured => write!(
+            Self::RemoteWritesUnsupported => write!(
                 f,
-                "{}=remote is not configured yet (Wave 3 remote client not shipped). \
-                 Use embedded (default) or unset {}. \
-                 Do not expect cross-process graph state until a Samyama daemon is wired.",
+                "{}=remote refuses Samyama HOT writes (ingest/extract/load). \
+                 Use the RESP read plane (`da graph-query --mode remote`, `da query`/`graph-stats`) \
+                 or unset {} for embedded. Remote writes stay unsupported; D127 locked.",
                 GraphMode::ENV_KEY,
                 GraphMode::ENV_KEY
+            ),
+            Self::RemoteEndpointMissing => write!(
+                f,
+                "{}=remote needs {} (canonical) or alias {}. \
+                 Daemon auto-start is forbidden.",
+                GraphMode::ENV_KEY,
+                crate::RemoteGraphConfig::ENV_ENDPOINT,
+                crate::RemoteGraphConfig::ENV_ENDPOINT_ALIAS
             ),
             Self::PersistenceNotConfigured { path } => write!(
                 f,
@@ -153,11 +176,24 @@ mod tests {
     }
 
     #[test]
-    fn remote_not_configured_message_is_actionable() {
-        let msg = GraphModeError::RemoteNotConfigured.to_string();
+    fn remote_writes_unsupported_message_is_actionable() {
+        let msg = GraphModeError::RemoteWritesUnsupported.to_string();
         assert!(msg.contains("remote"), "{msg}");
-        assert!(msg.contains("not configured"), "{msg}");
-        assert!(msg.contains("embedded"), "{msg}");
+        assert!(msg.contains("writes"), "{msg}");
+        assert!(!msg.contains("not shipped"), "{msg}");
+        assert!(!msg.contains("unshipped"), "{msg}");
+        assert!(
+            msg.contains("embedded") || msg.contains("graph-query"),
+            "{msg}"
+        );
+    }
+
+    #[test]
+    fn remote_endpoint_missing_message_names_canonical_and_alias() {
+        let msg = GraphModeError::RemoteEndpointMissing.to_string();
+        assert!(msg.contains("DA_REMOTE_GRAPH_ENDPOINT"), "{msg}");
+        assert!(msg.contains("DA_GRAPH_ENDPOINT"), "{msg}");
+        assert!(!msg.contains("not shipped"), "{msg}");
     }
 
     #[test]

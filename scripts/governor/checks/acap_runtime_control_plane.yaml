@@ -268,6 +268,25 @@ source_markers:
     required_patterns:
     - 'max_garbled_page_percent:'
     - 'fail_open:'
+  remote_writes_unsupported:
+    path: crates/kg-storage/src/graph_mode.rs
+    required_patterns:
+    - RemoteWritesUnsupported
+    - RemoteEndpointMissing
+    forbidden_patterns:
+    - 'is not configured yet'
+  remote_endpoint_alias:
+    path: crates/kg-storage/src/remote.rs
+    required_patterns:
+    - ENV_ENDPOINT_ALIAS
+    - DA_GRAPH_ENDPOINT
+    - resolve_endpoint_from_map
+  remote_query_read_plane:
+    path: crates/da-cli/src/main.rs
+    required_patterns:
+    - open_remote_store_from_env
+    - reject_remote_snapshot
+    - REMOTE_NODE_COUNT_CYPHER
   ingest_content_embedding_replace:
     path: crates/da-application/src/ingest.rs
     required_patterns:

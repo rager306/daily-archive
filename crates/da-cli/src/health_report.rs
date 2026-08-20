@@ -35,7 +35,7 @@ pub fn remote_error_class(message: &str) -> String {
 pub fn format_remote_graph_health_lines(status: &RemoteReadHealth) -> Vec<String> {
     let read_line = match status {
         RemoteReadHealth::MissingEndpoint => {
-            "❌ not configured (set DA_GRAPH_ENDPOINT=host:port)".into()
+            "❌ not configured (set DA_REMOTE_GRAPH_ENDPOINT or alias DA_GRAPH_ENDPOINT)".into()
         }
         RemoteReadHealth::Reachable => "✅ reachable (bounded scalar reads)".into(),
         RemoteReadHealth::Unreachable { error_class } => {
@@ -127,7 +127,7 @@ pub fn d127_import_status_line() -> String {
 
 /// Operator tip for multi-process health path (M307–M310).
 pub fn wave3_tip() -> &'static str {
-    "  tip: scalar remote reads use `da graph-query --mode remote --endpoint HOST:PORT`; HOT GraphMode::remote writes remain intentionally not configured"
+    "  tip: scalar remote reads use `da graph-query --mode remote --endpoint HOST:PORT`; HOT writes stay RemoteWritesUnsupported"
 }
 
 /// Format graph section lines for health output.
@@ -151,8 +151,9 @@ pub fn format_graph_health_lines(
     } else {
         lines.push(format!("  Samyama Graph:  ❌ not open ({detail})"));
         let show_tip = mode_text.eq_ignore_ascii_case("remote")
-            || detail.contains("RemoteNotConfigured")
-            || detail.contains("remote is not configured");
+            || detail.contains("RemoteWritesUnsupported")
+            || detail.contains("RemoteEndpointMissing")
+            || detail.contains("refuses Samyama HOT writes");
         if show_tip {
             lines.push(wave3_tip().to_string());
         }
@@ -163,8 +164,12 @@ pub fn format_graph_health_lines(
 /// Human detail for open / mode failures (stable tokens for tests/scripts).
 pub fn open_error_detail(err: &GraphModeError) -> String {
     match err {
-        GraphModeError::RemoteNotConfigured => {
-            "RemoteNotConfigured — full remote GraphStore not wired".into()
+        GraphModeError::RemoteWritesUnsupported => {
+            "RemoteWritesUnsupported — RESP read plane exists; HOT writes stay unsupported".into()
+        }
+        GraphModeError::RemoteEndpointMissing => {
+            "RemoteEndpointMissing — set DA_REMOTE_GRAPH_ENDPOINT (canonical) or alias DA_GRAPH_ENDPOINT"
+                .into()
         }
         GraphModeError::InvalidMode { value } => format!("InvalidMode({value})"),
         GraphModeError::PersistenceNotConfigured { path } => format!(
@@ -182,7 +187,9 @@ mod tests {
         let missing =
             format_remote_graph_health_lines(&RemoteReadHealth::MissingEndpoint).join("\n");
         assert!(missing.contains("not configured"));
-        assert!(missing.contains("DA_GRAPH_ENDPOINT"));
+        assert!(
+            missing.contains("DA_GRAPH_ENDPOINT") || missing.contains("DA_REMOTE_GRAPH_ENDPOINT")
+        );
         assert!(missing.contains("Remote writes:  ⛔ unsupported"));
         let reachable = format_remote_graph_health_lines(&RemoteReadHealth::Reachable).join("\n");
         assert!(reachable.contains("✅ reachable"));
@@ -216,13 +223,15 @@ mod tests {
     }
 
     #[test]
-    fn remote_failure_includes_tip_and_not_configured() {
-        let detail = open_error_detail(&GraphModeError::RemoteNotConfigured);
+    fn remote_failure_includes_tip_and_writes_unsupported() {
+        let detail = open_error_detail(&GraphModeError::RemoteWritesUnsupported);
         let lines = format_graph_health_lines("remote", false, false, &detail);
         let joined = lines.join("\n");
         assert!(joined.contains("DA_GRAPH_MODE:  remote"));
         assert!(joined.contains("❌ not open"));
-        assert!(joined.contains("RemoteNotConfigured"));
+        assert!(joined.contains("RemoteWritesUnsupported"));
+        assert!(!joined.contains("not shipped"));
+        assert!(!joined.contains("not wired"));
         assert!(joined.contains("graph-query"));
         assert!(joined.contains("scalar remote reads"));
         assert!(joined.contains("HOT"));
