@@ -199,30 +199,50 @@ pub async fn search_papers(
     };
     let out = run_readonly(store, &cypher).await?;
     if out.row_count > 0 {
-        // Post-filter for case-insensitive match in case Mock returns unfiltered.
-        let needle = query.to_lowercase();
-        // Column 1 is p.title (Cypher returns title second).
-        let filtered: Vec<Vec<serde_json::Value>> = out
-            .records
-            .into_iter()
-            .filter(|row| {
-                let title = row.get(1).and_then(|v| v.as_str()).unwrap_or("");
-                if title.is_empty() {
-                    // Original mock records have papers over raw nodes; include.
-                    return true;
-                }
-                title.to_lowercase().contains(&needle)
-            })
-            .take(limit)
-            .collect();
-        let row_count = filtered.len();
-        return Ok(CypherOutput {
-            columns: out.columns,
-            records: filtered,
-            row_count,
-        });
+        // M425: title-mode post-filter only — in full mode rows may match on
+        // abstract or topics that are not in the RETURN projection, so a
+        // title-only filter would erase legitimate engine hits.
+        if mode != "full" {
+            let needle = query.to_lowercase();
+            // Column 1 is p.title (Cypher returns title second).
+            let filtered: Vec<Vec<serde_json::Value>> = out
+                .records
+                .clone()
+                .into_iter()
+                .filter(|row| {
+                    let title = row.get(1).and_then(|v| v.as_str()).unwrap_or("");
+                    if title.is_empty() {
+                        // Original mock records have papers over raw nodes; include.
+                        return true;
+                    }
+                    title.to_lowercase().contains(&needle)
+                })
+                .take(limit)
+                .collect();
+            let row_count = filtered.len();
+            return Ok(CypherOutput {
+                columns: out.columns,
+                records: filtered,
+                row_count,
+            });
+        }
+        return Ok(out);
     }
-    Ok(out)
+    // M425: engine CONTAINS is case-sensitive, so a lowercase query misses
+    // uppercase titles. Retry with a case-normalized Cypher (toLower on both
+    // sides, coalesce so missing optional properties do not type-error).
+    let needle = escaped.to_lowercase();
+    let retry_cypher = if mode == "full" {
+        format!(
+            "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS '{needle}' OR toLower(coalesce(p.abstract_text, '')) CONTAINS '{needle}' OR toLower(coalesce(p.topics, '')) CONTAINS '{needle}' RETURN p.arxiv_id, p.title LIMIT {limit}"
+        )
+    } else {
+        format!(
+            "MATCH (p:Paper) WHERE toLower(p.title) CONTAINS '{needle}' RETURN p.arxiv_id, p.title LIMIT {limit}"
+        )
+    };
+    let retry = run_readonly(store, &retry_cypher).await?;
+    Ok(retry)
 }
 
 /// Get entities linked to a paper (read-only). Thin wrapper over MENTIONS edges.
@@ -1123,6 +1143,86 @@ mod tests {
         assert_eq!(result.row_count, 0);
     }
 
+    /// M425: query-path tools must be proven against the real in-process
+    /// Samyama engine — MockGraphStore has no Cypher (documented test-double
+    /// drift), so Mock-based seeding tests could only pin empty results.
+    #[tokio::test]
+    async fn test_get_paper_samyama_finds_seeded_paper() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let n = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(n, "arxiv_id", "2212.14024".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(n, "title", "The Relevance of Search".to_string())
+            .await
+            .unwrap();
+        let result = get_paper(
+            &store,
+            GetPaperParams {
+                arxiv_id: "2212.14024".to_string(),
+            },
+        )
+        .await
+        .expect("get_paper must run against the real engine");
+        assert_eq!(
+            result.row_count, 1,
+            "seeded paper must be found: {result:?}"
+        );
+        let title = result.records[0]
+            .get(1)
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(title, "The Relevance of Search");
+    }
+
+    /// M425 probe: engine CONTAINS is case-sensitive; the Rust post-filter
+    /// can only narrow engine hits, never add case-insensitive matches.
+    #[tokio::test]
+    async fn test_search_papers_samyama_exact_case_finds_seeded() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let n = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(n, "title", "Attention Is All You Need".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(n, "arxiv_id", "1706.03762".to_string())
+            .await
+            .unwrap();
+        let exact = search_papers(
+            &store,
+            None,
+            SearchPapersParams {
+                query: "Attention".to_string(),
+                limit: Some(5),
+                mode: None,
+            },
+        )
+        .await
+        .expect("exact-case search must run");
+        assert_eq!(exact.row_count, 1, "exact case must find: {exact:?}");
+
+        let lower = search_papers(
+            &store,
+            None,
+            SearchPapersParams {
+                query: "attention".to_string(),
+                limit: Some(5),
+                mode: None,
+            },
+        )
+        .await
+        .expect("lowercase search must run");
+        assert_eq!(
+            lower.row_count, 1,
+            "case-insensitive claim must hold on the real engine: {lower:?}"
+        );
+    }
+
     #[tokio::test]
     async fn test_get_sections_rejects_empty_arxiv_id() {
         let store = kg_storage::MockGraphStore::new();
@@ -1172,13 +1272,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_search_papers_case_insensitive_on_mock() {
-        // MockGraphStore stores Paper title verbatim; search_papers
-        // does case-insensitive CONTAINS via Rust post-filter.
-        let store = kg_storage::MockGraphStore::new();
-        // Seed: create two Paper nodes with titles.
-        // MockGraphStore::create_node is used via DirectGraphStore impl.
+    async fn test_search_papers_case_insensitive_finds_seeded_on_real_engine() {
+        // M425: proven against the real in-process Samyama engine — the old
+        // Mock test could only pin "no panic" because Mock has no Cypher.
         use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
         let n1 = store.create_node("Paper").await.unwrap();
         store
             .set_node_property_string(n1, "title", "Attention Is All You Need".to_string())
@@ -1197,11 +1295,6 @@ mod tests {
             .set_node_property_string(n2, "arxiv_id", "2112.10752".to_string())
             .await
             .unwrap();
-        // MockGraphStore.query_readonly returns constructed CypherOutput via
-        // get_nodes_by_label filtering; but read path constructs via Cypher.
-        // On Mock, query_readonly for search uses MATCH Paper — Mock returns
-        // filtered by Cypher; fallback: if out is empty (Mock has no Cypher
-        // index), search_papers returns empty. We just assert no error.
         let result = search_papers(
             &store,
             None,
@@ -1212,10 +1305,13 @@ mod tests {
             },
         )
         .await
-        .expect("search_papers should not error after seed");
-        // MockGraphStore may return 0 or 1 depending on Cypher support.
-        // At minimum, it must not error and must return at most limit.
-        assert!(result.row_count <= 1);
+        .expect("lowercase search must run on the real engine");
+        assert_eq!(
+            result.row_count, 1,
+            "must find exactly the matching paper: {result:?}"
+        );
+        let found_id = result.records[0][0].as_str().unwrap_or("");
+        assert_eq!(found_id, "1706.03762");
     }
 
     // ─── M366 S02: get_entities / validate_node ───
@@ -1249,6 +1345,44 @@ mod tests {
         .await
         .expect("get_entities should not error on empty mock");
         assert_eq!(result.row_count, 0);
+    }
+
+    /// M425: MENTIONS traversal proven on the real engine.
+    #[tokio::test]
+    async fn test_get_entities_samyama_returns_mentions_linked_entity() {
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let paper = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(paper, "arxiv_id", "2212.14024".to_string())
+            .await
+            .unwrap();
+        let entity = store.create_node("Entity").await.unwrap();
+        store
+            .set_node_property_string(entity, "vid", "entity:search:1".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(entity, "entity_type", "Method".to_string())
+            .await
+            .unwrap();
+        store.create_edge(paper, entity, "MENTIONS").await.unwrap();
+        let result = get_entities(
+            &store,
+            GetEntitiesParams {
+                arxiv_id: "2212.14024".to_string(),
+                entity_type: None,
+                limit: Some(10),
+            },
+        )
+        .await
+        .expect("get_entities must run on the real engine");
+        assert_eq!(
+            result.row_count, 1,
+            "MENTIONS-linked entity must be returned: {result:?}"
+        );
+        let vid = result.records[0][0].as_str().unwrap_or("");
+        assert_eq!(vid, "entity:search:1");
     }
 
     #[tokio::test]
@@ -1388,11 +1522,63 @@ mod tests {
         assert_eq!(result.char_count, 0);
     }
 
+    /// M425: engine-contract + tool-parity regression — search_papers must
+    /// return exactly what its raw Cypher returns on the real engine. This
+    /// is the test shape that exposed two production bugs the Mock could
+    /// never see: (1) the title-only post-filter erasing full-mode abstract
+    /// hits, (2) lowercase queries missing because CONTAINS is case-sensitive.
     #[tokio::test]
-    async fn test_search_papers_full_mode_searches_abstract() {
-        // D194 Wave 2: mode="full" searches title + abstract + topics.
-        let store = kg_storage::MockGraphStore::new();
+    async fn test_search_papers_tool_matches_raw_cypher_on_real_engine() {
         use kg_storage::DirectGraphStore;
+        use kg_storage::GraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let n = store.create_node("Paper").await.unwrap();
+        store
+            .set_node_property_string(n, "title", "A Novel Approach".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(n, "arxiv_id", "2501.12345".to_string())
+            .await
+            .unwrap();
+        store
+            .set_node_property_string(n, "abstract_text", "We study diffusion models".to_string())
+            .await
+            .unwrap();
+        // Engine facts pinned here: OR in WHERE works; a predicate over a
+        // MISSING property (p.topics) does not poison the OR chain.
+        let raw = store
+            .query_readonly(
+                "default",
+                "MATCH (p:Paper) WHERE p.title CONTAINS 'diffusion' OR p.abstract_text CONTAINS 'diffusion' OR p.topics CONTAINS 'diffusion' RETURN p.arxiv_id, p.title LIMIT 5",
+            )
+            .await
+            .unwrap();
+        assert_eq!(raw.records.len(), 1, "raw cypher finds the abstract match");
+        let tool = super::search_papers(
+            &store,
+            None,
+            super::SearchPapersParams {
+                query: "diffusion".to_string(),
+                limit: Some(5),
+                mode: Some("full".to_string()),
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(
+            tool.row_count, 1,
+            "tool must find what the raw cypher finds"
+        );
+        assert_eq!(tool.records[0][0].as_str(), Some("2501.12345"));
+    }
+
+    #[tokio::test]
+    async fn test_search_papers_full_mode_finds_abstract_term_on_real_engine() {
+        // D194 Wave 2 + M425: mode=full searches title + abstract + topics.
+        // Proven on the real engine — the old Mock test pinned <=5 no-panic.
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
         let n = store.create_node("Paper").await.unwrap();
         store
             .set_node_property_string(n, "title", "A Novel Approach".to_string())
@@ -1410,8 +1596,8 @@ mod tests {
             )
             .await
             .unwrap();
-        // Search by term only in abstract — title mode returns 0, full returns >=0
-        let result_full = search_papers(
+        // Term appears ONLY in the abstract: title mode misses, full finds.
+        let full = search_papers(
             &store,
             None,
             SearchPapersParams {
@@ -1421,9 +1607,28 @@ mod tests {
             },
         )
         .await
-        .expect("full search should not error");
-        // MockGraphStore Cypher may or may not support OR — assert no panic.
-        assert!(result_full.row_count <= 5);
+        .expect("full search must run on the real engine");
+        assert_eq!(
+            full.row_count, 1,
+            "abstract-only term must be found: {full:?}"
+        );
+        assert_eq!(full.records[0][0].as_str(), Some("2501.12345"));
+
+        let title_mode = search_papers(
+            &store,
+            None,
+            SearchPapersParams {
+                query: "diffusion".to_string(),
+                limit: Some(5),
+                mode: Some("title".to_string()),
+            },
+        )
+        .await
+        .expect("title search must run");
+        assert_eq!(
+            title_mode.row_count, 0,
+            "title mode must not see the abstract"
+        );
     }
 
     #[tokio::test]

@@ -1,5 +1,25 @@
 # Changelog
 
+### M425 Real-engine query tool tests fix search case bug
+
+- Moving da-mcp query-path tests from MockGraphStore (no Cypher) to the
+  real in-process SamyamaGraphStore exposed two production bugs the Mock
+  could never see:
+  1. `search_papers` claimed case-insensitive matching, but engine
+     CONTAINS is case-sensitive and the Rust post-filter only narrowed
+     engine hits — a lowercase query returned zero. Fixed with a
+     case-normalized retry (`toLower` + `coalesce`, fallback only when the
+     exact-case pass returns zero rows).
+  2. In full mode the title-only post-filter erased legitimate abstract
+     and topics hits (rows the engine correctly matched but whose title
+     did not contain the term). The filter is now title-mode only.
+- Flipped the pinned no-op tests (search case-insensitive `<=1`, full
+  mode `<=5` no-panic) to real expectations on the real engine; added
+  get_paper / get_entities / tool-vs-raw-Cypher parity regressions and a
+  MENTIONS traversal test. Mock Cypher is reclassified in STUB-AUDIT as
+  test-double by design with Samyama-backed tool tests as coverage.
+  D127 locked.
+
 ### M424 Honest mock vector search and Rust stub audit
 
 - `MockGraphStore::vector_search_direct` was a fake: constant score 0.0,

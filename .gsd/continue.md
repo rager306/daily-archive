@@ -1,31 +1,34 @@
-# Continue — M424 implemented (pending GSD seal)
+# Continue — M425 implemented (pending GSD seal)
 
 ## Last action
 
-M424-z0t487 S01+S02 implemented (code green; GSD skip-delivered closeout next):
+M425-0fynay S01+S02 implemented (code green; GSD skip-delivered closeout next):
 
-- S01: `MockGraphStore` vector search honest — brute-force cosine
-  (zero-norm guard), score-desc + node-id tiebreak, k-truncate;
-  `GraphStore::vector_search` returns seeded node (vid + props + score).
-  da-mcp seeded test flipped from zero rows to the real hit. kg-storage
-  mock 17 passed; da-mcp vector 3; batch_ingest 20 (regression); clippy
-  kg-storage + da-mcp clean.
-- S02: `doc/STUB-AUDIT.md` (rust-stub-audit.v1) — 13 entries with
-  file:line evidence; ingest.rs dangling Python-era pointer re-pointed to
-  ADR-053 Layer B; governor pin `stub_audit_doc`.
-
-Zero `todo!`/`unimplemented!` in workspace src (scan method in the doc).
+- **Два реальных бага найдены** переводом da-mcp query-тестов с Mock (нет
+  Cypher) на реальный in-process SamyamaGraphStore:
+  1. `search_papers` заявлял case-insensitive, но движковый CONTAINS
+     регистрозависим, а пост-фильтр видел только найденное движком →
+     lowercase-запрос возвращал 0. Фикс: retry с `toLower` + `coalesce`
+     (только при нуле строк на точном проходе).
+  2. В full-mode title-only пост-фильтр стирал abstract/topics-совпадения
+     (Mock-артефакт «in case Mock returns unfiltered» внутри продукта).
+     Фильтр теперь только в title-режиме.
+- Перевёрнуты пришпиленные no-op тесты (CI `<=1`, full `<=5`); добавлены
+  регрессии: get_paper, get_entities (MENTIONS), tool ≡ raw-Cypher parity.
+- STUB-AUDIT: mock Cypher = test-double by design, покрытие — Samyama-тесты.
+- da-mcp 40 passed; clippy clean; governor пины `mcp_search_ci_retry`,
+  `mcp_real_engine_tests`.
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M424 (UAT + sha256 validate + complete).
-2. Кандидаты следующего: MEM499 остаток — mock `query`/`query_readonly`
-   возвращают пустой QueryResult (документированный test-double дрейф);
-   либо свежий audit da-mcp/agent-plane на такие же пришпиленные фейки.
+1. GSD skip-delivered closeout for M425 (UAT + sha256 validate + complete).
+2. Следующий кандидат: оставшиеся query-инструменты (get_sections,
+   get_summary, get_references) на Samyama + hybrid-поиск; либо новый
+   процессный разрыв по AUDIT/STATE.
 
 ## Do not
 
-Unlock D127. Pin a fake with a test (MEM910). Unlock D127. Pipe cargo
-test through tail/echo. `#[deprecated]` fails clippy -D warnings in-crate.
-Resource cleanup `rm -rf target/debug/incremental` needs explicit user yes
-(MEM906; governor medium flag, disk only).
+Unlock D127. Pin a fake with a test. Полный проход cargo test через
+tail/echo (маскирует exit-коды → gsd_exec_false_success_evidence).
+`toLower(missing_prop)` в Samyama бросает type-error — использовать
+`coalesce(p.prop, '')`. Пост-фильтр в full-mode не возвращать.
