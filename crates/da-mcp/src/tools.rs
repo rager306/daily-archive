@@ -1382,6 +1382,99 @@ mod tests {
         assert_eq!(found_id, "1706.03762");
     }
 
+    /// M427: hybrid mode (BM25+dense RRF) proven end-to-end on the real
+    /// engine through the tool — routing, fetch Cypher, fusion, output shape.
+    #[tokio::test]
+    async fn test_search_papers_hybrid_on_real_engine_and_full_fallback() {
+        use kg_embeddings::MockEmbedder;
+        use kg_storage::DirectGraphStore;
+        let store = kg_storage::SamyamaGraphStore::new();
+        let papers = [
+            ("1706.03762", "Attention Is All You Need"),
+            ("2112.10752", "Diffusion Models Beat GANs"),
+            ("2501.00003", "Graph Neural Networks Survey"),
+        ];
+        for (id, title) in papers {
+            let n = store.create_node("Paper").await.unwrap();
+            store
+                .set_node_property_string(n, "arxiv_id", id.to_string())
+                .await
+                .unwrap();
+            store
+                .set_node_property_string(n, "title", title.to_string())
+                .await
+                .unwrap();
+            store
+                .set_node_property_string(n, "abstract_text", format!("About {title}."))
+                .await
+                .unwrap();
+        }
+        let embedder = MockEmbedder::new(8);
+        let hybrid = search_papers(
+            &store,
+            Some(&embedder),
+            SearchPapersParams {
+                query: "attention".to_string(),
+                limit: Some(3),
+                mode: Some("hybrid".to_string()),
+            },
+        )
+        .await
+        .expect("hybrid search must run on the real engine");
+        assert!(
+            hybrid.row_count >= 1,
+            "hybrid must find the paper: {hybrid:?}"
+        );
+        let ids: Vec<&str> = hybrid
+            .records
+            .iter()
+            .filter_map(|r| r.first().and_then(|v| v.as_str()))
+            .collect();
+        assert!(
+            ids.contains(&"1706.03762"),
+            "attention paper must be in hybrid results: {ids:?}"
+        );
+        assert_eq!(hybrid.columns.len(), 3, "arxiv_id, title, score shape");
+        let score_numeric = hybrid
+            .records
+            .iter()
+            .all(|r| r.get(2).map(|v| v.is_number()).unwrap_or(false));
+        assert!(score_numeric, "score column must be numeric: {hybrid:?}");
+
+        // Documented fallback: no embedder → hybrid falls back to full mode.
+        let fallback = search_papers(
+            &store,
+            None,
+            SearchPapersParams {
+                query: "diffusion".to_string(),
+                limit: Some(3),
+                mode: Some("hybrid".to_string()),
+            },
+        )
+        .await
+        .expect("no-embedder hybrid must fall back to full mode");
+        assert_eq!(
+            fallback.row_count, 1,
+            "full-mode fallback must find the diffusion paper: {fallback:?}"
+        );
+        assert_eq!(fallback.records[0][0].as_str(), Some("2112.10752"));
+
+        // Empty store: hybrid returns zero rows without error.
+        let empty_store = kg_storage::SamyamaGraphStore::new();
+        let empty = search_papers(
+            &empty_store,
+            Some(&embedder),
+            SearchPapersParams {
+                query: "attention".to_string(),
+                limit: Some(3),
+                mode: Some("hybrid".to_string()),
+            },
+        )
+        .await
+        .expect("hybrid on empty store must not error");
+        assert_eq!(empty.row_count, 0);
+    }
+
     // ─── M366 S02: get_entities / validate_node ───
 
     #[tokio::test]

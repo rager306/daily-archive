@@ -1,21 +1,29 @@
-# Continue — M426 implemented (pending GSD seal)
+# Continue — M426 complete; da-mcp query sweep finished
 
 ## Last action
 
-M426-570aq9 S01+S02 implemented (code green; GSD skip-delivered closeout next):
+M426-570aq9 complete (skip-delivered + UAT + sha256:4c5c3368… validate +
+gates + complete):
+- `57f74d1b`: S01 — `get_sections` (обратный hasPart + ORDER BY) и
+  `get_summary` (hasSummary + fallback) получили seeded-тесты на реальном
+  движке; инструменты оказались корректны — было только отсутствие
+  покрытия. S02 — `get_references`: `if let Ok` больше не глотает ошибки
+  движка (Err наружу); both-direction даёт единую 6-колоночную схему с
+  null-паддингом (красный тест поймал 2-wide строку в 4-wide схеме);
+  fallback-колонки согласованы.
+- da-mcp 43 passed; governor closeout ON_TRACK flags=0.
 
-- S01: `get_sections` (reverse hasPart + ORDER BY) и `get_summary`\n  (hasSummary + fallback) — seeded-тесты на реальном движке, оба\n  инструмента оказались корректны (просто без покрытия).
-- S02: `get_references` — два фикса: `if let Ok` больше не глотает\n  ошибки движка (теперь Err); both-direction даёт единую 6-колоночную\n  схему с null-паддингом (красный тест поймал строку ширины 2 в схеме\n  ширины 4); fallback-колонки согласованы с алиасами.
-- STUB-AUDIT: fake-fixed запись про error-swallowing.
-- da-mcp 43 passed; clippy clean.
-
-Сессия: M420→M421→M422→M423→M424→M425→M426 (6 milestones).
+Волна сессии: M420→M421→M422→M423→M424→M425→M426 (6 milestones,
+3 продуктовых бага: CI-поиск, full-mode фильтр, error-swallowing+schema).
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M426.
-2. da-mcp query-инструменты исчерпаны. Кандидаты: hybrid-режим поиска на\n   реальном движке; либо новый процессный разрыв.
+1. **Hybrid-режим поиска** (`search_papers_hybrid`, BM25+dense RRF) —
+   единственный оставшийся непроверенным путь da-mcp на реальном движке.
+2. Либо новый процессный разрыв из STATE/AUDIT.
 
 ## Do not
 
-Unlock D127. Pin a fake. `if let Ok` на engine-вызовах (глотает ошибки).\ntoLower(missing_prop) → coalesce. Runtime-executable UAT требует\nruntime-проверку.
+Unlock D127. Pin a fake. `if let Ok` на engine-вызовах.
+toLower(missing_prop) → coalesce. Runtime-executable UAT требует
+runtime-проверку. Full-mode title-only фильтр не возвращать.
