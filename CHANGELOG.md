@@ -1,5 +1,19 @@
 # Changelog
 
+### M417 S01 Entity embeddings become add-or-replace
+
+- The Entity-embedding write in extraction.rs used unconditional `add_vector`.
+  Entity nodes are persistent (by vid), so re-extracting an existing node
+  under a changed embedder hit Samyama's insert-only `VectorConflict` - the
+  write was swallowed with only a warn and the new model never applied.
+- `write_entity_embedding` now mirrors the Paper path: add on first attach,
+  `replace_vector` (M416) only when `embedding_fingerprint` changed, and a
+  `no-op` on an equal replay (keeps graph writes replay-idempotent). A
+  `embedding_sha256` property is stamped alongside, so re-extract does not
+  churn the vector store. Events `entity_embedding_added`/`replaced`/`unchanged`.
+- D278 records that GraphWrite stays deferred-by-design (no honest producer;
+  `openalex_pending` already has OpenAlexEnrich). D127 remains locked.
+
 ### M416 EmbedStale becomes a real scheduler task with repo-scoped vector replace
 
 - Samyama vector index was insert-only: a changed embedder model hit

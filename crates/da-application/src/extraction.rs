@@ -384,14 +384,31 @@ impl ExtractionUseCase {
                 if let Some(nid) = node_id {
                     match embedder.embed(&ext.label).await {
                         Ok(vec) => {
-                            if let Err(e) = self
-                                .graph_store
-                                .add_vector("Entity", "embedding", nid, vec)
-                                .await
+                            match write_entity_embedding(self.graph_store.as_ref(), nid, vec).await
                             {
-                                tracing::warn!(node_id = nid, error = %e, "Entity embedding write failed");
-                            } else {
-                                embeddings_written += 1;
+                                EntityEmbedWrite::Added => {
+                                    tracing::info!(
+                                        node_id = nid,
+                                        label = %ext.label,
+                                        event = "entity_embedding_added"
+                                    );
+                                    embeddings_written += 1;
+                                }
+                                EntityEmbedWrite::Replaced => {
+                                    tracing::info!(
+                                        node_id = nid,
+                                        label = %ext.label,
+                                        event = "entity_embedding_replaced"
+                                    );
+                                    embeddings_written += 1;
+                                }
+                                EntityEmbedWrite::Unchanged => {
+                                    tracing::info!(
+                                        node_id = nid,
+                                        label = %ext.label,
+                                        event = "entity_embedding_unchanged"
+                                    );
+                                }
                             }
                         }
                         Err(e) => {
@@ -808,6 +825,83 @@ fn extract_metric_value(text: &str, metric: &str) -> Option<f64> {
     None
 }
 
+/// Result of a sanctioned entity-vector write (M417 S01). Mirrors the Paper
+/// path: add on first attach, replace only when the model output changed,
+/// no-op on an equal fingerprint replay (keeps graph writes replay-idempotent).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntityEmbedWrite {
+    #[allow(dead_code)]
+    Added,
+    Replaced,
+    Unchanged,
+}
+
+/// Add-or-replace an Entity node's embedding, mirroring the Paper journey
+/// path. Compares `embedding_fingerprint` voice the stored `embedding_sha256`
+/// property; replaces via `replace_vector` (M416) only on change, adds when
+/// absent, and reports `Unchanged` on an equal replay so repeated extraction
+/// never churns the vector store.
+async fn write_entity_embedding(
+    graph_store: &dyn da_ports::graph_store::DirectGraphStore,
+    node_id: u64,
+    vector: Vec<f32>,
+) -> EntityEmbedWrite {
+    let fingerprint = crate::ingest::embedding_fingerprint(&vector);
+    let existing = graph_store
+        .get_node_property_string(node_id, "embedding_sha256")
+        .await;
+    match existing {
+        Some(stored) if stored == fingerprint => EntityEmbedWrite::Unchanged,
+        Some(_stored) => {
+            match graph_store
+                .replace_vector("Entity", "embedding", node_id, vector.clone())
+                .await
+            {
+                Ok(()) => {
+                    let _ = graph_store
+                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
+                        .await;
+                    EntityEmbedWrite::Replaced
+                }
+                Err(_absent) => {
+                    // A sha stamp without a stored vector (partial state): add.
+                    let _ = graph_store
+                        .add_vector("Entity", "embedding", node_id, vector.clone())
+                        .await;
+                    let _ = graph_store
+                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
+                        .await;
+                    EntityEmbedWrite::Replaced
+                }
+            }
+        }
+        None => {
+            match graph_store
+                .add_vector("Entity", "embedding", node_id, vector.clone())
+                .await
+            {
+                Ok(()) => {
+                    let _ = graph_store
+                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
+                        .await;
+                    EntityEmbedWrite::Added
+                }
+                Err(_conflict) => {
+                    // A vector without a sha stamp (legacy data): replace it
+                    // with the new model output and stamp the sha.
+                    let _ = graph_store
+                        .replace_vector("Entity", "embedding", node_id, vector.clone())
+                        .await;
+                    let _ = graph_store
+                        .set_node_property_string(node_id, "embedding_sha256", fingerprint)
+                        .await;
+                    EntityEmbedWrite::Replaced
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -828,6 +922,36 @@ mod tests {
     fn test_extract_metric_value_no_number() {
         let text = "We report accuracy in our experiments.";
         assert_eq!(extract_metric_value(text, "accuracy"), None);
+    }
+
+    #[tokio::test]
+    async fn write_entity_embedding_add_then_replace_then_noop() {
+        use da_ports::graph_store::DirectGraphStore as _;
+        let store = kg_storage::MockGraphStore::new();
+        let node = store.create_node("Entity").await.unwrap();
+        // First attach: no stored vector -> Added, vector stored + sha stamped.
+        let w1 = write_entity_embedding(&store, node, vec![0.1, 0.2]).await;
+        assert_eq!(w1, EntityEmbedWrite::Added);
+        let sha1 = store
+            .get_node_property_string(node, "embedding_sha256")
+            .await
+            .expect("sha stamped on first attach");
+        // Same vector again -> no rewrite (replay idempotent).
+        let w2 = write_entity_embedding(&store, node, vec![0.1, 0.2]).await;
+        assert_eq!(w2, EntityEmbedWrite::Unchanged);
+        let sha2 = store
+            .get_node_property_string(node, "embedding_sha256")
+            .await
+            .unwrap();
+        assert_eq!(sha1, sha2, "unchanged replay must not rewrite the sha");
+        // Changed model output -> Replaced on the same node.
+        let w3 = write_entity_embedding(&store, node, vec![7.0, 8.0]).await;
+        assert_eq!(w3, EntityEmbedWrite::Replaced);
+        let sha3 = store
+            .get_node_property_string(node, "embedding_sha256")
+            .await
+            .unwrap();
+        assert_ne!(sha1, sha3, "changed vector must advance the sha");
     }
 
     #[test]
