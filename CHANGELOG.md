@@ -1,5 +1,21 @@
 # Changelog
 
+### M439 catalog-wide sweep: 606 статей обработаны, отклонения типизированы
+
+- Полный обход каталога вне gold-200: **604/606 ok (99.7%), 0 failed**,
+  9 типизированных source-аномалий, wall-clock 12.3 мин (workers=4).
+- Найден и исправлен продуктовый баг: rule_extractor резал текст по
+  байтовым индексам из lowercase-копии — паника на мультибайтных символах
+  роняла весь прогон. Char-boundary snapping + red-first регресс-тест с
+  мутационной проверкой (panic воспроизводится двойной мутацией).
+- lib `da-cli/catalog_sweep.rs`: DATA-пороги, типизированный
+  классификатор отклонений, инвентарь; example-runner с resume.
+- Отклонения: 3 статьи с 0 entities (не-CS лексика — расширение DATA
+  словаря), 9 source-аномалий (8 no_pdf → HTML-путь, 2 инфраструктурные).
+- Метрики и рекомендации оптимизации: artifacts/catalog_sweep/
+  {sweep_report,aggregate}.json + analysis.md.
+
+
 ### M438 architecture closure: orchestrator defer + drift-gate coverage
 
 - ADR-066 / D280: PipelineOrchestrator stays product-side — engine

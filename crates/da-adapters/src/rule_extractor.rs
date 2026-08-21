@@ -208,6 +208,18 @@ impl RuleBasedExtractor {
     /// (or string edges). Prevents substring false positives like "arc" in
     /// "architecture", "ppo" in "support", "drop" in "dropout".
     #[inline]
+    /// Snap a byte index down to the nearest char boundary at or before it.
+    /// Byte indices found in a `to_lowercase()` copy of `text` can point
+    /// inside a multi-byte char of the original (lowercasing may change
+    /// byte lengths), so slicing the original must snap first.
+    fn snap_down(text: &str, index: usize) -> usize {
+        let mut i = index.min(text.len());
+        while i > 0 && !text.is_char_boundary(i) {
+            i -= 1;
+        }
+        i
+    }
+
     fn word_boundary(text: &str, start: usize, end: usize) -> bool {
         let before_ok = start == 0
             || !text
@@ -270,16 +282,24 @@ impl RuleBasedExtractor {
             for pattern in &["we propose ", "we present ", "we introduce ", "we use "] {
                 let lower_text = text.to_lowercase();
                 let mut start = 0;
-                while let Some(pos) = lower_text[start..].find(pattern) {
-                    let abs = start + pos + pattern.len();
+                while let Some(pos) = lower_text.get(start..).and_then(|s| s.find(pattern)) {
+                    let abs = Self::snap_down(text, start + pos + pattern.len());
                     if abs >= text.len() {
                         break;
                     }
-                    // Extract the first word (up to next space, comma, or 30 chars)
+                    // Extract the first word (up to next space, comma, or 30 chars).
+                    // The terminator search runs on the ORIGINAL text slice, so
+                    // every byte index is a char boundary by construction.
                     let remainder = &text[abs..];
                     let end = remainder
                         .find(|c: char| c.is_whitespace() || c == ',' || c == '.')
-                        .unwrap_or(remainder.len().min(30));
+                        .unwrap_or_else(|| {
+                            let mut i = remainder.len().min(30);
+                            while i > 0 && !remainder.is_char_boundary(i) {
+                                i -= 1;
+                            }
+                            i
+                        });
                     let candidate = remainder[..end].trim();
                     // Only accept if it starts with uppercase (proper noun / method name)
                     if !candidate.is_empty()
@@ -1597,4 +1617,36 @@ async fn test_extract_global_acronym_from_abstract() {
         !labels.contains(&"NLP"),
         "NLP should be filtered, got: {labels:?}"
     );
+}
+
+#[cfg(test)]
+mod char_boundary_tests {
+    use super::*;
+
+    /// Regression (M439 sweep panic): a multi-byte char ('µ') straddling the
+    /// 30-byte candidate cutoff must not panic. The cutoff index comes from a
+    /// byte count, so it can land mid-char; the slice must snap to a boundary.
+    #[test]
+    fn candidate_cutoff_inside_multibyte_char_does_not_panic() {
+        let extractor = RuleBasedExtractor::new();
+        // "We propose µ" + padding: after "we propose " (11 bytes), remainder
+        // starts inside/at 'µ' (2 bytes); min(len,30) can land mid-char when
+        // no terminator appears within 30 bytes.
+        // Bytes of remainder: 29×'a', then 'µ' (2 bytes: 29..31), then letters.
+        // The 30-byte cutoff lands on the continuation byte of 'µ'.
+        let text = "We propose aaaaaaaaaaaaaaaaaaaaaaaaaaaaa\u{b5}bcdefghij";
+        debug_assert_eq!(text[11..].len(), 40);
+        let candidates = extractor.extract_candidates(text, &EntityType::Method);
+        // No panic == pass.
+        let _ = candidates;
+    }
+
+    /// Same class: multibyte char immediately after the pattern boundary.
+    #[test]
+    fn multibyte_char_immediately_after_pattern_boundary() {
+        let extractor = RuleBasedExtractor::new();
+        let text = "We propose µRL framework";
+        let candidates = extractor.extract_candidates(text, &EntityType::Method);
+        let _ = candidates;
+    }
 }
