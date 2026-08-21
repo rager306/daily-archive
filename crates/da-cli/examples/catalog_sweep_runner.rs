@@ -382,6 +382,7 @@ async fn process_one(
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
+    let _log_guard = da_cli::logging::init_pipeline_logging("catalog_sweep_runner");
     let args = Args::parse();
     let thresholds = Arc::new(
         SweepThresholds::load(&args.thresholds).map_err(|e| anyhow::anyhow!("thresholds: {e}"))?,
