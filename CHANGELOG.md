@@ -1,5 +1,24 @@
 # Changelog
 
+### M437 corpus-wide semantic graph rebuild (MEM679)
+
+- Full gold-corpus semantic graph materialized for the first time:
+  **173 papers -> artifacts/gold_corpus/corpus_graph.sgsnap**
+  (21868 nodes / 51518 edges), sha256-bound AllWavesReport with
+  `replay_zero_writes` on every wave and a continuous graph chain —
+  the ADR-051 §8.1 disk-to-query contract now proven at corpus scale.
+- Process gap fixed (ADR-065): catalog is 100% versionless, so exact
+  revision binding blocked the whole corpus. Added honest
+  `tei_declared_revision` binding from the GROBID idno already stored in
+  the parse cache (`arXiv:{id}v{N}`); fail-closed preserved when the
+  document declares no version. 27 papers without any declared version
+  are excluded via filtered DATA manifest (no silent denominator loss).
+- Canaries: canary verification stage-id drift fixed (report-driven
+  `extraction_compute` instead of hardcoded `extract` — red-first test);
+  20 embedding-enabled waves over the shared cache root,
+  `replay_all_cache_hit` everywhere, import_eligible=false throughout.
+
+
 ### M436 kg-pipeline honest execution engine
 
 - Recon finding: `kg-pipeline::ExecutionEngine` was a fictitious contract —

@@ -361,11 +361,13 @@ fn evaluate_cached_extraction(
 ) -> Result<PaperMetrics> {
     let (extraction_payload_sha256, extraction_key_sha256) =
         stage_output_identity(replay, "extract")?;
+    let extraction_stage_id = stage_run_stage_id(replay, "extract")?;
     let extracted = load_verified_extraction(
         cache,
         &record.paper_id,
         &extraction_payload_sha256,
         &extraction_key_sha256,
+        &extraction_stage_id,
     )?;
     let gold: GoldFixture = serde_json::from_slice(
         &std::fs::read(&record.fixture_path)
@@ -414,17 +416,30 @@ fn stage_output_identity(report: &PipelineRunReport, step_name: &str) -> Result<
     }
 }
 
+/// The canonical stage id the pipeline actually ran this step under.
+/// Vocabulary-agnostic: the report is the source of truth (post split the
+/// extract step runs as `extraction_compute`, embed as `embedding`).
+fn stage_run_stage_id(report: &PipelineRunReport, step_name: &str) -> Result<String> {
+    let stage = report
+        .stages
+        .iter()
+        .find(|stage| stage.step_name == step_name)
+        .with_context(|| format!("missing stage '{step_name}' in pipeline report"))?;
+    Ok(stage.stage_id.clone())
+}
+
 fn load_verified_extraction(
     cache: &dyn PipelineCache,
     article_id: &str,
     output_sha256: &str,
     key_sha256: &str,
+    expected_stage_id: &str,
 ) -> Result<Vec<ExtractedEntity>> {
     let matches = cache
         .manifest(article_id)?
         .into_iter()
         .filter(|entry| {
-            entry.key.stage_id == "extract"
+            entry.key.stage_id == expected_stage_id
                 && entry.key_sha256 == key_sha256
                 && matches!(
                     &entry.outcome,
@@ -537,4 +552,171 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     std::fs::write(&temporary, bytes)?;
     std::fs::rename(&temporary, path)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod verified_extraction_tests {
+    use super::*;
+    use da_ports::pipeline_cache::{CachedSuccess, StageCacheKey, StageManifestEntry};
+    use std::collections::BTreeMap;
+
+    /// In-memory cache double for the manifest/lookup surface the canary
+    /// verification relies on.
+    struct MemoryCache {
+        entries: Vec<StageManifestEntry>,
+        payload: Vec<u8>,
+    }
+
+    impl MemoryCache {
+        fn with_extraction(stage_id: &str, key_sha256: &str, output_sha256: &str) -> Self {
+            let key = StageCacheKey {
+                source: SourceIdentity {
+                    article_id: "2501.00001".into(),
+                    selected_format: SourceFormat::Pdf,
+                    pdf_sha256: Some("aa".into()),
+                    html_sha256: None,
+                    acquisition_fingerprint: "acq".into(),
+                    normalization_fingerprint: "norm".into(),
+                },
+                stage_id: stage_id.into(),
+                dependency_output_sha256: BTreeMap::new(),
+                implementation_fingerprint: "rule_extract".into(),
+                configuration_fingerprint: "cfg".into(),
+                prompt_fingerprint: None,
+                model_fingerprint: None,
+                output_schema_fingerprint: "schema".into(),
+            };
+            let entities = vec![ExtractedEntity {
+                label: "graph neural network".into(),
+                entity_type: serde_json::from_str("\"Method\"").unwrap(),
+                section_title: "Abstract".into(),
+                section_ordinal: Some(0),
+                char_start: 0,
+                char_end: 21,
+                surface: "graph neural network".into(),
+            }];
+            let payload = serde_json::to_vec(&entities).unwrap();
+            let digest = Sha256::digest(&payload);
+            let output: String = digest.iter().map(|x| format!("{x:02x}")).collect();
+            assert_eq!(
+                output, output_sha256,
+                "test fixture must bind the real payload hash"
+            );
+            let entry = StageManifestEntry {
+                key: key.clone(),
+                key_sha256: key_sha256.into(),
+                recorded_at: "2026-08-21T00:00:00Z".into(),
+                outcome: StageOutcome::Success {
+                    payload_sha256: output,
+                    payload_size: payload.len() as u64,
+                },
+                metadata: BTreeMap::new(),
+            };
+            Self {
+                entries: vec![entry],
+                payload,
+            }
+        }
+    }
+
+    impl PipelineCache for MemoryCache {
+        fn lookup(
+            &self,
+            _key: &StageCacheKey,
+            _now: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<CacheLookup> {
+            Ok(CacheLookup::Hit(CachedSuccess {
+                manifest: self.entries[0].clone(),
+                payload: self.payload.clone(),
+            }))
+        }
+
+        fn store_success(
+            &self,
+            _key: &StageCacheKey,
+            _payload: &[u8],
+            _metadata: BTreeMap<String, String>,
+            _recorded_at: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<StageManifestEntry> {
+            unreachable!("verification never stores")
+        }
+
+        fn store_retryable_failure(
+            &self,
+            _key: &StageCacheKey,
+            _error_class: &str,
+            _message: &str,
+            _retry_after: &str,
+            _recorded_at: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<StageManifestEntry> {
+            unreachable!("verification never stores failures")
+        }
+
+        fn manifest(
+            &self,
+            _article_id: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<Vec<StageManifestEntry>> {
+            Ok(self.entries.clone())
+        }
+    }
+
+    fn report_with_extract(
+        stage_id: &str,
+        key_sha256: &str,
+        output_sha256: &str,
+    ) -> PipelineRunReport {
+        PipelineRunReport {
+            pipeline_id: "gold-corpus-parse-extract-v1".into(),
+            article_id: "2501.00001".into(),
+            completed: true,
+            stages: vec![da_application::StageRunRecord {
+                step_name: "extract".into(),
+                stage_id: stage_id.into(),
+                resolved_from: Some("rule_extract".into()),
+                cache_key_sha256: Some(key_sha256.into()),
+                admission: None,
+                disposition: StageDisposition::Executed {
+                    output_sha256: output_sha256.into(),
+                },
+            }],
+        }
+    }
+
+    /// Regression: after the extraction/materialization split the extract
+    /// step runs under stage id `extraction_compute`; the canary's verified
+    /// extraction lookup must resolve the stage id from the report instead
+    /// of a hardcoded vocabulary.
+    #[test]
+    fn verified_extraction_resolves_stage_id_from_report() {
+        let key_sha = "ab".repeat(16);
+        // Compute the real payload hash for the fixture entities first.
+        let entities = vec![ExtractedEntity {
+            label: "graph neural network".into(),
+            entity_type: serde_json::from_str("\"Method\"").unwrap(),
+            section_title: "Abstract".into(),
+            section_ordinal: Some(0),
+            char_start: 0,
+            char_end: 21,
+            surface: "graph neural network".into(),
+        }];
+        let payload = serde_json::to_vec(&entities).unwrap();
+        let out_sha: String = Sha256::digest(&payload)
+            .iter()
+            .map(|x| format!("{x:02x}"))
+            .collect();
+
+        let cache = MemoryCache::with_extraction("extraction_compute", &key_sha, &out_sha);
+        let report = report_with_extract("extraction_compute", &key_sha, &out_sha);
+        let (output, key) = stage_output_identity(&report, "extract").unwrap();
+        assert_eq!(
+            (output.as_str(), key.as_str()),
+            (out_sha.as_str(), key_sha.as_str())
+        );
+        let stage_id = stage_run_stage_id(&report, "extract").unwrap();
+        assert_eq!(stage_id, "extraction_compute");
+        let entities =
+            load_verified_extraction(&cache, "2501.00001", &output, &key, &stage_id).unwrap();
+        assert_eq!(entities.len(), 1);
+        assert_eq!(entities[0].label, "graph neural network");
+    }
 }

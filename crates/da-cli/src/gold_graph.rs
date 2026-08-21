@@ -480,6 +480,129 @@ fn manifestation_from_variant(
     })
 }
 
+/// TEI-declared revision binding (ADR-065): when the catalog is honestly
+/// versionless for an asset (checked binding returned no exact revision),
+/// the version GROBID declared in the document itself
+/// (`<idno type="arXiv">{id}v{N}</idno>`, kept in the parse cache payload)
+/// is an honest, non-invented revision source.
+///
+/// Returns `Ok(None)` when the document declares no version (or the TEI is
+/// absent): the caller keeps the original fail-closed error. Never invents
+/// a revision and refuses when versioned siblings exist (ambiguity is not
+/// resolvable from the document alone).
+pub fn tei_revision_binding(
+    cache: &dyn PipelineCache,
+    paper: &GoldWavePaper,
+    root: &Path,
+) -> Result<Option<CatalogRevisionBinding>> {
+    let source_dir = root.join("source");
+    anyhow::ensure!(
+        source_dir.is_dir(),
+        "catalog source dir missing: {}",
+        source_dir.display()
+    );
+    let bare_name = format!("{}.pdf", paper.paper_id);
+    let versioned_prefix = format!("{}v", paper.paper_id);
+    let mut bare_path: Option<PathBuf> = None;
+    let mut bare_hits = 0usize;
+    let mut versioned_seen = false;
+    for entry in std::fs::read_dir(&source_dir)? {
+        let path = entry?.path();
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if name.starts_with(&versioned_prefix) && name.ends_with(".pdf") {
+            versioned_seen = true;
+        }
+        if name == bare_name {
+            let bytes = std::fs::read(&path)?;
+            anyhow::ensure!(
+                sha256(&bytes) == paper.source_sha256,
+                "bare canonical asset digest drift for {}",
+                paper.paper_id
+            );
+            bare_hits += 1;
+            bare_path = Some(path);
+        }
+    }
+    anyhow::ensure!(
+        bare_hits <= 1,
+        "multiple bare assets for {}",
+        paper.paper_id
+    );
+    if versioned_seen || bare_hits != 1 {
+        return Ok(None);
+    }
+    let bare_path = bare_path.expect("checked == 1");
+
+    // The wave replay already verified the parse stage identity; reuse it.
+    let (parse_out, parse_key) = stage_identity(&paper.replay, "parse")?;
+    let parsed: ParsedArticle =
+        load_typed_payload(cache, &paper.paper_id, "parse", &parse_out, &parse_key)?;
+    let Some(tei) = parsed.tei_xml.as_deref() else {
+        return Ok(None);
+    };
+    let Some(revision) = declared_arxiv_revision(tei, &paper.paper_id) else {
+        return Ok(None);
+    };
+    anyhow::ensure!(revision > 0, "tei-declared revision zero is invalid");
+    let bytes = std::fs::metadata(&bare_path)?.len();
+    let manifestation = RevisionManifestationInput {
+        format: "pdf".into(),
+        sha256: paper.source_sha256.clone(),
+        bytes,
+        uri: format!("catalog:{}", evidence_path(&bare_path)),
+        path: evidence_path(&bare_path),
+        capture_status: "captured_local".into(),
+    };
+    let context = exact_context(&paper.paper_id, revision, "arxiv", vec![manifestation])?;
+    Ok(Some(CatalogRevisionBinding {
+        context,
+        method: "tei_declared_revision",
+    }))
+}
+
+/// Extract the arXiv revision the TEI header declares for `paper_id`.
+/// Matches `<idno type="arXiv">` (attribute matching is case-insensitive)
+/// whose text is exactly `{paper_id}v{N}`.
+fn declared_arxiv_revision(tei: &str, paper_id: &str) -> Option<u32> {
+    let lower = tei.to_ascii_lowercase();
+    let mut cursor = 0usize;
+    while let Some(rel) = lower[cursor..].find("<idno") {
+        let tag_start = cursor + rel;
+        let Some(header_end_rel) = lower[tag_start..].find('>') else {
+            break;
+        };
+        let header = &lower[tag_start..tag_start + header_end_rel];
+        let is_arxiv = header
+            .split(&[' ', '\t'][..])
+            .any(|attr| attr.starts_with("type=") && attr.ends_with("arxiv\"") && attr.len() > 6)
+            || header.contains("type=\"arxiv\"");
+        let text_start = tag_start + header_end_rel + 1;
+        let Some(text_end_rel) = lower[text_start..].find("</idno>") else {
+            break;
+        };
+        let text = tei[text_start..text_start + text_end_rel].trim();
+        // GROBID writes the idno as e.g. `arXiv:1412.6980v9[cs.LG]` — the
+        // `arXiv:` prefix and subject-category suffix are optional.
+        if is_arxiv
+            && let Some(id_rel) = text.find(paper_id)
+            && let after_id = &text[id_rel + paper_id.len()..]
+            && let Some(digits) = after_id.strip_prefix('v')
+        {
+            let take = digits.chars().take_while(char::is_ascii_digit).count();
+            if take > 0 {
+                let version: u32 = digits[..take].parse().unwrap_or(0);
+                if version > 0 {
+                    return Some(version);
+                }
+            }
+        }
+        cursor = text_start + text_end_rel;
+    }
+    None
+}
+
 fn exact_context(
     paper_id: &str,
     revision: u32,
@@ -498,157 +621,208 @@ fn exact_context(
         })
 }
 
+/// Typed catalog-binding failure so callers can distinguish "the catalog is
+/// honestly versionless for this asset" (TEI-declared fallback may apply)
+/// from every other fail-closed condition (ambiguity, drift, missing root).
+#[derive(Debug)]
+pub enum RevisionBindingFailure {
+    NoExactRevision {
+        paper_id: String,
+        source_sha256: String,
+    },
+    Other(anyhow::Error),
+}
+
 pub fn revision_binding_from_catalog(
     paper_id: &str,
     source_sha256: &str,
     root: &Path,
 ) -> Result<CatalogRevisionBinding> {
-    anyhow::ensure!(
-        root.is_dir(),
-        "catalog article root missing: {}",
-        root.display()
-    );
-    let mut by_digest: BTreeMap<String, CatalogRevisionBinding> = BTreeMap::new();
-    let mut metadata_entries = root
-        .read_dir()
-        .with_context(|| format!("read catalog root {}", root.display()))?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| name.starts_with("article.v") && name.ends_with(".json"))
-        })
-        .collect::<Vec<_>>();
-    metadata_entries.sort();
+    match revision_binding_from_catalog_checked(paper_id, source_sha256, root) {
+        Ok(Some(binding)) => Ok(binding),
+        Ok(None) => anyhow::bail!(
+            "no exact revision binding for {paper_id} source {source_sha256}; \
+             versionless corpus materialization is blocked"
+        ),
+        Err(RevisionBindingFailure::Other(error)) => Err(error),
+        Err(RevisionBindingFailure::NoExactRevision {
+            paper_id,
+            source_sha256,
+        }) => anyhow::bail!(
+            "no exact revision binding for {paper_id} source {source_sha256}; \
+             versionless corpus materialization is blocked"
+        ),
+    }
+}
 
-    for metadata_path in metadata_entries {
-        let revision = revision_from_metadata_path(&metadata_path)?;
-        let metadata: VersionedArticleMetadata = serde_json::from_slice(
-            &std::fs::read(&metadata_path)
-                .with_context(|| format!("read {}", metadata_path.display()))?,
-        )
-        .with_context(|| format!("parse {}", metadata_path.display()))?;
+/// Typed variant for callers that need to distinguish the honest
+/// versionless case (the TEI-declared fallback may apply) from hard
+/// failures. `Ok(None)` means: no exact revision evidence, fail-closed
+/// unless the caller has an independent honest version source.
+fn revision_binding_from_catalog_checked(
+    paper_id: &str,
+    source_sha256: &str,
+    root: &Path,
+) -> Result<Option<CatalogRevisionBinding>, RevisionBindingFailure> {
+    // The body is a nested fn so every `?` keeps its anyhow context and the
+    // blocked sentinel stays structural (no string matching).
+    fn body(
+        paper_id: &str,
+        source_sha256: &str,
+        root: &Path,
+    ) -> Result<Option<CatalogRevisionBinding>, anyhow::Error> {
         anyhow::ensure!(
-            metadata.article_key == paper_id,
-            "versioned metadata identity drift: expected {paper_id}, found {}",
-            metadata.article_key
+            root.is_dir(),
+            "catalog article root missing: {}",
+            root.display()
         );
-        anyhow::ensure!(
-            metadata.requested_source.versioned && metadata.requested_source.revision == revision,
-            "versioned metadata revision drift in {}",
-            metadata_path.display()
-        );
-        let expected_source_key = format!("{paper_id}v{revision}");
-        anyhow::ensure!(
-            metadata.requested_source.source_key == expected_source_key,
-            "versioned source key drift: expected {expected_source_key}, found {}",
-            metadata.requested_source.source_key
-        );
-        anyhow::ensure!(
-            !metadata.source_variants.is_empty(),
-            "versioned metadata has no source variants: {}",
-            metadata_path.display()
-        );
-        let manifestations = metadata
-            .source_variants
-            .iter()
-            .map(|variant| manifestation_from_variant(root, revision, variant))
-            .collect::<Result<Vec<_>>>()?;
-        let source_code = metadata
-            .source_code
-            .clone()
-            .unwrap_or_else(|| "arxiv".to_string());
-        let context = exact_context(paper_id, revision, &source_code, manifestations)?;
-        let binding = CatalogRevisionBinding {
-            context,
-            method: "authoritative_version_metadata",
-        };
-        for manifestation in &binding.context.manifestations {
-            if let Some(previous) = by_digest.insert(manifestation.sha256.clone(), binding.clone())
-                && previous.context != binding.context
-            {
-                anyhow::bail!(
-                    "ambiguous revision binding for {paper_id} digest {}: v{} and v{}",
-                    manifestation.sha256,
-                    previous.context.revision,
-                    binding.context.revision
-                );
+        let mut by_digest: BTreeMap<String, CatalogRevisionBinding> = BTreeMap::new();
+        let mut metadata_entries = root
+            .read_dir()
+            .with_context(|| format!("read catalog root {}", root.display()))?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with("article.v") && name.ends_with(".json"))
+            })
+            .collect::<Vec<_>>();
+        metadata_entries.sort();
+
+        for metadata_path in metadata_entries {
+            let revision = revision_from_metadata_path(&metadata_path)?;
+            let metadata: VersionedArticleMetadata = serde_json::from_slice(
+                &std::fs::read(&metadata_path)
+                    .with_context(|| format!("read {}", metadata_path.display()))?,
+            )
+            .with_context(|| format!("parse {}", metadata_path.display()))?;
+            anyhow::ensure!(
+                metadata.article_key == paper_id,
+                "versioned metadata identity drift: expected {paper_id}, found {}",
+                metadata.article_key
+            );
+            anyhow::ensure!(
+                metadata.requested_source.versioned
+                    && metadata.requested_source.revision == revision,
+                "versioned metadata revision drift in {}",
+                metadata_path.display()
+            );
+            let expected_source_key = format!("{paper_id}v{revision}");
+            anyhow::ensure!(
+                metadata.requested_source.source_key == expected_source_key,
+                "versioned source key drift: expected {expected_source_key}, found {}",
+                metadata.requested_source.source_key
+            );
+            anyhow::ensure!(
+                !metadata.source_variants.is_empty(),
+                "versioned metadata has no source variants: {}",
+                metadata_path.display()
+            );
+            let manifestations = metadata
+                .source_variants
+                .iter()
+                .map(|variant| manifestation_from_variant(root, revision, variant))
+                .collect::<Result<Vec<_>>>()?;
+            let source_code = metadata
+                .source_code
+                .clone()
+                .unwrap_or_else(|| "arxiv".to_string());
+            let context = exact_context(paper_id, revision, &source_code, manifestations)?;
+            let binding = CatalogRevisionBinding {
+                context,
+                method: "authoritative_version_metadata",
+            };
+            for manifestation in &binding.context.manifestations {
+                if let Some(previous) =
+                    by_digest.insert(manifestation.sha256.clone(), binding.clone())
+                    && previous.context != binding.context
+                {
+                    anyhow::bail!(
+                        "ambiguous revision binding for {paper_id} digest {}: v{} and v{}",
+                        manifestation.sha256,
+                        previous.context.revision,
+                        binding.context.revision
+                    );
+                }
             }
         }
-    }
 
-    if let Some(binding) = by_digest.get(source_sha256) {
-        return Ok(binding.clone());
-    }
-
-    // Recovery path: no version metadata digest matched, but exactly one local
-    // versioned asset may have the selected bytes. This never invents a revision.
-    let mut recovered = Vec::new();
-    let mut scan_paths = Vec::new();
-    if let Ok(entries) = root.join("source").read_dir() {
-        scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
-    }
-    if let Ok(entries) = root.read_dir() {
-        scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
-    }
-    for path in scan_paths {
-        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-            continue;
-        };
-        let (prefix, extension) = if let Some(value) = name.strip_suffix(".pdf") {
-            (value, "pdf")
-        } else if let Some(value) = name.strip_suffix(".html") {
-            (value, "html")
-        } else {
-            continue;
-        };
-        let Some(revision) = prefix
-            .strip_prefix(&format!("{paper_id}v"))
-            .or_else(|| prefix.strip_prefix("article.v"))
-            .and_then(|value| value.parse::<u32>().ok())
-        else {
-            continue;
-        };
-        anyhow::ensure!(revision > 0, "revision zero is invalid");
-        let bytes = std::fs::metadata(&path)
-            .with_context(|| format!("stat {}", path.display()))?
-            .len();
-        let digest =
-            sha256(&std::fs::read(&path).with_context(|| format!("read {}", path.display()))?);
-        if digest == source_sha256 {
-            recovered.push((
-                revision,
-                RevisionManifestationInput {
-                    format: extension.to_string(),
-                    sha256: digest,
-                    bytes,
-                    uri: format!("catalog:{}", evidence_path(&path)),
-                    path: evidence_path(&path),
-                    capture_status: "captured_local".into(),
-                },
-            ));
+        if let Some(binding) = by_digest.get(source_sha256) {
+            return Ok(Some(binding.clone()));
         }
-    }
-    if recovered.len() > 1 {
-        let revisions = recovered
-            .iter()
-            .map(|(revision, _)| format!("v{revision}"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        anyhow::bail!("ambiguous checksum revision binding for {paper_id}: {revisions}");
-    }
-    if let Some((revision, manifestation)) = recovered.pop() {
-        let context = exact_context(paper_id, revision, "arxiv", vec![manifestation])?;
-        return Ok(CatalogRevisionBinding {
-            context,
-            method: "unique_checksum_recovery",
-        });
+
+        // Recovery path: no version metadata digest matched, but exactly one local
+        // versioned asset may have the selected bytes. This never invents a revision.
+        let mut recovered = Vec::new();
+        let mut scan_paths = Vec::new();
+        if let Ok(entries) = root.join("source").read_dir() {
+            scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
+        }
+        if let Ok(entries) = root.read_dir() {
+            scan_paths.extend(entries.filter_map(Result::ok).map(|entry| entry.path()));
+        }
+        for path in scan_paths {
+            let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+                continue;
+            };
+            let (prefix, extension) = if let Some(value) = name.strip_suffix(".pdf") {
+                (value, "pdf")
+            } else if let Some(value) = name.strip_suffix(".html") {
+                (value, "html")
+            } else {
+                continue;
+            };
+            let Some(revision) = prefix
+                .strip_prefix(&format!("{paper_id}v"))
+                .or_else(|| prefix.strip_prefix("article.v"))
+                .and_then(|value| value.parse::<u32>().ok())
+            else {
+                continue;
+            };
+            anyhow::ensure!(revision > 0, "revision zero is invalid");
+            let bytes = std::fs::metadata(&path)
+                .with_context(|| format!("stat {}", path.display()))?
+                .len();
+            let digest =
+                sha256(&std::fs::read(&path).with_context(|| format!("read {}", path.display()))?);
+            if digest == source_sha256 {
+                recovered.push((
+                    revision,
+                    RevisionManifestationInput {
+                        format: extension.to_string(),
+                        sha256: digest,
+                        bytes,
+                        uri: format!("catalog:{}", evidence_path(&path)),
+                        path: evidence_path(&path),
+                        capture_status: "captured_local".into(),
+                    },
+                ));
+            }
+        }
+        if recovered.len() > 1 {
+            let revisions = recovered
+                .iter()
+                .map(|(revision, _)| format!("v{revision}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            anyhow::bail!("ambiguous checksum revision binding for {paper_id}: {revisions}");
+        }
+        if let Some((revision, manifestation)) = recovered.pop() {
+            let context = exact_context(paper_id, revision, "arxiv", vec![manifestation])?;
+            return Ok(Some(CatalogRevisionBinding {
+                context,
+                method: "unique_checksum_recovery",
+            }));
+        }
+
+        // No versioned metadata digest matched and no unique versioned
+        // asset carries these bytes: the catalog is honestly versionless
+        // for this source.
+        Ok(None)
     }
 
-    anyhow::bail!(
-        "no exact revision binding for {paper_id} source {source_sha256}; versionless corpus materialization is blocked"
-    )
+    body(paper_id, source_sha256, root).map_err(RevisionBindingFailure::Other)
 }
 
 pub fn load_wave_report(path: &Path) -> Result<GoldWaveReport> {
@@ -915,11 +1089,28 @@ fn prepare_wave(
                         let root = metadata.article_root.as_ref().with_context(|| {
                             format!("catalog article root missing for {}", paper.paper_id)
                         })?;
-                        let binding = revision_binding_from_catalog(
-                            &paper.paper_id,
-                            &paper.source_sha256,
-                            root,
-                        )?;
+                        let binding =
+                            match revision_binding_from_catalog_checked(
+                                &paper.paper_id,
+                                &paper.source_sha256,
+                                root,
+                            ) {
+                                Ok(Some(binding)) => binding,
+                                Ok(None) => tei_revision_binding(cache, paper, root)?.ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "no exact revision binding for {} source {}; versionless corpus materialization is blocked",
+                                        paper.paper_id,
+                                        paper.source_sha256
+                                    )
+                                })?,
+                                Err(RevisionBindingFailure::Other(error)) => return Err(error),
+                                Err(RevisionBindingFailure::NoExactRevision {
+                                    paper_id,
+                                    source_sha256,
+                                }) => anyhow::bail!(
+                                    "no exact revision binding for {paper_id} source {source_sha256}; versionless corpus materialization is blocked"
+                                ),
+                            };
                         Ok((
                             paper.clone(),
                             load_verified_artifacts(cache, paper)?,
@@ -1339,6 +1530,194 @@ mod tests {
             first.context.section_vid(0).unwrap(),
             latest.context.section_vid(0).unwrap()
         );
+    }
+
+    use da_ports::pipeline_cache::{
+        CachedSuccess, PipelineCache, StageCacheKey, StageManifestEntry, StageOutcome,
+    };
+    use std::collections::BTreeMap;
+
+    /// Minimal cache double exposing one verified parse payload.
+    struct TeiTestCache {
+        entry: StageManifestEntry,
+        payload: Vec<u8>,
+        parse_output_sha256: String,
+        parse_key_sha256: String,
+    }
+
+    impl TeiTestCache {
+        fn new(article_id: &str, tei_xml: &str) -> Self {
+            let parsed = serde_json::json!({
+                "paper_id": article_id,
+                "title": "T",
+                "abstract_text": "A",
+                "body_text": "B",
+                "sections": [],
+                "citations": [],
+                "pdf_hash": "h",
+                "tei_xml": tei_xml,
+            });
+            let payload = serde_json::to_vec(&parsed).unwrap();
+            let output: String = sha2::Sha256::digest(&payload)
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect();
+            let key = format!("{}parse", "k".repeat(60));
+            let entry = StageManifestEntry {
+                key: StageCacheKey {
+                    source: da_ports::pipeline_cache::SourceIdentity {
+                        article_id: article_id.into(),
+                        selected_format: da_ports::pipeline_cache::SourceFormat::Pdf,
+                        pdf_sha256: Some("s".into()),
+                        html_sha256: None,
+                        acquisition_fingerprint: "a".into(),
+                        normalization_fingerprint: "n".into(),
+                    },
+                    stage_id: "parse".into(),
+                    dependency_output_sha256: BTreeMap::new(),
+                    implementation_fingerprint: "i".into(),
+                    configuration_fingerprint: "c".into(),
+                    prompt_fingerprint: None,
+                    model_fingerprint: None,
+                    output_schema_fingerprint: "o".into(),
+                },
+                key_sha256: key.clone(),
+                recorded_at: "2026-08-21T00:00:00Z".into(),
+                outcome: StageOutcome::Success {
+                    payload_sha256: output.clone(),
+                    payload_size: payload.len() as u64,
+                },
+                metadata: BTreeMap::new(),
+            };
+            Self {
+                entry,
+                payload,
+                parse_output_sha256: output,
+                parse_key_sha256: key,
+            }
+        }
+    }
+
+    impl PipelineCache for TeiTestCache {
+        fn lookup(
+            &self,
+            _key: &StageCacheKey,
+            _now: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<CacheLookup> {
+            Ok(CacheLookup::Hit(CachedSuccess {
+                manifest: self.entry.clone(),
+                payload: self.payload.clone(),
+            }))
+        }
+        fn store_success(
+            &self,
+            _key: &StageCacheKey,
+            _payload: &[u8],
+            _metadata: BTreeMap<String, String>,
+            _recorded_at: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<StageManifestEntry> {
+            unreachable!("binding never stores")
+        }
+        fn store_retryable_failure(
+            &self,
+            _key: &StageCacheKey,
+            _error_class: &str,
+            _message: &str,
+            _retry_after: &str,
+            _recorded_at: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<StageManifestEntry> {
+            unreachable!("binding never stores failures")
+        }
+        fn manifest(
+            &self,
+            _article_id: &str,
+        ) -> da_ports::pipeline_cache::PipelineCacheResult<Vec<StageManifestEntry>> {
+            Ok(vec![self.entry.clone()])
+        }
+    }
+
+    fn tei_test_cache(_article_id: &str, _pdf_sha: &str, tei_xml: &str) -> Arc<TeiTestCache> {
+        Arc::new(TeiTestCache::new(_article_id, tei_xml))
+    }
+
+    fn tei_test_replay(article_id: &str, cache: &TeiTestCache) -> PipelineRunReport {
+        PipelineRunReport {
+            pipeline_id: "gold".into(),
+            article_id: article_id.into(),
+            completed: true,
+            stages: vec![StageRunRecord {
+                step_name: "parse".into(),
+                stage_id: "parse".into(),
+                resolved_from: Some("grobid_parse".into()),
+                cache_key_sha256: Some(cache.parse_key_sha256.clone()),
+                admission: None,
+                disposition: StageDisposition::Executed {
+                    output_sha256: cache.parse_output_sha256.clone(),
+                },
+            }],
+        }
+    }
+
+    /// TEI-declared revision binding (ADR-065): the versionless canonical
+    /// asset binds through the arXiv idno version GROBID declared in the
+    /// document itself — never invented, fail-closed when absent.
+    #[test]
+    fn tei_declared_revision_binds_versionless_canonical_asset() {
+        let root = std::env::temp_dir().join(format!("da-tei-binding-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("source")).unwrap();
+        let pdf_bytes = b"canonical-bytes";
+        let pdf_sha = sha256(pdf_bytes);
+        std::fs::write(root.join("source/1412.6980.pdf"), pdf_bytes).unwrap();
+        std::fs::write(root.join("article.json"), b"{}").unwrap();
+
+        let cache = tei_test_cache(
+            "1412.6980",
+            &pdf_sha,
+            r#"<teiHeader><fileDesc><sourceDesc><biblStruct><idno type="arXiv">arXiv:1412.6980v8[cs.LG]</idno></biblStruct></sourceDesc></fileDesc></teiHeader>"#,
+        );
+        let paper = GoldWavePaper {
+            paper_id: "1412.6980".into(),
+            source_sha256: pdf_sha,
+            replay: tei_test_replay("1412.6980", &cache),
+        };
+        let binding = tei_revision_binding(cache.as_ref(), &paper, &root)
+            .expect("tei binding should resolve")
+            .expect("versioned idno must bind");
+        assert_eq!(binding.method, "tei_declared_revision");
+        assert_eq!(binding.context.revision, 8);
+        assert_eq!(binding.context.canonical_id, "1412.6980");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// No declared version in the TEI idno -> None -> caller keeps the
+    /// versionless fail-closed error.
+    #[test]
+    fn tei_declared_revision_without_version_stays_blocked() {
+        let root = std::env::temp_dir().join(format!("da-tei-noblock-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("source")).unwrap();
+        let pdf_bytes = b"canonical-bytes";
+        let pdf_sha = sha256(pdf_bytes);
+        std::fs::write(root.join("source/1412.6980.pdf"), pdf_bytes).unwrap();
+
+        let cache = tei_test_cache(
+            "1412.6980",
+            &pdf_sha,
+            r#"<teiHeader><idno type="arXiv">1412.6980</idno></teiHeader>"#,
+        );
+        let paper = GoldWavePaper {
+            paper_id: "1412.6980".into(),
+            source_sha256: pdf_sha,
+            replay: tei_test_replay("1412.6980", &cache),
+        };
+        let binding = tei_revision_binding(cache.as_ref(), &paper, &root)
+            .expect("lookup itself must not error");
+        assert!(
+            binding.is_none(),
+            "versionless idno must not bind: {binding:?}"
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
