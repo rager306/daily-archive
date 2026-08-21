@@ -2348,21 +2348,11 @@ fn audit_fields() {
                 let block_end = next_create.min(next_function);
                 let block: String = lines[*line_num..block_end].join("\n");
                 let fields = pipeline_fields.entry(label.clone()).or_default();
-                // Simple line-by-line scan for set_node_property_* calls.
-                for bline in block.lines() {
-                    if let Some(pos) = bline.find("set_node_property_") {
-                        // Find the " field " pair after the first comma.
-                        if let Some(comma) = bline[pos..].find(',') {
-                            let after = &bline[pos + comma + 1..];
-                            if let Some(q1) = after.find('"') {
-                                let rest = &after[q1 + 1..];
-                                if let Some(q2) = rest.find('"') {
-                                    fields.insert(rest[..q2].to_string());
-                                }
-                            }
-                        }
-                    }
-                }
+                // M433: block-level extraction via the tested lib helper —
+                // the old line-by-line scan missed every multi-line call
+                // (cargo fmt splits them routinely; M432 found 2 of 4
+                // drifted fields).
+                fields.extend(da_cli::audit_fields::extract_set_fields(&block));
             }
         }
     }
