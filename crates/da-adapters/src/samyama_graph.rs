@@ -22,7 +22,8 @@ mod tests {
         let id = store.create_node_direct("Paper").await;
         store
             .set_property_direct(id, "title", PropertyValue::String("Test".into()))
-            .await;
+            .await
+            .expect("direct set must succeed");
         assert_eq!(store.node_count().await, 1);
     }
 

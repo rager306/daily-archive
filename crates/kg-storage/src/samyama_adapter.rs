@@ -115,10 +115,17 @@ impl SamyamaGraphStore {
         store.create_node(Label::new(label))
     }
 
-    /// Direct property set (HOT path — no Cypher).
-    pub async fn set_property_direct(&self, node_id: NodeId, key: &str, value: PropertyValue) {
+    /// Direct property set (HOT path — no Cypher). Returns Result (M431:
+    /// a pub write API must not swallow failures — same policy as
+    /// [`Self::create_edge_direct`]).
+    pub async fn set_property_direct(
+        &self,
+        node_id: NodeId,
+        key: &str,
+        value: PropertyValue,
+    ) -> Result<(), samyama::GraphError> {
         let mut store = self.store_write().await;
-        let _ = store.set_node_property(&self.tenant, node_id, key.to_string(), value);
+        store.set_node_property(&self.tenant, node_id, key.to_string(), value)
     }
 
     /// Direct edge creation (HOT path — no Cypher). Returns Result.
@@ -808,6 +815,23 @@ mod mode_tests {
         assert_eq!(GraphMode::parse(None).unwrap(), GraphMode::Embedded);
         let store = SamyamaGraphStore::open_for_mode(GraphMode::Embedded).expect("embedded");
         let _ = store;
+    }
+
+    /// M431: the pub direct write API returns Result and a happy write
+    /// reads back — a swallowed failure would be a silent graph mutation.
+    #[tokio::test]
+    async fn set_property_direct_returns_result_and_reads_back() {
+        let store = SamyamaGraphStore::new();
+        let node = store.create_node_direct("Paper").await;
+        store
+            .set_property_direct(node, "vid", PropertyValue::String("vid:p1".into()))
+            .await
+            .expect("happy direct set must be Ok");
+        let read = store
+            .get_node_property_string(node.0, "vid")
+            .await
+            .expect("property must read back");
+        assert_eq!(read, "vid:p1");
     }
 
     #[test]

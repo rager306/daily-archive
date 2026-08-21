@@ -84,9 +84,11 @@ async fn main() -> Result<()> {
 
         let t = Instant::now();
         for i in 0..scale {
+            // M431: a profile that silently wrote nothing is meaningless.
             store
                 .set_property_direct(node_ids[i % node_ids.len()], "score", (i as f64).into())
-                .await;
+                .await
+                .expect("direct property set must succeed");
         }
         let set_property_us = t.elapsed().as_micros() as u64;
 
