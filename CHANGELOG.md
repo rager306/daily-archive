@@ -1,5 +1,29 @@
 # Changelog
 
+### M436 kg-pipeline honest execution engine
+
+- Recon finding: `kg-pipeline::ExecutionEngine` was a fictitious contract —
+  the doc-comment promised retry/failure policy/status tracking while the
+  loop aborted on first error; `RetryPolicyRef` and `FailurePolicy` were
+  never consumed; 4/6 `PipelineStatus` variants were unreachable. The
+  product path never noticed because execution lives in
+  `PipelineOrchestrator` (ADR-049) and kg-pipeline was used only for
+  topology.
+- Fixed (ADR-064): per-step retry from a policy registry with an injected
+  `Sleeper` port (ADR-051 determinism infra — no real sleeps in tests);
+  `FailurePolicy::Abort`/`Continue`/`RetryThenAbort` semantics with
+  transitive skip of dependents; `attempts_per_step`/`skipped_steps` in
+  `ExecutionResult`; observable FSM — `StepEvent` stream (Started/Retried/
+  Failed/Skipped/Completed + StatusChanged Pending→Running→terminal) with
+  all six statuses reachable; cooperative `EngineControl` pause/stop
+  checked between steps.
+- Red-first + mutation-checked: retry success on attempt 3, sleeper call
+  count, Continue→abort mutation and pause-check mutation both caught by
+  tests. `execute()`/`execute_with_policies()` keep historical single-
+  attempt abort behavior (no consumer change; da-application
+  acap_control_plane_test green).
+
+
 ### M435 Governor pins the audit gate
 
 - M433/M434 made the audit-fields drift gate structurally correct

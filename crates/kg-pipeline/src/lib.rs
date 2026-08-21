@@ -12,5 +12,8 @@ pub mod engine;
 pub mod failure;
 
 pub use builder::{Pipeline, PipelineBuilder, PipelineStep, StageName};
-pub use engine::{ExecutionEngine, ExecutionResult, PipelineStatus};
+pub use engine::{
+    EngineControl, ExecutionEngine, ExecutionResult, PipelineStatus, Sleeper, StepEvent,
+    TokioSleeper,
+};
 pub use failure::{FailureAction, FailurePolicy, RetryPolicy};
