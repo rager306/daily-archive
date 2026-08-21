@@ -1,42 +1,37 @@
-# Continue — M436 закрыт; kg-pipeline движок честен
+# Continue — M437 закрыт; корпусный семантический граф построен
 
 ## Last action
 
-M436-q9cuc1 complete (skip-delivered + UAT + sha256:0776105b… validate +
+M437-p43udw complete (skip-delivered + UAT + sha256:2260e195… validate +
 gates + complete + checkpoint):
-- `d5e93613`: фиктивный контракт ExecutionEngine заменён реальным:
-  per-step retry из policy registry + injectable `Sleeper` (ADR-051
-  contour 1, NoopSleeper в тестах), FailurePolicy Abort/Continue/
-  RetryThenAbort с транзитивным скипом зависимых, `attempts_per_step`/
-  `skipped_steps`, наблюдаемый FSM (`StepEvent` + `StatusChanged`,
-  все 6 статусов достижимы), `EngineControl` pause/stop (stop выигрывает).
-- ADR-064 принят: движок владеет семантикой исполнения, Orchestrator
-  остаётся продуктовой композицией. Обратная совместимость сохранена
-  (execute() = однопопыточный abort), потребитель зелёный.
-- Governor пин `pipeline_engine_honest` (required: max_attempts,
-  StatusChanged, EngineControl) — отрицательная фикстура доказана
-  (DRIFT_RISK high при удалении маркера). ON_TRACK flags=0.
+- `4dee321e`: **первый корпусный семантический граф** — 173 бумаги →
+  `artifacts/gold_corpus/corpus_graph.sgsnap` (21868 узлов / 51518 рёбер),
+  AllWavesReport с sha256-привязкой, replay_zero_writes по всем 20 волнам,
+  chain непрерывен, D127 locked.
+- ADR-065: каталог 100% versionless → честный `tei_declared_revision`
+  binding (GROBID idno `arXiv:{id}v{N}` из parse-кэша); fail-closed
+  сохранён; 27 бумаг без версии исключены DATA-манифестом.
+- Canary fix (red-first): stage-id из run report, не hardcoded `extract`.
+- `data/graph_tasks/gold_corpus.tasks.cypher`: 10 задач, suite PASSED
+  (0 EMPTY / 0 ERROR).
 
 ## Current state
 
-- Волна M420→M436 (17 milestones) закрыта. QUEUE пуст, STATE: no active.
-- D127 locked. Governor ON_TRACK flags=0 violations=0.
-- Полный guardrail PASS (158.7s). GitNexus: low risk, 0 affected processes.
+- Волна M420→M437 (18 milestones) закрыта. QUEUE пуст, STATE: no active.
+- D127 locked. Governor: продуктовых флагов 0; resource_target_bloat
+  [medium] вернулся (target/ 21GB, incremental 5GB) — очистка по явному «да».
 
 ## Next action (priority)
 
-1. Кандидаты следующей волны:
-   a) corpus-wide semantic graph rebuild (MEM679, gold-корпус,
-      materialize_extracted путь);
-   b) миграция PipelineOrchestrator на движок kg-pipeline (ADR-064 §5,
-      follow-up — большой рефактор, оценить риски сначала);
-   c) docs-drift-check за audit-командой.
-2. GitNexus reindex перед следующим крупным редактированием — новые
-   символы (StepEvent/EngineControl/Sleeper) не разрешаются.
+1. Кандидаты: миграция PipelineOrchestrator на движок kg-pipeline
+   (ADR-064 §5, оценка рисков сначала); docs-drift-check за
+   audit-командой; 27 no-version бумаг — когда появится evidence.
+2. GitNexus reindex перед следующим крупным редактированием.
+3. GSD-урок волны: validate требует гомогенные evidence-классы
+   (Contract=runtime, Integration=artifact, UAT=runtime gsd_uat_exec
+   на каждый browser-requiring слайс).
 
 ## Do not
 
-Unlock D127. Pin a fake. `let _ =` на pub write API. `FailureAction`
-остаётся экспортируемым-но-непотребляемым (документировано ADR-064) —
-не удалять без ревизии. Governor forbidden-паттерны — точные строки
-кода, не английские фразы (M435/M436 урок; использовал required-маркеры).
+Unlock D127. Pin a fake. Изобретать версии статей. `let _ =` на pub
+write API. Хардкодить stage-id словари — читать из run report.
