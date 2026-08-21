@@ -1,30 +1,31 @@
-# Continue — M430 implemented (pending GSD seal)
+# Continue — M430 complete; test modules commit-verified
 
 ## Last action
 
-M430-tfnwt4 S01 implemented (code green; GSD skip-delivered closeout next):
+M430-tfnwt4 complete (skip-delivered + UAT + sha256:7dd335e3… validate +
+gates + complete):
+- `865cca72`: три тест-код находки закрыты (2 fake-pass seed-риска в
+  embed-stale тесте → `.expect`; TempDir::keep → явный discard);
+  per-crate `cargo-clippy-tests` hook (`--lib --tests`, без workspace /
+  --all-targets / rocksdb-ловушки) добавлен и **PASSED на самом коммите**.
+  AGENTS.md + STUB-AUDIT фиксируют сплит. Все 11 crates зелёные под
+  `--tests -D warnings`.
+- Governor closeout ON_TRACK flags=0.
 
-- Sвип класса swallow в da-cli/da-adapters: большинство `let _ =` /
-  `.ok()` — легитимные cleanup (temp, env, test-await); scheduler
-  executors честные (typed outcomes). Реальных багов не нашлось.
-- Замер clippy --tests выявил 3 тест-код находки: 2 ignored seed
-  Results в embed-stale тесте (fake-pass риск) .unwrap()ed,
-  1 TempDir::keep discard. Фикс + per-crate clippy --tests pre-commit
-  hook. Все 11 crates зелёные под --lib --tests -D warnings.
-- AGENTS.md + STUB-AUDIT записаны. M429 урок закрыт: тест-модули
-  теперь верифицируются коммитом.
-
-Волна: M420→M430 (10 milestones; 5 продуктовых багов + процессный разрыв).
+Волна: M420→M430 (11 milestones; 5 продуктовых багов, 2 мок-фейка,
+процессный разрыв pre-commit).
 
 ## Next action (priority)
 
-1. GSD skip-delivered closeout for M430.
-2. Следующий кандидат: flag REVIEW CLI / deeper проверка — например
-   канареечный pill на `clippy --tests` уже работает; можно продвинуть
-   governor на правильный тест-модульный контакт или волну типа
-   `cargo test --workspace`-standby.
+1. Свип swallow-класса завершён (da-mcp, da-application, da-cli,
+   da-adapters). Кандидаты:
+   a) kg-storage read_only_server / remote plane на тот же класс;
+   b) процессный разрыв из STATE/QUEUE;
+   c) `cargo test --workspace`-канарейка в CI (не в pre-commit).
 
 ## Do not
 
 Unlock D127. Pin a fake. `if let Ok` / `let _ =` на store/engine.
-`--workspace` clippy/test (rocksdb-пересборка).
+`--workspace` в pre-commit (rocksdb). Ручной перенос 64-символьных SHA
+в большие JSON-вызовы — снимать свежий capture и копировать дословно
+(урок M430: 8 ретраев validate из-за порчи хеша).
