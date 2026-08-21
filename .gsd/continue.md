@@ -1,35 +1,100 @@
-# Continue — M439 закрыт; каталог обработан полностью
+# Continue — Handoff после M439; каталог обработан полностью
 
-## Last action
+## Состояние проекта (на конец сессии)
 
-M439-mssz6z complete (skip-delivered + UAT + sha256:2bff0051… validate +
-gates + complete + checkpoint):
-- **Свип каталога**: 606 не-gold статей обработано (parse→extract→embed),
-  604 ok (99.7%), 0 failed, 9 типизированных source-аномалий, 12.3 мин.
-- **Продуктовый баг исправлен**: rule_extractor резал текст по байтам из
-  lowercase-копии → паника на мультибайте ('µ') роняла весь прогон.
-  Char-boundary snapping + red-first регресс-тест (мутация воспроизводит
-  панику). Коммиты `64d2de5d` + `101efab3` (logging pin).
-- Метрики/рекомендации: artifacts/catalog_sweep/{sweep_report,aggregate,
-  analysis.md}. Топ-рекомендации: расширить methods.phrases DATA-словарь
-  (3 статьи с 0 entities), GROBID workers=8, embed batching, crash-safe
-  flush отчёта, HTML-путь для 8 no_pdf.
+- **Волна M420→M439 (20 milestones) закрыта и запечатана** на master,
+  головка `d3753ebd` (continue.md) ← `5ba51242` (trajectory ON_TRACK)
+  ← `101efab3` (logging pin) ← `64d2de5d` (M439 sweep).
+- QUEUE пуст, STATE: no active milestone. **D127 locked** (import
+  fail-closed), все отчёты import_eligible=false.
+- **Governor ON_TRACK flags=0 violations=0** (disk вычищен: target/
+  19G→15G, incremental удалён, свободно 99G).
+- GitNexus reindex свежий: 30339 узлов / 56801 рёбер (AGENTS.md обновлён).
 
-## Current state
+## Что сделано в этой сессии (хронология)
 
-- Волна M420→M439 (20 milestones) закрыта. QUEUE пуст, STATE: no active.
-- D127 locked. Governor: продуктовых флагов 0; resource_target_bloat
-  [medium] циклический (incremental 3.8GB после сборок) — чистить по «да».
+| Волна | Суть | Коммит |
+|---|---|---|
+| **M436** kg-pipeline honest engine FSM | Фейковый ExecutionEngine (retry/failure policy игнорировались, 4/6 FSM-статусов недостижимы) заменён реальным: retry-реестр + Sleeper-порт (ADR-051), Abort/Continue/RetryThenAbort с транзитивным скипом, StepEvent-поток, EngineControl pause/stop. ADR-064. Governor-пин `pipeline_engine_honest`. | `d5e93613` |
+| **M437** Corpus-wide semantic graph (MEM679) | Первый корпусный граф: 173 статьи → corpus_graph.sgsnap (21868 узлов/51518 рёбер), replay_zero_writes на всех волнах, chain continuity, sha256-bound. **ADR-065**: каталог 100% versionless → честный tei_declared_revision binding (GROBID idno из parse-кэша), 27 no-version бумаг исключены DATA-манифестом. Canary stage-id drift fix (red-first). Corpus task suite 10 задач all-PASS. | `4dee321e` |
+| **M438** Architecture closure | **ADR-066/D280**: Orchestrator остаётся product-side (durable vs in-process retry — комплементарны, пересечение ~30 строк). docs_drift_check.sh + audit-fields/schema-check, секция Schema drift gate в GRAPH-SCHEMA.md, negative fixture. | `32dc02da` |
+| **M439** Catalog-wide sweep | 606 не-gold статей обработано (parse→extract→embed): **604 ok (99.7%), 0 failed**, 9 source-аномалий, 12.3 мин. **Продуктовый баг исправлен**: rule_extractor резал текст по байтам из lowercase-копии → паника на мультибайте; char-boundary snapping + red-first тест (мутация воспроизводит панику). Метрики: entities p50=9/p95=18; sections p50=42. Рекомендации в analysis.md. | `64d2de5d`+`101efab3` |
+| Disk cleanup | target/ 20G→15G (incremental), Governor ON_TRACK. | `5ba51242` |
 
-## Next action (priority)
+## Ключевые артефакты
 
-1. Из analysis.md: расширение DATA-словаря методов (закроет low-yield);
-   HTML-путь для 8 no_pdf аномалий (HtmlParseStage готов).
-2. Опционально: материализация свипа в граф (пока graph-free) — после
-   решения по version-binding для не-gold статей.
-3. Disk cleanup по явному «да».
+- `artifacts/gold_corpus/corpus_graph.sgsnap` — корпусный семантический
+  граф (173 papers), AllWavesReport с sha256-привязкой
+- `artifacts/catalog_sweep/{sweep_report,aggregate}.json + analysis.md` —
+  свип каталога с метриками и 5 рекомендациями оптимизации
+- `data/graph_tasks/gold_corpus.tasks.cypher` — корпусный semantic suite
+- ADR-064 (honest engine), ADR-065 (tei binding), ADR-066 (orchestrator
+  defer); D280
 
-## Do not
+## Открытые кандидаты (требуют решения/разведки, не фабриковать no-op)
 
-Unlock D127. Изобретать версии. Хардкодить пороги/словари в коде — всё
-в DATA YAML. Слайсить строки по байтам из lowercase-копий (snap!).
+1. **DATA-словарь методов** — расширить methods.phrases для не-CS полей
+   (3 статьи свипа с 0 entities: math-oc, robotics). Чистый DATA-путь.
+2. **HTML-путь для 8 no_pdf аномалий** — HtmlParseStage готов, нужен
+   wiring в свип-раннер.
+3. **Материализация свипа в граф** — 606 статей сейчас только в кэше;
+   требует решения по version-binding для не-gold (ADR-065 fallback
+   уже есть — tei_declared_revision должен покрыть большинство).
+4. **GROBID workers=8** — холодный прогон упал бы с ~34 до ~17 мин
+   (проверить память контейнера -Xmx4g).
+5. **Crash-safe partial flush** отчёта свипа (сейчас resume спасает кэшем).
+6. Отложено навсегда/долго: Orchestrator→движок (ADR-066), 27 no-version
+   бумаг (ждут upstream evidence), FailureAction consumer-or-remove.
+
+## Операторы (проверенные команды)
+
+```bash
+# Per-crate dev loop (НЕ workspace — rocksdb trap)
+cargo test -p <crate> --lib; cargo clippy -p <crate> --all-targets --no-deps -- -D warnings
+
+# Полный гейт — только в конце слайса
+bash scripts/verify_rust_architecture.sh
+
+# Governor (быстрый, ~1s)
+python3 scripts/check_project_trajectory.py --phase preflight|active|closeout
+
+# Свип каталога (resume-safe, кэш content-addressed)
+cargo run -p da-cli --example catalog_sweep_runner -- --workers 4 \
+  --include-embedding --cache-root artifacts/catalog_sweep/pipeline_cache \
+  --report artifacts/catalog_sweep/sweep_report.json
+
+# Корпусный граф: запросы
+cargo run -p da-cli -- graph-stats --snapshot artifacts/gold_corpus/corpus_graph.sgsnap
+cargo run -p da-cli --example graph_task_suite -- --snapshot artifacts/gold_corpus/corpus_graph.sgsnap \
+  --tasks data/graph_tasks/gold_corpus.tasks.cypher --report artifacts/graph_tasks/gold_corpus_report.json
+
+# GitNexus reindex (после структурных изменений)
+node .gitnexus/run.cjs analyze
+```
+
+## Do not (грабли, собранные за сессию)
+
+- **Unlock D127**; изобретать версии статей; писать в граф из свипа.
+- **Слайсить строки по байтам из lowercase-копий** — snap_down/snap_up
+  (M439 баг). Governor-пин на это пока НЕ добавлен — кандидат на усиление.
+- Хардкодить stage-id словари — читать из run report (M437 canary баг).
+- Governor forbidden/required паттерны — точные строки кода/маркеры, не
+  английские фразы (матчат doc-комментарии; уроки M435/M436).
+- gsd_validate: evidence-классы гомогенны per verification class
+  (Contract=runtime, Integration=artifact, UAT=runtime gsd_uat_exec);
+  browser-requiring слайсам — per-slice UAT строки.
+- `rm -rf` блокируется guard'ом даже после подтверждения — использовать
+  `find <path> -depth -delete`.
+- Деструктивные операции над target/ — только через явное подтверждение
+  пользователя (ask_user_questions destructive_confirm).
+- После pre-commit «Stashing unstaged files» — rg-проверка что doc-правки
+  попали в коммит (MEM918).
+- Ручной ввод 64-символьных SHA в validate — всегда свежий
+  captureMilestoneVerificationSourceRevision (M430/M434).
+
+## Следующий шаг (приоритет)
+
+Рекомендую: **(1)** расширение DATA-словаря методов + перегон 3 low-yield
+статей (быстрый измеримый выигрыш); **(2)** материализация свипа в граф
+(ADR-065 binding уже готов — проверить покрытие tei_declared_revision на
+не-gold корпусе). Пункты 4-5 из списка — по мере надобности.
