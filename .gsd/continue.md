@@ -1,39 +1,35 @@
-# Continue — M438 закрыт; архитектурные хвосты M436-M437 закрыты
+# Continue — M439 закрыт; каталог обработан полностью
 
 ## Last action
 
-M438-ar8owh complete (skip-delivered + UAT + sha256:db6e2993… validate +
+M439-mssz6z complete (skip-delivered + UAT + sha256:2bff0051… validate +
 gates + complete + checkpoint):
-- ADR-066 / D280: PipelineOrchestrator остаётся product-side. Миграция
-  на движок kg-pipeline закрыта как deferred-by-design: пересечение
-  ~30 строк из 2655; durable cross-process retry (кэш-persisted
-  RetryableFailure + RetrySuppressed) vs bounded in-process retry
-  (Sleeper) — комплементарные семантики. ACAP admission, cache identity,
-  GraphMaterialize rerun, StageRunRecord не входят в универсальный крейт.
-- docs_drift_check.sh теперь покрывает 5 команд (+audit-fields,
-  +schema-check); GRAPH-SCHEMA.md получил секцию Schema drift gate.
-  Negative fixture доказан; advisory-only сохранён (FAST-ONLY).
-- Коммиты: `32dc02da` (волна), `dd7a7561` (gitnexus stats), `ae1907b7`
-  (trajectory). GitNexus reindex выполнен: 30339 узлов / 56801 рёбер.
+- **Свип каталога**: 606 не-gold статей обработано (parse→extract→embed),
+  604 ok (99.7%), 0 failed, 9 типизированных source-аномалий, 12.3 мин.
+- **Продуктовый баг исправлен**: rule_extractor резал текст по байтам из
+  lowercase-копии → паника на мультибайте ('µ') роняла весь прогон.
+  Char-boundary snapping + red-first регресс-тест (мутация воспроизводит
+  панику). Коммиты `64d2de5d` + `101efab3` (logging pin).
+- Метрики/рекомендации: artifacts/catalog_sweep/{sweep_report,aggregate,
+  analysis.md}. Топ-рекомендации: расширить methods.phrases DATA-словарь
+  (3 статьи с 0 entities), GROBID workers=8, embed batching, crash-safe
+  flush отчёта, HTML-путь для 8 no_pdf.
 
 ## Current state
 
-- Волна M420→M438 (19 milestones) закрыта. QUEUE пуст, STATE: no active.
+- Волна M420→M439 (20 milestones) закрыта. QUEUE пуст, STATE: no active.
 - D127 locked. Governor: продуктовых флагов 0; resource_target_bloat
-  [medium] (target/ 21GB, incremental 5GB) — очистка по явному «да».
+  [medium] циклический (incremental 3.8GB после сборок) — чистить по «да».
 
 ## Next action (priority)
 
-1. Открытых архитектурных хвостов больше нет. Кандидаты:
-   a) 27 no-version бумаг — блокировано до появления evidence upstream;
-   b) перевод docs_drift_check.sh в blocking — требует hermetic binary
-      path (сейчас противоречит FAST-ONLY);
-   c) FailureAction: потребитель или удаление (ADR-064 Consequences);
-   d) новая разведка по логам/продукту (не фабриковать no-op).
-2. Disk cleanup по явному «да» пользователя.
+1. Из analysis.md: расширение DATA-словаря методов (закроет low-yield);
+   HTML-путь для 8 no_pdf аномалий (HtmlParseStage готов).
+2. Опционально: материализация свипа в граф (пока graph-free) — после
+   решения по version-binding для не-gold статей.
+3. Disk cleanup по явному «да».
 
 ## Do not
 
-Unlock D127. Изобретать версии статей. Хардкодить stage-id словари.
-Мигрировать Orchestrator без нового consumer (ADR-066). Governor
-forbidden/required паттерны — точные строки кода/маркеры.
+Unlock D127. Изобретать версии. Хардкодить пороги/словари в коде — всё
+в DATA YAML. Слайсить строки по байтам из lowercase-копий (snap!).
