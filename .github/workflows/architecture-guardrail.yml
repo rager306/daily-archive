@@ -76,17 +76,22 @@ jobs:
         run: |
           # --no-deps: lint only our crates, not vendored Samyama (which has
           # many pre-existing unused-import warnings we do not own).
+          # M432: da-graph removed (crate no longer exists — the dead
+          # reference failed clippy with an unmatched package ID); da-mcp
+          # added (was absent from CI entirely).
           cargo clippy \
             -p kg-ontology -p kg-storage -p kg-embeddings -p kg-algorithms -p kg-pipeline \
             -p da-domain -p da-ports -p da-application \
-            -p da-graph -p da-adapters -p da-cli \
+            -p da-adapters -p da-cli -p da-mcp \
             --all-targets --no-deps -- -D warnings
 
-      - name: Unit tests (per-crate, M339)
+      - name: Unit + integration tests (per-crate, M339 + M432)
         run: |
           # Per-crate tests matching scripts/verify_rust_architecture.sh.
-          # CI has time budget for the full workspace, but per-crate keeps
-          # output readable and isolates failures.
+          # M432: integration suites added — da-cli --tests (incl. the
+          # cross-process ADR-061 contract remote_read_plane_test),
+          # da-adapters --tests, and da-mcp --lib (the M425-M428
+          # real-engine tool sweep) were previously absent from CI.
           cargo test -p kg-ontology --lib
           cargo test -p kg-storage --lib
           cargo test -p kg-embeddings --lib
@@ -94,8 +99,9 @@ jobs:
           cargo test -p kg-pipeline --lib
           cargo test -p da-domain --lib
           cargo test -p da-application --tests
-          cargo test -p da-adapters --lib
-          cargo test -p da-cli --lib
+          cargo test -p da-adapters --tests
+          cargo test -p da-cli --tests
+          cargo test -p da-mcp --lib
 
       - name: Hexagonal dependency-direction check
         run: |

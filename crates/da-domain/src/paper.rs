@@ -103,6 +103,12 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
             ("openalex_pending", crate::schema::FieldType::Boolean),
             ("cited_by_count", crate::schema::FieldType::Integer),
             ("schema_version", crate::schema::FieldType::Integer),
+            // M419 S01: pdf-inspector triage stamped on the Paper node
+            // (pdf_type is the Debug-formatted PdfType; pages are a
+            // comma-joined 1-indexed list; encoding is the soft flag).
+            ("pdf_type", crate::schema::FieldType::String),
+            ("pdf_pages_needing_ocr", crate::schema::FieldType::String),
+            ("pdf_has_encoding_issues", crate::schema::FieldType::Boolean),
         ]
     }
 }

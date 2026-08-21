@@ -951,6 +951,20 @@ impl ParserPort for FigureParser {
 
 #[tokio::test]
 async fn journey_with_figures_runs_per_image_branch() {
+    // M432: cargo test runs with CWD = crate root; pin the quote policy
+    // absolutely so the journey resolves the ADR-062 window regardless of
+    // CWD (the default is the workspace-root-relative bundled path).
+    // SAFETY: single-threaded test setup before any concurrent readers of
+    // the environment within this test binary.
+    unsafe {
+        std::env::set_var(
+            "DA_FIGURE_QUOTE_POLICY",
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../data/ontology/figure_quote_policy.yaml")
+                .to_string_lossy()
+                .to_string(),
+        );
+    }
     let store = Arc::new(SamyamaGraphStore::new());
     let cache_dir = tempdir("cache-fig");
     let cache = Arc::new(FilePipelineCache::new(cache_dir.clone()));

@@ -146,6 +146,9 @@ impl crate::schema::NodeSchemaDef for EntitySchema {
             ("canonical_vid", crate::schema::FieldType::String),
             // Phase 3: GNN readiness — entity label embedding (bge-m3 1024d)
             ("embedding", crate::schema::FieldType::Vector),
+            // M418/M429: embedding_sha256 stamped beside every vector write
+            // so the Unchanged fast-path can verify replay integrity.
+            ("embedding_sha256", crate::schema::FieldType::String),
             ("domain_tags", crate::schema::FieldType::String),
         ]
     }

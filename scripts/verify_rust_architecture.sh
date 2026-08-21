@@ -103,9 +103,14 @@ cargo test -p kg-algorithms --lib
 cargo test -p kg-pipeline --lib
 cargo test -p da-domain --lib
 cargo test -p da-application --tests
-cargo test -p da-adapters --lib
-# ADR-051 §8.1: pure graph task suite parser (M336/M337) — no rocksdb, no snap required
-cargo test -p da-cli --lib graph_tasks
+# M432: integration suites — acquisition contracts + pipeline cache
+# (hub_ocr_probe compiles empty without the pdf-classifier feature).
+cargo test -p da-adapters --tests
+# M432: da-cli integration tests incl. the cross-process ADR-061
+# contract (remote_read_plane_test) and load_journey suite.
+cargo test -p da-cli --tests
+# M432: da-mcp real-engine tool tests (M425-M428 sweep).
+cargo test -p da-mcp --lib
 # ADR-051 P1: TemporalEdge property suite (M353)
 cargo test -p kg-ontology --lib proptest
 # ADR-051 P1: EntityType / RelationType wire stability (M354)
