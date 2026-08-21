@@ -2285,74 +2285,92 @@ fn audit_fields() {
     println!();
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let src_dir = manifest_dir.join("../da-application/src");
-    let src_dir = match src_dir.canonicalize() {
-        Ok(p) => p,
-        Err(_) => {
-            eprintln!("Could not locate da-application/src directory");
-            std::process::exit(2);
-        }
-    };
+    // M434: scan BOTH product surfaces that create nodes and set
+    // properties — da-application/src and da-cli/src (load_journey stamps
+    // embedding_sha256 on Paper; the old single-dir scan was blind across
+    // the crate boundary). da-adapters/da-mcp verified free of non-test
+    // create_node writers.
+    let src_dirs: Vec<PathBuf> = ["../da-application/src", "src"]
+        .iter()
+        .map(|rel| manifest_dir.join(rel))
+        .filter_map(|p| p.canonicalize().ok())
+        .collect();
+    if src_dirs.is_empty() {
+        eprintln!("Could not locate product src directories");
+        std::process::exit(2);
+    }
 
     // Build a map: label -> set of fields set via set_node_property_*.
     let mut pipeline_fields: BTreeMap<String, HashSet<String>> = BTreeMap::new();
     let mut scanned_files = 0usize;
-    if let Ok(entries) = fs::read_dir(&src_dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().and_then(|s| s.to_str()) != Some("rs") {
-                continue;
-            }
-            scanned_files += 1;
-            let content = match fs::read_to_string(&path) {
-                Ok(c) => c,
-                Err(_) => continue,
-            };
-            let lines: Vec<&str> = content.lines().collect();
-            // Find create_node call sites
-            let mut create_sites: Vec<(usize, String)> = Vec::new();
-            for (i, line) in lines.iter().enumerate() {
-                if let Some(start) = line.find("create_node(\"") {
-                    let after = &line[start + "create_node(\"".len()..];
-                    if let Some(end) = after.find("\")") {
-                        let label = &after[..end];
-                        if !label.is_empty()
-                            && label.chars().all(|c| c.is_alphanumeric() || c == '_')
-                        {
-                            create_sites.push((i, label.to_string()));
+    for src_dir in &src_dirs {
+        if let Ok(entries) = fs::read_dir(src_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|s| s.to_str()) != Some("rs") {
+                    continue;
+                }
+                scanned_files += 1;
+                let content = match fs::read_to_string(&path) {
+                    Ok(c) => c,
+                    Err(_) => continue,
+                };
+                let lines: Vec<&str> = content.lines().collect();
+                // Find create_node call sites
+                let mut create_sites: Vec<(usize, String)> = Vec::new();
+                for (i, line) in lines.iter().enumerate() {
+                    if let Some(start) = line.find("create_node(\"") {
+                        let after = &line[start + "create_node(\"".len()..];
+                        if let Some(end) = after.find("\")") {
+                            let label = &after[..end];
+                            if !label.is_empty()
+                                && label.chars().all(|c| c.is_alphanumeric() || c == '_')
+                            {
+                                create_sites.push((i, label.to_string()));
+                            }
                         }
                     }
                 }
-            }
-            // For each create_node, scan within the current function only.
-            // A fixed line window can cross helper boundaries and attribute
-            // unrelated fields to the previous label (false schema drift).
-            for (idx, (line_num, label)) in create_sites.iter().enumerate() {
-                let next_create = create_sites
-                    .get(idx + 1)
-                    .map(|(n, _)| *n)
-                    .unwrap_or(lines.len());
-                let next_function = lines
-                    .iter()
-                    .enumerate()
-                    .skip(line_num + 1)
-                    .find_map(|(line_index, line)| {
-                        let trimmed = line.trim_start();
-                        let is_function = trimmed.starts_with("fn ")
-                            || trimmed.starts_with("async fn ")
-                            || trimmed.starts_with("pub fn ")
-                            || trimmed.starts_with("pub async fn ");
-                        is_function.then_some(line_index)
-                    })
-                    .unwrap_or(lines.len());
-                let block_end = next_create.min(next_function);
-                let block: String = lines[*line_num..block_end].join("\n");
-                let fields = pipeline_fields.entry(label.clone()).or_default();
-                // M433: block-level extraction via the tested lib helper —
-                // the old line-by-line scan missed every multi-line call
-                // (cargo fmt splits them routinely; M432 found 2 of 4
-                // drifted fields).
-                fields.extend(da_cli::audit_fields::extract_set_fields(&block));
+                // For each create_node, scan within the current function only.
+                // A fixed line window can cross helper boundaries and attribute
+                // unrelated fields to the previous label (false schema drift).
+                for (idx, (line_num, label)) in create_sites.iter().enumerate() {
+                    let next_create = create_sites
+                        .get(idx + 1)
+                        .map(|(n, _)| *n)
+                        .unwrap_or(lines.len());
+                    let next_function = lines
+                        .iter()
+                        .enumerate()
+                        .skip(line_num + 1)
+                        .find_map(|(line_index, line)| {
+                            let trimmed = line.trim_start();
+                            let is_function = trimmed.starts_with("fn ")
+                                || trimmed.starts_with("async fn ")
+                                || trimmed.starts_with("pub fn ")
+                                || trimmed.starts_with("pub async fn ");
+                            is_function.then_some(line_index)
+                        })
+                        .unwrap_or(lines.len());
+                    let block_end = next_create.min(next_function);
+                    // M434: doc comments are not code — the scanner was
+                    // matching its own docstring examples as drift.
+                    let block: String = lines[*line_num..block_end]
+                        .iter()
+                        .filter(|l| {
+                            let t = l.trim_start();
+                            !(t.starts_with("///") || t.starts_with("//!"))
+                        })
+                        .copied()
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    let fields = pipeline_fields.entry(label.clone()).or_default();
+                    // M433: block-level extraction via the tested lib helper —
+                    // the old line-by-line scan missed every multi-line call
+                    // (cargo fmt splits them routinely; M432 found 2 of 4
+                    // drifted fields).
+                    fields.extend(da_cli::audit_fields::extract_set_fields(&block));
+                }
             }
         }
     }
@@ -2371,7 +2389,7 @@ fn audit_fields() {
         declared.insert(label, fields);
     }
 
-    println!("Scanned {scanned_files} .rs files under da-application/src");
+    println!("Scanned {scanned_files} .rs files across product src (da-application + da-cli)");
     println!(
         "Found {} distinct labels with set_node_property_* calls",
         pipeline_fields.len()

@@ -109,6 +109,9 @@ impl crate::schema::NodeSchemaDef for PaperSchema {
             ("pdf_type", crate::schema::FieldType::String),
             ("pdf_pages_needing_ocr", crate::schema::FieldType::String),
             ("pdf_has_encoding_issues", crate::schema::FieldType::Boolean),
+            // M434: journey first-attach and the EmbedStale executor stamp
+            // the vector digest beside every embedding write (D277).
+            ("embedding_sha256", crate::schema::FieldType::String),
         ]
     }
 }
@@ -131,5 +134,16 @@ mod tests {
     fn test_paper_vid_matches() {
         let p = Paper::new("1206.6423", "Test");
         assert_eq!(p.vid, crate::vid::paper_vid("1206.6423"));
+    }
+
+    /// M434: journey first-attach + EmbedStale stamp the vector digest.
+    #[test]
+    fn test_paper_schema_has_embedding_sha256() {
+        use crate::schema::NodeSchemaDef;
+        let names: Vec<&str> = PaperSchema::optional_fields(&PaperSchema)
+            .iter()
+            .map(|(n, _)| *n)
+            .collect();
+        assert!(names.contains(&"embedding_sha256"), "{names:?}");
     }
 }

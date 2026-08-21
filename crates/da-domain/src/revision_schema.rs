@@ -37,6 +37,9 @@ impl NodeSchemaDef for PaperRevisionSchema {
             ("published_at", FieldType::DateTime),
             ("abstract_text", FieldType::String),
             ("retrieval_eligible", FieldType::Boolean),
+            // M434: the shared embedding_write helper stamps the vector
+            // digest on the revision content node (content_label path).
+            ("embedding_sha256", FieldType::String),
         ]
     }
 }
@@ -69,5 +72,19 @@ impl NodeSchemaDef for SourceManifestationSchema {
             ("captured_at", FieldType::DateTime),
             ("retrieval_eligible", FieldType::Boolean),
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// M434: the shared embedding_write helper stamps the digest on the
+    /// revision content node.
+    #[test]
+    fn paper_revision_schema_has_embedding_sha256() {
+        let schema = crate::revision_schema::PaperRevisionSchema;
+        let names: Vec<&str> = schema.optional_fields().iter().map(|(n, _)| *n).collect();
+        assert!(names.contains(&"embedding_sha256"), "{names:?}");
     }
 }
