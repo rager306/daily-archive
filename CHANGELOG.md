@@ -1,5 +1,21 @@
 # Changelog
 
+### M435 Governor pins the audit gate
+
+- M433/M434 made the audit-fields drift gate structurally correct
+  (multi-line `extract_set_fields`, both product surfaces), but it only
+  ran under CI's `schema_check_test` — in the dev loop a regression to
+  the line-based scan or a single-surface scope would pass every commit
+  and silently re-blind the ADR-045 gate.
+- Two Governor pins (`audit_field_scanner` requiring `extract_set_fields`;
+  `audit_both_surfaces` requiring `src_dirs` and forbidding the restored
+  line-by-line `for bline in block.lines()` blind spot) now enforce it at
+  every commit in ~1s with no build — the first line of defense.
+- The pin construction itself exposed the scanner's doc-comment
+  false-positive class once more: a naive `forbidden: line-by-line`
+  tripped on the module doc's own description. The forbidden pattern is
+  the exact regressed code shape, not the English phrase. D127 locked.
+
 ### M434 Audit both surfaces and declare sha fields
 
 - The audit-fields drift gate scanned only da-application/src — blind across
