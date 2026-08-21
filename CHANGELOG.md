@@ -1,5 +1,17 @@
 # Changelog
 
+### M431 Honest direct property write on the adapter
+
+- The M429/M430 swallow-class sweep reached kg-storage. Verdict: the
+  trait impls are honest (map_err everywhere) and the read_only_server
+  discards are standard best-effort error replies. One finding:
+  `set_property_direct` — a pub direct write API — discarded the store
+  Result (same class as M429). Now Result-returning, mirroring
+  `create_edge_direct`; the hot-path profiling example asserts success
+  (a profile that silently wrote nothing is meaningless). The
+  server-side discards are classified legitimate in STUB-AUDIT.
+  D127 locked.
+
 ### M430 Pre-commit compiles test modules
 
 - M429 exposed that the pre-commit clippy hook compiled only lib targets:
