@@ -35,6 +35,7 @@ listed here — see `legacy/doc/adr/`.
 | [063](ADR-063-graphwrite-deferred-by-design.md) | GraphWrite stays deferred-by-design (no honest producer; governor asserts no fake executor) | Accepted (M417-36ebrj/S02, D278) | 2026-08-20 |
 | [064](ADR-064-kg-pipeline-honest-execution-engine.md) | kg-pipeline Honest Execution Engine (real retry/failure policies, observable FSM, injected Sleeper) | Accepted (M436-q9cuc1) | 2026-08-21 |
 | [065](ADR-065-tei-declared-revision-binding.md) | TEI-declared revision binding for versionless canonical assets (document-declared arXiv version; fail-closed without it) | Accepted (M437-p43udw) | 2026-08-21 |
+| [066](ADR-066-pipeline-orchestrator-stays-product-side.md) | PipelineOrchestrator stays product-side — engine migration deferred-by-design (durable vs in-process retry are complementary) | Accepted (D280) | 2026-08-21 |
 
 ## Phase completion status (ADR-050, 2026-08-02)
 

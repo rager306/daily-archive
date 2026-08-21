@@ -1,5 +1,25 @@
 # Changelog
 
+### M438 architecture closure: orchestrator defer + drift-gate coverage
+
+- ADR-066 / D280: PipelineOrchestrator stays product-side — engine
+  migration (ADR-064 §5 follow-up) closed as deferred-by-design. Recon
+  showed the overlap with kg-pipeline's ExecutionEngine is ~30 lines of
+  step-walking; the orchestrator owns durable cross-process retry
+  (RetryableFailure persisted to cache, RetrySuppressed on next run)
+  while the engine owns bounded in-process retry with an injected
+  Sleeper — complementary semantics, not duplication. ACAP admission,
+  cache identity, GraphMaterialize rerun and the StageRunRecord surface
+  must not enter a universal crate.
+- docs_drift_check.sh now covers all five doc-rendering commands: the
+  three original ones plus `audit-fields` and `schema-check` (the
+  ADR-045 Wave E schema drift gate). GRAPH-SCHEMA.md gained a canonical
+  "Schema drift gate" section carrying both commands' current output and
+  the same-commit update rule. Negative fixture proven: hiding either
+  command marker from both docs makes the detector report it. The hook
+  stays advisory-only by design (FAST-ONLY pre-commit policy).
+
+
 ### M437 corpus-wide semantic graph rebuild (MEM679)
 
 - Full gold-corpus semantic graph materialized for the first time:

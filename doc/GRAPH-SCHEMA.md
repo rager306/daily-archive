@@ -474,6 +474,40 @@ dangling references and missing required fields.
 
 ---
 
+## Schema drift gate (ADR-045 Wave E / MEM508)
+
+Two CLI commands verify that pipeline code and the schema registry do not
+drift apart. Both must print their OK marker after any change to node/field
+writes or schema declarations — update this section in the same commit when
+their summary numbers change.
+
+```
+$ da audit-fields
+
+Scanned 90 .rs files across product src (da-application + da-cli)
+Found 26 distinct labels with set_node_property_* calls
+Schema registry declares 43 node types
+
+
+✅ OK — every pipeline-set field is declared in its schema
+```
+
+```
+$ da schema-check
+
+Scanned 68 .rs files under da-application/src
+Found 25 distinct node labels referenced via create_node()
+Schema registry contains 43 declared node types
+
+✅ OK — every create_node label is registered in all_node_schemas()
+```
+
+CI runs both via `crates/da-cli/tests/schema_check_test.rs`
+(`cargo test -p da-cli --tests`); the governor pins protect the scanner
+implementation itself (`audit_field_scanner`, `audit_both_surfaces`).
+
+---
+
 ## Loading contract
 
 1. **`da schema init`** — create all 26 indexes (9 node types + Source + Reference + Author + SchedulerTask +
