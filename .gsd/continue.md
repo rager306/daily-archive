@@ -1,34 +1,20 @@
-# Continue — M432 complete; CI matches the swept surface
+# Continue — M433 implemented (pending GSD seal)
 
 ## Last action
 
-M432-uoupho complete (skip-delivered + UAT + sha256:06dc73e5… validate +
-gates + complete):
-- `d3137585`: CI-разрыв закрыт — мёртвый `-p da-graph` убран (clippy падал
-  бы unmatched package ID), **da-mcp добавлен в CI** (46 real-engine
-  тестов M425-M428 впервые в CI), интеграционные наборы da-cli (268, вкл.
-  кросс-процессный ADR-061 контракт) и da-adapters (234) добавлены;
-  verify-script синхронизирован.
-- Локальное доказательство команд вскрыло и закрыло 2 реальных дефекта:
-  1) **schema drift**: 4 поля пишутся с M418/M419, но не декларированы
-     (Paper pdf_type / pdf_pages_needing_ocr / pdf_has_encoding_issues;
-     Entity embedding_sha256) → декларированы, audit-fields = OK;
-  2) CWD-зависимый figure-тест → DA_FIGURE_QUOTE_POLICY пинится абсолютно
-     (CARGO_MANIFEST_DIR).
-- Workspace swallow-sweep **полностью закрыт** (kg-* финальный скан чист,
-  STUB-AUDIT запись).
+M433-4hy6og S01 implemented (code green; GSD skip-delivered closeout next):
 
-Волна: M420→M432 (13 milestones).
+- `extract_set_fields` в либе da-cli (чистая, тестируемая): блочный скан
+  от каждого `set_node_property_` до **матчинга закрывающей скобки**.\n- Красный тест multi-line поймал слепоту старого сканера; первый запуск\n  исправленного сканера поднял ЛОЖНЫЙ positive — dynamic-loop\n  (`set_node_property_string(n, property, value)`, поле-переменная)\n  без строкового литерала уезжал вперёд к `create_edge(…, \"hasSummary\")`.\n  Paren-bounding закрыл: поле обязано быть строкой ВНУТРИ аргументов\n  вызова; dynamic-loop регресс-тест зелёный.
+- 5 unit fixtures; бинарный аудит **OK** на текущем дереве; da-cli --tests\n  зелёные; clippy clean.
+
+Волна: M420→M433 (14 milestones).
 
 ## Next action (priority)
 
-1. audit-fields сканер построчный — пропустил 2 из 4 дрейф-полей
-   (multi-line вызовы). Кандидат: docs-drift-check / scanner fix.
-2. Либо процессный разрыв из STATE/QUEUE.
-3. Disk: target/ 22.7GB (incremental отстроился) — очистка по явному «да».
+1. GSD skip-delivered closeout for M433.
+2. Свип и гейты полностью зелёные. Кандидаты: STATE/QUEUE разрыв;\n   ADR-061/063 обзор; волна kg-pipeline контрактов.
 
 ## Do not
 
-Unlock D127. Pin a fake. `let _ =` на pub write API. Тесты с
-workspace-относительными DATA-путями без CARGO_MANIFEST_DIR-пина.
-Ручной перенос 64-символьных SHA.
+Unlock D127. Pin a fake. `let _ =` на pub write API. Тесты с\nworkspace-относительными DATA-путями без CARGO_MANIFEST_DIR-пина.\nРучной перенос 64-символьных SHA.
