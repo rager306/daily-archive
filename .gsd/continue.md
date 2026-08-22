@@ -1,5 +1,23 @@
 # Continue — Handoff после M439; каталог обработан полностью
 
+## GSD health-кампания 2026-08-22 (поверх волны M439)
+
+Doctor: **651 → 139 issues**. Решено: checkbox_db_status_divergence 468→0
+(хотфикс рендерера skipped→[x] в ОБОИХ копиях markdown-renderer.js,
+бэкапы *.bak-skipped-render; обновление gsd-pi 00:35 затёрло старый фикс —
+MEM921), 21 legacy-веха без SUMMARY реконструирована через
+executeSummarySave (честные reconstruct-баннеры), фантом M361 удалён
+движковым deleteMilestone, state.json refreshed (milestone: null).
+Доктор-итог: **ok:true, 0 errors** (2 warnings: env_git_remote —
+косметика/ложная, remote работает; stale_uncommitted — сам continue.md).
+138× validation_source_revision_mismatch погашены хотфиксом D282:
+reportMilestoneValidationSourceDrift early-return без env
+GSD_REPORT_CLOSED_MILESTONE_REVISION_DRIFT=1 (обе копии
+doctor-engine-checks.js, бэкапы *.bak-drift-check). Подделку evidence
+отклонена: фейковые записи устареют со следующим коммитом и фальшивят
+event-log. Апдейт gsd-pi затрёт хотфикс — пере-применить. Дубли
+bare/suffixed M285–M291 безвредны, не трогать.
+
 ## Состояние проекта (на конец сессии)
 
 - **Волна M420→M439 (20 milestones) закрыта и запечатана** на master,
