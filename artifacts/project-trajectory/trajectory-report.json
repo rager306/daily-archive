@@ -1,7 +1,7 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
   "phase": "closeout",
-  "verdict": "on_track",
+  "verdict": "drift_risk",
   "dimensions": {
     "schema_readiness": {
       "description": "Typed knowledge schema (node labels, property types, edge contracts)",
@@ -132,17 +132,23 @@
       ]
     }
   },
-  "drift_flags": [],
+  "drift_flags": [
+    {
+      "flag": "resource_target_bloat",
+      "severity": "medium",
+      "evidence": "target/ is 23.4GB (78GB free on disk) — consider 'cargo clean' before workspace builds Recommendation: Remove incremental cache: rm -rf target/debug/incremental (5.5GB); Remove example artifacts: rm -rf target/debug/examples (2.8GB); Dependencies cache large (13.8GB) — cargo clean -p <crate> to prune specific deps; Debug profile 23.4GB — run 'cargo clean' before workspace builds"
+    }
+  ],
   "reverse_adr_audit_details": {
     "status": "clear",
     "violations": [],
     "violations_count": 0
   },
   "next_actions": [
-    "No drift detected. Continue current milestone."
+    "target/ bloated: prune debug incremental/examples before workspace cargo."
   ],
   "milestone_context": {
-    "latest_milestone_id": "442",
-    "latest_milestone_title": "fafzp6-catalog-wide-materialization-and-feature"
+    "latest_milestone_id": "443",
+    "latest_milestone_title": "ss1ks0-indexed-hot-path-for-catalog-materializa"
   }
 }
