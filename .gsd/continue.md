@@ -1,3 +1,30 @@
+# Continue — Handoff после M444; регрессии ловим на всех статьях по пути
+
+## Состояние (2026-08-22, конец сессии M444-zn38ht)
+
+- **M444-zn38ht закрыт** (validate pass → gates 0 → consistency ok →
+  complete). Коммит `99e14c8b`.
+- **Regression harness**: catalog_regression (типизированный diff
+  run-отчётов: removed/added papers, revision drift, structural drops с
+  допуском DA_REGRESSION_TOLERANCE, replay-honesty, failures; exit 1).
+  Живая проверка: 589/589 идентично → 0 findings; тампер → 3/3 поймано.
+- **Drift-статистика по всем статьям**: 9.84 mentions/статья; 3
+  zero-mention alarm (известные low-yield не-CS). Семантика:
+  entities_created = глобальный dedup-счётчик, alarm = 0 MENTIONS.
+- **Направление закреплено**: gold — ТОЛЬКО эталон F1-фикстур; рабочий
+  корпус = все статьи каталога (589 в графе).
+- Попутно: исправлен баг дублирующегося JSON-ключа `revision` в
+  run-отчётах (writer + закоммиченный артефакт).
+
+## Следующий шаг (приоритет)
+
+1. **DATA-словарь методов для 3 zero-mention статей** (1203.2295,
+   2302.06590, 2504.16925) — закрыть alarms drift-статистики; перегон и
+   regression-check как приёмка.
+2. Пересборка каталога с индексами (M443) + regression-check как сквозной
+   прогон нового конвейера.
+3. D127-решение (только по вашему «да»).
+
 # Continue — Handoff после M443; hot path проиндексирован (37–154x)
 
 ## Состояние (2026-08-22, конец сессии M443-ss1ks0)
