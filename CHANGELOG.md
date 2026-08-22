@@ -1,5 +1,19 @@
 # Changelog
 
+### M442 full run: 589 статей каталога → единый семантический граф
+
+- **589/589 completed, 0 failed, 0 replay-noop violations** (wall-clock
+  ~2 ч, оффлайн, workers=1). Снапшот catalog_materialized.sgsnap:
+  **66299 узлов / 169916 рёбер**; graph-stats disk→query same-process OK.
+- Покрытие материализации каталога: **589/604 = 97.5%** (523 TEI + 66
+  pdf-stamp recovery + 15 честных no_stamp).
+- Сравнение с gold-графом (173 статьи, 21868/51518): плотность на статью
+  сопоставима (catalog 112.6/288.5 vs gold 126.4/297.8 узлов/рёбер);
+  наборы статей не пересекаются by construction — отчёт фиксирует
+  honest non-equivalence (artifacts/catalog_sweep/
+  catalog_vs_gold_comparison.json).
+- Все 589 статей несут revision-owned identity (v1..v11).
+
 ### M442 feature-matrix gate + crash-safe resume материализации
 
 - **Пин feature-matrix**: verify_rust_architecture.sh теперь компилирует

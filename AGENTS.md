@@ -501,6 +501,8 @@ cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_ma
 cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover
 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
   cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
+# Full catalog-wide run (589 papers; ~2h offline) — already executed,
+# snapshot committed: artifacts/catalog_sweep/catalog_materialized.sgsnap.
 # Resume an interrupted full run (crash-safe; skips completed, merges reports):
 DA_MATERIALIZE_RESUME=1 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
   cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
