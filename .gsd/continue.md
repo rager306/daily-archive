@@ -1,3 +1,30 @@
+# Continue — Handoff после M441; recovery 66/81, полный корпус готов
+
+## Состояние (2026-08-22, конец сессии M441-h0uc3h)
+
+- **M441-h0uc3h закрыт** (validate pass → gates 0 → consistency ok →
+  complete → checkpoint). Коммит `e0104199`. Governor closeout ON_TRACK.
+- **Recovery: 66/81 no_tei_revision восстановлены** из PDF-штампов
+  (arXiv:<id>vN, страница 1-2, pdf-inspector за feature pdf-classifier,
+  оффлайн). Merged-канарка: 30/30, 0 failed, 0 replay-noop; снапшот
+  3341 узлов / 6990 рёбер.
+- Итог по покрытию материализации: **589/604 (97.5%) bindable**
+  (523 TEI + 66 штампы), 15 остаются typed-skip no_stamp.
+- Попутно починен pre-existing баг feature-сборки da-cli
+  (RegionTextPort import, ломался с M422; гейт эту комбинацию не
+  собирал — кандидат на усиление гейта).
+- Новый оператор: `--recover` + `DA_MATERIALIZE_RECOVERY=... --run`
+  (см. AGENTS Operators).
+
+## Следующий шаг (приоритет)
+
+1. **Full run 589 статей** → единый не-gold граф + сравнение с gold
+   (M437). Решение по объёму за оператором.
+2. DATA-словарь методов для не-CS полей (3 low-yield статьи).
+3. Governor: пин «feature-matrix build» в verify_rust_architecture.sh
+   (--features pdf-classifier для da-cli) — чтобы feature-брейки больше
+   не жили годами.
+
 # Continue — Handoff после M440; свип материализуем, GSD здоров
 
 ## Состояние (2026-08-22, конец сессии M440-rv8tlx)
