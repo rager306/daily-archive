@@ -1,3 +1,26 @@
+# Continue — Handoff после M446-S01; словари живые, rebuild 6 минут
+
+## Состояние (2026-08-22, M446-rw9a2p S01 закрыт, S02 запланирована)
+
+- Коммит `92d9be70`. **Два системных DATA-first нарушения закрыты**:
+  раннеры читают data/extraction_patterns.yaml (env
+  DA_EXTRACTION_PATTERNS); кэш-ключи несут rules_sha256 (порт
+  Extractor::cache_fingerprint).
+- **Полная пересборка корпуса: sweep 14с + материализация 6.3 мин**
+  (589/589, 0 failed, 0 replay-noop) — индексы M443 дали ~19x.
+  Drift: 0 zero-mention; mentions 9.84→11.08.
+- M446 **S02 ещё НЕ начата** (запланирована): unify edge_contracts.yaml
+  + doi_prefix_map.yaml за OpenAlex-адаптером (убить хардкод).
+- **Новая аномалия в реестре**: 19 статей в 2+ категориях каталога
+  (байт-идентичные PDF) — блокирует eval_batch gold F1; чинить
+  lookup-унификацией (не удалением). Кандидат в S02 или отдельную волну.
+
+## Следующий шаг (приоритет)
+
+1. **M446 S02**: edge_contracts unify + doi_prefix_map (+ опционально
+   lookup-унификация 19 дублей → разблокирует gold F1 spot-check).
+2. Затем W-B2 (citation_styles) и W-C (сущности-цитаты) по roadmap.
+
 # Continue — Handoff после M445; аудит конвейера готов
 
 ## Состояние (2026-08-22, конец сессии M445-9a6s8e)
