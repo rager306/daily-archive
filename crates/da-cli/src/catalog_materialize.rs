@@ -425,6 +425,33 @@ pub fn load_paper_artifacts(
     })
 }
 
+// ─── M442: crash-safe resume (prior-run extraction) ────────────────────────
+
+/// Paper ids that reached the terminal `completed` state in a prior run
+/// report. Resume skips exactly these; failed and skipped papers are retried
+/// or re-derived. A missing prior report is an empty set (fresh run).
+pub fn prior_completed_ids(
+    prior_report_json: &[u8],
+) -> serde_json::Result<std::collections::BTreeSet<String>> {
+    let value: serde_json::Value = serde_json::from_slice(prior_report_json)?;
+    let mut ids = std::collections::BTreeSet::new();
+    if let Some(papers) = value.get("papers").and_then(|p| p.as_array()) {
+        for paper in papers {
+            // PaperRunRecord serializes the FSM state with #[serde(flatten)]
+            // and tag = "state": the verdict is the record's top-level
+            // "state" string, not a nested object.
+            let completed = paper
+                .get("state")
+                .and_then(|s| s.as_str())
+                .is_some_and(|s| s == "completed");
+            if completed && let Some(id) = paper.get("paper_id").and_then(|v| v.as_str()) {
+                ids.insert(id.to_string());
+            }
+        }
+    }
+    Ok(ids)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -724,6 +751,29 @@ mod tests {
             Err(LoadArtifactsError::PayloadCorrupt { stage, .. }) => assert_eq!(stage, STAGE_PARSE),
             other => panic!("expected PayloadCorrupt, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn prior_completed_extracts_only_completed() {
+        let json = br#"{"papers":[
+            {"paper_id":"1111.1111","state":"completed"},
+            {"paper_id":"2222.2222","state":"skipped"},
+            {"paper_id":"3333.3333","state":"failed"}
+        ]}"#;
+        let ids = prior_completed_ids(json).unwrap();
+        assert!(ids.contains("1111.1111"));
+        assert_eq!(ids.len(), 1);
+    }
+
+    #[test]
+    fn prior_completed_empty_and_missing_papers_array() {
+        assert!(prior_completed_ids(b"{}").unwrap().is_empty());
+        assert!(prior_completed_ids(b"[]").unwrap().is_empty());
+    }
+
+    #[test]
+    fn prior_completed_corrupt_json_is_typed_error() {
+        assert!(prior_completed_ids(b"{nope").is_err());
     }
 
     #[test]

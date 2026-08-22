@@ -501,6 +501,9 @@ cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_ma
 cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover
 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
   cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
+# Resume an interrupted full run (crash-safe; skips completed, merges reports):
+DA_MATERIALIZE_RESUME=1 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
+  cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
 
 # Extraction evaluation on gold-standard corpus (12 modern papers)
 cargo run -p da-cli --example eval_batch

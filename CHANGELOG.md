@@ -1,5 +1,19 @@
 # Changelog
 
+### M442 feature-matrix gate + crash-safe resume материализации
+
+- **Пин feature-matrix**: verify_rust_architecture.sh теперь компилирует
+  `da-cli --features pdf-classifier --examples`; Governor-политика
+  `feature_matrix_gate` (DATA YAML + Python-чек + 3 юнит-теста)
+  флагает исчезновение пина. Урок M441 закрыт двумя слоями.
+- **Crash-safe resume** (--resume / DA_MATERIALIZE_RESUME=1): прерванный
+  full-run продолжает с места остановки — preload снапшота, skip
+  завершённых статей по prior-отчёту, merge записей и totals.
+  E2E: 5 → resume → 10 total, граф растёт ровно на новые статьи
+  (380→680 узлов), 0 дубликаций, 0 replay-нарушений.
+- Хелпер prior_completed_ids (flattened-state парсинг) + 3 юнит-теста
+  (17 в модуле). Баг nested-парсинга пойман E2E-канаркой и исправлен.
+
 ### M441 version recovery: PDF-штампы закрывают 66/81 no_tei_revision
 
 - Разведка: 9/12 пропущенных PDF несут штамп arXiv:<id>vN на первой

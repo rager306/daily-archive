@@ -36,7 +36,7 @@ use da_application::revision_materialization::{
 use da_application::{ExtractionUseCase, IngestUseCase};
 use da_cli::catalog_materialize::{
     CoverageReport, CoverageVerdict, LoadArtifactsError, audit, load_paper_artifacts,
-    load_sweep_ok_papers,
+    load_sweep_ok_papers, prior_completed_ids,
 };
 use da_domain::PdfTriageStatus;
 use da_ports::graph_store::DirectGraphStore;
@@ -92,6 +92,11 @@ struct Args {
     /// Default: DA_MATERIALIZE_LIMIT env or 0 (all).
     #[arg(long)]
     limit: Option<usize>,
+    /// Resume an interrupted run (M442): preload the existing snapshot,
+    /// skip papers already completed in the existing run report, merge
+    /// records. Default: DA_MATERIALIZE_RESUME=1 enables.
+    #[arg(long)]
+    resume: bool,
     /// Recovery report output (--recover). Default:
     /// DA_MATERIALIZE_RECOVERY_REPORT env or
     /// artifacts/catalog_sweep/materialization_recovery.json.
@@ -369,7 +374,8 @@ struct RunReport {
     snapshot: String,
     totals: RunTotals,
     run_state: RunMaterializeState,
-    papers: Vec<PaperRunRecord>,
+    /// Prior-run records (raw JSON on resume) plus new typed records.
+    papers: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Default)]
@@ -460,6 +466,57 @@ async fn run_materialization(args: &Args) -> Result<()> {
         "no materializable papers in coverage report"
     );
 
+    // M442 crash-safe resume: an interrupted run continues instead of
+    // restarting from zero. Prior completed papers are skipped (their graph
+    // state is already in the preloaded snapshot); failed/skipped papers
+    // are retried. Totals merge prior + new.
+    let resume = args.resume
+        || std::env::var("DA_MATERIALIZE_RESUME")
+            .ok()
+            .is_some_and(|v| v.trim() == "1");
+    let run_report_path = args.run_report_path();
+    let snapshot_path = args.snapshot_path();
+    let mut prior_records: Vec<serde_json::Value> = Vec::new();
+    let mut prior_totals = RunTotals::default();
+    let mut prior_processed = 0usize;
+    if resume && let Ok(prior_bytes) = std::fs::read(&run_report_path) {
+        let prior_ids = prior_completed_ids(&prior_bytes)
+            .with_context(|| format!("parse prior run report {}", run_report_path.display()))?;
+        let prior: serde_json::Value = serde_json::from_slice(&prior_bytes)
+            .with_context(|| format!("parse prior run report {}", run_report_path.display()))?;
+        if let Some(papers) = prior.get("papers").and_then(|p| p.as_array()) {
+            for paper in papers {
+                let completed = paper
+                    .get("state")
+                    .and_then(|s| s.as_str())
+                    .is_some_and(|s| s == "completed");
+                if completed {
+                    prior_processed += 1;
+                }
+                prior_records.push(paper.clone());
+            }
+        }
+        if let Some(t) = prior.get("totals") {
+            prior_totals.completed =
+                t.get("completed").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            prior_totals.skipped = t.get("skipped").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            prior_totals.failed = t.get("failed").and_then(|v| v.as_u64()).unwrap_or(0) as usize;
+            prior_totals.replay_noop_violations = t
+                .get("replay_noop_violations")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0) as usize;
+        }
+        let before = targets.len();
+        targets.retain(|(id, _, _)| !prior_ids.contains(id));
+        println!(
+            "resume: {} prior records ({} completed), targets {} -> {}",
+            prior_records.len(),
+            prior_processed,
+            before,
+            targets.len()
+        );
+    }
+
     // Source hashes from the sweep report (manifestation evidence).
     let sweep: serde_json::Value = serde_json::from_slice(&std::fs::read(&args.sweep_report)?)?;
     let mut source_sha: BTreeMap<String, String> = BTreeMap::new();
@@ -473,6 +530,24 @@ async fn run_materialization(args: &Args) -> Result<()> {
 
     // Embedded in-process store; refuses remote/persistence modes honestly.
     let store: Arc<dyn DirectGraphStore> = Arc::new(SamyamaGraphStore::try_from_env()?);
+
+    // Snapshot preload on resume: continue from the graph state the
+    // interrupted run already wrote.
+    if resume && snapshot_path.is_file() {
+        let bytes = std::fs::read(&snapshot_path)
+            .with_context(|| format!("read prior snapshot {}", snapshot_path.display()))?;
+        store
+            .import_snapshot(&bytes)
+            .await
+            .context("import prior snapshot")?;
+        println!(
+            "resume: preloaded snapshot {} ({} nodes / {} edges)",
+            snapshot_path.display(),
+            store.node_count().await,
+            store.edge_count().await
+        );
+    }
+
     let clock: Arc<dyn Clock> = Arc::new(SystemClock);
     let ingest =
         IngestUseCase::materializer_only_with_clock(Arc::clone(&store), Arc::clone(&clock));
@@ -482,6 +557,9 @@ async fn run_materialization(args: &Args) -> Result<()> {
 
     let mut run_fsm = RunMaterializeFsm::new();
     run_fsm.apply(RunMaterializeEvent::Started)?;
+    for _ in 0..prior_processed {
+        run_fsm.apply(RunMaterializeEvent::PaperProcessed)?;
+    }
     let mut papers: Vec<PaperRunRecord> = Vec::with_capacity(targets.len());
     let mut totals = RunTotals::default();
 
@@ -670,22 +748,30 @@ async fn run_materialization(args: &Args) -> Result<()> {
     // Export.
     run_fsm.apply(RunMaterializeEvent::ExportStarted)?;
     let snapshot_bytes = store.export_snapshot().await.context("export snapshot")?;
-    let snapshot_path = args.snapshot_path();
     da_cli::gold_graph::atomic_write(&snapshot_path, &snapshot_bytes)
         .with_context(|| format!("write snapshot {}", snapshot_path.display()))?;
     run_fsm.apply(RunMaterializeEvent::ExportDone {
         snapshot: snapshot_path.display().to_string(),
     })?;
 
+    totals.completed += prior_totals.completed;
+    totals.skipped += prior_totals.skipped;
+    totals.failed += prior_totals.failed;
+    totals.replay_noop_violations += prior_totals.replay_noop_violations;
+    let mut paper_values: Vec<serde_json::Value> = prior_records.into_iter().collect();
+    paper_values.extend(
+        papers
+            .into_iter()
+            .filter_map(|record| serde_json::to_value(record).ok()),
+    );
     let report = RunReport {
         schema_version: 1,
         snapshot: snapshot_path.display().to_string(),
         totals,
         run_state: run_fsm.state().clone(),
-        papers,
+        papers: paper_values,
     };
     let json = serde_json::to_vec_pretty(&report)?;
-    let run_report_path = args.run_report_path();
     da_cli::gold_graph::atomic_write(&run_report_path, &json)
         .with_context(|| format!("write run report {}", run_report_path.display()))?;
 
