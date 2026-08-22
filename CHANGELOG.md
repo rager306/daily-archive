@@ -1,5 +1,29 @@
 # Changelog
 
+### M441 version recovery: PDF-штампы закрывают 66/81 no_tei_revision
+
+- Разведка: 9/12 пропущенных PDF несут штамп arXiv:<id>vN на первой
+  странице — источник версии именно этого ассета (без сети и без
+  угадывания latest).
+- `arxiv_stamp_revision` (da-application, чистая логика): таблица
+  форматов (vN, суффикс категории, перенос строки, регистр), отказ для
+  чужих id/v0/без-версии; RevisionRecoveryFsm (TeiChecked → StampChecked
+  → Recovered/StillUnbound, terminal-absorb) + D127-canary. 6 новых
+  тестов (всего 15 в модуле).
+- Runner: режим `--recover` за feature `pdf-classifier` (pdf-inspector,
+  первые 2 страницы, оффлайн): **66 recovered / 15 still_unbound /
+  0 pdf errors** по реальным 81; merge в --run через
+  DA_MATERIALIZE_RECOVERY (+66 materializable).
+- Merged-канарка 30 статей: 30/30 completed, 0 failed, 0 replay-noop;
+  восстановленные статьи прошли до Completed со своими версиями
+  (1611.01796→v2, 1905.08085→v5, 2005.14165→v4).
+- Попутно исправлен pre-existing баг feature-сборки: load_journey звал
+  trait-метод RegionTextPort без импорта трейта (ломал
+  `cargo check -p da-cli --features pdf-classifier` со времён M422;
+  полный гейт эту комбинацию не собирал). Ре-экспорт
+  `da_adapters::pdf_inspector` для feature-пути.
+- Env: DA_MATERIALIZE_RECOVERY_REPORT, DA_MATERIALIZE_RECOVERY.
+
 ### M440 sweep materialization: кэш свипа → семантический граф (S01-S03)
 
 - Coverage-audit 604 ok-статей свипа по ADR-065 tei_declared_revision

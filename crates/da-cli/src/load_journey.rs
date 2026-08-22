@@ -884,6 +884,9 @@ fn try_region_text_grounding(
 ) -> Option<(String, String)> {
     #[cfg(feature = "pdf-classifier")]
     {
+        // The method lives in the RegionTextPort trait — the import must be
+        // inside the cfg block so non-feature builds see no unused import.
+        use da_ports::region_text::RegionTextPort;
         let bytes = std::fs::read(pdf_path).ok()?;
         let region = artifact.region;
         let outcome = da_adapters::PdfInspectorRegionText::new().extract_text_in_region(

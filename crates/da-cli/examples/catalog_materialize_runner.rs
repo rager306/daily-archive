@@ -23,6 +23,8 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use da_adapters::{FilePipelineCache, SamyamaGraphStore};
+#[cfg(feature = "pdf-classifier")]
+use da_application::catalog_materialization::arxiv_stamp_revision;
 use da_application::catalog_materialization::{
     PaperMaterializeEvent, PaperMaterializeFsm, PaperMaterializeState, RunMaterializeEvent,
     RunMaterializeFsm, RunMaterializeState, SKIP_AMBIGUOUS_PARSE_KEYS, SKIP_ASSET_MISSING,
@@ -59,6 +61,10 @@ struct Args {
     /// Materialization run (S02 mode).
     #[arg(long)]
     run: bool,
+    /// Version recovery over skipped papers (M441; feature pdf-classifier).
+    /// Writes a typed recovery report; no graph writes.
+    #[arg(long)]
+    recover: bool,
     /// Content-addressed sweep pipeline cache root.
     #[arg(long, default_value = "artifacts/catalog_sweep/pipeline_cache")]
     cache_root: PathBuf,
@@ -86,6 +92,23 @@ struct Args {
     /// Default: DA_MATERIALIZE_LIMIT env or 0 (all).
     #[arg(long)]
     limit: Option<usize>,
+    /// Recovery report output (--recover). Default:
+    /// DA_MATERIALIZE_RECOVERY_REPORT env or
+    /// artifacts/catalog_sweep/materialization_recovery.json.
+    #[arg(long)]
+    recovery_report: Option<PathBuf>,
+}
+
+impl Args {
+    #[cfg(feature = "pdf-classifier")]
+    fn recovery_report_path(&self) -> PathBuf {
+        self.recovery_report.clone().unwrap_or_else(|| {
+            PathBuf::from(env_or(
+                "DA_MATERIALIZE_RECOVERY_REPORT",
+                "artifacts/catalog_sweep/materialization_recovery.json",
+            ))
+        })
+    }
 }
 
 impl Args {
@@ -123,8 +146,9 @@ fn main() -> Result<()> {
     // pipeline_composition_root_without_file_logging).
     let _log_guard = da_cli::logging::init_pipeline_logging("catalog_materialize_runner");
     let args = Args::parse();
-    if args.audit_only == args.run {
-        anyhow::bail!("pass exactly one mode: --audit-only or --run");
+    let modes = args.audit_only as u8 + args.run as u8 + args.recover as u8;
+    if modes != 1 {
+        anyhow::bail!("pass exactly one mode: --audit-only, --run or --recover");
     }
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -141,8 +165,154 @@ async fn async_main(args: Args) -> Result<()> {
     );
     if args.audit_only {
         run_audit(&args)
+    } else if args.recover {
+        #[cfg(feature = "pdf-classifier")]
+        {
+            recovery::run_recovery(&args)
+        }
+        #[cfg(not(feature = "pdf-classifier"))]
+        {
+            anyhow::bail!(
+                "--recover requires the pdf-classifier feature: cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover"
+            )
+        }
     } else {
         run_materialization(&args).await
+    }
+}
+
+/// M441 S02: offline version recovery over skipped papers. Feature-gated:
+/// pdf-inspector links only under da-adapters/pdf-classifier.
+#[cfg(feature = "pdf-classifier")]
+mod recovery {
+
+    use super::*;
+    use da_application::catalog_materialization::{
+        RECOVERY_REASON_NO_STAMP, RECOVERY_REASON_PDF_ERROR, RECOVERY_SOURCE_PDF_STAMP,
+        arxiv_stamp_revision,
+    };
+
+    #[derive(Debug, serde::Serialize)]
+    pub(super) struct RecoveryRecord {
+        pub paper_id: String,
+        pub category: Option<String>,
+        pub outcome: &'static str,
+        pub revision: Option<u32>,
+        pub source: Option<&'static str>,
+        pub reason: Option<&'static str>,
+    }
+
+    #[derive(Debug, Default, serde::Serialize)]
+    pub(super) struct RecoveryTotals {
+        pub recovered: usize,
+        pub still_unbound: usize,
+        pub pdf_error: usize,
+    }
+
+    #[derive(Debug, serde::Serialize)]
+    pub(super) struct RecoveryReport {
+        pub schema_version: u32,
+        pub totals: RecoveryTotals,
+        pub papers: Vec<RecoveryRecord>,
+    }
+
+    pub(super) fn run_recovery(args: &Args) -> Result<()> {
+        let coverage: CoverageReport = serde_json::from_slice(&std::fs::read(&args.report)?)
+            .with_context(|| format!("parse coverage report {}", args.report.display()))?;
+        let targets: Vec<(String, Option<String>)> = coverage
+            .papers
+            .iter()
+            .filter(|p| p.verdict == CoverageVerdict::Skipped)
+            .map(|p| (p.paper_id.clone(), p.category.clone()))
+            .collect();
+        anyhow::ensure!(!targets.is_empty(), "no skipped papers in coverage report");
+
+        let mut report = RecoveryReport {
+            schema_version: 1,
+            totals: RecoveryTotals::default(),
+            papers: Vec::with_capacity(targets.len()),
+        };
+        for (paper_id, category) in targets {
+            let pdf = args
+                .catalog_root
+                .join(category.as_deref().unwrap_or("unknown"))
+                .join(&paper_id)
+                .join("source")
+                .join(format!("{paper_id}.pdf"));
+            let record = match std::fs::read(&pdf) {
+                Ok(bytes) => {
+                    // The first two pages carry the arXiv stamp when present.
+                    let options = da_adapters::pdf_inspector::PdfOptions::new().pages([0u32, 1]);
+                    match da_adapters::pdf_inspector::process_pdf_mem_with_options(&bytes, options)
+                    {
+                        Ok(result) => {
+                            let markdown = result.markdown.unwrap_or_default();
+                            match arxiv_stamp_revision(&markdown, &paper_id) {
+                                Some(revision) => {
+                                    tracing::info!(paper = %paper_id, revision, source = "pdf_stamp", "revision recovered");
+                                    report.totals.recovered += 1;
+                                    RecoveryRecord {
+                                        paper_id,
+                                        category,
+                                        outcome: "recovered",
+                                        revision: Some(revision),
+                                        source: Some(RECOVERY_SOURCE_PDF_STAMP),
+                                        reason: None,
+                                    }
+                                }
+                                None => {
+                                    report.totals.still_unbound += 1;
+                                    RecoveryRecord {
+                                        paper_id,
+                                        category,
+                                        outcome: "still_unbound",
+                                        revision: None,
+                                        source: None,
+                                        reason: Some(RECOVERY_REASON_NO_STAMP),
+                                    }
+                                }
+                            }
+                        }
+                        Err(error) => {
+                            tracing::warn!(paper = %paper_id, %error, "pdf-inspector failed");
+                            report.totals.pdf_error += 1;
+                            RecoveryRecord {
+                                paper_id,
+                                category,
+                                outcome: "pdf_error",
+                                revision: None,
+                                source: None,
+                                reason: Some(RECOVERY_REASON_PDF_ERROR),
+                            }
+                        }
+                    }
+                }
+                Err(error) => {
+                    tracing::warn!(paper = %paper_id, %error, "asset missing for recovery");
+                    report.totals.pdf_error += 1;
+                    RecoveryRecord {
+                        paper_id,
+                        category,
+                        outcome: "pdf_error",
+                        revision: None,
+                        source: None,
+                        reason: Some(RECOVERY_REASON_PDF_ERROR),
+                    }
+                }
+            };
+            report.papers.push(record);
+        }
+
+        let path = args.recovery_report_path();
+        let json = serde_json::to_vec_pretty(&report)?;
+        da_cli::gold_graph::atomic_write(&path, &json)
+            .with_context(|| format!("write recovery report {}", path.display()))?;
+        println!(
+            "recovery: {} recovered | {} still unbound | {} pdf errors",
+            report.totals.recovered, report.totals.still_unbound, report.totals.pdf_error
+        );
+        println!("report: {}", path.display());
+        Ok(())
     }
 }
 
@@ -228,8 +398,50 @@ fn skip_reason_for(error: &LoadArtifactsError) -> &'static str {
 
 async fn run_materialization(args: &Args) -> Result<()> {
     // Input: coverage report (S01 artifact) filtered to materializable.
-    let coverage: CoverageReport = serde_json::from_slice(&std::fs::read(&args.report)?)
+    let mut coverage: CoverageReport = serde_json::from_slice(&std::fs::read(&args.report)?)
         .with_context(|| format!("parse coverage report {}", args.report.display()))?;
+    // Optional M441 merge: recovered revisions upgrade no_tei_revision skips
+    // to materializable before target selection (env DA_MATERIALIZE_RECOVERY
+    // points at the recovery report; unset = no merge).
+    let mut recovered_count = 0usize;
+    let recovery_path = std::env::var("DA_MATERIALIZE_RECOVERY")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .map(PathBuf::from);
+    if let Some(path) = &recovery_path {
+        let recovery: serde_json::Value = serde_json::from_slice(&std::fs::read(path)?)
+            .with_context(|| format!("parse recovery report {}", path.display()))?;
+        let mut revisions: BTreeMap<String, u32> = BTreeMap::new();
+        if let Some(papers) = recovery.get("papers").and_then(|p| p.as_array()) {
+            for row in papers {
+                let (Some(outcome), Some(paper)) = (
+                    row.get("outcome").and_then(|v| v.as_str()),
+                    row.get("paper_id").and_then(|v| v.as_str()),
+                ) else {
+                    continue;
+                };
+                if outcome == "recovered"
+                    && let Some(revision) = row.get("revision").and_then(|v| v.as_u64())
+                {
+                    revisions.insert(paper.to_string(), revision as u32);
+                }
+            }
+        }
+        for paper in &mut coverage.papers {
+            if paper.verdict == CoverageVerdict::Skipped
+                && let Some(revision) = revisions.remove(&paper.paper_id)
+            {
+                paper.verdict = CoverageVerdict::Materializable;
+                paper.revision = Some(revision);
+                paper.reason = None;
+                recovered_count += 1;
+            }
+        }
+        tracing::info!(recovered = recovered_count, "recovery merge applied");
+    }
+    if recovered_count > 0 {
+        println!("recovery merge: +{recovered_count} materializable from pdf stamps");
+    }
     let mut targets: Vec<(String, Option<String>, u32)> = coverage
         .papers
         .iter()

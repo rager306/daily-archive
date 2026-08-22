@@ -37,6 +37,8 @@ pub mod section_summary_policy;
 pub mod tex_archive;
 
 #[cfg(feature = "pdf-classifier")]
+pub use pdf_inspector;
+#[cfg(feature = "pdf-classifier")]
 pub mod pdf_classifier;
 #[cfg(feature = "pdf-classifier")]
 pub mod region_text;

@@ -497,6 +497,10 @@ cargo run -p da-cli --example catalog_materialize_runner -- --audit-only
 #    full run: no limit; env knobs DA_MATERIALIZE_{LIMIT,SNAPSHOT,RUN_REPORT})
 cargo run -p da-cli --example catalog_materialize_runner -- --run --limit 25
 cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
+# Version recovery for no_tei_revision papers (M441; offline, pdf stamps):
+cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover
+DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
+  cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
 
 # Extraction evaluation on gold-standard corpus (12 modern papers)
 cargo run -p da-cli --example eval_batch
@@ -562,7 +566,7 @@ Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; pr
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **daily-archive** (34074 symbols, 58848 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **daily-archive** (34287 symbols, 59340 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

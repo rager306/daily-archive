@@ -358,8 +358,295 @@ fn run_event_name(event: &RunMaterializeEvent) -> String {
     }
 }
 
+// ─── M441 S01: arXiv version-stamp recovery (pure logic) ────────────────────
+
+/// Recovery outcome vocabulary shared by the runner report (M441 S02).
+pub const RECOVERY_SOURCE_TEI_IDNO: &str = "tei_idno";
+pub const RECOVERY_SOURCE_PDF_STAMP: &str = "pdf_stamp";
+pub const RECOVERY_REASON_NO_STAMP: &str = "no_stamp";
+pub const RECOVERY_REASON_PDF_ERROR: &str = "pdf_error";
+
+/// Extract the arXiv revision declared in the page-1 stamp
+/// (`arXiv:<paper_id>vN`, optionally followed by a category suffix like
+/// `[cs.CL]` and a date). Tolerates case differences, whitespace after the
+/// colon, and a line wrap between the id and the `vN`. Rejects foreign ids,
+/// `v0`, and stamps without a version: recovery must be definitive or None.
+pub fn arxiv_stamp_revision(page_text: &str, paper_id: &str) -> Option<u32> {
+    let lower = page_text.to_ascii_lowercase();
+    let needle = "arxiv:";
+    let mut cursor = 0usize;
+    while let Some(rel) = lower[cursor..].find(needle) {
+        let after_colon = cursor + rel + needle.len();
+        cursor = after_colon;
+        let rest = page_text[after_colon..].trim_start();
+        let Some(after_id) = rest.strip_prefix(paper_id) else {
+            continue;
+        };
+        let after_id = after_id.trim_start();
+        let Some(digits) = after_id.strip_prefix(['v', 'V']) else {
+            // Stamp for this id without a version: keep scanning in case
+            // the same page also carries a versioned stamp.
+            continue;
+        };
+        let take: String = digits.chars().take_while(char::is_ascii_digit).collect();
+        if take.is_empty() {
+            continue;
+        }
+        if let Ok(revision) = take.parse::<u32>()
+            && revision > 0
+        {
+            return Some(revision);
+        }
+    }
+    None
+}
+
+/// Events for one paper's revision recovery.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "event")]
+pub enum RecoveryEvent {
+    TeiChecked { declared: bool },
+    StampChecked { revision: Option<u32> },
+    Fail { stage: &'static str, error: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case", tag = "state")]
+pub enum RecoveryState {
+    Pending,
+    TeiChecked { declared: bool },
+    Recovered { revision: u32, source: &'static str },
+    StillUnbound { reason: &'static str },
+    Failed { stage: &'static str, error: String },
+}
+
+impl RecoveryState {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            Self::Recovered { .. } | Self::StillUnbound { .. } | Self::Failed { .. }
+        )
+    }
+}
+
+#[derive(Debug, Error, PartialEq, Eq)]
+#[error("illegal recovery transition: {event:?} in state {from:?}")]
+pub struct IllegalRecoveryTransition {
+    pub from: &'static str,
+    pub event: String,
+}
+
+/// Revision recovery FSM: TEI idno first (M440 path), then the page-1 PDF
+/// stamp. D127 canary: no import/promote/unlock surface; recovery only
+/// produces a revision number for binding.
+#[derive(Debug, Clone)]
+pub struct RevisionRecoveryFsm {
+    state: RecoveryState,
+}
+
+impl Default for RevisionRecoveryFsm {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RevisionRecoveryFsm {
+    pub fn new() -> Self {
+        Self {
+            state: RecoveryState::Pending,
+        }
+    }
+
+    pub fn state(&self) -> &RecoveryState {
+        &self.state
+    }
+
+    pub fn apply(&mut self, event: RecoveryEvent) -> Result<(), IllegalRecoveryTransition> {
+        match (&self.state, event) {
+            (s, event) if s.is_terminal() => {
+                let _ = event;
+                Ok(())
+            }
+            (RecoveryState::Pending, RecoveryEvent::TeiChecked { declared }) => {
+                if declared {
+                    self.state = RecoveryState::Recovered {
+                        revision: 0,
+                        source: RECOVERY_SOURCE_TEI_IDNO,
+                    };
+                    Ok(())
+                } else {
+                    self.state = RecoveryState::TeiChecked { declared: false };
+                    Ok(())
+                }
+            }
+            (
+                RecoveryState::TeiChecked { declared: false },
+                RecoveryEvent::StampChecked { revision },
+            ) => match revision {
+                Some(revision) if revision > 0 => {
+                    self.state = RecoveryState::Recovered {
+                        revision,
+                        source: RECOVERY_SOURCE_PDF_STAMP,
+                    };
+                    Ok(())
+                }
+                _ => {
+                    self.state = RecoveryState::StillUnbound {
+                        reason: RECOVERY_REASON_NO_STAMP,
+                    };
+                    Ok(())
+                }
+            },
+            (_, RecoveryEvent::Fail { stage, error }) => {
+                self.state = RecoveryState::Failed { stage, error };
+                Ok(())
+            }
+            (s, event) => Err(IllegalRecoveryTransition {
+                from: recovery_state_name(s),
+                event: recovery_event_name(&event),
+            }),
+        }
+    }
+}
+
+fn recovery_state_name(state: &RecoveryState) -> &'static str {
+    match state {
+        RecoveryState::Pending => "Pending",
+        RecoveryState::TeiChecked { .. } => "TeiChecked",
+        RecoveryState::Recovered { .. } => "Recovered",
+        RecoveryState::StillUnbound { .. } => "StillUnbound",
+        RecoveryState::Failed { .. } => "Failed",
+    }
+}
+
+fn recovery_event_name(event: &RecoveryEvent) -> String {
+    match event {
+        RecoveryEvent::TeiChecked { .. } => "tei_checked".into(),
+        RecoveryEvent::StampChecked { .. } => "stamp_checked".into(),
+        RecoveryEvent::Fail { .. } => "fail".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    // ─── M441 S01: stamp parser table ────────────────────────────────────
+
+    #[test]
+    fn stamp_table() {
+        let cases: &[(&str, &str, Option<u32>)] = &[
+            ("arXiv:1611.01796v2", "1611.01796", Some(2)),
+            (
+                "arXiv:2005.14165v4 [cs.CL] 24 May 2020",
+                "2005.14165",
+                Some(4),
+            ),
+            ("arXiv:1206.6423\nv2", "1206.6423", Some(2)),
+            ("ARXIV:1905.08085V5", "1905.08085", Some(5)),
+            ("arXiv: 2302.08468v3", "2302.08468", Some(3)),
+            (
+                "noise before arXiv:1809.07124v2 [cs.LG] more noise",
+                "1809.07124",
+                Some(2),
+            ),
+            ("arXiv:1611.01796", "1611.01796", None),
+            ("arXiv:9999.9999v3", "1611.01796", None),
+            ("arXiv:2302.04761v0", "2302.04761", None),
+            ("", "1611.01796", None),
+            ("no stamp at all", "1611.01796", None),
+        ];
+        for (text, id, expected) in cases {
+            assert_eq!(
+                arxiv_stamp_revision(text, id),
+                *expected,
+                "text={text:?} id={id}"
+            );
+        }
+    }
+
+    #[test]
+    fn stamp_versioned_stamp_wins_over_bare_mention() {
+        let text = "see arXiv:1611.01796 for the intro\n\narXiv:1611.01796v3";
+        assert_eq!(arxiv_stamp_revision(text, "1611.01796"), Some(3));
+    }
+
+    #[test]
+    fn recovery_fsm_legal_path_pdf_stamp() {
+        let mut fsm = RevisionRecoveryFsm::new();
+        fsm.apply(RecoveryEvent::TeiChecked { declared: false })
+            .unwrap();
+        fsm.apply(RecoveryEvent::StampChecked { revision: Some(2) })
+            .unwrap();
+        assert_eq!(
+            fsm.state(),
+            &RecoveryState::Recovered {
+                revision: 2,
+                source: RECOVERY_SOURCE_PDF_STAMP
+            }
+        );
+    }
+
+    #[test]
+    fn recovery_fsm_tei_declared_short_circuits() {
+        let mut fsm = RevisionRecoveryFsm::new();
+        fsm.apply(RecoveryEvent::TeiChecked { declared: true })
+            .unwrap();
+        assert!(matches!(
+            fsm.state(),
+            RecoveryState::Recovered {
+                source: RECOVERY_SOURCE_TEI_IDNO,
+                ..
+            }
+        ));
+        fsm.apply(RecoveryEvent::StampChecked { revision: Some(9) })
+            .unwrap();
+        assert!(matches!(
+            fsm.state(),
+            RecoveryState::Recovered {
+                source: RECOVERY_SOURCE_TEI_IDNO,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn recovery_fsm_no_stamp_is_typed_terminal() {
+        let mut fsm = RevisionRecoveryFsm::new();
+        fsm.apply(RecoveryEvent::TeiChecked { declared: false })
+            .unwrap();
+        fsm.apply(RecoveryEvent::StampChecked { revision: None })
+            .unwrap();
+        assert_eq!(
+            fsm.state(),
+            &RecoveryState::StillUnbound {
+                reason: RECOVERY_REASON_NO_STAMP
+            }
+        );
+    }
+
+    #[test]
+    fn recovery_fsm_illegal_and_fail_paths() {
+        let mut fsm = RevisionRecoveryFsm::new();
+        let err = fsm
+            .apply(RecoveryEvent::StampChecked { revision: Some(1) })
+            .unwrap_err();
+        assert_eq!(err.from, "Pending");
+        let mut failing = RevisionRecoveryFsm::new();
+        failing
+            .apply(RecoveryEvent::TeiChecked { declared: false })
+            .unwrap();
+        failing
+            .apply(RecoveryEvent::Fail {
+                stage: "pdf",
+                error: "boom".into(),
+            })
+            .unwrap();
+        assert!(matches!(failing.state(), RecoveryState::Failed { .. }));
+        failing
+            .apply(RecoveryEvent::StampChecked { revision: Some(1) })
+            .unwrap();
+        assert!(matches!(failing.state(), RecoveryState::Failed { .. }));
+    }
+
     use super::*;
 
     #[test]
