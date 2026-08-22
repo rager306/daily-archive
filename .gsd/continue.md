@@ -1,3 +1,31 @@
+# Continue — Handoff после M440; свип материализуем, GSD здоров
+
+## Состояние (2026-08-22, конец сессии M440-rv8tlx)
+
+- **M440-rv8tlx закрыт** (validate pass → gates 0 → consistency ok →
+  complete → checkpoint). Коммит `228e7853` (атомарный: код+тесты+доки+
+  артефакты). Governor closeout: **ON_TRACK flags=0 violations=0**.
+- Кэш свипа M439 теперь материализуем: **523/604 бумаг bindable**
+  (ADR-065 tei_declared_revision fallback, D283), 81 typed-skip
+  (no_tei_revision). Канарка 25 статей: 25/25, 0 failed, **0 replay-noop
+  violations**, снапшот 2626 узлов/5484 рёбер.
+- Новое: `da-application/catalog_materialization.rs` (FSM scan→bind→
+  materialize→verify, terminal-absorb proptest, D127-canary),
+  `da-cli/catalog_materialize.rs` (audit+loader, typed errors),
+  `examples/catalog_materialize_runner.rs` (--audit-only / --run;
+  env DA_MATERIALIZE_{LIMIT,SNAPSHOT,RUN_REPORT}; ADR-052 logging).
+- Полный прогон 523 статей: `cargo run -p da-cli --example
+  catalog_materialize_runner -- --run` (~минуты, оффлайн). Выходной
+  снапшот — candidate evidence, D127 locked.
+
+## Следующий шаг (приоритет)
+
+1. **Full run 523 статей** → corpus-wide не-gold граф + метрики против
+   gold-графа (M437). Решение оператора по объёму.
+2. DATA-словарь методов для не-CS (3 low-yield статьи свипа).
+3. Восстановление версий 81 no_tei_revision (HTML idno / arXiv API) —
+   новый кандидат после M440.
+
 # Continue — Handoff после M439; каталог обработан полностью
 
 ## GSD health-кампания 2026-08-22 (поверх волны M439)
