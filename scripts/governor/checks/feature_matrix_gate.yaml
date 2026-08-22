@@ -1,0 +1,29 @@
+# Feature-matrix gate pin — M442 S01, closing the M441 lesson.
+#
+# DATA for the Governor `feature_matrix_gate` check. The architecture gate
+# (scripts/verify_rust_architecture.sh) must compile documented CLI feature
+# combinations: the pdf-classifier build stayed broken from M422 to M441
+# because no layer of the verification stack ever compiled it. This policy
+# pins the gate script itself so the feature-matrix step cannot silently
+# disappear:
+#
+#   - required pattern `--features pdf-classifier` — the matrix line exists;
+#   - required pattern `--examples` — examples compile under the feature too
+#     (the runner is an example; a lib-only check would not cover it);
+#
+# When a new CLI feature lands, extend the gate's feature-matrix block and
+# add its marker here. This is DATA — adding a pin is an edit here, not a
+# Python change.
+
+schema_version: feature-matrix-gate.v1
+policy_id: feature-matrix-gate
+dimension: test_strategy
+severity: medium
+anchor: "M441 lesson, ADR-051 (overlapping verification contours)"
+
+source_markers:
+  verify_script:
+    path: scripts/verify_rust_architecture.sh
+    required_patterns:
+      - "--features pdf-classifier"
+      - "--examples"

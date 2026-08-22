@@ -971,6 +971,11 @@ class TrajectoryService:
         # (no import_eligible key anywhere in the envelope).
         drift_flags.extend(self._check_read_only_agent_contract())
 
+        # M442 S01: feature-matrix gate pin — the architecture gate must keep
+        # compiling documented CLI feature combinations (M441 lesson: the
+        # pdf-classifier build stayed broken for a month unseen).
+        drift_flags.extend(self._check_feature_matrix_gate())
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()
@@ -2036,6 +2041,52 @@ class TrajectoryService:
             if missing:
                 _flag("read_only_agent_contract_source_marker_missing",
                       f"{marker_key} source missing enforcement markers: {missing}")
+        return flags
+
+    def _check_feature_matrix_gate(self) -> list[DriftFlag]:
+        """Feature-matrix gate pin (M442 S01, M441 lesson).
+
+        Reads `scripts/governor/checks/feature_matrix_gate.yaml` (DATA) and
+        verifies that scripts/verify_rust_architecture.sh keeps its feature
+        matrix step: documented CLI feature combinations must compile in the
+        full gate. The pdf-classifier combination stayed broken from M422 to
+        M441 because no verification layer built it; this check makes a
+        silent removal of the pin a trajectory flag. Adding new CLI features
+        means extending both the gate script block and this YAML.
+        """
+        path = self.root / "scripts/governor/checks/feature_matrix_gate.yaml"
+        if not path.exists():
+            return []
+        try:
+            contract = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError) as error:
+            return [DriftFlag(
+                flag="feature_matrix_gate_invalid",
+                severity="medium",
+                evidence=f"cannot load {path}: {error}",
+                dimension="test_strategy",
+            )]
+        flags: list[DriftFlag] = []
+        dimension = str(contract.get("dimension", "test_strategy"))
+        severity = str(contract.get("severity", "medium"))
+
+        def _flag(name: str, evidence: str) -> None:
+            flags.append(DriftFlag(
+                flag=name, severity=severity, evidence=evidence, dimension=dimension,
+            ))
+
+        for marker_key, entry in (contract.get("source_markers") or {}).items():
+            marker_path = self.root / str(entry.get("path", ""))
+            if not marker_path.is_file():
+                _flag("feature_matrix_gate_source_missing",
+                      f"{marker_key} source missing: {marker_path}")
+                continue
+            text = marker_path.read_text(errors="replace")
+            missing = [p for p in entry.get("required_patterns", []) if p not in text]
+            if missing:
+                _flag("feature_matrix_gate_pin_missing",
+                      f"{marker_key} gate script lost the feature-matrix markers: "
+                      f"{missing} — documented CLI features are no longer compiled by the gate")
         return flags
 
     def _check_logging_architecture(self) -> list[DriftFlag]:

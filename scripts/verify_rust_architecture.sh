@@ -28,6 +28,12 @@ cargo clippy \
   -p da-adapters -p da-cli -p da-mcp \
   --all-targets --no-deps -- -D warnings
 
+# M441 lesson (M442 pin): documented CLI feature combinations must compile.
+# pdf-classifier stayed broken for a month because the gate never built it.
+# Keep every documented feature compiling; add new features here.
+echo "=== cargo check feature matrix (da-cli pdf-classifier) ==="
+cargo check -p da-cli --features pdf-classifier --examples
+
 # Helper: grep inside [dependencies] only (prod deps). Use for hexagonal
 # checks where dev-dependencies are allowed to violate the rule (tests
 # legitimately import adapters for wiring).

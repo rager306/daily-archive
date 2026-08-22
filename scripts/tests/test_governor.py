@@ -6,6 +6,7 @@ Or:       python3 tests/test_governor.py
 
 import json
 import sys
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -2573,6 +2574,49 @@ def test_read_only_agent_contract_missing_fixture_is_flagged():
     assert "negative" in flags[0].evidence
 
 
+
+def _feature_matrix_gate_setup(root: Path, gate_script: str) -> None:
+    """Copy the committed feature-matrix policy + write a gate script variant."""
+    repo = _scripts_dir.parent
+    rel = "scripts/governor/checks/feature_matrix_gate.yaml"
+    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(repo / rel, root / rel)
+    _write(root / "scripts/verify_rust_architecture.sh", gate_script)
+
+def test_feature_matrix_gate_pass_on_clean_gate_script():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _feature_matrix_gate_setup(
+        service.root,
+        "# feature matrix\ncargo check -p da-cli --features pdf-classifier --examples\n",
+    )
+    assert service._check_feature_matrix_gate() == []
+
+def test_feature_matrix_gate_missing_pin_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _feature_matrix_gate_setup(service.root, "cargo clippy only\n")
+    flags = service._check_feature_matrix_gate()
+    marker = [f for f in flags if f.flag == "feature_matrix_gate_pin_missing"]
+    assert len(marker) == 1
+
+def test_feature_matrix_gate_source_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _feature_matrix_gate_setup(service.root, "")
+    # The policy exists; remove the gate script it pins.
+    import os
+    os.remove(service.root / "scripts/verify_rust_architecture.sh")
+    flags = service._check_feature_matrix_gate()
+    marker = [f for f in flags if f.flag == "feature_matrix_gate_source_missing"]
+    assert len(marker) == 1
+
+def test_feature_matrix_gate_absent_policy_is_silent():
+    # No policy file -> no check output (checks are opt-in per project).
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    assert service._check_feature_matrix_gate() == []
+
 def test_read_only_agent_contract_positive_fixture_must_be_clean():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
@@ -2720,6 +2764,10 @@ def _run_all_tests() -> int:
         test_read_only_agent_contract_fixture_must_be_object_not_array,
         test_read_only_agent_contract_source_marker_missing_is_flagged,
         test_read_only_agent_contract_invalid_yaml_is_flagged,
+        test_feature_matrix_gate_pass_on_clean_gate_script,
+        test_feature_matrix_gate_missing_pin_is_flagged,
+        test_feature_matrix_gate_source_missing_is_flagged,
+        test_feature_matrix_gate_absent_policy_is_silent,
     ]
     passed = 0
     failed = 0
