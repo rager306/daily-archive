@@ -473,6 +473,12 @@ impl Default for RuleBasedExtractor {
 
 #[async_trait]
 impl Extractor for RuleBasedExtractor {
+    /// M446: port-level cache identity bridge — exposes the hashed rule
+    /// DATA so RuleExtractionStage contracts invalidate on dictionary
+    /// changes even when callers pass a static fingerprint string.
+    fn cache_fingerprint(&self) -> Option<String> {
+        Some(self.cache_identity().configuration_fingerprint)
+    }
     async fn extract(&self, sections: &[(String, String)]) -> ExtractResult<Vec<ExtractedEntity>> {
         let mut entities = Vec::new();
 

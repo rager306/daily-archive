@@ -302,13 +302,21 @@ impl RuleExtractionStage {
         configuration_fingerprint: impl Into<String>,
     ) -> Self {
         let extractor_name = extractor.name().to_string();
+        // M446: compose the extractor's effective configuration identity
+        // into the cache key — static caller strings alone never
+        // invalidated on dictionary changes.
+        let static_part = configuration_fingerprint.into();
+        let configuration_fingerprint = match extractor.cache_fingerprint() {
+            Some(id) => format!("{static_part};rules_sha256={id}"),
+            None => static_part,
+        };
         Self {
             extractor,
             parsed_dependency: parsed_dependency.into(),
             contract: StageContract {
                 stage_id: "rule_extract".into(),
                 implementation_fingerprint: "RuleExtractionStage@parsed-sections-v1".into(),
-                configuration_fingerprint: configuration_fingerprint.into(),
+                configuration_fingerprint,
                 prompt_fingerprint: None,
                 model_fingerprint: Some(extractor_name),
                 output_schema_fingerprint:
@@ -479,6 +487,31 @@ impl PipelineStageExecutor for FigureDetectionStage {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn rule_extract_contract_binds_rule_data_identity() {
+        use crate::rule_extractor::ExtractionConfig;
+        use std::sync::Arc;
+        let cfg_a = ExtractionConfig::bundled();
+        let mut cfg_b = ExtractionConfig::bundled();
+        cfg_b.methods.phrases.push("zzz-test-phrase".into());
+        let stage_a = RuleExtractionStage::new(
+            Arc::new(crate::RuleBasedExtractor::with_config(cfg_a)),
+            "parse",
+            "static-v1",
+        );
+        let stage_b = RuleExtractionStage::new(
+            Arc::new(crate::RuleBasedExtractor::with_config(cfg_b)),
+            "parse",
+            "static-v1",
+        );
+        let (a, b) = (stage_a.contract(), stage_b.contract());
+        assert_ne!(
+            a.configuration_fingerprint, b.configuration_fingerprint,
+            "dictionary change must invalidate the extraction cache key"
+        );
+        assert!(a.configuration_fingerprint.contains("rules_sha256="));
+    }
+
     use super::*;
     use da_ports::figure_detection::{
         FigureDetectionError, FigureDetectionPortResult, FigureDetectionResult,
@@ -705,9 +738,12 @@ mod tests {
             serde_json::from_slice(&output.payload).unwrap();
         assert!(entities.iter().any(|entity| entity.label == "GEPA"));
         assert_eq!(output.metadata["sections"], "1");
-        assert_eq!(
-            stage.contract().configuration_fingerprint,
-            "sha256:fixture-config"
+        // M446: the fingerprint now composes the extractor's rule-DATA
+        // identity (rules_sha256=…) behind the caller-supplied part.
+        let fp = stage.contract().configuration_fingerprint;
+        assert!(
+            fp.starts_with("sha256:fixture-config;rules_sha256="),
+            "fp: {fp}"
         );
     }
 

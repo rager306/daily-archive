@@ -319,6 +319,27 @@ impl fmt::Display for LoadArtifactsError {
 
 impl std::error::Error for LoadArtifactsError {}
 
+/// Fingerprint of the extraction dictionary the CURRENT runtime would use
+/// (env DA_EXTRACTION_PATTERNS, default data/extraction_patterns.yaml).
+/// Mirrors the stage-composed `rules_sha256` marker (M446).
+fn live_extraction_fingerprint() -> Option<String> {
+    static LIVE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    LIVE.get_or_init(|| {
+        let path = std::env::var("DA_EXTRACTION_PATTERNS")
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_else(|| "data/extraction_patterns.yaml".to_string());
+        da_adapters::rule_extractor::ExtractionConfig::from_yaml_file(&path)
+            .ok()
+            .map(|config| {
+                da_adapters::RuleBasedExtractor::with_config(config)
+                    .cache_identity()
+                    .configuration_fingerprint
+            })
+    })
+    .clone()
+}
+
 fn unique_success_entry(
     cache: &dyn PipelineCache,
     paper_id: &str,
@@ -331,10 +352,26 @@ fn unique_success_entry(
             stage: "manifest",
             message: e.to_string(),
         })?;
-    let successes: Vec<&da_ports::pipeline_cache::StageManifestEntry> = manifest
+    let mut successes: Vec<&da_ports::pipeline_cache::StageManifestEntry> = manifest
         .iter()
         .filter(|e| e.key.stage_id == stage && matches!(e.outcome, StageOutcome::Success { .. }))
         .collect();
+    // M446: dictionary changes write a second Success entry under a new
+    // key (rules_sha256 in the configuration fingerprint). Resolve the
+    // ambiguity by preferring entries produced by the CURRENT live
+    // dictionary instead of deleting history.
+    if stage == STAGE_EXTRACTION
+        && let Some(live) = live_extraction_fingerprint()
+    {
+        let matching: Vec<_> = successes
+            .iter()
+            .filter(|e| e.key.configuration_fingerprint.contains(&live))
+            .copied()
+            .collect();
+        if !matching.is_empty() {
+            successes = matching;
+        }
+    }
     let distinct: std::collections::BTreeSet<&str> =
         successes.iter().map(|e| e.key_sha256.as_str()).collect();
     if distinct.is_empty() {

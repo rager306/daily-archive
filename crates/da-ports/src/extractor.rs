@@ -42,6 +42,16 @@ pub trait Extractor: Send + Sync {
 
     /// Extractor name (e.g. "rule-based", "gliner2").
     fn name(&self) -> &str;
+
+    /// Stable cache identity of the extractor's effective configuration
+    /// (M446): hashed rule DATA or model binding. Stage cache keys MUST
+    /// include this so dictionary/model changes invalidate stale cached
+    /// extraction output. `None` (default) for extractors with no
+    /// configuration surface; stages then rely on the caller-supplied
+    /// configuration fingerprint alone.
+    fn cache_fingerprint(&self) -> Option<String> {
+        None
+    }
 }
 
 #[cfg(test)]

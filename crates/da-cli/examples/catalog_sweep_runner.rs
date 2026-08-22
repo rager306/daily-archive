@@ -379,6 +379,23 @@ async fn process_one(
     }
 }
 
+/// M446: DATA-first extractor construction — read the extraction
+/// dictionaries from the repository YAML (env DA_EXTRACTION_PATTERNS,
+/// default data/extraction_patterns.yaml) with an honest fallback to the
+/// bundled snapshot when the file is absent. Previously these runners
+/// compiled-in `RuleBasedExtractor::new()`, so editing the YAML never
+/// changed runtime behavior.
+fn extractor_from_data() -> da_adapters::RuleBasedExtractor {
+    let path = std::env::var("DA_EXTRACTION_PATTERNS")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "data/extraction_patterns.yaml".to_string());
+    match da_adapters::rule_extractor::ExtractionConfig::from_yaml_file(&path) {
+        Ok(config) => da_adapters::RuleBasedExtractor::with_config(config),
+        Err(_) => da_adapters::RuleBasedExtractor::new(),
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
@@ -464,7 +481,7 @@ async fn main() -> Result<()> {
             .with_profile(GrobidProfile::structural())
             .with_timeout(std::time::Duration::from_secs(args.grobid_timeout_seconds)),
     );
-    let extractor = Arc::new(RuleBasedExtractor::new());
+    let extractor = Arc::new(extractor_from_data());
     let embedder = args
         .include_embedding
         .then(|| Arc::new(FdApiEmbedder::from_env()));

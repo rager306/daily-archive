@@ -34,8 +34,7 @@ use std::sync::Arc;
 
 use da_adapters::{
     FdApiEmbedder, FigureDetectionStage, GrobidParseStage, GrobidParser, GrobidProfile,
-    ParsedArticleEmbeddingStage, PdfFigures2Adapter, RuleBasedExtractor, RuleExtractionStage,
-    SamyamaGraphStore,
+    ParsedArticleEmbeddingStage, PdfFigures2Adapter, RuleExtractionStage, SamyamaGraphStore,
 };
 use da_application::candidate_materialization_stage::CandidateMaterializationStage;
 use da_application::equation_extraction_stage::EquationExtractionStage;
@@ -94,7 +93,7 @@ impl JourneyPorts {
     pub fn from_env() -> Self {
         Self {
             parser: Arc::new(GrobidParser::from_env()),
-            extractor: Arc::new(RuleBasedExtractor::new()),
+            extractor: Arc::new(extractor_from_data()),
             embedder: Arc::new(FdApiEmbedder::from_env()),
             detector: PdfFigures2Adapter::from_env()
                 .ok()
@@ -871,6 +870,23 @@ pub fn ground_section_by_region_text(
     });
     let first = matched.next()?;
     matched.next().is_none().then_some(first)
+}
+
+/// M446: DATA-first extractor construction — read the extraction
+/// dictionaries from the repository YAML (env DA_EXTRACTION_PATTERNS,
+/// default data/extraction_patterns.yaml) with an honest fallback to the
+/// bundled snapshot when the file is absent. Previously these runners
+/// compiled-in `RuleBasedExtractor::new()`, so editing the YAML never
+/// changed runtime behavior.
+fn extractor_from_data() -> da_adapters::RuleBasedExtractor {
+    let path = std::env::var("DA_EXTRACTION_PATTERNS")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "data/extraction_patterns.yaml".to_string());
+    match da_adapters::rule_extractor::ExtractionConfig::from_yaml_file(&path) {
+        Ok(config) => da_adapters::RuleBasedExtractor::with_config(config),
+        Err(_) => da_adapters::RuleBasedExtractor::new(),
+    }
 }
 
 /// IO side of the fallback: extract the figure region's PDF text via the

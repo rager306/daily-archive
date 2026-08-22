@@ -1,5 +1,30 @@
 # Changelog
 
+### M446 W-A1: словари сделали живыми — кэш инвалидируется, rebuild 6 минут
+
+- **Найдены и закрыты два системных разрыва** (DATA-first нарушался):
+  1) Раннеры (sweep, production journey) строили экстрактор из
+  **bundled-снимка в бинарнике** — правки data/extraction_patterns.yaml
+  не меняли рантайм. Теперь: from_yaml_file за env
+  DA_EXTRACTION_PATTERNS (default data/…), честный fallback на bundled.
+  2) Stage-контракты несли **статический** configuration_fingerprint —
+  смена словаря не инвалидировала кэш extraction. Порт Extractor
+  получил cache_fingerprint() (default None), RuleBasedExtractor
+  отдаёт sha256 значений конфига, RuleExtractionStage компонует
+  `;rules_sha256=` в ключ. Тест: разные словари → разные ключи.
+- **methods.phrases +18 фраз** (math-oc алгоритмы, SE-эконометрика,
+  robotics diffusion): 3 zero-mention статьи извлекают 2/1/5 сущностей.
+- **Полная пересборка: 14с sweep (604, кэш) + 6.3 мин материализация
+  (589/589, 0 failed, 0 replay-noop)** — было ~2ч; индексы M443 дали
+  ~19x на полном корпусе. Regression-check против предыдущего отчёта:
+  0 findings. Drift: **0 zero-mention алармов**, mentions 9.84→11.08.
+- Лоадер материализации различает старые/новые extraction-записи по
+  живому fingerprint словаря (история не удаляется).
+- Новый инструмент extract_probe (не-gold аналог eval_extract).
+- **Отложено честно**: gold F1 spot-check заблокирован pre-existing
+  аномалией — 19 статей лежат в 2+ категориях каталога
+  (байт-идентичные PDF; чинится lookup-унификацией, не удалением).
+
 ### M445 pipeline stage audit: все 20 этапов против ADR
 
 - Артефакт doc/review/pipeline-stage-audit-2026-08-22.md: поэтапная
