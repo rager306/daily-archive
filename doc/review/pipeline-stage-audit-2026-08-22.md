@@ -5,25 +5,44 @@ plane, checked against binding ADRs. Verdicts: READY / READY-WITH-GAPS /
 GAP. Evidence paths are repo-relative. Companion decision trail: D276
 (stage→layer binding), D279 (triage DATA), D284 (hot-path indexes).
 
-## 1. Stage-by-stage
+## 1. Пошаговая таблица конвейера (строки = шаги, колонки = оси анализа)
 
-| Stage (ledger id) | ACAP layer | ADR | Logic / branching | Gaps → what to fix |
-|---|---|---|---|---|
-| acquisition | source_registered | ADR-056 W1–W5 | Catalog-hit + script ensure; SourceIdentity from assets (pdf/html sha, fingerprints); typed LoadReport | **GAP (multi-source)**: sources beyond arXiv+HTML-textbook not implemented: W10 rust-native fetch demoted to script; no DOI-first / PubMed / bioRxiv adapters; `source_codes.yaml` has vocabulary but only `arxiv` + textbook code exercised |
-| catalog | source_verified | ADR-056, ADR-065 | Version binding: exact catalog revision → tei_declared fallback (v-bound, 589/604); versionless → typed skip; manifestation sha256 == parsed.pdf_hash enforced | 15 papers remain no_stamp (HTML idno / arXiv-API recovery — honest typed skips today) |
-| parse | parsed | ADR-053, D204 | GROBID structural profile (DATA-fingerprinted); HtmlParser for HTML; pdf-inspector pre-triage (D279 DATA threshold); page_text_missingness stamped (M422) | READY. Aliases grobid_parse/html_parse/document_context/figure_detect all canonicalize here (documented gotcha: `document_context` step name hits parse gate — deferred ledger fix Q4#4) |
-| document_context ("pageindex" AST) | structured | ADR-053 §layers, governor html_structure_honesty | Dotted `path_id`, per-parent `order`, `parent_section_id`, prev/next navigation chain; `~N` restart suffixes never become dotted parents; config fingerprint `navigation=source-order;summary_join=path_id` | READY-WITH-GAPS: page-level AST (page→column→block anchors) not modeled — sections only; figure_quote_policy gives bounded quote windows but no cross-page span continuity |
-| figure_context / figure_analysis | structured / extracted | ADR-060, ADR-062 | Chart-native payloads, no synthetic components; quote policy windows (DATA) | READY |
-| table_fidelity | evidence_linked | ADR-047 conflict rules | 18-cell fidelity, row/col/digest, typed conflicts never overwrite | READY |
-| equation_extraction | embedded | equation_coverage_contract.yaml | MathML grounded, typed missingness (M414) | READY |
-| revision_materialization | structured | ADR-058 | Revision-owned vids, [from,to), SUPERSEDES; replay-idempotent (M440: 589/589 zero violations) | READY |
-| extraction_compute / _materialization | extracted / evidence_linked | ADR-045 patterns | Rule-based over DATA dictionaries (methods.phrases); entity vid dedup (shared nodes); MENTIONS/FOUND_IN per paper | 3 zero-mention papers (non-CS lexis) → dictionary extension backlog; citation-entity linking not extracted (authors/venues are not entities today) |
-| embedding | embedded | ADR-040 | fd-api bge-m3 via env (FD_*), DeterministicEmbedder in tests; cached Vec<f32> replay | READY |
-| summary | summarized | snapshot_derivation + section_summary_roles | Bounded→chained extractive, revision-grounded (M395/M396) | READY |
-| readiness / cluster / resolution | (no layer — typed skip by design) | entity_resolution.yaml | Cluster detection, entity resolution DATA-driven | READY; `readiness`/`cluster` carry no acap_layer (honest no-claim) |
-| assurance | — | ADR-055 | ACAP replay via InstrumentedGraphStore physical outcomes; hard invariants vs diagnostic scores | READY |
-| checkpoint | accepted_checkpoint | snapshot lineage (M382) | .sgsnap export, SnapshotIdentity, chain continuity | READY |
-| query | — | ADR-061 | RO RESP plane, DA.IDENTITY, `da agent-run --verify`; writes fail closed | READY; full remote GraphStore (P1) and RuVector agent brain (vendored, unwired) remain the two big agent-readiness gaps; ADR-039 REVIEW/OUTPUT FSM states not modeled |
+Порядок строк = порядок исполнения. Обозначения: ✅ готово · ⚠️ готово с пробелом · ❌ пробел.
+Подробности по каждой оси — в §2–§6 ниже.
+
+| № | Шаг (вход → выход) | ADR / ACAP-слой | Логика · ветвления | Разрывы / пробелы | FSM · расписание | Агенты · контекст | Хардкод · словари | Вердикт |
+|---|---|---|---|---|---|---|---|---|
+| 1 | **acquire**: id/URL → ассеты (pdf/html) + SourceIdentity + LoadReport | 056 / source_registered | каталог-hit → есть; miss → script-ensure; pdf и html не смешиваются (разные sha) | ❌ только arXiv + HTML-учебник; W10 натив-fetch не сделан; DOI/PubMed/bioRxiv нет | TaskType::Ingest (реальный) | Source-узел L0; агентам хватает идентичности | source_codes.yaml есть, exercised 2 кода | ❌ GAP |
+| 2 | **catalog-bind**: ассет → версия vN + SourceManifestation | 056+065 / source_verified | точная версия → tei_declared fallback → versionless=typed-skip; sha256(manifest)==pdf_hash | ⚠️ 15 статей без версии (no_stamp) | — (часть acquire) | ревизионная идентичность для запросов | — | ✅ |
+| 3 | **triage**: pdf → PdfTriageDecision (garbled-страницы) | 053+D279 / — | garbled% > порога (DATA) → block/continue; fail_open env | — | — | page_text_missingness штампуется (агент видит пробелы) | pdf_triage_policy.yaml ✅ | ✅ |
+| 4 | **parse**: pdf/html → ParsedArticle (TEI, секции, цитаты, таблицы, формулы) | 053+D204 / parsed | GROBID structural ИЛИ HtmlParser (по формату); координаты фигур; strict-кэш по fingerprint | ⚠️ alias-шероховатость document_context (Q4#4) | TaskType::Reparse | вся полнота статьи живёт тут | fingerprints = идентичность кэша (by design) | ✅ |
+| 5 | **document_context** ("pageindex" AST): ParsedArticle → DocumentContextProjection (path_id, порядок, prev/next) | 053 / structured | точечный path_id; порядок в родителе; `~N`-рестарты НЕ становятся родителями; HTML без path-identity → BLOCKED, not_claimed | ❌ постраничный уровень (страница→колонка→блок) не моделируется — только секции | — | навигация агента по статье (единый join-ключ) | governor-контракт html_structure_honesty ✅ | ⚠️ |
+| 6 | **figure_detect**: TEI → DetectedVisualArtifact | 060 / parsed(alias) | тип фигуры по TEI-маркерам; без синтетики | — | — | кандидат-доказательства для агента | figure_type_labels.yaml | ✅ |
+| 7 | **figure_analysis**: артефакт → типизированный payload (chart/photo/compound) | 060+062 / extracted | chart-native; панели по caption-маркерам; quote-окна ограничены DATA | ⚠️ кросс-страничная непрерывность окон нет | — | богатый мультимодальный контекст | figure_quote_policy, panel_markers ✅ | ✅ |
+| 8 | **table_fidelity**: таблицы → ячейки (row/col/digest) | 047 / evidence_linked | конфликты типизированы, никогда не перезаписывают | — | — | табличные факты с доказательством | — | ✅ |
+| 9 | **equation_extraction**: MathML → формулы + missingness | 014? — / embedded | неграндед → typed missingness, не тихий пропуск | — | — | формулы как контекст | equation_coverage_contract ✅ | ✅ |
+| 10 | **revision_materialization**: ParsedArticle+версия → Paper/PaperRevision/Section/Reference/Source/Category | 058 / structured | [from,to)-интервалы, SUPERSEDES; replay-идемпотентно (589/589 ноль нарушений) | — | — (вызывается MaterializeFsm) | темпоральный граф — база всех запросов | property_indexes (D284) ✅ | ✅ |
+| 11 | **extraction_compute**: секции → ExtractedEntity[] | 045 / extracted | rule-based по DATA-словарям; vid=хэш(тип+метка) | ⚠️ 3 статьи zero-mention (не-CS лексика) | TaskType::Extract | сущности — ядро для агента | extraction_patterns.yaml (methods.phrases) | ⚠️ |
+| 12 | **extraction_materialization**: сущности → Entity-узлы + MENTIONS/FOUND_IN/EvidenceBundle | 042 / evidence_linked | Entity дедуплицируется по vid (общие узлы между статьями) | ❌ авторы/журналы НЕ сущности (цитатных узлов нет) | — | evidence-цепи для заземления ответов | — | ⚠️ |
+| 13 | **embedding**: title+abstract → вектор (1024d) | 040 / embedded | FD_API через env; кэш Vec<f32>; DeterministicEmbedder в тестах | — | TaskType::EmbedStale (замена модели = санкц. процесс) | векторный поиск агента | FD_* env ✅ | ✅ |
+| 14 | **summary**: секции → извлекающие саммари по ревизиям | — / summarized | bounded→chained; ревизионно-заземлены | — | — | быстрые выжимки для агента | section_summary_roles.yaml | ✅ |
+| 15 | **enrich** (OpenAlex): arxiv_id/DOI → Work/Citation + CITES | 042 / — | нет данных → честный stub (openalex_pending); фильтр по DOI | ⚠️ фильтр `doi:10.48550/arxiv.{id}` — единственный хардкод; Crossref/doi.org нет | TaskType::OpenAlexEnrich | библиографический контекст | ❌ нужны citation_styles/venue/author-словари | ⚠️ |
+| 16 | **assurance + checkpoint**: граф → ACAP-вердикт + .sgnap | 055+382 / accepted_checkpoint | replay через физические исходы; валидный раздел applied=0; SnapshotIdentity | — | — | кандидат-evidence; D127 заперт | acap_control_plane.yaml | ✅ |
+| 17 | **query / serve**: снапшот → RO-плоскость (RESP, DA.IDENTITY, --verify) | 061 / — | записи fail-closed; digest-проверка в Rust | ⚠️ RuVector-мозг не подключён; REVIEW/OUTPUT-состояния FSM (039) нет; полный remote-стор P1 | — | рабочий цикл агента готов на чтение | — | ⚠️ |
+
+### Сводка по осям (сколько шагов в каком состоянии)
+
+| Ось | ✅ | ⚠️ | ❌ |
+|---|---|---|---|
+| Логика/ветвления корректны | 15 | 2 | — |
+| Мультисорс (источники) | 2 кода | — | W10/DOI/PubMed/bioRxiv |
+| Постраничный AST | секции ✅ | окна цитат | страницы/колонки/блоки |
+| FSM-адмиссия без хардкодов | да (D276) | alias-шероховатость | — |
+| Расписание (TaskType) | 5 живых | GraphWrite отложен by design | — |
+| Готовность к агентам (чтение) | read-plane ✅ | мозг/REVIEW-OUTPUT | — |
+| Словари DATA | 29 YAML | +5 приоритетных | — |
+| Научный контекст | якоря/DOI-on-Work | Crossref/doi.org | сущности-цитаты |
+
 
 ## 2. Scheduling / FSM
 
