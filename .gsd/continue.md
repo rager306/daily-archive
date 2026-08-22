@@ -1,3 +1,26 @@
+# Continue — Handoff после M445; аудит конвейера готов
+
+## Состояние (2026-08-22, конец сессии M445-9a6s8e)
+
+- **M445-9a6s8e закрыт** (validate pass → gates 0 → consistency ok →
+  complete). Артефакт:
+  **doc/review/pipeline-stage-audit-2026-08-22.md** — аудит всех 20
+  этапов против ADR.
+- Главные пробелы (по приоритету из аудита): мультисорс-аквизиция
+  (DOI/PubMed/bioRxiv, W10), словари citation_styles/venue_registry/
+  author_identity/doi_prefix_map/method_taxonomy, постраничный AST,
+  агентный мозг (RuVector unwired, REVIEW/OUTPUT FSM нет).
+- Один хардкод в проде: OpenAlex arXiv-DOI фильтр (адаптер).
+- Аномалии: дубль edge_contracts.yaml (data/ vs data/ontology/),
+  alias-canonicalization document_context, 3 zero-mention, 15 versionless.
+
+## Следующий шаг (приоритет из аудита)
+
+1. **Словари цитирования + doi_prefix_map** (унификация связей,
+   убивает хардкод OpenAlex) — тонкая DATA-волна с тестами парсинга.
+2. Мультисорс-аквизиция W10 (rust-native fetch за SourceAcquisitionPort).
+3. Расширение methods.phrases для 3 zero-mention статей.
+
 # Continue — Handoff после M444; регрессии ловим на всех статьях по пути
 
 ## Состояние (2026-08-22, конец сессии M444-zn38ht)
