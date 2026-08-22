@@ -565,7 +565,10 @@ pub fn tei_revision_binding(
 /// Extract the arXiv revision the TEI header declares for `paper_id`.
 /// Matches `<idno type="arXiv">` (attribute matching is case-insensitive)
 /// whose text is exactly `{paper_id}v{N}`.
-fn declared_arxiv_revision(tei: &str, paper_id: &str) -> Option<u32> {
+/// Extract the arXiv revision number (vN) that GROBID declared in the TEI
+/// `<idno type="arxiv">` header, if any. Shared by gold-wave binding and
+/// the M440 sweep materialization coverage audit.
+pub fn declared_arxiv_revision(tei: &str, paper_id: &str) -> Option<u32> {
     let lower = tei.to_ascii_lowercase();
     let mut cursor = 0usize;
     while let Some(rel) = lower[cursor..].find("<idno") {

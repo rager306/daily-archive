@@ -490,6 +490,14 @@ cargo test -p da-adapters --features pdf-classifier --test hub_ocr_probe -- --no
 # CLI build with pre-GROBID triage (off by default):
 #   cargo build -p da-cli --features pdf-classifier
 
+# Sweep cache materialization (M440; offline, no services needed)
+# 1) Coverage audit (read-only): bindability per paper via ADR-065 fallback
+cargo run -p da-cli --example catalog_materialize_runner -- --audit-only
+# 2) Materialize replay -> .sgsnap + per-paper FSM report (canary: --limit 25;
+#    full run: no limit; env knobs DA_MATERIALIZE_{LIMIT,SNAPSHOT,RUN_REPORT})
+cargo run -p da-cli --example catalog_materialize_runner -- --run --limit 25
+cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
+
 # Extraction evaluation on gold-standard corpus (12 modern papers)
 cargo run -p da-cli --example eval_batch
 
@@ -554,7 +562,7 @@ Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; pr
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **daily-archive** (30339 symbols, 56801 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **daily-archive** (34074 symbols, 58848 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

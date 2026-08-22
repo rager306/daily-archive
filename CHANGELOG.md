@@ -1,5 +1,26 @@
 # Changelog
 
+### M440 sweep materialization: кэш свипа → семантический граф (S01-S03)
+
+- Coverage-audit 604 ok-статей свипа по ADR-065 tei_declared_revision
+  fallback: **523 materializable (86.6%), 81 typed-skip (no_tei_revision)**,
+  reconcile без пропусков; артефакт materialization_coverage.json (D283).
+- Явный FSM материализации (da-application/catalog_materialization.rs):
+  scan→bind→materialize→verify(replay-noop), терминальные состояния
+  поглощают события, illegal-переходы типизированы, D127-canary —
+  import/promote/unlock событий нет by design; proptest на absorb.
+- Runner (examples/catalog_materialize_runner.rs): полный оффлайн-replay
+  кэша (parse+extraction+embedding) через materializer-only use cases,
+  revision-owned identity, manifest-дайджест из parsed.pdf_hash с
+  cross-check против sweep-отчёта (drift → typed Fail), экспорт .sgsnap.
+  Env-ручки: DA_MATERIALIZE_{LIMIT,SNAPSHOT,RUN_REPORT} (.env.example).
+- Канарка 25 статей: **25/25 completed, 0 failed, 0 replay-noop
+  violations**; повторный прогон структурно идентичен (2626 nodes / 5484
+  edges; байтовые отличия — только Clock-метки по ADR M330/M398);
+  graph-stats по цепочке disk→query one-process OK.
+- Тесты: 25 новых (14 da-cli audit+loader, 9 FSM incl. proptest,
+  2 integration MockGraphStore); clippy чист.
+
 ### M439 catalog-wide sweep: 606 статей обработаны, отклонения типизированы
 
 - Полный обход каталога вне gold-200: **604/606 ok (99.7%), 0 failed**,

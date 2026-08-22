@@ -113,6 +113,7 @@ pub use equation_materialize::{
 };
 pub mod healing;
 pub use healing::GraphHealingUseCase;
+pub mod catalog_materialization;
 pub mod enrich;
 pub use enrich::{EnrichResult, EnrichUseCase};
 pub mod influence_flower;
