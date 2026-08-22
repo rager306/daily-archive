@@ -1,5 +1,26 @@
 # Changelog
 
+### M444 corpus regression harness: регрессии ловятся на всех статьях по пути
+
+- Направление пользователя: работать со ВСЕМИ статьями и ловить регрессию
+  инлайн, не золотыми замерами. Gold остаётся только эталоном F1.
+- **Regression diff engine** (da-cli/catalog_regression): типизированные
+  находки между двумя run-отчётами — PapersRemoved/Added, RevisionDrift,
+  StructuralDrop (с относительным допуском DA_REGRESSION_TOLERANCE),
+  ReplayHonestyLost, FailedPapers; exit 1 при любой находке. 6 юнит-тестов.
+- **corpus_regression_check** example: на идентичных реальных отчётах
+  589/589 — 0 findings (exit 0); на тампернутом — поймал все 3 внесённые
+  регрессии (удалённая статья, дрейф ревизии 2→3, entities 12→4), exit 1.
+- **Drift-статистика по всем статьям** (catalog_drift_stats.json):
+  9.84 mentions/статья в среднем; нулевых — ровно 3 (те самые low-yield
+  не-CS статьи из бэклога). Семантика исправлена по первому применению:
+  entities_created — глобальный dedup-счётчик (0 на статью = пере-
+  использование vid, норма), alarm-сигнал — нулевые MENTIONS.
+- **Попутно найден и исправлен баг артефактов**: PaperRunRecord писал
+  `revision` дважды (дубликат JSON-ключа из flattened FSM-состояния);
+  строгие парсеры отклоняли отчёты. Writer исправлен, закоммиченный
+  full-run отчёт починен (round-trip dedup, значения идентичны).
+
 ### M443 indexed hot path: материализация 50–143x быстрее на полном сторе
 
 - Диагноз: 2-часовой full-run M442 — каждый identity-lookup (Entity vid,

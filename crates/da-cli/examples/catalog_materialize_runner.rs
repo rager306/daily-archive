@@ -364,7 +364,9 @@ fn run_audit(args: &Args) -> Result<()> {
 #[derive(Debug, Serialize)]
 struct PaperRunRecord {
     paper_id: String,
-    revision: Option<u32>,
+    // M444 fix: the flattened PaperMaterializeState already carries
+    // `revision` for bound/completed states — an explicit field here
+    // serialized a duplicate JSON key (strict parsers reject it).
     #[serde(flatten)]
     state: PaperMaterializeState,
 }
@@ -803,15 +805,8 @@ async fn run_materialization(args: &Args) -> Result<()> {
 }
 
 fn record(paper_id: &str, fsm: &mut PaperMaterializeFsm) -> PaperRunRecord {
-    let revision = match fsm.state() {
-        PaperMaterializeState::Completed { revision, .. }
-        | PaperMaterializeState::Materialized { revision, .. }
-        | PaperMaterializeState::Bound { revision } => Some(*revision),
-        _ => None,
-    };
     PaperRunRecord {
         paper_id: paper_id.to_string(),
-        revision,
         state: fsm.state().clone(),
     }
 }

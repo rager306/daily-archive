@@ -501,6 +501,12 @@ cargo run -p da-cli -- graph-stats --snapshot artifacts/catalog_sweep/catalog_ma
 cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --recover
 DA_MATERIALIZE_RECOVERY=artifacts/catalog_sweep/materialization_recovery.json \
   cargo run -p da-cli --features pdf-classifier --example catalog_materialize_runner -- --run
+# Post-rebuild regression check (M444; runs over ALL articles, no gold):
+cargo run -p da-cli --example corpus_regression_check -- \
+  --before artifacts/catalog_sweep/materialization_run_report.json \
+  --after /tmp/new_run_report.json
+# Drift stats (per-category mentions density, zero-mention alarms):
+#   artifacts/catalog_sweep/catalog_drift_stats.json (regenerate from run report)
 # Hot-path lookup benchmark at full-store scale (M443):
 cargo run -p da-cli --example materialize_index_bench -- \
   --snapshot artifacts/catalog_sweep/catalog_materialized.sgsnap
