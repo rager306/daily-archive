@@ -1,3 +1,31 @@
+# Continue — Handoff после M442; каталог материализован в граф (589 статей)
+
+## Состояние (2026-08-22, конец сессии M442-fafzp6)
+
+- **M442-fafzp6 закрыт** (validate pass → gates 0 → consistency ok →
+  complete → checkpoint). Коммиты `45f60bab`, `b2da8fa1`, `9bdbac59`.
+- **Полный прогон: 589/604 (97.5%) статей каталога в одном графе**:
+  catalog_materialized.sgsnap — 66299 узлов / 169916 рёбер, 0 failed,
+  **0 replay-noop violations**. Снапшот закоммичен (24МБ) как durable
+  candidate evidence. D127 locked.
+- **Feature-matrix пин**: гейт компилирует da-cli --features
+  pdf-classifier --examples; Governor-политика feature_matrix_gate
+  флагает исчезновение пина (78 self-test).
+- **Crash-safe resume** (--resume / DA_MATERIALIZE_RESUME=1): первый
+  full-run умер на 540/589 без resume — добавлен и E2E-проверен.
+- Сравнение с gold: плотность сопоставима (112.6/288.5 vs
+  126.4/297.8 узлов/рёбер на статью), наборы непересекающиеся;
+  catalog_vs_gold_comparison.json.
+
+## Следующий шаг (приоритет)
+
+1. Решение оператора по D127 unlock для каталога-графа (сейчас
+   candidate evidence only) — или интеграция обоих графов (gold+catalog)
+   в один queryable слой через serve-graph.
+2. DATA-словарь методов для не-CS полей (3 low-yield статьи свипа).
+3. Производительность full-run (~2ч): per-paper lookup растёт линейно
+   со стором — кандидат на индекс vid→node_id в materialize_extracted.
+
 # Continue — Handoff после M441; recovery 66/81, полный корпус готов
 
 ## Состояние (2026-08-22, конец сессии M441-h0uc3h)

@@ -1,6 +1,6 @@
 {
   "schema_version": "m286.hexagonal.governor.v1",
-  "phase": "active",
+  "phase": "closeout",
   "verdict": "drift_risk",
   "dimensions": {
     "schema_readiness": {
@@ -134,14 +134,9 @@
   },
   "drift_flags": [
     {
-      "flag": "gsd_planning_projection_degraded",
+      "flag": "resource_target_bloat",
       "severity": "medium",
-      "evidence": "active milestone M442-fafzp6 slice S01 has no PLAN tasks — run gsd_plan_slice before execute; active milestone M442-fafzp6 slice S02 has no PLAN tasks — run gsd_plan_slice before execute"
-    },
-    {
-      "flag": "active_milestone_zero_projected_plan_tasks",
-      "severity": "medium",
-      "evidence": "1 active milestone(s) with 0 tasks in readable PLAN projections: ['M442-fafzp6']; this is projection health, not engine database truth"
+      "evidence": "target/ is 21.3GB (80GB free on disk) — consider 'cargo clean' before workspace builds Recommendation: Remove incremental cache: rm -rf target/debug/incremental (3.7GB); Remove example artifacts: rm -rf target/debug/examples (2.5GB); Dependencies cache large (13.8GB) — cargo clean -p <crate> to prune specific deps; Debug profile 21.3GB — run 'cargo clean' before workspace builds"
     }
   ],
   "reverse_adr_audit_details": {
@@ -150,7 +145,7 @@
     "violations_count": 0
   },
   "next_actions": [
-    "No drift detected. Continue current milestone."
+    "target/ bloated: prune debug incremental/examples before workspace cargo."
   ],
   "milestone_context": {
     "latest_milestone_id": "442",
