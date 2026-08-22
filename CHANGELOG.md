@@ -1,5 +1,25 @@
 # Changelog
 
+### M443 indexed hot path: материализация 50–143x быстрее на полном сторе
+
+- Диагноз: 2-часовой full-run M442 — каждый identity-lookup (Entity vid,
+  Paper arxiv_id, Section/Reference/revision vids) без property-index
+  линейно сканировал стор, растущий до 66k узлов; replay удваивает.
+- Инфраструктура индексов в SamyamaGraphStore уже была (backfill+трекинг,
+  протестирована) — composition root их просто не создавал.
+- Новый контракт da-application/materialization_indexes: 9 уникальных
+  identity-ключей + ensure_materialization_indexes; **Citation.arxiv_id
+  сознательно исключён** (дубликаты между статьями: min-id vs scan-order
+  семантика) — задокументировано.
+- Runner обеспечивает индексы после open/preload. Бенчмарк на полном
+  снапшоте (examples/materialize_index_bench): **Entity.vid 50x,
+  Paper.arxiv_id 143x** на miss-пробах; сборка 9 индексов по 66k узлов —
+  389 мс one-time.
+- Регрессия A/B: 30-статейная канарка с индексами — **структурно
+  идентичный** граф (3341/6990 узлов/рёбер), 0 replay-noop нарушений.
+- Governor-пин logging поймал новый bench-пример до коммита (M440-урок
+  работает). 5 новых тестов (2 lib + 3 integration).
+
 ### M442 full run: 589 статей каталога → единый семантический граф
 
 - **589/589 completed, 0 failed, 0 replay-noop violations** (wall-clock

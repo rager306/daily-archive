@@ -192,3 +192,20 @@ async fn distinct_revisions_do_not_collide() {
     }
     assert!(store.node_count().await > 0);
 }
+
+mod materialization_indexes_tests {
+    use super::common::mock_graph_store::MockGraphStore;
+    use da_application::materialization_indexes::ensure_materialization_indexes;
+    use da_ports::graph_store::DirectGraphStore;
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn ensure_creates_all_hot_path_pairs_on_mock_store() {
+        let store: Arc<dyn DirectGraphStore> = Arc::new(MockGraphStore::new());
+        let created = ensure_materialization_indexes(&store).await.unwrap();
+        assert_eq!(
+            created.len(),
+            da_application::materialization_indexes::MATERIALIZATION_PROPERTY_INDEXES.len()
+        );
+    }
+}

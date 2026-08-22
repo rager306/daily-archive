@@ -30,6 +30,7 @@ use da_application::catalog_materialization::{
     RunMaterializeFsm, RunMaterializeState, SKIP_AMBIGUOUS_PARSE_KEYS, SKIP_ASSET_MISSING,
     SKIP_NO_EMBEDDING_CACHE, SKIP_NO_EXTRACTION_CACHE, SKIP_NO_PARSE_CACHE,
 };
+use da_application::materialization_indexes::ensure_materialization_indexes;
 use da_application::revision_materialization::{
     RevisionContentContext, RevisionManifestationInput,
 };
@@ -547,6 +548,15 @@ async fn run_materialization(args: &Args) -> Result<()> {
             store.edge_count().await
         );
     }
+
+    // M443: hot-path property indexes. Identity lookups (Entity vid, Paper
+    // arxiv_id, section/reference/revision vids) are linear scans without
+    // these — the unindexed 589-paper run took ~2h; benchmarks show 50-143x
+    // faster lookups after a one-time ~0.4s build at full scale.
+    let indexed_keys = ensure_materialization_indexes(&store)
+        .await
+        .context("ensure materialization hot-path indexes")?;
+    println!("hot-path indexes ensured: {} keys", indexed_keys.len());
 
     let clock: Arc<dyn Clock> = Arc::new(SystemClock);
     let ingest =

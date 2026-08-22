@@ -115,6 +115,7 @@ pub mod healing;
 pub use healing::GraphHealingUseCase;
 pub mod catalog_materialization;
 pub mod enrich;
+pub mod materialization_indexes;
 pub use enrich::{EnrichResult, EnrichUseCase};
 pub mod influence_flower;
 pub use influence_flower::{
