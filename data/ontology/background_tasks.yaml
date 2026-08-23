@@ -1,0 +1,28 @@
+# Background task registry — resource-heavy lazy work (M451).
+# Generic runner reads this; adding a task = a YAML entry, not new runner code.
+# Profiles: llm (rate+budget guarded), network, cpu.
+schema_version: background-tasks.v1
+adr_ref: ADR-068, ADR-055
+
+tasks:
+  - id: per_section_summaries
+    target: article
+    cost_profile: llm
+    trigger: lazy_requested        # markers in manifest artifacts.summaries.per_section.status
+    model_binding: paper-summary-generate-default
+    prompt_file: data/prompts/article-summary/per-section.v1.md
+    input: parsed.sections[]
+    policy:
+      min_section_chars: 200       # shorter sections need no summary
+      max_sections_per_request: 16 # batches for giants (340 sections)
+      requests_per_min: 12
+      daily_budget_requests: 2000
+    cache_fingerprint: [pid, model, prompt_sha256, sections_sha256]
+    statuses: [not_requested, requested, building, built, failed]
+    enabled: true
+
+  - id: debug_html_rebuild
+    target: article
+    cost_profile: cpu
+    trigger: on_demand
+    enabled: true

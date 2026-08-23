@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v8   # v8: enriched layer real — OpenAlex A-ID anchor, positional author binding, honest pending
+schema_version: article-schema.v9   # v9: summaries per_section lazy sub-state (background tasks registry)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -18,6 +18,7 @@ changes:
   v6: "quality_signals слой: 7 детерминированных сигналов из уже собранных слоёв; пороги/набор = data/ontology/quality_signal_policy.yaml"
   v7: "citations_resolved: title-match против корпуса (resolved_corpus), venue_id из venue_registry, style из citation_styles, сжатые авторы"
   v8: "enriched: OpenAlex work-якорь (A-ID+ORCID), позиционная привязка TEI-авторов с проверкой фамилии, openalex_not_found = honest pending"
+  v9: "summaries.per_section: ленивый подслой — статусы not_requested/requested/building/built/failed; триггер и лимиты из data/ontology/background_tasks.yaml; lifecycle статьи НЕ меняется"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -142,7 +143,7 @@ layers:
       openalex_only: "автор есть только в OpenAlex (TEI короче)"
     missingness_via: [openalex_not_found, openalex_fetch_failed]
     inputs: ["api.openalex.org (ключ в env OPENALEX_API_KEY, никогда в DATA)"]
-    lineage: "ADR-055: provenance.json = endpoint+fetched_at+http_status+cache_key; кэш artifacts/pipeline_cache/openalex_works/
+    lineage: "ADR-055: provenance.json = endpoint+fetched_at+http_status+cache_key; кэш artifacts/pipeline_cache/openalex_works/"
 
   - id: citations_resolved
     authority: A4
@@ -167,10 +168,16 @@ layers:
     title: Выжимки
     files:
       - {name: abstract.json, type: SummaryNode, required: true}
-      - {name: per_section.json, type: "Vec<SectionSummary>", required: false}
+      - {name: per_section.json, type: "Vec<SectionSummary>", required: false, lazy: true}
       - {name: full_paper.json, type: SummaryNode, required: false}
     derived_from: [parsed, enriched]
     lifecycle_ceiling: summarized
+    lazy_sublayers:
+      per_section:
+        trigger: requested-маркер в артефакте; строит фоновый раннер
+        statuses: [not_requested, requested, building, built, failed]
+        policy_ref: data/ontology/background_tasks.yaml#per_section_summaries
+        note: "ленивость вместо массовой LLM-генерации; lifecycle не меняется"
 
   - id: quality_signals
     authority: A6
