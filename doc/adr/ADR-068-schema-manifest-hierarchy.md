@@ -109,7 +109,55 @@ daily-archive/                   ← REPO ROOT
 3. **Manifests are the Governor's source of truth.** Governor checks manifest invariants, not raw file existence.
 4. **Manifests record provenance.** Every entry has timestamps, source references, checksums.
 
-### 2.5 Versioning (per-source)
+### 2.5 Temporality & Versioning
+
+#### 2.5.1 Schema versioning (schema evolution)
+
+Schemas are themselves versioned artifacts with an append-only history:
+
+```
+data/sources/arxiv/
+├── SCHEMA.yaml                  ← CURRENT schema (v2)
+├── SCHEMA.v1.yaml               ← superseded v1 (kept, read-only)
+└── SCHEMA.history.yaml          ← change log: v1→v2 when/why/how-migrate
+```
+
+Rules:
+- Schema changes are **append-only**: new version is a new file, old is frozen.
+- `SCHEMA.history.yaml` records: version, date, ADR reference, migration instruction.
+- Old manifests written under v1 remain readable forever (parser selects by the manifest's own `schema_version`).
+- Migration is **lazy**: a v1 manifest is NOT rewritten until the underlying article is reprocessed. v1 and v2 manifests coexist during transition.
+- Governor rule `schema_history_exists`: any SCHEMA.yaml with version > v1 must have a matching SCHEMA.history.yaml entry.
+
+#### 2.5.2 Manifest temporality (bi-temporal)
+
+Manifests track **two time axes**, same as TemporalEdge in kg-ontology:
+
+| Axis | Field | Meaning |
+|---|---|---|
+| valid_time | `observed_at` | when the fact was true in the external world (arXiv published v2 on 2026-08-01) |
+| transaction_time | `recorded_at` | when OUR pipeline observed/recorded it (we parsed it on 2026-08-22) |
+
+Every lifecycle transition in a manifest is a typed event:
+
+```yaml
+lifecycle_events:                    # append-only, never overwritten
+  - stage: parsed
+    recorded_at: 2026-08-22T14:03:11Z
+    observed_at: 2026-08-01T00:00:00Z   # if externally anchored
+    actor: grobid-profile-structural
+    evidence_sha256: "…"
+  - stage: extracted
+    recorded_at: 2026-08-22T14:03:14Z
+    actor: rule-based-extractor
+    evidence_sha256: "…"
+```
+
+- Current state (`lifecycle: extracted`) is DERIVED from the last event, never hand-set.
+- Regenerating a manifest re-derives state; the event log is preserved (append-only).
+- `revision_graph.json` edges carry both timestamps: `supersedes {from: v1, to: v2, observed_at, recorded_at}`.
+
+#### 2.5.3 Article versioning (per-source)
 
 ```
 sources/arxiv/<category>/<paper_id>/
@@ -127,6 +175,12 @@ sources/arxiv/<category>/<paper_id>/
 - New version → new directory, old untouched (append-only).
 - `revision_graph.json` tracks `supersedes`, `same_as`, `derived_from`.
 - Active version = latest with lifecycle ≥ parsed.
+
+#### 2.5.4 Temporal invariants (added)
+
+- `schema_history_append_only`: schema evolution is append-only with SCHEMA.history.yaml entry for every bump.
+- `lifecycle_events_preserved`: manifest regeneration never drops lifecycle events (append-only log).
+- `transaction_time_monotonic`: `recorded_at` never decreases within one article's event log.
 
 ### 2.6 Meta-prompt principle (binding)
 
@@ -242,13 +296,15 @@ rules:
 
 - Should `governor/fixtures/` also carry SCHEMA + MANIFEST? (Probably yes.)
 - How deep does the hierarchy go? (Per-article manifests are leaves; no deeper.)
-- Automatic schema migration tool when schema_version bumps?
+- Migration tooling for bulk manifest re-versioning (lazy migration is the default; bulk tool optional).
 
 ---
 
 ## LLM Reading Notes
 
 - **Core principle:** SCHEMA = what's possible (static, versioned), MANIFEST = what exists (dynamic, auto-generated). Both are DATA files that the code reads.
+- **Direction of fit:** schemas are NORMATIVE (target), not descriptive. Governor reports gaps between schema and reality; the work is closing those gaps, never editing the schema to match a messy present.
+- **Temporality:** two axes everywhere — `observed_at` (valid_time, external world) and `recorded_at` (transaction_time, our pipeline). Lifecycle state is always DERIVED from the append-only event log, never hand-set. Schema evolution itself is append-only (SCHEMA.history.yaml).
 - **Anti-pattern prevented:** hardcoding structure in code. If you want to add a new source type, you create a SCHEMA.yaml, not a Rust struct.
 - **Key constraint from law-nexus:** artifact graph with lifecycle ceilings and authority stack — each layer can only go up, never down.
 - **The "meta-prompt" in practice:** the system's structure is described by data files that both humans and code read. The code is a generic engine; the data tells it what to do.
