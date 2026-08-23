@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v9   # v9: summaries per_section lazy sub-state (background tasks registry)
+schema_version: article-schema.v10   # v10: context navigation — PageIndex semantics (M025 ideas: parent/children/walk)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -19,6 +19,7 @@ changes:
   v7: "citations_resolved: title-match против корпуса (resolved_corpus), venue_id из venue_registry, style из citation_styles, сжатые авторы"
   v8: "enriched: OpenAlex work-якорь (A-ID+ORCID), позиционная привязка TEI-авторов с проверкой фамилии, openalex_not_found = honest pending"
   v9: "summaries.per_section: ленивый подслой — статусы not_requested/requested/building/built/failed; триггер и лимиты из data/ontology/background_tasks.yaml; lifecycle статьи НЕ меняется"
+  v10: "context/navigation.json: PageIndex-семантика (parent/children/prev/next/depth); идентичность узла = section_id (path_id НЕ уникален: 55% статей имеют дубли)"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -86,8 +87,28 @@ layers:
     title: Навигационная истина (AST-проекция документа)
     files:
       - {name: projection.json, type: DocumentContextProjection, required: true}
+      - {name: navigation.json, type: "Vec<NavNode>", required: true}
     derived_from: [parsed]
     lifecycle_ceiling: structured
+    path_id_grammar:
+      identity: "section_id — ЕДИНСТВЕННАЯ идентичность узла (path_id не уникален: 55% статей имеют дубли)"
+      patterns: ["<int> — корневая секция", "<int>.<int>… — иерархия точкой", "<int>. — заголовочный узел (метаданные секции)", "'~'-рестарты parsed — НЕ становятся родителями"]
+      parent_rule: "parent('1.2.3')='1.2'; parent('1')=null; уровень = число сегментов без хвостовой точки"
+      styles: "corpus: dot=567, flat=37 (в канонической проекции тильды нормализуются)"
+    nav_node_fields:
+      section_id: str
+      path_id: str
+      depth: int
+      parent_section_id: "str | null (корень)"
+      children_section_ids: [str]     # ordered by document order
+      prev_section_id: "str | null"   # документный порядок (walk semantics)
+      next_section_id: "str | null"
+      title: str
+    nav_queries:                       # реализуются запросами над navigation.json
+      - find_by_title
+      - children_of
+      - path_to_root
+      - walk_next                      # документный обход (PageIndex walk)
 
   - id: figures
     authority: A2
