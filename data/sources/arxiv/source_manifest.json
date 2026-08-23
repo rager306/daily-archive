@@ -1,0 +1,32 @@
+{
+  "schema_version": "source-manifest.v1",
+  "source_id": "arxiv",
+  "title": "arXiv preprint server",
+  "description": "Primary preprint server for physics, math, CS and related fields",
+  "reliability_tier": 2,
+  "locator": {
+    "type": "arxiv_id",
+    "pattern": "^\\d{4}\\.\\d{4,5}(v\\d+)?$|^arxiv:\\d{4}\\.\\d{4,5}",
+    "examples": ["2507.19457", "arxiv:2602.04837"]
+  },
+  "acquisition": {
+    "method": "api_fetch",
+    "base_url": "https://arxiv.org",
+    "auth": "none",
+    "rate_limit_rps": 1.0,
+    "retry_policy": {"max_retries": 3, "backoff_seconds": 30}
+  },
+  "assets_policy": {
+    "primary_format": "pdf",
+    "sidecar_formats": ["html"],
+    "requires_fulltext_license": false,
+    "versioning_model": "v_suffix"
+  },
+  "parser_profile": "grobid_structural",
+  "identity_mapping": {
+    "paper_key_field": "article_key",
+    "category_field": "coarse_topic_code",
+    "title_field": "identity.title",
+    "authors_field": "identity.authors"
+  }
+}
