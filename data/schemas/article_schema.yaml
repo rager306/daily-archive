@@ -8,13 +8,14 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v5   # v5: figures layer real (TEI), external_resources layer (ADR-053 Layer I)
+schema_version: article-schema.v6   # v6: quality_signals layer real — deterministic signals, policy as DATA
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
   v3: "invariants: машиночитаемые декларации паттернов — общий движок валидации, статья лишь первый объект"
   v4: "missingness_vocabulary += no_citation_elements; equations/citations слои уважают parsed missingness"
   v5: "figures слой наполняется из TEI (8833 figure-элементов корпуса); НОВЫЙ слой external_resources (6189 ptr-URL); словарь external_resource_domains.yaml"
+  v6: "quality_signals слой: 7 детерминированных сигналов из уже собранных слоёв; пороги/набор = data/ontology/quality_signal_policy.yaml"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -160,11 +161,14 @@ layers:
 
   - id: quality_signals
     authority: A6
-    title: Сигналы качества
+    title: Сигналы качества (детерминированные, без LLM)
     files:
       - {name: quality_signals.json, type: "Vec<QualitySignal>", required: true}
-    derived_from: [parsed, extracted, enriched]
+    derived_from: [parsed, extracted, figures, citations_resolved, external_resources]
     lifecycle_ceiling: summarized
+    fields: [signal_id, value, verdict]
+    inputs: [data/ontology/quality_signal_policy.yaml]
+    verdict_vocabulary: [ok, warn, alarm, info]
 
   - id: debug
     authority: A7

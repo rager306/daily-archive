@@ -20,11 +20,82 @@ from pathlib import Path
 
 import yaml
 
-NOT_REACHED_LAYERS = ["enriched", "summaries", "quality_signals"]
+NOT_REACHED_LAYERS = ["enriched", "summaries"]
 
 
 def sha256_file(p: Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def _verdict(value, thresholds, direction="above"):
+    """Map value to ok/warn/alarm per policy thresholds (DATA)."""
+    if not thresholds:
+        return "info"
+    warn = thresholds.get("warn_below")
+    alarm = thresholds.get("alarm_below")
+    alarm_at = thresholds.get("alarm_at")
+    if alarm_at is not None:
+        return "alarm" if value >= alarm_at else "ok"
+    if alarm is not None and value < alarm:
+        return "alarm"
+    if warn is not None and value < warn:
+        return "warn"
+    return "ok"
+
+
+def _compute_quality_signals(parsed, artifacts, policy_signals):
+    """Deterministic signals from already-built layers. Pure-ish: reads
+    the parsed dict + manifest artifact stats, no network, no LLM."""
+    import statistics
+    out = []
+
+    def emit(sid, value, thresholds, scale):
+        out.append({
+            "signal_id": sid,
+            "value": round(value, 4) if isinstance(value, float) else value,
+            "scale": scale,
+            "verdict": _verdict(value, thresholds),
+        })
+
+    sections = parsed.get("sections") or []
+    texts = [len(s.get("text") or "") for s in sections]
+
+    for sig in policy_signals:
+        sid = sig.get("id")
+        th = sig.get("thresholds", {}) or {}
+        params = sig.get("params", {}) or {}
+
+        if sid == "sections_text_completeness" and texts:
+            min_chars = params.get("min_chars", 200)
+            ok = sum(1 for t in texts if t >= min_chars)
+            emit(sid, ok / len(texts), th, "ratio")
+        elif sid == "median_section_chars" and texts:
+            emit(sid, int(statistics.median(texts)), th, "chars")
+        elif sid == "citation_anchor_coverage":
+            cit = parsed.get("citations") or []
+            if cit:
+                with_a = sum(1 for c in cit if c.get("anchors"))
+                emit(sid, with_a / len(cit), th, "ratio")
+        elif sid == "zero_mention_extraction":
+            ents = (artifacts.get("extracted") or {}).get("stats", {}).get("entities", 0)
+            min_sec = params.get("min_sections", 5)
+            if len(sections) >= min_sec:
+                emit(sid, 1 if ents == 0 else 0, th, "flag")
+        elif sid == "figure_caption_coverage":
+            fig = artifacts.get("figures") or {}
+            st = fig.get("stats") or {}
+            if st.get("count"):
+                emit(sid, st.get("with_caption", 0) / st["count"], th, "ratio")
+        elif sid == "code_available":
+            ext = (artifacts.get("external_resources") or {}).get("stats", {}).get("by_type", {})
+            emit(sid, ext.get("code", 0), th, "count")
+        elif sid == "citation_resolution_rate":
+            cs = (artifacts.get("citations_resolved") or {}).get("stats") or {}
+            total = cs.get("total", 0)
+            if total:
+                resolved = cs.get("resolved_arxiv", 0) + cs.get("resolved_doi", 0)
+                emit(sid, resolved / total, th, "ratio")
+    return out
 
 
 def build(paper_id: str, root: Path = Path("data/processed")) -> None:
@@ -247,8 +318,34 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
                       "cells": sum(len(t["cells"] or []) for t in tables)},
         }
 
+    # ── quality_signals layer: deterministic signals per policy ───────
+    policy = {}
+    try:
+        policy = yaml.safe_load(
+            (Path(__file__).resolve().parent.parent / "data/ontology/quality_signal_policy.yaml").read_text()
+        ) or {}
+    except OSError:
+        policy = {}
+    signals = _compute_quality_signals(parsed, artifacts, policy.get("signals", []))
+    (article / "quality_signals.json").write_text(json.dumps(signals, ensure_ascii=False, indent=1))
+    verdicts = {}
+    for s in signals:
+        if s.get("verdict") and s["verdict"] != "info":
+            verdicts[s["verdict"]] = verdicts.get(s["verdict"], 0) + 1
+    artifacts["quality_signals"] = {
+        "file": "quality_signals.json",
+        "derived_from": ["parsed", "extracted", "figures", "citations_resolved", "external_resources"],
+        "sha256": sha256_file(article / "quality_signals.json"),
+        "built_at": now,
+        "actor": "m451-reference-builder",
+        "stats": {"count": len(signals), **{f"{k}_signals": v for k, v in verdicts.items()}},
+        "inputs": ["data/ontology/quality_signal_policy.yaml"],
+    }
+
     # ── not-reached layers (lifecycle has not arrived yet) ────────────
     for layer in NOT_REACHED_LAYERS:
+        if layer == "quality_signals":
+            continue
         artifacts[layer] = {"not_reached": True}
 
     manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True))

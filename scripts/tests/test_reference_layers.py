@@ -80,3 +80,14 @@ def test_figures_and_external_resources_built(tmp_path):
     assert m["artifacts"]["figures"]["stats"]["count"] == 1
     assert m["artifacts"]["external_resources"]["stats"]["unique_urls"] == 3
     assert m["artifacts"]["tables"]["missingness"] == "no_table_elements"
+
+    # quality_signals: deterministic, policy-driven
+    qs = json.loads((d / "quality_signals.json").read_text())
+    by_id = {s["signal_id"]: s for s in qs}
+    assert set(by_id) >= {"sections_text_completeness", "citation_anchor_coverage",
+                          "figure_caption_coverage", "code_available"}
+    assert all(s["verdict"] in ("ok", "warn", "alarm", "info") for s in qs)
+    assert by_id["figure_caption_coverage"]["value"] == 1.0
+    assert by_id["code_available"]["value"] == 1  # github.com in fixture TEI
+    assert m["artifacts"]["quality_signals"]["stats"]["count"] == len(qs)
+    assert "enriched" in m["artifacts"] and m["artifacts"]["enriched"]["not_reached"]
