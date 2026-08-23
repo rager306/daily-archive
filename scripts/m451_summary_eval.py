@@ -71,10 +71,18 @@ def _router_key() -> str:
     return key
 
 
-def call_model(policy: dict, model: str, prompt: str, user: str, use_cache: bool = True):
-    slug = re.sub(r"[^a-z0-9]+", "-", model.lower()).strip("-")
+def call_model(policy: dict, model, prompt: str, user: str, use_cache: bool = True):
+    """model: str name or {name, label, extra} spec from policy (DATA)."""
+    label = model
+    extra = {}
+    if isinstance(model, dict):
+        label = model.get("label") or model["name"]
+        extra = model.get("extra") or {}
+        model = model["name"]
+    slug = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
     CACHE.mkdir(parents=True, exist_ok=True)
-    key = hashlib.sha256((model + user[:200]).encode()).hexdigest()[:16]
+    fingerprint = model + json.dumps(extra, sort_keys=True) + user[:200]
+    key = hashlib.sha256(fingerprint.encode()).hexdigest()[:16]
     cf = CACHE / f"{slug}-{key}.json"
     if use_cache and cf.exists():
         rec = json.loads(cf.read_text())
@@ -82,20 +90,22 @@ def call_model(policy: dict, model: str, prompt: str, user: str, use_cache: bool
             return rec
 
     key = _router_key()
-    body = json.dumps({
+    body_d = {
         "model": model,
         "messages": [
             {"role": "system", "content": prompt},
             {"role": "user", "content": user},
         ],
         "temperature": 0.2,
-        "max_tokens": 4000,  # headroom: reasoning models spend tokens on <think>
+        "max_tokens": 8000,  # headroom: effort modes spend more on reasoning
         "stream": False,
-    }).encode()
+    }
+    body_d.update(extra)  # per-model DATA overrides (e.g. reasoning_effort)
+    body = json.dumps(body_d).encode()
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = f"Bearer {key}"
-    rec = {"model": model, "prompt_key": cf.stem, "ok": False, "done": False}
+    rec = {"model": label, "model_name": model, "prompt_key": cf.stem, "ok": False, "done": False}
     # NOTE: `done` flips to True ONLY with ok=True (parsed success).
     # Failures (HTTP/network) stay retryable — never cached as terminal.
     last_err = None
@@ -213,6 +223,9 @@ def main(argv):
     rows = []
     from concurrent.futures import ThreadPoolExecutor
 
+    def mlabel(m):
+        return m.get("label") or m if isinstance(m, dict) else m
+
     jobs = []
     for pid in pids:
         parsed = json.loads((REPO / f"data/processed/{pid}/parsed/article.json").read_text())
@@ -233,7 +246,7 @@ def main(argv):
             mets = metrics_for(policy, rec["parsed"], aw, entities, article_text)
         else:
             mets = None
-        return {"paper": pid, "model": model, "ok": rec["ok"],
+        return {"paper": pid, "model": rec.get("model", mlabel(model)), "ok": rec["ok"],
                 "extraction": rec.get("extraction"), "latency_s": rec.get("latency_s"),
                 "error": rec.get("error"), "metrics": mets}
 
@@ -247,7 +260,7 @@ def main(argv):
     print(f"\n{'model':34} {'ok':>3} {'struct':>7} {'ground':>7} {'entity':>7} {'num':>6} {'halluc':>7} {'med_lat':>8}")
     print("-" * 88)
     agg = {}
-    for model in models:
+    for model in map(mlabel, models):
         rs = [r for r in rows if r["model"] == model]
         ok = [r for r in rs if r["ok"]]
         def med(k):

@@ -187,7 +187,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(d.protocol, "openai_chat_completions");
-        assert_eq!(d.model_name, "agnes-ai/agnes-2.0-flash");
+        // M451 benchmark: default retargeted agnes-2.0 -> agnes-2.5
+        assert_eq!(d.model_name, "agnes-ai/agnes-2.5-flash");
         assert_eq!(d.endpoint, "http://127.0.0.1:20128/v1/chat/completions");
         assert_eq!(
             r.resolve("prompt-eval-summary-agnes", Some("http://127.0.0.1:20128"))
@@ -203,7 +204,8 @@ mod tests {
         );
         let quality = r.resolve("paper-summary-generate-quality", None).unwrap();
         let fallback = r.resolve("paper-summary-generate-fallback", None).unwrap();
-        assert_eq!(quality.model_name, "xai/grok-code-fast-1");
+        // M451 benchmark: quality -> glm-4.5-air (fallback stays grok)
+        assert_eq!(quality.model_name, "glm/glm-4.5-air");
         assert_eq!(fallback.model_name, "xai/grok-code-fast-1");
         for id in [
             "paper-summary-generate-quality",
