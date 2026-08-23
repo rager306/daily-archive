@@ -224,7 +224,25 @@ pub fn validate_file_backed(
     for decl in &norm.invariants {
         match decl.pattern.as_str() {
             "collection_records" => {
-                collection_records(object_id, decl, io, &mut out);
+                // DATA-driven gate: when the layer is honestly missing
+                // (typed missingness, e.g. extraction_not_run for textbook
+                // chapters), the collection check does not apply.
+                let gated = decl
+                    .params
+                    .get("require_layer")
+                    .and_then(|v| v.as_str())
+                    .and_then(|layer| {
+                        object
+                            .get("artifacts")
+                            .and_then(|a| a.get(layer))
+                            .and_then(|l| l.get("present"))
+                            .and_then(|v| v.as_bool())
+                            .map(|present| !present)
+                    })
+                    .unwrap_or(false);
+                if !gated {
+                    collection_records(object_id, decl, io, &mut out);
+                }
             }
             "graph_edges_known" => {
                 artifact_files_exist(object_id, object, decl, io, &mut out);

@@ -1,78 +1,74 @@
-# Agent read-tools contract — W-F agent brain surface (v11 prep).
-# Vectify MCP pattern: next_steps in EVERY response, JSON-envelope (tools
-# never raise), char budget, verbatim ids. Read-only. DATA not code:
-# implementation (da-mcp/Rust read-plane over article layers) consumes
-# this contract; prompt surfaces derive descriptions from here.
 schema_version: agent-read-tools.v1
-adr_ref: "ADR-054 (MCP), doc/research/document-model-pageindex-synthesis-2026-08-23.md"
-
+adr_ref: ADR-054 (MCP), doc/research/document-model-pageindex-synthesis-2026-08-23.md
 principles:
-  - "tools never raise: every outcome is a JSON envelope {success|error, next_steps}"
-  - "next_steps: навигационная подсказка в каждом ответе (какие вызовы имеют смысл дальше)"
-  - "ids передаются verbatim (section_id/paper_id); никогда не конструируются"
-  - "char_budget: {default: 100000, hard_margin_pct: 5}"
-  - "role=furniture узлы скрыты из structure-preview по умолчанию (include_furniture=false)"
-
+- 'tools never raise: every outcome is a JSON envelope {success|error, next_steps}'
+- 'next_steps: навигационная подсказка в каждом ответе (какие вызовы имеют смысл дальше)'
+- ids передаются verbatim (section_id/paper_id); никогда не конструируются
+- 'char_budget: {default: 100000, hard_margin_pct: 5}'
+- role=furniture узлы скрыты из structure-preview по умолчанию (include_furniture=false)
 tools:
-  - id: browse_articles
-    description: список статей корпуса с lifecycle/слоями (пагинация)
-    params:
-      offset: int
-      limit: int
-    returns:
-      - paper_id: str
-      - title: str
-      - lifecycle: str
-      - layers_built: "list[str]"
-    next_steps:
-      - get_article_structure
-  - id: get_article_structure
-    description: "дерево навигации статьи (path_id, depth, roles, sizes; furniture скрыт по умолчанию)"
-    params:
-      paper_id: str
-      include_furniture: "bool=false"
-      part: int
-    returns:
-      - section_id: str
-      - path_id: str
-      - title: str
-      - depth: int
-      - role: str
-      - char_count: int
-      - children_preview: "list[str]"
-    next_steps:
-      - get_section_text
-      - get_summary
-  - id: get_section_text
-    description: текст секции (по section_id verbatim)
-    params:
-      paper_id: str
-      section_id: str
-    returns:
-      text: str
-      char_count: int
-      path_id: str
-      prev_section_id: "str|null"
-      next_section_id: "str|null"
-    next_steps:
-      - get_article_structure
-      - get_summary
-  - id: get_summary
-    description: "выжимки статьи (abstract/per_section — если built)"
-    params:
-      paper_id: str
-      level: "abstract|per_section"
-    returns: summary_payload
-    next_steps:
-      - get_section_text
-
+- id: browse_articles
+  description: список статей корпуса с lifecycle/слоями (пагинация)
+  params:
+    offset: int
+    limit: int
+  returns:
+  - paper_id: str
+  - title: str
+  - lifecycle: str
+  - layers_built: list[str]
+  next_steps:
+  - get_article_structure
+- id: get_article_structure
+  description: дерево навигации статьи (path_id, depth, roles, sizes; furniture скрыт
+    по умолчанию)
+  params:
+    paper_id: str
+    include_furniture: bool=false
+    part: int
+  returns:
+  - section_id: str
+  - path_id: str
+  - title: str
+  - depth: int
+  - role: str
+  - char_count: int
+  - children_preview: list[str]
+  next_steps:
+  - get_section_text
+  - get_summary
+- id: get_section_text
+  description: текст секции (по section_id verbatim)
+  params:
+    paper_id: str
+    section_id: str
+  returns:
+    text: str
+    char_count: int
+    path_id: str
+    prev_section_id: str|null
+    next_section_id: str|null
+  next_steps:
+  - get_article_structure
+  - get_summary
+- id: get_summary
+  description: выжимки статьи (abstract/per_section — если built)
+  params:
+    paper_id: str
+    level: abstract|per_section
+  returns: summary_payload
+  next_steps:
+  - get_section_text
 optimizer_surface:
   prompt_files: data/prompts/article-summary/
   frozen_eval: governor/fixtures/prompt_eval/article-summary.eval.v1.json
   signals_readable:
-    - navigation_efficiency
-    - furniture_share
-    - all quality_signals
+  - navigation_efficiency
+  - furniture_share
+  - all quality_signals
   locks:
     optimizer_enabled: false
     production_acceptance_eligible: false
+object_classes:
+- 'article (grammar: arxiv_pdf_dot)'
+- 'chapter (grammar: html_headings, id=gnn-ch-*)'

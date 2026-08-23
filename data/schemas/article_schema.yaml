@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v11   # v11: furniture roles + nav invariants (engine patterns) + tree_cost + hardening
+schema_version: article-schema.v12   # v12: grammar profiles table — html_headings textbook chapters as article objects
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -21,6 +21,7 @@ changes:
   v9: "summaries.per_section: ленивый подслой — статусы not_requested/requested/building/built/failed; триггер и лимиты из data/ontology/background_tasks.yaml; lifecycle статьи НЕ меняется"
   v10: "context/navigation.json: PageIndex-семантика (parent/children/prev/next/depth); идентичность узла = section_id (path_id НЕ уникален: 55% статей имеют дубли)"
   v11: "role+confidence на узлах (furniture_detectors.yaml), char_count в узлах, инварианты node_ref_integrity/list_symmetric_next_prev (движок), сигналы navigation_efficiency/furniture_share, prompt-injection hardening"
+  v12: "grammar_profiles: html_headings (главы учебников — h1-h6 дерево) становятся article-объектами; missingness += extraction_not_run"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -91,6 +92,20 @@ layers:
       - {name: navigation.json, type: "Vec<NavNode>", required: true}
     derived_from: [parsed]
     lifecycle_ceiling: structured
+    grammar_profile: "arxiv_pdf_dot (по умолчанию) | html_headings | page_outline | latex_env | kb_page — поле манифеста"
+    grammar_profiles:
+      html_headings:
+        source: HTML h1-h6 дерево (учебники/KB)
+        path_id: "из numbering в заголовке ('1.1.1') если есть; иначе по уровням"
+        identity: "section_id = <chapter>:h<N>-<ordinal> (уникален)"
+        nav_semantics: "родитель = ближайший заголовок меньшего уровня сверху"
+        furniture_html: "permalink-маркеры ('¶') чистятся; Summary/Prerequisites/Concepts Covered — body для учебников"
+      page_outline:
+        source: PDF bookmarks (embedded_toc)
+        anchor: page-range
+      latex_env:
+        source: LaTeX theorem/definition/exercise окружления
+        structural_type: theorem|definition|exercise|proof
     path_id_grammar:
       identity: "section_id — ЕДИНСТВЕННАЯ идентичность узла (path_id не уникален: 55% статей имеют дубли)"
       patterns: ["<int> — корневая секция", "<int>.<int>… — иерархия точкой", "<int>. — заголовочный узел (метаданные секции)", "'~'-рестарты parsed — НЕ становятся родителями"]
@@ -263,6 +278,7 @@ manifest:
     no_formula_elements: "парсер не нашёл формул"
     no_citation_elements: "парсер не нашёл цитат (поле citations пусто)"
     no_external_resources: "TEI не содержит ptr-URL"
+    extraction_not_run: "extracted-стадия не выполнялась для этого класса объектов (учебные главы)"
     openalex_not_found: "работа не проиндексирована OpenAlex — honest pending, не выдумывается"
     openalex_fetch_failed: "сетевой сбой — ретрай при следующем прогоне"
     parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
@@ -338,6 +354,7 @@ invariants:
 
   - pattern: collection_records               # записи коллекции удовлетворяют полю
     layer: extracted
+    require_layer: extracted                  # gate: пропускается при present:false (typed missingness)
     file: extracted/entities.json
     field: section_ordinal
     required: true
