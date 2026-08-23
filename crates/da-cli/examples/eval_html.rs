@@ -3,7 +3,7 @@
 //! Usage: cargo run -p da-cli --example eval_html -- <html_path> <paper_id>
 //! Example:
 //!   cargo run -p da-cli --example eval_html -- \
-//!     data/article_catalog/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html \
+//!     data/articles/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html \
 //!     gnn-ch-01
 
 use da_adapters::{HtmlParser, RuleBasedExtractor};
@@ -16,7 +16,7 @@ async fn main() {
     let html_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| {
-            "data/article_catalog/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html".to_string()
+            "data/articles/article_catalog/gnn_textbook/html/gnn-ch-chapters__01-intro-to-graphs/source/chapter.html".to_string()
         });
     let paper_id = std::env::args()
         .nth(2)

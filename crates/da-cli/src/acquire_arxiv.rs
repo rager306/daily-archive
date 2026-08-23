@@ -17,7 +17,7 @@ pub struct AcquireArxivArgs {
     pub ids: Option<String>,
     #[arg(long)]
     pub ids_file: Option<PathBuf>,
-    #[arg(long, default_value = "data/article_catalog")]
+    #[arg(long, default_value = "data/articles")]
     pub catalog_root: PathBuf,
     #[arg(long)]
     pub report: PathBuf,

@@ -1438,13 +1438,14 @@ async fn graph_edges_read_back_validate_clean_and_detect_cross_parent() {
     assert!(report.counts.contains_key("NAV-CROSS-PARENT-SIBLING"));
 }
 
-/// The committed Governor fixtures (`data/navigation_contract/`) are DATA
+/// The committed Governor fixtures (`governor/fixtures/navigation_contract/`) are DATA
 /// consumed by `scripts/governor/checks/section_navigation_contract.yaml`.
 /// This test pins them to the current validator output, so the fixtures can
 /// never silently drift from the Rust contract.
 #[test]
 fn navigation_report_fixtures_match_committed_governor_data() {
-    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/navigation_contract");
+    let fixtures_dir =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../governor/fixtures/navigation_contract");
     let (sections, map) = deep_tree_fixture();
 
     // Positive fixture: complete deep tree, model edges → zero diagnostics.

@@ -415,7 +415,7 @@ async fn main() -> Result<()> {
         .filter_map(|r| r["paper_id"].as_str().map(String::from))
         .collect();
 
-    let catalog_root = PathBuf::from("data/article_catalog/article_catalog/arxiv");
+    let catalog_root = PathBuf::from("data/articles/article_catalog/arxiv");
     let inventory = build_inventory(&catalog_root, &gold_ids)?;
     let with_pdf: Vec<CatalogEntry> = inventory
         .iter()

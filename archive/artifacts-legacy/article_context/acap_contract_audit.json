@@ -1,0 +1,317 @@
+{
+  "schema_version": "acap-contract-audit-report.v1",
+  "input": {
+    "schema_version": "acap-contract-audit-input.v1",
+    "source_fingerprints": {
+      "materialization_artifact": "ff708c1918eb20fe92cb0cdb22dc00b47635d396ad0747115b4fe92b45b65779",
+      "policy_yaml": "caf55dd76d72289c51c14a90c6a7a7766bc05c5fe303b03051a35310307d70eb"
+    },
+    "policy_id": "acap-ontology-v2",
+    "policy_schema_version": "article-context-assurance.v1",
+    "policy_rollout": "bootstrap",
+    "policy_layers": [
+      {
+        "id": "checkpoint",
+        "enforcement": "bootstrap",
+        "state": "accepted_checkpoint",
+        "hard_metrics": [
+          "checksum_lineage_coverage",
+          "replay_net_writes",
+          "replay_observation_integrity",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "latency_p95_ms"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[checkpoint]"
+      },
+      {
+        "id": "embedding",
+        "enforcement": "required",
+        "state": "embedded",
+        "hard_metrics": [
+          "required_field_retention",
+          "checksum_lineage_coverage",
+          "cache_lineage_exactness"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "latency_p95_ms",
+          "cache_hit_rate"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[embedding]"
+      },
+      {
+        "id": "enrichment",
+        "enforcement": "bootstrap",
+        "state": "enriched",
+        "hard_metrics": [
+          "evidence_grounding_coverage",
+          "typed_missingness_coverage",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "quality_score",
+          "latency_p95_ms"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[enrichment]"
+      },
+      {
+        "id": "evidence",
+        "enforcement": "required",
+        "state": "evidence_linked",
+        "hard_metrics": [
+          "evidence_grounding_coverage",
+          "ontology_conformance",
+          "checksum_lineage_coverage"
+        ],
+        "quality_metrics": [
+          "coverage"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[evidence]"
+      },
+      {
+        "id": "extraction",
+        "enforcement": "required",
+        "state": "extracted",
+        "hard_metrics": [
+          "checksum_lineage_coverage",
+          "typed_missingness_coverage"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "quality_score"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[extraction]"
+      },
+      {
+        "id": "finalize",
+        "enforcement": "bootstrap",
+        "state": "finalized",
+        "hard_metrics": [
+          "ontology_conformance",
+          "d127_unlock_count",
+          "cache_lineage_exactness"
+        ],
+        "quality_metrics": [
+          "coverage"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[finalize]"
+      },
+      {
+        "id": "materialization",
+        "enforcement": "required",
+        "state": "materialized",
+        "hard_metrics": [
+          "required_field_retention",
+          "byte_conservation",
+          "ontology_conformance",
+          "replay_net_writes",
+          "replay_observation_integrity",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "latency_p95_ms"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[materialization]"
+      },
+      {
+        "id": "parse",
+        "enforcement": "required",
+        "state": "parsed",
+        "hard_metrics": [
+          "required_field_retention",
+          "byte_conservation",
+          "checksum_lineage_coverage",
+          "typed_missingness_coverage"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "latency_p95_ms",
+          "cache_hit_rate"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[parse]"
+      },
+      {
+        "id": "resolution",
+        "enforcement": "bootstrap",
+        "state": "resolved",
+        "hard_metrics": [
+          "evidence_grounding_coverage",
+          "ontology_conformance",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "quality_score"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[resolution]"
+      },
+      {
+        "id": "semantic_tasks",
+        "enforcement": "bootstrap",
+        "state": "task_accepted",
+        "hard_metrics": [
+          "semantic_task_pass_rate",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "coverage"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[semantic_tasks]"
+      },
+      {
+        "id": "source",
+        "enforcement": "required",
+        "state": "source_verified",
+        "hard_metrics": [
+          "required_field_retention",
+          "checksum_lineage_coverage",
+          "typed_missingness_coverage",
+          "d127_unlock_count"
+        ],
+        "quality_metrics": [
+          "coverage"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[source]"
+      },
+      {
+        "id": "structure",
+        "enforcement": "required",
+        "state": "structured",
+        "hard_metrics": [
+          "required_field_retention",
+          "byte_conservation",
+          "checksum_lineage_coverage"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "semantic_density"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[structure]"
+      },
+      {
+        "id": "summary",
+        "enforcement": "bootstrap",
+        "state": "summarized",
+        "hard_metrics": [
+          "checksum_lineage_coverage",
+          "evidence_grounding_coverage",
+          "typed_missingness_coverage"
+        ],
+        "quality_metrics": [
+          "coverage",
+          "quality_score",
+          "context_utilization",
+          "disclosed_truncation_rate",
+          "semantic_density",
+          "cost_per_article"
+        ],
+        "source_ref": "article_context_assurance.yaml#layers[summary]"
+      }
+    ],
+    "policy_metric_names": [
+      "byte_conservation",
+      "cache_hit_rate",
+      "cache_lineage_exactness",
+      "checksum_lineage_coverage",
+      "context_utilization",
+      "cost_per_article",
+      "coverage",
+      "d127_unlock_count",
+      "disclosed_truncation_rate",
+      "evidence_grounding_coverage",
+      "latency_p95_ms",
+      "ontology_conformance",
+      "quality_score",
+      "replay_net_writes",
+      "replay_observation_integrity",
+      "required_field_retention",
+      "semantic_density",
+      "semantic_task_pass_rate",
+      "typed_missingness_coverage"
+    ],
+    "policy_fsm_states": [
+      "accepted_checkpoint",
+      "embedded",
+      "enriched",
+      "evidence_linked",
+      "extracted",
+      "failed_visible",
+      "finalized",
+      "materialized",
+      "parsed",
+      "resolved",
+      "source_registered",
+      "source_verified",
+      "structured",
+      "summarized",
+      "task_accepted"
+    ],
+    "aggregate_schema_declared": "article-context-assurance-aggregate.v1",
+    "aggregate_path_declared": "artifacts/article_context/assurance_report.json",
+    "aggregate_required_keys": [
+      "aggregate",
+      "article_count",
+      "cache_results",
+      "fsm_results",
+      "import_eligible",
+      "layer_results",
+      "optimizer_results",
+      "pipeline_revision",
+      "policy_sha256",
+      "prompt_results",
+      "schema_version"
+    ],
+    "rust_surface": {
+      "per_article_schema": "article-context-assurance-report.v1",
+      "policy_id": "acap-ontology-v2",
+      "aggregate_schema": "article-context-assurance-aggregate.v1",
+      "hard_failures_kind": "list",
+      "source_ref": "da-domain/src/assurance.rs"
+    },
+    "embedded_reports": {
+      "count": 200,
+      "layers_observed": [
+        "embedding",
+        "evidence",
+        "extraction",
+        "materialization",
+        "parse",
+        "source",
+        "structure"
+      ],
+      "source_ref": "artifacts/article_context/materialization_all_200.json+artifacts/article_context/assurance_report.json"
+    },
+    "aggregate_report": {
+      "present": true,
+      "declared_path": "artifacts/article_context/assurance_report.json",
+      "source_ref": "fs_check"
+    },
+    "governor_contract": {
+      "expected_schema_version": "article-context-assurance-aggregate.v1",
+      "expected_hard_failures_kind": "list",
+      "required_top_level": [
+        "schema_version",
+        "article_count",
+        "pipeline_revision",
+        "policy_sha256",
+        "layer_results",
+        "fsm_results",
+        "cache_results",
+        "prompt_results",
+        "optimizer_results",
+        "aggregate",
+        "import_eligible"
+      ],
+      "source_ref": "governor/application/trajectory_service.py"
+    },
+    "import_eligible": false
+  },
+  "findings": [],
+  "verdict": "converged",
+  "import_eligible": false,
+  "report_sha256": "d3b364562d3554bf871229eebaceb1f7aa9d927f4872d7ba0040da7bbaad3a5a"
+}

@@ -971,16 +971,14 @@ async fn batch_ingest(
     let mut pdfs: Vec<(String, String)> = Vec::new();
     let mut resolved_contexts: Vec<Option<da_application::RevisionContentContext>> = Vec::new();
     for pid in &id_list {
-        let resolved = match production::resolve_catalog_pdf(
-            std::path::Path::new("data/article_catalog"),
-            pid,
-        ) {
-            Ok(resolved) => resolved,
-            Err(error) => {
-                eprintln!("❌ Catalog revision resolution failed for {pid}: {error}");
-                std::process::exit(1);
-            }
-        };
+        let resolved =
+            match production::resolve_catalog_pdf(std::path::Path::new("data/articles"), pid) {
+                Ok(resolved) => resolved,
+                Err(error) => {
+                    eprintln!("❌ Catalog revision resolution failed for {pid}: {error}");
+                    std::process::exit(1);
+                }
+            };
         let Some(resolved) = resolved else {
             continue;
         };
@@ -1515,11 +1513,7 @@ async fn summarize_paper(
 
     // Find PDF
     let pdf = std::process::Command::new("find")
-        .args([
-            "data/article_catalog",
-            "-name",
-            &format!("{}.pdf", paper_id),
-        ])
+        .args(["data/articles", "-name", &format!("{}.pdf", paper_id)])
         .output()
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
@@ -1671,16 +1665,14 @@ async fn extract_entities(
     use da_ports::parser::ParserPort;
     use std::sync::Arc;
 
-    let resolved = match production::resolve_catalog_pdf(
-        std::path::Path::new("data/article_catalog"),
-        paper_id,
-    ) {
-        Ok(resolved) => resolved,
-        Err(error) => {
-            eprintln!("❌ Catalog revision resolution failed for {paper_id}: {error}");
-            std::process::exit(1);
-        }
-    };
+    let resolved =
+        match production::resolve_catalog_pdf(std::path::Path::new("data/articles"), paper_id) {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                eprintln!("❌ Catalog revision resolution failed for {paper_id}: {error}");
+                std::process::exit(1);
+            }
+        };
     let (pdf_path, revision_context, binding_method) = match resolved {
         Some(resolved) => (
             resolved.path.display().to_string(),

@@ -14,7 +14,7 @@
 //! structure the source does not prove. Partial identity and duplicate
 //! paths are blocked too, so readiness can never over-claim.
 //!
-//! The committed Governor fixtures (`data/html_structure_contract/`) are
+//! The committed Governor fixtures (`governor/fixtures/html_structure_contract/`) are
 //! DATA consumed by `scripts/governor/checks/html_structure_honesty.yaml`;
 //! this test pins them to the current stage output and to the blocked-
 //! record contract, so the fixtures cannot silently drift from the Rust
@@ -363,14 +363,14 @@ async fn document_context_stage_rejects_unresolved_summary_path() {
 // ─── Governor fixture pinning (PIR-010 / PIR-009) ─────────────────────
 
 /// The committed positive Governor fixture
-/// (`data/html_structure_contract/html_path_identity.projection.json`) must
+/// (`governor/fixtures/html_structure_contract/html_path_identity.projection.json`) must
 /// equal the current stage output for the proven-HTML fixture, so the DATA
 /// consumed by `scripts/governor/checks/html_structure_honesty.yaml` can
 /// never silently drift from the Rust contract.
 #[tokio::test]
 async fn document_context_stage_fixtures_match_committed_governor_data() {
-    let fixtures_dir =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/html_structure_contract");
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../governor/fixtures/html_structure_contract");
     let article = html_article("gnn-ch-chapters__01-intro-to-graphs");
     let output = DocumentContextStage::new()
         .execute(request(&article, vec![]))
@@ -391,15 +391,15 @@ async fn document_context_stage_fixtures_match_committed_governor_data() {
 }
 
 /// The committed negative Governor fixture
-/// (`data/html_structure_contract/flat_missing_identity.blocked.json`)
+/// (`governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json`)
 /// models the fail-closed outcome for flat HTML: ok=false, readiness
 /// stays `not_claimed`, a typed reason names the blocked identity, and
 /// import_eligible stays false (D127). Pins the blocked-record contract
 /// to the same semantics the tests above enforce.
 #[test]
 fn document_context_stage_negative_fixture_models_blocked_html_readiness() {
-    let fixtures_dir =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/html_structure_contract");
+    let fixtures_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../governor/fixtures/html_structure_contract");
     let record: serde_json::Value = serde_json::from_str(
         &std::fs::read_to_string(fixtures_dir.join("flat_missing_identity.blocked.json"))
             .expect("read flat_missing_identity.blocked.json"),

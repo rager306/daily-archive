@@ -45,7 +45,7 @@ async fn main() {
 
     // --- Find PDF ---
     let pdf = std::process::Command::new("find")
-        .args(["data/article_catalog", "-name", &format!("{paper_id}.pdf")])
+        .args(["data/articles", "-name", &format!("{paper_id}.pdf")])
         .output()
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())

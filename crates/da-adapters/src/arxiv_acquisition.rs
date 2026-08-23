@@ -35,7 +35,7 @@ fn ar5iv_base() -> String {
 /// Filesystem-backed arXiv acquisition.
 #[derive(Debug, Clone)]
 pub struct ArxivSourceAcquisition {
-    /// Root containing `article_catalog/...` (typically `data/article_catalog`).
+    /// Root containing `article_catalog/...` (typically `data/articles`).
     pub catalog_root: PathBuf,
     pub user_agent: String,
 }

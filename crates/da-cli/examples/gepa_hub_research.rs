@@ -102,7 +102,7 @@ struct CitationEntryJson {
 
 fn find_pdf(paper_id: &str) -> Option<String> {
     let o = std::process::Command::new("find")
-        .args(["data/article_catalog", "-name", &format!("{paper_id}.pdf")])
+        .args(["data/articles", "-name", &format!("{paper_id}.pdf")])
         .output()
         .ok()?;
     let s = String::from_utf8(o.stdout).ok()?;

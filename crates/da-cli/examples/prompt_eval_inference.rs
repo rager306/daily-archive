@@ -21,13 +21,13 @@ use std::{
 
 #[derive(Parser)]
 struct Args {
-    #[arg(long, default_value = "data/prompt_eval/fixtures.yaml")]
+    #[arg(long, default_value = "governor/fixtures/prompt_eval/fixtures.yaml")]
     fixtures: PathBuf,
     #[arg(long, default_value = "data/ontology/prompt_tasks.yaml")]
     prompt_registry: PathBuf,
     #[arg(long, default_value = "models.yaml")]
     model_registry: PathBuf,
-    #[arg(long, default_value = "data/prompt_eval/inference.yaml")]
+    #[arg(long, default_value = "governor/fixtures/prompt_eval/inference.yaml")]
     inference_policy: PathBuf,
     #[arg(
         long,
@@ -368,11 +368,11 @@ mod tests {
     fn project_policy_is_bounded_and_unsafe_unlocks_fail_closed() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let set: FixtureSet = serde_yaml::from_slice(
-            &std::fs::read(root.join("data/prompt_eval/fixtures.yaml")).unwrap(),
+            &std::fs::read(root.join("governor/fixtures/prompt_eval/fixtures.yaml")).unwrap(),
         )
         .unwrap();
         let mut policy: InferencePolicy = serde_yaml::from_slice(
-            &std::fs::read(root.join("data/prompt_eval/inference.yaml")).unwrap(),
+            &std::fs::read(root.join("governor/fixtures/prompt_eval/inference.yaml")).unwrap(),
         )
         .unwrap();
         assert!(validate_policy(&policy, &set).is_ok());

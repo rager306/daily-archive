@@ -10,7 +10,73 @@ use da_ports::openalex::{
 };
 use serde::Deserialize;
 
-const OPENALEX_BASE: &str = "https://api.openalex.org";
+/// Base URL: env OPENALEX_BASE_URL (default public API). No hardcode in
+/// request paths (M446).
+fn openalex_base() -> String {
+    std::env::var("OPENALEX_BASE_URL")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "https://api.openalex.org".to_string())
+}
+
+/// DOI prefix for a source code, from data/ontology/doi_prefix_map.yaml
+/// (env DA_DOI_PREFIX_MAP). Bundled arXiv fallback keeps behavior when the
+/// file is absent — the dictionary is the single place to extend for new
+/// sources (M446 W-B1).
+pub fn doi_prefix_for(source_code: &str) -> Option<String> {
+    static BUNDLED: std::sync::OnceLock<std::collections::BTreeMap<String, String>> =
+        std::sync::OnceLock::new();
+    let path = std::env::var("DA_DOI_PREFIX_MAP")
+        .ok()
+        .filter(|v| !v.trim().is_empty())
+        .unwrap_or_else(|| "data/ontology/doi_prefix_map.yaml".to_string());
+    let text = std::fs::read_to_string(&path).ok();
+    let map = text
+        .and_then(|t| serde_yaml::from_str::<serde_yaml::Value>(&t).ok())
+        .and_then(|v| {
+            v.get("doi_prefixes")?.as_mapping().map(|m| {
+                m.iter()
+                    .filter_map(|(k, v)| Some((k.as_str()?.to_string(), v.as_str()?.to_string())))
+                    .collect::<std::collections::BTreeMap<String, String>>()
+            })
+        })
+        .or_else(|| {
+            BUNDLED
+                .get_or_init(|| {
+                    [("arxiv".to_string(), "10.48550/arxiv.".to_string())]
+                        .into_iter()
+                        .collect()
+                })
+                .clone()
+                .into()
+        });
+    map.as_ref().and_then(|m| m.get(source_code).cloned())
+}
+
+#[cfg(test)]
+mod doi_prefix_tests {
+    use super::*;
+
+    #[test]
+    fn arxiv_prefix_from_data_or_fallback() {
+        // In-repo test: the committed dictionary is present next to the
+        // workspace, so the DATA path wins; the fallback only fires when
+        // the file is missing (covered by the unknown-source case below).
+        let prefix = doi_prefix_for("arxiv").expect("arxiv prefix");
+        assert_eq!(prefix, "10.48550/arxiv.");
+    }
+
+    #[test]
+    fn unknown_source_is_none() {
+        assert!(doi_prefix_for("not-a-source").is_none());
+    }
+
+    #[test]
+    fn doi_filter_shape_is_preserved() {
+        let filter = format!("doi:{}{}", doi_prefix_for("arxiv").unwrap(), "2504.16925");
+        assert_eq!(filter, "doi:10.48550/arxiv.2504.16925");
+    }
+}
 
 /// HTTP adapter for OpenAlex API.
 pub struct OpenAlexHttpAdapter {
@@ -177,8 +243,12 @@ fn parse_work(w: WorkResponse) -> OpenAlexWork {
 impl OpenAlexClient for OpenAlexHttpAdapter {
     async fn fetch_by_arxiv_id(&self, arxiv_id: &str) -> OpenAlexResult<OpenAlexWork> {
         // Use filter search instead of direct DOI URL — more reliable.
-        let url = format!("{}/works", OPENALEX_BASE);
-        let doi_filter = format!("doi:10.48550/arxiv.{}", arxiv_id);
+        let url = format!("{}/works", openalex_base());
+        let doi_filter = format!(
+            "doi:{}{}",
+            doi_prefix_for("arxiv").unwrap_or_else(|| "10.48550/arxiv.".into()),
+            arxiv_id
+        );
 
         tracing::info!(
             arxiv_id,
@@ -287,7 +357,7 @@ impl OpenAlexClient for OpenAlexHttpAdapter {
     }
 
     async fn search(&self, query: &str, limit: usize) -> OpenAlexResult<Vec<OpenAlexWork>> {
-        let url = format!("{}/works", OPENALEX_BASE);
+        let url = format!("{}/works", openalex_base());
 
         tracing::info!(
             api = "openalex",

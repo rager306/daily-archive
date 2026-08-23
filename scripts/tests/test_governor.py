@@ -1077,13 +1077,13 @@ report_contract:
 fixtures:
   positive:
     id: complete_tree
-    path: data/navigation_contract/complete_tree.report.json
+    path: governor/fixtures/navigation_contract/complete_tree.report.json
     expect:
       ok: true
       diagnostic_count: 0
   negative:
     id: broken_tree
-    path: data/navigation_contract/broken_tree.report.json
+    path: governor/fixtures/navigation_contract/broken_tree.report.json
     expect:
       ok: false
       diagnostic_count_min: 1
@@ -1093,11 +1093,11 @@ graph_task_suite:
   path: data/graph_tasks/tree_navigation.tasks.cypher
   required_patterns: [first_child, next_sibling, parent_section]
 """)
-    _write(root / "data/navigation_contract/complete_tree.report.json", json.dumps({
+    _write(root / "governor/fixtures/navigation_contract/complete_tree.report.json", json.dumps({
         "ok": True, "section_count": 8, "edge_count": 13,
         "diagnostic_count": 0, "counts": {}, "diagnostics": [],
     }))
-    _write(root / "data/navigation_contract/broken_tree.report.json", json.dumps({
+    _write(root / "governor/fixtures/navigation_contract/broken_tree.report.json", json.dumps({
         "ok": False, "section_count": 8, "edge_count": 14, "diagnostic_count": 3,
         "counts": {
             "NAV-MISSING-SIBLING": 1,
@@ -1130,7 +1130,7 @@ def test_section_navigation_contract_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_navigation_contract(service.root)
-    (service.root / "data/navigation_contract/broken_tree.report.json").unlink()
+    (service.root / "governor/fixtures/navigation_contract/broken_tree.report.json").unlink()
     flags = service._check_section_navigation_contract()
     assert len(flags) == 1
     assert flags[0].flag == "section_navigation_contract_fixture_missing"
@@ -1141,7 +1141,7 @@ def test_section_navigation_contract_positive_fixture_must_be_clean():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_navigation_contract(service.root)
-    _write(service.root / "data/navigation_contract/complete_tree.report.json", json.dumps({
+    _write(service.root / "governor/fixtures/navigation_contract/complete_tree.report.json", json.dumps({
         "ok": False, "section_count": 8, "edge_count": 13, "diagnostic_count": 1,
         "counts": {"NAV-CYCLE": 1},
         "diagnostics": [{"code": "NAV-CYCLE", "path_id": None, "section_id": None,
@@ -1158,7 +1158,7 @@ def test_section_navigation_contract_negative_fixture_must_report_codes():
     service.root = _make_root()
     _write_navigation_contract(service.root)
     # Negative fixture that omits NAV-CROSS-PARENT-SIBLING and NAV-MULTI-SUCCESSOR.
-    _write(service.root / "data/navigation_contract/broken_tree.report.json", json.dumps({
+    _write(service.root / "governor/fixtures/navigation_contract/broken_tree.report.json", json.dumps({
         "ok": False, "section_count": 8, "edge_count": 12, "diagnostic_count": 1,
         "counts": {"NAV-MISSING-SIBLING": 1},
         "diagnostics": [{"code": "NAV-MISSING-SIBLING", "path_id": "1.1",
@@ -1209,11 +1209,11 @@ ontology_data:
 wire_fixtures:
   positive:
     id: canonical_wire
-    path: data/temporal_wire_contract/canonical_wire.positive.json
+    path: governor/fixtures/temporal_wire_contract/canonical_wire.positive.json
     expect: accepted
   negative:
     id: legacy_integer_wire
-    path: data/temporal_wire_contract/legacy_integer_wire.negative.json
+    path: governor/fixtures/temporal_wire_contract/legacy_integer_wire.negative.json
     expect: rejected
 """)
     _write(root / "data/ontology/node_schemas.yaml", (
@@ -1225,7 +1225,7 @@ wire_fixtures:
         "node_schemas:\n"
         "- label: Paper\n"
     ))
-    _write(root / "data/temporal_wire_contract/canonical_wire.positive.json", json.dumps([
+    _write(root / "governor/fixtures/temporal_wire_contract/canonical_wire.positive.json", json.dumps([
         "2024-01-15T10:30:00Z",
         "2023-11-14T22:13:20Z",
         "2024-01-15T10:30:00.123456Z",
@@ -1233,7 +1233,7 @@ wire_fixtures:
         "OPEN",
         None,
     ]))
-    _write(root / "data/temporal_wire_contract/legacy_integer_wire.negative.json", json.dumps([
+    _write(root / "governor/fixtures/temporal_wire_contract/legacy_integer_wire.negative.json", json.dumps([
         1700000000,
         0,
         -1,
@@ -1259,7 +1259,7 @@ def test_canonical_temporal_wire_format_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_temporal_wire_contract(service.root)
-    (service.root / "data/temporal_wire_contract/legacy_integer_wire.negative.json").unlink()
+    (service.root / "governor/fixtures/temporal_wire_contract/legacy_integer_wire.negative.json").unlink()
     flags = service._check_canonical_temporal_wire_format()
     assert len(flags) == 1
     assert flags[0].flag == "canonical_temporal_wire_format_fixture_missing"
@@ -1284,7 +1284,7 @@ def test_canonical_temporal_wire_format_positive_fixture_must_be_clean():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_temporal_wire_contract(service.root)
-    _write(service.root / "data/temporal_wire_contract/canonical_wire.positive.json",
+    _write(service.root / "governor/fixtures/temporal_wire_contract/canonical_wire.positive.json",
            json.dumps(["2024-01-15T10:30:00Z", 1700000000]))
     flags = service._check_canonical_temporal_wire_format()
     assert len(flags) == 1
@@ -1298,7 +1298,7 @@ def test_canonical_temporal_wire_format_negative_fixture_must_be_rejected():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_temporal_wire_contract(service.root)
-    _write(service.root / "data/temporal_wire_contract/legacy_integer_wire.negative.json",
+    _write(service.root / "governor/fixtures/temporal_wire_contract/legacy_integer_wire.negative.json",
            json.dumps([1700000000, "2024-01-15T10:30:00Z"]))
     flags = service._check_canonical_temporal_wire_format()
     assert len(flags) == 1
@@ -1343,11 +1343,11 @@ independence:
 fixtures:
   positive:
     id: valid_decisions
-    path: data/promotion_contract/valid_decisions.positive.json
+    path: governor/fixtures/promotion_contract/valid_decisions.positive.json
     expect: clean
   negative:
     id: contract_violations
-    path: data/promotion_contract/contract_violations.negative.json
+    path: governor/fixtures/promotion_contract/contract_violations.negative.json
     expect:
       require_violations: [missing_evidence, import_leak, self_confirmation, reviewer_not_independent, promoter_not_independent, transition_mismatch, invalid_timestamp, double_promotion, terminal_mutation]
 source_markers:
@@ -1366,7 +1366,7 @@ source_markers:
         "pub struct PromotionService;\n"
         "PromotionCommitSink PromotionTransitionRequest\n"
     ))
-    _write(root / "data/promotion_contract/valid_decisions.positive.json", json.dumps([
+    _write(root / "governor/fixtures/promotion_contract/valid_decisions.positive.json", json.dumps([
         {
             "decision_id": "gold-propose-1",
             "transition": "proposed",
@@ -1400,7 +1400,7 @@ source_markers:
             },
         },
     ]))
-    _write(root / "data/promotion_contract/contract_violations.negative.json", json.dumps([
+    _write(root / "governor/fixtures/promotion_contract/contract_violations.negative.json", json.dumps([
         {
             "violation": "missing_evidence",
             "decision": {
@@ -1563,7 +1563,7 @@ def test_promotion_evidence_contract_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_promotion_contract(service.root)
-    (service.root / "data/promotion_contract/contract_violations.negative.json").unlink()
+    (service.root / "governor/fixtures/promotion_contract/contract_violations.negative.json").unlink()
     flags = service._check_promotion_evidence_contract()
     assert len(flags) == 1
     assert flags[0].flag == "promotion_evidence_contract_fixture_missing"
@@ -1574,7 +1574,7 @@ def test_promotion_evidence_contract_positive_fixture_must_be_clean():
     service.root = _make_root()
     _write_promotion_contract(service.root)
     # Inject an import leak into the positive promoted decision (D127).
-    path = service.root / "data/promotion_contract/valid_decisions.positive.json"
+    path = service.root / "governor/fixtures/promotion_contract/valid_decisions.positive.json"
     decisions = json.loads(path.read_text())
     decisions[1]["candidate"]["import_eligible"] = True
     _write(path, json.dumps(decisions))
@@ -1588,7 +1588,7 @@ def test_promotion_evidence_contract_negative_fixture_must_trigger_labelled_viol
     service.root = _make_root()
     _write_promotion_contract(service.root)
     # Break the self_confirmation record so its labelled violation no longer fires.
-    path = service.root / "data/promotion_contract/contract_violations.negative.json"
+    path = service.root / "governor/fixtures/promotion_contract/contract_violations.negative.json"
     records = json.loads(path.read_text())
     for record in records:
         if record.get("violation") == "self_confirmation":
@@ -1603,7 +1603,7 @@ def test_promotion_evidence_contract_negative_fixture_must_cover_required_violat
     service.root = _make_root()
     _write_promotion_contract(service.root)
     # Remove the double_promotion journal entirely — coverage must fail.
-    path = service.root / "data/promotion_contract/contract_violations.negative.json"
+    path = service.root / "governor/fixtures/promotion_contract/contract_violations.negative.json"
     records = json.loads(path.read_text())
     records = [r for r in records if r.get("violation") != "double_promotion"]
     _write(path, json.dumps(records))
@@ -1650,11 +1650,11 @@ admission:
   fixtures:
     positive:
       id: legal_admission
-      path: data/acap_runtime_control_plane/admission_legal.positive.json
+      path: governor/fixtures/acap_runtime_control_plane/admission_legal.positive.json
       expect: clean
     negative:
       id: admission_violations
-      path: data/acap_runtime_control_plane/admission_illegal.negative.json
+      path: governor/fixtures/acap_runtime_control_plane/admission_illegal.negative.json
       expect:
         require_violations: [illegal_transition, denied_without_reason, missing_evidence_ref, admitted_with_error, import_leak]
 promotion:
@@ -1664,11 +1664,11 @@ promotion:
   fixtures:
     positive:
       id: authority_legal
-      path: data/acap_runtime_control_plane/promotion_authority.positive.json
+      path: governor/fixtures/acap_runtime_control_plane/promotion_authority.positive.json
       expect: clean
     negative:
       id: authority_violations
-      path: data/acap_runtime_control_plane/promotion_authority.negative.json
+      path: governor/fixtures/acap_runtime_control_plane/promotion_authority.negative.json
       expect:
         require_violations: [auto_promote, import_leak, self_authority, missing_evidence]
 scheduler:
@@ -1678,11 +1678,11 @@ scheduler:
   fixtures:
     positive:
       id: recovery_legal
-      path: data/acap_runtime_control_plane/scheduler_recovery.positive.json
+      path: governor/fixtures/acap_runtime_control_plane/scheduler_recovery.positive.json
       expect: clean
     negative:
       id: recovery_violations
-      path: data/acap_runtime_control_plane/scheduler_recovery.negative.json
+      path: governor/fixtures/acap_runtime_control_plane/scheduler_recovery.negative.json
       expect:
         require_violations: [double_publish, stale_epoch_publish, recovery_without_aborted_attempt, completed_without_result, due_after_completion, import_leak]
 replay:
@@ -1691,11 +1691,11 @@ replay:
   fixtures:
     positive:
       id: replay_idempotent
-      path: data/acap_runtime_control_plane/replay_idempotent.positive.json
+      path: governor/fixtures/acap_runtime_control_plane/replay_idempotent.positive.json
       expect: clean
     negative:
       id: replay_violations
-      path: data/acap_runtime_control_plane/replay_idempotent.negative.json
+      path: governor/fixtures/acap_runtime_control_plane/replay_idempotent.negative.json
       expect:
         require_violations: [executor_rerun, duplicate_stage_records, cache_miss_on_replay, promotion_sink_growth, scheduler_new_attempts, scheduler_due_again, import_leak]
 source_markers:
@@ -1730,7 +1730,7 @@ fsm:
     - [finalized, task_accepted]
     - [task_accepted, accepted_checkpoint]
 """)
-    _write(root / "data/acap_runtime_control_plane/admission_legal.positive.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/admission_legal.positive.json", json.dumps([
         {"stage_id": "acquisition", "admitted": True,
          "evidence_ref": "source:sha256:pdf-v1", "disposition": "executed",
          "from_state": "source_registered", "to_state": "source_verified"},
@@ -1738,7 +1738,7 @@ fsm:
          "evidence_ref": "test-key-summary", "disposition": "executed",
          "from_state": "materialized", "to_state": "enriched"},
     ]))
-    _write(root / "data/acap_runtime_control_plane/admission_illegal.negative.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/admission_illegal.negative.json", json.dumps([
         {"violation": "illegal_transition", "record": {
             "stage_id": "summary", "admitted": False, "evidence_ref": "",
             "disposition": "failed", "from_state": "source_registered",
@@ -1759,14 +1759,14 @@ fsm:
             "disposition": "executed", "from_state": "embedded", "to_state": "materialized",
             "import_eligible": True}},
     ]))
-    _write(root / "data/acap_runtime_control_plane/promotion_authority.positive.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/promotion_authority.positive.json", json.dumps([
         {"decision_id": "gold-3", "transition": "promoted",
          "verifier": "contract:verifier:gold:1", "reviewer": "contract:reviewer:gold:2",
          "promoter": "contract:promoter:gold:3",
          "evidence_refs": ["gold:2510.26094:RLHF:Method"],
          "sink_len": 3, "explicit_transitions": 3, "import_eligible": False},
     ]))
-    _write(root / "data/acap_runtime_control_plane/promotion_authority.negative.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/promotion_authority.negative.json", json.dumps([
         {"violation": "auto_promote", "record": {
             "decision_id": "opt-1", "transition": "auto_promoted",
             "verifier": "eval:summary", "reviewer": "elig:summary", "promoter": "optimizer:grpo",
@@ -1790,7 +1790,7 @@ fsm:
             "promoter": "contract:promoter:gold:5", "evidence_refs": [],
             "sink_len": 3, "explicit_transitions": 3, "import_eligible": False}},
     ]))
-    _write(root / "data/acap_runtime_control_plane/scheduler_recovery.positive.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/scheduler_recovery.positive.json", json.dumps([
         {"task_vid": "scheduler:openalex_enrich:2401.00001", "status": "completed",
          "attempts": 2, "attempt_outcomes": ["aborted", "succeeded"],
          "published_by_epoch": 2,
@@ -1798,7 +1798,7 @@ fsm:
                                 "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
          "due_after_replay": 0, "import_eligible": False},
     ]))
-    _write(root / "data/acap_runtime_control_plane/scheduler_recovery.negative.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/scheduler_recovery.negative.json", json.dumps([
         {"violation": "double_publish", "record": {
             "task_vid": "scheduler:openalex_enrich:2401.00001", "status": "completed",
             "attempts": 2, "attempt_outcomes": ["aborted", "succeeded"],
@@ -1839,7 +1839,7 @@ fsm:
                                    "evidence_refs": ["stage:parse:cache:sha256:cache-key:sha256:abc123"]}],
             "due_after_replay": 0, "import_eligible": True}},
     ]))
-    _write(root / "data/acap_runtime_control_plane/replay_idempotent.positive.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/replay_idempotent.positive.json", json.dumps([
         {"scenario": "full-fsm-chain pdf-v1 replay",
          "pipeline_executor_calls": [["acquisition", 1], ["checkpoint", 1]],
          "pipeline_stage_records": 2,
@@ -1848,7 +1848,7 @@ fsm:
          "scheduler_attempts": 2, "scheduler_attempts_after_replay": 2,
          "scheduler_due_after_replay": 0, "import_eligible": False},
     ]))
-    _write(root / "data/acap_runtime_control_plane/replay_idempotent.negative.json", json.dumps([
+    _write(root / "governor/fixtures/acap_runtime_control_plane/replay_idempotent.negative.json", json.dumps([
         {"violation": "executor_rerun", "record": {
             "scenario": "executor rerun",
             "pipeline_executor_calls": [["acquisition", 2], ["checkpoint", 1]],
@@ -1933,7 +1933,7 @@ def test_acap_runtime_control_plane_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_acap_runtime_control_plane_contract(service.root)
-    (service.root / "data/acap_runtime_control_plane/admission_illegal.negative.json").unlink()
+    (service.root / "governor/fixtures/acap_runtime_control_plane/admission_illegal.negative.json").unlink()
     flags = service._check_acap_runtime_control_plane()
     assert len(flags) == 1
     assert flags[0].flag == "acap_runtime_control_plane_fixture_missing"
@@ -1944,7 +1944,7 @@ def test_acap_runtime_control_plane_positive_fixture_must_be_clean():
     service.root = _make_root()
     _write_acap_runtime_control_plane_contract(service.root)
     # Inject an import leak into the promotion positive record (D127).
-    path = service.root / "data/acap_runtime_control_plane/promotion_authority.positive.json"
+    path = service.root / "governor/fixtures/acap_runtime_control_plane/promotion_authority.positive.json"
     records = json.loads(path.read_text())
     records[0]["import_eligible"] = True
     _write(path, json.dumps(records))
@@ -1958,7 +1958,7 @@ def test_acap_runtime_control_plane_negative_fixture_must_trigger_labelled_viola
     service.root = _make_root()
     _write_acap_runtime_control_plane_contract(service.root)
     # Break the self_authority record so its labelled violation no longer fires.
-    path = service.root / "data/acap_runtime_control_plane/promotion_authority.negative.json"
+    path = service.root / "governor/fixtures/acap_runtime_control_plane/promotion_authority.negative.json"
     records = json.loads(path.read_text())
     for record in records:
         if record.get("violation") == "self_authority":
@@ -1973,7 +1973,7 @@ def test_acap_runtime_control_plane_negative_fixture_must_cover_required_violati
     service.root = _make_root()
     _write_acap_runtime_control_plane_contract(service.root)
     # Remove the scheduler import_leak record entirely — coverage must fail.
-    path = service.root / "data/acap_runtime_control_plane/scheduler_recovery.negative.json"
+    path = service.root / "governor/fixtures/acap_runtime_control_plane/scheduler_recovery.negative.json"
     records = json.loads(path.read_text())
     records = [r for r in records if r.get("violation") != "import_leak"]
     _write(path, json.dumps(records))
@@ -2069,14 +2069,14 @@ report_contract:
 fixtures:
   positive:
     id: html_path_identity
-    path: data/html_structure_contract/html_path_identity.projection.json
+    path: governor/fixtures/html_structure_contract/html_path_identity.projection.json
     expect:
       ok: true
       unique_paths: true
       all_sections_have_identity: true
   negative:
     id: flat_missing_identity
-    path: data/html_structure_contract/flat_missing_identity.blocked.json
+    path: governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json
     expect:
       ok: false
       readiness: not_claimed
@@ -2088,7 +2088,7 @@ readiness_markers:
     - 'graph_readiness = "not_claimed"'
     - 'source_profile.as_deref() == Some("textbook")'
 """)
-    _write(root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+    _write(root / "governor/fixtures/html_structure_contract/html_path_identity.projection.json", json.dumps({
         "article_id": "gnn-ch-chapters__01-intro-to-graphs",
         "sections": [
             {"path_id": "1", "title": "Chapter 1", "parent_section_id": None,
@@ -2101,7 +2101,7 @@ readiness_markers:
              "previous_path_id": "1.2", "next_path_id": None, "summary": None},
         ],
     }))
-    _write(root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+    _write(root / "governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
         "schema_version": "document-context-blocked.v1",
         "article_id": "gnn-ch-chapters__03-flat",
         "ok": False,
@@ -2128,7 +2128,7 @@ def test_html_structure_honesty_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_html_structure_contract(service.root)
-    (service.root / "data/html_structure_contract/flat_missing_identity.blocked.json").unlink()
+    (service.root / "governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json").unlink()
     flags = service._check_html_structure_honesty()
     assert len(flags) == 1
     assert flags[0].flag == "html_structure_honesty_fixture_missing"
@@ -2139,7 +2139,7 @@ def test_html_structure_honesty_positive_fixture_must_have_full_identity():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_html_structure_contract(service.root)
-    _write(service.root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+    _write(service.root / "governor/fixtures/html_structure_contract/html_path_identity.projection.json", json.dumps({
         "article_id": "gnn-ch-chapters__01-intro-to-graphs",
         "sections": [
             {"path_id": "1", "title": "Chapter 1", "parent_section_id": None,
@@ -2159,7 +2159,7 @@ def test_html_structure_honesty_positive_fixture_must_have_unique_paths():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_html_structure_contract(service.root)
-    _write(service.root / "data/html_structure_contract/html_path_identity.projection.json", json.dumps({
+    _write(service.root / "governor/fixtures/html_structure_contract/html_path_identity.projection.json", json.dumps({
         "article_id": "gnn-ch-chapters__01-intro-to-graphs",
         "sections": [
             {"path_id": "1", "title": "A", "parent_section_id": None,
@@ -2178,7 +2178,7 @@ def test_html_structure_honesty_negative_fixture_must_stay_not_claimed():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_html_structure_contract(service.root)
-    _write(service.root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+    _write(service.root / "governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
         "schema_version": "document-context-blocked.v1",
         "article_id": "gnn-ch-chapters__03-flat",
         "ok": True,
@@ -2198,7 +2198,7 @@ def test_html_structure_honesty_negative_fixture_must_keep_d127_locked():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _write_html_structure_contract(service.root)
-    _write(service.root / "data/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
+    _write(service.root / "governor/fixtures/html_structure_contract/flat_missing_identity.blocked.json", json.dumps({
         "schema_version": "document-context-blocked.v1",
         "article_id": "gnn-ch-chapters__03-flat",
         "ok": False,
@@ -2256,12 +2256,12 @@ def _copy_multimodal_contracts(root: Path) -> None:
         "scripts/governor/checks/visual_candidates_require_graph_lineage.yaml",
         "scripts/governor/checks/table_payload_requires_cell_provenance.yaml",
         "scripts/governor/checks/equation_context_coverage.yaml",
-        "data/visual_lineage_contract/lineage_complete.positive.json",
-        "data/visual_lineage_contract/lineage_broken.negative.json",
-        "data/table_provenance_contract/provenance_complete.positive.json",
-        "data/table_provenance_contract/provenance_broken.negative.json",
-        "data/equation_coverage_contract/coverage_complete.positive.json",
-        "data/equation_coverage_contract/coverage_broken.negative.json",
+        "governor/fixtures/visual_lineage_contract/lineage_complete.positive.json",
+        "governor/fixtures/visual_lineage_contract/lineage_broken.negative.json",
+        "governor/fixtures/table_provenance_contract/provenance_complete.positive.json",
+        "governor/fixtures/table_provenance_contract/provenance_broken.negative.json",
+        "governor/fixtures/equation_coverage_contract/coverage_complete.positive.json",
+        "governor/fixtures/equation_coverage_contract/coverage_broken.negative.json",
         "crates/da-domain/src/figure_candidate.rs",
         "crates/da-domain/src/table_candidate.rs",
         "crates/da-domain/src/table_fidelity.rs",
@@ -2286,7 +2286,7 @@ def test_visual_candidates_require_graph_lineage_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
-    (service.root / "data/visual_lineage_contract/lineage_broken.negative.json").unlink()
+    (service.root / "governor/fixtures/visual_lineage_contract/lineage_broken.negative.json").unlink()
     flags = service._check_visual_candidates_require_graph_lineage()
     assert len(flags) == 1
     assert flags[0].flag == "visual_candidates_require_graph_lineage_fixture_missing"
@@ -2298,7 +2298,7 @@ def test_visual_candidates_require_graph_lineage_positive_fixture_must_be_clean(
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Inject an import unlock into the positive candidate (D127).
-    path = service.root / "data/visual_lineage_contract/lineage_complete.positive.json"
+    path = service.root / "governor/fixtures/visual_lineage_contract/lineage_complete.positive.json"
     records = json.loads(path.read_text())
     records[0]["import_eligible"] = True
     _write(path, json.dumps(records))
@@ -2313,7 +2313,7 @@ def test_visual_candidates_require_graph_lineage_negative_fixture_must_trigger_l
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Neutralise the import_unlock record so its labelled violation no longer fires.
-    path = service.root / "data/visual_lineage_contract/lineage_broken.negative.json"
+    path = service.root / "governor/fixtures/visual_lineage_contract/lineage_broken.negative.json"
     records = json.loads(path.read_text())
     for record in records:
         if record.get("violation") == "import_unlock":
@@ -2329,7 +2329,7 @@ def test_visual_candidates_require_graph_lineage_negative_fixture_must_cover_req
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Remove the authority_unlock record entirely — coverage must fail.
-    path = service.root / "data/visual_lineage_contract/lineage_broken.negative.json"
+    path = service.root / "governor/fixtures/visual_lineage_contract/lineage_broken.negative.json"
     records = json.loads(path.read_text())
     records = [r for r in records if r.get("violation") != "authority_unlock"]
     _write(path, json.dumps(records))
@@ -2374,7 +2374,7 @@ def test_table_payload_requires_cell_provenance_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
-    (service.root / "data/table_provenance_contract/provenance_broken.negative.json").unlink()
+    (service.root / "governor/fixtures/table_provenance_contract/provenance_broken.negative.json").unlink()
     flags = service._check_table_payload_requires_cell_provenance()
     assert len(flags) == 1
     assert flags[0].flag == "table_payload_requires_cell_provenance_fixture_missing"
@@ -2386,7 +2386,7 @@ def test_table_payload_requires_cell_provenance_positive_fixture_must_be_clean()
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Inject an import unlock into the positive candidate (D127).
-    path = service.root / "data/table_provenance_contract/provenance_complete.positive.json"
+    path = service.root / "governor/fixtures/table_provenance_contract/provenance_complete.positive.json"
     records = json.loads(path.read_text())
     records[0]["import_eligible"] = True
     _write(path, json.dumps(records))
@@ -2401,7 +2401,7 @@ def test_table_payload_requires_cell_provenance_negative_fixture_must_trigger_la
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Neutralise the import_unlock record so its labelled violation no longer fires.
-    path = service.root / "data/table_provenance_contract/provenance_broken.negative.json"
+    path = service.root / "governor/fixtures/table_provenance_contract/provenance_broken.negative.json"
     records = json.loads(path.read_text())
     for record in records:
         if record.get("violation") == "import_unlock":
@@ -2417,7 +2417,7 @@ def test_table_payload_requires_cell_provenance_negative_fixture_must_cover_requ
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Remove the cell_without_digest record entirely — coverage must fail.
-    path = service.root / "data/table_provenance_contract/provenance_broken.negative.json"
+    path = service.root / "governor/fixtures/table_provenance_contract/provenance_broken.negative.json"
     records = json.loads(path.read_text())
     records = [r for r in records if r.get("violation") != "cell_without_digest"]
     _write(path, json.dumps(records))
@@ -2462,7 +2462,7 @@ def test_equation_context_coverage_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
-    (service.root / "data/equation_coverage_contract/coverage_broken.negative.json").unlink()
+    (service.root / "governor/fixtures/equation_coverage_contract/coverage_broken.negative.json").unlink()
     flags = service._check_equation_context_coverage()
     assert len(flags) == 1
     assert flags[0].flag == "equation_context_coverage_fixture_missing"
@@ -2474,7 +2474,7 @@ def test_equation_context_coverage_positive_fixture_must_be_clean():
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Inject an import unlock into the positive candidate (D127).
-    path = service.root / "data/equation_coverage_contract/coverage_complete.positive.json"
+    path = service.root / "governor/fixtures/equation_coverage_contract/coverage_complete.positive.json"
     records = json.loads(path.read_text())
     records[0]["import_eligible"] = True
     _write(path, json.dumps(records))
@@ -2489,7 +2489,7 @@ def test_equation_context_coverage_negative_fixture_must_trigger_labelled_violat
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Neutralise the import_unlock record so its labelled violation no longer fires.
-    path = service.root / "data/equation_coverage_contract/coverage_broken.negative.json"
+    path = service.root / "governor/fixtures/equation_coverage_contract/coverage_broken.negative.json"
     records = json.loads(path.read_text())
     for record in records:
         if record.get("violation") == "import_unlock":
@@ -2505,7 +2505,7 @@ def test_equation_context_coverage_negative_fixture_must_cover_required_violatio
     service.root = _make_root()
     _copy_multimodal_contracts(service.root)
     # Remove the invalid_span record entirely — coverage must fail.
-    path = service.root / "data/equation_coverage_contract/coverage_broken.negative.json"
+    path = service.root / "governor/fixtures/equation_coverage_contract/coverage_broken.negative.json"
     records = json.loads(path.read_text())
     records = [r for r in records if r.get("violation") != "invalid_span"]
     _write(path, json.dumps(records))
@@ -2543,8 +2543,8 @@ def _copy_read_only_agent_contract(root: Path) -> None:
     repo = _scripts_dir.parent
     rels = [
         "scripts/governor/checks/read_only_agent_contract.yaml",
-        "data/read_only_agent_contract/agent_run_verified.positive.json",
-        "data/read_only_agent_contract/agent_run_tampered.negative.json",
+        "governor/fixtures/read_only_agent_contract/agent_run_verified.positive.json",
+        "governor/fixtures/read_only_agent_contract/agent_run_tampered.negative.json",
         "crates/da-cli/src/agent_run.rs",
         "crates/da-application/src/agent_run.rs",
         "crates/kg-storage/src/read_only_server.rs",
@@ -2567,7 +2567,7 @@ def test_read_only_agent_contract_missing_fixture_is_flagged():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _copy_read_only_agent_contract(service.root)
-    (service.root / "data/read_only_agent_contract/agent_run_tampered.negative.json").unlink()
+    (service.root / "governor/fixtures/read_only_agent_contract/agent_run_tampered.negative.json").unlink()
     flags = service._check_read_only_agent_contract()
     assert len(flags) == 1
     assert flags[0].flag == "read_only_agent_contract_fixture_missing"
@@ -2622,7 +2622,7 @@ def test_read_only_agent_contract_positive_fixture_must_be_clean():
     service.root = _make_root()
     _copy_read_only_agent_contract(service.root)
     # Inject an import_eligible key into the positive envelope (D127 unlock).
-    path = service.root / "data/read_only_agent_contract/agent_run_verified.positive.json"
+    path = service.root / "governor/fixtures/read_only_agent_contract/agent_run_verified.positive.json"
     envelope = json.loads(path.read_text(encoding="utf-8"))
     envelope["import_eligible"] = True
     _write(path, json.dumps(envelope))
@@ -2638,7 +2638,7 @@ def test_read_only_agent_contract_negative_fixture_must_be_structurally_clean():
     service.root = _make_root()
     _copy_read_only_agent_contract(service.root)
     # Break the negative envelope's structure: drop the run block entirely.
-    path = service.root / "data/read_only_agent_contract/agent_run_tampered.negative.json"
+    path = service.root / "governor/fixtures/read_only_agent_contract/agent_run_tampered.negative.json"
     envelope = json.loads(path.read_text(encoding="utf-8"))
     del envelope["run"]
     _write(path, json.dumps(envelope))
@@ -2653,7 +2653,7 @@ def test_read_only_agent_contract_fixture_must_be_object_not_array():
     service = TrajectoryService.__new__(TrajectoryService)
     service.root = _make_root()
     _copy_read_only_agent_contract(service.root)
-    path = service.root / "data/read_only_agent_contract/agent_run_verified.positive.json"
+    path = service.root / "governor/fixtures/read_only_agent_contract/agent_run_verified.positive.json"
     envelope = json.loads(path.read_text(encoding="utf-8"))
     _write(path, json.dumps([envelope]))
     flags = service._check_read_only_agent_contract()

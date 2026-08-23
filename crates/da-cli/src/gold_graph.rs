@@ -1514,7 +1514,7 @@ mod tests {
     #[test]
     fn catalog_revision_bindings_select_exact_versions_without_inventing_identity() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+            .join("../../data/articles/arxiv/cs-ai/2506.07853");
         let v1 = sha256(&std::fs::read(root.join("source/2506.07853v1.pdf")).unwrap());
         let v5 = sha256(&std::fs::read(root.join("source/2506.07853v5.pdf")).unwrap());
         assert_ne!(v1, v5);
@@ -1761,7 +1761,7 @@ mod tests {
         use da_ports::pipeline_cache::{SourceFormat, SourceIdentity, StageCacheKey};
 
         let catalog_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+            .join("../../data/articles/arxiv/cs-ai/2506.07853");
         let cache_root =
             std::env::temp_dir().join(format!("da-gold-two-revisions-{}", std::process::id()));
         std::fs::create_dir_all(&cache_root).unwrap();
@@ -2007,7 +2007,7 @@ mod tests {
     #[test]
     fn load_corpus_and_legacy_revision_adapters_agree_on_identity() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../data/article_catalog/article_catalog/arxiv/cs-ai/2506.07853");
+            .join("../../data/articles/arxiv/cs-ai/2506.07853");
         let pdf = root.join("source/2506.07853v5.pdf");
         let digest = sha256(&std::fs::read(&pdf).unwrap());
         let corpus = revision_binding_from_catalog("2506.07853", &digest, &root)

@@ -69,7 +69,7 @@ skip it:
 cargo test --workspace      # DON'T
 ```
 
-`bash scripts/verify_rust_architecture.sh` is the **full gate** — run it
+`PYTHONPATH=scripts python3 -m governor architecture` is the **full gate** — run it
 only as the final check at slice end, not on every edit. It runs
 fmt + clippy + hexagonal invariant + per-crate tests for all our crates.
 
@@ -235,9 +235,9 @@ from ADRs, dimensions, reverse-ADR audit, drift flags. Rules are DATA
 (YAML), not hardcoded Python.
 
 ```bash
-python3 scripts/check_project_trajectory.py --phase preflight   # default
+PYTHONPATH=scripts python3 -m governor --phase preflight   # default
 python3 scripts/check_project_trajectory.py --phase active
-python3 scripts/check_project_trajectory.py --phase closeout
+PYTHONPATH=scripts python3 -m governor --phase closeout
 ```
 
 Reverse-ADR audit enforces 7 rules: 4 artifacts-gate (D127/ADR-005/ADR-040)
@@ -454,10 +454,10 @@ Dependency direction (enforced by `scripts/verify_rust_architecture.sh` + CI):
 ```bash
 # Architecture guardrail — FULL gate, run at slice END only (slow)
 # (fmt + clippy + hexagonal invariant + per-crate tests for kg-* + da-*)
-bash scripts/verify_rust_architecture.sh
+PYTHONPATH=scripts python3 -m governor architecture
 
 # Governor CLI — trajectory report (fast, ~1s)
-python3 scripts/check_project_trajectory.py --phase preflight
+PYTHONPATH=scripts python3 -m governor --phase preflight
 
 # Per-crate checks during iterative dev (FAST, avoids rocksdb rebuild)
 cargo check  -p <changed-crate>
@@ -572,7 +572,7 @@ Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; pr
 1. Prefer **GitNexus** `query` / `context` / `impact` (rules below).
 2. Before edit: `impact({target, direction:"upstream"})` — warn on HIGH/CRITICAL.
 3. Before commit: `detect_changes({scope:"compare", base_ref:"main"})`.
-4. Onion: `bash scripts/verify_rust_architecture.sh`.
+4. Onion: `PYTHONPATH=scripts python3 -m governor architecture`.
 5. Do not invent free labels; do not open import without user yes.
 
 <!-- project-current:end -->
@@ -580,7 +580,7 @@ Weak F1&lt;0.7 remaining: mostly tiny gold (2–3 ents) or gnn-html chapters; pr
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **daily-archive** (34445 symbols, 59641 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **daily-archive** (35663 symbols, 60292 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

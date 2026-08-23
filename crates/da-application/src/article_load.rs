@@ -652,7 +652,7 @@ mod tests {
     fn ensure_only_catalog_hit_report_honest() {
         let mock = MockSourceAcquisition::catalog_hit_pdf(
             "2602.04837",
-            "data/article_catalog/article_catalog/arxiv/cs-ai/2602.04837/source/2602.04837.pdf",
+            "data/articles/arxiv/cs-ai/2602.04837/source/2602.04837.pdf",
             "abc123",
         );
         let uc = ArticleLoadUseCase::new(&mock);

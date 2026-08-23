@@ -754,9 +754,8 @@ mod tests {
         let jar = PathBuf::from(
             "/root/vendor-source/scipdf_parser/scipdf/pdf/pdffigures2/pdffigures2-assembly-0.0.12-SNAPSHOT.jar",
         );
-        let pdf = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(
-            "../../data/article_catalog/article_catalog/arxiv/cs-cl/2507.19457/source/2507.19457.pdf",
-        );
+        let pdf = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../data/articles/arxiv/cs-cl/2507.19457/source/2507.19457.pdf");
         assert!(
             jar.is_file(),
             "real integration JAR missing: {}",

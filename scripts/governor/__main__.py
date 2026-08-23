@@ -32,8 +32,26 @@ from governor.application import AuditService, TrajectoryService
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="governor",
-        description="Hexagonal trajectory enforcement CLI.",
+        description="Unified control CLI — trajectory, architecture, docs drift.",
     )
+    sub = parser.add_subparsers(dest="command")
+
+    # ── Subcommand: architecture ─────────────────────────────────────
+    arch = sub.add_parser("architecture", help="Rust architecture gate (fmt+clippy+hexagonal+tests)")
+    arch.add_argument("--quick", action="store_true", help="Skip per-crate tests (fmt+clippy only)")
+
+    # ── Subcommand: docs-drift ────────────────────────────────────────
+    sub.add_parser("docs-drift", help="Check CLI-rendered doc tables in GRAPH-SCHEMA.md")
+
+    # ── Subcommand: doctor ────────────────────────────────────────────
+    doctor = sub.add_parser("doctor", help="Full repository health check (all gates)")
+
+    # ── Subcommand: trajectory (explicit, same as default) ────────────
+    traj = sub.add_parser("trajectory", help="Trajectory check (same as default)")
+    traj.add_argument("--phase", choices=["preflight", "active", "closeout"], default="preflight")
+    traj.add_argument("--root", default=None)
+    traj.add_argument("--check-only", action="store_true")
+
     parser.add_argument(
         "--phase",
         choices=["preflight", "active", "closeout"],
@@ -77,6 +95,20 @@ def main() -> int:
         help="Run cargo clippy per-crate and surface dead_code/unused warnings.",
     )
     args = parser.parse_args()
+    # ── Route subcommands ─────────────────────────────────────────
+    if args.command == "architecture":
+        return _run_architecture_gate(args)
+    elif args.command == "docs-drift":
+        return _run_docs_drift()
+    elif args.command == "doctor":
+        return _run_doctor(args)
+    elif args.command == "trajectory":
+        # Re-parse with trajectory-specific args
+        args.phase = args.phase
+        args.root = args.root
+        args.check_only = args.check_only
+        # fall through to default trajectory logic
+
 
     project_root = Path(args.root).resolve() if args.root else _detect_root()
     checks_dir = Path(__file__).resolve().parent / "checks"
@@ -271,6 +303,122 @@ def _print_artifact_audit(artifact_reader) -> None:
     print(f"Violations: {violations}")
     if violations == 0:
         print("All universal fields are false (clean).")
+
+
+
+
+def _run_architecture_gate(args) -> int:
+    """Absorb scripts/verify_rust_architecture.sh — Rust architecture gate."""
+    import subprocess
+    root = Path(__file__).resolve().parent.parent.parent
+    
+    steps = [
+        ("cargo fmt (check)", ["cargo", "fmt", "-p", "kg-ontology", "-p", "kg-storage",
+                                "-p", "kg-embeddings", "-p", "kg-algorithms", "-p", "kg-pipeline",
+                                "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
+                                "-p", "da-adapters", "-p", "da-cli", "-p", "da-mcp",
+                                "--", "--check"]),
+        ("cargo clippy (lib)", ["cargo", "clippy",
+                                 "-p", "kg-ontology", "-p", "kg-storage", "-p", "kg-embeddings",
+                                 "-p", "kg-algorithms", "-p", "kg-pipeline",
+                                 "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
+                                 "-p", "da-adapters", "-p", "da-cli", "-p", "da-mcp",
+                                 "--no-deps", "--", "-D", "warnings"]),
+        ("cargo clippy (tests)", ["cargo", "clippy",
+                                   "-p", "kg-ontology", "-p", "kg-storage", "-p", "kg-embeddings",
+                                   "-p", "kg-algorithms", "-p", "kg-pipeline",
+                                   "-p", "da-domain", "-p", "da-ports", "-p", "da-application",
+                                   "-p", "da-adapters", "-p", "da-cli", "-p", "da-mcp",
+                                   "--lib", "--tests", "--no-deps", "--", "-D", "warnings"]),
+        ("feature-matrix build", ["cargo", "check", "-p", "da-cli",
+                                   "--features", "pdf-classifier", "--examples"]),
+    ]
+    
+    if not args.quick:
+        steps.extend([
+            ("kg-ontology tests", ["cargo", "test", "-p", "kg-ontology", "--lib"]),
+            ("kg-storage tests", ["cargo", "test", "-p", "kg-storage", "--lib"]),
+            ("kg-embeddings tests", ["cargo", "test", "-p", "kg-embeddings", "--lib"]),
+            ("kg-algorithms tests", ["cargo", "test", "-p", "kg-algorithms", "--lib"]),
+            ("kg-pipeline tests", ["cargo", "test", "-p", "kg-pipeline", "--lib"]),
+            ("da-domain tests", ["cargo", "test", "-p", "da-domain", "--lib"]),
+            ("da-application tests", ["cargo", "test", "-p", "da-application", "--tests"]),
+            ("da-adapters tests", ["cargo", "test", "-p", "da-adapters", "--tests"]),
+            ("da-cli tests", ["cargo", "test", "-p", "da-cli", "--tests"]),
+        ])
+    
+    failed = 0
+    for name, cmd in steps:
+        print(f"  {name}...", end=" ", flush=True)
+        result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("OK")
+        else:
+            print("FAIL")
+            # Show last 5 lines of stderr
+            for line in result.stderr.strip().split('\n')[-5:]:
+                print(f"    {line}")
+            failed = 1
+    
+    if failed:
+        print("\n  ARCHITECTURE GATE: FAIL")
+    else:
+        print("\n  ARCHITECTURE GATE: PASS")
+    return failed
+
+
+def _run_docs_drift() -> int:
+    """Absorb scripts/docs_drift_check.sh — doc table drift detection."""
+    import subprocess
+    root = Path(__file__).resolve().parent.parent.parent
+    
+    result = subprocess.run(
+        ["bash", str(root / "scripts" / "docs_drift_check.sh")],
+        cwd=root, capture_output=True, text=True,
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+    return result.returncode
+
+
+def _run_doctor(args) -> int:
+    """Full repository health: trajectory + architecture + docs + artifacts."""
+    print("=== GOVERNOR DOCTOR ===\n")
+    
+    print("--- 1. Trajectory ---")
+    # Reuse the default trajectory logic by calling the existing path
+    from governor.application import TrajectoryService
+    from governor.adapters import (
+        FilesystemADRRepository, FilesystemArtifactReader,
+        FilesystemCodeScanner, FilesystemGsdPlanningReader,
+        FilesystemMilestoneReader, GitReader, YAMLRuleRepository,
+    )
+    root = Path(args.root) if args.root else Path.cwd()
+    
+    service = TrajectoryService(
+        adr_repository=FilesystemADRRepository(root),
+        artifact_reader=FilesystemArtifactReader(root),
+        code_scanner=FilesystemCodeScanner(root),
+        planning_reader=FilesystemGsdPlanningReader(root),
+        milestone_reader=FilesystemMilestoneReader(root),
+        git_reader=GitReader(root),
+        rule_repository=YAMLRuleRepository(root),
+    )
+    report = service.build_report(phase="closeout")
+    print(f"  Verdict: {report.verdict}")
+    for flag in report.flags:
+        print(f"  [{flag.severity}] {flag.flag}: {flag.evidence[:100]}")
+    
+    print("\n--- 2. Architecture ---")
+    arch_result = _run_architecture_gate(args)
+    
+    print("\n--- 3. Docs drift ---")
+    docs_result = _run_docs_drift()
+    
+    overall = max(arch_result, docs_result, 0 if report.verdict.value == "on_track" else 1)
+    print(f"\n=== DOCTOR: {'PASS' if overall == 0 else 'FAIL'} ===")
+    return overall
 
 
 if __name__ == "__main__":

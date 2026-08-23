@@ -1549,20 +1549,19 @@ mod tests {
 
     #[test]
     fn test_extract_domain_cs_lg() {
-        let path =
-            "data/article_catalog/article_catalog/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
+        let path = "data/articles/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
         assert_eq!(extract_domain_from_path(path), Some("cs.LG".to_string()));
     }
 
     #[test]
     fn test_extract_domain_cs_ai() {
-        let path = "/root/daily-archive/data/article_catalog/article_catalog/arxiv/cs-ai/1234.5678/source/1234.5678.pdf";
+        let path = "/root/daily-archive/data/articles/arxiv/cs-ai/1234.5678/source/1234.5678.pdf";
         assert_eq!(extract_domain_from_path(path), Some("cs.AI".to_string()));
     }
 
     #[test]
     fn test_extract_domain_physics() {
-        let path = "data/article_catalog/article_catalog/arxiv/cond-mat-mtrl-sci/1234.5678/source/1234.5678.pdf";
+        let path = "data/articles/arxiv/cond-mat-mtrl-sci/1234.5678/source/1234.5678.pdf";
         // cond-mat.mtrl-sci has multi-part suffix (lowercase in arXiv)
         assert_eq!(
             extract_domain_from_path(path),
@@ -1572,8 +1571,7 @@ mod tests {
 
     #[test]
     fn test_extract_domain_unknown_category() {
-        let path =
-            "data/article_catalog/article_catalog/arxiv/xx-yy/1234.5678/source/1234.5678.pdf";
+        let path = "data/articles/arxiv/xx-yy/1234.5678/source/1234.5678.pdf";
         assert_eq!(extract_domain_from_path(path), None);
     }
 
@@ -1585,8 +1583,7 @@ mod tests {
 
     #[test]
     fn test_extract_source_arxiv_from_path() {
-        let path =
-            "data/article_catalog/article_catalog/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
+        let path = "data/articles/arxiv/cs-lg/2603.24533/source/2603.24533.pdf";
         assert_eq!(extract_source_from_path(path), Some("arxiv".to_string()));
     }
 

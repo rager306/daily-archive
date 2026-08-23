@@ -4,7 +4,7 @@
 //! evidence → claims → verification → result_ref`) MUST stay in the Rust
 //! verifier (`da agent-run verify`), never recomputed as canonical serde JSON
 //! in Python. This test pins that behaviour against **committed genuine
-//! envelopes** checked into `data/read_only_agent_contract/`:
+//! envelopes** checked into `governor/fixtures/read_only_agent_contract/`:
 //!
 //! - `agent_run_verified.positive.json` — a real v1 envelope produced by a
 //!   live `da agent-run run` (terminal `verified`). Offline `--verify` must
@@ -33,7 +33,7 @@ const REPORT_FORMAT: &str = "da.agent-run.report.v1";
 fn contract_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
-        .join("data/read_only_agent_contract")
+        .join("governor/fixtures/read_only_agent_contract")
 }
 
 /// Run the real `da` binary with a scrubbed agent env (defence in depth —

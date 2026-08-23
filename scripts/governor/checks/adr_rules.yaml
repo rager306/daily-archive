@@ -35,7 +35,7 @@ rules:
   - id: prompt_eval_data_must_not_claim_production_acceptance
     anchor: "ADR-059 (independent frozen evaluation before optimizer admission)"
     severity: high
-    scan: data/prompt_eval/
+    scan: governor/fixtures/prompt_eval/
     pattern: 'production_acceptance_eligible\s*:\s*true'
     rationale: "Frozen source review and contract outputs do not prove production model quality; acceptance requires separately authorized real same-n baseline/candidate inference evidence."
     suffix_allowlist: [.yaml, .yml]
@@ -43,7 +43,7 @@ rules:
   - id: prompt_eval_data_must_not_enable_optimizer_or_promotion
     anchor: "ADR-059, D136, D127"
     severity: high
-    scan: data/prompt_eval/
+    scan: governor/fixtures/prompt_eval/
     pattern: '(?:optimizer_enabled|auto_promote)\s*:\s*true'
     rationale: "Prompt evaluation DATA may evaluate candidates but must not enable optimization, promotion or import authority."
     suffix_allowlist: [.yaml, .yml]

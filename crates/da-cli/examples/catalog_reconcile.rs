@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 struct Args {
-    #[arg(long, default_value = "data/article_catalog")]
+    #[arg(long, default_value = "data/articles")]
     catalog_root: PathBuf,
     #[arg(long, default_value = "artifacts/article_catalog/reconciliation.json")]
     report: PathBuf,

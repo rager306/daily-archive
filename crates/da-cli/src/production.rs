@@ -687,7 +687,7 @@ mod tests {
 
     #[test]
     fn catalog_resolver_prefers_exact_version_for_identical_bare_bytes() {
-        let catalog = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/article_catalog");
+        let catalog = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/articles");
         let resolved = resolve_catalog_pdf(&catalog, "2506.07853")
             .unwrap()
             .expect("catalog paper");

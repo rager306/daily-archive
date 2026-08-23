@@ -757,9 +757,7 @@ mod tests {
         });
         report.assets.push(LoadAssetRecord {
             kind: "pdf".into(),
-            path:
-                "data/article_catalog/article_catalog/arxiv/cs-ai/2602.04837/source/2602.04837.pdf"
-                    .into(),
+            path: "data/articles/arxiv/cs-ai/2602.04837/source/2602.04837.pdf".into(),
             sha256: Some("abc".into()),
             bytes: Some(12),
             disposition: AssetDisposition::CatalogHit,

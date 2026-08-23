@@ -17,9 +17,9 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Parser)]
 struct Args {
-    #[arg(long, default_value = "data/prompt_eval/fixtures.yaml")]
+    #[arg(long, default_value = "governor/fixtures/prompt_eval/fixtures.yaml")]
     fixtures: PathBuf,
-    #[arg(long, default_value = "data/prompt_eval/policy.yaml")]
+    #[arg(long, default_value = "governor/fixtures/prompt_eval/policy.yaml")]
     policy: PathBuf,
     #[arg(long, default_value = "data/ontology/prompt_tasks.yaml")]
     prompt_registry: PathBuf,

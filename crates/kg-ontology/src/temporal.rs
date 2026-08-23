@@ -551,7 +551,7 @@ mod wire_stability_tests {
             .unwrap()
             .parent()
             .unwrap()
-            .join("data/temporal_wire_contract");
+            .join("governor/fixtures/temporal_wire_contract");
         let positive_path = fixtures_dir.join("canonical_wire.positive.json");
         if !positive_path.exists() {
             eprintln!("skip: {} not found", positive_path.display());

@@ -87,7 +87,7 @@ struct Args {
     #[arg(long)]
     snapshot: Option<PathBuf>,
     /// Canonical article catalog root (asset evidence for manifestations).
-    #[arg(long, default_value = "data/article_catalog/article_catalog/arxiv")]
+    #[arg(long, default_value = "data/articles/article_catalog/arxiv")]
     catalog_root: PathBuf,
     /// Process only the first N materializable papers (canary runs).
     /// Default: DA_MATERIALIZE_LIMIT env or 0 (all).
