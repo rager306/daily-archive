@@ -53,7 +53,28 @@ def check_data_integrity(root: Path) -> list[DriftFlag]:
             flags.extend(_check_cache_binding(root, rule, _flag))
         elif rule_id == "artifact_lifecycle_gc":
             flags.extend(_check_artifact_gc(root, rule, _flag))
+        elif rule_id == "textbook_manifest_required":
+            flags.extend(_check_textbook_manifests(root, rule, _flag))
 
+    return flags
+
+
+def _check_textbook_manifests(root: Path, rule: dict, _flag) -> list[DriftFlag]:
+    """Every textbook under sources/textbook/<id>/ needs a textbook_manifest.json."""
+    flags = []
+    textbook_dir = root / rule.get("scan", "data/sources/textbook/")
+    if not textbook_dir.exists():
+        return flags
+    for textbook in textbook_dir.iterdir():
+        if not textbook.is_dir():
+            continue
+        manifest = textbook / "textbook_manifest.json"
+        if not manifest.is_file():
+            flags.append(_flag(
+                "textbook_manifest_missing",
+                f"textbook/{textbook.name}/ has no textbook_manifest.json — "
+                f"add one describing format and parsing approach",
+            ))
     return flags
 
 

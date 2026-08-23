@@ -8,7 +8,7 @@ rules:
   description: No hardcoded https:// or http:// in Rust src (env vars only)
   scan: crates/*/src/
   pattern: https?://[a-z0-9.-]+[a-z]
-  exclude_pattern: w3\.org|tei-c\.org|localhost|127\.0\.0\.1|example|json-schema\.org|arxiv\.org|doi\.org|openalex\.org|anthropic\.com|minimax\.io|export\.arxiv\.org|proxy\.example
+  exclude_pattern: w3\.org|tei-c\.org|localhost|127\.0\.0\.1|example\.|json-schema\.org|arxiv\.org|doi\.org|openalex\.org|anthropic\.com|minimax\.io|export\.arxiv\.org|proxy\.example
   suffix_allowlist:
   - .rs
   exclude_dirs:
@@ -31,3 +31,7 @@ rules:
   scan: artifacts/
   check: stale_artifact_dir
   max_age_days: 30
+- id: textbook_manifest_required
+  description: Every textbook must have a textbook_manifest.json
+  check: textbook_manifest
+  scan: data/sources/textbook/
