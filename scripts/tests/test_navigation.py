@@ -44,3 +44,19 @@ def test_navigation_built_and_symmetric(tmp_path):
     import yaml
     m = yaml.safe_load((d / "manifest.yaml").read_text())
     assert m["artifacts"]["context"]["navigation"]["stats"]["nodes"] == 3
+
+
+def test_structural_elements_detectors_valid():
+    """v13: latex_env kinds are DATA and regex-sound."""
+    import re as _re
+    import yaml as _yaml
+    cfg = _yaml.safe_load(Path(__file__).resolve().parent.parent.parent.joinpath(
+        "data/ontology/structural_elements_detectors.yaml").read_text())
+    kinds = cfg["kinds"]
+    assert {"theorem", "definition", "exercise", "proof"} <= set(kinds)
+    for k, spec in kinds.items():
+        pat = spec["pattern"]
+        _re.compile(pat)  # must be a valid regex
+    assert _re.match(kinds["theorem"]["pattern"], "Theorem 1.1.5")
+    assert _re.match(kinds["definition"]["pattern"], "Definition 2.3")
+    assert not _re.match(kinds["theorem"]["pattern"], "A theorem is...")

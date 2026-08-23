@@ -70,5 +70,13 @@ optimizer_surface:
     optimizer_enabled: false
     production_acceptance_eligible: false
 object_classes:
-- 'article (grammar: arxiv_pdf_dot)'
-- 'chapter (grammar: html_headings, id=gnn-ch-*)'
+- 'article (grammar: arxiv_pdf_dot, anchor=text-span)'
+- 'chapter (grammar: html_headings, id=gnn-ch-*, anchor=text-span)'
+- 'monograph (grammar: page_outline, id=trench-*, anchor=page_range: get_section_text
+  возвращает текст страниц диапазона; structural_elements доступны как якоря find_element(kind,numbering))'
+consumer_boundary:
+  application: read-plane над файловыми слоями (вся контентная логика + детекторы
+    DATA)
+  governor_cli: 'только мета: структура репо/схемы/ADR-инварианты; контент статей/глав/монографий
+    НЕ проверяется governor (память: governor потребляет только proven-артефакты)'
+  optimizers: candidate-слоты через frozen eval; все locks=false (ADR-059/D136)

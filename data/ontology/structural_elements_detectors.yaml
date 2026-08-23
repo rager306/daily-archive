@@ -1,0 +1,27 @@
+# Structural elements detectors — LaTeX environments surfaced from PDF
+# text (v13, latex_env grammar). DATA not code: kind vocabulary,
+# patterns, and per-kind semantics. Feeds: Layer J terminology
+# (definitions!), agent context (theorem anchors), optimizer surface
+# (structural completeness signals).
+schema_version: structural-elements-detectors.v1
+adr_ref: ADR-068, doc/research/document-model-pageindex-synthesis-2026-08-23.md
+
+kinds:
+  theorem:     {pattern: '^Theorem \d+\.\d+',  kind_family: statement, definition_source: true}
+  lemma:       {pattern: '^Lemma \d+\.\d+',      kind_family: statement}
+  corollary:   {pattern: '^Corollary \d+\.\d+',  kind_family: statement}
+  definition:  {pattern: '^Definition \d+\.\d+', kind_family: definition, definition_source: true}
+  example:     {pattern: '^Example \d+\.\d+',    kind_family: illustration}
+  exercise:    {pattern: '^Exercise \d+\.\d+',   kind_family: exercise}
+  remark:      {pattern: '^Remark \d+\.\d+',     kind_family: commentary}
+  proof:       {pattern: '^Proof\\b',               kind_family: proof}
+
+extraction:
+  scope: per_section_text          # ищем в тексте секции (не в toc)
+  line_anchor: true                # сохраняем вхождение + страницу
+  numbering_capture: '\d+\.\d+'  # номер элемента (Theorem 1.1 -> 1.1)
+  min_text_chars: 0                # statement-текст пишем как есть
+
+agent_surface:
+  find_element: {by: kind, by_numbering: true}
+  definition_source_note: "Definition-элементы = сырьё Layer J (терминология): текст после 'Definition N.N.' до следующего окружения"

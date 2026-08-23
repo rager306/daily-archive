@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v12   # v12: grammar profiles table — html_headings textbook chapters as article objects
+schema_version: article-schema.v13   # v13: page_outline (PDF toc anchors) + structural_elements (latex_env kinds)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -22,6 +22,7 @@ changes:
   v10: "context/navigation.json: PageIndex-семантика (parent/children/prev/next/depth); идентичность узла = section_id (path_id НЕ уникален: 55% статей имеют дубли)"
   v11: "role+confidence на узлах (furniture_detectors.yaml), char_count в узлах, инварианты node_ref_integrity/list_symmetric_next_prev (движок), сигналы navigation_efficiency/furniture_share, prompt-injection hardening"
   v12: "grammar_profiles: html_headings (главы учебников — h1-h6 дерево) становятся article-объектами; missingness += extraction_not_run"
+  v13: "page_outline: PDF-TOC как навигация (anchor=page_range); structural_elements.json: theorem/definition/exercise kinds поверх текста секций (latex_env)"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -101,8 +102,11 @@ layers:
         nav_semantics: "родитель = ближайший заголовок меньшего уровня сверху"
         furniture_html: "permalink-маркеры ('¶') чистятся; Summary/Prerequisites/Concepts Covered — body для учебников"
       page_outline:
-        source: PDF bookmarks (embedded_toc)
-        anchor: page-range
+        source: "PDF-TOC/bookmarks (embedded_toc, PyMuPDF)"
+        anchor: "page_range {page_start, page_end} — текст секции = extract_text страниц диапазона"
+        identity: "section_id = <monograph>:toc<N>"
+        nav_semantics: "уровни TOC как depth; page_end = начало следующего узла - 1"
+        toc_furniture: "титульные TOC-записи (Trinity University, Digital Commons) классифицируются детекторами" 
       latex_env:
         source: LaTeX theorem/definition/exercise окружления
         structural_type: theorem|definition|exercise|proof
@@ -130,6 +134,12 @@ layers:
       - children_of
       - path_to_root
       - walk_next                      # документный обход (PageIndex walk)
+    structural_elements:
+      file: context/structural_elements.json
+      description: "LaTeX-окружения, выявленные в тексте секций (latex_env грамматика)"
+      record: {section_id, page, kind, numbering, statement_chars, definition_source}
+      kinds_source: data/ontology/structural_elements_detectors.yaml
+      feeds: [Layer J терминология (definitions), агентские якоря, сигналы полноты]
 
   - id: figures
     authority: A2
