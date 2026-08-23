@@ -62,12 +62,18 @@ impl ExtractionConfig {
     }
 
     /// Load from YAML file, falling back to bundled defaults.
+    /// M446: reads from data/extraction_patterns.yaml (env DA_EXTRACTION_PATTERNS).
     pub fn load() -> Self {
-        for path in [
-            "data/extraction_patterns.yaml",
-            "../../data/extraction_patterns.yaml",
-            "../../../data/extraction_patterns.yaml",
-        ] {
+        let primary = std::env::var("DA_EXTRACTION_PATTERNS")
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+            .unwrap_or_else(|| "data/extraction_patterns.yaml".to_string());
+        let paths = [
+            primary,
+            "../../data/extraction_patterns.yaml".into(),
+            "../../../data/extraction_patterns.yaml".into(),
+        ];
+        for path in &paths {
             if std::path::Path::new(path).exists()
                 && let Ok(config) = Self::from_yaml_file(path)
             {

@@ -971,14 +971,16 @@ async fn batch_ingest(
     let mut pdfs: Vec<(String, String)> = Vec::new();
     let mut resolved_contexts: Vec<Option<da_application::RevisionContentContext>> = Vec::new();
     for pid in &id_list {
-        let resolved =
-            match production::resolve_catalog_pdf(std::path::Path::new("data/articles"), pid) {
-                Ok(resolved) => resolved,
-                Err(error) => {
-                    eprintln!("❌ Catalog revision resolution failed for {pid}: {error}");
-                    std::process::exit(1);
-                }
-            };
+        let resolved = match production::resolve_catalog_pdf(
+            std::path::Path::new("data/sources/arxiv"),
+            pid,
+        ) {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                eprintln!("❌ Catalog revision resolution failed for {pid}: {error}");
+                std::process::exit(1);
+            }
+        };
         let Some(resolved) = resolved else {
             continue;
         };
@@ -1513,7 +1515,7 @@ async fn summarize_paper(
 
     // Find PDF
     let pdf = std::process::Command::new("find")
-        .args(["data/articles", "-name", &format!("{}.pdf", paper_id)])
+        .args(["data/sources/arxiv", "-name", &format!("{}.pdf", paper_id)])
         .output()
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
@@ -1666,7 +1668,8 @@ async fn extract_entities(
     use std::sync::Arc;
 
     let resolved =
-        match production::resolve_catalog_pdf(std::path::Path::new("data/articles"), paper_id) {
+        match production::resolve_catalog_pdf(std::path::Path::new("data/sources/arxiv"), paper_id)
+        {
             Ok(resolved) => resolved,
             Err(error) => {
                 eprintln!("❌ Catalog revision resolution failed for {paper_id}: {error}");

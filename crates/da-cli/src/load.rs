@@ -49,8 +49,8 @@ pub struct LoadArgs {
     #[arg(long, default_value = "auto")]
     pub provider: String,
 
-    /// Catalog root for ensure (typically data/articles)
-    #[arg(long, default_value = "data/articles")]
+    /// Catalog root for ensure (typically data/sources/arxiv)
+    #[arg(long, default_value = "data/sources/arxiv")]
     pub catalog_root: PathBuf,
 
     /// Authorize network fetch when assets missing
@@ -2352,7 +2352,7 @@ mod tests {
         let args = LoadArgs {
             locator: None,
             provider: "auto".into(),
-            catalog_root: PathBuf::from("data/articles"),
+            catalog_root: PathBuf::from("data/sources/arxiv"),
             allow_network: false,
             include_tex_source: false,
             stages: None,

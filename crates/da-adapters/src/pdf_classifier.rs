@@ -139,11 +139,9 @@ mod tests {
     #[tokio::test]
     async fn classify_real_arxiv_pdf() {
         let pdf_path = std::env::var("CARGO_MANIFEST_DIR")
-            .map(|d| {
-                format!("{d}/../../data/articles/arxiv/cs-cl/2507.19457/source/2507.19457.pdf")
-            })
+            .map(|d| format!("{d}/../../data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf"))
             .unwrap_or_else(|_| {
-                "data/articles/arxiv/cs-cl/2507.19457/source/2507.19457.pdf".to_string()
+                "data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf".to_string()
             });
         if !std::path::Path::new(&pdf_path).exists() {
             eprintln!("skipping: test PDF not found at {pdf_path}");

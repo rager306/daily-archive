@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 fn hub_pdf() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../data/articles/article_catalog/arxiv/cs-cl/2507.19457/source/2507.19457.pdf")
+        .join("../../data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf")
 }
 
 #[tokio::test]

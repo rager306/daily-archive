@@ -9,7 +9,7 @@ use std::path::PathBuf;
 struct Args {
     #[arg(long, default_value = "data/gold_standard")]
     fixtures: PathBuf,
-    #[arg(long, default_value = "data/articles/article_catalog")]
+    #[arg(long, default_value = "data/sources/arxiv/article_catalog")]
     catalog: PathBuf,
     #[arg(long, default_value_t = 10)]
     batch_size: usize,

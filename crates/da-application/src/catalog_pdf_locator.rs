@@ -1,6 +1,6 @@
 //! Filesystem `CatalogPdfLocator` — catalog truth only (M411 S01).
 //!
-//! Walks `DA_CATALOG_ROOT` (injected path; default `data/articles`)
+//! Walks `DA_CATALOG_ROOT` (injected path; default `data/sources/arxiv`)
 //! looking for `source/<id>.pdf` or a versioned sibling `source/<id>vN.pdf`.
 //! Never invents a path: a miss is `None`.
 
@@ -21,9 +21,10 @@ impl FilesystemCatalogPdfLocator {
         }
     }
 
-    /// Composition-root helper: `DA_CATALOG_ROOT` or `data/articles`.
+    /// Composition-root helper: `DA_CATALOG_ROOT` or `data/sources/arxiv`.
     pub fn from_env() -> Self {
-        let root = std::env::var("DA_CATALOG_ROOT").unwrap_or_else(|_| "data/articles".to_string());
+        let root =
+            std::env::var("DA_CATALOG_ROOT").unwrap_or_else(|_| "data/sources/arxiv".to_string());
         Self::new(root)
     }
 }

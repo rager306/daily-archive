@@ -19,6 +19,8 @@ pub mod llm_client;
 pub mod multimodal_llm;
 pub mod openalex;
 pub mod parser;
+pub mod path_config;
+pub mod paths;
 pub mod region_text;
 pub use region_text::{RegionTextOutcome, RegionTextPort};
 pub mod pipeline_cache;

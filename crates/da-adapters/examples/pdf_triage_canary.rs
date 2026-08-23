@@ -13,7 +13,7 @@
 //!
 //! Build/run:
 //!   cargo run -p da-adapters --features pdf-classifier --example pdf_triage_canary -- \
-//!       --pdf data/articles/article_catalog/arxiv/cs-cl/2507.19457/source/2507.19457.pdf \
+//!       --pdf data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf \
 //!       [--pages 69,84]
 //!
 //! Exit codes: 0 = modes agree, 2 = divergence (see `diff`), 1 = error.

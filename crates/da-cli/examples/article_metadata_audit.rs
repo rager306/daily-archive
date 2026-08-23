@@ -11,9 +11,12 @@ use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 struct Args {
-    #[arg(long, default_value = "data/articles/article_catalog/arxiv")]
+    #[arg(long, default_value = "data/sources/arxiv/article_catalog/arxiv")]
     arxiv_root: PathBuf,
-    #[arg(long, default_value = "data/articles/article_catalog/gnn_textbook")]
+    #[arg(
+        long,
+        default_value = "data/sources/arxiv/article_catalog/gnn_textbook"
+    )]
     gnn_root: PathBuf,
     #[arg(
         long,

@@ -30,7 +30,7 @@ async fn main() {
     let _log_guard = da_cli::logging::init_pipeline_logging("eval_batch");
     let manifest = build_gold_corpus_manifest(
         std::path::Path::new("data/gold_standard"),
-        std::path::Path::new("data/articles"),
+        std::path::Path::new("data/sources/arxiv"),
         10,
     )
     .unwrap_or_else(|error| {

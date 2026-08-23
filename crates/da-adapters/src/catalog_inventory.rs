@@ -227,7 +227,7 @@ fn files_with_extension(root: &Path, extension: &str) -> std::io::Result<Vec<Pat
 fn resolve_variant_path(catalog_root: &Path, metadata_path: &Path, value: &str) -> Option<PathBuf> {
     let raw = Path::new(value);
     let mut candidates = vec![metadata_path.parent()?.join(raw), catalog_root.join(raw)];
-    if let Ok(relative) = raw.strip_prefix("data/articles") {
+    if let Ok(relative) = raw.strip_prefix("data/sources/arxiv") {
         candidates.push(catalog_root.join(relative));
     }
     candidates.into_iter().find(|path| path.is_file())

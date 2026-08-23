@@ -1,0 +1,54 @@
+# Centralized path configuration — single source of truth for ALL data paths.
+# Every path used by the Rust pipeline must be defined here.
+# Code reads this file; no hardcoded paths in crates (meta-prompt principle).
+#
+# Override individual paths via env vars (DA_PATH_<KEY>).
+
+schema_version: path-config.v1
+
+paths:
+  # ── Sources (immutable article assets) ─────────────────────────────
+  catalog_root: data/sources/arxiv
+  catalog_index: data/sources/arxiv/index.json
+  gold_standard_dir: data/gold_standard
+
+  # ── Dictionaries (all YAML) ────────────────────────────────────────
+  ontology_dir: data/ontology
+  node_schemas: data/ontology/node_schemas.yaml
+  edge_contracts: data/ontology/edge_contracts.yaml
+  extraction_patterns: data/extraction_patterns.yaml
+  prompt_tasks: data/ontology/prompt_tasks.yaml
+  identity_indexes: data/ontology/identity_indexes.yaml
+  property_indexes: data/ontology/property_indexes.yaml
+  doi_prefix_map: data/ontology/doi_prefix_map.yaml
+  pdf_triage_policy: data/ontology/pdf_triage_policy.yaml
+  pipeline_stage_contracts: data/ontology/pipeline_stage_contracts.yaml
+  arxiv_categories: data/arxiv_categories.yaml
+  extension_domains: data/extension_domains.yaml
+  source_codes: data/source_codes.yaml
+  node_vocabulary: data/node_vocabulary.yaml
+  failure_taxonomy: data/failure_taxonomy.yaml
+  algorithm_params: data/algorithm_params.yaml
+  catalog_sweep_thresholds: data/catalog_sweep_thresholds.yaml
+
+  # ── Graph tasks ─────────────────────────────────────────────────────
+  graph_tasks_dir: data/graph_tasks
+
+  # ── Graphs (snapshots) ─────────────────────────────────────────────
+  graphs_dir: data/graphs
+  catalog_snapshot: data/graphs/catalog_materialized.sgsnap
+  gold_snapshot: data/graphs/gold_corpus.sgsnap
+
+  # ── Artifacts (scratch, current wave) ───────────────────────────────
+  artifacts_root: artifacts
+  pipeline_cache: artifacts/pipeline_cache
+  catalog_sweep_cache: artifacts/catalog_sweep/pipeline_cache
+  catalog_sweep_report: artifacts/catalog_sweep/sweep_report.json
+  materialization_report: artifacts/catalog_sweep/materialization_run_report.json
+  drift_stats: artifacts/catalog_sweep/catalog_drift_stats.json
+  regression_report: artifacts/catalog_sweep/regression_report.json
+
+  # ── Test fixture articles (used by integration tests) ──────────────
+  test_article_cs_cl: data/sources/arxiv/cs-cl/2507.19457/source/2507.19457.pdf
+  test_article_cs_ai: data/sources/arxiv/cs-ai/2602.04837/source/2602.04837.pdf
+  test_article_cs_lg: data/sources/arxiv/cs-lg/2603.24533/source/2603.24533.pdf

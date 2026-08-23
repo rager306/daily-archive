@@ -245,7 +245,7 @@ mod tests {
     fn mock_catalog_hit_without_network() {
         let mock = MockSourceAcquisition::catalog_hit_pdf(
             "2602.04837",
-            "data/articles/arxiv/cs-ai/2602.04837/source/2602.04837.pdf",
+            "data/sources/arxiv/cs-ai/2602.04837/source/2602.04837.pdf",
             "deadbeef",
         );
         let loc = ArticleLocator::parse("2602.04837").unwrap();

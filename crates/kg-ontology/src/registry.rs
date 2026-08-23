@@ -258,17 +258,25 @@ impl OntologyRegistry {
         Ok(root.edge_contracts)
     }
 
-    /// Try `data/ontology/` relative to cwd, then workspace-relative path from crate.
+    /// Try `data/ontology/` relative to cwd, then env, then workspace-relative.
     pub fn load_project_meta_ontology() -> Result<Self, RegistryError> {
-        let candidates = [
-            PathBuf::from("data/ontology"),
+        let primary = std::env::var("DA_ONTOLOGY_DIR")
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+            .map(PathBuf::from);
+        let mut candidates: Vec<PathBuf> = Vec::new();
+        if let Some(p) = &primary {
+            candidates.push(p.clone());
+        }
+        candidates.push(PathBuf::from("data/ontology"));
+        candidates.push(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .parent()
                 .unwrap()
                 .parent()
                 .unwrap()
                 .join("data/ontology"),
-        ];
+        );
         let mut last = None;
         for dir in &candidates {
             match Self::load_from_dir(dir) {

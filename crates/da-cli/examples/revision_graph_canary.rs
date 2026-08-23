@@ -20,7 +20,7 @@ use std::sync::Arc;
 struct Args {
     #[arg(
         long,
-        default_value = "data/articles/article_catalog/arxiv/cs-ai/2506.07853"
+        default_value = "data/sources/arxiv/article_catalog/arxiv/cs-ai/2506.07853"
     )]
     unit_root: PathBuf,
     #[arg(
