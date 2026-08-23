@@ -1,166 +1,177 @@
-# Dimension definitions — project maturity areas assessed by governor.
-# Each dimension has: id, status_logic (how to derive status), evidence (list).
-#
-# This is DATA — loaded by governor.domain.dimensions at runtime.
-# Condition syntax: "path/to/file exists" or "path exists AND path exists"
-
 dimensions:
-  - id: schema_readiness
-    description: "Typed knowledge schema (node labels, property types, edge contracts)"
-    status_logic:
-      implemented: "crates/da-domain/src/schema.rs exists AND doc/adr/ADR-040-technology-stack-lock-samyama-ruvector-rvf.md exists"
-      design_accepted: "doc/adr/ADR-040-technology-stack-lock-samyama-ruvector-rvf.md exists"
-      missing: "always (fallback)"
-    evidence:
-      - "da-domain::schema canonical home (Rust workspace)"
-      - "ADR-040 Samyama unified store"
-      - "ADR-045 edge contract matrix"
-      - "31 node schemas (XSchema)"
-
-  - id: extraction_coverage
-    description: "Extraction pipeline quality on gold-standard corpus"
-    status_logic:
-      prototype_done: "always (M283 eval_batch ran)"
-    evidence:
-      - "Rust RuleBasedExtractor (crates/da-adapters)"
-      - "Gold-standard corpus: 12 modern papers, 96 gold entities"
-      - "Precision 0.639 / Recall 0.979 / F1 0.774 (micro)"
-      - "import_eligible=false (D127)"
-    artifact_ref: "crates/da-cli/examples/eval_batch.rs"
-
-  - id: graph_store_binding
-    description: "KG+vector+persist store binding (ADR-040 Samyama)"
-    status_logic:
-      superseded_by_samyama: "crates/da-adapters/src/samyama_graph.rs exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "ADR-040 Samyama = sole KG+vector+persist store"
-      - "SamyamaGraphStore impl (GraphStore + DirectGraphStore)"
-      - "kg-storage traits re-exported via da-ports (M285-z09px0/S05)"
-
-  - id: hexagonal_discipline
-    description: "Hexagonal/Onion overlay maturity (ADR-034)"
-    status_logic:
-      crystallized: "crates/da-ports/src/lib.rs exists AND crates/da-adapters/src/samyama_graph.rs exists AND scripts/verify_rust_architecture.sh exists AND crates/kg-ontology/src/lib.rs exists AND crates/kg-storage/src/lib.rs exists"
-      in_progress: "crates/da-ports/src/lib.rs exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "ADR-034 hexagonal/onion overlay on Rust workspace"
-      - "da-domain <- da-ports <- da-application (da-adapters implements ports, da-cli/da-mcp are composition roots)"
-      - "kg-* universal crate family (ADR-050, no da-* deps)"
-      - "scripts/verify_rust_architecture.sh guardrail"
-
-  - id: kg_crate_family
-    description: "Universal kg-* crate family migration (ADR-050)"
-    status_logic:
-      phase_a_complete: "crates/da-domain/Cargo.toml exists AND crates/kg-ontology/src/lib.rs exists AND crates/kg-storage/src/lib.rs exists"
-      skeleton_done: "crates/kg-ontology/src/lib.rs exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "ADR-050 kg-* crate family (5 crates)"
-      - "Phase A: da-domain re-exports kg-ontology (M285/S03)"
-      - "Phase B: da-ports re-exports kg-storage (M285/S05)"
-      - "Phase D: YAML ontology export pending"
-
-  - id: canary_resolvability
-    description: "Canary paper resolvability metric (M280-M284)"
-    status_logic:
-      measured: "artifacts/etl/canary-resolvability-metric.v1.json exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "M280: canary paper ids assigned, 12 held-out frozen"
-      - "M281: gold char-span grounding"
-      - "M282: relation entity-id resolve"
-      - "M284: evidence governor fleet wire"
-    artifact_ref: "artifacts/etl/canary-resolvability-metric.v1.json"
-
-  - id: structure_gate
-    description: "Structure gate v2 IR signals (M277)"
-    status_logic:
-      active: "artifacts/etl/structure-readiness.json exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "M277: v2 IR hard structure, newline soft_legacy"
-      - "M283: ODL layout key fix, hybrid gold batch"
-    artifact_ref: "artifacts/etl/structure-readiness.json"
-
-  - id: gepa_isolation
-    description: "GEPA held-out isolation wire (M279)"
-    status_logic:
-      wired: "artifacts/etl/canary-held-out-split.v1.json exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "M279: held_out excluded from GEPA train fail-closed"
-      - "M280: 60 paper_ids assigned, 12 held-out frozen"
-    artifact_ref: "artifacts/etl/canary-held-out-split.v1.json"
-
-  - id: test_coverage_delta
-    description: "Test coverage: files without tests (MEM515)"
-    status_logic:
-      measured: "scripts/governor/adapters/clippy_scanner.py exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "governor --check-dead-code surfaces dead code"
-      - "Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]"
-      - "test_coverage_delta dimension added M287 post-session"
-    artifact_ref: "scripts/governor/adapters/clippy_scanner.py"
-
-  - id: resource_safety
-    description: "Disk space and memory checks — prevent mid-process crashes (M360+)"
-    status_logic:
-      healthy: "always (runtime check in trajectory_service)"
-      warning: "disk < 10GB free OR memory < 2GB free"
-      critical: "disk < 2GB free OR memory < 512MB free"
-      not_started: "always (fallback)"
-    evidence:
-      - "Preflight disk/memory check before cargo builds and long-running pipelines"
-      - "df -h / and free -m via psutil or /proc/meminfo"
-      - "Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)"
-      - "Added after disk pollution incident from excessive cargo build calls"
-    artifact_ref: "scripts/governor/checks/resource_safety.py"
-
-  - id: mcp_surface_completeness
-    description: "MCP product surface: tools + resources + prompts (ADR-054, D194)"
-    status_logic:
-      full: "da-mcp has tools (>= 8) AND resources (>= 4) AND prompts (>= 2)"
-      partial: "da-mcp has tools but missing resources or prompts"
-      tools_only: "da-mcp has tools but no resources and no prompts"
-      not_started: "always (fallback)"
-    evidence:
-      - "crates/da-mcp/src/tools.rs has >= 8 pub async fn handlers"
-      - "crates/da-mcp/src/lib.rs has list_mcp_resources method"
-      - "crates/da-mcp/src/lib.rs has list_mcp_prompts method"
-      - "Governor checks product completeness, not just ADR invariants"
-      - "Added D194 Wave 1: catches product-readiness drift"
-    artifact_ref: "crates/da-mcp/src/lib.rs"
-
-  - id: ontology_layer_readiness
-    description: "ADR-053 Layer A-J implementation status (D194 audit)"
-    status_logic:
-      layer_a_done: "path_id + nav edges (next_sibling/first_child/parent_section)"
-      layer_b_done: "SummarySchema + hasSummary edge"
-      layer_c_done: "MethodSchema + DatasetSchema + MetricSchema"
-      layers_a_to_c: "layer_a_done AND layer_b_done AND layer_c_done"
-      partial: "layer_a_done only"
-      not_started: "always (fallback)"
-    evidence:
-      - "crates/da-domain/src/article.rs: path_id in SectionSchema"
-      - "crates/da-domain/src/article.rs: SummarySchema struct"
-      - "crates/da-domain/src/article.rs: MethodSchema/DatasetSchema/MetricSchema structs"
-      - "data/ontology/node_schemas.yaml: Summary/Method/Dataset/Metric labels"
-      - "data/ontology/edge_contracts.yaml: hasSummary edge"
-      - "D194 audit: Layer A-C done, D-J pending"
-    artifact_ref: "crates/da-domain/src/article.rs"
-
-  - id: agent_read_plane
-    description: "Read-only agent plane with verified envelopes (PIR-017/PIR-021, ADR-061)"
-    status_logic:
-      enforced: "data/read_only_agent_contract/agent_run_verified.positive.json exists AND data/read_only_agent_contract/agent_run_tampered.negative.json exists AND crates/da-cli/tests/read_only_agent_contract_verify_test.rs exists"
-      not_started: "always (fallback)"
-    evidence:
-      - "Rust offline verifier pinned: da agent-run verify exit 0 PASS / exit 3 FAIL (D273)"
-      - "Governor DATA contract scripts/governor/checks/read_only_agent_contract.yaml"
-      - "Committed genuine envelopes (positive + tampered negative)"
-      - "D127 locked: envelope carries no import_eligible key"
-      - "serve-graph path does not instantiate vendor RespServer"
-    artifact_ref: "scripts/governor/checks/read_only_agent_contract.yaml"
+- id: schema_readiness
+  description: Typed knowledge schema (node labels, property types, edge contracts)
+  status_logic:
+    implemented: crates/da-domain/src/schema.rs exists AND doc/adr/ADR-040-technology-stack-lock-samyama-ruvector-rvf.md
+      exists
+    design_accepted: doc/adr/ADR-040-technology-stack-lock-samyama-ruvector-rvf.md
+      exists
+    missing: always (fallback)
+  evidence:
+  - da-domain::schema canonical home (Rust workspace)
+  - ADR-040 Samyama unified store
+  - ADR-045 edge contract matrix
+  - 31 node schemas (XSchema)
+- id: extraction_coverage
+  description: Extraction pipeline quality on gold-standard corpus
+  status_logic:
+    prototype_done: always (M283 eval_batch ran)
+  evidence:
+  - Rust RuleBasedExtractor (crates/da-adapters)
+  - 'Gold-standard corpus: 12 modern papers, 96 gold entities'
+  - Precision 0.639 / Recall 0.979 / F1 0.774 (micro)
+  - import_eligible=false (D127)
+  artifact_ref: crates/da-cli/examples/eval_batch.rs
+- id: graph_store_binding
+  description: KG+vector+persist store binding (ADR-040 Samyama)
+  status_logic:
+    superseded_by_samyama: crates/da-adapters/src/samyama_graph.rs exists
+    not_started: always (fallback)
+  evidence:
+  - ADR-040 Samyama = sole KG+vector+persist store
+  - SamyamaGraphStore impl (GraphStore + DirectGraphStore)
+  - kg-storage traits re-exported via da-ports (M285-z09px0/S05)
+- id: hexagonal_discipline
+  description: Hexagonal/Onion overlay maturity (ADR-034)
+  status_logic:
+    crystallized: crates/da-ports/src/lib.rs exists AND crates/da-adapters/src/samyama_graph.rs
+      exists AND scripts/verify_rust_architecture.sh exists AND crates/kg-ontology/src/lib.rs
+      exists AND crates/kg-storage/src/lib.rs exists
+    in_progress: crates/da-ports/src/lib.rs exists
+    not_started: always (fallback)
+  evidence:
+  - ADR-034 hexagonal/onion overlay on Rust workspace
+  - da-domain <- da-ports <- da-application (da-adapters implements ports, da-cli/da-mcp
+    are composition roots)
+  - kg-* universal crate family (ADR-050, no da-* deps)
+  - scripts/verify_rust_architecture.sh guardrail
+- id: kg_crate_family
+  description: Universal kg-* crate family migration (ADR-050)
+  status_logic:
+    phase_a_complete: crates/da-domain/Cargo.toml exists AND crates/kg-ontology/src/lib.rs
+      exists AND crates/kg-storage/src/lib.rs exists
+    skeleton_done: crates/kg-ontology/src/lib.rs exists
+    not_started: always (fallback)
+  evidence:
+  - ADR-050 kg-* crate family (5 crates)
+  - 'Phase A: da-domain re-exports kg-ontology (M285/S03)'
+  - 'Phase B: da-ports re-exports kg-storage (M285/S05)'
+  - 'Phase D: YAML ontology export pending'
+- id: canary_resolvability
+  description: Canary paper resolvability metric (M280-M284)
+  status_logic:
+    measured: artifacts/etl/canary-resolvability-metric.v1.json exists
+    not_started: always (fallback)
+  evidence:
+  - 'M280: canary paper ids assigned, 12 held-out frozen'
+  - 'M281: gold char-span grounding'
+  - 'M282: relation entity-id resolve'
+  - 'M284: evidence governor fleet wire'
+  artifact_ref: artifacts/etl/canary-resolvability-metric.v1.json
+- id: structure_gate
+  description: Structure gate v2 IR signals (M277)
+  status_logic:
+    active: artifacts/etl/structure-readiness.json exists
+    not_started: always (fallback)
+  evidence:
+  - 'M277: v2 IR hard structure, newline soft_legacy'
+  - 'M283: ODL layout key fix, hybrid gold batch'
+  artifact_ref: artifacts/etl/structure-readiness.json
+- id: gepa_isolation
+  description: GEPA held-out isolation wire (M279)
+  status_logic:
+    wired: artifacts/etl/canary-held-out-split.v1.json exists
+    not_started: always (fallback)
+  evidence:
+  - 'M279: held_out excluded from GEPA train fail-closed'
+  - 'M280: 60 paper_ids assigned, 12 held-out frozen'
+  artifact_ref: artifacts/etl/canary-held-out-split.v1.json
+- id: test_coverage_delta
+  description: 'Test coverage: files without tests (MEM515)'
+  status_logic:
+    measured: scripts/governor/adapters/clippy_scanner.py exists
+    not_started: always (fallback)
+  evidence:
+  - governor --check-dead-code surfaces dead code
+  - 'Manual scan: kg-* src files >30 lines without #[test] or #[cfg(test)]'
+  - test_coverage_delta dimension added M287 post-session
+  artifact_ref: scripts/governor/adapters/clippy_scanner.py
+- id: resource_safety
+  description: Disk space and memory checks — prevent mid-process crashes (M360+)
+  status_logic:
+    healthy: always (runtime check in trajectory_service)
+    warning: disk < 10GB free OR memory < 2GB free
+    critical: disk < 2GB free OR memory < 512MB free
+    not_started: always (fallback)
+  evidence:
+  - Preflight disk/memory check before cargo builds and long-running pipelines
+  - df -h / and free -m via psutil or /proc/meminfo
+  - Blocks cargo test --workspace when disk < 5GB (rocksdb rebuild needs space)
+  - Added after disk pollution incident from excessive cargo build calls
+  artifact_ref: scripts/governor/checks/resource_safety.py
+- id: mcp_surface_completeness
+  description: 'MCP product surface: tools + resources + prompts (ADR-054, D194)'
+  status_logic:
+    full: da-mcp has tools (>= 8) AND resources (>= 4) AND prompts (>= 2)
+    partial: da-mcp has tools but missing resources or prompts
+    tools_only: da-mcp has tools but no resources and no prompts
+    not_started: always (fallback)
+  evidence:
+  - crates/da-mcp/src/tools.rs has >= 8 pub async fn handlers
+  - crates/da-mcp/src/lib.rs has list_mcp_resources method
+  - crates/da-mcp/src/lib.rs has list_mcp_prompts method
+  - Governor checks product completeness, not just ADR invariants
+  - 'Added D194 Wave 1: catches product-readiness drift'
+  artifact_ref: crates/da-mcp/src/lib.rs
+- id: ontology_layer_readiness
+  description: ADR-053 Layer A-J implementation status (D194 audit)
+  status_logic:
+    layer_a_done: path_id + nav edges (next_sibling/first_child/parent_section)
+    layer_b_done: SummarySchema + hasSummary edge
+    layer_c_done: MethodSchema + DatasetSchema + MetricSchema
+    layers_a_to_c: layer_a_done AND layer_b_done AND layer_c_done
+    partial: layer_a_done only
+    not_started: always (fallback)
+  evidence:
+  - 'crates/da-domain/src/article.rs: path_id in SectionSchema'
+  - 'crates/da-domain/src/article.rs: SummarySchema struct'
+  - 'crates/da-domain/src/article.rs: MethodSchema/DatasetSchema/MetricSchema structs'
+  - 'data/ontology/node_schemas.yaml: Summary/Method/Dataset/Metric labels'
+  - 'data/ontology/edge_contracts.yaml: hasSummary edge'
+  - 'D194 audit: Layer A-C done, D-J pending'
+  artifact_ref: crates/da-domain/src/article.rs
+- id: agent_read_plane
+  description: Read-only agent plane with verified envelopes (PIR-017/PIR-021, ADR-061)
+  status_logic:
+    enforced: data/read_only_agent_contract/agent_run_verified.positive.json exists
+      AND data/read_only_agent_contract/agent_run_tampered.negative.json exists AND
+      crates/da-cli/tests/read_only_agent_contract_verify_test.rs exists
+    not_started: always (fallback)
+  evidence:
+  - 'Rust offline verifier pinned: da agent-run verify exit 0 PASS / exit 3 FAIL (D273)'
+  - Governor DATA contract scripts/governor/checks/read_only_agent_contract.yaml
+  - Committed genuine envelopes (positive + tampered negative)
+  - 'D127 locked: envelope carries no import_eligible key'
+  - serve-graph path does not instantiate vendor RespServer
+  artifact_ref: scripts/governor/checks/read_only_agent_contract.yaml
+- id: graph_semantics
+  description: Semantic content quality of .sgnap snapshots (text, enrichment, dedup)
+  status_logic:
+    implemented: scripts/governor/checks/graph_semantics.yaml exists
+    missing: always (fallback)
+  evidence:
+  - Section text completeness (avg raw_text length)
+  - Enrichment coverage (Author/Venue/Topic nodes)
+  - Entity dedup integrity (duplicate vids)
+  - Revision binding coverage
+- id: data_integrity
+  description: Data path canonicality, cache invalidation, hardcode scan, artifact
+    GC
+  status_logic:
+    implemented: scripts/governor/checks/data_integrity.yaml exists
+    missing: always (fallback)
+  evidence:
+  - No hardcoded service URLs in Rust src
+  - No nested data directories
+  - Cache fingerprints bound to DATA content
+  - Artifact lifecycle GC policy

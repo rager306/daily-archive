@@ -10,6 +10,7 @@ from pathlib import Path
 
 from governor.application.audit_service import AuditService
 from governor.domain.trajectory import (
+# M449: graph semantics + data integrity
     Dimension,
     DriftFlag,
     TrajectoryReport,
@@ -975,6 +976,16 @@ class TrajectoryService:
         # compiling documented CLI feature combinations (M441 lesson: the
         # pdf-classifier build stayed broken for a month unseen).
         drift_flags.extend(self._check_feature_matrix_gate())
+
+        # M449: graph semantic validation — catches empty graphs, missing
+        # enrichment, stub sections (the "пустышка" problem).
+        from governor.adapters.graph_query_reader import check_graph_semantics
+        drift_flags.extend(check_graph_semantics(self.root))
+
+        # M449: data integrity — hardcode scan, path canonicality,
+        # cache binding, artifact GC.
+        from governor.adapters.data_integrity_checker import check_data_integrity
+        drift_flags.extend(check_data_integrity(self.root))
 
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)

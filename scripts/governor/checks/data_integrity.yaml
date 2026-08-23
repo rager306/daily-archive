@@ -1,0 +1,33 @@
+schema_version: data-integrity.v1
+policy_id: data-integrity
+dimension: data_integrity
+severity: medium
+anchor: M446 (cache invalidation), M447 (path nesting), M448 (data separation)
+rules:
+- id: no_hardcoded_service_urls
+  description: No hardcoded https:// or http:// in Rust src (env vars only)
+  scan: crates/*/src/
+  pattern: https?://[a-z0-9.-]+[a-z]
+  exclude_pattern: w3\.org|tei-c\.org|localhost|127\.0\.0\.1|example|json-schema\.org|arxiv\.org|doi\.org|openalex\.org|anthropic\.com|minimax\.io|export\.arxiv\.org|proxy\.example
+  suffix_allowlist:
+  - .rs
+  exclude_dirs:
+  - tests
+  - examples
+  - benches
+- id: no_nested_data_dirs
+  description: data/ must not contain same-name nested directories
+  scan: data/
+  check: nested_dir
+- id: cache_invalidation_bound
+  description: Stage contracts that consume DATA must include config sha in fingerprint
+  scan: crates/da-adapters/src/pipeline_stages.rs
+  required_patterns:
+  - rules_sha256
+  - cache_fingerprint
+- id: artifact_lifecycle_gc
+  description: artifacts/ subdirs older than 30 days with no code readers should be
+    archived
+  scan: artifacts/
+  check: stale_artifact_dir
+  max_age_days: 30

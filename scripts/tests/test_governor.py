@@ -2687,6 +2687,78 @@ def test_read_only_agent_contract_invalid_yaml_is_flagged():
     assert flags[0].flag == "read_only_agent_contract_invalid"
 
 
+# ═══ M449: Graph Semantics + Data Integrity ═══════════════════════════
+
+def test_graph_semantics_no_snapshots_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_graph_semantics_contract(service.root)
+    from governor.adapters.graph_query_reader import check_graph_semantics
+    flags = check_graph_semantics(service.root)
+    assert any(f.flag == "graph_semantics_no_snapshots" for f in flags)
+
+
+def test_data_integrity_hardcoded_url_is_caught():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    # Write a file with a hardcoded URL
+    _write(service.root / "crates/da-test/src/api.rs",
+           'const URL: &str = "https://api.some-unknown-service.io/v1";\n')
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_hardcoded_url" for f in flags)
+
+
+def test_data_integrity_w3_namespace_url_is_allowed():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    _write(service.root / "crates/da-test/src/xml.rs",
+           'const NS: &str = "http://www.w3.org/1998/Math/MathML";\n')
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert not any(f.flag == "data_integrity_hardcoded_url" for f in flags)
+
+
+def test_data_integrity_nested_dir_is_caught():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    # Create nested dir
+    (service.root / "data/article_catalog/article_catalog").mkdir(parents=True)
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_nested_dir" for f in flags)
+
+
+def test_data_integrity_cache_binding_missing_is_flagged():
+    service = TrajectoryService.__new__(TrajectoryService)
+    service.root = _make_root()
+    _copy_data_integrity_contract(service.root)
+    # Write a stage file WITHOUT the required pattern
+    _write(service.root / "crates/da-adapters/src/pipeline_stages.rs",
+           "// no cache binding here\n")
+    from governor.adapters.data_integrity_checker import check_data_integrity
+    flags = check_data_integrity(service.root)
+    assert any(f.flag == "data_integrity_cache_binding_missing" for f in flags)
+
+
+def _copy_graph_semantics_contract(root: Path) -> None:
+    repo = _scripts_dir.parent
+    rel = "scripts/governor/checks/graph_semantics.yaml"
+    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+    import shutil
+    shutil.copy2(repo / rel, root / rel)
+
+
+def _copy_data_integrity_contract(root: Path) -> None:
+    repo = _scripts_dir.parent
+    rel = "scripts/governor/checks/data_integrity.yaml"
+    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+    import shutil
+    shutil.copy2(repo / rel, root / rel)
+
 def _run_all_tests() -> int:
     """Simple test runner (no pytest dependency)."""
     tests = [
@@ -2768,6 +2840,11 @@ def _run_all_tests() -> int:
         test_feature_matrix_gate_missing_pin_is_flagged,
         test_feature_matrix_gate_source_missing_is_flagged,
         test_feature_matrix_gate_absent_policy_is_silent,
+        test_graph_semantics_no_snapshots_is_flagged,
+        test_data_integrity_hardcoded_url_is_caught,
+        test_data_integrity_w3_namespace_url_is_allowed,
+        test_data_integrity_nested_dir_is_caught,
+        test_data_integrity_cache_binding_missing_is_flagged,
     ]
     passed = 0
     failed = 0
@@ -2785,3 +2862,5 @@ def _run_all_tests() -> int:
 
 if __name__ == "__main__":
     sys.exit(_run_all_tests())
+
+
