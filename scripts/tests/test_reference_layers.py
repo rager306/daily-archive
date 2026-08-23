@@ -41,6 +41,17 @@ def _article(tmp_path: Path) -> Path:
             "context": {"status": "complete", "at": "2026-08-23T02:00:00Z", "output_sha256": "b", "ast_nodes": 1},
             "extracted": {"status": "complete", "at": "2026-08-23T03:00:00Z", "output_sha256": "c", "entity_count": 1},
         }}))
+    (d / "manifest.yaml").write_text(
+        "schema_version: article-manifest.v1\n"
+        "paper_id: 2501.00001\n"
+        "source: {code: arxiv, identity_ref: x}\n"
+        "lifecycle: extracted\n"
+        "lifecycle_events:\n"
+        "  - {stage: parsed, recorded_at: '2026-08-23T01:00:00Z', actor: grobid}\n"
+        "  - {stage: structured, recorded_at: '2026-08-23T02:00:00Z', actor: dcp}\n"
+        "  - {stage: extracted, recorded_at: '2026-08-23T03:00:00Z', actor: rbe}\n"
+        "artifacts: {}\n"
+    )
     return d.parent
 
 
