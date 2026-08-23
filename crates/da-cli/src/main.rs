@@ -118,6 +118,17 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Source-import FSM surface: status/plan/import per article object
+    Source {
+        /// Subcommand: status | plan | import
+        action: String,
+        /// Object id (paper/chapter/monograph)
+        paper_id: String,
+        /// import: report only, do not execute
+        #[arg(long, default_value = "true")]
+        dry_run: bool,
+    },
+
     /// Validate schema-manifest objects against their DATA norm
     /// (ADR-068: articles today, any schema_objects class later)
     ValidateObjects {
@@ -447,6 +458,19 @@ fn main() {
     });
 
     match cli.command {
+        Commands::Source { action, paper_id, dry_run } => {
+            use da_cli::source_cli;
+            let r = match action.as_str() {
+                "status" => source_cli::run_status(&paper_id),
+                "plan" => source_cli::run_plan(&paper_id),
+                "import" => source_cli::run_import(&paper_id, dry_run),
+                other => Err(anyhow::anyhow!("unknown source action {other:?} (status|plan|import)")),
+            };
+            if let Err(e) = r {
+                eprintln!("da source: {e}");
+                std::process::exit(2);
+            }
+        }
         Commands::ValidateObjects { class, ids } => {
             use da_adapters::fs_schema_objects::FsSchemaObjectStore;
             use da_application::validate_schema_objects::validate_schema_objects;
