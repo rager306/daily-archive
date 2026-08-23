@@ -1,0 +1,466 @@
+[
+ {
+  "index": 0,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "GUI-Act-Web [30], OmniAct-Web [31], and OmniAct-Desktop [31]. We only use the test splits of these benchmarks for evaluation. Evaluation metrics. Following Os-Atlas [1], we use three commonly adopted metrics for GUI agents in evaluation: action type prediction accuracy, click point prediction accuracy, and step success rate, denoted as Type, Grounding, and SR, respectively. In more detail, Type measures the exact match score between the predicted action types (e.g., &apos;click&apos; and &apos;scroll&apos;) and the ground truth. Grounding evaluates the performance of GUI grounding in downstream tasks. Besides, SR represents the step-wise success rate",
+  "anchors": [],
+  "raw_text": "GUI-Act-Web [30], OmniAct-Web [31], and OmniAct-Desktop [31]. We only use the test splits of these benchmarks for evaluation. Evaluation metrics. Following Os-Atlas [1], we use three commonly adopted metrics for GUI agents in evaluation: action type prediction accuracy, click point prediction accuracy, and step success rate, denoted as Type, Grounding, and SR, respectively. In more detail, Type measures the exact match score between the predicted action types (e.g., &apos;click&apos; and &apos;scroll&apos;) and the ground truth. Grounding evaluates the performance of GUI grounding in downstream tasks. Besides, SR represents the step-wise success rate\n\t\n\t\n\t\tAndroidControl-High\n\t\t\n\t\t\t27\n\t\t\n\t\n\tFor supervised fune-tuning (SFT), we use the QwenVL2.5-3B/7B [4] model as Implementation Details Training and inference details All experiments are conducted using 8×NVIDIA A100-80G GPUs. Evaluation benchmarks. We evaluate our model on eight agent benchmarks on three different platforms, including AndroidControl-Low GUI-Odyssey [28 ScreenSpot [3], ScreenSpot-Pro [29 the base model for experiments and employ the LLaMA Factory [25] framework for one epoch of training to avoid overfitting. For RFT, we use the EasyR1 [26] framework for training over nine epochs. During inference, to ensure fairness, we apply a unified and simple prompt across all comparison methods, and conduct experiments under zero-shot prompt configurations where a step is deemed successful only if both the predicted action and its associated arguments (e.g., point for click actions and input text for scroll actions) are correct"
+ },
+ {
+  "index": 1,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "Experimental Results We here evaluate our GUI-R1 model by comparing it with current state-of-the-art (SOTA) models on various tasks including GUI grounding tasks, GUI low-level tasks, and GUI high-level tasks. Grounding capability. We evaluate the grounding capability of GUI-R1 using ScreenSpot [3] and ScreenSpot-Pro [29]. ScreenSpot assesses GUI grounding performance across mobile, desktop, and web platforms, while ScreenSpot-Pro focuses on high-resolution professional environments, featuring expert-annotated tasks spanning 23 applications, five industries, and three operating systems. As shown in Table 1, compared to the previous SOTA model Os-Atlas-7B, which was trained with large-scale data using supervised fine-tuning (SFT), the RFT approach achieves superior performance on the 3B-sized Qwen2.5-VL model using only 0.2% of the data (3K vs. 14M). Furthermore, compared to the base models QwenVL2.5-3B/7B and the SFT-trained QwenVL2.5* 3B/7B models using the same dataset, the RFT-based GUI-R1 demonstrates significantly better performance in GUI grounding tasks. Moreover, at the 3B scale, GUI-R1 achieves substantial gains over SFT models on ScreenSpot\n\t\t80.08 vs. 63.55) and ScreenSpot-Pro (25.23 vs. 13.80\n\t\t\n\t\n\trepresenting improvements of 26.3% and 82.8%, respectively. This highlights the effectiveness of the RL training framework in leveraging small-scale datasets to achieve significant performance improvements which demonstrates its potential as a data-efficient and scalable approach for model training in resource-constrained environments"
+ },
+ {
+  "index": 2,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "Low-level task capability. We evaluate the low-level task execution capability of GUI-R1 using four benchmark datasets: AndroidControl-Low [27], GUI-Act-Web",
+  "anchors": [],
+  "raw_text": "Low-level task capability. We evaluate the low-level task execution capability of GUI-R1 using four benchmark datasets: AndroidControl-Low [27], GUI-Act-Web\n\t\n\t\n\t\tOmniAct-Web, and OmniAct-Desktop\n\t\t\n\t\t\t29"
+ },
+ {
+  "index": 3,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "OmniAct-Desktop is used to test low-level task execution on desktop platforms. As demonstrated in Table 2, our method impressively improves the success rate of GUI low-level tasks for 3B and 7B models, with the average success rate increasing from 55.65 to 80.88 at the 3B scale. Compared to UI-R1 [9], which is concurrent work also trained using RFT, our model achieves a 10-point improvement at the 3B scale, validating that RL training focused on high-level tasks can further enhance the model&apos;s understanding of low-level instructions. Note that an interesting observation is that the use of small-scale SFT data even leads to performance degradation on some metrics such as GR on AndroidControl-Low. This limitation stems from SFT&apos;s reliance on taskspecific labeled data, which constrains the model&apos;s ability to adapt to unseen environments",
+  "anchors": [],
+  "raw_text": "OmniAct-Desktop is used to test low-level task execution on desktop platforms. As demonstrated in Table 2, our method impressively improves the success rate of GUI low-level tasks for 3B and 7B models, with the average success rate increasing from 55.65 to 80.88 at the 3B scale. Compared to UI-R1 [9], which is concurrent work also trained using RFT, our model achieves a 10-point improvement at the 3B scale, validating that RL training focused on high-level tasks can further enhance the model&apos;s understanding of low-level instructions. Note that an interesting observation is that the use of small-scale SFT data even leads to performance degradation on some metrics such as GR on AndroidControl-Low. This limitation stems from SFT&apos;s reliance on taskspecific labeled data, which constrains the model&apos;s ability to adapt to unseen environments\n\t\t\n\t\t\tAndroidcontrol\n\t\t\n\t\n\t\n\t\tLow evaluates low-level task execution on mobile platforms, while GUI-Act-Web and OmniAct-Web focus on low-level task execution on web platforms\n\t\t\n\t\n\tIn contrast, our RFT method not only enhances out-of-distribution (OOD) generalization by optimizing References"
+ },
+ {
+  "index": 4,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2410.23218",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b4",
+    "section_path_id": "1",
+    "quote": "[1]",
+    "offset": 2261
+   },
+   {
+    "ref_id": "b4",
+    "section_path_id": "2.1",
+    "quote": "[1]",
+    "offset": 768
+   },
+   {
+    "ref_id": "b4",
+    "section_path_id": "3.3",
+    "quote": "[1]",
+    "offset": 223
+   }
+  ],
+  "raw_text": "Os-atlas: A foundation action model for generalist gui agents\n\t\t\n\t\t\tZhiyongWu\n\t\t\n\t\t\n\t\t\tZhenyuWu\n\t\t\n\t\t\n\t\t\tFangzhiXu\n\t\t\n\t\t\n\t\t\tYianWang\n\t\t\n\t\t\n\t\t\tQiushiSun\n\t\t\n\t\t\n\t\t\tChengyouJia\n\t\t\n\t\t\n\t\t\tKanzhiCheng\n\t\t\n\t\t\n\t\t\tZichenDing\n\t\t\n\t\t\n\t\t\tLihengChen\n\t\t\n\t\t\n\t\t\tPaulPuLiang\n\t\t\n\t\tarXiv:2410.23218\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 5,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2501.12326",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b5",
+    "section_path_id": "2.1",
+    "quote": "[2]",
+    "offset": 927
+   }
+  ],
+  "raw_text": "YujiaQin\n\t\t\n\t\t\n\t\t\tYiningYe\n\t\t\n\t\t\n\t\t\tJunjieFang\n\t\t\n\t\t\n\t\t\tHaomingWang\n\t\t\n\t\t\n\t\t\tShihaoLiang\n\t\t\n\t\t\n\t\t\tShizuoTian\n\t\t\n\t\t\n\t\t\tJundaZhang\n\t\t\n\t\t\n\t\t\tJiahaoLi\n\t\t\n\t\t\n\t\t\tYunxinLi\n\t\t\n\t\t\n\t\t\tShijueHuang\n\t\t\n\t\tarXiv:2501.12326\n\t\tUi-tars: Pioneering automated gui interaction with native agents\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 6,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2401.10935",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b6",
+    "section_path_id": "3.3",
+    "quote": "[3]",
+    "offset": 206
+   }
+  ],
+  "raw_text": "KanzhiCheng\n\t\t\n\t\t\n\t\t\tQiushiSun\n\t\t\n\t\t\n\t\t\tYougangChu\n\t\t\n\t\t\n\t\t\tFangzhiXu\n\t\t\n\t\t\n\t\t\tYantaoLi\n\t\t\n\t\t\n\t\t\tJianbingZhang\n\t\t\n\t\t\n\t\t\tZhiyongWu\n\t\t\n\t\tarXiv:2401.10935\n\t\tSeeclick: Harnessing gui grounding for advanced visual gui agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 7,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2502.13923",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "ShuaiBai\n\t\t\n\t\t\n\t\t\tKeqinChen\n\t\t\n\t\t\n\t\t\tXuejingLiu\n\t\t\n\t\t\n\t\t\tJialinWang\n\t\t\n\t\t\n\t\t\tWenbinGe\n\t\t\n\t\t\n\t\t\tSiboSong\n\t\t\n\t\t\n\t\t\tKaiDang\n\t\t\n\t\t\n\t\t\tPengWang\n\t\t\n\t\t\n\t\t\tShijieWang\n\t\t\n\t\t\n\t\t\tJunTang\n\t\t\n\t\tarXiv:2502.13923\n\t\tQwen2. 5-vl technical report\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 8,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.01785",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "ZiyuLiu\n\t\t\n\t\t\n\t\t\tZeyiSun\n\t\t\n\t\t\n\t\t\tYuhangZang\n\t\t\n\t\t\n\t\t\tXiaoyiDong\n\t\t\n\t\t\n\t\t\tYuhangCao\n\t\t\n\t\t\n\t\t\tHaodongDuan\n\t\t\n\t\t\n\t\t\tDahuaLin\n\t\t\n\t\t\n\t\t\tJiaqiWang\n\t\t\n\t\tarXiv:2503.01785\n\t\tVisual-rft: Visual reinforcement fine-tuning\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 9,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.06749",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "WenxuanHuang\n\t\t\n\t\t\n\t\t\tBohanJia\n\t\t\n\t\t\n\t\t\tZijieZhai\n\t\t\n\t\t\n\t\t\tShaoshengCao\n\t\t\n\t\t\n\t\t\tZheyuYe\n\t\t\n\t\t\n\t\t\tFeiZhao\n\t\t\n\t\t\n\t\t\tYaoHu\n\t\t\n\t\t\n\t\t\tShaohuiLin\n\t\t\n\t\tarXiv:2503.06749\n\t\tVision-r1: Incentivizing reasoning capability in multimodal large language models\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 10,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "R1-v: Reinforcing super generalization ability in vision-language models with less than $3\n\t\t\n\t\t\tLiangChen\n\t\t\n\t\t\n\t\t\tLeiLi\n\t\t\n\t\t\n\t\t\tHaozheZhao\n\t\t\n\t\t\n\t\t\tYifanSong\n\t\t\n\t\t\n\t\t\tVinci"
+ },
+ {
+  "index": 11,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "Vlm-r1: A stable and generalizable r1-style large vision-language model\n\t\t\n\t\t\tHaozhanShen\n\t\t\n\t\t\n\t\t\tZilunZhang\n\t\t\n\t\t\n\t\t\tKangjiaZhao\n\t\t\n\t\t\n\t\t\tQianqianZhang\n\t\t\n\t\t\n\t\t\tRuochenXu\n\t\t\n\t\t\n\t\t\tTianchengZhao\n\t\t\n\t\t\n\t\t\n\t\t\t2025"
+ },
+ {
+  "index": 12,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.21620",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b12",
+    "section_path_id": "2.2",
+    "quote": "[9]",
+    "offset": 570
+   },
+   {
+    "ref_id": "b12",
+    "section_path_id": "1~6",
+    "quote": "[9]",
+    "offset": 722
+   }
+  ],
+  "raw_text": "Ui-r1: Enhancing action prediction of gui agents by reinforcement learning\n\t\t\n\t\t\tZhengxiLu\n\t\t\n\t\t\n\t\t\tYuxiangChai\n\t\t\n\t\t\n\t\t\tYaxuanGuo\n\t\t\n\t\t\n\t\t\tXiYin\n\t\t\n\t\t\n\t\t\tLiangLiu\n\t\t\n\t\t\n\t\t\tHaoWang\n\t\t\n\t\t\n\t\t\tGuanjingXiong\n\t\t\n\t\t\n\t\t\tHongshengLi\n\t\t\n\t\tarXiv:2503.21620\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 13,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2501.12948",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b13",
+    "section_path_id": "1",
+    "quote": "[10]",
+    "offset": 1670
+   },
+   {
+    "ref_id": "b13",
+    "section_path_id": "2.2",
+    "quote": "[10]",
+    "offset": 84
+   },
+   {
+    "ref_id": "b13",
+    "section_path_id": "3.1",
+    "quote": "[10]",
+    "offset": 600
+   }
+  ],
+  "raw_text": "Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning\n\t\t\n\t\t\tDejianDaya Guo\n\t\t\n\t\t\n\t\t\tHaoweiYang\n\t\t\n\t\t\n\t\t\tJunxiaoZhang\n\t\t\n\t\t\n\t\t\tRuoyuSong\n\t\t\n\t\t\n\t\t\tRunxinZhang\n\t\t\n\t\t\n\t\t\tQihaoXu\n\t\t\n\t\t\n\t\t\tShirongZhu\n\t\t\n\t\t\n\t\t\tPeiyiMa\n\t\t\n\t\t\n\t\t\tXiaoWang\n\t\t\n\t\t\n\t\t\tBi\n\t\t\n\t\tarXiv:2501.12948\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 14,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "Cognitive architectures for language agents",
+  "anchors": [
+   {
+    "ref_id": "b14",
+    "section_path_id": "2.1",
+    "quote": "[11]",
+    "offset": 208
+   }
+  ],
+  "raw_text": "Cognitive architectures for language agents\n\t\t\n\t\t\tTheodoreSumers\n\t\t\n\t\t\n\t\t\tShunyuYao\n\t\t\n\t\t\n\t\t\tKarthikNarasimhan\n\t\t\n\t\t\n\t\t\tThomasGriffiths\n\t\t\n\t\n\t\n\t\tTransactions on Machine Learning Research\n\t\t\n\t\t\t2023"
+ },
+ {
+  "index": 15,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "A survey on large language model based autonomous agents",
+  "anchors": [],
+  "raw_text": "A survey on large language model based autonomous agents\n\t\t\n\t\t\tLeiWang\n\t\t\n\t\t\n\t\t\tChenMa\n\t\t\n\t\t\n\t\t\tXueyangFeng\n\t\t\n\t\t\n\t\t\tZeyuZhang\n\t\t\n\t\t\n\t\t\tHaoYang\n\t\t\n\t\t\n\t\t\tJingsenZhang\n\t\t\n\t\t\n\t\t\tZhiyuanChen\n\t\t\n\t\t\n\t\t\tJiakaiTang\n\t\t\n\t\t\n\t\t\tXuChen\n\t\t\n\t\t\n\t\t\tYankaiLin\n\t\t\n\t\n\t\n\t\tFrontiers of Computer Science\n\t\t\n\t\t\t18\n\t\t\t6\n\t\t\t186345\n\t\t\t2024"
+ },
+ {
+  "index": 16,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2310.00280",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "QiushiSun\n\t\t\n\t\t\n\t\t\tZhangyueYin\n\t\t\n\t\t\n\t\t\tXiangLi\n\t\t\n\t\t\n\t\t\tZhiyongWu\n\t\t\n\t\t\n\t\t\tXipengQiu\n\t\t\n\t\t\n\t\t\tLingpengKong\n\t\t\n\t\tarXiv:2310.00280\n\t\tCorex: Pushing the boundaries of complex reasoning through multi-model collaboration\n\t\t\n\t\t\t2023\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 17,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2410.05243",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b17",
+    "section_path_id": "2.1",
+    "quote": "[14]",
+    "offset": 672
+   }
+  ],
+  "raw_text": "BoyuGou\n\t\t\n\t\t\n\t\t\tRuohanWang\n\t\t\n\t\t\n\t\t\tBoyuanZheng\n\t\t\n\t\t\n\t\t\tYananXie\n\t\t\n\t\t\n\t\t\tChengChang\n\t\t\n\t\t\n\t\t\tYihengShu\n\t\t\n\t\t\n\t\t\tHuanSun\n\t\t\n\t\t\n\t\t\tYuSu\n\t\t\n\t\tarXiv:2410.05243\n\t\tNavigating the digital world as humans do: Universal visual grounding for gui agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 18,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2412.16720",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b18",
+    "section_path_id": "2.2",
+    "quote": "[15]",
+    "offset": 63
+   }
+  ],
+  "raw_text": "AaronJaech\n\t\t\n\t\t\n\t\t\tAdamKalai\n\t\t\n\t\t\n\t\t\tAdamLerer\n\t\t\n\t\t\n\t\t\tAdamRichardson\n\t\t\n\t\t\n\t\t\tAhmedEl-Kishky\n\t\t\n\t\t\n\t\t\tAidenLow\n\t\t\n\t\t\n\t\t\tAlecHelyar\n\t\t\n\t\t\n\t\t\tAleksanderMadry\n\t\t\n\t\t\n\t\t\tAlexBeutel\n\t\t\n\t\t\n\t\t\tAlexCarney\n\t\t\n\t\tarXiv:2412.16720\n\t\tOpenai o1 system card\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 19,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2402.03300",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b19",
+    "section_path_id": "2.2",
+    "quote": "[16]",
+    "offset": 152
+   }
+  ],
+  "raw_text": "ZhihongShao\n\t\t\n\t\t\n\t\t\tPeiyiWang\n\t\t\n\t\t\n\t\t\tQihaoZhu\n\t\t\n\t\t\n\t\t\tRunxinXu\n\t\t\n\t\t\n\t\t\tJunxiaoSong\n\t\t\n\t\t\n\t\t\tXiaoBi\n\t\t\n\t\t\n\t\t\tHaoweiZhang\n\t\t\n\t\t\n\t\t\tMingchuanZhang\n\t\t\n\t\t\n\t\t\tYKLi\n\t\t\n\t\t\n\t\t\tYWu\n\t\t\n\t\tarXiv:2402.03300\n\t\tPushing the limits of mathematical reasoning in open language models\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 20,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.18470",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b20",
+    "section_path_id": "2.2",
+    "quote": "[17]",
+    "offset": 174
+   }
+  ],
+  "raw_text": "Code-r1: Reproducing r1 for code with reliable rewards\n\t\t\n\t\t\tJiaweiLiu\n\t\t\n\t\t\n\t\t\tLingmingZhang\n\t\t\n\t\tarXiv:2503.18470\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 21,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b21",
+    "section_path_id": "2.2",
+    "quote": "[18]",
+    "offset": 206
+   }
+  ],
+  "raw_text": "ZihanWang\n\t\t\n\t\t\n\t\t\t*\n\t\t\n\t\t\n\t\t\tKangruiWang\n\t\t\n\t\t\n\t\t\t*\n\t\t\n\t\t\n\t\t\tQinengWang\n\t\t\n\t\t\n\t\t\t*\n\t\t\n\t\t\n\t\t\tPingyueZhang\n\t\t\n\t\t\n\t\t\t*\n\t\t\n\t\t\n\t\t\tLinjieLi\n\t\t\n\t\t\n\t\t\t*\n\t\t\n\t\t\n\t\t\tZhengyuanYang\n\t\t\n\t\t\n\t\t\tKefanYu\n\t\t\n\t\t\n\t\t\tMinhNhatNguyen\n\t\t\n\t\t\n\t\t\tMonicaLam\n\t\t\n\t\t\n\t\t\tYipingLu\n\t\t\n\t\t\n\t\t\tKyunghyunCho\n\t\t\n\t\t\n\t\t\tJiajunWu\n\t\t\n\t\t\n\t\t\tLiFei-Fei\n\t\t\n\t\t\n\t\t\tLijuanWang\n\t\t\n\t\t\n\t\t\tYejinChoi\n\t\t\n\t\t\n\t\t\tManlingLi\n\t\t\n\t\n\t\n\t\tTraining agents by reinforcing reasoning\n\t\t\n\t\t\t2025"
+ },
+ {
+  "index": 22,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.18470",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "ZhenyuPan\n\t\t\n\t\t\n\t\t\tHanLiu\n\t\t\n\t\tarXiv:2503.18470\n\t\tMetaspatial: Reinforcing 3d spatial reasoning in vlms for the metaverse\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 23,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2503.07365",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "Mm-eureka: Exploring visual aha moment with rule-based large-scale reinforcement learning\n\t\t\n\t\t\tFanqingMeng\n\t\t\n\t\t\n\t\t\tLingxiaoDu\n\t\t\n\t\t\n\t\t\tZongkaiLiu\n\t\t\n\t\t\n\t\t\tZhixiangZhou\n\t\t\n\t\t\n\t\t\tQuanfengLu\n\t\t\n\t\t\n\t\t\tDaochengFu\n\t\t\n\t\t\n\t\t\tBotianShi\n\t\t\n\t\t\n\t\t\tWenhaiWang\n\t\t\n\t\t\n\t\t\tJunjunHe\n\t\t\n\t\t\n\t\t\tKaipengZhang\n\t\t\n\t\tarXiv:2503.07365\n\t\t\n\t\t\t2025\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 24,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b24",
+    "section_path_id": "3.3",
+    "quote": "[21]",
+    "offset": 108
+   }
+  ],
+  "raw_text": "The fineweb datasets: Decanting the web for the finest text data at scale\n\t\t\n\t\t\tGuilhermePenedo\n\t\t\n\t\t\n\t\t\tHynekKydlíček\n\t\t\n\t\t\n\t\t\tAntonLozhkov\n\t\t\n\t\t\n\t\t\tMargaretMitchell\n\t\t\n\t\t\n\t\t\tColinARaffel\n\t\t\n\t\t\n\t\t\tLeandroVon Werra\n\t\t\n\t\t\n\t\t\tThomasWolf\n\t\t\n\t\tNeurIPS\n\t\t\n\t\t\t2024"
+ },
+ {
+  "index": 25,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b25",
+    "section_path_id": "3.3",
+    "quote": "[22]",
+    "offset": 121
+   }
+  ],
+  "raw_text": "Uibert: Learning generic multimodal representations for ui understanding\n\t\t\n\t\t\tChongyangBai\n\t\t\n\t\t\n\t\t\tXiaoxueZang\n\t\t\n\t\t\n\t\t\tYingXu\n\t\t\n\t\t\n\t\t\tSrinivasSunkara\n\t\t\n\t\t\n\t\t\tAbhinavRastogi\n\t\t\n\t\t\n\t\t\tJindongChen\n\t\t\n\t\t\n\t\t\tBlaiseAguera Y Arcas\n\t\t\n\t\t\n\t\t\t2021"
+ },
+ {
+  "index": 26,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2407.17490",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b26",
+    "section_path_id": "3.3",
+    "quote": "[23]",
+    "offset": 132
+   }
+  ],
+  "raw_text": "YuxiangChai\n\t\t\n\t\t\n\t\t\tSiyuanHuang\n\t\t\n\t\t\n\t\t\tYazheNiu\n\t\t\n\t\t\n\t\t\tHanXiao\n\t\t\n\t\t\n\t\t\tLiangLiu\n\t\t\n\t\t\n\t\t\tDingyuZhang\n\t\t\n\t\t\n\t\t\tPengGao\n\t\t\n\t\t\n\t\t\tShuaiRen\n\t\t\n\t\t\n\t\t\tHongshengLi\n\t\t\n\t\tarXiv:2407.17490\n\t\tAmex: Android multi-annotation expo dataset for mobile gui agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 27,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2005.03776",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b27",
+    "section_path_id": "3.3",
+    "quote": "[24]",
+    "offset": 146
+   }
+  ],
+  "raw_text": "Mapping natural language instructions to mobile ui action sequences\n\t\t\n\t\t\tYangLi\n\t\t\n\t\t\n\t\t\tJiacongHe\n\t\t\n\t\t\n\t\t\tXinZhou\n\t\t\n\t\t\n\t\t\tYuanZhang\n\t\t\n\t\t\n\t\t\tJasonBaldridge\n\t\t\n\t\tarXiv:2005.03776\n\t\t\n\t\t\t2020\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 28,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "Unified efficient fine-tuning of 100+ language models",
+  "anchors": [],
+  "raw_text": "Unified efficient fine-tuning of 100+ language models\n\t\t\n\t\t\tYaoweiZheng\n\t\t\n\t\t\n\t\t\tRichongZhang\n\t\t\n\t\t\n\t\t\tJunhaoZhang\n\t\t\n\t\t\n\t\t\tYanhanYe\n\t\t\n\t\t\n\t\t\tZheyanLuo\n\t\t\n\t\t\n\t\t\tZhangchiFeng\n\t\t\n\t\t\n\t\t\tYongqiangMa\n\t\t\n\t\t\n\t\t\tLlamafactory\n\t\t\n\t\n\t\n\t\tACL\n\t\t\n\t\t\t2024"
+ },
+ {
+  "index": 29,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "Easyr1: An efficient, scalable, multimodality rl training framework\n\t\t\n\t\t\tYaoweiZheng\n\t\t\n\t\t\n\t\t\tJuntingLu\n\t\t\n\t\t\n\t\t\tShenzhiWang\n\t\t\n\t\t\n\t\t\tYXiong\n\t\t\n\t\t\n\t\t\t2025"
+ },
+ {
+  "index": 30,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2406.03679",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b30",
+    "section_path_id": "1~6",
+    "quote": "[27]",
+    "offset": 89
+   }
+  ],
+  "raw_text": "On the effects of data scale on computer control agents\n\t\t\n\t\t\tWeiLi\n\t\t\n\t\t\n\t\t\tWilliamBishop\n\t\t\n\t\t\n\t\t\tAliceLi\n\t\t\n\t\t\n\t\t\tChrisRawles\n\t\t\n\t\t\n\t\t\tFolawiyoCampbell-Ajala\n\t\t\n\t\t\n\t\t\tDivyaTyamagundlu\n\t\t\n\t\t\n\t\t\tOrianaRiva\n\t\t\n\t\tarXiv:2406.03679\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 31,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2406.08451",
+  "doi": null,
+  "title": null,
+  "anchors": [
+   {
+    "ref_id": "b31",
+    "section_path_id": "1~6",
+    "quote": "[28]",
+    "offset": 110
+   }
+  ],
+  "raw_text": "QuanfengLu\n\t\t\n\t\t\n\t\t\tWenqiShao\n\t\t\n\t\t\n\t\t\tZitaoLiu\n\t\t\n\t\t\n\t\t\tFanqingMeng\n\t\t\n\t\t\n\t\t\tBoxuanLi\n\t\t\n\t\t\n\t\t\tBotongChen\n\t\t\n\t\t\n\t\t\tSiyuanHuang\n\t\t\n\t\t\n\t\t\tKaipengZhang\n\t\t\n\t\t\n\t\t\tYuQiao\n\t\t\n\t\t\n\t\t\tPingLuo\n\t\t\n\t\tarXiv:2406.08451\n\t\tGui odyssey: A comprehensive dataset for cross-app gui navigation on mobile devices\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 32,
+  "resolved_state": "raw_only",
+  "arxiv_id": null,
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "Screenspot-pro: Gui grounding for professional high-resolution computer use. Workshop on Reasoning and Planning for Large Language Models\n\t\t\n\t\t\tKaixinLi\n\t\t\n\t\t\n\t\t\tZiyangMeng\n\t\t\n\t\t\n\t\t\tHongzhanLin\n\t\t\n\t\t\n\t\t\tZiyangLuo\n\t\t\n\t\t\n\t\t\tYuchenTian\n\t\t\n\t\t\n\t\t\tJingMa\n\t\t\n\t\t\n\t\t\tZhiyongHuang\n\t\t\n\t\t\n\t\t\tTat-SengChua\n\t\t\n\t\t\n\t\t\t2025"
+ },
+ {
+  "index": 33,
+  "resolved_state": "resolved_arxiv",
+  "arxiv_id": "2406.11317",
+  "doi": null,
+  "title": null,
+  "anchors": [],
+  "raw_text": "WentongChen\n\t\t\n\t\t\n\t\t\tJunboCui\n\t\t\n\t\t\n\t\t\tJinyiHu\n\t\t\n\t\t\n\t\t\tYujiaQin\n\t\t\n\t\t\n\t\t\tJunjieFang\n\t\t\n\t\t\n\t\t\tYueZhao\n\t\t\n\t\t\n\t\t\tChongyiWang\n\t\t\n\t\t\n\t\t\tJunLiu\n\t\t\n\t\t\n\t\t\tGuirongChen\n\t\t\n\t\t\n\t\t\tYupengHuo\n\t\t\n\t\tarXiv:2406.11317\n\t\tFrom general vision language models to versatile gui agents\n\t\t\n\t\t\t2024\n\t\t\n\t\n\tarXiv preprint"
+ },
+ {
+  "index": 34,
+  "resolved_state": "candidate_title",
+  "arxiv_id": null,
+  "doi": null,
+  "title": "Omniact: A dataset and benchmark for enabling multimodal generalist autonomous agents for desktop and web",
+  "anchors": [],
+  "raw_text": "Omniact: A dataset and benchmark for enabling multimodal generalist autonomous agents for desktop and web\n\t\t\n\t\t\tRaghavKapoor\n\t\t\n\t\t\n\t\t\tParagYash\n\t\t\n\t\t\n\t\t\tMelisaButala\n\t\t\n\t\t\n\t\t\tJingRussak\n\t\t\n\t\t\n\t\t\tKiranYu Koh\n\t\t\n\t\t\n\t\t\tWaseemKamble\n\t\t\n\t\t\n\t\t\tRuslanAl-Shikh\n\t\t\n\t\t\n\t\t\tSalakhutdinov\n\t\t\n\t\n\t\n\t\tECCV\n\t\t\n\t\t\tSpringer\n\t\t\t2024"
+ }
+]
