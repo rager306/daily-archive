@@ -36,31 +36,40 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
     artifacts = manifest["artifacts"]
 
     # ── equations layer: re-export formulas with section binding ──────
-    eq_dir = article / "equations"
-    eq_dir.mkdir(exist_ok=True)
-    equations = [
-        {
-            "formula_id": f["formula_id"],
-            "section_path_id": f["section_path_id"],
-            "section_ordinal": f["section_ordinal"],
-            "label": f.get("label"),
-            "representation": f.get("representation"),
-            "source_digest": f.get("source_digest"),
-            "missingness": f.get("missingness"),
+    formulas = parsed.get("formulas") or []
+    if formulas:
+        eq_dir = article / "equations"
+        eq_dir.mkdir(exist_ok=True)
+        equations = [
+            {
+                "formula_id": f["formula_id"],
+                "section_path_id": f["section_path_id"],
+                "section_ordinal": f["section_ordinal"],
+                "label": f.get("label"),
+                "representation": f.get("representation"),
+                "source_digest": f.get("source_digest"),
+                "missingness": f.get("missingness"),
+            }
+            for f in formulas
+        ]
+        (eq_dir / "index.json").write_text(json.dumps(equations, ensure_ascii=False, indent=1))
+        grounded = sum(1 for e in equations if e["representation"])
+        artifacts["equations"] = {
+            "file": "equations/index.json",
+            "derived_from": ["parsed"],
+            "sha256": sha256_file(eq_dir / "index.json"),
+            "built_at": now,
+            "actor": "m451-reference-builder",
+            "stats": {"count": len(equations), "grounded": grounded,
+                      "ungrounded": len(equations) - grounded},
         }
-        for f in parsed.get("formulas") or []
-    ]
-    (eq_dir / "index.json").write_text(json.dumps(equations, ensure_ascii=False, indent=1))
-    grounded = sum(1 for e in equations if e["representation"])
-    artifacts["equations"] = {
-        "file": "equations/index.json",
-        "derived_from": ["parsed"],
-        "sha256": sha256_file(eq_dir / "index.json"),
-        "built_at": now,
-        "actor": "m451-reference-builder",
-        "stats": {"count": len(equations), "grounded": grounded,
-                  "ungrounded": len(equations) - grounded},
-    }
+    else:
+        # parsed itself carries the typed reason (no_formula_elements)
+        artifacts["equations"] = {
+            "present": False,
+            "missingness": parsed.get("formula_missingness") or "no_formula_elements",
+            "derived_from": ["parsed"],
+        }
 
     # ── citations_resolved: CLASSIFICATION, never fake resolution ────
     # resolved_state vocabulary:
@@ -69,8 +78,17 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
     #   candidate_title       — no ID but title present (match vs
     #                           citation_styles/venue_registry later)
     #   raw_only              — only raw GROBID text
-    citations = []
-    for i, c in enumerate(parsed.get("citations") or []):
+    raw_citations = parsed.get("citations") or []
+    if not raw_citations:
+        artifacts["citations_resolved"] = {
+            "present": False,
+            "missingness": "no_citation_elements",
+            "derived_from": ["parsed"],
+        }
+        citations = []
+    else:
+        citations = []
+    for i, c in enumerate(raw_citations):
         if c.get("arxiv_id"):
             state = "resolved_arxiv"
         elif c.get("doi"):
@@ -88,20 +106,21 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
             "anchors": c.get("anchors"),
             "raw_text": c.get("raw_text"),
         })
-    (article / "citations_resolved.json").write_text(
-        json.dumps(citations, ensure_ascii=False, indent=1))
-    from collections import Counter
-    states = dict(Counter(c["resolved_state"] for c in citations))
-    artifacts["citations_resolved"] = {
-        "file": "citations_resolved.json",
-        "derived_from": ["parsed"],   # enricher joins later (W5)
-        "sha256": sha256_file(article / "citations_resolved.json"),
-        "built_at": now,
-        "actor": "m451-reference-builder",
-        "stats": {"total": len(citations), **states},
-        "inputs": ["data/ontology/citation_styles.yaml",
-                   "data/ontology/venue_registry.yaml"],  # dictionaries for the future title-matching
-    }
+    if raw_citations:
+        (article / "citations_resolved.json").write_text(
+            json.dumps(citations, ensure_ascii=False, indent=1))
+        from collections import Counter
+        states = dict(Counter(c["resolved_state"] for c in citations))
+        artifacts["citations_resolved"] = {
+            "file": "citations_resolved.json",
+            "derived_from": ["parsed"],   # enricher joins later (W5)
+            "sha256": sha256_file(article / "citations_resolved.json"),
+            "built_at": now,
+            "actor": "m451-reference-builder",
+            "stats": {"total": len(citations), **states},
+            "inputs": ["data/ontology/citation_styles.yaml",
+                       "data/ontology/venue_registry.yaml"],  # dictionaries for the future title-matching
+        }
 
     # ── typed missingness for absent layers ───────────────────────────
     # tables: parsed carries the typed reason itself
@@ -149,7 +168,7 @@ def build(paper_id: str, root: Path = Path("data/processed")) -> None:
         artifacts[layer] = {"not_reached": True}
 
     manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False, allow_unicode=True))
-    print(f"{paper_id}: equations={len(equations)} citations={len(citations)} states={states}")
+    print(f"{paper_id}: formulas={len(formulas)} citations={len(raw_citations)}")
 
 
 if __name__ == "__main__":

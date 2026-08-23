@@ -8,11 +8,12 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v3   # v3: invariants as machine-readable declarations (generic validation engine, M451)
+schema_version: article-schema.v4   # v4: missingness_vocabulary += no_citation_elements (pilot wave of 10)
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
   v3: "invariants: машиночитаемые декларации паттернов — общий движок валидации, статья лишь первый объект"
+  v4: "missingness_vocabulary += no_citation_elements; equations/citations слои уважают parsed missingness"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -197,6 +198,7 @@ manifest:
     no_table_elements: "парсер не нашёл таблиц в источнике"
     no_figure_elements: "парсер не извлекает рисунки (нет coords/фигур в GROBID-профиле)"
     no_formula_elements: "парсер не нашёл формул"
+    no_citation_elements: "парсер не нашёл цитат (поле citations пусто)"
     parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
 
   # Цитаты: словарь состояний разрешения (классификация, НЕ резолв)
