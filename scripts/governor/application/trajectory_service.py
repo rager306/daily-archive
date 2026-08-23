@@ -987,6 +987,10 @@ class TrajectoryService:
         from governor.adapters.data_integrity_checker import check_data_integrity
         drift_flags.extend(check_data_integrity(self.root))
 
+        # M451: schema/manifest hierarchy (ADR-068)
+        from governor.adapters.schema_hierarchy_checker import check_schema_hierarchy
+        drift_flags.extend(check_schema_hierarchy(self.root))
+
         verdict = self._derive_verdict(audit_report, drift_flags, phase)
         next_actions = self._build_next_actions(verdict, drift_flags)
         milestone_ctx = self._build_milestone_context()

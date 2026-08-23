@@ -1,310 +1,259 @@
 # ADR-068: Schema/Manifest Hierarchy — Meta-Prompt Data Architecture
 
-- Status: Proposed
-- Date: 2026-08-23
+- Status: Accepted
+- Date: 2026-08-23 (revised same day after elegance review)
 - Deciders: repo owner + agent (M451)
 - Tags: data-architecture, meta-prompt, schema, manifest, versioning, no-hardcode
 
 ## 0. One-line Decision
 
-Every level of the data tree carries a **SCHEMA** (what is possible) and a **MANIFEST** (what exists now). Both are DATA files — the code reads them and never hardcodes structure.
+**Schema is the norm, the filesystem is the truth, the Governor is the direct validator, and manifests are derived caches.** Four roles, each doing one thing. Structure is DATA — the code reads schemas and never hardcodes layout.
 
 ## 1. Context
 
-The project accumulated structural chaos because data layout lived in code (hardcoded paths), in ADRs (prose only), or in nobody's head. The M445 audit found double-nested catalogs, orphan dictionaries, and 66% unresolvable citations. The M450 restructure fixed paths but didn't establish the **principle** that structure itself must be data.
+Structural chaos accumulated because data layout lived in code (hardcoded paths), in ADRs (prose only), or nowhere. The M445 audit found double-nested catalogs, orphan dictionaries, 66% unresolvable citations. M450 fixed paths but did not establish the **principle** that structure itself must be data.
 
-The law-nexus project demonstrated the pattern: artifact graph + lifecycle ceilings + authority stack + forbidden edges — all in DATA, checked by Governor.
+law-nexus demonstrated the pattern: artifact graph + lifecycle ceilings + authority stack + forbidden edges — all in DATA, checked by a governance tool.
+
+An initial draft of this ADR was reviewed for elegance and corrected: manifests at every level bloat metadata; manifest-vs-FS comparison creates a sync-error class; schema history files duplicate git+ADR; bi-temporality is meaningless for directories. This revision fixes those.
 
 ## 2. Decision
 
-### 2.1 The Schema/Manifest pair
+### 2.1 The four roles (binding)
 
-**Every top-level directory in the repository** carries a SCHEMA.yaml + MANIFEST.yaml pair. Not just `data/` — also `governor/`, `crates/`, `scripts/`, `doc/`, `artifacts/`, `archive/`, `logs/`. The repo root itself has a SCHEMA + MANIFEST defining what top-level directories are valid.
-
-| File | Role | Mutability |
+| Role | Object | Property |
 |---|---|---|
-| `SCHEMA.yaml` | What CAN exist: types, structure, rules, lifecycle values, versioning model | Versioned (v1 → v2), changes require schema_version bump |
-| `MANIFEST.yaml` | What EXISTS now: counts, statuses, coverage, timestamps, active items | Updated automatically by pipeline stages |
+| **Norm** | `SCHEMA.yaml` | What CAN and MUST exist. Machine-readable rules. Versioned. |
+| **Truth** | the filesystem | What actually exists. Never edited to please a checker. |
+| **Validator** | Governor | Compares truth against norm **directly** — FS ↔ SCHEMA. Reports gaps. |
+| **Cache** | `MANIFEST.yaml` | Derived aggregates for humans and fast lookups. Stale = harmless; regenerated. |
 
-Neither is hand-edited during normal operation. Schemas change through ADR; manifests change through pipeline execution.
+Corollaries:
 
-### 2.2 Hierarchy (top-down)
+- Governor NEVER validates "manifest ↔ filesystem". That comparison class is deleted. A stale manifest costs a recompute, nothing more.
+- Work = closing gaps between FS and SCHEMA. Never editing the schema to match a messy present, never hand-writing manifests.
+- Definitions live in exactly ONE place (the schema of the object). Checks consume; they do not restate.
+
+### 2.2 Hierarchy
 
 ```
-daily-archive/                   ← REPO ROOT
-├── SCHEMA.yaml                  ← what top-level directories are valid
-├── MANIFEST.yaml                ← repo state: project phase, active milestone, counts
+daily-archive/                   ← repo root
+├── SCHEMA.yaml                  ← valid top-level dirs, ignored tool dirs, forbidden dirs
+├── MANIFEST.yaml                ← CACHE: repo aggregates
 │
-├── data/                        ← scientific data
-│   ├── SCHEMA.yaml              ← what types of data can live here
-│   ├── MANIFEST.yaml            ← what data exists, sizes, last_updated
+├── data/
+│   ├── SCHEMA.yaml              ← NORM: valid data classes
+│   ├── MANIFEST.yaml            ← CACHE: data aggregates
 │   ├── sources/
-│   │   ├── SCHEMA.yaml          ← what source types are valid
-│   │   ├── MANIFEST.yaml        ← which sources connected, coverage
+│   │   ├── SCHEMA.yaml          ← NORM: valid source types
+│   │   ├── MANIFEST.yaml        ← CACHE: source coverage
 │   │   ├── arxiv/
-│   │   │   ├── SCHEMA.yaml      ← arxiv article structure + versioning
-│   │   │   ├── MANIFEST.yaml    ← 801 articles, 31 categories
-│   │   │   └── <category>/<id>/ ← articles follow arxiv SCHEMA
+│   │   │   ├── SCHEMA.yaml      ← NORM: arxiv article layout + versioning
+│   │   │   ├── MANIFEST.yaml    ← CACHE: article counts per category
+│   │   │   └── <category>/<paper_id>/…          ← follows arxiv SCHEMA
 │   │   ├── textbook/
-│   │   │   ├── SCHEMA.yaml      ← DIFFERENT structure (chapters, not articles)
-│   │   │   ├── MANIFEST.yaml    ← 2 textbooks, 29 chapters
-│   │   │   └── <textbook_id>/   ← chapters follow textbook SCHEMA
-│   │   └── …each source has its own SCHEMA + MANIFEST
+│   │   │   ├── SCHEMA.yaml      ← NORM: chapters, not articles
+│   │   │   └── MANIFEST.yaml    ← CACHE
+│   │   └── …                    ← blog/, nature/, course/ (schemas; manifests optional)
 │   ├── processed/
-│   │   ├── SCHEMA.yaml          ← processing layers (lifecycle model)
-│   │   ├── MANIFEST.yaml        ← articles at each stage
-│   │   └── <paper_id>/          ← follows processed SCHEMA
-│   ├── ontology/
-│   │   ├── SCHEMA.yaml          ← what dictionary types are valid
-│   │   └── MANIFEST.yaml        ← which dictionaries, versions
-│   ├── graphs/
-│   │   ├── SCHEMA.yaml
-│   │   └── MANIFEST.yaml        ← snapshots, sizes, D127 status
-│   └── gold_standard/
-│       ├── SCHEMA.yaml
-│       └── MANIFEST.yaml
+│   │   ├── SCHEMA.yaml          ← NORM: processing layers + lifecycle values
+│   │   │                           (references data/schemas/article_schema.yaml)
+│   │   └── MANIFEST.yaml        ← CACHE: stage coverage
+│   │   └── <paper_id>/manifest.yaml  ← per-article ARTIFACT metadata (see 2.5)
+│   ├── ontology/SCHEMA.yaml     ← NORM: dictionary types
+│   ├── graphs/SCHEMA.yaml       ← NORM: snapshot types, D127 lock
+│   ├── gold_standard/SCHEMA.yaml← NORM: fixture rules, immutable
+│   ├── graph_tasks/SCHEMA.yaml  ← NORM
+│   └── schemas/SCHEMA.yaml      ← NORM: which schema files may exist here
 │
-├── governor/                    ← control-plane data (separated from scientific)
-│   ├── SCHEMA.yaml              ← what fixture types are valid
-│   ├── MANIFEST.yaml            ← which contracts, which fixtures
-│   └── fixtures/
-│       └── <contract>/          ← follows governor SCHEMA
-│
-├── crates/                      ← Rust code
-│   ├── SCHEMA.yaml              ← crate naming, dependency rules, hexagonal
-│   └── MANIFEST.yaml            ← which crates exist, versions, test counts
-│
-├── scripts/                     ← build/check scripts
-│   ├── SCHEMA.yaml              ← what script types are valid
-│   └── MANIFEST.yaml            ← which scripts, entry points
-│
-├── doc/                         ← documentation
-│   ├── SCHEMA.yaml              ← doc types (ADR, review, …)
-│   └── MANIFEST.yaml            ← which docs, dates, statuses
-│
-├── artifacts/                   ← scratch space (current wave)
-│   ├── SCHEMA.yaml              ← what artifact types are valid + GC policy
-│   └── MANIFEST.yaml            ← current artifacts, age, readers
-│
-├── archive/                     ← cold storage (D237)
-│   ├── SCHEMA.yaml              ← what can be archived, retention policy
-│   └── MANIFEST.yaml            ← what's archived, from when, sizes
-│
-└── logs/                        ← structured logs (ADR-052)
-    ├── SCHEMA.yaml              ← log format, rotation
-    └── MANIFEST.yaml            ← current log files, dates
+├── governor/SCHEMA.yaml + MANIFEST.yaml
+├── crates/SCHEMA.yaml
+├── scripts/SCHEMA.yaml
+├── doc/SCHEMA.yaml
+├── artifacts/SCHEMA.yaml
+├── archive/SCHEMA.yaml
+└── logs/SCHEMA.yaml
 ```
+
+**Manifests exist ONLY at aggregate levels** (root, data, sources, processed, arxiv, textbook, governor). Leaves (a single article, a single dictionary) carry artifact metadata, not directory manifests. This bounds manifest count at ~7 regardless of corpus size.
 
 ### 2.3 Schema composition rules
 
-1. **Child schema inherits from parent.** `sources/arxiv/SCHEMA.yaml` extends `sources/SCHEMA.yaml`.
-2. **Each source type has its own schema.** An arxiv article and a textbook chapter have different structures, different parsers, different lifecycles.
-3. **Schemas are versioned.** `schema_version: v1` → `v2` when structure changes. Old manifests remain readable.
-4. **A schema can reference other schemas.** `processed/SCHEMA.yaml` says "input follows sources/arxiv/SCHEMA.yaml".
+1. **Child inherits parent.** `sources/arxiv/SCHEMA.yaml` is a refinement of `sources/SCHEMA.yaml`.
+2. **Each source type has its own schema.** An arxiv article and a textbook chapter are different shapes with different lifecycles.
+3. **Schemas are machine-readable.** Every rule the Governor enforces is declared in the schema itself (`valid_subdirs`, `valid_files`, `forbidden`, `ignore`, `lifecycle_values`, …). New checks require no new checker code — only new schema data.
+4. **One definition site.** The article layer/lifecycle/invariant definition lives in `data/schemas/article_schema.yaml`. Everything else (Governor checks, pipeline code, docs) references it.
+5. **Schemas are versioned but their history is git+ADR.** `schema_version` + `adr_ref` fields. A version bump cites the ADR that motivated it. No separate SCHEMA.history.yaml — that duplicates git and the ADR-INDEX (both already append-only).
 
-### 2.4 Manifest composition rules
+### 2.4 Naming convention (binding)
 
-1. **Manifests are machine-generated.** Pipeline stages update them. No hand-editing.
-2. **Manifests track lifecycle per item.** Each article in `processed/MANIFEST.yaml` has a lifecycle value.
-3. **Manifests are the Governor's source of truth.** Governor checks manifest invariants, not raw file existence.
-4. **Manifests record provenance.** Every entry has timestamps, source references, checksums.
-
-### 2.5 Temporality & Versioning
-
-#### 2.5.1 Schema versioning (schema evolution)
-
-Schemas are themselves versioned artifacts with an append-only history:
-
-```
-data/sources/arxiv/
-├── SCHEMA.yaml                  ← CURRENT schema (v2)
-├── SCHEMA.v1.yaml               ← superseded v1 (kept, read-only)
-└── SCHEMA.history.yaml          ← change log: v1→v2 when/why/how-migrate
-```
-
-Rules:
-- Schema changes are **append-only**: new version is a new file, old is frozen.
-- `SCHEMA.history.yaml` records: version, date, ADR reference, migration instruction.
-- Old manifests written under v1 remain readable forever (parser selects by the manifest's own `schema_version`).
-- Migration is **lazy**: a v1 manifest is NOT rewritten until the underlying article is reprocessed. v1 and v2 manifests coexist during transition.
-- Governor rule `schema_history_exists`: any SCHEMA.yaml with version > v1 must have a matching SCHEMA.history.yaml entry.
-
-#### 2.5.2 Manifest temporality (bi-temporal)
-
-Manifests track **two time axes**, same as TemporalEdge in kg-ontology:
-
-| Axis | Field | Meaning |
+| Name | Role | Where |
 |---|---|---|
-| valid_time | `observed_at` | when the fact was true in the external world (arXiv published v2 on 2026-08-01) |
-| transaction_time | `recorded_at` | when OUR pipeline observed/recorded it (we parsed it on 2026-08-22) |
+| `SCHEMA.yaml` | norm for a structural directory | every structural directory |
+| `MANIFEST.yaml` (UPPERCASE) | derived cache of a directory's aggregates | aggregate levels only (~7 files) |
+| `manifest.yaml` (lowercase) | metadata of ONE artifact (article, version) | inside the artifact's directory |
 
-Every lifecycle transition in a manifest is a typed event:
+Legacy names (`source_manifest.json`, `textbook_manifest.json`, per-article `manifest.json`) are declared legacy; migration folds them into the lowercase artifact manifest. Migration is scheduled, not urgent — the schema tolerates both during transition.
+
+### 2.5 The article artifact (leaf level)
+
+Each processed article directory carries a lowercase `manifest.yaml` — self-sufficient metadata:
+
+- `schema_version` — which article manifest schema version it follows
+- `paper_id`, `source` locator (type, category, sha256, acquired_at)
+- `lifecycle` — **derived** from the last `lifecycle_events` entry, never hand-set
+- `lifecycle_events` — append-only log (see 2.6)
+- `artifacts` — the artifact graph: layer → {file, stage, sha256, derived_from}
+- `revision` — present only for versioned articles (see 2.7)
+
+A human opening one `manifest.yaml` sees everything about that article without walking schemas.
+
+Layer definitions, authority stack, cross-layer invariants and forbidden edges live in `data/schemas/article_schema.yaml` (the single definition site). The Governor consumes that file; it does not restate the rules.
+
+### 2.6 Temporality
+
+Two axes — **but only where both are meaningful**:
+
+| Level | Axes | Rationale |
+|---|---|---|
+| Per-article lifecycle events | `observed_at` (valid_time) + `recorded_at` (transaction_time) | A fact about the external world (arXiv published v2) vs when our pipeline recorded it |
+| Directory manifests | `recorded_at` only | A directory has no "truth in the external world"; the second axis would be noise |
 
 ```yaml
-lifecycle_events:                    # append-only, never overwritten
+lifecycle_events:            # append-only; regeneration preserves the log
   - stage: parsed
     recorded_at: 2026-08-22T14:03:11Z
-    observed_at: 2026-08-01T00:00:00Z   # if externally anchored
+    observed_at: 2026-08-01T00:00:00Z   # present only when externally anchored
     actor: grobid-profile-structural
     evidence_sha256: "…"
-  - stage: extracted
-    recorded_at: 2026-08-22T14:03:14Z
-    actor: rule-based-extractor
-    evidence_sha256: "…"
 ```
 
-- Current state (`lifecycle: extracted`) is DERIVED from the last event, never hand-set.
-- Regenerating a manifest re-derives state; the event log is preserved (append-only).
-- `revision_graph.json` edges carry both timestamps: `supersedes {from: v1, to: v2, observed_at, recorded_at}`.
+- `lifecycle: extracted` is DERIVED from the last event.
+- Manifest regeneration recomputes derived fields and appends new events; it never rewrites or drops history.
+- `recorded_at` is monotonic within one article.
 
-#### 2.5.3 Article versioning (per-source)
+### 2.7 Article versioning — flat by default
 
 ```
-sources/arxiv/<category>/<paper_id>/
-├── v1/                      ← version 1 (immutable after v2 exists)
-│   ├── source/*.pdf
-│   ├── parsed/article.json
-│   └── manifest.yaml        ← manifest for v1
-├── v2/                      ← version 2
-│   ├── source/*.pdf
-│   ├── parsed/article.json
-│   └── manifest.yaml        ← manifest for v2
-└── revision_graph.json      ← links between versions
+data/sources/arxiv/<category>/<paper_id>/       ← SINGLE version (the default)
+    source/<id>.pdf …
+    identity.json
+
+data/sources/arxiv/<category>/<paper_id>/       ← MULTI version (appears on demand)
+    v1/… v2/…
+    revision_graph.json     ← supersedes/same_as/derived_from edges,
+                              each edge carrying observed_at + recorded_at
 ```
 
-- New version → new directory, old untouched (append-only).
-- `revision_graph.json` tracks `supersedes`, `same_as`, `derived_from`.
+- Single-version articles stay FLAT. No empty `v1/` nesting for 800 articles to serve the rare multi-version case.
+- When a second version arrives: versions move into `v1/`, `v2/` directories (append-only — old content untouched), `revision_graph.json` appears.
 - Active version = latest with lifecycle ≥ parsed.
+- `revision_graph` is acyclic; old version layers are immutable once superseded.
 
-#### 2.5.4 Temporal invariants (added)
-
-- `schema_history_append_only`: schema evolution is append-only with SCHEMA.history.yaml entry for every bump.
-- `lifecycle_events_preserved`: manifest regeneration never drops lifecycle events (append-only log).
-- `transaction_time_monotonic`: `recorded_at` never decreases within one article's event log.
-
-### 2.6 Meta-prompt principle (binding)
+### 2.8 Meta-prompt principle (binding)
 
 ```
 RULE: Code reads schemas. Code does not define structure.
 
-This applies to ALL data in the repository, not just data/:
-- No hardcoded paths in crates/ → read from path_config.yaml
-- No hardcoded lifecycle values → read from SCHEMA.yaml
-- No hardcoded source structures → read from source SCHEMA.yaml
-- No hardcoded processing stages → read from processed SCHEMA.yaml
-- No hardcoded artifact types → read from artifacts/SCHEMA.yaml
-- No hardcoded log formats → read from logs/SCHEMA.yaml
-- No hardcoded crate dependency rules → read from crates/SCHEMA.yaml
+Applies to ALL data in the repository, not just data/:
+- paths            → data/path_config.yaml
+- lifecycle values → the SCHEMA that owns them
+- source shapes    → per-source SCHEMA.yaml
+- article layers   → data/schemas/article_schema.yaml
+- processing stages→ data/ontology/pipeline_stage_contracts.yaml
+- artifact types   → artifacts/SCHEMA.yaml
 
 Governor enforces:
-  - SCHEMA.yaml + MANIFEST.yaml exists for every top-level directory
-  - Child SCHEMA references parent SCHEMA (inheritance chain)
-  - MANIFEST.yaml content matches actual directory state
-  - Code does not reference paths not in path_config.yaml
-  - Schema changes require schema_version bump + ADR reference
-  - No ad-hoc directories without SCHEMA (anywhere in repo)
+- SCHEMA.yaml exists for every structural directory
+- FS conforms to SCHEMA (valid/forbidden rules) — validated DIRECTLY
+- invariants declared in schemas actually hold on the FS
+- manifest caches exist at aggregate levels and carry generated_at
 ```
 
-### 2.7 Governor integration
+### 2.9 Governor integration
 
-New Governor dimension: `schema_hierarchy`
+New dimension: `schema_hierarchy`. The checker is a **generic engine**:
 
-```yaml
-rules:
-  - id: schema_manifest_pair_exists
-    description: "Every data/ subdirectory has both SCHEMA.yaml and MANIFEST.yaml"
-    
-  - id: manifest_current
-    description: "MANIFEST.yaml checksum matches actual directory contents"
-    
-  - id: schema_versioned
-    description: "Every SCHEMA.yaml has schema_version field"
-    
-  - id: no_unschemaed_directories
-    description: "No ad-hoc directories in data/ without schema"
-    
-  - id: lifecycle_values_valid
-    description: "All lifecycle values in manifests exist in parent SCHEMA"
-```
+1. Reads the list of structural/aggregate directories from its contract YAML (DATA).
+2. For each, loads `SCHEMA.yaml` and validates the filesystem against the rules **declared in that schema** — valid subdirs, file patterns, forbidden names, ignore lists. No structural knowledge is hardcoded in the checker.
+3. Reports each violation as a drift flag naming the schema rule violated.
+
+Invariants beyond structure (e.g., `ast_nodes == sections_count`) are read from `article_schema.yaml` and checked against artifact contents — same engine, data-driven rules.
 
 ## 3. Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│ data/SCHEMA.yaml + MANIFEST.yaml            │ ← root
-├─────────────────────────────────────────────┤
-│ sources/SCHEMA.yaml + MANIFEST.yaml         │ ← source types
-├──────────┬──────────┬───────────────────────┤
-│ arxiv/   │ textbook/│ blog/                 │ ← per-source
-│ SCHEMA   │ SCHEMA   │ SCHEMA                │
-│ MANIFEST │ MANIFEST │ MANIFEST              │
-├──────────┴──────────┴───────────────────────┤
-│ <articles follow source SCHEMA>             │
-├─────────────────────────────────────────────┤
-│ processed/SCHEMA.yaml + MANIFEST.yaml       │ ← processing layers
-│ <processed articles follow processed SCHEMA>│
-├─────────────────────────────────────────────┤
-│ ontology/, graphs/, gold_standard/          │
-│ each with SCHEMA + MANIFEST                 │
-└─────────────────────────────────────────────┘
+┌─────────────────┐   declares    ┌──────────────────┐
+│   SCHEMA.yaml   │◄──────────────│       ADR        │
+│  (norm, data)   │               └──────────────────┘
+└────────┬────────┘
+         │ validated against
+┌────────▼────────┐   reports gaps   ┌──────────────┐
+│  FILESYSTEM     │──────────────────►│   GOVERNOR   │
+│  (truth)        │                  └──────────────┘
+└────────┬────────┘                         │ flags
+         │ aggregated by pipeline           ▼
+┌────────▼────────┐                  ┌──────────────┐
+│  MANIFEST.yaml  │  (cache, stale   │  drift report│
+│  (~7 files)     │   is harmless)   └──────────────┘
+└─────────────────┘
 ```
 
 ## 4. Consequences
 
-+ One place to understand what data exists and how it's structured.
-+ Governor can mechanically validate structure (no prose-only rules).
-+ Adding a new source = creating SCHEMA + MANIFEST, zero code changes.
-+ Versioning built into the structure, not bolted on.
-+ Meta-prompt principle enforced: code adapts to data, not vice versa.
++ One norm per structure, one truth, one validator, cheap caches.
++ Governor checks structure without manifest-sync errors (that class is deleted).
++ Adding a source type = one SCHEMA.yaml, zero code changes.
++ Versioning appears only where versions exist (flat default).
++ Manifest count bounded (~7) regardless of corpus growth.
++ Bi-temporal semantics only where both axes mean something.
 
-− Initial cost: create schemas for all existing directories.
-− Manifests need automatic update hooks in pipeline stages.
-− Schema changes require discipline (version bump + ADR).
+− Initial cost: write schemas for existing directories; migrate legacy manifest names on a schedule.
+− Schema changes require discipline (version bump + ADR reference).
+− Per-article manifest content validation is a later wave (structure first).
 
 ## 5. Implementation waves
 
 | Wave | Content | Status |
 |---|---|---|
-| W1 (this ADR) | Root + sources + processed schemas | Proposed |
-| W2 | Create all SCHEMA.yaml + MANIFEST.yaml files | Next |
-| W3 | Governor schema_hierarchy rules | Next |
-| W4 | Manifest auto-update in pipeline | Later |
-| W5 | Versioned article directories | Later |
+| W1 | This ADR: roles, hierarchy, temporality, versioning | Done |
+| W2 | SCHEMA.yaml at structural levels; MANIFEST.yaml at aggregate levels | Done (this milestone) |
+| W3 | Governor `schema_hierarchy` generic engine + contract | Done (this milestone) |
+| W4 | Per-article lowercase manifest.yaml with lifecycle_events | Next |
+| W5 | Manifest auto-refresh hooks in pipeline stages | Later |
+| W6 | Legacy manifest name migration | Later |
 
 ## 6. Testing requirements (ADR-051)
 
-- Governor contract: schema_manifest_pair_exists, manifest_current
-- Integration: pipeline stages update manifests
-- Unit: schema versioning round-trip
+- Governor contract tests: schema pair existence, FS conformance (positive/negative fixtures in governor/fixtures/schema_hierarchy/)
+- Negative fixture: `old_artifacts_graphs/`-style forbidden directory must flip the check
+- Unit: schema loading, rule evaluation, gap reporting
 
 ## 7. Acceptance criteria
 
-- **Every top-level directory** in the repo has SCHEMA.yaml + MANIFEST.yaml
-- Every data/ subdirectory (depth ≥ 1) has SCHEMA.yaml + MANIFEST.yaml
-- Repo root has SCHEMA.yaml defining valid top-level directories
-- No hardcoded lifecycle values or path structures in Rust code
-- Governor self-test includes schema_hierarchy checks
-- Adding a new source type requires only: new SCHEMA + MANIFEST + source_codes.yaml entry
-- Adding a new top-level directory requires: root SCHEMA update + ADR
+- Every structural directory has SCHEMA.yaml with `schema_version`
+- Aggregate levels (~7) have MANIFEST.yaml with `generated_at`; leaves do not
+- Governor `schema_hierarchy` dimension validates FS ↔ SCHEMA directly, data-driven
+- Existing gap `old_artifacts_graphs/` is flagged until closed
+- No hardcoded lifecycle values or path structures in checker code
 
 ## 8. Supersession / amendments
 
-- Supersedes the implicit "data lives wherever" practice from ADR-067.
-- ADR-067 defined normalized layout; this ADR defines the schema/manifest principle on top.
+- Builds on ADR-067 (normalized layout): 067 defined WHERE things live; 068 defines HOW structure is declared, validated and versioned.
+- Replaces the initial M451 draft (manifests everywhere, manifest↔FS checks, SCHEMA.history.yaml) — corrected after elegance review.
 
 ## 9. Open points
 
-- Should `governor/fixtures/` also carry SCHEMA + MANIFEST? (Probably yes.)
-- How deep does the hierarchy go? (Per-article manifests are leaves; no deeper.)
-- Migration tooling for bulk manifest re-versioning (lazy migration is the default; bulk tool optional).
+- Bulk tool for re-versioning manifests when schema_version bumps (lazy migration is default; bulk optional).
+- Should per-article `manifest.json` (M450) migrate to `manifest.yaml` in W6 or absorb YAML events first?
 
 ---
 
 ## LLM Reading Notes
 
-- **Core principle:** SCHEMA = what's possible (static, versioned), MANIFEST = what exists (dynamic, auto-generated). Both are DATA files that the code reads.
-- **Direction of fit:** schemas are NORMATIVE (target), not descriptive. Governor reports gaps between schema and reality; the work is closing those gaps, never editing the schema to match a messy present.
-- **Temporality:** two axes everywhere — `observed_at` (valid_time, external world) and `recorded_at` (transaction_time, our pipeline). Lifecycle state is always DERIVED from the append-only event log, never hand-set. Schema evolution itself is append-only (SCHEMA.history.yaml).
-- **Anti-pattern prevented:** hardcoding structure in code. If you want to add a new source type, you create a SCHEMA.yaml, not a Rust struct.
-- **Key constraint from law-nexus:** artifact graph with lifecycle ceilings and authority stack — each layer can only go up, never down.
-- **The "meta-prompt" in practice:** the system's structure is described by data files that both humans and code read. The code is a generic engine; the data tells it what to do.
+- **Four roles:** SCHEMA = norm (what must/may exist), FS = truth, Governor = direct validator, MANIFEST = derived cache. Never compare manifest to FS; never edit schema to match reality.
+- **Direction of fit:** schemas are NORMATIVE. Governor reports gaps; the work is closing them.
+- **Manifests are bounded:** only ~7 aggregate levels. An article's metadata is its own lowercase `manifest.yaml`, self-sufficient, with lifecycle DERIVED from an append-only event log.
+- **Temporality:** bi-temporal (observed_at/recorded_at) only for facts about articles; directories get recorded_at only.
+- **Versioning:** flat layout is the default; v1/v2 directories + revision_graph.json appear only when a second version actually exists. Schema history = git + ADR (schema_version + adr_ref), no duplicate history files.
+- **Anti-pattern prevented:** hardcoding structure in code. New source type → new SCHEMA.yaml, not a Rust struct. New check → new schema data, not new checker code.

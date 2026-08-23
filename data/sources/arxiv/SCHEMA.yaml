@@ -1,0 +1,19 @@
+schema_version: v2
+path: data/sources/arxiv
+description: arXiv preprints by category. Flat layout by default; v-dirs appear only
+  on second version.
+adr_ref: ADR-068
+layout:
+  default: flat — <category>/<paper_id>/source/*.pdf + identity.json
+  versioned: on_second_version — <category>/<paper_id>/v1/,v2/ + revision_graph.json
+  definition: data/schemas/article_schema.yaml
+subdir_pattern:
+- '*-*'
+- unknown
+article_layout:
+  required:
+  - source/
+  - identity.json
+  versioning: append-only, old versions immutable
+ignore:
+- .*

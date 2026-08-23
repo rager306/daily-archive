@@ -1,0 +1,18 @@
+schema_version: v2
+path: data/processed
+description: 'Processing pipeline outputs per article. Layer/lifecycle definition:
+  data/schemas/article_schema.yaml (single definition site).'
+adr_ref: ADR-068
+definition_ref: data/schemas/article_schema.yaml
+subdir_pattern:
+- '*.*'
+article_layout:
+  manifest: manifest.yaml (lowercase = artifact metadata, lifecycle DERIVED from lifecycle_events)
+  layers: see article_schema.yaml layers (parsed, pageindex, figures, tables, equations,
+    extracted, enriched, summaries, quality_signals, debug)
+  lifecycle_values: see article_schema.yaml lifecycle_order
+legacy_files:
+  manifest.json: M450 format; migrates to lowercase manifest.yaml with lifecycle_events
+    in W4-W6
+ignore:
+- .*

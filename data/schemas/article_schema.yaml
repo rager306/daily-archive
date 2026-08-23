@@ -1,0 +1,221 @@
+# ═══════════════════════════════════════════════════════════════════
+# ARTICLE SCHEMA — единственное место определения статьи (ADR-068)
+#
+# Роли: SCHEMA = норма · FS = истина · Governor = прямой валидатор ·
+#       MANIFEST = производный кэш. Этот файл — норма для статьи.
+#
+# Его читают: Governor (инварианты), пайплайн (слои/lifecycle), люди.
+# Ничто не дублирует эти правила в другом месте.
+# ═══════════════════════════════════════════════════════════════════
+
+schema_version: article-schema.v1
+adr_ref: ADR-068
+path: data/schemas/article_schema.yaml
+
+# ── Layout: плоско по умолчанию, версии по требованию ───────────────
+#
+# ОДНА версия (по умолчанию, ~все статьи):
+#   processed/<paper_id>/
+#   ├── manifest.yaml          ← метаданные артефакта (строчные = артефакт)
+#   ├── parsed/article.json
+#   ├── pageindex/projection.json
+#   ├── extracted/entities.json
+#   └── …
+#
+# НЕСКОЛЬКО версий (появляется при второй версии, append-only):
+#   processed/<paper_id>/
+#   ├── manifest.yaml          ← метаданные АКТИВНОЙ версии + revision
+#   ├── revision_graph.json    ← supersedes/same_as/derived_from
+#   ├── v1/…                   ← заморожено
+#   └── v2/…                   ← активная
+#
+# Источник хранится отдельно и неизменно:
+#   sources/<type>/<category>/<paper_id>/source/*
+
+layout:
+  default: flat
+  versioned: on_second_version
+  revision_graph: revision_graph.json
+
+# ── Lifecycle ────────────────────────────────────────────────────────
+# Порядок стадий. Значение статьи = DERIVED из последнего события,
+# не выставляется вручную.
+
+lifecycle_order:
+  - raw         # источник загружен
+  - parsed      # GROBID/HTML парсинг завершён
+  - structured  # AST + figures + tables + equations
+  - extracted   # сущности извлечены
+  - enriched    # внешние метаданные присоединены
+  - summarized  # выжимки построены
+  - validated   # инварианты Governor проходят
+
+# ── Слои (authority stack: нижний неизменяем, верхний не понижает) ──
+# derived_from указывает на слои-предки. debug выводится из manifest —
+# транзитивно видит всё, что видит манифест.
+
+layers:
+  - id: source
+    authority: A0
+    title: Исходные ассеты
+    immutable: true
+    lives_in: sources/<type>/<category>/<paper_id>/source/
+    derived_from: []
+    lifecycle_ceiling: raw
+
+  - id: parsed
+    authority: A1
+    title: Структурная истина
+    files:
+      - {name: article.json, type: ParsedArticle, required: true}
+    derived_from: [source]
+    lifecycle_ceiling: parsed
+
+  - id: pageindex
+    authority: A2
+    title: Навигационная истина (AST)
+    files:
+      - {name: projection.json, type: DocumentContextProjection, required: true}
+    derived_from: [parsed]
+    lifecycle_ceiling: structured
+
+  - id: figures
+    authority: A2
+    title: Рисунки
+    files:
+      - {name: index.json, type: "Vec<FigureCandidate>", required: true}
+      - {name: "*.png", type: binary, required: false}
+    derived_from: [parsed]
+    lifecycle_ceiling: structured
+
+  - id: tables
+    authority: A2
+    title: Таблицы
+    files:
+      - {name: index.json, type: "Vec<TableCandidate>", required: true}
+    derived_from: [parsed]
+    lifecycle_ceiling: structured
+
+  - id: equations
+    authority: A2
+    title: Формулы
+    files:
+      - {name: index.json, type: "Vec<EquationCandidate>", required: true}
+    derived_from: [parsed]
+    lifecycle_ceiling: structured
+
+  - id: extracted
+    authority: A3
+    title: Сущности
+    files:
+      - {name: entities.json, type: "Vec<ExtractedEntity>", required: true}
+    derived_from: [parsed]
+    lifecycle_ceiling: extracted
+
+  - id: enriched
+    authority: A4
+    title: Внешние метаданные
+    files:
+      - {name: authors.json, type: "Vec<AuthorEntry>", required: true}
+      - {name: venue.json, type: VenueEntry, required: true}
+      - {name: topics.json, type: "Vec<TopicEntry>", required: true}
+      - {name: provenance.json, type: ProvenanceRecord, required: true}
+    derived_from: [parsed]          # обогащение от parsed, НЕ от extracted
+    lifecycle_ceiling: enriched
+
+  - id: citations_resolved
+    authority: A4
+    title: Разрешённые цитаты
+    files:
+      - {name: citations_resolved.json, type: "Vec<ResolvedCitation>", required: true}
+    derived_from: [parsed, enriched]
+    lifecycle_ceiling: enriched
+
+  - id: summaries
+    authority: A5
+    title: Выжимки
+    files:
+      - {name: abstract.json, type: SummaryNode, required: true}
+      - {name: per_section.json, type: "Vec<SectionSummary>", required: false}
+      - {name: full_paper.json, type: SummaryNode, required: false}
+    derived_from: [parsed, enriched]
+    lifecycle_ceiling: summarized
+
+  - id: quality_signals
+    authority: A6
+    title: Сигналы качества
+    files:
+      - {name: quality_signals.json, type: "Vec<QualitySignal>", required: true}
+    derived_from: [parsed, extracted, enriched]
+    lifecycle_ceiling: summarized
+
+  - id: debug
+    authority: A7
+    title: HTML-отчёт для человека
+    regenerable: true
+    files:
+      - {name: debug/index.html, type: html, required: false}
+    derived_from: [manifest]        # транзитивно: всё, что видит манифест
+    lifecycle_ceiling: any
+
+# ── manifest.yaml артефакта (контракт полей) ────────────────────────
+manifest:
+  required_fields:
+    - schema_version          # article-manifest.v1
+    - paper_id
+    - source                  # {type, category, sha256, acquired_at}
+    - lifecycle               # DERIVED из последнего события
+    - lifecycle_events        # append-only
+    - artifacts               # граф: слой → {file, stage, sha256, derived_from}
+  optional_fields:
+    - revision                # присутствует только у мультиверсионных
+    - notes
+  events:
+    fields: [stage, recorded_at, observed_at, actor, evidence_sha256]
+    observed_at_optional: true   # только когда есть внешний якорь
+    semantics: |
+      recorded_at  — transaction_time: когда наш пайплайн зафиксировал.
+      observed_at  — valid_time: когда факт был истинен во внешнем мире.
+      Текущий lifecycle = стадия последнего события. Регенерация манифеста
+      сохраняет журнал (append-only) и пересчитывает производные поля.
+
+# ── Инварианты (Governor читает отсюда, не дублирует) ───────────────
+invariants:
+  - id: lifecycle_monotonic
+    rule: stage_index(artifact) <= stage_index(article.lifecycle)
+  - id: derived_from_exists
+    rule: каждый derived_from указывает на существующий слой
+  - id: derived_from_acyclic
+    rule: граф слоёв ацикличен
+  - id: ast_covers_sections
+    rule: pageindex.ast_nodes == parsed.sections_count
+  - id: no_orphan_entities
+    rule: каждая сущность привязана к секции (section ordinal)
+  - id: enrichment_after_parse
+    rule: enriched.stage_index >= parsed.stage_index
+  - id: source_immutable
+    rule: source.sha256 неизменен с первого manifest
+  - id: events_append_only
+    rule: регенерация манифеста не теряет и не переписывает события
+  - id: transaction_time_monotonic
+    rule: recorded_at не убывает внутри журнала статьи
+  - id: authority_no_downgrade
+    rule: слой с меньшим authority не зависит от слоя с большим
+
+# ── Запрещено ────────────────────────────────────────────────────────
+forbidden:
+  - enriched понижает/повышает lifecycle parsed   # изменение чужой стадии
+  - figures/tables/equations подменяют source
+  - сущность без привязки к секции
+  - authors без provenance
+  - debug как источник истины для других слоёв
+  - ручная установка lifecycle (только через событие)
+
+# ── revision_graph.json (только для мультиверсионных) ───────────────
+revision_graph:
+  edges: [supersedes, same_as, derived_from]
+  edge_fields: [from, to, observed_at, recorded_at]
+  invariants:
+    - revision_acyclic: граф ревизий ацикличен
+    - old_version_immutable: слои superseded-версии заморожены
+    - active_version_min_parsed: активная версия >= parsed

@@ -82,7 +82,7 @@ def test_prompt_eval_production_or_optimizer_unlock_is_caught():
     root = _make_root()
     checks_dir = Path(__file__).resolve().parent.parent / "governor" / "checks"
     _write(
-        root / "data" / "prompt_eval" / "fixtures.yaml",
+        root / "governor" / "fixtures" / "prompt_eval" / "fixtures.yaml",
         "production_acceptance_eligible: true\noptimizer_enabled: true\n",
     )
     report = AuditService(
@@ -2864,3 +2864,65 @@ if __name__ == "__main__":
     sys.exit(_run_all_tests())
 
 
+
+
+# --- schema_hierarchy checker (ADR-068, M451) ---
+
+def _schema_root(tmp_path: Path) -> Path:
+    """Build a minimal tree conforming to ADR-068 for the checker."""
+    root = tmp_path / "repo"
+    (root / "data").mkdir(parents=True)
+    (root / "data" / "SCHEMA.yaml").write_text(
+        "schema_version: v1\nvalid_subdirs: [sources]\nvalid_files: ['*.yaml']\n"
+    )
+    (root / "data" / "sources").mkdir()
+    (root / "data" / "sources" / "SCHEMA.yaml").write_text("schema_version: v1\n")
+    (root / "data" / "MANIFEST.yaml").write_text("generated_at: 2026-08-23T00:00:00Z\n")
+    (root / "scripts" / "governor" / "checks").mkdir(parents=True)
+    (root / "scripts" / "governor" / "checks" / "schema_hierarchy.yaml").write_text(
+        "schema_version: schema-hierarchy.v2\n"
+        "dimension: schema_hierarchy\nseverity: medium\n"
+        "structural_directories: [data, data/sources]\n"
+        "aggregate_directories: [data]\n"
+        "forbidden_top_level: [old_*]\n"
+    )
+    return root
+
+
+def _checker(root: Path):
+    from governor.adapters.schema_hierarchy_checker import check_schema_hierarchy
+    return check_schema_hierarchy(root)
+
+
+def test_schema_hierarchy_clean_tree_has_no_flags(tmp_path):
+    root = _schema_root(tmp_path)
+    flags = _checker(root)
+    assert flags == []
+
+
+def test_schema_hierarchy_flags_forbidden_top_level(tmp_path):
+    root = _schema_root(tmp_path)
+    (root / "old_junk").mkdir()
+    flags = _checker(root)
+    assert any(f.flag == "forbidden_directory" and "old_junk" in f.evidence for f in flags)
+
+
+def test_schema_hierarchy_flags_missing_schema(tmp_path):
+    root = _schema_root(tmp_path)
+    (root / "data" / "SCHEMA.yaml").unlink()
+    flags = _checker(root)
+    assert any(f.flag == "schema_missing" and "data" in f.evidence for f in flags)
+
+
+def test_schema_hierarchy_flags_subdir_not_in_schema(tmp_path):
+    root = _schema_root(tmp_path)
+    (root / "data" / "junkdir").mkdir()
+    flags = _checker(root)
+    assert any(f.flag == "subdir_not_in_schema" and "junkdir" in f.evidence for f in flags)
+
+
+def test_schema_hierarchy_flags_file_not_in_schema(tmp_path):
+    root = _schema_root(tmp_path)
+    (root / "data" / "stray.exe").write_text("x")
+    flags = _checker(root)
+    assert any(f.flag == "file_not_in_schema" and "stray.exe" in f.evidence for f in flags)

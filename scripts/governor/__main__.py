@@ -334,7 +334,7 @@ def _run_architecture_gate(args) -> int:
                                    "--features", "pdf-classifier", "--examples"]),
     ]
     
-    if not args.quick:
+    if not getattr(args, "quick", False):
         steps.extend([
             ("kg-ontology tests", ["cargo", "test", "-p", "kg-ontology", "--lib"]),
             ("kg-storage tests", ["cargo", "test", "-p", "kg-storage", "--lib"]),
@@ -387,28 +387,32 @@ def _run_doctor(args) -> int:
     print("=== GOVERNOR DOCTOR ===\n")
     
     print("--- 1. Trajectory ---")
-    # Reuse the default trajectory logic by calling the existing path
-    from governor.application import TrajectoryService
+    # Reuse the canonical trajectory composition (same as the default path).
+    from governor.application import AuditService, TrajectoryService
     from governor.adapters import (
-        FilesystemADRRepository, FilesystemArtifactReader,
-        FilesystemCodeScanner, FilesystemGsdPlanningReader,
-        FilesystemMilestoneReader, GitReader, YAMLRuleRepository,
+        FilesystemADRRepository, FilesystemCodeScanner,
+        FilesystemGsdPlanningReader, FilesystemMilestoneReader,
+        GitReader, YAMLRuleRepository,
     )
-    root = Path(args.root) if args.root else Path.cwd()
-    
+    from pathlib import Path as _P
+    root = _P(args.root) if args.root else Path.cwd()
+    checks_dir = Path(__file__).resolve().parent / "checks"
+
+    scanner = FilesystemCodeScanner(root)
+    rule_repo = YAMLRuleRepository(checks_dir)
     service = TrajectoryService(
-        adr_repository=FilesystemADRRepository(root),
-        artifact_reader=FilesystemArtifactReader(root),
-        code_scanner=FilesystemCodeScanner(root),
-        planning_reader=FilesystemGsdPlanningReader(root),
+        project_root=root,
+        audit_service=AuditService(scanner=scanner, rule_repo=rule_repo),
+        rule_repo=rule_repo,
+        adr_repo=FilesystemADRRepository(root),
         milestone_reader=FilesystemMilestoneReader(root),
+        gsd_planning_reader=FilesystemGsdPlanningReader(root),
         git_reader=GitReader(root),
-        rule_repository=YAMLRuleRepository(root),
     )
     report = service.build_report(phase="closeout")
     print(f"  Verdict: {report.verdict}")
-    for flag in report.flags:
-        print(f"  [{flag.severity}] {flag.flag}: {flag.evidence[:100]}")
+    for flag in report.drift_flags:
+        print(f"  [{flag.get('severity')}] {flag.get('flag')}: {str(flag.get('evidence'))[:100]}")
     
     print("\n--- 2. Architecture ---")
     arch_result = _run_architecture_gate(args)

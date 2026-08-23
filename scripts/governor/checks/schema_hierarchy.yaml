@@ -1,0 +1,54 @@
+# Schema/Manifest hierarchy check — M451 / ADR-068.
+#
+# Четыре роли: SCHEMA = норма · FS = истина · Governor = прямой валидатор ·
+# MANIFEST = кэш. Движок НЕ сверяет манифест с FS — только FS со SCHEMA.
+#
+# Все структурные правила (valid/forbidden/ignore) движок читает из самих
+# SCHEMA.yaml. Этот контракт задаёт только: где искать схемы, где ждём
+# манифесты-агрегаты, что запрещено на верхнем уровне.
+
+schema_version: schema-hierarchy.v2
+policy_id: schema-hierarchy
+dimension: schema_hierarchy
+severity: medium
+anchor: "ADR-068, M451"
+
+# Директории, где обязана быть SCHEMA.yaml (норма структуры)
+structural_directories:
+  - ""                          # корень репо
+  - data
+  - data/sources
+  - data/sources/arxiv
+  - data/sources/textbook
+  - data/processed
+  - data/ontology
+  - data/graphs
+  - data/gold_standard
+  - data/graph_tasks
+  - data/schemas
+  - governor
+  - governor/fixtures
+  - crates
+  - scripts
+  - doc
+  - artifacts
+  - archive
+  - logs
+
+# Уровни-агрегаты: только здесь MANIFEST.yaml (ADR-068 §2.2, ~7 файлов)
+aggregate_directories:
+  - ""
+  - data
+  - data/sources
+  - data/sources/arxiv
+  - data/sources/textbook
+  - data/processed
+  - governor
+
+# Запрещённые имена на верхнем уровне (data-driven; паттерны fnmatch)
+forbidden_top_level:
+  - "old_*"
+  - "temp"
+  - "tmp"
+  - "__pycache__"
+  - "node_modules"
