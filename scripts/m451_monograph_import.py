@@ -34,7 +34,7 @@ def load_detectors() -> dict:
     return cfg.get("kinds", {})
 
 
-def import_monograph(pdf_path: Path, object_id: str) -> str:
+def import_monograph(pdf_path: Path, object_id: str, identity_ref: str = "sources/textbook/trench-real-analysis/identity.json") -> str:
     import fitz
 
     doc = fitz.open(pdf_path)
@@ -105,7 +105,7 @@ def import_monograph(pdf_path: Path, object_id: str) -> str:
     parsed = {
         "schema_version": "parsed-article.v2", "paper_id": object_id,
         "grammar_profile": "page_outline",
-        "title": entries[3]["title"] if len(entries) > 3 else object_id,
+        "title": next((e["title"] for e in entries[4:6] if e["depth"] == 1), object_id) or object_id,
         "body_text": "\n\n".join(t for _, t in section_texts),
         "sections": [
             {"section_id": e["section_id"], "title": e["title"],
@@ -137,8 +137,7 @@ def import_monograph(pdf_path: Path, object_id: str) -> str:
     manifest = {
         "schema_version": "article-manifest.v1", "paper_id": object_id,
         "grammar_profile": "page_outline",
-        "source": {"code": "textbook",
-                   "identity_ref": "sources/textbook/trench-real-analysis/identity.json"},
+        "source": {"code": "textbook", "identity_ref": identity_ref},
         "lifecycle": "structured",
         "lifecycle_events": [
             {"stage": "raw", "recorded_at": now, "actor": "monograph-source"},
@@ -183,13 +182,22 @@ def import_monograph(pdf_path: Path, object_id: str) -> str:
 
 
 def main(argv):
+    only = set(argv[1:])
     jobs = [
-        (SRC / "trench_real_analysis.pdf", "trench-real-analysis"),
-        (SRC / "supplement_1_improper_integrals.pdf", "trench-supplement-1-improper-integrals"),
-        (SRC / "supplement_2_lagrange_multipliers.pdf", "trench-supplement-2-lagrange-multipliers"),
+        (SRC / "trench_real_analysis.pdf", "trench-real-analysis",
+         "sources/textbook/trench-real-analysis/identity.json"),
+        (SRC / "supplement_1_improper_integrals.pdf", "trench-supplement-1-improper-integrals",
+         "sources/textbook/trench-real-analysis/identity.json"),
+        (SRC / "supplement_2_lagrange_multipliers.pdf", "trench-supplement-2-lagrange-multipliers",
+         "sources/textbook/trench-real-analysis/identity.json"),
+        (REPO / "data/sources/textbook/ads-discrete-structures/source/ads.pdf",
+         "ads-discrete-structures",
+         "sources/textbook/ads-discrete-structures/identity.json"),
     ]
-    for pdf, oid in jobs:
-        print(f"{oid}: {import_monograph(pdf, oid)}")
+    for pdf, oid, ident_ref in jobs:
+        if only and oid not in only:
+            continue
+        print(f"{oid}: {import_monograph(pdf, oid, ident_ref)}")
 
 
 if __name__ == "__main__":
