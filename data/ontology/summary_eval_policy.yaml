@@ -1,0 +1,48 @@
+schema_version: summary-eval-policy.v1
+adr_ref: ADR-068, ADR-051
+prompt: "You are summarizing a scientific paper for a researcher's knowledge base.\n\
+  Return ONLY a JSON object (no markdown fences, no commentary) with fields:\n{\n\
+  \  \"tldr\": \"1-2 sentences, the core claim\",\n  \"contributions\": [\"...\"],\n\
+  \  \"methods\": \"what was done and how (2-4 sentences)\",\n  \"results\": \"key\
+  \ findings with numbers where present in the paper\",\n  \"limitations\": \"stated\
+  \ or evident limitations\"\n}\nGround every statement in the paper text below. Do\
+  \ not invent numbers,\nnames, or claims. Use English.\n"
+output_fields:
+- tldr
+- contributions
+- methods
+- results
+- limitations
+input:
+  max_body_chars: 24000
+  include:
+  - title
+  - abstract_text
+  - sections_text
+metrics:
+- id: structure_compliance
+  description: все поля JSON непустые, tldr <= 400 символов, contributions >= 2
+  params:
+    max_tldr_chars: 500
+- id: grounding_claims
+  description: доля предложений summary с content-word overlap >= 0.3 против статьи
+  params:
+    min_overlap: 0.3
+- id: entity_coverage
+  description: доля extracted-сущностей статьи, упомянутых в summary
+- id: numeric_fidelity
+  description: доля чисел из summary, найденных в тексте статьи
+- id: hallucination_proxy
+  description: доля именованных сущностей summary (Capitalized/кавычки), отсутствующих
+    в статье
+  direction: lower_is_better
+- id: compression
+  description: доля summary_символов / article_символов (информативно, без вердикта)
+router:
+  endpoint: http://127.0.0.1:20128/v1/chat/completions
+  timeout_s: 240
+models:
+- agnes-ai/agnes-2.5-flash
+- muse-spark-1.2-contributor
+- glm/glm-4.5-air
+- cx/gpt-5.6-luna
