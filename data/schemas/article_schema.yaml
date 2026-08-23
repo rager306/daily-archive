@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v10   # v10: context navigation — PageIndex semantics (M025 ideas: parent/children/walk)
+schema_version: article-schema.v11   # v11: furniture roles + nav invariants (engine patterns) + tree_cost + hardening
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -20,6 +20,7 @@ changes:
   v8: "enriched: OpenAlex work-якорь (A-ID+ORCID), позиционная привязка TEI-авторов с проверкой фамилии, openalex_not_found = honest pending"
   v9: "summaries.per_section: ленивый подслой — статусы not_requested/requested/building/built/failed; триггер и лимиты из data/ontology/background_tasks.yaml; lifecycle статьи НЕ меняется"
   v10: "context/navigation.json: PageIndex-семантика (parent/children/prev/next/depth); идентичность узла = section_id (path_id НЕ уникален: 55% статей имеют дубли)"
+  v11: "role+confidence на узлах (furniture_detectors.yaml), char_count в узлах, инварианты node_ref_integrity/list_symmetric_next_prev (движок), сигналы navigation_efficiency/furniture_share, prompt-injection hardening"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -104,6 +105,11 @@ layers:
       prev_section_id: "str | null"   # документный порядок (walk semantics)
       next_section_id: "str | null"
       title: str
+      char_count: int                 # размер узла (S для tree_cost)
+      role: "body|furniture|header_metadata (детекторы DATA)"
+      role_confidence: "deterministic|heuristic"
+    role_vocabulary:
+      source: data/ontology/furniture_detectors.yaml
     nav_queries:                       # реализуются запросами над navigation.json
       - find_by_title
       - children_of
@@ -318,6 +324,17 @@ invariants:
     stat_a: sections
     layer_b: context
     stat_b: ast_nodes
+
+  - pattern: node_ref_integrity               # ссылки узлов навигации указывают на существующие id
+    list_field: navigation
+    id_field: section_id
+    ref_fields: [parent_section_id, next_section_id, prev_section_id]
+    file: context/navigation.json
+
+  - pattern: list_symmetric_next_prev         # next(A)=B => prev(B)=A
+    list_field: navigation
+    id_field: section_id
+    file: context/navigation.json
 
   - pattern: collection_records               # записи коллекции удовлетворяют полю
     layer: extracted

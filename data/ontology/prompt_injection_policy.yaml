@@ -1,0 +1,18 @@
+# Prompt-injection hardening — LLM-stage input scrubbing (v11).
+# Vectify classic idea: scrub known injection patterns from extracted
+# document text BEFORE it reaches an LLM. DATA not code. Applied by
+# summaries/per_section builders; provenance records hardened=true.
+schema_version: prompt-injection-policy.v1
+adr_ref: ADR-068, ADR-059
+
+scrub_patterns:
+  - '(?i)ignore (all|previous|above) instructions'
+  - '(?i)disregard (the |all )?(previous|above|prior)'
+  - '(?i)system prompt:?'
+  - '(?i)you are now'
+  - '(?i)<\\|im_start\\|>'
+  - '(?i)\\[INST\\]'
+  - '(?i)### (system|instruction)'
+  - '(?i)forget everything'
+replacement: "[scrubbed-injection]"
+log_scrubbed: true          # счётчик замен уходит в provenance (не сам текст)

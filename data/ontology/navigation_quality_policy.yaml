@@ -1,0 +1,32 @@
+# Navigation quality policy — tree_cost signal (v11, Vectify idea).
+# Search-cost model over the navigation tree: nodes carry char_count as
+# "size"; routing cost is paid per tree level descended. DATA not code.
+schema_version: navigation-quality-policy.v1
+adr_ref: ADR-068, doc/research/document-model-pageindex-synthesis-2026-08-23.md
+
+model:
+  size_of: char_count          # S(node) — у Vectify страницы, у нас символы
+  routing_cost: 250            # R: «стоимость» одного шага спуска (chars-экв.)
+  formula: |
+    tree_cost = max over frontier(d * R + S_resolved(d))
+    frontier — листья и residual (непокрытая детьми часть родителя
+    аппроксимируется char_count самого узла минус сумма детей)
+
+signal:
+  id: navigation_efficiency
+  description: worst-case стоимость поиска по дереву статьи
+  scale: chars
+  thresholds:
+    warn_above: 12000      # длинные frontier-ветки
+    alarm_above: 30000     # дерево вырождено (глубина/несбаланс)
+  per_paper_report: [tree_cost, max_depth, frontier_nodes, residual_chars]
+
+furniture_cleanliness:
+  id: furniture_share
+  description: доля furniture-узлов от всех узлов навигации
+  scale: ratio
+  thresholds: {warn_above: 0.25, alarm_above: 0.5}
+  description_long: |
+    Высокая доля furniture = грязный источник (GROBID-артефакты). Агентам:
+    фильтровать furniture; оптимизаторам: сигнал качества источника;
+    валидатору: порог здоровья.

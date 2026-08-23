@@ -19,6 +19,28 @@ from pathlib import Path
 
 import yaml
 
+_SCRUB = None
+
+
+def _scrub_injection(text: str):
+    """Prompt-injection hardening (data/ontology/prompt_injection_policy.yaml).
+    Returns (clean_text, n_replaced). DATA-driven patterns, never logged raw."""
+    global _SCRUB
+    if _SCRUB is None:
+        try:
+            cfg = yaml.safe_load((REPO / "data/ontology/prompt_injection_policy.yaml").read_text()) or {}
+            _SCRUB = [(re.compile(p), cfg.get("replacement", "[scrubbed-injection]"))
+                      for p in cfg.get("scrub_patterns", [])]
+        except OSError:
+            _SCRUB = []
+    n = 0
+    for pat, repl in _SCRUB:
+        text, k = pat.subn(repl, text)
+        n += k
+    return text, n
+
+
+
 REPO = Path(__file__).resolve().parent.parent
 CACHE = REPO / "artifacts/pipeline_cache/summaries_v1"
 POLICY = yaml.safe_load((REPO / "data/ontology/summary_eval_policy.yaml").read_text())
@@ -65,8 +87,9 @@ def extract_json(raw: str):
     return None
 
 
-def generate(pid: str, user: str) -> dict:
+def generate(pid: str, user: str, _scrubbed: int = 0) -> dict:
     """Cached LLM call; cache key = pid + model + prompt_sha256."""
+    user, _scrubbed = _scrub_injection(user)
     CACHE.mkdir(parents=True, exist_ok=True)
     cf = CACHE / f"{pid}.json"
     if cf.exists():
@@ -83,7 +106,7 @@ def generate(pid: str, user: str) -> dict:
         "stream": False,
     }).encode()
     rec = {"pid": pid, "model": MODEL, "prompt_sha256": PROMPT_SHA,
-           "endpoint": ENDPOINT, "ok": False}
+           "endpoint": ENDPOINT, "ok": False, "injection_scrubbed": _scrubbed}
     for attempt in range(3):
         req = urllib.request.Request(ENDPOINT, data=body, headers={
             "Content-Type": "application/json",

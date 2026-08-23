@@ -183,6 +183,8 @@ pub fn validate_object(
             "enum_membership" => enum_membership(object_id, object, decl, norm, &mut out),
             "graph_edges_known" => graph_edges_known(object_id, object, decl, norm, &mut out),
             "cross_layer_stat_eq" => cross_layer_stat_eq(object_id, object, decl, &mut out),
+            "node_ref_integrity" => node_ref_integrity(object_id, object, decl, &mut out),
+            "list_symmetric_next_prev" => list_symmetric_next_prev(object_id, object, decl, &mut out),
             // file-backed: skipped here, run via FileBackedChecks
             "collection_records" => {}
             other => out.push(SchemaViolation {
@@ -227,10 +229,150 @@ pub fn validate_file_backed(
             "graph_edges_known" => {
                 artifact_files_exist(object_id, object, decl, io, &mut out);
             }
+            // list-based patterns whose list lives in a separate DATA file:
+            // read the collection, wrap it as {list_field: [...]}, and run
+            // the pure implementation — never silently skip.
+            "node_ref_integrity" | "list_symmetric_next_prev" => {
+                let Some(file) = decl.params.get("file").and_then(|v| v.as_str()) else {
+                    out.push(bad_params(object_id, &decl.pattern));
+                    continue;
+                };
+                match io.collection_records(object_id, &{
+                    let mut d = decl.clone();
+                    d.params.insert(
+                        "file".to_string(),
+                        serde_yaml::Value::from(file),
+                    );
+                    d
+                }) {
+                    Ok(Some(nodes)) if !nodes.is_empty() => {
+                        let list_field = decl
+                            .params
+                            .get("list_field")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("navigation");
+                        let mut wrapped = serde_yaml::Mapping::new();
+                        wrapped.insert(
+                            serde_yaml::Value::from(list_field),
+                            serde_yaml::Value::Sequence(nodes),
+                        );
+                        let wrapped = serde_yaml::Value::Mapping(wrapped);
+                        match decl.pattern.as_str() {
+                            "node_ref_integrity" => node_ref_integrity(
+                                object_id,
+                                &wrapped,
+                                decl,
+                                &mut out,
+                            ),
+                            _ => list_symmetric_next_prev(
+                                object_id,
+                                &wrapped,
+                                decl,
+                                &mut out,
+                            ),
+                        }
+                    }
+                    Ok(_) => out.push(SchemaViolation {
+                        object_id: object_id.to_string(),
+                        pattern: decl.pattern.clone(),
+                        kind: ViolationKind::ObjectFileMissing,
+                        evidence: format!("navigation list {file:?} empty/absent"),
+                    }),
+                    Err(e) => out.push(SchemaViolation {
+                        object_id: object_id.to_string(),
+                        pattern: decl.pattern.clone(),
+                        kind: ViolationKind::ObjectFileMissing,
+                        evidence: format!("navigation list unreadable: {e}"),
+                    }),
+                }
+            }
             _ => {}
         }
     }
     out
+}
+
+/// `node_ref_integrity`: every declared reference field of every node in
+/// a list points at an existing node id (dangling parents/next/prev).
+/// Pure: the list arrives as part of the object (manifest-level) or is
+/// injected as `nodes` by the file-backed pass.
+fn node_ref_integrity(
+    id: &str,
+    obj: &serde_yaml::Value,
+    decl: &InvariantDeclaration,
+    out: &mut Vec<SchemaViolation>,
+) {
+    let (Some(list_field), Some(id_field)) = (
+        param_str(decl, "list_field"),
+        param_str(decl, "id_field"),
+    ) else {
+        out.push(bad_params(id, &decl.pattern));
+        return;
+    };
+    let ref_fields = param_list(decl, "ref_fields");
+    let Some(nodes) = obj.get(list_field).and_then(|v| v.as_sequence()) else {
+        return;
+    };
+    let ids: Vec<&str> = nodes
+        .iter()
+        .filter_map(|n| n.get(id_field).and_then(|v| v.as_str()))
+        .collect();
+    for n in nodes {
+        let node_id = n.get(id_field).and_then(|v| v.as_str()).unwrap_or("?");
+        for rf in &ref_fields {
+            if let Some(target) = n.get(rf).and_then(|v| v.as_str())
+                && !ids.contains(&target)
+            {
+                out.push(SchemaViolation {
+                    object_id: id.to_string(),
+                    pattern: decl.pattern.clone(),
+                    kind: ViolationKind::EdgeTargetUnknown,
+                    evidence: format!("{node_id}.{rf} -> dangling {target:?}"),
+                });
+            }
+        }
+    }
+}
+
+/// `list_symmetric_next_prev`: for every node, next(A)=B implies
+/// prev(B)=A (document-order walk consistency).
+fn list_symmetric_next_prev(
+    id: &str,
+    obj: &serde_yaml::Value,
+    decl: &InvariantDeclaration,
+    out: &mut Vec<SchemaViolation>,
+) {
+    let (Some(list_field), Some(id_field)) = (
+        param_str(decl, "list_field"),
+        param_str(decl, "id_field"),
+    ) else {
+        out.push(bad_params(id, &decl.pattern));
+        return;
+    };
+    let Some(nodes) = obj.get(list_field).and_then(|v| v.as_sequence()) else {
+        return;
+    };
+    let by_id: Vec<(&str, &serde_yaml::Value)> = nodes
+        .iter()
+        .filter_map(|n| n.get(id_field).and_then(|v| v.as_str()).map(|s| (s, n)))
+        .collect();
+    for (node_id, n) in &by_id {
+        let Some(next) = n.get("next_section_id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let Some((_, target)) = by_id.iter().find(|(k, _)| *k == next) else {
+            continue; // dangling handled by node_ref_integrity
+        };
+        let back = target.get("prev_section_id").and_then(|v| v.as_str());
+        if back != Some(*node_id) {
+            out.push(SchemaViolation {
+                object_id: id.to_string(),
+                pattern: decl.pattern.clone(),
+                kind: ViolationKind::TimestampNotMonotonic, // reuse ordering-kind
+                evidence: format!("next({node_id})={next:?} but prev({next})={back:?}"),
+            });
+        }
+    }
 }
 
 // ── pattern implementations ──────────────────────────────────────────
@@ -661,6 +803,35 @@ mod tests {
         assert_eq!(vs[0].kind, ViolationKind::RecordFieldInvalid);
         assert!(vs[0].evidence.contains("orphan"));
         assert!(vs[0].evidence.contains("negative"));
+    }
+
+    const NAV_YAML: &str = "lifecycle_order: [raw, parsed, structured]\nlayers:\n  - {id: parsed}\ninvariants:\n  - pattern: node_ref_integrity\n    list_field: navigation\n    id_field: section_id\n    ref_fields: [parent_section_id, next_section_id, prev_section_id]\n  - pattern: list_symmetric_next_prev\n    list_field: navigation\n    id_field: section_id\n";
+
+    #[test]
+    fn node_ref_integrity_catches_dangling_parent() {
+        let n = ObjectNorm::from_yaml_str(NAV_YAML).unwrap();
+        let o = obj(
+            "navigation:\n  - {section_id: a, parent_section_id: ghost, next_section_id: b, prev_section_id: null}\n  - {section_id: b, parent_section_id: a, next_section_id: null, prev_section_id: a}\n",
+        );
+        let vs = validate_object("p", &o, &n);
+        assert!(vs.iter().any(|v| v.kind == ViolationKind::EdgeTargetUnknown
+            && v.evidence.contains("ghost")));
+    }
+
+    #[test]
+    fn next_prev_symmetry_checked() {
+        let n = ObjectNorm::from_yaml_str(NAV_YAML).unwrap();
+        // broken: next(a)=b but prev(b)=null
+        let o = obj(
+            "navigation:\n  - {section_id: a, parent_section_id: null, next_section_id: b, prev_section_id: null}\n  - {section_id: b, parent_section_id: a, next_section_id: null, prev_section_id: null}\n",
+        );
+        let vs = validate_object("p", &o, &n);
+        assert!(vs.iter().any(|v| v.evidence.contains("prev")));
+        // consistent pair passes
+        let ok = obj(
+            "navigation:\n  - {section_id: a, parent_section_id: null, next_section_id: b, prev_section_id: null}\n  - {section_id: b, parent_section_id: a, next_section_id: null, prev_section_id: a}\n",
+        );
+        assert!(validate_object("p", &ok, &n).is_empty());
     }
 
     #[test]

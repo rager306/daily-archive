@@ -11,6 +11,7 @@ Queries below are the reference implementation for the Rust side.
 from __future__ import annotations
 
 import hashlib
+import re
 import json
 import sys
 from pathlib import Path
@@ -31,6 +32,55 @@ def parent_path(path_id: str):
     return parent or None
 
 
+def _load_detectors() -> list:
+    try:
+        cfg = yaml.safe_load(
+            (REPO / "data/ontology/furniture_detectors.yaml").read_text()) or {}
+        return cfg.get("detectors", [])
+    except OSError:
+        return []
+
+
+def _tree_cost(nodes: list) -> dict:
+    """Vectify model adapted: S=node char_count, R from policy DATA."""
+    try:
+        pol = yaml.safe_load(
+            (REPO / "data/ontology/navigation_quality_policy.yaml").read_text()) or {}
+        R = pol.get("model", {}).get("routing_cost", 250)
+        th = pol.get("signal", {}).get("thresholds", {})
+    except OSError:
+        R, th = 250, {}
+    by = {n["section_id"]: n for n in nodes}
+    children = {}
+    for n in nodes:
+        p = n.get("parent_section_id")
+        if p:
+            children.setdefault(p, []).append(n["section_id"])
+
+    def size(nid):
+        return by[nid].get("char_count", 0)
+
+    def cost(nid, d):
+        kids = children.get(nid, [])
+        if not kids:
+            return d * R + size(nid)
+        child_sum = sum(size(k) for k in kids)
+        residual = max(0, size(nid) - child_sum)
+        branches = [cost(k, d + 1) for k in kids]
+        if residual > 0:
+            branches.append((d + 1) * R + residual)
+        return max(branches) if branches else d * R + size(nid)
+
+    roots = [n["section_id"] for n in nodes if not n.get("parent_section_id")]
+    worst = max((cost(r, 1) for r in roots), default=0)
+    return {
+        "tree_cost": worst,
+        "max_depth": max((n["depth"] for n in nodes), default=0),
+        "frontier_nodes": sum(1 for n in nodes if not children.get(n["section_id"])),
+        "thresholds": th,
+    }
+
+
 def build_navigation(pid: str, root: Path) -> dict:
     article = root / pid
     proj = json.loads((article / "context" / "projection.json").read_text())
@@ -40,12 +90,27 @@ def build_navigation(pid: str, root: Path) -> dict:
     for s in secs:
         by_path.setdefault(str(s["path_id"]), s)  # first wins on path dupes
 
+    # v11: role detectors (DATA) + char_count (size for tree_cost)
+    detectors = _load_detectors()
+
+    def classify(title, pid_path):
+        t = (title or "").strip()
+        for d in detectors:
+            pat = d.get("title_pattern")
+            if pat and re.match(pat, t):
+                return d.get("role", "body"), d.get("confidence", "heuristic")
+        if d_ids and pid_path.endswith("."):
+            return "header_metadata", "deterministic"
+        return "body", "heuristic"
+
+    d_ids = []
     nodes = []
     for s in sorted(secs, key=lambda x: x.get("order", 0)):
         pid_path = str(s["path_id"])
         pp = parent_path(pid_path)
         parent = by_path.get(pp) if pp else None
         depth = 0 if pid_path.endswith(".") else (pid_path.count(".") + 1 if "." in pid_path else 1)
+        role, conf = classify(s.get("title"), pid_path)
         nodes.append({
             "section_id": s["section_id"],
             "path_id": pid_path,
@@ -55,7 +120,11 @@ def build_navigation(pid: str, root: Path) -> dict:
             "prev_section_id": None,
             "next_section_id": None,
             "title": s.get("title"),
+            "char_count": s.get("char_count", 0),
+            "role": role,
+            "role_confidence": conf,
         })
+        d_ids.append(s["section_id"])
     by_nid = {n["section_id"]: n for n in nodes}
     # children (document order preserved by nodes list)
     for n in nodes:
@@ -71,6 +140,9 @@ def build_navigation(pid: str, root: Path) -> dict:
 
     mp = article / "manifest.yaml"
     m = yaml.safe_load(mp.read_text())
+    tc = _tree_cost(nodes)
+    furniture = sum(1 for n in nodes if n["role"] == "furniture")
+    share = furniture / max(len(nodes), 1)
     m["artifacts"]["context"]["navigation"] = {
         "file": "context/navigation.json",
         "sha256": hashlib.sha256((article / "context" / "navigation.json").read_bytes()).hexdigest(),
@@ -80,8 +152,29 @@ def build_navigation(pid: str, root: Path) -> dict:
             "roots": sum(1 for n in nodes if not n["parent_section_id"]),
             "max_depth": max(n["depth"] for n in nodes),
             "path_dupes": len(nodes) - len({n["path_id"] for n in nodes}),
+            "furniture": furniture,
+            "furniture_share": round(share, 3),
+            "tree_cost": tc["tree_cost"],
         },
+        "inputs": ["data/ontology/furniture_detectors.yaml",
+                   "data/ontology/navigation_quality_policy.yaml"],
     }
+    # v11 signals appended to quality_signals.json (merge, keep others)
+    qs_path = article / "quality_signals.json"
+    qs = json.loads(qs_path.read_text()) if qs_path.exists() else []
+    qs = [s for s in qs if s.get("signal_id") not in ("navigation_efficiency", "furniture_share")]
+    def verdict(value, th, higher_bad=True):
+        if not th: return "info"
+        for k in ("warn_above", "alarm_above"):
+            if k in th and value > th[k]:
+                return "alarm" if k == "alarm_above" else "warn"
+        return "ok"
+    nth = tc.get("thresholds", {})
+    qs.append({"signal_id": "navigation_efficiency", "value": tc["tree_cost"],
+               "scale": "chars", "verdict": verdict(tc["tree_cost"], nth)})
+    qs.append({"signal_id": "furniture_share", "value": round(share, 3),
+               "scale": "ratio", "verdict": verdict(share, {"warn_above": 0.25, "alarm_above": 0.5})})
+    qs_path.write_text(json.dumps(qs, ensure_ascii=False, indent=1))
     mp.write_text(yaml.safe_dump(m, sort_keys=False, allow_unicode=True))
     return {"nodes": len(nodes)}
 

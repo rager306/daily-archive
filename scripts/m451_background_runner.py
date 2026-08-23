@@ -22,6 +22,28 @@ from pathlib import Path
 
 import yaml
 
+_SCRUB = None
+
+
+def _scrub_injection(text: str):
+    """Prompt-injection hardening (data/ontology/prompt_injection_policy.yaml).
+    Returns (clean_text, n_replaced). DATA-driven patterns, never logged raw."""
+    global _SCRUB
+    if _SCRUB is None:
+        try:
+            cfg = yaml.safe_load((REPO / "data/ontology/prompt_injection_policy.yaml").read_text()) or {}
+            _SCRUB = [(re.compile(p), cfg.get("replacement", "[scrubbed-injection]"))
+                      for p in cfg.get("scrub_patterns", [])]
+        except OSError:
+            _SCRUB = []
+    n = 0
+    for pat, repl in _SCRUB:
+        text, k = pat.subn(repl, text)
+        n += k
+    return text, n
+
+
+
 REPO = Path(__file__).resolve().parent.parent
 REGISTRY = yaml.safe_load((REPO / "data/ontology/background_tasks.yaml").read_text())
 MODELS = yaml.safe_load((REPO / "models.yaml").read_text())
@@ -129,6 +151,7 @@ def run_per_section(pid: str, spec: dict, state: dict) -> str:
         user = "\n\n".join(
             f"[path_id={s.get('path_id')} section_id={s.get('section_id')} title={s.get('title','')}]\n{s.get('text','')}"
             for s in batch)
+        user, _scrubbed = _scrub_injection(user)
         body = json.dumps({
             "model": model,
             "messages": [{"role": "system", "content": prompt},
@@ -159,7 +182,7 @@ def run_per_section(pid: str, spec: dict, state: dict) -> str:
            "summaries": results, "sections_meta": [
                {"path_id": s.get("path_id"), "section_id": s.get("section_id"),
                 "title": s.get("title")} for s in sections],
-           "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+           "fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "injection_scrubbed": _scrubbed}
     if ok_all:
         cf.write_text(json.dumps(rec, ensure_ascii=False))
     return _write_output(article, pid, rec, model, prompt_sha, spec)
