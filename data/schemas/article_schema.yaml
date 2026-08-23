@@ -8,7 +8,7 @@
 # Ничто не дублирует эти правила в другом месте.
 # ═══════════════════════════════════════════════════════════════════
 
-schema_version: article-schema.v7   # v7: citations_resolved enrichment — corpus title-match, venue_id, style classification
+schema_version: article-schema.v8   # v8: enriched layer real — OpenAlex A-ID anchor, positional author binding, honest pending
 adr_ref: ADR-068
 changes:
   v2: "artifacts: present/missingness/not_reached/built_at/actor/inputs; citations_resolved vocabulary"
@@ -17,6 +17,7 @@ changes:
   v5: "figures слой наполняется из TEI (8833 figure-элементов корпуса); НОВЫЙ слой external_resources (6189 ptr-URL); словарь external_resource_domains.yaml"
   v6: "quality_signals слой: 7 детерминированных сигналов из уже собранных слоёв; пороги/набор = data/ontology/quality_signal_policy.yaml"
   v7: "citations_resolved: title-match против корпуса (resolved_corpus), venue_id из venue_registry, style из citation_styles, сжатые авторы"
+  v8: "enriched: OpenAlex work-якорь (A-ID+ORCID), позиционная привязка TEI-авторов с проверкой фамилии, openalex_not_found = honest pending"
   v1: "initial definition (layers, lifecycle, invariants, forbidden edges)" 
 path: data/schemas/article_schema.yaml
 
@@ -123,7 +124,7 @@ layers:
 
   - id: enriched
     authority: A4
-    title: Внешние метаданные
+    title: Внешние метаданные (OpenAlex work-якорь)
     files:
       - {name: authors.json, type: "Vec<AuthorEntry>", required: true}
       - {name: venue.json, type: VenueEntry, required: true}
@@ -131,6 +132,17 @@ layers:
       - {name: provenance.json, type: ProvenanceRecord, required: true}
     derived_from: [parsed]          # обогащение от parsed, НЕ от extracted
     lifecycle_ceiling: enriched
+    author_identity_hierarchy:
+      author_key: "внутренний ID-базис (норм. инициалы+фамилия) — идентичность 1-го класса"
+      openalex_a_id: "первичный внешний якорь (дизамбигуация OpenAlex)"
+      orcid: "поле с якоря (сильнейший сигнал)"
+    binding_vocabulary:
+      position_surname_confirmed: "позиция authorship совпала с TEI, фамилия подтверждена"
+      position_surname_mismatch: "позиция совпала, фамилия НЕ подтвердилась — помечено, доверие ниже"
+      openalex_only: "автор есть только в OpenAlex (TEI короче)"
+    missingness_via: [openalex_not_found, openalex_fetch_failed]
+    inputs: ["api.openalex.org (ключ в env OPENALEX_API_KEY, никогда в DATA)"]
+    lineage: "ADR-055: provenance.json = endpoint+fetched_at+http_status+cache_key; кэш artifacts/pipeline_cache/openalex_works/
 
   - id: citations_resolved
     authority: A4
@@ -217,6 +229,8 @@ manifest:
     no_formula_elements: "парсер не нашёл формул"
     no_citation_elements: "парсер не нашёл цитат (поле citations пусто)"
     no_external_resources: "TEI не содержит ptr-URL"
+    openalex_not_found: "работа не проиндексирована OpenAlex — honest pending, не выдумывается"
+    openalex_fetch_failed: "сетевой сбой — ретрай при следующем прогоне"
     parser_not_configured: "слой предусмотрен схемой, пайплайн не реализован"
 
   # Цитаты: словарь состояний разрешения (детерминированный матч — DATA)

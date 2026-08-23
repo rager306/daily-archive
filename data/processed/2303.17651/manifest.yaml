@@ -3,7 +3,7 @@ paper_id: '2303.17651'
 source:
   code: arxiv
   identity_ref: sources/arxiv/cs-cl/2303.17651/identity.json
-lifecycle: extracted
+lifecycle: enriched
 lifecycle_events:
 - stage: parsed
   recorded_at: '2026-08-23T05:49:27.860963+00:00'
@@ -17,6 +17,10 @@ lifecycle_events:
   recorded_at: '2026-08-23T05:49:27.875910+00:00'
   actor: rule-based-extractor
   evidence_sha256: 65bbe3818d5d8ff7c3ab8f7ff9fb4597edf4f714ec40550afd50be36919fddaa
+- stage: enriched
+  recorded_at: '2026-08-23T10:50:40Z'
+  actor: openalex-enricher
+  evidence_sha256: 24e6ef3cc15d56f6ae176c8aea8b747b66b40ed8b1dbea7cb13540222f411b1e
 artifacts:
   parsed:
     file: parsed/article.json
@@ -99,7 +103,27 @@ artifacts:
       referenced_in_text: 7
       total_in_text_refs: 8
   enriched:
-    not_reached: true
+    file: enriched/authors.json
+    files:
+    - enriched/authors.json
+    - enriched/venue.json
+    - enriched/topics.json
+    - enriched/provenance.json
+    derived_from:
+    - parsed
+    sha256: 24e6ef3cc15d56f6ae176c8aea8b747b66b40ed8b1dbea7cb13540222f411b1e
+    built_at: '2026-08-23T10:50:40Z'
+    actor: openalex-enricher
+    stats:
+      authors: 16
+      with_orcid: 8
+      with_a_id: 15
+      surname_confirmed: 16
+      binding_mismatch: 0
+      topics: 3
+      cited_by_count: 217
+    inputs:
+    - api.openalex.org (polite pool)
   summaries:
     not_reached: true
   quality_signals:
