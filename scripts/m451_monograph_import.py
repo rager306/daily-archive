@@ -33,6 +33,81 @@ def load_detectors() -> dict:
     cfg = yaml.safe_load((REPO / "data/ontology/structural_elements_detectors.yaml").read_text())
     return cfg.get("kinds", {})
 
+FIG_CAP_RE = re.compile(r"Figure (\d+(?:\.\d+)*)[:.]?\s*([^\n]{0,100})")
+
+
+def extract_figures(doc, entries, d: Path, object_id: str) -> dict:
+    """Caption -> nearest image on the page (geometry match, no ML).
+    Extracts matched images to figures/assets/. Honest stats: unmatched
+    captions and unassigned images are counted, never fabricated."""
+    caps = {}
+    for p in range(doc.page_count):
+        for m in FIG_CAP_RE.finditer(doc[p].get_text()):
+            num = m.group(1)
+            if num not in caps:
+                caps[num] = (p + 1, m.group(2).strip())
+    assets = d / "figures" / "assets"
+    assets.mkdir(exist_ok=True)
+    records = []
+    used_xrefs = set()
+    for num, (page_no, caption) in sorted(caps.items()):
+        page = doc[page_no - 1]
+        rects = page.search_for(f"Figure {num}")
+        imgs = page.get_image_info(xrefs=True)
+        if not imgs:
+            continue
+        cap_y = rects[0].y1 if rects else 0.0
+        best, best_dist = None, None
+        for info in imgs:
+            bbox = info["bbox"]
+            dist = abs((bbox[1] + bbox[3]) / 2 - cap_y)
+            if best_dist is None or dist < best_dist:
+                best, best_dist = info, dist
+        if best is None:
+            continue
+        xref = best.get("xref", 0)
+        rec = {
+            "figure_id": f"fig-{num}",
+            "label": f"Figure {num}",
+            "caption": caption,
+            "page": page_no,
+            "bbox": [round(v, 1) for v in best["bbox"]],
+            "section_id": None,  # filled below by page range
+        }
+        for e in entries:
+            if e["page_start"] <= page_no <= e["page_end"] and e["title"] not in (
+                    "Trinity University", "Digital Commons @ Trinity"):
+                rec["section_id"] = e["section_id"]
+                break
+        try:
+            img = doc.extract_image(xref)
+            fname = f"fig-{num.replace('.', '_')}.{img['ext']}"
+            (assets / fname).write_bytes(img["image"])
+            rec["image_file"] = f"figures/assets/{fname}"
+            used_xrefs.add(xref)
+        except Exception:
+            rec["image_file"] = None
+        records.append(rec)
+    (d / "figures" / "index.json").write_text(json.dumps(records, ensure_ascii=False, indent=1))
+    total_imgs = {im[0] for p in range(doc.page_count) for im in doc[p].get_images(full=True)}
+    return {
+        "file": "figures/index.json",
+        "derived_from": ["parsed"],
+        "sha256": hashlib.sha256((d / "figures" / "index.json").read_bytes()).hexdigest(),
+        "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "actor": "page-outline-figures",
+        "stats": {
+            "captions_in_text": len(caps),
+            "figures_indexed": len(records),
+            "with_image_file": sum(1 for r in records if r.get("image_file")),
+            "unassigned_images": len(total_imgs - used_xrefs),
+            "binary_note": ("raster extracted" if sum(1 for r in records if r.get("image_file"))
+                            else "vector/EPS diagrams — captions indexed, binaries need page-clip rasterization (future)"),
+        },
+        "inputs": ["embedded raster images (PyMuPDF) + caption geometry match"],
+    }
+
+
 
 def import_monograph(pdf_path: Path, object_id: str, identity_ref: str = "sources/textbook/trench-real-analysis/identity.json") -> str:
     import fitz
@@ -101,6 +176,9 @@ def import_monograph(pdf_path: Path, object_id: str, identity_ref: str = "source
     d = DST_ROOT / object_id
     (d / "parsed").mkdir(parents=True, exist_ok=True)
     (d / "context").mkdir(exist_ok=True)
+    (d / "figures").mkdir(exist_ok=True)
+
+    figures_index = extract_figures(doc, entries, d, object_id)
 
     parsed = {
         "schema_version": "parsed-article.v2", "paper_id": object_id,
@@ -172,6 +250,7 @@ def import_monograph(pdf_path: Path, object_id: str, identity_ref: str = "source
             "tables": {"present": False, "missingness": "no_table_elements", "derived_from": ["parsed"]},
             "figures": {"present": False, "missingness": "no_figure_elements", "derived_from": ["parsed"]},
             "external_resources": {"present": False, "missingness": "no_external_resources", "derived_from": ["parsed"]},
+            "figures": figures_index,
             "enriched": {"not_reached": True},
             "summaries": {"not_reached": True},
             "quality_signals": {"not_reached": True},
