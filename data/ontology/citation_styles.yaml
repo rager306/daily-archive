@@ -1,0 +1,66 @@
+# Citation style patterns — M450 W-B.
+# DATA not code: rules for parsing reference strings that lack arxiv_id or DOI.
+#
+# The GROBID parser already extracts structured citations (CitationEntry).
+# This dictionary helps CLASSIFY unresolvable references by their shape:
+#
+#   journal_article: has venue name + volume/pages pattern
+#   book: has publisher + year, no volume
+#   conference_paper: has proceedings/conference keywords + year
+#   preprint_other: non-arXiv preprint (bioRxiv, SSRN, …)
+#   web_resource: URL-only reference
+#   book_chapter: "In:" prefix + editor names
+#   thesis: PhD/Master thesis markers
+#
+# Purpose: typed classification for enrichment prioritisation and
+# citation-context extraction (W-G roadmap).
+
+schema_version: citation-styles.v1
+
+styles:
+  - id: journal_article
+    label: "Journal article"
+    signals:
+      - "journal|proceedings|transactions|annals|bulletin"
+      - "\\d+\\s*\\(\\d+\\)"          # volume(issue)
+      - "\\d+[-–]\\d+"                  # page range
+    
+  - id: book
+    label: "Book / monograph"
+    signals:
+      - "Springer|Wiley|Cambridge|Oxford|MIT Press|Morgan|CRC|Chapman"
+      - "\\d{4}"                        # publication year
+    anti_signals:
+      - "proceedings|conference|journal"
+
+  - id: conference_paper
+    label: "Conference paper"
+    signals:
+      - "[Pp]roceedings|[Cc]onference|[Ww]orkshop|[Ss]ymposium"
+      - "\\d{4}"
+
+  - id: book_chapter
+    label: "Book chapter"
+    signals:
+      - "^In[:\\s]"
+
+  - id: thesis
+    label: "Thesis / dissertation"
+    signals:
+      - "[Pp][hH]\\.?[dD]|[Mm]aster.*thesis|[Dd]octoral"
+
+  - id: web_resource
+    label: "Web resource"
+    signals:
+      - "https?://"
+      - "[Aa]ccessed"
+
+# Enrichment priority: which unresolved citation types to try resolving first
+enrichment_priority:
+  - journal_article     # highest chance of DOI lookup
+  - conference_paper    # proceedings often have DOIs
+  - book                # ISBN → metadata lookup possible
+  - book_chapter        # harder without book DOI
+  - thesis              # rarely resolvable automatically
+  - web_resource        # lowest priority
+

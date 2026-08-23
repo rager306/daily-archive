@@ -1,0 +1,83 @@
+# Venue registry — canonical venue names with aliases.
+# DATA not code: add new venues here, not in Rust.
+#
+# Purpose: normalise venue names extracted from citations so that
+# Author/Venue nodes don't fragment due to name variants.
+# Used by W-C (citation entities) and enrichment.
+
+schema_version: venue-registry.v1
+
+venues:
+  - canonical: "NeurIPS"
+    aliases: ["Neural Information Processing Systems", "NIPS", "Advances in Neural Information Processing Systems"]
+    type: conference
+  - canonical: "ICML"
+    aliases: ["International Conference on Machine Learning", "Proc. ICML", "PMLR"]
+    type: conference
+  - canonical: "ICLR"
+    aliases: ["International Conference on Learning Representations"]
+    type: conference
+  - canonical: "CVPR"
+    aliases: ["IEEE Conference on Computer Vision and Pattern Recognition", "Computer Vision and Pattern Recognition"]
+    type: conference
+  - canonical: "ACL"
+    aliases: ["Annual Meeting of the Association for Computational Linguistics", "Proceedings of ACL"]
+    type: conference
+  - canonical: "EMNLP"
+    aliases: ["Empirical Methods in Natural Language Processing"]
+    type: conference
+  - canonical: "KDD"
+    aliases: ["ACM SIGKDD", "Knowledge Discovery and Data Mining"]
+    type: conference
+  - canonical: "AAAI"
+    aliases: ["AAAI Conference on Artificial Intelligence", "Association for the Advancement of Artificial Intelligence"]
+    type: conference
+  - canonical: "IJCAI"
+    aliases: ["International Joint Conference on Artificial Intelligence"]
+    type: conference
+  - canonical: "ECCV"
+    aliases: ["European Conference on Computer Vision"]
+    type: conference
+  - canonical: "ICCV"
+    aliases: ["International Conference on Computer Vision"]
+    type: conference
+  - canonical: "Nature"
+    aliases: ["Nature journal"]
+    type: journal
+  - canonical: "Science"
+    aliases: ["Science magazine", "Science (journal)"]
+    type: journal
+  - canonical: "JMLR"
+    aliases: ["Journal of Machine Learning Research"]
+    type: journal
+  - canonical: "Journal of the ACM"
+    aliases: ["JACM", "Journal of the Association for Computing Machinery"]
+    type: journal
+  - canonical: "SIAM Journal on Computing"
+    aliases: ["SIAM J. Comput.", "SICOMP"]
+    type: journal
+  - canonical: "Annals of Mathematics"
+    aliases: ["Ann. Math.", "Annals of Math."]
+    type: journal
+  - canonical: "Journal of the American Statistical Association"
+    aliases: ["JASA", "J. Am. Stat. Assoc."]
+    type: journal
+  - canonical: "Proceedings of the National Academy of Sciences"
+    aliases: ["PNAS", "Proc. Natl. Acad. Sci."]
+    type: journal
+  - canonical: "Physical Review Letters"
+    aliases: ["PRL", "Phys. Rev. Lett."]
+    type: journal
+  - canonical: "Springer-Verlag"
+    aliases: ["Springer"]
+    type: publisher
+  - canonical: "MIT Press"
+    aliases: ["MIT"]
+    type: publisher
+
+# Matching rules: case-insensitive, substring match against citation raw_text.
+# Longest alias wins when multiple venues match.
+matching:
+  strategy: "longest_alias_substring"
+  case_insensitive: true
+

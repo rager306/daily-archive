@@ -1,0 +1,38 @@
+# Author identity registry — canonical author names with known aliases.
+# DATA not code: extend here as authors are disambiguated.
+#
+# Purpose: prevent author name fragmentation in the graph.
+# E.g. "WTrench" and "William F. Trench" are the same person.
+#
+# This file starts minimal and grows as enrichment resolves identities.
+# The GROBID parser produces compressed names ("RABailey" = initials + surname);
+# the canonical form is "Full Name".
+
+schema_version: author-identity.v1
+
+authors: []
+# Example entry:
+# - canonical: "William F. Trench"
+#   aliases: ["WF Trench", "WTrench", "W.Trench", "Trench W F"]
+#   orcid: null
+#   affiliation_history:
+#     - institution: "Trinity University"
+#       period: "2000-present"
+
+matching:
+  strategy: "initials_plus_surname"
+  # GROBID compressed format: initials concatenated before surname
+  # e.g. "RABailey" → initials="RA", surname="Bailey"
+  case_insensitive: true
+EOF
+
+echo "=== Add citation_styles + venue_registry + author_identity to path_config ==="; python3 - <<'EOF'
+import yaml
+p = 'data/path_config.yaml'
+d = yaml.safe_load(open(p))
+d['paths']['citation_styles'] = 'data/ontology/citation_styles.yaml'
+d['paths']['venue_registry'] = 'data/ontology/venue_registry.yaml'
+d['paths']['author_identity'] = 'data/ontology/author_identity.yaml'
+yaml.safe_dump(d, open(p, 'w'), sort_keys=False, allow_unicode=True)
+print("path_config updated")
+EOF
