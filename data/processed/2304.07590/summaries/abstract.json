@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.07590",
+ "tldr": "The paper proposes a self-collaboration framework where multiple LLM agents act as distinct roles (analyst, coder, tester) to collaboratively generate code for complex tasks, achieving 29.9%-47.1% Pass@1 improvement over single LLM agents on code generation benchmarks.",
+ "contributions": [
+  "A self-collaboration framework with role instructions enabling LLM agents to collaborate with each other for complex code generation",
+  "An elementary virtual team of three LLM roles (analyst, coder, tester) instantiated following software-development methodology (SDM)",
+  "Demonstrated significant improvements compared to single LLM agents on multiple code generation benchmarks",
+  "Showcased effectiveness on complex repository-level code generation tasks beyond what single LLM agents can handle"
+ ],
+ "methods": "The authors propose a self-collaboration framework composed of two parts: division of labor and collaboration. Through role instructions, multiple LLM agents are assigned distinct expert roles. Following software-development methodology, they instantiate an elementary team of three ChatGPT agents (analyst, coder, tester) that perform analysis, coding, and testing stages sequentially. The analyst breaks down requirements into subtasks and creates high-level plans; the coder writes code based on plans and refines it based on tester feedback; the tester simulates testing and generates reports. A shared blackboard coordinates information exchange between roles, with a maximum of 4 interactions, and the workflow terminates when the tester confirms no issues persist.",
+ "results": "Self-collaboration code generation improves 29.9%-47.1% Pass@1 compared to the base LLM agent across various benchmarks. Evaluations were conducted on six benchmarks: MBPP, HumanEval, MBPP-ET, HumanEval-ET, APPS, and CoderEval. Experiments used ChatGPT (gpt-3.5-turbo-0301) with temperature=0, max tokens=512, and maximum 4 interactions. The framework was also evaluated on real-world repository-level code generation tasks from actual development projects, where it showed notable effectiveness.",
+ "limitations": "The tester role uses the LLM to simulate testing rather than executing code with real compilers and test cases, which may limit evaluation accuracy. The approach is limited to a maximum of 4 interactions between roles. The framework's effectiveness on repository-level tasks was showcased qualitatively rather than through comprehensive benchmark evaluation. The study primarily uses ChatGPT (GPT-3.5) as the base model, with only some experiments extending to GPT-4.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:14Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

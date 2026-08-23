@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2608.07067",
+ "tldr": "DocMemo is a memory-guided framework for long-document visual question answering that uses tri-level probabilistic memory and Bayesian page belief updating with Thompson sampling to dynamically discover and refine evidence across multiple retrieval rounds.",
+ "contributions": [
+  "Proposes DocMemo, a memory-guided framework for multi-modal document understanding with tri-level memory separating document structural priors, dynamic page beliefs, and query-specific reasoning traces.",
+  "Introduces Bayesian page belief updating with Thompson sampling and spatial contiguity propagation, enabling uncertainty-aware and locality-aware dynamic retrieval across rounds.",
+  "Demonstrates state-of-the-art performance on three long-document DocVQA benchmarks (MMLongBench-Doc, LongDocURL, PaperTab), with ablations validating the effectiveness of core components."
+ ],
+ "methods": "DocMemo maintains a tri-level document memory: Document Schema Memory (offline-computed structural priors including page summaries, topic labels, and global summary), Page Belief Memory (Beta distribution modeling of per-page relevance confidence updated via Bayesian conjugacy), and Question Episodic Memory (intermediate evidence summaries and refined queries across rounds). During retrieval, pages are scored by combining current-round visual similarity with cross-round Thompson-sampled page beliefs, reranked using summaries and memory context, and accumulated across rounds. Positive reasoning feedback is propagated to neighboring pages within radius r=2 with decay factor γ=0.5, and adaptive-granularity evidence access supplements page-level context with fine-grained visual crops for table-intensive documents.",
+ "results": "On MMLongBench-Doc, DocMemo achieves 71.3% overall accuracy, with gains of 3.7 pp over the strongest agentic baseline; on LongDocURL it improves by 8.8 pp; on PaperTab by 15.0 pp. Category-wise on MMLongBench-Doc: TXT 70.53%, LAY 61.34%, CHA 67.80%, TAB 73.27%, FIG 63.77%, UNA 78.79%. Evidence Recall improves from 28.32% (round 1) to 69.56% (round 3), and All-Hit Rate increases from 12.90% to 58.05%. Ablation: removing all memory modules drops accuracy from 71.3% to 68.47%; removing Bayesian updating drops to 68.80%; removing adaptive-granularity causes the largest TAB degradation.",
+ "limitations": "Iterative multi-round retrieval increases computational cost compared to single-round methods. The system relies on offline-precomputed visual embeddings and page summaries, which may limit adaptability to documents with non-standard layouts. Negative reasoning feedback is not propagated to neighboring pages, potentially missing relevant nearby evidence. Performance gains show diminishing returns after the second iteration.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.11523",
+ "tldr": "Group Preference Optimization (GPO) is a few-shot alignment framework that augments a base LLM with an independent meta-learned transformer module to steer model outputs toward the preferences of new, unseen groups using only a handful of in-context preference examples.",
+ "contributions": [
+  "Introducing GPO, a few-shot framework for aligning LLMs to diverse interest groups under limited per-group supervision",
+  "An independent transformer preference module trained via meta-learning to perform in-context preference prediction",
+  "Architectural design incorporating permutation-specific inductive biases from in-context learning literature",
+  "Rigorous evaluation across 22 US demographic groups (OpinionQA) and 14 global countries (GlobalOpinionQA)"
+ ],
+ "methods": "GPO augments a base LLM with an independent transformer module that learns to predict group preferences in-context. For each training group, prompt-response pairs are embedded via the base LLM and split into context and target sets; the transformer is trained via meta-learning to predict target preferences given context preferences. The architecture discards positional encodings for permutation invariance, concatenates input-output pairs into single tokens for pairwise relations, and uses masking to enforce conditional independence. At test time, GPO adapts to unseen groups using only a few in-context preference examples without fine-tuning the base LLM.",
+ "results": "GPO surpasses the top-performing baselines by 7.1% on average when adapting to 22 US demographic groups in OpinionQA, and by 8.4% when aligning with 14 global countries in GlobalOpinionQA. GPO also performs most effectively in adapting to individual preferences compared to other baselines. It requires fewer group-specific preferences and less training and inference computing resources than in-context steering and fine-tuning methods.",
+ "limitations": [
+  "Evaluated primarily on closed-ended multiple-choice survey datasets rather than open-ended tasks like creative writing",
+  "The conditional independence assumption for target preferences was adopted after preliminary experiments showed no noticeable improvement with dependency modeling",
+  "Prefers embedding-based representations over raw text sequences due to efficiency concerns with long contexts, which may lose some textual detail"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

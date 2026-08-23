@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1703.00050",
+ "tldr": "SceneSeer is an interactive text-to-3D scene generation system that parses natural language into explicit constraints, uses a spatial knowledge base learned from ~12,490 existing 3D scenes to infer implicit constraints and objects, and generates plausible 3D scenes that users can iteratively refine through textual commands.",
+ "contributions": [
+  "A probabilistic framework for interactive text-to-3D scene generation covering scene generation, inference, and interaction",
+  "A spatial knowledge base learned from a corpus of approximately 12,490 mostly indoor 3D scenes and object models (following Chang et al.)",
+  "Demonstration that implicit spatial knowledge (e.g., inferred supporting objects, co-occurring items) enables terse natural language descriptions",
+  "Interactive scene refinement via high-level semantic textual commands (select, add, delete, replace, move, scale)",
+  "Human perceptual evaluation showing SceneSeer generates high-quality scenes matching input text"
+ ],
+ "methods": "The system decomposes text-to-scene into four subtasks: Semantic Parsing (extracting objects, attributes, and spatial relations from input text using Stanford CoreNLP and deterministic mapping to a scene template), Scene Inference (expanding the template with implicit constraints via a learned support hierarchy prior P_support and inferring missing objects based on location/context), Scene Generation (selecting 3D models from a database by querying keywords and randomly choosing from top 10 results, then layout optimization via sampling positions/orientations/sizes using semantic attributes like support parent, support surface, attachment surface, and position on surface), and Scene Interaction (allowing users to issue textual commands parsed into operations like Select, LookAt, Insert, Remove, Replace, Move, Scale that modify scene parameters while keeping the scene as similar as possible to the original). The approach frames the problem probabilistically as estimating P(s|u).",
+ "results": "Human judgment experiments found that SceneSeer can generate high-quality scenes matching the input text. The system successfully infers unstated but implicit objects (e.g., plates under sandwiches, desks supporting computers, monitors on desks). Localized arrangements such as computer desks generate high-quality scenes, attributed to many examples in the training corpus. However, more complex scenes like living rooms exhibit some unnatural object positioning (e.g., TV does not face the couch), highlighting the need for iterative refinement.",
+ "limitations": [
+  "The system was trained on a corpus of approximately 12,490 mostly indoor objects, limiting generalization to other场景 types",
+  "Complex scenes (e.g., living rooms) exhibit unnatural object positioning such as TVs not facing couches",
+  "The model makes simplifying assumptions: assuming t is independent of u for scene inference, assuming models can be selected independently (ignoring correlations like matching furniture sets), and randomly sampling objects for location-based inference rather than deterministically identifying required objects",
+  "Object selection randomly picks from top 10 model database results, which may not always match desired attributes",
+  "Implicit inference currently samples random object selections for locations rather than identifying what objects must exist for each location"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.14909",
+ "tldr": "The paper proposes using pre-trained LLMs to construct explicit PDDL world models, which are then used with sound domain-independent planners, rather than using LLMs directly as planners.",
+ "contributions": [
+  "A novel paradigm that constructs explicit PDDL world models from LLMs and uses them with domain-independent planners",
+  "Using LLMs as an interface between PDDL and corrective feedback sources (PDDL validators and humans)",
+  "Translating PDDL into natural language for non-expert users and encoding corrective feedback back into domain models",
+  "Evaluation on two IPC domains and a Household domain showing high-quality PDDL generation and successful task solving"
+ ],
+ "methods": "The approach prompts pre-trained LLMs with detailed instructions, one or two examples from other domains (e.g., Blocksworld), domain context, action descriptions, and a dynamically updated predicate list to generate PDDL models one action at a time. The generation process is run twice to improve accuracy, with the second pass including all extracted predicates. LLMs serve as an interface between PDDL and feedback sources: PDDL validators provide syntax error messages, and humans review natural-language translations of the PDDL models. Corrective feedback is incorporated by replaying the PDDL-construction dialogue with the LLM.",
+ "results": "GPT-4 generates high-quality PDDL domain models with over 400 literals for 41 actions. GPT-4 can correct all errors according to natural language feedback from PDDL validators and humans. The corrected PDDL models were used to successfully solve 48 challenging planning tasks across two IPC domains and a Household domain.",
+ "limitations": "LLMs may not generate fully functional PDDL models initially, requiring correction. The approach relying on LLM planners with PDDL validation feedback is still limited by the 'planning capability' of LLMs. LLMs struggle with reasoning and planning, and may overlook physical plausibility and long-term dependencies. Repeatedly providing the same feedback can lead to user frustration.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

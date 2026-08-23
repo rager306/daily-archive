@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.08172",
+ "tldr": "The authors propose LASER, an LLM agent that models interactive web navigation as state-space exploration, enabling flexible backtracking from mistakes and ensuring valid actions at every step. LASER outperforms previous methods on the WebShop task and closes the gap with human performance.",
+ "contributions": [
+  "Formulating interactive web navigation tasks as state-space exploration rather than forward-only execution",
+  "Defining state-specific system instructions and per-state action spaces to guide LLM agents without in-context examples",
+  "Introducing a backup strategy using a memory buffer of intermediate results when max steps are reached",
+  "Demonstrating strong results on WebShop and sim-to-real transfer to amazon.com"
+ ],
+ "methods": "The authors define a set of high-level states the agent might encounter (four states for WebShop: search, results, item, and stopping state). For each state, they write generic instructions describing possible observations and how to act. They also define permissible actions per state to ensure the agent always selects valid actions. The LLM agent receives state-specific instructions, current observation, permissible actions, and action history as inputs, then produces a thought and selects an action using GPT-4's function-calling capability. A memory buffer stores non-matching intermediate results for a backup strategy when the agent is forced to stop after 15 maximum state transitions.",
+ "results": "On the WebShop task (500 test instructions), LASER achieves a 50.0% success rate and 75.6 reward score, outperforming ReAct (34.0% SR, 59.7 reward), ASH (30.2% SR, 56.7 reward), and WebGUM (45.0% SR, 67.5 reward), while approaching human expert performance (59.6% SR, 82.1 reward). LASER without the backup strategy still achieves 48.4% SR and 71.2 reward. On sim-to-real transfer to amazon.com (100 instructions, human-evaluated), LASER achieves results very close to human performance. Ablation studies show that adding one in-context example leads to worse performance, function-calling provides a modest boost, and trajectory length has less negative impact than for ReAct and ASH.",
+ "limitations": [
+  "Only experimented with the task of finding target items in the shopping domain, not covering other e-commerce tasks like tracking orders or checking order history",
+  "Requires manual annotation of possible states and their descriptions, making it suitable for specific domains rather than open-world web agents",
+  "Performance drops significantly when using weaker models like text-davinci-003",
+  "Certain real-world actions (e.g., clicking buy) have hard-to-recover consequences, requiring extra caution before deployment"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

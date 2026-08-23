@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.08240",
+ "tldr": "WaltzRL is a multi-agent reinforcement learning framework that jointly trains a conversation agent and a feedback agent in a collaborative positive-sum game, using a Dynamic Improvement Reward to reduce both unsafe responses and overrefusals in LLMs.",
+ "contributions": [
+  "Proposed WaltzRL, a multi-agent RL framework that jointly optimizes a conversation agent and a feedback agent for safety alignment",
+  "Introduced a novel Dynamic Improvement Reward (DIR) formulation that incentivizes the feedback agent to produce suggestions that genuinely improve the conversation agent's responses",
+  "Demonstrated that WaltzRL enhances LLM safety without degrading general capabilities, lifting the Pareto front between helpfulness and harmlessness"
+ ],
+ "methods": "WaltzRL formulates safety alignment as a collaborative multi-agent reinforcement learning game between a conversation agent and a feedback agent. The feedback agent labels responses for unsafe content and overrefusal, provides textual feedback, and adaptively decides when to stop giving feedback. A Dynamic Improvement Reward (DIR) is computed as the difference in the conversation agent's reward before and after incorporating feedback, encouraging useful suggestions. Training uses a two-stage pipeline: first freezing the conversation agent to train the feedback agent, then collaborative training with both agents. The system is initialized with Llama-3.1-8B-Instruct and trained on adversarial prompts from WildJailbreak and borderline overrefusal prompts from OR-Bench-80K.",
+ "results": "On WildJailbreak, unsafe responses decreased from 39.0% to 4.6%. On OR-Bench, overrefusals decreased from 45.3% to 9.9%, evaluated across five diverse datasets. The framework was shown to preserve general capability even without including helpfulness data during RL training. An oracle baseline using template feedback from ground-truth labels underperformed WaltzRL, demonstrating the importance of detailed feedback.",
+ "limitations": [
+  "Training was conducted without helpfulness data, relying solely on adversarial and borderline prompts",
+  "Only one feedback round (T_max=1) was used, though the framework theoretically supports multiple rounds",
+  "At inference, both agents must be deployed jointly, which may increase system complexity compared to single-model approaches"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

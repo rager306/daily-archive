@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.04254",
+ "tldr": "The paper introduces XOT (Everything of Thoughts), a novel MCTS-LLM collaborative framework that simultaneously achieves performance, efficiency, and flexibility in thought generation for complex problem-solving, defying the apparent trade-off among these three attributes in existing paradigms.",
+ "contributions": [
+  "Proposing XOT to overcome the 'Penrose triangle' limitation where existing thought paradigms can exhibit at most two of three desired attributes: performance, efficiency, and flexibility",
+  "Introducing a policy/value neural network (~10^6 parameters) trained via self-play MCTS simulations to guide efficient thought exploration",
+  "Developing a MCTS-LLM collaborative thought revision framework that iteratively identifies and corrects errors in MCTS-generated thought trajectories using only one LLM inference call",
+  "Demonstrating capability to generate both single and multiple flexible thought trajectories (including graph-like structures for multi-solution problems)"
+ ],
+ "methods": "The authors formulate thought generation as a Markov Decision Process where each thought is a state-action pair. They train a lightweight shared MLP policy/value network through iterative MCTS self-play simulations using PUCT selection, expansion/evaluation, and backpropagation. The trained network guides MCTS to search for thought trajectories on new problems, with top-visitation actions selected for single solutions or sampled trajectories for multiple solutions. These trajectories are converted to text prompts and fed to an LLM, which then iteratively revises thoughts by detecting errors and triggering additional MCTS simulations from error states.",
+ "results": "Evaluated on Game of 24, 8-Puzzle, and Pocket Cube. On Game of 24 with 1-time revision, XOT achieved 79.56% accuracy with GPT-3.5 and 74.45% with GPT-4. With 3-time revision, accuracy improved to 90.51% (GPT-3.5) and 85.40% (GPT-4). XOT consistently outperformed baselines including IO, CoT, CoT-SC, ToT, GoT, and single MCTS. The revision process was shown to mitigate performance gaps attributable to modeling ability differences.",
+ "limitations": "MCTS may not always provide globally optimal thought trajectories, and extracted thoughts may contain inaccuracies or suboptimal solutions. The effectiveness of the approach depends on LLMs' ability to identify and correct errors during the revision process. The paper notes computational training costs for MCTS in Appendix B but does not provide specific efficiency numbers for all evaluated tasks in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

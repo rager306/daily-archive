@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.11586",
+ "tldr": "The paper introduces SCOPE (Semantic Space COnversation Planning with improved Efficiency), which plans multi-turn LLM conversations in semantic space using learned transition and reward models, achieving 70x faster planning than conventional simulation-based methods while attaining higher cumulative rewards under practical planning budgets.",
+ "contributions": [
+  "Transforming the multi-turn conversation planning problem (originally an MDP) into a semantic form representation that preserves the optimal action selected at every conversation turn.",
+  "Introducing SCOPE, which exploits dense conversation semantic representations to learn lightweight transition and reward models, performing MCTS entirely in semantic space without costly additional LLM queries.",
+  "Demonstrating that SCOPE achieves higher cumulative rewards than conventional non-myopic and myopic planning baselines under practical planning budgets and two realistic reward functions."
+ ],
+ "methods": "Conversation planning is formulated as a Markov decision process where states are conversation contexts, actions are LLM responses, and rewards are assigned per turn. During a learning phase, the authors use a semantic embedding model to map conversation transitions into semantic space, then train a probabilistic transition model (using mixture density networks or deep ensembles) and a neural reward model on static conversation data. During runtime, candidate LLM responses are projected into semantic space, and Monte Carlo tree search (MCTS) is performed entirely within this semantic space using the learned models, eliminating the need for additional LLM simulation queries.",
+ "results": "SCOPE performs conversation planning 70 times faster than conventional simulation-based planning algorithms across a wide variety of conversation starters and two reward functions seen in the real world. Under different planning budgets, SCOPE consistently achieves higher cumulative rewards than vanilla MCTS and myopic baselines. The paper notes that prior vanilla MCTS requires 740 seconds of search time at each conversation turn for reasonable performance, which is impractical for real-time conversations.",
+ "limitations": "The semantic MDP assumes certain conditions on the embedding model, reward function, and transition model for theoretical equivalence to the original MDP, though the authors note these assumptions may not hold exactly yet SCOPE still outperforms baselines. The transition and reward models are trained on static conversation data, which may not fully capture all possible real-world conversational dynamics. Vanilla MCTS under practical (small) planning budgets was shown to be ineffective for conversation planning.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

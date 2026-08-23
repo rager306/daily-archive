@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.11595",
+ "tldr": "The paper introduces Stepwise Guided Policy Optimization (SGPO), a framework that uses a stepwise judge model to assign graded rewards within all-negative-sample groups, allowing GRPO to learn from incorrect reasoning trajectories.",
+ "contributions": [
+  "Proposing SGPO, a framework that leverages a stepwise judge model to identify the first incorrect step in a reasoning trajectory and assign proportional rewards",
+  "Proving that SGPO outperforms GRPO in a simplified theoretical setting",
+  "Demonstrating empirical improvements across model sizes (7B, 14B, 32B) on nine reasoning benchmarks in both offline and online settings",
+  "Showing SGPO works effectively with less powerful open-source judge models, not requiring correct answer generation"
+ ],
+ "methods": "The authors introduce a stepwise judge model that evaluates reasoning trajectories by identifying the first error, assigning a Reasoning Trajectory Score (RTS) equal to the ratio of correct steps to total steps. This score is converted into a reward via a sigmoid function r_SGPO(y) = 1/(1+exp(-β(RTS(y)-γ))) with β=10 and γ=0.5 for incorrect responses, replacing the binary reward in GRPO. Multiple independent judgments use majority vote. The method is tested theoretically in a simplified H=2 setting and empirically across 7B, 14B, and 32B models on nine reasoning benchmarks using both closed-source and open-source judge models.",
+ "results": "SGPO improves average performance over GRPO, with the most significant gains in early and mid-training stages when all-negative groups are prevalent. Improvements were observed across model sizes 7B, 14B, and 32B in both offline and online training. However, improvements are not uniform across every benchmark and depend on the structure and informativeness of negative samples. SGPO remained effective with open-source judges like DeepSeek-V3-0324, Qwen3-235B-A22B, and QwQ-32B.",
+ "limitations": [
+  "If all trajectories in a group fail at the same first-error position, group-normalized advantages can still vanish",
+  "Not uniform across every benchmark",
+  "Effectiveness depends on the structure and informativeness of negative samples",
+  "Current focus is on outcome-based post-training with GRPO-style group-relative updates for structured reasoning tasks; extension to arbitrary reward settings is left to future work"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

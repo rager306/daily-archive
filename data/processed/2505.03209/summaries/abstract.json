@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.03209",
+ "tldr": "DYSTIL is a novel strategy-based reinforcement learning framework that dynamically queries large language models to induce textual strategies from expert demonstrations and gradually internalizes them into the RL agent through policy optimization, improving generalization, sample efficiency, and interpretability.",
+ "contributions": [
+  "A novel strategy-based RL architecture enabling synergy between higher-level strategy acquisition and parameterized policy optimization",
+  "Effective knowledge distillation from large-scale LLMs onto lightweight LLMs via strategy induction to improve policy generalizability",
+  "Significantly better learning performance (17.75% average success rate improvement over strongest baseline) and sample efficiency across Minigrid and BabyAI environments",
+  "Enhanced model transparency and interpretability through a direct textual channel to observe the evolution of the policy's underlying strategies during training"
+ ],
+ "methods": "The authors propose DYSTIL, which uses a strategy-generating LLM (e.g., GPT-4o) to induce textual strategies from expert demonstration trajectories via a three-component prompt: environment description, expert trajectories, and a strategy query prompt. A novel strategy-based model architecture is designed with four components: an Input Constructor that concatenates environment description, stored strategies, goal, and pseudo-state; a Core Reasoning LLM (lightweight open-source LLM like Llama 3.1 8B) for autoregressive reasoning; an Actor Module using the last-layer hidden state fed into the pre-trained language modeling head to produce action probability distributions; and a Critic Module projecting the same hidden state into a value function. The dynamic process iteratively combines LLM strategy induction with on-policy PPO: after initial strategy induction from demonstrations, behavioral cloning internalizes strategies into policy parameters, then experience collection and advantage estimation feed into iterative strategy refinement using credit assignment, with new strategies progressively replacing outdated ones in the agent's memory.",
+ "results": "DYSTIL was evaluated on four challenging RL environments from Minigrid and BabyAI. It outperforms the strongest baseline method by 17.75% in average success rate across the four environments. The method also achieves higher sample efficiency during the learning process compared to existing baseline approaches.",
+ "limitations": "Expert demonstrations are often expensive or hard to collect, with limited amounts typically available. Limited expert demonstrations can only cover a small region of the state space, leading to potential overfitting. The one-time static strategy induction approach has the limitation of no opportunity for self-correction if initial induced strategies are inaccurate or incomplete (though DYSTIL addresses this with its dynamic iterative approach). Existing rule induction methods with LLMs lack a credit assignment mechanism to inform which specific actions are responsible for success or failure, limiting reasoning ability.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

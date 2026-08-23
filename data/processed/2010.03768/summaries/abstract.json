@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2010.03768",
+ "tldr": "ALFWorld aligns the TextWorld text-based simulator with the ALFRED embodied benchmark, enabling agents like BUTLER to learn abstract text-based policies via imitation learning and zero-shot transfer to visually grounded embodied tasks, yielding 7x faster training and better generalization than training from scratch in the embodied world.",
+ "contributions": [
+  "ALFWorld: the first parallel interactive text-based and embodied environment aligning six ALFRED task types with TextWorld counterparts via PDDL.",
+  "BUTLER architecture: a modular agent with a text agent (BRAIN), a Mask R-CNN-based language state estimator (VISION), and a controller using A* navigation (BODY).",
+  "Empirical demonstration that pre-training in abstract TextWorld enables better zero-shot generalization to unseen embodied environments than training from corpora of demonstrations or from scratch."
+ ],
+ "methods": "ALFWorld maps ALFRED's six task types (3,553 total tasks across seen and unseen rooms) to TextWorld using PDDL and template-based textual observations. The BUTLER agent's text-based component (BRAIN) is a Transformer Seq2Seq model with BERT embeddings, a recurrent aggregator, and an observation queue, trained via DAgger with expert demonstrations. At test time in the embodied world, BUTLER::VISION uses a pre-trained Mask R-CNN detector to generate textual observations from visual frames, BUTLER::BRAIN generates high-level text actions, and BUTLER::BODY executes them via A* navigation and ALFRED API calls. Evaluation includes zero-shot transfer, an oracle variant (BUTLER-ORACLE), and human-annotated goals with 66 unseen verbs and 189 unseen nouns.",
+ "results": "BUTLER trained in TextWorld achieves 40% success on all seen embodied tasks and 35% on unseen, compared to a Seq2Seq baseline trained on static demonstrations at 6% (seen) and 5% (unseen). For individual task types on unseen: Heat & Place 83% (BUTLER) vs 12% (Seq2Seq), Cool & Place 91% vs 21%, Clean & Place 74% vs 12%, Pick & Place 50% vs 17%. BUTLER-ORACLE (oracle state estimation and controller) drops to 37% seen and 26% unseen, indicating domain gaps. Training in TextWorld is 7x faster. Human-annotated goals with unseen vocabulary achieve non-trivial success (e.g., 20% seen, 10% unseen on Pick & Place).",
+ "limitations": [
+  "Domain gaps between TextWorld and embodied environments cause performance drops even with oracle perception and control (BUTLER-ORACLE).",
+  "Text-based controller assumes a pre-built grid-map of receptacle locations; map-free navigation is not addressed.",
+  "State estimation relies on template-based descriptions from Mask R-CNN detections, with imperfect detection and navigation failures due to collisions.",
+  "Agent is trained on templated language and only preliminary generalization to human-annotated goals with unseen nouns and verbs is demonstrated."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

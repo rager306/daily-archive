@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2306.06624",
+ "tldr": "RestGPT is an LLM-based framework that connects large language models with real-world RESTful APIs using a coarse-to-fine online planning mechanism, enabling complex task decomposition and API selection.",
+ "contributions": [
+  "First work to connect LLMs with RESTful APIs, compatible with existing real-world applications and providing extensibility",
+  "Proposed RestGPT, a coarse-to-fine online planning framework addressing API understanding, planning, and response parsing challenges",
+  "Built RestBench, a human-annotated benchmark with two practical scenarios (TMDB movie database and Spotify music player)",
+  "Demonstrated superior performance over baselines with 75% success rate on TMDB and over 70% on Spotify"
+ ],
+ "methods": "RestGPT comprises three modules: a Planner that generates natural language sub-tasks iteratively, an API Selector that maps sub-tasks to API calling plans by reading endpoint descriptions from OpenAPI Specifications, and an Executor containing a Caller and a Parser. The Caller generates API parameters using filtered API documents and produces a response description for the Parser. The Parser leverages LLM coding capability to generate Python code from OAS response schemas for information extraction. The system operates in an iterative plan-and-execute loop with 'continue' and 'end' signals for flexible online planning.",
+ "results": "RestGPT achieved 75% success rate on TMDB and over 70% on Spotify, outperforming baselines: Offline (29%), DEPS (38%), ReAct (44%), and Reflexion (52%) on TMDB. It had minimal solution length compared to baselines. With text-davinci-003 as the base LLM, performance was best; ChatGPT performed slightly worse; Llama2-13B could not comprehend prompts; Vicuna-13B completed only simple instructions. Correct path rate was slightly higher than success rate across most cases.",
+ "limitations": "Majority of errors occur during the planning stage—planner loses track after multiple rounds leading to early exit, and API selector hallucinates in-path parameters or selects incorrect APIs. Performance decreases as instruction complexity increases (gold path length grows). Llama2-13B could not generate valid plans at all. ChatGPT tends to be too verbose and continues planning after completion.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

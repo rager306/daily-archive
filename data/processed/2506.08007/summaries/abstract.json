@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.08007",
+ "tldr": "Reinforcement Pre-Training (RPT) reframes next-token prediction as a reasoning task trained with reinforcement learning, using verifiable correctness-based rewards from the pre-training corpus itself. This paradigm significantly improves next-token prediction accuracy and provides a stronger foundation for downstream reinforcement fine-tuning.",
+ "contributions": [
+  "Introduce RPT as a new scaling paradigm that reframes next-token prediction as a reasoning task trained with RL, using intrinsic verifiable rewards from the pre-training corpus",
+  "Show RPT is scalable and general-purpose, minimizing reward hacking through rule-based rewards and promoting generalization by encouraging reasoning patterns",
+  "Demonstrate significant improvements in next-token prediction accuracy with favorable scaling properties (consistent improvement with increased training compute)",
+  "Show RPT yields a stronger pre-trained foundation for subsequent RL fine-tuning and enhances zero-shot performance on downstream tasks"
+ ],
+ "methods": "The authors reframe next-token prediction as a next-token reasoning task where the model generates a chain-of-thought reasoning sequence before predicting the next token. They use a prefix-matching reward: reward is 1 if the predicted token sequence is an exact byte-prefix of the ground-truth completion at a valid token boundary, and 0 otherwise. Training is performed on-policy using the GRPO algorithm with the OmniMATH dataset (4,428 competition-level math problems), with entropy-based token filtering to prioritize challenging tokens. Experiments use Deepseek-R1-Distill-Qwen-14B as the base model, with 8K training length, learning rate 1e-6, batch size 256, G=8 sampled responses per question, and 1,000 total training steps.",
+ "results": "On next-token prediction accuracy (Table 1), RPT-14B achieved 45.11% (easy), 33.56% (medium), and 23.75% (hard), outperforming both standard next-token prediction (Qwen2.5-14B: 41.90/30.03/20.65; R1-Distill-Qwen-14B: 41.60/29.46/20.43) and reasoning baselines (R1-Distill-Qwen-14B: 3.31/1.66/1.41). Scaling curves show consistent accuracy improvement with increased training compute across all difficulty levels with high R² values. For RL fine-tuning (Table 2), RPT-14B achieved 56.3% before RL and 58.3% after, outperforming continual NTP training (10.7% → 13.0%) and the baseline (51.2% → 52.7%). In zero-shot evaluation (Table 3), RPT-14B surpassed R1-Distill-Qwen-14B across all benchmarks and exceeded R1-Distill-Qwen-32B with gains of ~7 points on SuperGPQA and ~22 points on MMLU-Pro. Reasoning pattern analysis showed RPT-14B used 161.8% more hypothesis patterns and 26.2% more deduction patterns than problem-solving baselines.",
+ "limitations": "Experiments were conducted on a relatively small dataset (4,428 OmniMATH problems) for 1,000 training steps, limiting direct generalization to web-scale corpora. The entropy-based data filtering requires a proxy model to identify challenging tokens. The study primarily evaluates on mathematical reasoning tasks, and broader evaluation across diverse domains is limited. Continuous NTP training on the same corpus performed poorly, suggesting the approach's effectiveness is specific to the RL framing rather than additional training compute alone.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2601.03192",
+ "tldr": "MEMRL enables frozen LLMs to self-evolve via non-parametric reinforcement learning on episodic memory, decoupling stable reasoning from plastic memory to continuously improve at runtime without weight updates.",
+ "contributions": [
+  "Proposes a non-parametric runtime learning approach that evolves agents via reinforcement learning on episodic memory without modifying model weights",
+  "Introduces a Two-Phase Retrieval mechanism that filters noise by combining semantic similarity with learned Q-value utility estimates",
+  "Formulates memory retrieval as a value-based decision process within the Memory-Augmented MDP framework",
+  "Demonstrates superior performance across four benchmarks while theoretically guaranteeing stability and preventing catastrophic forgetting"
+ ],
+ "methods": "MEMRL structures external memory as Intent-Experience-Utility triplets, where Q-values approximate expected returns of applying each experience. It employs a Two-Phase Retrieval: Phase A uses cosine similarity with a sparsity threshold to create a candidate pool, and Phase B selects top-k items using a composite score balancing semantic similarity and Q-value utility (weighted by lambda). Retrieved memories are used to augment the frozen LLM's context, and Q-values are updated at runtime using a Monte Carlo-style rule based on environmental rewards. Successful trajectories are summarized by the LLM and written back as new triplets, enabling continual memory expansion.",
+ "results": "MEMRL surpasses the strongest baseline (MemP) by an average of +3.8% in Cumulative Success Rate (CSR) under Runtime Learning, with gains of +6.2% on ALFWorld and OS tasks, and +3.6% on HLE. For transferability, it outperforms MemP by +2.8% average Success Rate, with +5.8% on ALFWorld and +2.6% on OS tasks. Ablation shows lambda=0.5 optimally balances semantic and utility signals. Cross-task retrieval improves OS-Agent by +9.0% and ALFWorld by +5.1% over single-task feedback. Q-values correlate strongly (Pearson r=0.861) with empirical success rates, ranging from 21.5% to 88.1% across confidence bins.",
+ "limitations": "On the HLE benchmark, cross-task retrieval provides no advantage (single-task baseline tied at 0.610 vs MEMRL's 0.606), attributed to HLE's low internal semantic similarity (0.186), which prevents effective cross-task generalization. Dense retrieval configurations (k1=10, k2=5) degrade performance by introducing distractions, indicating sensitivity to retrieval bandwidth. Excessive RL weighting (lambda near 1) induces volatility and context detachment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

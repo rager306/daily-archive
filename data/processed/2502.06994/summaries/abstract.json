@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.06994",
+ "tldr": "SyncMind is a framework defining the out-of-sync problem for LLM agents in collaborative software engineering, and SyncBench is a benchmark of 24,332 instances from 21 GitHub repositories. Experiments reveal substantial performance gaps among agents and their consistently low collaboration willingness (≤4.86%), indicating fundamental limitations in CSE.",
+ "contributions": [
+  "SyncMind framework that systematically defines the agent out-of-sync problem in CSE with recovery effectiveness, collaborative tendency, and resource awareness dimensions",
+  "SyncBench benchmark featuring 24,332 instances of agent out-of-sync scenarios derived from 21 popular GitHub repositories with executable verification tests",
+  "Systematic evaluation of seven LLM agents revealing ability gaps, collaboration limitations, and resource awareness deficiencies"
+ ],
+ "methods": "SyncMind defines out-of-sync as a state where an agent's belief (B_k) deviates from the world state (S_k) due to missed updates, with recovery occurring through independent exploration or collaborative assistance under time and financial resource constraints. SyncBench was constructed by extracting Python functions from 21 GitHub repositories, simulating out-of-sync via Git history reversal (Caller and Callee scenarios), applying multi-level quality filtering, and using Docker for isolated test environments. Seven LLM agents were evaluated with up to 30 turns (baseline) and 50 turns (resource-aware), measuring five metrics: Success Rate, Localization Accuracy, Conditional Success Rate, Assistance Seeking Rate, and Recovery Efficiency.",
+ "results": "Substantial performance gaps among agents: Llama-3.1 agents had SR ≤ 3.33% while Claude-3.5-Sonnet achieved SR ≥ 28.18%. Agents' localization accuracy varied widely (LA_func: 4.67%-56.35%; LA_file: 8.33%-64.09%). Collaboration willingness was consistently low across all agents (ASR ≤ 4.86%), with Claude-3.5-Sonnet having the highest at 4.86% and DeepSeek the lowest at 1.21%. Collaborator assistance improved recovery performance by +0.33% to +5.52%. Oracle information experiments yielded an upper bound of SR = 86.33% with ASR = 100%. Agents with more high-quality questions and front-loaded assistance-seeking strategies achieved better recovery outcomes. Evaluation subset consisted of 300 instances (150 Caller, 150 Callee) after weighted downsampling.",
+ "limitations": [
+  "Significantly low collaboration willingness across all tested LLM agents (≤4.86%), suggesting fundamental limitations in CSE",
+  "Persistent performance gaps among agents across diverse task scenarios and varying recovery conditions",
+  "Critical limitations in agents' resource awareness and adaptive utilization under temporal and financial constraints",
+  "Only evaluated on Python-based repositories; benchmark applicability may be limited to other languages",
+  "Evaluation subset of 300 instances after downsampling, with average cost of $0.56/instance",
+  "LLM-simulated collaborators may not fully capture real human collaborator dynamics"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

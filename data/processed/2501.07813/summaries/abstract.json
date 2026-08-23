@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.07813",
+ "tldr": "RIRS is a training-free orchestration framework for multi-agent question answering that routes queries to relevant specialized RAG agents using embedding-space centroid summaries and iteratively refines questions to compose evidence across agents for complex multi-hop queries.",
+ "contributions": [
+  "A training-free multi-agent orchestration framework (RIRS) that avoids centralized corpora while preserving knowledge sovereignty",
+  "A centroid-based routing mechanism using max-min similarity clustering to summarize each agent's local corpus without raw data sharing",
+  "An iterative refining-solving strategy for multi-hop queries that composes evidence across agents and rounds",
+  "Theoretical analysis bounding the routing surrogate loss from using centroids instead of fine-grained knowledge pieces",
+  "Demonstration that broadcast-to-all and single-RAG-agent baselines underperform compared to routed multi-agent systems"
+ ],
+ "methods": "Each RAG agent encodes its local corpus into embeddings, partitions them into coherent clusters using a max-min similarity objective, and uploads only cluster centroids to a central server. For query solving, the server embeds user queries and routes them to the TopK most relevant agents via centroid similarity matching. For complex queries, RIRS iteratively evaluates partial responses, refines unresolved sub-questions, and repeats routing until a final answer is produced or no progress remains.",
+ "results": "GoldRouter (oracle routing) achieves up to a 5% improvement over EfficientRAG on multi-hop QA datasets. Broadcast-to-all degrades accuracy significantly: with Qwen-Plus, accuracy drops from 83.02 to 67.76 and latency rises from 12.97s to 72.91s on single-hop QA. Multi-agent systems consistently outperform single-RAG-agent systems because distributing knowledge across domain-specific agents improves retrieval relevance and reduces noise from irrelevant content.",
+ "limitations": "The approach requires agents to periodically compute and upload centroid summaries, though this is an offline process. The quality of routing depends on embedding model performance and cluster coherence. The iterative process terminates only when no further progress can be made or a final answer is produced, which may not always yield complete answers for out-of-scope queries.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

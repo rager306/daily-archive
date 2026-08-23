@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.00898",
+ "tldr": "The paper proposes PIT (ImPlicit Self-ImprovemenT), a framework that enables LLMs to implicitly learn self-improvement goals from human preference data by reformulating RLHF to maximize the quality gap between improved and reference responses, eliminating the need for manual rubric design.",
+ "contributions": [
+  "Introducing PIT, a framework that learns self-improvement implicitly from preference data without requiring explicit rubric design",
+  "Reformulating RLHF training objectives to maximize response quality gap conditioned on reference responses instead of absolute response quality",
+  "Proposing curriculum reinforcement learning with multiple rounds to progressively improve PIT by using reference responses sampled from increasingly better models",
+  "Demonstrating through experiments on two real-world datasets (Anthropic/HH-RLHF helpful subset with 161K pairs, OpenAI/Summary with 92.9K training data) and one synthetic dataset (13K examples from PaLM 2) that PIT significantly outperforms prompting-based methods like Self-Refine"
+ ],
+ "methods": "PIT is trained in three stages following RLHF: (1) Supervised fine-tuning where PIT maximizes the likelihood of better responses y_w given input x and worse reference y_l, using loss L_SFT_PIT = -log M_PIT(y_w|x, y_l). (2) Reward model training where R_PIT learns to predict quality gaps r_gap(x, y_1, y_2) using a pairwise loss over all response pairs. (3) Curriculum reinforcement learning in two rounds: first optimizing with reference responses from annotated data (y_l, y_w), then sampling reference responses from the policy model M_RL_P for further improvement. At inference, PIT generates improved responses y_1 ~ M_PIT(·|x, y_ref) where y_ref is sampled from the policy model, and the process can be repeated iteratively. The authors used PaLM 2 (Bison) as the backbone model trained on TPU v4.",
+ "results": "PIT significantly outperforms prompting-based methods (Self-Refine) across all three datasets. The method successfully improved response quality as measured by both GPT-4 evaluations and DeBERTa-Large reward model evaluations. For evaluation, GPT-4 was used on 128 examples and DeBERTa-Large on 1,000 examples per dataset. The reward distribution from R_PIT on the synthetic dataset followed the expected pattern from the loss design (Equation 1), with negative rewards observed when two responses were identical, indicating PIT penalizes repeating reference responses.",
+ "limitations": [
+  "The first round of curriculum reinforcement learning (Optimization_RL,0_PIT) is necessary; removing it and directly optimizing the second round causes PIT to fail to improve policy model responses",
+  "Purely training PIT only on the first round also fails since PIT never sees data sampled from the policy model",
+  "The method was only evaluated using GPT-4, DeBERTa-Large, and its own reward model as evaluators, which may introduce evaluator-specific biases",
+  "Only the helpful subset of HH-RLHF was used; the harmless subset was not experimented with",
+  "Unlikelihood loss was found to cause performance degradation during SFT and was therefore excluded"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

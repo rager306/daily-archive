@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.16925",
+ "tldr": "Latent Diffusion Planning (LDP) is a modular imitation learning approach that separates a diffusion-based latent planner (trained on action-free data) from a diffusion-based inverse dynamics model (trained on suboptimal data), operating over a compact VAE-learned latent space to outperform state-of-the-art methods in low-demonstration regimes.",
+ "contributions": [
+  "A novel imitation learning algorithm (LDP) combining a learned visual encoder, latent planner, and inverse dynamics model",
+  "Demonstration that LDP can leverage suboptimal and action-free data to improve performance when expert demonstrations are limited",
+  "Experimental evidence that LDP outperforms video planning-based methods by using temporally dense latent predictions for fast closed-loop inference"
+ ],
+ "methods": "LDP first trains a beta-VAE with image reconstruction loss to learn a compact latent embedding space. Then it trains two separate diffusion models in this latent space: (1) a planner using a Conditional U-Net that forecasts a horizon of future latent states conditioned on current latent embeddings, trained on action-free demonstrations; and (2) an inverse dynamics model (IDM) using an MLPResNet that extracts actions from pairs of latent states, trained on suboptimal trajectories. At inference, the planner samples future latent states via DDPM sampling, the IDM extracts actions from consecutive latent state pairs via DDPM sampling, and receding-horizon control executes a shorter action chunk than the full forecasted horizon.",
+ "results": "On simulated Robomimic tasks with limited demonstrations (e.g., 3/200 for Lift, 25/200 for Transfer Cube), LDP + Action-Free + Suboptimal data achieved: Lift 1.00 ± 0.00, Can 0.98 ± 0.00, Square 0.83 ± 0.01, ALOHA Cube 0.97 ± 0.01, averaging 0.95. LDP alone averaged 0.65 vs. DP at 0.51 and DP-VPT at 0.59. Video planning baselines UniPi-OL + Action-Free and UniPi-CL + Action-Free performed poorly at 0.11 and 0.18 averages respectively. Real-world Frank Panda experiments used 82 demonstrations, 84 suboptimal trajectories, and 12 action-free demonstrations.",
+ "limitations": "Primary evaluation is on simulated visual robotic manipulation tasks; real-world results are limited to a single Lift task. The method assumes access to suboptimal and action-free data, whose availability is not guaranteed. Video planning baselines (UniPi) performed very poorly, suggesting possible sensitivity to architectural choices. The paper does not report results scaling to very large demonstration datasets where LDP's advantages may be less pronounced.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

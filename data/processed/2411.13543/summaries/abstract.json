@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.13543",
+ "tldr": "BALROG is a novel benchmark aggregating six reinforcement learning game environments to evaluate the agentic capabilities (long-horizon reasoning, spatial reasoning, systematic exploration) of LLMs and VLMs, revealing that current models struggle significantly on complex tasks and vision-based decision-making performs worse than text-only input.",
+ "contributions": [
+  "BALROG, a suite of six RL environments (BabyAI, Crafter, TextWorld, Baba Is AI, MiniHack, NetHack) with a fine-grained metric and a novel data-informed progression system for NetHack",
+  "Baseline zero-shot evaluations of state-of-the-art LLMs and VLMs in both language-only and vision-language modalities",
+  "Qualitative analysis identifying a knowing-doing gap where models possess knowledge from pre-training but fail to apply it",
+  "An open-source toolkit supporting inference-time prompting strategies like chain-of-thought and few-shot learning"
+ ],
+ "methods": "The authors introduce BALROG, a benchmark combining six procedurally-generated RL game environments spanning difficulty levels from tasks solvable by nonexpert humans in seconds to extremely challenging ones requiring years to master. They evaluate seven LLMs/VLMs (GPT-4o, Claude 3.5 Sonnet, Gemini-1.5, Llama 3.1/3.2, o1-preview) using zero-shot prompting, where agents output natural language actions conditioned on observation history. Each environment is tested in two modalities (language-only and vision-language), using a history length of 16 observations, with multiple seeds for statistical significance. A standardized 0-100 scoring metric is used, with a novel data-informed progression metric for NetHack.",
+ "results": "Claude 3.5 Sonnet achieved the highest average progression at 32.64% in language-only format, followed by GPT-4o and Llama 3.1 70B. Models showed fair performance on BabyAI, Crafter, and Baba Is AI, with open-source Llama 3.1 70B and Llama 3.2 90B narrowly surpassing GPT-4o and Claude 3.5 Sonnet on Baba Is AI. Gemini models failed on TextWorld (flagged as unsafe). MiniHack quest and Boxoban tasks were never solved by any model. All models flatlined on NetHack, with o1-preview achieving only 1.5% average progression (1.57% in language-only mode, roughly three times better than Claude-3.5-Sonnet). Performance declined for GPT-4o and Llama 3.2 when image observations were added, while Gemini-1.5-Pro and Claude 3.5 Sonnet maintained consistent performance across formats.",
+ "limitations": "Models exhibit severe deficiencies in spatial reasoning (frequently getting cornered in combat), systematic exploration (aimlessly revisiting explored areas), and long-term planning (near-zero performance on MiniHack and NetHack). Vision-based decision-making performs worse than text-only input for several models, indicating unreliable multimodal reasoning. The knowing-doing gap shows models cannot apply pre-trained knowledge in practice (e.g., GPT-4o dying from rotten food despite knowing it is dangerous). Models are confined by finite compute per forward pass and cannot solve the reasoning tasks in BALROG at current scales.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

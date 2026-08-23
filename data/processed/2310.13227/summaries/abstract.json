@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.13227",
+ "tldr": "ToolChain* is an efficient A*-like tree search algorithm that enables LLM-based agents to navigate expansive action spaces by formulating tool-use planning as decision tree traversal with task-specific cost functions.",
+ "contributions": [
+  "Proposes ToolChain*, a novel A*-like tree search algorithm for autonomous LLM-based agents on complex planning and reasoning tasks",
+  "Formulates the action space as a decision tree, mitigating error propagation and expanding search space",
+  "Significantly accelerates LLM-based agents in navigating expansive action tree spaces while balancing exploration and exploitation"
+ ],
+ "methods": "The authors formulate tool-use planning as a decision tree where each node represents a potential API call. They apply an A* search algorithm with task-specific cost functions composed of cumulative cost g(n) and future cost h(n). The cumulative cost combines a task-specific heuristic from long-term memory (LCS score) and self-consistency frequency from the LLM. The future cost integrates a heuristic based on action position in stored plans and an imagination score from the LLM. The algorithm iteratively selects the lowest-cost frontier node, expands it by sampling k actions from the LLM, and updates costs.",
+ "results": "ToolChain* outperforms state-of-the-art baselines by 3.1% and 3.5% on average on planning and reasoning tasks, while requiring 7.35x and 2.31x less time respectively. On ToolBench, it surpasses GPT-3.5-turbo baselines by 3.7% and GPT-4 baselines by 2.5%, and improves over AdaPlanner by 3.8% in average success rate. For example, on the Virtual Home dataset, ToolChain* achieved 68.6% vs MCTS's 66.7%. On GSM8K, it scored 74.7% vs MCTS's 72.1%.",
+ "limitations": "The approach requires maintaining a long-term memory of successful plans which may not cover all potential actions for unseen tasks. The self-consistency computation using DeBERTa-large for reasoning tasks adds computational overhead. The cost function relies on task-specific heuristics that depend on the quality and coverage of demonstration examples in the seed set.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:14Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

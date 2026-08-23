@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.05154",
+ "tldr": "Knowledgeable-R1 is a reinforcement-learning framework that trains LLMs to balance parametric knowledge (PK) and contextual knowledge (CK) in RAG systems, enabling them to resist misleading context while still leveraging reliable external evidence.",
+ "contributions": [
+  "A joint sampling scheme generating paired responses with and without retrieval to learn local and global advantages for knowledge selection",
+  "An asymmetric advantage transformation that reduces penalties for PK-based decoding to encourage exploration of parametric knowledge",
+  "Demonstration of significant robustness improvements in adversarial and counterfactual RAG scenarios without degrading performance on correct contexts"
+ ],
+ "methods": "The authors propose Knowledgeable-R1, a multi-objective reinforcement learning framework with three decoding policies: PK (parametric-only, query-only input), CK (context-aware, query+context input), and RPK (robust-PK, query+context input but targeting PK-consistent answers). A joint sampling scheme generates paired trajectories across these policies, computing local advantages within each policy and global advantages comparing CK versus RPK under the same input. An asymmetric advantage modulation function reduces penalties for negative RPK advantages using a dynamically adjusted coefficient β, preventing the model from over-relying on context. PPO-style policy optimization combines the three objectives with equal weights.",
+ "results": "Knowledgeable-R1 significantly outperforms baselines across five contextual scenarios. In counterfactual/adversarial scenarios (S2), it achieves +22.89% improvement over GRPO baselines and +30.47% over original RAG prompting, with Knowledgeable-R1 scoring 37.3% versus GRPO w/ RAG at 19.7%. Performance is preserved when retrieved context is fully accurate (S1), showing no degradation. Consistent results were observed across Qwen2.5-3B/7B/14B and Llama3.1-8B models.",
+ "limitations": "The method operates at the token level and relies on dataset-provided contexts rather than active retrieval, meaning real-world retrieval quality is not addressed. The asymmetric advantage transformation introduces some bias in gradient estimates. Performance on general reasoning tasks beyond the five evaluated scenarios is not reported. The approach uses the same training data and one epoch for fair comparison, which may limit the full potential of the method.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

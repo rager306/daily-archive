@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.02337",
+ "tldr": "WEBRL is a self-evolving online curriculum reinforcement learning framework that trains open-source LLMs into high-performance web agents, achieving state-of-the-art results on WebArena-Lite and surpassing proprietary LLM APIs.",
+ "contributions": [
+  "Introduces WEBRL, the first systematic framework enabling effective RL for LLM web agents from initialization in online web environments",
+  "Addresses three key challenges: scarcity of training tasks, sparsity of feedback signals, and policy distribution drift in online learning",
+  "Achieves state-of-the-art results on WebArena-Lite, surpassing both proprietary LLM APIs and previous open-source trained web agents by over 160% relatively"
+ ],
+ "methods": "The authors propose a self-evolving online curriculum RL framework for training web agents in the WebArena environment. First, they train an outcome-supervised reward model (ORM) that evaluates task success by comparing probabilities of 'YES' and 'NO' outputs given the instruction, historical actions, and final state HTML. Second, they implement a self-evolving curriculum that generates new training tasks from unsuccessful attempts in previous phases, filtered by a critic (scores between 0.05 and 0.75) and GPT-4o to exclude infeasible tasks. Third, they use KL-constrained policy updates to prevent distribution drift, incorporating a KL-divergence term between reference and actor policies. Finally, they implement an experience replay buffer with actor confidence filtering, storing only successful trajectories with perplexity between 1/0.95 and 1/0.5.",
+ "results": "On WebArena-Lite (165 test cases), WEBRL improves Llama-3.1-8B success rate from 4.8% to 42.4%, and GLM-4-9B from 6.1% to 43%. Llama-3.1-70B achieves 49.1% SR. These results surpass GPT-4-Turbo (17.6%), GPT-4o (13.9%), and AutoWebGLM (18.2%). The agent performs best when selecting past experiences of moderate difficulty, and larger KL divergence constraints yield better performance with replay.",
+ "limitations": "WebArena provides only a limited test set (812 instructions) with no predefined training tasks, requiring online exploration which inherently risks policy distribution drift and catastrophic forgetting. The ORM relies on the LLM's language head and only uses final state HTML due to context window limitations, potentially missing intermediate information. Intermediate steps receive no direct process rewards, making it difficult to accurately reuse trajectories where later errors cause failure despite correct earlier steps.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

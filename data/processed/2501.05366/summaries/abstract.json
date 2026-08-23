@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.05366",
+ "tldr": "Search-o1 integrates agentic retrieval-augmented generation with a Reason-in-Documents module into large reasoning models, enabling on-demand external knowledge retrieval during stepwise reasoning while preserving chain-of-thought coherence.",
+ "contributions": [
+  "Search-o1, the first framework integrating agentic search workflows into o1-like reasoning for autonomous knowledge supplementation",
+  "A combination of agentic RAG and a knowledge refinement module that retrieves external knowledge on demand while maintaining logical flow",
+  "Extensive evaluation across five complex reasoning domains and six open-domain QA benchmarks demonstrating strong performance"
+ ],
+ "methods": "The framework embeds an agentic RAG mechanism directly into the LRM reasoning chain, allowing the model to autonomously generate search queries when encountering knowledge gaps. Retrieved documents are then processed by a separate Reason-in-Documents module that analyzes and refines the information before injecting concise, relevant knowledge back into the reasoning chain. The system uses special delimiter tokens to mark search queries and refined results within the reasoning sequence, and supports batch inference for parallel processing of multiple questions.",
+ "results": "Search-o1 was evaluated on GPQA (PhD-level science QA with 198 and 546 questions), MATH500, AMC2023, AIME2024, and six open-domain QA benchmarks across science, mathematics, coding, and other domains. The paper reports remarkable performance improvements in reasoning tasks while maintaining substantial gains in general knowledge, with quantitative analysis confirming efficiency and scalability.",
+ "limitations": "Retrieved documents are often lengthy and contain redundant information that can disrupt reasoning coherence. LRMs exhibit catastrophic forgetting in general capabilities due to reasoning-focused pre-training and fine-tuning, limiting long-context understanding. Standard problem-oriented RAG was found ineffective compared to direct reasoning for these tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

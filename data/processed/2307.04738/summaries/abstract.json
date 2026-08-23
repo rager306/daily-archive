@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2307.04738",
+ "tldr": "RoCo is a zero-shot multi-robot collaboration method that uses LLMs for both high-level dialogue-based task coordination and low-level motion planning, validated on a new 6-task benchmark called RoCoBench.",
+ "contributions": [
+  "An LLM-based multi-robot framework (RoCo) enabling dialogue-style task coordination, feedback-improved sub-task planning, and LLM-informed multi-arm motion planning in joint space",
+  "RoCoBench, a 6-task benchmark covering diverse collaboration scenarios varying in task decomposition, observation space symmetry, and workspace overlap",
+  "RoCoBench-Text, a text-only dataset for evaluating LLM agent representation and reasoning in multi-agent collaboration"
+ ],
+ "methods": "Each robot is delegated an LLM agent that engages in a dialogue to reason about task strategy, producing a sub-task plan. The plan is validated through text parsing, task constraint checking, inverse kinematics feasibility, collision checking, and waypoint validation, with environment feedback looped back to agents for re-planning. Validated plans are converted into goal configurations in joint space and executed via a centralized RRT-based multi-arm motion planner. LLMs also generate 3D task-space waypoints to reduce motion planner sample complexity.",
+ "results": "RoCo achieves high success rates across all 6 tasks in RoCoBench. In a 3D spatial reasoning toy example with GPT-4, 86.7% success rate over 30 runs with an average of 2.73 attempts. Dialogue agents sometimes achieve comparable performance to an oracle planner despite receiving less information. LLM-proposed waypoints significantly accelerate motion planning for placing sub-tasks under high workspace overlap. Real-world experiments with a robot and human sorting blocks show performance bottlenecked by OWL-ViT object detection accuracy. Zero-shot adaptation demonstrated across object initialization, task goal, and robot capability variations.",
+ "limitations": [
+  "LLM 3D spatial reasoning degrades as grid size and number of obstacles increase",
+  "Plans may fail IK checks or collision checks, requiring re-planning rounds",
+  "Episode is considered failed if task is not completed within a finite number of rounds",
+  "Real-world performance bottlenecked by imperfect perception from object detection models (e.g., OWL-ViT errors)",
+  "Maximum re-plan attempts per round limits recovery from persistent failures"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

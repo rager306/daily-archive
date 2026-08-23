@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.19905",
+ "tldr": "EMAC+ is an embodied multimodal agent that collaboratively integrates LLMs and VLMs through a bidirectional training paradigm, enabling dynamic refinement of high-level textual plans using real-time visual feedback from low-level control tasks.",
+ "contributions": [
+  "A bidirectional training paradigm that harmonizes symbolic reasoning with vision-driven control, enabling the LLM to learn environment dynamics through VLM feedback",
+  "An embodied agent that directly generates low-level actions from pixels while retaining the interpretability of language-guided planning",
+  "Validation of a co-adaptive LLM-VLM framework in both simulated (ALFWorld) and real physical environments (RT-1)"
+ ],
+ "methods": "EMAC+ uses a modularized VLM (based on InstructBLIP with frozen ViT, Q-Former, and LLM decoder) that processes pixel observations and task instructions to generate low-level control actions via a pre-trained action mapping dictionary. A parallel text world is constructed using PDDL to translate visual observations into structured textual states. The LLM acts as a high-level planner generating textual action sequences, while the VLM executes low-level actions. After execution, retrospective feedback (success/failure of planned actions and whether the current plan can solve the task) is sent back to the LLM for re-planning. The VLM is trained using DPO loss for imitation learning, and the LLM is fine-tuned with LoRA for parameter-efficient updates based on environmental feedback trajectories.",
+ "results": "Extensive experiments on ALFWorld and RT-1 benchmarks demonstrate that EMAC+ achieves superior task performance, robustness against noisy observations, and efficient learning compared to baselines. The model shows enhanced generalization capability for out-of-distribution tasks and more consistent performance amid environment disturbances. 134 out-of-distribution jobs were used in ALFWorld testing.",
+ "limitations": [
+  "Existing VLMs trained on static image-text pairs struggle to understand dynamic visual environments, as demonstrated by GPT-4V's failure in ALFWorld zero-shot settings",
+  "Pre-collected dataset finetuning is suboptimal due to environmental variability, absence of large-scale expert annotations, and distribution shift challenges",
+  "Textual descriptions of pixel observations are prone to losing important details required for robotic control",
+  "LLM-generated plans often lack precision for low-level control, leading to execution failures"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

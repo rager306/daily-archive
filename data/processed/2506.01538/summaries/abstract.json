@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.01538",
+ "tldr": "LAMARL is a novel approach that integrates Large Language Models with Multi-Agent Reinforcement Learning to autonomously generate prior policies and reward functions for cooperative multi-robot tasks, eliminating the need for manual reward tuning.",
+ "contributions": [
+  "An LLM-aided function generation module that fully automates the generation of prior policy and reward functions through four steps: user instruction input, constraint analysis, function generation, and function review",
+  "Integration of the LLM-generated prior policy into the MARL actor loss via a regularization term (maximizing Q - α(a - a_prior)²) to equip robots with basic task skills",
+  "Demonstration on the shape assembly benchmark showing comparable performance to the optimal Mean-shift method without manual design or expert data"
+ ],
+ "methods": "The LAMARL framework consists of two modules. The first module uses LLMs to autonomously generate prior policy and reward functions through four automated steps: user instruction input (with CoT prompts and basic APIs), constraint analysis and processing (categorizing basic and complex constraints), function generation (producing Python code for policy and reward), and function review (verifying correctness). The second module integrates these functions into a MADDPG-based MARL algorithm, where the prior policy regularizes the actor objective and the reward function guides training within the environment.",
+ "results": "On the shape assembly benchmark, LAMARL achieves performance comparable to the Mean-shift method (M1 avg: 0.5837 vs 0.5815; M2 avg: 0.1189 vs 0.1211). The prior policy improves sample efficiency by an average of 185.9%. Structured prompts using Chain-of-Thought and basic APIs improve LLM output success rates by 28.5%-67.5%. LAMARL outperforms MDR (M1: 0.5634, M2: 0.1533) and AIRL (M1: 0.5411, M2: 0.1821). Experiments were conducted with 30 robots across 26 target shapes with randomized region shapes during training.",
+ "limitations": "LAMARL is less effective on certain complex shapes like 'L' and 'T', which is attributed to the relatively simple LLM-generated reward limiting effectiveness in handling scenarios such as narrow passages and multiple corners. The method also requires manually configuring environmental parameters (robot count, sensing radius, etc.) that satisfy the constraint 4n_robot*r_avoid² ≤ n_cell*l_cell².",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

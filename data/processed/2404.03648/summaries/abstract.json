@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.03648",
+ "tldr": "AutoWebGLM is a 6B-parameter web navigation agent based on ChatGLM3-6B that uses HTML simplification, hybrid human-AI data construction, reinforcement learning, and rejection sampling finetuning to outperform GPT-4 on real-world web browsing tasks.",
+ "contributions": [
+  "Design of AutoWebGLM agent using curriculum learning, self-sampling reinforcement learning, and rejection sampling finetuning (RFT) for web browsing",
+  "Construction of a bilingual (English/Chinese) web browsing dataset of ~10,000 traces and the AutoWebBench benchmark",
+  "Demonstration that a 6B-parameter model achieves performance comparable to state-of-the-art LLM-based agents at a practically usable level"
+ ],
+ "methods": "The authors designed an HTML Pruner algorithm to simplify webpage HTML while preserving vital information and operable elements. They built training data using a hybrid human-AI approach: collecting URLs from Similarweb, generating web recognition and simple task operation data via GPT-3.5-Turbo with Selenium validation, and manually annotating complex task traces with GPT-4 providing operational intent predictions. The model was trained in three stages: curriculum learning on structured data, reinforcement learning bootstrapped by self-sampling from a virtual environment, and rejection sampling finetuning (RFT) for domain-specific refinement. A Chrome extension was deployed for real-world interaction.",
+ "results": "AutoWebGLM (6B parameters) outperforms GPT-4 on web navigation benchmarks. The model builds a bilingual evaluation dataset (AutoWebBench) covering English and Chinese websites. The constructed dataset contains approximately 10,000 web browsing traces. The agent demonstrates capability comparable to larger models like WebAgent (540B Flan-U-Pal), while being practically deployable. RFT significantly increased capabilities within specific web environments.",
+ "limitations": "Current LLMs cannot reliably complete data annotation tasks for complex web browsing trajectories. Even advanced LLMs cannot complete complex multi-step web tasks with satisfactory accuracy, necessitating manual annotation. The initial iterative step-by-step CoT approach incurred high API costs and generated weak operational links. Privacy and security limitations hinder direct acquisition of user browser operation sequences.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

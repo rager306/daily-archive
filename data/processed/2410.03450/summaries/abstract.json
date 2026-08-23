@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.03450",
+ "tldr": "MART (MLLM As ReTriever) fine-tunes an MLLM retriever using interactive preference learning so it can identify the most task-effective trajectories for embodied agents in unseen environments, combined with a Trajectory Abstraction mechanism to condense trajectories while preserving key milestones.",
+ "contributions": [
+  "First approach integrating interactive learning with a retriever, using interactive feedback to fine-tune an MLLM retriever for evaluating trajectory effectiveness",
+  "Trajectory Abstraction mechanism that uses MLLM summarization to condense trajectories, reducing average input from 11.51 steps to 3.13 milestones while retaining essential information",
+  "Empirical validation across AI2-THOR and LEGENT environments showing MART surpasses baselines by over 10%"
+ ],
+ "methods": "For each training task, K expert trajectories are sampled from memory and provided as prompts to an MLLM agent (LLaVA-7B), which executes the task to obtain success rates. These rates form preference pairs (higher-success vs. lower-success trajectories) used to fine-tune the MLLM retriever with a Bradley-Terry loss, adding a one-layer MLP score head to the hidden states. A separate MLLM (GPT-4o) performs Trajectory Abstraction by identifying milestone observations that are useful for the current task, compressing trajectories while preserving key information. During inference, the fine-tuned retriever scores candidate trajectories and selects the highest-scoring one as the reference for the embodied agent.",
+ "results": "MART achieves significantly higher task success rates than baselines across AI2-THOR and LEGENT environments. MART consistently surpasses baseline methods by over 10% across different environments. Trajectory Abstraction reduces average input trajectory length from 11.51 steps to 3.13 milestones while preserving essential information.",
+ "limitations": [
+  "Memory pool size is relatively small: 40 training trajectories and 32 test trajectories in LEGENT, and 170/118 trajectories in AI2-THOR",
+  "Trajectory Abstraction relies on an external MLLM (GPT-4o), introducing additional dependency and potential cost",
+  "The paper does not demonstrate results at significantly larger scale beyond the tested environments"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.22501",
+ "tldr": "EvolveSearch is an iterative self-evolution framework combining reinforcement learning (RL) and supervised fine-tuning (SFT) to enhance LLM agentic web search capabilities without any human-annotated reasoning data, achieving a 4.7% average improvement over the current state-of-the-art across seven MHQA benchmarks.",
+ "contributions": [
+  "Proposes EvolveSearch, the first framework to iteratively combine RL with SFT to enhance LLMs' web search capabilities",
+  "Eliminates the need for human-annotated reasoning data by leveraging high-quality RL rollouts for continuous self-improvement",
+  "Demonstrates significant effectiveness and generality across multiple MHQA datasets through extensive empirical evaluation"
+ ],
+ "methods": "The framework divides training data into N parts and iteratively alternates between two stages across 10 iterations. In Stage 1 (RL phase), the model performs reinforcement learning using Group Relative Policy Optimization (GRPO) with a hybrid reward combining format reward and answer reward, generating 16 rollouts per sample with a batch size of 128. In Stage 2 (SFT phase), rollouts are filtered using three rules—High-Reward Selection (δ=0.7), Same Query Deduplication, and Multi-Calls Selection (top k=2000)—then used for Rejection Sampling Fine-Tuning (RSFT) to produce a better cold-start model for the next RL iteration. Experiments use Qwen2.5-7B-Instruct as the backbone with Qwen2.5-72B-Instruct as the judge model, trained on 80,000 samples from NQ, TQ, HotpotQA, and 2Wiki.",
+ "results": "EvolveSearch achieves a 4.7% average improvement over the previous state-of-the-art across seven MHQA benchmarks. After 3 iterations, it reaches 76.2% average in-domain accuracy and 53.7% out-of-domain accuracy, consistently outperforming all baselines including DeepResearcher (73.2% ID, 50.3% OOD) and DeepResearcher* (73.2% ID, 50.3% OOD). It also shows strong generalization across out-of-domain datasets (Musique: 33.8%, Bamboogle: 77.1%, PopQA: 50.3%). The iterative RL-only baseline (RLSearch-ite3) achieved 73.8% ID and 53.2% OOD, demonstrating that SFT cold-start provides a meaningful advantage.",
+ "limitations": [
+  "Requires a large judge model (Qwen2.5-72B-Instruct) for reward computation, which may be computationally expensive",
+  "Performance with different judge models (e.g., DeepSeek-V3, GPT-4o, Grok-3) was slightly lower than the trained judge model, though improvement trends remained consistent",
+  "The hybrid reward format constraint (requiring exact tag matching) may bias the model toward certain rollout patterns",
+  "Experiments were limited to 3 reported iterations despite using N=10 data partitions"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

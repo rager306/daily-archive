@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.09049",
+ "tldr": "The paper introduces VIKI-Bench, a hierarchical benchmark with over 20,000 task instances across 100 scenes for evaluating VLMs in embodied multi-agent cooperation, and VIKI-R, a two-stage fine-tuning framework (SFT with Chain-of-Thought followed by GRPO-based reinforcement learning) that significantly outperforms baselines across all three task levels.",
+ "contributions": [
+  "Introduction of VIKI-Bench, the first hierarchical benchmark for embodied multi-agent cooperation with three task levels: Agent Activation, Task Planning, and Trajectory Perception, featuring heterogeneous robot types, multi-view visual inputs, and over 20,000 task instances across 100 diverse scenes.",
+  "Proposal of VIKI-R, a two-stage learning framework using hierarchical reward signals to learn structured reasoning across diverse tasks, enabling generalizable cooperation in complex environments.",
+  "Extensive experiments demonstrating VIKI-R's effectiveness, highlighting the importance of hierarchical supervision and showing how RL facilitates compositional collaboration patterns."
+ ],
+ "methods": "The authors introduce VIKI-Bench, a benchmark with three task levels: Agent Activation (selecting appropriate robots based on scene and task), Task Planning (generating and refining ordered action sequences), and Trajectory Perception (predicting 2D motion trajectories from egocentric views). Data is generated using GPT-4o as a plan generator/allocator with verification modules and human inspection. VIKI-R is a two-stage framework: first, Supervised Fine-Tuning (SFT) with Chain-of-Thought annotations to optimize reasoning step likelihood; second, Reinforcement Fine-Tuning using Grouped Relative Proximal Optimization (GRPO) with a composite reward function combining format reward (enforcing <think>/<answer> tags) and task-specific accuracy rewards for each level.",
+ "results": "VIKI-R outperforms baselines including Ans-SFT, VIKI-R-Zero, and closed-source models (GPT-4o, Gemini-2.5-Flash-preview, Claude-3.7-Sonnet) across all three task levels. Model scale critically affects performance: the 72B Qwen2.5-VL matches or surpasses some closed-source baselines, while the 32B variant shows substantial drops. Feedback-driven iterative refinement improves planning accuracy—for example, GPT-4o gains 1.9% at pass@3 and 3.6% at pass@6 with feedback injection.",
+ "limitations": "Ans-SFT yields strong in-domain improvements but fails to generalize to out-of-domain scenarios. Reducing model size from 72B to 32B parameters incurs substantial drops in planning accuracy and trajectory quality, indicating high capacity requirements. Some closed-source models (Gemini, Claude) exhibit almost no trajectory-prediction capability in zero-shot evaluation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

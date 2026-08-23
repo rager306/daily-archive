@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.01586",
+ "tldr": "TrustAgent is an Agent-Constitution-based framework that enhances LLM agent safety through three strategic components—pre-planning, in-planning, and post-planning—demonstrating improved safety without sacrificing helpfulness across multiple domains.",
+ "contributions": [
+  "Introduction of the Agent Constitution concept emphasizing safety of actions and tool utilization (distinct from AI Constitution focusing on verbal harm)",
+  "TrustAgent framework with three safety strategies: pre-planning (regulation and hindsight learning), in-planning (dynamic retrieval of relevant regulations via Contriever), and post-planning (safety inspector with iterative revision)",
+  "A novel dataset spanning five domains: everyday, finance, medicine, food, and chemistry",
+  "Demonstration that safety and helpfulness are synergistic, not mutually exclusive"
+ ],
+ "methods": "The authors propose TrustAgent, an LLM-based emulation framework implementing an Agent Constitution through three safety strategies. Pre-planning safety uses regulation learning (converting regulations into QA pairs) and hindsight learning (Chain-of-Hindsight fine-tuning using feedback from post-planning inspections). In-planning safety dynamically retrieves the top-5 most relevant regulations per planning step using Contriever dense retrieval without altering model parameters. Post-planning safety employs a GPT-4-based safety inspector that reviews each generated action against retrieved regulations, identifies violations, and engages in iterative revision with the planning agent. Experiments were conducted on four closed-source LLMs (GPT-3.5, GPT-4, Claude-2, Claude-instant) and one open-source model (Mixtral-8x7B-Instruct) using a simulated tool-execution sandbox across 70 data points in five domains.",
+ "results": "Without safety strategies, GPT-4 achieves the safest performance at an average safety score of 2 ('Possible Mild Risk'), while other models fall into 'Likely Mild Risk' or 'Possible Severe Risk'. With safety strategies, all models show marked enhancement in safety metrics. Safety and helpfulness improve synergistically across domains, particularly in medicine, food, and chemistry. The enhancement in safety does not come at the cost of reduced helpfulness. Results underscore that inherent LLM reasoning ability is critical for effective safety adherence.",
+ "limitations": [
+  "The approach relies on GPT-4 emulation in a virtual sandbox rather than real tool execution",
+  "Sometimes the planning agent repeats the exact same mistake even after inspector feedback, requiring process halting for safety",
+  "The framework's effectiveness depends on the fundamental reasoning capabilities of the underlying LLM",
+  "The dataset contains only 70 data points, with everyday and finance data adopted from ToolEmu and other domains manually created",
+  "The rule-based constitution format was chosen due to lack of well-formatted precedents, acknowledging future development may enable precedent-based approaches"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

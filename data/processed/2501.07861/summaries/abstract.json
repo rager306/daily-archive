@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.07861",
+ "tldr": "ReARTeR is a framework that enhances Retrieval-Augmented Generation (RAG) systems' multi-step reasoning capabilities through both post-training scaling (using MCTS-guided step-level preference data and KTO optimization) and test-time scaling (using a Process Reward Model for scoring and a Process Explanation Model for refinement guidance).",
+ "contributions": [
+  "Pioneers combining post-training and test-time scaling to enhance reasoning in RAG scenarios via Trustworthy Process Rewarding.",
+  "Addresses PEM-PRM misalignment through off-policy preference learning, PRM training data bias via OmegaPRM with balanced annotations, and early-step PRM bias via a TD-based look-ahead search strategy.",
+  "Demonstrates significant improvements on multiple public multi-step reasoning RAG datasets."
+ ],
+ "methods": "ReARTeR uses a Process Reward Model (PRM) that provides scalar scores for reasoning steps and a Process Explanation Model (PEM) that generates natural language explanations to guide step refinement. At test time, reasoning steps with low PRM scores trigger PEM-generated explanations, which the generator uses to refine outputs. For post-training, Monte Carlo Tree Search (MCTS) guided by Trustworthy Process Rewarding collects step-level preference data, where steps with MC > 0.5 are positive and MC ≤ 0.5 are negative. This data trains the model via Iterative Preference Optimization using KTO Loss. The PRM is trained with Cross-Entropy loss on automatically annotated data (using OmegaPRM for questions with 0 < MC < 1, and stronger generators for MC = 0 cases). A TD-based look-ahead search (r_t ← r_t + αΔ_t) reduces early-step bias by adaptively rolling out up to H steps when reward differences remain significant.",
+ "results": "The paper reports significant improvements on multiple public multi-step reasoning RAG datasets, validating the feasibility of enhancing RAG systems' reasoning through both post-training and inference-time scaling. Specific numerical results are truncated in the provided text but the experiments address four research questions: improvements on closed-source and open-source models, component effects on test-time scaling, iteration count effects in post-training, and PEM-PRM alignment effectiveness.",
+ "limitations": [
+  "Relies on automatic annotation (Monte Carlo methods) which can introduce distributional bias, though mitigated by OmegaPRM and stronger generators.",
+  "Discards questions with MC = 0 or MC = 1 as lacking discriminative value, potentially losing some training signal.",
+  "The approach sacrifices some exploration compared to PPO-based methods like ReFT in favor of more stable updates.",
+  "Performance depends on the quality of the process reward and explanation models, which require careful training."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.21506",
+ "tldr": "Mind2Web 2 is a benchmark of 130 long-horizon, time-varying web search tasks with an Agent-as-a-Judge evaluation framework using tree-structured rubrics; the best system, OpenAI Deep Research, achieves 50-70% of human performance while spending half the time.",
+ "contributions": [
+  "Mind2Web 2 benchmark with 130 realistic, long-horizon tasks requiring real-time web browsing and information synthesis, constructed with over 1,000 hours of human labor",
+  "Agent-as-a-Judge framework using tree-structured rubrics to automatically evaluate both answer correctness and source attribution for complex, time-varying answers",
+  "Comprehensive evaluation of ten frontier agentic search systems and human performance on the benchmark"
+ ],
+ "methods": "The benchmark consists of 130 tasks across diverse domains, created through a three-stage pipeline involving task proposers, refinement experts, and validation experts. Evaluation uses a novel Agent-as-a-Judge framework where task-specific rubrics are structured as trees with leaf nodes representing binary criteria (0 or 1) that aggregate upward using a gate-then-average strategy. Critical nodes act as gating conditions, while non-critical nodes allow partial scoring. Judge agents use LLM-based Extractor and Verifier tools to parse answer text and verify claims against cited source webpages. Rubric scripts are generated via an LLM-based code generation pipeline with autonomous self-debugging and self-reflection, followed by two-stage human refinement.",
+ "results": "The best-performing system, OpenAI Deep Research, achieves 50-70% of human performance while spending half the time. Deep Research systems outperform search-augmented LLMs and web agents like Operator. Humans on a 30-task subset took up to one hour per task, visiting up to 31 websites and 375 webpages. The agent-judge evaluation achieves a 99% correctness rate in human evaluation. Some rubric trees contain up to 603 nodes. Current systems still underperform humans overall but sometimes match or exceed humans on detail-heavy tasks.",
+ "limitations": "Current agentic search systems still struggle with time-varying tasks requiring real-time information. Existing benchmarks compromise by focusing on predefined, time-invariant answers rather than complex, evolving responses. The benchmark has only 130 tasks, though each contains many fine-grained evaluation nodes. Human task completion numbers may be underestimated since participants could make mistakes or omit steps. Results were reported on a private test set of 120 tasks with only 10 tasks in the public development set.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

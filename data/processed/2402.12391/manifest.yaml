@@ -3,7 +3,7 @@ paper_id: '2402.12391'
 source:
   code: arxiv
   identity_ref: sources/arxiv/q-bio-gn/2402.12391/identity.json
-lifecycle: enriched
+lifecycle: summarized
 lifecycle_events:
 - stage: parsed
   recorded_at: '2026-08-23T05:49:30.466853+00:00'
@@ -21,6 +21,10 @@ lifecycle_events:
   recorded_at: '2026-08-23T10:55:09Z'
   actor: openalex-enricher
   evidence_sha256: 6eec19ac0b8d091149566db131b3059f85f35ab5d5e8c91f144d7860ddca9572
+- stage: summarized
+  recorded_at: '2026-08-23T11:55:53Z'
+  actor: agnes-ai/agnes-2.5-flash
+  evidence_sha256: 0c13bbeaff4085ad9ad602bcbf348f2118dcab121be4e181453835ddbe520c98
 artifacts:
   parsed:
     file: parsed/article.json
@@ -118,7 +122,16 @@ artifacts:
     inputs:
     - api.openalex.org (polite pool)
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from:
+    - parsed
+    - enriched
+    sha256: 0c13bbeaff4085ad9ad602bcbf348f2118dcab121be4e181453835ddbe520c98
+    built_at: '2026-08-23T11:55:53Z'
+    actor: agnes-ai/agnes-2.5-flash
+    stats:
+      tldr_chars: 300
+      contributions: 3
   quality_signals:
     file: quality_signals.json
     derived_from:

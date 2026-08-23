@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11190v1",
+ "tldr": "The paper develops a unified linear framework that identifies complementary failure modes for cross-modal alignment (CA) and cross-modal prediction (CP), producing a phase diagram with four regimes (Both, CA only, CP only, Neither) that practitioners can use to diagnose and choose the right multimodal objective before training.",
+ "contributions": [
+  "Unified linear analysis of CA and CP under a multimodal spiked model with structured cross-modal nuisance correlation, deriving closed-form separation ratios ΔCA and ΔCP",
+  "Phase diagram partitioning multimodal problems into four recovery regimes: Both, CA only, CP only, and Neither",
+  "Data-driven procedure to estimate recovery regimes from a small labeled subsample before cross-modal training",
+  "Experimental validation across synthetic data, stereo-vision benchmarks, image-caption pairs, and real astrophysical data"
+ ],
+ "methods": "The authors derive a spiked signal-plus-noise model where each modality decomposes into shared signal coordinates and modality-specific nuisance coordinates, with structured cross-modal nuisance correlation ηj. Under this model, CA reduces to CCA (symmetric whitening via the leading singular directions of matrix C) and CP reduces to truncated reduced-rank regression (one-sided/source-side whitening via matrix A). Separation ratios ΔCA and ΔCP are derived as thresholds for signal recovery. The linear theory is then validated in nonlinear experiments using VICReg (for CA) and MSE reconstruction (for CP) with deep encoders on synthetic spiked data, Stereo-dSprites, MS-COCO image-caption pairs, and real astrophysical spectroscopic/photometric data.",
+ "results": "On synthetic spiked data, CP fails to recover the signal at nuisance correlation ν ≈ 0.15 while CA maintains near-perfect recovery until ν ≈ 0.75, confirming that cross-modal noise breaks CP roughly 5× earlier than CA. In Stereo-dSprites experiments, CA fails under perfectly correlated nuisance and improves as alignment decreases, while CP shows the opposite behavior. On MS-COCO, CP I→T dominates CA by ~10 percentage points at low noise and degrades monotonically as image noise increases, matching the predicted asymmetry since ΔCP depends only on source-side quantities. On real astrophysical data, pairing the same spectroscopic encoder with two photometric instruments confirmed the predicted regime shift, including the Neither regime where cross-modal training is actively harmful and the stronger modality alone is optimal.",
+ "limitations": "The theoretical analysis is conducted in a linear setting, though nonlinear validation is performed. At perfect nuisance alignment (ν = 1), CP circumvents the predicted failure because its overcapacity bottleneck encodes both signal and nuisance without compression pressure, a regime outside the linear theory. VICReg is used as an approximation for CA in nonlinear experiments but does not enforce exact orthogonality constraints. The Neither regime—where both CA and CP fail—is identified as an important open problem rather than being resolved.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

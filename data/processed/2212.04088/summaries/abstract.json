@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2212.04088",
+ "tldr": "LLM-Planner is a novel method that uses large language models for few-shot grounded high-level planning for embodied agents, achieving competitive performance on the ALFRED dataset using less than 0.5% of paired training data.",
+ "contributions": [
+  "Proposing LLM-Planner, an LLM-based planner for embodied instruction following that enables few-shot planning without parameter updates",
+  "Introducing a dynamic grounded re-planning algorithm that incorporates perceived objects from the environment into prompts to generate physically grounded plans",
+  "Demonstrating competitive few-shot performance on ALFRED with less than 0.5% of training data, while existing methods barely complete any task under the same setting"
+ ],
+ "methods": "LLM-Planner uses a hierarchical planning approach with an LLM (e.g., GPT-3/TEXT-DAVINCI-003) as a high-level planner that generates sequences of subgoals (HLPs) via in-context learning with a few paired examples. A frozen BERT-base model retrieves the K most similar in-context examples via kNN based on instruction embeddings, and logit biases constrain the output to allowed actions and objects. When the agent gets stuck (fails an action or exceeds a step threshold), a grounded re-planning algorithm re-prompts the LLM with observed objects from the environment to dynamically regenerate the plan. The low-level planner, trained on synthetic simulator data, maps each subgoal to primitive actions independently of the language instruction.",
+ "results": "On the ALFRED dataset, LLM-Planner achieves competitive performance using less than 0.5% of paired training data, outperforming multiple baselines trained with the full training set. Existing methods can barely complete any task successfully under the same few-shot setting. The method was evaluated by integrating with the perception module and low-level planner from HLSM [3].",
+ "limitations": [
+  "The approach depends on an object detector to perceive objects in the environment for grounded re-planning",
+  "Requires a low-level planner to convert high-level plans into primitive actions",
+  "Evaluation is conducted on ALFRED, and while the authors claim generalizability to other datasets, extensive validation across diverse environments is not presented",
+  "The method uses GPT-3 (TEXT-DAVINCI-003), which may incur high inference costs and latency for real-time embodied applications"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.02301",
+ "tldr": "The paper introduces Distilling step-by-step, a method that extracts chain-of-thought rationales from large language models as additional supervision to train smaller task-specific models that outperform LLMs using far less training data and model parameters.",
+ "contributions": [
+  "A new paradigm that views LLMs as reasoning agents producing natural language rationales rather than just sources of noisy labels",
+  "A multi-task training framework that jointly trains small models to predict both task labels and LLM-generated rationales",
+  "Empirical demonstration across 4 NLP benchmarks showing significant reductions in required training data and model size while outperforming large LLMs"
+ ],
+ "methods": "The method uses Chain-of-Thought (CoT) prompting to extract natural language rationales from a 540B parameter PaLM LLM given unlabeled datasets. These rationales are then used as additional supervision signals to train smaller T5 models (220M, 770M, and 11B) within a multi-task learning framework. The small model is trained to output both the task label and the rationale by minimizing a combined loss: L = L_label + λL_rationale, with task prefixes ([label], [rationale]) prepended to inputs to condition output type. At test time, only the label branch is used, eliminating the need for an LLM during deployment.",
+ "results": "Across 4 NLP benchmarks (e-SNLI, ANLI, CQA, SVAMP): (1) Distilling step-by-step achieves the same performance as standard finetuning with up to 85% less labeled data (e.g., only 12.5% of e-SNLI needed). (2) It outperforms 540B PaLM's few-shot CoT using a 770M T5 model with only 80% of available labeled data, while standard finetuning of the same T5 struggles even with 100%. (3) On ANLI, it outperforms standard finetuning and distillation by an average of 8% and 13% accuracy respectively. (4) A 11B T5 model trained with this method outperforms the 540B PaLM LLM. Improvements are most pronounced on ANLI, with up to 2000x smaller model size than the LLM baseline.",
+ "limitations": "The approach relies on LLM-generated rationales which may contain errors or biases, potentially transferring flawed reasoning to smaller models. The method was evaluated on only 4 NLP benchmarks across 3 task types (NLI, QA, arithmetic), limiting generalizability claims. The multi-task framework requires careful tuning of the λ hyperparameter balancing label and rationale losses. Additionally, generating rationales via CoT prompting from large LLMs still requires access to a powerful teacher model during training, even if not at deployment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

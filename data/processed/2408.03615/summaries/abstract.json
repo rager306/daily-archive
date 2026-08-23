@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.03615",
+ "tldr": "Optimus-1 is a multimodal composable agent equipped with a Hybrid Multimodal Memory module (HDKG + AMEP) that significantly improves long-horizon task performance in Minecraft, achieving up to 30% improvement over existing agents and 2-6x improvement across various MLLM backbones.",
+ "contributions": [
+  "Proposed Hybrid Multimodal Memory module composed of Hierarchical Directed Knowledge Graph (HDKG) for structured world knowledge and Abstracted Multimodal Experience Pool (AMEP) storing both successful and failed execution cases.",
+  "Constructed Optimus-1 agent framework with Knowledge-Guided Planner, Experience-Driven Reflector, and Action Controller.",
+  "Demonstrated 2-6 times performance improvement across various MLLM backbones (Deepseek-VL, InternLM-XComposer2-VL), outperforming GPT-4V baseline, and showed self-evolution capability through non-parametric memory expansion."
+ ],
+ "methods": "The authors propose a Hybrid Multimodal Memory module consisting of HDKG, which maps object relationships into a directed graph for explicit knowledge retrieval, and AMEP, which dynamically abstracts and stores multimodal information (video frames, textual plans, environment state) from both successful and failed task executions. Optimus-1 integrates this memory into a three-component architecture: a Knowledge-Guided Planner that decomposes tasks into sub-goals using visual observations and HDKG knowledge, an Action Controller (STEVE-1) that executes low-level mouse/keyboard actions, and an Experience-Driven Reflector that periodically retrieves relevant experiences from AMEP to reflect and replan. A non-parametric learning approach ('free exploration-teacher guidance') incrementally expands the memory without parameter updates. Evaluation was conducted in Minecraft (MineRL, 67 tasks across 7 groups) with at least 30 runs per task.",
+ "results": "Optimus-1 achieved near 100% success rate on Wood Group tasks, 29.28% and 53.40% improvement over Jarvis-1 on Diamond and Redstone Groups respectively, and an average 5.37% improvement closer to human-level performance. Without HDKG, performance dropped by an average of 20%; without AMEP, it dropped by 12%. Ablation on AMEP retrieval showed a 10% average decrease without case retrieval, with failure cases providing meaningful guidance. MLLMs with Hybrid Multimodal Memory improved 2-6 times across task groups, outperforming GPT-4V baseline. Self-evolution over 4 epochs (150 exploration + 10 teacher guidance tasks per period) showed continuous performance gains.",
+ "limitations": "The approach is evaluated exclusively in Minecraft, limiting demonstrated generalization to this domain. The method requires an initial 'free exploration' phase to build up the knowledge graph and experience pool before effective task execution. Performance on harder task groups (Gold: 4.25-11.54%, Diamond: 3.25-9.59%) remains low even for Optimus-1. Baseline comparisons used different initialization conditions (DEPS and Jarvis-1 had tools in initial inventory while Optimus-1 started with empty inventory), though this made Optimus-1's evaluation more challenging.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

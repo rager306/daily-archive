@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2306.07542",
+ "tldr": "The paper introduces MABIM (Multi-Agent Benchmark for Inventory Management), a multi-echelon, multi-commodity inventory management simulator designed as a versatile MARL benchmark that can generate tasks with challenges such as scaling up, cooperation, competition, generalization, and robustness.",
+ "contributions": [
+  "Development of MABIM, a multi-echelon, multi-commodity inventory management simulator with versatile, configurable task generation",
+  "Simulation of a wide range of MARL challenges including scaling up (thousands of agents), cooperation, competition, generalization, and robustness",
+  "Evaluation of classic OR algorithms (Base Stock, (s, S)) and MARL algorithms (IPPO, QTRAN) on challenging tasks, revealing their strengths and weaknesses"
+ ],
+ "methods": "The authors model a multi-echelon inventory system where each SKU in each warehouse is treated as an independent agent. The simulator supports multi-echelon structures with multiple warehouses and SKUs, incorporating real demand data (over 2000 real SKU demands), lead times, warehouse capacities, overflow strategies, and configurable profit-based rewards. They construct 51 built-in tasks by varying parameters (number of SKUs, warehouses, capacity) and evaluate four algorithms—Base Stock, (s, S), IPPO, and QTRAN—on scaling-up, competition, cooperation, generalization, and robustness tasks, using a single A100 GPU for training.",
+ "results": "IPPO performs well with few SKUs but fails entirely at 2000 agents even after 5 million iterations. QTRAN yields good results but is resource-intensive with substantial training instability. Under competition (reduced capacity), BS static strategy suffers from overflow costs while IPPO reduces replenishment without maximizing long-term profit; (s, S) static and QTRAN show better stability. In cooperation tasks (two- and three-echelon models), pure MARL algorithms underperform, but combining IPPO/QTRAN with BS (IPPO+BS, QTRAN+BS) significantly surpasses both pure OR and pure MARL approaches, indicating insufficient upstream-downstream information exchange. For non-stationary contexts, (s, S) hindsight achieves the best normalized performance, IPPO outperforms other algorithms, and static OR algorithms perform worst, especially in generalization.",
+ "limitations": [
+  "IPPO fails to converge at 2000 agents despite 5 million training iterations",
+  "QTRAN suffers from training instability and high resource demands (time and GPU memory)",
+  "Pure MARL algorithms struggle with multi-echelon cooperation, indicating insufficient information exchange between upstream and downstream agents",
+  "Static OR algorithms perform poorly in generalization and robustness tasks",
+  "The current benchmark uses flat inventory structures; tree-based or graph-based structures and partially observable settings are left for future work"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

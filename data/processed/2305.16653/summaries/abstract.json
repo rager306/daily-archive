@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.16653",
+ "tldr": "AdaPlanner is a closed-loop adaptive planning method where LLM agents refine their plans in response to environmental feedback using in-plan and out-of-plan refinement strategies, code-style prompting, and a skill discovery mechanism for improved sample efficiency.",
+ "contributions": [
+  "Proposed AdaPlanner, an explicit closed-loop planning framework where the LLM acts as both planner and refiner",
+  "Developed a code-style LLM prompt structure that reduces ambiguity and mitigates hallucination during plan generation",
+  "Introduced a skill discovery mechanism that archives successful plans as few-shot exemplars to improve sample efficiency",
+  "Demonstrated superior performance over state-of-the-art baselines on ALFWorld and MiniWoB++ with significantly fewer samples"
+ ],
+ "methods": "AdaPlanner decomposes tasks into sub-goals using Pythonic code prompts, with each sub-plan containing assertion statements to check fulfillment. During execution, in-plan feedback (observations aligned with predictions) is processed via an ask_LLM() action that extracts key information for subsequent actions. Out-of-plan feedback (deviations from predictions) triggers a refine-then-resume mechanism that revises the entire plan and resumes execution from an intermediate checkpoint rather than restarting. A skill memory module archives successful trajectories to serve as few-shot exemplars for similar future tasks. The system operates solely via prompting without dedicated training.",
+ "results": "AdaPlanner outperforms state-of-the-art baselines by 3.73% on ALFWorld and 4.11% on MiniWoB++. It utilizes 2x fewer samples on ALFWorld and 600x fewer samples on MiniWoB++ compared to baselines. The code-based prompting reduces LLM hallucination during plan generation and refinement.",
+ "limitations": "The method's effectiveness depends on the quality of code-based prompts and available demonstrations for skill discovery. Acquiring expert demonstrations can be costly as the number of tasks increases, though skill discovery helps mitigate this. The paper text is truncated, so some limitations may not be fully stated. Open-loop systems remain vulnerable to environmental changes, and implicit closed-loop methods can make sub-optimal decisions with detrimental long-term implications.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

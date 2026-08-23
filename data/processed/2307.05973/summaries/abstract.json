@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2307.05973",
+ "tldr": "VoxPoser leverages LLMs to compose 3D value maps from free-form language instructions, which are then used in a model-based MPC framework to synthesize zero-shot robot trajectories for a variety of manipulation tasks.",
+ "contributions": [
+  "A framework (VoxPoser) that extracts affordances and constraints from LLMs to compose dense 3D voxel value maps in the robot's observation space",
+  "Zero-shot generalization for open-set instructions with open-set objects across everyday manipulation tasks",
+  "A method to efficiently learn dynamics models from online interactions, biased by LLM-synthesized zero-shot trajectories for contact-rich tasks"
+ ],
+ "methods": "VoxPoser decomposes a language instruction into sub-tasks via an LLM planner. For each sub-task, an LLM writes Python code that invokes VLM-based perception APIs (e.g., OWL-ViT for detection, Segment Anything for masking, XMEM for tracking) to obtain spatial-geometric object information, then manipulates 3D arrays (shape 100x100x100) to compose value maps encoding affordance, avoidance, rotation, velocity, and gripper commands. These maps are smoothed and combined into a cost function (weighted sum of normalized affordance and avoidance maps with weights 2 and 1) optimized via MPC with random shooting at 5 Hz replanning. For contact-rich tasks, a prior trajectory from zero-shot synthesis biases action sampling to accelerate learning of a dynamics model via L2 loss minimization.",
+ "results": "VoxPoser achieves a high average success rate on 5 representative real-world everyday manipulation tasks, with robustness to dynamic perturbations such as moving targets/obstacles and re-closed drawers. In simulation, 13 highly-randomizable tasks were evaluated with 2,766 unique instructions; VoxPoser outperformed baselines across both seen and unseen instructions/attributes, maintaining similar success rates between seen and unseen conditions.",
+ "limitations": "The majority of considered tasks assume static scenes with no environment dynamics model. A heuristic-based planar pushing dynamics model was used rather than a learned one for most tasks. Contact-rich interactions require online experience to efficiently learn a dynamics model, as the zero-shot baseline alone may not suffice. Success depends on the quality of LLM-generated value maps, and errors can arise from perception or map composition failures.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

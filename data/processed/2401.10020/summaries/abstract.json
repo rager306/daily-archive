@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.10020",
+ "tldr": "Self-Rewarding Language Models use the model itself as its own reward model via LLM-as-a-Judge prompting during iterative DPO training, enabling simultaneous improvement in both instruction following and reward modeling ability without relying on human preferences alone.",
+ "contributions": [
+  "Introduced Self-Rewarding Language Models that act as both instruction-following generators and self-evaluating reward models",
+  "Demonstrated iterative DPO training where the reward model improves alongside the language model across iterations",
+  "Showed a Llama 2 70B fine-tuned on three iterations outperforms Claude 2, Gemini Pro, and GPT-4 0613 on AlpacaEval 2.0"
+ ],
+ "methods": "Starting from a Llama 2 70B base model fine-tuned on Open Assistant instruction-following (IFT) and evaluation (EFT) seed data, the approach iteratively generates new prompts via few-shot prompting, produces N=4 candidate responses, and evaluates them using LLM-as-a-Judge prompting with a 5-point additive scoring system. Preference pairs (highest vs lowest scoring responses) are constructed and used for DPO training to produce the next iteration model. This process is repeated for up to three iterations.",
+ "results": "M2 (Iteration 2) achieves 55.5% head-to-head wins over M1 (11.7%) and 49.2% over the SFT Baseline (14.5%). M3 (Iteration 3) achieves 47.7% wins over M2 (12.5%) and 62.5% over the SFT Baseline (9.8%). AlpacaEval 2.0 win rates increase from 9.94% (M1) to 15.38% (M2) to 20.44% (M3), with M3 outperforming Claude 2, Gemini Pro, and GPT-4 0613. EFT training does not degrade instruction-following performance (30.5% vs 30.9% wins). Improvements are strongest on more complex tasks; mathematics and logical reasoning show little improvement.",
+ "limitations": "The approach mainly enables models to better utilize existing knowledge rather than acquire new capabilities, as evidenced by limited gains in mathematics and logical reasoning. The self-improvement effect likely saturates in real-world settings. The paper acknowledges there is much left to explore.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

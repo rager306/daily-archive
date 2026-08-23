@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.10019",
+ "tldr": "R-Judge is a benchmark evaluating LLMs' ability to judge and identify safety risks from multi-turn agent interaction records, revealing that most models struggle with risk awareness in open agent scenarios.",
+ "contributions": [
+  "Formalized the problem of agent safety as evaluating LLMs' risk awareness by judging safety from agent interaction records.",
+  "Proposed R-Judge, the first benchmark dataset curated to assess risk awareness of LLMs for agent safety, containing 569 multi-turn interaction records across 27 scenarios, 5 categories, and 10 risk types with human-annotated safety labels and risk descriptions.",
+  "Evaluated 11 popular LLMs on R-Judge, disclosing that most fail to identify safety risks, and explored mechanisms like fine-tuning and prompting to enhance performance."
+ ],
+ "methods": "R-Judge was constructed by curating agent interaction records from existing datasets (ToolEmu, InjecAgent, AgentMonitor) and manually constructing additional samples to balance safe and unsafe cases. Records include user instructions, agent thoughts/actions, and environment feedback. Evaluation uses a two-step pipeline: first, LLMs analyze whether agent actions are safe; second, they output binary safety labels. Metrics include F1 score, Recall, Specificity for safety judgment, and Effectiveness for risk identification assessed via GPT-4 as an automatic scorer.",
+ "results": "GPT-4o achieved the highest F1 score of 74.45% in safety judgment, while no other evaluated models significantly exceeded random performance. Fine-tuning on safety judgment data improved model performance, whereas straightforward prompting techniques like few-shot chain-of-thought did not consistently enhance results. Only ChatGPT showed improvement when risk types were added as hints.",
+ "limitations": "Existing safety benchmarks primarily focus on LLM-generated content rather than behavioral risks in interactive agent environments. The dataset, while diverse, may not cover all real-world agent scenarios, and open-source models demonstrated notably lower performance compared to API-based models. Additionally, evaluating multi-turn interactions and ensuring consistent human annotation across complex cases pose inherent challenges.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

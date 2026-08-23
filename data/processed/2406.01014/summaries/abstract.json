@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.01014",
+ "tldr": "Mobile-Agent-v2 proposes a multi-agent architecture with planning, decision, and reflection agents to address navigation challenges caused by long interleaved text-image histories in mobile device operation tasks, achieving over 30% improvement in task completion over the single-agent baseline.",
+ "contributions": [
+  "A multi-agent architecture (Mobile-Agent-v2) with three specialized agents—planning, decision, and reflection—to alleviate navigation difficulties inherent in single-agent frameworks for mobile device operation",
+  "A memory unit updated by the decision agent to retain focus content from history screens, plus a reflection agent that assesses whether operations meet expectations and generates remedial measures",
+  "Dynamic evaluations across Harmony OS and Android OS, non-English and English scenarios, and system/external/multi-app settings, demonstrating significant performance improvements and further gains from manual operation knowledge injection"
+ ],
+ "methods": "Mobile-Agent-v2 iteratively employs three agents: the planning agent summarizes lengthy interleaved image-text history operations into a pure-text task progress; the decision agent generates operations from the operation space (open app, tap, swipe, type, home, stop) based on task progress, current screen, reflection feedback, and memory unit; the reflection agent compares screens before and after each operation to classify it as correct, ineffective, or erroneous. A visual perception module uses ConvNextViT-document (OCR), GroundingDINO (icon detection), and Qwen-VL-Int4 (icon description) to extract text and icon information with coordinates. The system is evaluated on real devices via ADB across 88 instructions (40 system apps, 40 external apps, 8 multi-app) on Harmony OS and Android OS using GPT-4 (planning) and GPT-4V (decision and reflection).",
+ "results": "Mobile-Agent-v2 achieves over 30% improvement in task completion compared to Mobile-Agent (single-agent). In advanced instructions, success rate reaches 55% vs. 20% with Mobile-Agent. In English scenarios, Mobile-Agent-v2 achieves an average improvement of 27% in success rate over Mobile-Agent. For multi-app tasks, Mobile-Agent-v2 improves SR by 37.5% and CR by 44.2% compared to Mobile-Agent. With knowledge injection, completion rate can reach 100% despite decision accuracy not being 100%, confirming the reflection agent's value. Performance on system apps exceeds external apps.",
+ "limitations": [
+  "Decision accuracy does not reach 100% even with knowledge injection, indicating errors are unavoidable and depend heavily on the reflection agent",
+  "Performance is lower on external apps compared to system apps",
+  "The approach relies on cloud-based MLLM APIs (GPT-4, GPT-4V), implying latency and connectivity dependencies",
+  "Knowledge injection was only applied to instructions the agent could not accomplish, suggesting incomplete coverage of difficult cases"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

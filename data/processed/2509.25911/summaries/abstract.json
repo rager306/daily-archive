@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.25911",
+ "tldr": "Mem-α is a reinforcement learning framework that trains LLM agents to learn effective memory construction strategies for complex multi-component memory systems, using downstream question-answering accuracy as reward signal. Despite training exclusively on sequences up to 30k tokens, the agent generalizes to sequences exceeding 400k tokens.",
+ "contributions": [
+  "Proposes Mem-α, a reinforcement learning framework that trains agents to effectively manage complex memory systems through interaction and feedback",
+  "Constructs a specialized training dataset of 562 balanced instances from MemoryAgentBench spanning conversations, document sharing, pattern recognition, and storytelling",
+  "Designs a three-component memory architecture (core, episodic, and semantic memory) with specialized tools for memory operations",
+  "Demonstrates significant improvements over existing memory-augmented agent baselines with strong generalization to sequences over 13× the training length"
+ ],
+ "methods": "The authors formulate memory construction as a sequential decision-making problem using Group Relative Policy Optimization (GRPO). The agent processes information chunks and decides which memory operations (insert, update, delete) to perform across a three-component memory architecture (core memory: max 512-token summary; semantic memory: structured factual statements; episodic memory: timestamped events). The reward signal combines four components: correctness reward (QA accuracy via a decoupled RAG pipeline), tool call format reward, compression reward (1 - l_m/l_c), and memory content reward (validated by Qwen3-32b). Training uses 562 instances sampled from MemoryAgentBench with Qwen3-4B as backbone, trained on 32 H100 GPUs for 205 steps.",
+ "results": "Mem-α achieves significant improvements over baselines (Long-Context, RAG-Top2, MemAgent, MEM1) across Accurate Retrieval, Test-Time Learning, and Long-Range Understanding tasks. Ablation studies show RL provides substantial gains beyond the memory structure alone. The approach reduces memory footprint by approximately 50% compared to Long-Context and RAG-Top2 baselines. The method generalizes to sequences exceeding 400k tokens (up to 474K in Multi-Doc dataset), over 13× the maximum training length of 30k tokens.",
+ "limitations": [
+  "Trained exclusively on instances with maximum length of 30k tokens and averaging under 20k tokens; generalization to 400k+ tokens is demonstrated but not trained directly on such lengths",
+  "Conflict Resolution dimension is excluded from evaluation due to lack of realistic benchmarks, as existing datasets remain predominantly synthetic",
+  "Memory content reward requires Qwen3-32b for validation, adding computational overhead",
+  "The four reward hyperparameters (β=0.05, γ=1 fixed) require tuning, and their effect on different configurations is shown separately rather than being principled"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

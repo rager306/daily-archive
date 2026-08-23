@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.10379",
+ "tldr": "The Algorithm of Thoughts (AoT) enhances LLM reasoning by embedding algorithmic search examples directly in-context, enabling exploration with single or few queries and outperforming multi-query methods like Tree of Thoughts while using significantly fewer tokens.",
+ "contributions": [
+  "Proposes AoT, a novel in-context learning paradigm that presents LLMs with [PROBLEM, SEARCH PROCESS, SOLUTION] examples rather than linear step-by-step chains.",
+  "Demonstrates that AoT surpasses single-prompt methods (standard prompting, CoT/CoT-SC) and multi-query external mechanisms like Tree of Thoughts on the Game of 24 benchmark while using far fewer tokens.",
+  "Shows that instructing an LLM with an algorithm can lead the model to infuse its own intuition, achieving search efficiency that exceeds the algorithm itself.",
+  "Provides a theoretical result (Corollary 3.1) indicating AoT can tackle NP problems, extending beyond the P-problem scope of CoT."
+ ],
+ "methods": "AoT guides LLMs by providing in-context examples patterned after search algorithms (DFS/BFS) that illustrate the complete exploratory process. The method divides the search into steps, proposes solutions to subproblems through uninterrupted sequential generation (avoiding multiple model queries), and evaluates candidate viability within the same generation sweep. Backtracking is handled implicitly via the model’s generative recurrence, using DFS with pruning to keep nodes close. The approach also includes a theoretical expressivity analysis showing that if a transformer generates aⁿ intermediate tokens under AoT prompting, it can solve problems in TIME(aⁿ).",
+ "results": "On the Game of 24 benchmark (indices 901–1000), AoT achieved a 96.6% success rate with DFS-style examples and 91.2% with BFS-style examples, both using only a single prompt. In comparison, standard prompting scored 0%, CoT 3.4%, CoT-SC 8.5%, and Tree of Thoughts (ToT) 46.8% (with up to 100 node visits and hundreds of queries). AoT also outperformed conventional DFS when the same algorithmic structure was used as a baseline, and its advantage persisted even after fine-tuning, indicating the benefit stems from the prompting paradigm rather than model alignment.",
+ "limitations": "The approach is specifically designed for tree-search-like tasks that require breaking problems into segments and exploring multiple continuations; its generalizability to other reasoning domains is not demonstrated. The theoretical expressivity result is informal and relies on an appendix proof. The method assumes that well-designed in-context examples can capture the essential search heuristics, which may require careful manual construction (as noted in the paper’s setup).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

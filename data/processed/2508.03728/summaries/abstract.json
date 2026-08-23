@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.03728",
+ "tldr": "WINELL is an agentic framework that continuously updates Wikipedia articles by searching online sources, extracting relevant facts, and generating fine-grained edit suggestions consistent with human editing behavior.",
+ "contributions": [
+  "Introduction of WINELL, an agentic framework for autonomously updating Wikipedia articles based on online information aggregation.",
+  "Creation of a fine-grained editing model fine-tuned on historical human Wikipedia edits, outperforming closed-source models like GPT-4o.",
+  "Design of an automatic evaluation setup using historical human edits as a benchmark to measure factual update coverage."
+ ],
+ "methods": "WINELL uses a multi-agent framework with three components: a Navigator that searches online sources, an Extractor that identifies relevant updates and maps them to article sections, and an Aggregator that deduplicates and filters updates based on section-specific content criteria induced from the article structure. A fine-grained editing model, trained on historical human Wikipedia edits (original paragraph, updated paragraph, and source), then integrates identified updates into the appropriate sections while mimicking human editing patterns.",
+ "results": "The fine-tuned editor models outperform both open-source baselines (Qwen2.5-7B-Instruct, Llama-3.1-8B-Instruct) and closed-source models (GPT-4o, GPT-4o-mini). The Qwen2.5-7B-Editor achieved 90.7% key facts coverage with only 52.8 token changes and 20.1% commentary coverage; the Llama-3.1-8B-Editor achieved 91.7% key facts coverage with 49.8 token changes and 18.7% commentary coverage, both surpassing GPT-4o (91.3% key facts, 73.4 tokens, 53.1% commentary). The evaluation used 600+ entities and measured performance against human edits from January–December 2024.",
+ "limitations": "The evaluation relies on automatic metrics using textual entailment rather than manual verification, which may not fully capture edit quality. The system still retains some subjective commentary compared to the ideal human standard of 0% commentary coverage. Additionally, only one edit instance per entity was randomly selected for the test set to avoid overlap, potentially limiting evaluation diversity.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:52Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

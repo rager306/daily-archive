@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.04652",
+ "tldr": "The paper models LLM collaboration as a cooperative Multi-Agent Reinforcement Learning (MARL) problem and proposes MAGRPO, a multi-agent extension of Group Relative Policy Optimization that trains multiple LLMs to cooperate through centralized group-relative advantages while maintaining decentralized execution.",
+ "contributions": [
+  "Formalizing LLM collaboration as a cooperative MARL problem under the Dec-POMDP framework",
+  "Developing the MAGRPO algorithm that optimizes agent cooperation through aligned joint rewards while preserving decentralized execution",
+  "Demonstrating that fine-tuning with MAGRPO improves both response efficiency and quality in writing and coding collaboration tasks",
+  "Providing analysis of limitations of existing approaches and outlining open challenges in applying MARL to LLM collaboration"
+ ],
+ "methods": "The authors formalize LLM collaboration as a Decentralized Partially Observable Markov Decision Process (Dec-POMDP), where n LLM agents generate responses synchronously based on local prompts and receive joint rewards from an accessible state. They propose MAGRPO, which extends GRPO to the multi-agent setting: at each turn, each agent generates a group of responses sampled from its policy, receives joint rewards, and updates its policy using centralized group-relative advantage estimates computed via Monte Carlo returns averaged over the group. The method uses no importance sampling, no epsilon clipping, and a KL divergence coefficient of 0, training with stochastic gradient descent on the policy objective J(theta_i) = E[1/G * sum_g A^(g)_t * log(pi_theta_i(a^(g)_i,t | h^(G)_i,t))].",
+ "results": "Experiments on TLDR summarization and arXiv expansion writing with two Qwen3-1.7B agents show monotonically increasing structure and logical coherence scores during training. Style consistency temporarily decreases in the first 100 steps as agents diverge to optimize other objectives before realigning. MAGRPO is approximately 3 times faster than a single Qwen3-4B model with comparable parameter count, which fails to produce well-structured responses despite detailed instructions. Multi-agent baselines (naive concatenation, sequential pipeline, one-round discussion) underperform MAGRPO in both efficiency and coherence. Experiments also demonstrate results on HumanEval coding collaboration with two Qwen2.5-Coder-3B agents.",
+ "limitations": [
+  "Token-level modeling leads to very long horizons while sequence-level modeling has very large action and observation spaces; the best modeling approach remains an open question",
+  "Standard centralized training with centralized critics or value mixers does not scale well to the large action and observation spaces of LLM collaboration",
+  "The approach is evaluated on short-horizon tasks, and whether it balances performance and scalability effectively in longer settings is not established",
+  "Prompt-based coordination baselines have limited effectiveness and do not scale well to scenarios involving large numbers of agents or extended multi-turn interactions"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

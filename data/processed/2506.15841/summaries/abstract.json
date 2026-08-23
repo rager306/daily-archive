@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.15841",
+ "tldr": "MEM1 is an end-to-end reinforcement learning framework that enables LLM agents to maintain constant memory across arbitrarily long multi-turn tasks by learning to consolidate prior memory and new observations into a compact internal state at each turn.",
+ "contributions": [
+  "MEM1: an end-to-end RL framework where agents learn reasoning-driven memory consolidation, maintaining near-constant memory usage by updating a shared internal state and discarding irrelevant/redundant information each turn",
+  "A masked trajectory approach with 2D attention masking for policy optimization under dynamically updated contexts",
+  "A scalable multi-objective task augmentation method that composes existing single-objective QA datasets into arbitrarily complex multi-hop task sequences",
+  "Demonstration across three domains (internal retrieval QA, open-domain web QA, multi-turn web shopping) showing significant efficiency and performance gains"
+ ],
+ "methods": "MEM1 trains agents end-to-end with PPO reinforcement learning, where at each turn the model generates an internal state <IS> that consolidates prior memory with new environment observations, then produces a query or answer action. After each turn, all previous context tags are pruned except the prompt, initial query, and the most recent <IS>, <query>, and <info> elements, keeping context bounded. A two-dimensional attention mask is applied during policy updates to correctly compute token-wise advantages despite the dynamic context. The authors also construct multi-objective QA tasks by interleaving multiple questions from existing datasets (HotpotQA, Natural Questions) into composite queries requiring N search-and-reasoning turns.",
+ "results": "MEM1-7B improves performance by 3.5× while reducing memory usage by 3.7× compared to Qwen2.5-14B-Instruct on a 16-objective multi-hop QA task. At the 16-objective level, MEM1 achieves superior accuracy versus all baselines, with 1.27× lower peak memory usage and 1.78× faster inference compared to the best uncollapsed baseline. The agent trained on 2-objective compositions generalizes effectively to up to 16-objective tasks. Improvements were demonstrated across internal retrieval QA, open-domain web QA, and multi-turn web shopping (WebShop).",
+ "limitations": [
+  "Existing benchmarks like HotpotQA, Bamboogle, and 2wiki typically involve only two information-seeking steps and are not explicitly structured for long-horizon memory management",
+  "Limited publicly available datasets support training for long-horizon interactive processes",
+  "The task augmentation composes existing single-objective datasets, which may not fully capture the complexity of all real-world scenarios"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

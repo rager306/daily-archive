@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.05291",
+ "tldr": "WorkArena++ is a benchmark of 682 compositional tasks built on the ServiceNow platform that evaluates web agents' planning, reasoning, retrieval, and contextual understanding abilities on realistic enterprise workflows, revealing that even state-of-the-art LLMs and VLMs largely fail while humans solve tasks with ease.",
+ "contributions": [
+  "Introduction of WorkArena++ benchmark expanding from 33 to 682 tasks with composite, realistic office worker trajectories requiring problem-solving, data-driven decision-making, and memorization",
+  "Technical improvements including visual diversity via 10 fictitious companies with customized UIs, improved database isolation through sandboxing, an extendable composition framework, and Oracle-based observation-action trace extraction for fine-tuning",
+  "Empirical evaluation showing state-of-the-art agents achieve near-zero success on WorkArena++ while humans achieve 87.5-100% success"
+ ],
+ "methods": "The authors built WorkArena++ on the ServiceNow platform using BrowserGym as the interaction environment. They expanded the original 33 WorkArena tasks into 682 tasks organized into two difficulty levels (L2 with explicit step-by-step instructions, L3 with implicit goals delivered via tickets requiring KB retrieval) across five skill categories: planning/problem solving, information retrieval, data-driven decision making, sophisticated memorization, and contextual understanding through infeasible tasks. They evaluated closed-source models (GPT-3.5, GPT-4o, GPT-4o-vision) and open-source models (Llama3-70b, Mixtral-8x22b) with a maximum of 50 time-steps per task, alongside human baseline evaluations.",
+ "results": "All evaluated agents generally failed on WorkArena++: GPT-4o achieved only 3.0±1.1% on L2 and 0% on L3; GPT-4o-v achieved 3.8±1.3% on L2 and 0% on L3. GPT-3.5, Llama3-70b, and Mixtral-8x22b scored 0% across both levels. GPT-4o-v showed some success on retrieval tasks involving reading charts. In contrast, humans achieved 87.5-100% success across task categories. For reference, agents scored 42.7% on WorkArena L1.",
+ "limitations": [
+  "Current web agents achieve near-zero success rates, indicating significant gaps before useful workplace deployment",
+  "The 50-step limit per task may constrain longer workflows",
+  "Context truncation was used for some models to fit within token limits",
+  "Visual diversity could be further expanded beyond the 10 fictitious brands"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

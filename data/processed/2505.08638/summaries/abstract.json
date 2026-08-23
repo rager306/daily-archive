@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.08638",
+ "tldr": "The paper introduces TRAIL, a benchmark of 148 human-annotated OpenTelemetry-structured agentic execution traces with a formal error taxonomy, and demonstrates that even state-of-the-art LLMs perform poorly at trace debugging, with the best model (Gemini-2.5-Pro) achieving only 11% joint accuracy.",
+ "contributions": [
+  "A formal error taxonomy spanning reasoning, planning/coordination, and system execution error categories",
+  "TRAIL dataset: 148 curated traces totaling 1,987 OpenTelemetry spans (575 with at least one error) drawn from GAIA and SWE-Bench Lite",
+  "Demonstration that current SOTA LLMs struggle significantly on trace debugging and error localization",
+  "Open-source release (MIT License) with a HuggingFace leaderboard"
+ ],
+ "methods": "The authors constructed traces using both single-agent (CodeAct with Claude-3-7-Sonnet on SWE-Bench Lite) and multi-agent (OpenDeepResearch with o3-mini as backbone on GAIA) systems, generating OpenTelemetry-structured traces grounded in real-world software engineering and open-world information retrieval tasks. Human annotators labeled errors according to a formal taxonomy across three areas: reasoning, planning/coordination, and system execution. The dataset contains 841 annotated errors averaging 5.68 errors per trace. They evaluated multiple SOTA LLM families (including o3, Claude-3.7-Sonnet, and Gemini-2.5-Pro) on predicting error categories and their locations within traces.",
+ "results": "Gemini-2.5-Pro achieved the best performance at only 11% combined joint accuracy on error category prediction and location localization across both GAIA and SWE-Bench splits. Traces are long, with many requiring a significant fraction of or exceeding LLM context length limits (totaling 1,987 OpenTelemetry spans). Models benefit from the presence and greater extent of reasoning chains. The dataset contains 841 total annotated errors across 148 traces (575 spans exhibit at least one error).",
+ "limitations": "The dataset size is relatively small at only 148 traces. Evaluating LLMs on TRAIL requires processing traces that approach or exceed maximum input lengths, which may limit which models can be fairly evaluated. The benchmark focuses on two specific domains (software engineering via SWE-Bench Lite and open-world IR via GAIA), which may not generalize to all agentic applications. Previous work noted that handling structured data remains challenging for LLMs, and this challenge persists with OpenTelemetry-structured traces.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

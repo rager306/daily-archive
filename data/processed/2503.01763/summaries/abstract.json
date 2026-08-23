@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.01763",
+ "tldr": "The paper introduces TOOLRET, a benchmark with 7.6k retrieval tasks and 43k tools, finding that even strong conventional IR models perform poorly on tool retrieval (e.g., NV-Embed-v1 achieves only nDCG@10 of 33.83), but training on their 200k+ instance dataset substantially improves performance.",
+ "contributions": [
+  "Introduce TOOLRET, the first large-scale evaluation benchmark for tool retrieval tasks comprising 7.6k diverse retrieval tasks and a corpus of 43k tools",
+  "Systematically evaluate six types of IR models on TOOLRET and analyze the impact of retrieval quality on the end-to-end task pass rate of tool-use LLMs",
+  "Contribute TOOLRET-train, a large-scale training dataset with over 200k retrieval instances that significantly enhances IR model performance"
+ ],
+ "methods": "The authors collected tool-use datasets from AI conferences (ACL, NeurIPS, EMNLP, CIKM) and open-source platforms like HuggingFace (30+ datasets, August 2023 to December 2024). They performed data cleaning, task sampling via K-means clustering on embeddings, and toolset deduplication/merging to produce 7.6k tasks and 43k tools. Instructions were generated using a target-aware strategy with GPT-4o guided by 100 human-crafted seed instructions. Six model types were evaluated: sparse retrieval (BM25s), single-task dense retrieval, multi-task embedding models, cross-encoder rerankers, and LLM agents. For training data, each retrieval task was paired with 10 negative tools retrieved by NV-Embed-v1.",
+ "results": "The best model (NV-Embed-v1) achieved only nDCG@10 of 33.83 on TOOLRET, substantially lower than its performance on conventional IR benchmarks. A pilot experiment on ToolBench showed that replacing pre-annotated toolsets with retrieved tools caused a 10.1 percentage point decrease in end-to-end task pass rate, with recall@10 of only 27.3%. Even strong retrievers like ColBERT-v2 struggled. Training on TOOLRET-train (200k+ instances) led to significant improvements in retrieval performance and higher end-to-end task pass rates.",
+ "limitations": "Tool retrieval tasks suffer from lower term overlap between queries and target tools compared to conventional IR, demanding higher representation abilities. There is a task shift from conventional information-seeking to tool retrieval, causing suboptimal performance of IR models not explicitly optimized for this domain. Existing benchmarks simplify retrieval by manually pre-annotating small tool sets (10-20 tools per task), which does not reflect real-world large-scale toolsets.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

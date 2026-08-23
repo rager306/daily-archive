@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.12839",
+ "tldr": "HIVE is a knowledge-aware planning system that uses PDDL-based formal logic and an LLM backbone to schedule, execute, and explain plans of atomic actions across multiple models, while respecting user constraints such as licensing and model size. It outperforms existing systems with 30% higher task selection accuracy and 100% constraint adherence.",
+ "contributions": [
+  "Capability Knowledge Graph (C-KG): a structured knowledge graph linking HuggingFace models to Papers With Code benchmarks, including performance metrics, properties (e.g., number of parameters, licensing), and executable Python code snippets",
+  "PDDL-empowered planning approach: mapping natural language instructions to PDDL problem spaces for formal, explainable planning of atomic action sequences across multiple models",
+  "MUSE benchmark: a new evaluation benchmark of 100 heterogeneous multi-modal queries (single-task, two-task, three-task) covering ASR, QA, and image generation across 15 models",
+  "HIVE and HIVE light: two system variants, with HIVE light using 8-bit quantized 7B-parameter models deployable on local servers"
+ ],
+ "methods": "The system first builds a Capability Knowledge Graph by extracting model cards from HuggingFace, aligning them with Papers With Code benchmarks via arXiv paper IDs, and using an LLM (DeepSeek-Coder) to generate Python execution functions from code snippets. Upon receiving a natural language query, HIVE parses it into structured components (instruction, text, question, URL, data, categories) and rephrases it for clarity. An LLM classifier selects relevant PDDL domains, which are merged into a unified domain file. The parsed instruction is then mapped to specific PDDL actions, reconstructing a PDDL problem solved by a Best First Width Search reasoner to produce an executable plan. Model selection optimizes for user constraints (licensing, computational resources, performance metrics). Finally, plan execution maps query components to Python function arguments via similarity matching, with a fallback to semantically similar models when code snippets are unavailable.",
+ "results": "HIVE outperforms HuggingGPT and ControlLLM across all three binary metrics (Task Selection, Flow of Thought, Final Output) on the MUSE benchmark. HIVE achieves 30% higher accuracy in task selection and respects user constraints in 100% of cases. HIVE light, despite using only 8-bit quantized 7B-parameter models, surpasses both baselines in overall evaluation. HuggingGPT achieves the highest Final Output score but performs poorly in Task Selection and Flow of Thought due to over-selecting tasks even for single-task queries.",
+ "limitations": "HuggingGPT's approach of collecting many relevant tasks can reduce trustworthiness through over-selection. The C-KG construction depends on available HuggingFace model cards and Papers With Code benchmark data. HIVE light uses quantized models which may sacrifice some precision for computational efficiency. The evaluation uses binary metrics that assess whether expected tasks are performed but do not judge output quality or accuracy. The benchmark includes only tasks and models supported by all three compared systems, potentially limiting scope.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.07853",
+ "tldr": "The paper proposes a structured temporal modeling pattern grounded in the IFLA LRMoo ontology that represents legal norms as chains of versioned F1 Works (Temporal Versions and Language Versions) with granular component-level versioning and event-centric amendment modeling, enabling deterministic point-in-time reconstruction of legal texts.",
+ "contributions": [
+  "A two-tier expression model distinguishing language-agnostic Temporal Versions (F1 Works) from their monolingual Language Versions (F2 Expressions)",
+  "Granular recursive component-level versioning using parallel hierarchies for Component Concepts, Component Temporal Versions, and Component Language Versions",
+  "Event-centric change modeling where amendments are reified as first-class events jointly typed as F27 Work Creation and E64 End of Existence",
+  "Deterministic point-in-time reconstruction demonstrated on the Brazilian Constitution, which has been amended over one hundred times"
+ ],
+ "methods": "The model is grounded in the IFLA LRMoo ontology, mapping each legal norm as a single immutable F1 Work Concept, with temporal evolution represented as a chain of distinct F1 Temporal Versions linked via R2 is derivative of. Each TV is realized through an F2 Expression Language Version. Legislative amendments are formalized as first-class events that use (P16) the amending provision as source, take out of existence (P93) the prior TV, and create (R16) the new TV. The component-level model applies the same pattern recursively to articles, paragraphs, etc., with a scalable event hierarchy leveraging CIDOC CRM's P9 consists of for process decomposition into micro-events. Validity intervals are derived from bounding events rather than stored statically, supporting bitemporal modeling with separate transaction time (P4 has time-span) and valid time properties.",
+ "results": "The Brazilian Constitution case study demonstrates the model can trace the constitution's lifecycle across 100+ amendments, including a detailed example of Constitutional Amendment No. 26 (2000-02-14) adding the word 'housing' (moradia) to the caput of Article 6. The architecture enables exact reconstruction of any part of a legal text as it existed on any given date. For instance, TV0 (1988-10-05) was created and TV1 (1992-03-31) was derived from it via Constitutional Amendment No. 1, forming an auditable version chain. Component-level lineage is preserved via R2 is derivative of at each CTV.",
+ "limitations": "Instantiating the hierarchical event structure at scale is a significant practical challenge. The parsing of unstructured legislative texts to reliably extract the inputs and outputs for each micro-event is described as a non-trivial task requiring dedicated processing pipelines, which the authors identify as future work rather than something achieved in this paper.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

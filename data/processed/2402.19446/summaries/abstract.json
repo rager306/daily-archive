@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.19446",
+ "tldr": "ArCHer is a hierarchical multi-turn reinforcement learning framework for fine-tuning LLMs that runs a high-level off-policy Q-learning algorithm and a low-level on-policy token-generation algorithm in parallel, achieving ~100x sample efficiency gains over on-policy methods like PPO.",
+ "contributions": [
+  "A general framework (ArCHer: Actor-Critic Framework with a Hierarchical Structure) for developing multi-turn RL algorithms for LLMs that combines high-level utterance-level value learning with low-level token-level policy optimization",
+  "Formulation of language generation as a hierarchical MDP with utterance-level actions at the high level and token-level actions at the low level",
+  "Demonstration of ~100x sample efficiency improvement over PPO and convergence to better performance than off-policy methods, with effectiveness shown up to 7B parameter scale"
+ ],
+ "methods": "The framework poses multi-turn language generation as a hierarchical MDP where each turn/utterance is a high-level action and each token within a turn is a low-level action. Two RL algorithms run in parallel: a high-level off-policy TD learner trains utterance-level Q and V functions using Bellman backups over stored interaction data, while a low-level on-policy actor optimizes token generation via REINFORCE policy gradients using the Q-derived advantage as terminal reward. The approach can also be extended with a token-level baseline for variance reduction and adapted for offline RL training.",
+ "results": "ArCHer achieves approximately 100x sample efficiency over existing on-policy methods like PPO, converges to better performance than off-policy methods, and scales effectively up to 7 billion parameters. For comparison, token-level ILQL took more than 10 days to converge on a task while filtered behavior cloning took less than a day.",
+ "limitations": [
+  "The paper notes that off-policy utterance-level methods using multiple candidate utterances from frozen pre-trained LLMs reduce the pace of policy improvement",
+  "Token-level methods suffer from extremely long horizons resulting in slow learning speeds",
+  "Direct Q-value optimization in offline settings can result in overestimation, divergence, and poor policy performance (partially addressed but discussed as a challenge)"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

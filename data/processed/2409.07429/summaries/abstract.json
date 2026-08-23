@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.07429",
+ "tldr": "Agent Workflow Memory (AWM) induces reusable workflows from past agent trajectories and stores them in memory to guide future task-solving, substantially improving web navigation performance on Mind2Web and WebArena benchmarks.",
+ "contributions": [
+  "Introducing Agent Workflow Memory (AWM), a method that extracts and stores reusable task routines (workflows) from agent experiences to guide subsequent actions",
+  "Demonstrating AWM works in both offline (from annotated examples) and online supervision-free (from self-generated correct predictions) settings",
+  "Showing efficient learning from small amounts of data, with substantial gains after only tens of examples",
+  "Evaluating cross-task, cross-website, and cross-domain generalization on two major benchmarks"
+ ],
+ "methods": "AWM uses a language model-based induction module to extract reusable sub-routines from agent trajectories, abstracting example-specific values into generalized placeholders (e.g., \"{product-name}\" instead of \"dry cat food\"). Each workflow consists of a textual description of the goal and a series of action steps. In the offline setting, workflows are induced from training examples beforehand and integrated into agent memory at inference time. In the online setting, the agent processes test queries in a streaming fashion, inducing workflows from self-generated correct predictions judged by an evaluation model, then adding them to memory for subsequent tasks. Experiments were conducted on WebArena (812 tasks across five websites) and Mind2Web using GPT-4 and GPT-3.5-turbo.",
+ "results": "On WebArena, AWM achieves 35.5% overall success rate, surpassing BrowserGym (23.5%) by 12.0 absolute points and 51.1% relative increase, and outperforming SteP (human-written workflows, 33.0%) by 7.6% relative. AWM reduces average steps to 5.9 per task versus 7.9 for BrowserGym and 46.7 for AutoEval. On Mind2Web, AWM offline improves step-wise success rate by 24.6% relative and task-level success rate by 4.0-8.9% relative over baselines. Cross-template generalization on WebArena shows consistent improvement across all website splits. Cross-website and cross-domain evaluations on Mind2Web show AWM surpassing baselines by 8.9 to 14.0 absolute points, with margins widening as train-test distribution gaps increase.",
+ "limitations": "The online setting relies on a neural evaluation model to judge whether predicted trajectories are successful before inducing workflows, which introduces dependency on the quality of the evaluator. Workflows are induced per-website, which may limit transfer across very different domains without additional training data.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:56Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

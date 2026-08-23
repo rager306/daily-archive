@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2306.05301",
+ "tldr": "ToolAlpaca is a framework that enables compact language models to learn generalized tool-use abilities by fine-tuning them on an automatically generated diverse corpus of ~3,900 tool-use instances spanning 400+ APIs across 50 categories.",
+ "contributions": [
+  "First work to verify the feasibility of equipping compact language models with generalized tool-use capacities comparable to extremely large language models",
+  "Proposes ToolAlpaca, a framework for automated generation of tool-use corpus and enhancement of generalized tool-use ability in compact LMs",
+  "Creates a diverse tool-use corpus of 3,938 instances from 400+ tools across 50 categories"
+ ],
+ "methods": "ToolAlpaca first constructs a diverse toolset by collecting tool names and introductions from the public-apis repository (over 1,400 APIs) and using LLMs to generate standardized documentation including descriptions, function documentation, and OpenAPI specifications. It then generates tool-use instances via a multi-agent simulation environment with three LLM-simulated agents: a user agent that drafts task instructions, an assistant agent that selects tools and executes actions in ReAct format, and a tool executor agent that simulates API responses using OpenAPI specs. The resulting corpus of 3,938 instances is used to fine-tune compact models (Vicuna-based), producing ToolAlpaca-7B and ToolAlpaca-13B.",
+ "results": "ToolAlpaca achieves generalized tool-use capabilities comparable to GPT-3.5 on unseen tools, including real-world APIs and multi-modal tools, evaluated via machine evaluation with GPT-4. Models trained on more diverse toolsets perform better even with the same number of instances, confirming diversity as a pivotal factor for generalization.",
+ "limitations": "The paper acknowledges that real-world tool-use instances involve complex multi-turn interactions that are difficult to construct at scale. The tool executor uses LLM-simulated responses rather than actual API calls, which may not fully capture real-world execution nuances. The approach relies on LLM-generated documentation that may contain inaccuracies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

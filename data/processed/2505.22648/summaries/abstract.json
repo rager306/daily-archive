@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.22648",
+ "tldr": "WebDancer presents a data-centric, four-stage paradigm (browsing data construction, trajectory sampling, SFT, and RL via DAPO) for building autonomous multi-step information-seeking web agents based on the ReAct framework.",
+ "contributions": [
+  "Two novel dataset synthesis pipelines: CRAWLQA (crawling authoritative websites and generating deep queries via GPT-4o) and E2HQA (iteratively evolving simple QA pairs into complex multi-step ones)",
+  "A four-stage training paradigm combining rejection sampling fine-tuning (Short-CoT and Long-CoT trajectories) followed by on-policy RL with the DAPO algorithm",
+  "WebDancer, instantiated on ReAct with search and click tools, achieving strong performance on GAIA and WebWalkerQA benchmarks"
+ ],
+ "methods": "The authors construct two synthetic datasets—CRAWLQA (crawling root URLs from sites like arxiv, github, wiki and using GPT-4o to generate QA pairs from subpages) and E2HQA (iteratively replacing entities with sub-questions to scale complexity). High-quality ReAct trajectories are sampled via rejection sampling using GPT-4o (Short-CoT) and QwQ-Plus (Long-CoT), then filtered through three stages: validity control, correctness verification, and quality assessment (limiting to ≤2 actions, checking non-redundancy, goal alignment, and logical accuracy). The model is first cold-start trained via SFT (masking observation tokens from loss), then refined with DAPO-based on-policy RL, which uses dynamic sampling to over-sample underutilized QA pairs and filter out prompts with perfect or zero accuracy.",
+ "results": "WebDancer achieves a Pass@3 score of 64.1% on GAIA and 62.0% on WebWalkerQA. It substantially outperforms vanilla ReAct baselines across model scales and surpasses GPT-4o in the best-case scenario. RL yields substantial Pass@3 and Cons@3 improvements for non-reasoning models, with Post-RL Pass@1 comparable to SFT baseline Pass@3. For LRM-based agents, RL improvements in Pass@1, Pass@3, and Cons@3 are marginal, though consistency improves slightly.",
+ "limitations": [
+  "RL improvements for LRMs are marginal, attributed to sparse reward signals from excessively long trajectories",
+  "Synthetically generated QA data may contain invalid or noisy instances that could degrade policy learning",
+  "Trajectory filtering restricts actions to ≤2, potentially discarding valid but longer reasoning paths",
+  "Test sets of existing benchmarks are small (GAIA: 466, WebWalkerQA: 680, BrowseComp: 1,266), limiting robust evaluation"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

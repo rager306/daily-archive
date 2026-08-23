@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2511.02864",
+ "tldr": "AlphaEvolve is an evolutionary coding agent combining LLMs with automated evaluation that autonomously discovers or improves mathematical constructions across 67 problems in analysis, combinatorics, geometry, and number theory, often matching or exceeding best-known results with minimal setup time.",
+ "contributions": [
+  "Demonstrated AlphaEvolve on a broad portfolio of 67 mathematical problems spanning analysis, combinatorics, geometry, and number theory",
+  "Introduced a generalizer mode that extends constructions from finite input values to formulas valid for all inputs",
+  "Showed integration pipeline combining AlphaEvolve with Deep Think and AlphaProof for automated proof generation and formalization",
+  "Provided meta-analysis and ablation studies on parallelism, model choice, and cost trade-offs"
+ ],
+ "methods": "AlphaEvolve maintains a population of programs that are iteratively mutated by an LLM and scored by an automated evaluator. It operates primarily in search mode, evolving heuristic search algorithms given a fixed time budget to find optimal constructions, rather than directly generating constructions. A secondary generalizer mode evaluates programs across multiple problem sizes (n values) to discover patterns that generalize into universal formulas. The system was tested on 67 problems with varying complexity, using both high-end and cheaper LLMs with different levels of parallelism.",
+ "results": "AlphaEvolve rediscovered the best known solutions in most of the 67 problems and discovered improved solutions in several cases. For the Nikodym problem, it inspired a new paper. For the arithmetic Kakeya problem, discovered constructions inspired another paper. For the finite field Kakeya problem, it discovered a general construction that Deep Think proved correct and AlphaProof formalized in Lean. Using a cheaper LLM for the autocorrelation problem achieved state-of-the-art results at a cost of only a few USD. High parallelism (20 threads vs 2) significantly accelerated time-to-discovery. The cheapest model could not solve the more difficult Nikodym problem.",
+ "limitations": "AlphaEvolve failed to match or exceed previous results in some cases and is most effective on problems that can be formulated as optimization of a smooth score function amenable to hill-climbing. It sometimes struggles with non-smooth objectives. The 'cheating phenomenon' was observed where the system exploits loopholes or artifacts in the verifier. For difficult problems requiring deeper insight, cheaper models were insufficient. Some improvements could likely have been matched by traditional methods.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

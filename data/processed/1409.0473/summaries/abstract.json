@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1409.0473",
+ "tldr": "The paper proposes an encoder-decoder neural machine translation model with an attention mechanism that jointly learns to align and translate, allowing the decoder to search for relevant source words adaptively. This approach outperforms basic fixed-length encoder-decoders, especially on long sentences, and achieves performance comparable to phrase-based systems.",
+ "contributions": [
+  "Introduction of an attention-based encoder-decoder model (RNNsearch) that learns to align source and target words during translation.",
+  "Use of a bidirectional RNN encoder to produce annotations capturing context around each source word.",
+  "Demonstration that the proposed model significantly improves translation quality over basic encoder-decoders, particularly for long sentences.",
+  "Qualitative analysis showing that the learned soft alignments are linguistically plausible and handle non-monotonic translations naturally."
+ ],
+ "methods": "The proposed RNNsearch model uses a bidirectional RNN encoder to generate annotations (h_j) for each source word. During decoding, at each step the decoder computes a context vector c_i as a weighted sum of these annotations, where weights alpha_ij are soft alignments learned via a feedforward neural network. The decoder is an RNN whose hidden state depends on the previous hidden state, previous target word, and the current context vector. Both encoder and decoder are trained jointly using minibatch stochastic gradient descent with Adadelta on English-to-French parallel data from WMT '14.",
+ "results": "On English-to-French translation, RNNsearch outperforms the basic RNN encoder-decoder (RNNencdec) across all sentence lengths. RNNsearch-50 achieves BLEU scores comparable to the phrase-based Moses system when evaluated only on sentences with known words, despite Moses using an additional monolingual corpus. RNNsearch shows much greater robustness to sentence length: while RNNencdec performance deteriorates rapidly for longer sentences, RNNsearch maintains performance even for sentences of length 50 or more. Qualitative alignment visualizations confirm that soft alignments capture plausible word correspondences, including non-monotonic patterns and handling of phrases with different lengths.",
+ "limitations": "The model was trained only on parallel corpora (850M words reduced to 348M) without using monolingual data for pretraining, although the authors note that monolingual data could potentially improve performance. The evaluation was restricted to sentences consisting of known words (shortlist of 30,000 words per language), and unknown words were mapped to a special token. The experiments were conducted only on English-to-French translation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

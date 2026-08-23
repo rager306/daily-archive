@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11169v1",
+ "tldr": "Piper decouples distributed training strategy declaration from runtime execution via a unified intermediate representation (IR) and scheduling directives, enabling both common strategies and novel composed strategies like DualPipe with 6-30% throughput improvement.",
+ "contributions": [
+  "A user scheduling API for controlling high-level parallelism and low-level intra-device execution",
+  "A unified IR (global training DAG) enabling joint scheduling of communication and computation across composed parallelism strategies",
+  "An efficient strategy-agnostic distributed runtime",
+  "End-to-end evaluation showing performance parity on common strategies and 6-30% throughput improvement on novel composed strategies"
+ ],
+ "methods": "Piper is built as a torch.compile backend with a Ray-based distributed runtime. Users annotate models with tensor placement directives (e.g., pipeline stage boundaries, expert parallelism tags) and scheduling directives that transform Piper's intermediate representation—a global training DAG of Chunk (compute) and Comm (communication) nodes. The compiler extracts a non-distributed DAG from model code, then applies user-specified transformations (microbatching, resource assignment to GPU streams, ordering constraints). A centralized scheduler produces per-device execution plans, which the strategy-agnostic runtime executes while respecting data and temporal dependencies.",
+ "results": "Piper matches performance of general-purpose frameworks (Megatron, TorchTitan) on widely supported strategies. It achieves 6-30% throughput improvement on composed strategies like DualPipe. In a case study combining PP with different ZeRO levels, Piper supports all strategies where other frameworks fail, enabling 3-8x larger batch sizes. A 1.46x slowdown from DP-allreduce interfering with EP all-to-alls was observed and addressed through finer-grained communication scheduling.",
+ "limitations": "Piper's approach still requires human expertise to design and specify strategies via annotations and directives, though it reduces the effort compared to prior systems. The paper notes that optimal intra-device scheduling decisions (e.g., when to overlap forwards with backwards vs. forwards with forwards) are nontrivial and may require extensive profiling. The system's centralized scheduler introduces some overhead, though it is designed to minimize CPU-based scheduling blocks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

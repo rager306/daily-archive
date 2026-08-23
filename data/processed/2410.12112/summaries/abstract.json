@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.12112",
+ "tldr": "LLMFP is a general-purpose zero-shot planning framework that leverages LLMs to formally formulate and solve planning problems as optimization problems from scratch, without requiring task-specific examples or external critics.",
+ "contributions": [
+  "A novel perspective on using LLMs to solve planning by rigorously constructing optimization problems from scratch, similar to how human experts use optimization tools",
+  "LLMFP, the first framework to enable LLMs to build and solve diverse types of planning problems as optimization problems with no task-specific examples or external critics",
+  "Strong empirical results: 83.7% and 86.8% optimal rates for GPT-4o and Claude 3.5 Sonnet across 9 tasks, outperforming the best baseline (direct planning with OpenAI o1-preview) by 37.6% and 40.7%"
+ ],
+ "methods": "LLMFP solves planning problems through a five-step pipeline: (1) DEFINER prompts an LLM to identify goals, decision variables, and constraints (including implicit ones inferred via commonsense reasoning) from natural language inputs; (2) FORMULATOR creates a structured JSON representation summarizing key information for each variable needed for coding; (3) CODE GENERATOR has LLMs write code to formally encode the problem using SMT (satisfiability modulo theory); (4) RESULT FORMATTER converts execution results into fixed-format plans; (5) SELF ASSESSMENT AND MODIFICATION assesses each step and automatically modifies the first incorrect step until the plan passes all assessments.",
+ "results": "Evaluated on 9 diverse planning problems ranging from single-step supply chain to multi-step robot block stacking. LLMFP achieves an average optimal rate of 83.7% for GPT-4o and 86.8% for Claude 3.5 Sonnet, significantly outperforming the best baseline (direct planning with OpenAI o1-preview) with 37.6% and 40.7% improvements respectively. Ablation experiments validated key components of LLMFP. The framework also demonstrates ease of adding task-specific examples to clarify unclear queries within the same domain.",
+ "limitations": "For multi-step planning problems, implicit constraints are absent because task descriptions must explicitly define preconditions and effects of each action, limiting the application of the implicit constraint discovery mechanism. The current implementation uses SMT solvers specifically, though the authors note it can be adapted to other planners or solvers. Performance still leaves room for improvement (not reaching 100% optimality). Some constraints require commonsense reasoning to infer, which depends on LLM capability.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

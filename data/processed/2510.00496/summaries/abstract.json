@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.00496",
+ "tldr": "Agent-ScanKit is a systematic probing framework using three orthogonal sensitivity perturbation paradigms (visual-guided, text-guided, structure-guided) to quantify memory vs. reasoning in multimodal GUI agents, revealing that most models rely on mechanical memorization rather than genuine reasoning.",
+ "contributions": [
+  "Comprehensive evaluation of 18 open-source GUI agents across 5 benchmarks, revealing infinite predictive space and finite generalization as two central challenges",
+  "Introduction of Agent-ScanKit, a unified probing toolkit for quantitative assessment of memory and reasoning through sensitivity perturbations without requiring model internals",
+  "Demonstration that existing agents exhibit spurious reasoning driven by over-memorization, with RL and CoT-augmented strategies showing limited but meaningful reasoning progress"
+ ],
+ "methods": "The authors propose three orthogonal probing paradigms using perturbation operators applied to the perceptual state space of a POMDP formulation. Visual-guided probing uses object masking, object editing, and zoom-in strategies to test whether grounding relies on memorized spatial priors versus contextual reasoning. Text-guided probing applies token-level masking and sentence-level substitution to atomic instructions to distinguish memory-driven from reasoning-driven textual processing. Structure-guided probing evaluates visual shortcuts (relying solely on current screen) and action shortcuts (relying solely on atomic instructions) for reflection and state actions. Performance is measured by delta_P = Acc(unperturbed) - Acc(perturbed), quantifying sensitivity to each perturbation type.",
+ "results": "Across 18 multimodal agents evaluated on AndroidControl, AITZ, GUI-Odyssey, GUI-Act-Mobile, and web/desktop benchmarks: (1) Agents perform relatively robustly on coordinate-based actions (e.g., CLICK) but show poor performance on reflection actions (PRESSHOME, PRESSBACK) and state actions (WAIT, COMPLETE). (2) Significant performance drops occur on long-horizon tasks (GUI Odyssey) and cross-platform scenarios, despite some models reporting stepwise accuracy above 80% on benchmarks like AITZ and AndroidControl. (3) Over-memorization is observed across all three probing strategies, with agents acting as retrievers of training-aligned knowledge. (4) SFT-based models outperform their RL counterparts in some cases. (5) CoT-augmented agents (e.g., AgentCPM-GUI) match the performance of strongest non-reasoning models and show some reasoning capability on the language modality side, enabling competence extrapolation and environmental adaptability.",
+ "limitations": "The paper notes that while RL is commonly regarded as a pathway to generalization, SFT-based models can outperform RL counterparts. CoT-augmented strategies remain imperfect and only provide limited reasoning capability. The study focuses on 18 open-source agents across 5 benchmarks, which may not capture the full spectrum of proprietary or closed models. Additionally, the probing framework itself may not fully disentangle memory from reasoning in all cases, and the analysis primarily targets GUI tasks rather than broader agent capabilities.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:14Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

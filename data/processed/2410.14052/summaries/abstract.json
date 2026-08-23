@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.14052",
+ "tldr": "MemTree is a dynamic tree-structured memory representation for LLMs that emulates human cognitive schemas, enabling efficient organization, retrieval, and integration of information through hierarchical aggregation and O(log N) insertion complexity.",
+ "contributions": [
+  "Introduction of MemTree, an algorithm using dynamic tree-structured memory representation inspired by human schemas",
+  "Online memory update mechanism with O(log N) insertion complexity using depth-adaptive similarity thresholds",
+  "Collapsed tree retrieval method comparing query embeddings against all nodes simultaneously",
+  "Theoretical approximation guarantee connecting MemTree to online hierarchical clustering algorithms"
+ ],
+ "methods": "MemTree represents memory as a directed tree where each node contains aggregated textual content, semantic embeddings, parent/child relationships, and depth. Upon new information, the algorithm traverses from the root, computing cosine similarity between the new embedding and child nodes using a depth-adaptive threshold θ(d) = θ₀e^(λd). If similarity exceeds the threshold, traversal continues deeper; otherwise, a new leaf node is created. Parent nodes along the traversal path are updated via conditional aggregation. Retrieval uses a collapsed tree approach, flattening all nodes and selecting top-k by cosine similarity. The method was evaluated on four benchmarks: Multi-Session Chat (500 sessions, ~15 rounds), Multi-Session Chat Extended (70 additional sessions, ~200 rounds), QuALITY (single-document QA), and MultiHop RAG (multi-document QA across 609 news articles).",
+ "results": "On Multi-Session Chat (15-round dialogue), MemTree outperforms online methods including MemoryStream and MemGPT. For extended conversations (~200 rounds), MemTree consistently maintains superior accuracy as discussions progress. On single-document QA (QuALITY), MemTree surpasses other online methods and reduces the performance gap with offline models, particularly exceeding RAPTOR on challenging questions requiring deeper reasoning. On multi-document QA (MultiHop RAG), MemTree surpasses online methods and approaches offline model performance, particularly outperforming GraphRAG. On complex temporal queries requiring analysis of event sequences across multiple documents, MemTree exceeds all offline methods.",
+ "limitations": "The tree structure is less flexible than a generic graph architecture, though it inherently biases the model towards hierarchical representation. Offline methods like RAPTOR and GraphRAG require complete dataset access and periodic full reconstruction to incorporate new information, whereas MemTree supports online updates. The depth-adaptive threshold and specific parameter values (θ₀, λ) require careful tuning, with details provided in Appendix A.1.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

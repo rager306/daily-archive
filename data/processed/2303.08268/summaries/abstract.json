@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.08268",
+ "tldr": "Matcha (Multimodal environment chatting) agent uses an LLM as its backbone to enable interactive multimodal perception, allowing a robot to autonomously decide on epistemic actions (knock, touch, weigh) across vision, sound, haptics, and weight modalities before executing a task in a partially observable environment.",
+ "contributions": [
+  "Establishment of a manipulation scenario with multimodal sensory data and language descriptions",
+  "Proposal of Matcha agent, an interactive perception framework where an LLM is prompted to work in a chatting fashion for continuous environmental feedback and contextual reasoning",
+  "Demonstration that LLMs can perform interactive multimodal perception and behavior explanation"
+ ],
+ "methods": "The authors propose Matcha, a modular framework with three components: an LLM backbone, multimodal perception modules (vision via ViLD, impact sound classification, weight measurement, haptic description), and a language-conditioned control policy. All modules communicate through natural language as an intermediate representation. Given a high-level instruction, the LLM selects perceiving commands (e.g., knock, touch, weigh) autoregressively until confident, then plans task execution. The LLM is used in a few-shot manner without fine-tuning. Experiments were conducted in CoppeliaSim simulations with the NICOL desktop robot equipped with two Open-Manipulator-Pro arms (right arm activated), performing object-picking tasks where material identification requires multiple modalities. OpenAI text-davinci-003 and text-ada-001 were used as LLM backends.",
+ "results": "The framework was evaluated on an object-picking task where robots were instructed to pick up objects by latent material properties not visually distinguishable. Two feedback description settings were tested: distinct descriptions (e.g., 'It could be plastic with a 47% chance, or ceramic with a 35% chance') and indistinct descriptions (e.g., 'dull', 'tinkling'). The system demonstrated that LLMs can provide high-level planning and reasoning skills and control interactive robot behavior in a multimodal environment. The distinct description setting was noted as more task-oriented for disambiguation, while the indistinct description setting was more task-agnostic with generalization potential.",
+ "limitations": "Experiments were conducted solely in CoppeliaSim simulations with simplified haptics (assigning variational material descriptions rather than real tactile sensing). Physics-driven sound simulation and deformable object simulation were not supported in CoppeliaSim, requiring alternative implementations. The vision module prioritized demonstrating multimodal integration over extensive fine-tuning of ViLD. Small LLMs were found unable to follow the prompt constraints strictly, generating unexpected commands and requiring extra tuning.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

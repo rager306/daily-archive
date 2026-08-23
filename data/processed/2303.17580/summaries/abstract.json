@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.17580",
+ "tldr": "HuggingGPT is an LLM-powered agent that uses ChatGPT as a controller to autonomously plan, select, and execute tasks using expert models from Hugging Face, enabling the solution of complex multi-modal AI tasks.",
+ "contributions": [
+  "Proposed HuggingGPT with an inter-model cooperation protocol that applies LLMs as the brain for planning and decision while automatically invoking and executing expert models for specific tasks.",
+  "Integrated the Hugging Face hub with numerous task-specific models around ChatGPT to tackle generalized AI tasks covering multiple modalities and domains, providing multimodal and reliable conversation services.",
+  "Formulated and evaluated task planning and model selection capabilities of LLMs across different task types (single, sequential, and graph tasks).",
+  "Conducted extensive experiments on challenging AI tasks across language, vision, speech, and cross-modality to demonstrate HuggingGPT's capability."
+ ],
+ "methods": "HuggingGPT operates in four stages: (1) Task Planning — ChatGPT analyzes user requests and decomposes them into structured sub-tasks with dependencies using a JSON-format prompt template with demonstrations; (2) Model Selection — ChatGPT selects appropriate models from Hugging Face based on their language descriptions, filtering by task type and ranking by download count to manage context limits; (3) Task Execution — Selected models are invoked with dynamically resolved resource dependencies (using <resource>-task_id symbols), with independent tasks executed in parallel; (4) Response Generation — ChatGPT integrates all inference results and generates human-readable responses.",
+ "results": "HuggingGPT can tackle a wide range of sophisticated AI tasks spanning different modalities and domains. Experiments were conducted on single tasks (e.g., object detection, image classification), sequential tasks (e.g., pose detection → pose-to-image generation → image-to-text → text-to-speech), and graph tasks (e.g., image similarity retrieval) across language, vision, speech, and cross-modality. Evaluation metrics included Precision, Recall, F1, Accuracy, Edit Distance, and GPT-4 Score for task planning. Specific numerical results are truncated in the provided text.",
+ "limitations": "Current LLMs are limited to text input/output and lack native ability to process complex information such as vision and speech. For challenging tasks, LLMs are weaker than fine-tuned expert models even in zero-shot/few-shot settings. The approach requires collecting high-quality model descriptions, which may involve prompt engineering. Additionally, context length limits constrain the number of models that can be considered simultaneously, requiring filtering and ranking strategies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

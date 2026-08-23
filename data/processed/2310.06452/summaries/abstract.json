@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.06452",
+ "tldr": "RLHF improves out-of-distribution generalization compared to SFT but significantly reduces output diversity, revealing an inherent tradeoff between generalization and diversity in current LLM fine-tuning methods.",
+ "contributions": [
+  "Extensive analysis of how each stage of the RLHF pipeline (SFT, reward modelling, RLHF) affects OOD generalisation and output diversity",
+  "Evaluation across two base models (LLaMa 7B and OPT at multiple sizes) on summarisation and instruction following tasks",
+  "Use of multiple diversity metrics covering syntactic (EAD), semantic (Sentence-BERT), and logical (NLI) diversity",
+  "Disentanglement of reward model effects vs optimization effects via Best-of-N analysis",
+  "Open-sourcing code for reproducible research"
+ ],
+ "methods": "The authors fine-tuned LLaMa 7B models through three stages: supervised fine-tuning (SFT) on input-output pairs using cross-entropy loss, reward modelling (RM) trained to predict human preferences on ~64,000 summary comparisons, and RLHF using PPO with a KL penalty (β_KL=0.05). They evaluated generalization using GPT-4 as a simulated human evaluator, measuring preference-vs-reference win rates on in-distribution and out-of-distribution test sets (e.g., CNN/DailyMail for summarisation, AlpacaEval and Sequential Instructions for instruction following). Diversity was measured using expectation-adjusted distinct N-grams, Sentence-BERT cosine similarity, and NLI diversity across K=16 outputs per N=500 inputs.",
+ "results": "RLHF improves both in-distribution and out-of-distribution performance compared to SFT. RLHF generalizes better than SFT to new inputs, particularly as distribution shift increases. Best-of-N (N=16) outperforms RLHF, which outperforms SFT, on both ID and OOD metrics. However, RLHF significantly reduces output diversity compared to SFT across all diversity measures in the per-input setting, and still reduces diversity to a lesser extent in the cross-input setting. The generalization gap for SFT and Bo16 policies were the same in summarisation. All policies showed performance drops OOD, with the reward model generalizing near-perfectly (ID accuracy 75.8, OOD accuracy 71.6 on CNNDM).",
+ "limitations": "Diversity evaluation relies on automated metrics (EAD, Sentence-BERT, NLI) rather than direct human diversity assessments, though these metrics are externally validated. Experiments focus primarily on the 7B LLaMa model with some additional work on OPT models of varying sizes that showed worse overall performance. The analysis is limited to summarisation and instruction following tasks. GPT-4 is used as a simulated human evaluator, which may not fully capture human preferences. Best-of-N sampling, while effective, has substantially higher inference-time compute cost making it impractical for many applications.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.00735",
+ "tldr": "LADDER is a framework that enables LLMs to autonomously improve problem-solving capabilities by recursively generating and solving progressively simpler variants of complex problems, using reinforcement learning without human supervision or curated datasets.",
+ "contributions": [
+  "Proposed LADDER, a framework for autonomous model improvement through recursive problem decomposition and self-guided RL via GRPO",
+  "Developed a systematic method for generating and verifying problem variants that create natural difficulty gradients, requiring only numerical verification",
+  "Demonstrated significant empirical improvements on mathematical integration tasks",
+  "Introduced Test-Time Reinforcement Learning (TTRL), scaling compute at inference time through variant generation and RL"
+ ],
+ "methods": "LADDER recursively generates trees of progressively simpler integral variants from complex problems, creating a natural difficulty gradient. Each variant is verified using numerical integration (sampling 5 points from [-10,10] and comparing within 10^-2 relative difference). Group Relative Policy Optimization (GRPO) is then used to train the model on these variants with a reward system based on accuracy and answer format. TTRL extends this by generating variants and performing RL at inference time for each test question, then rolling back to original parameters afterward.",
+ "results": "Llama 3.2 3B accuracy improved from 1% to 82% on undergraduate-level integration problems. Qwen2.5 7B Deepseek-R1 Distilled achieved 73% on the MIT Integration Bee qualifying examination using LADDER alone, and 90% with TTRL, surpassing OpenAI o1. The 7B model also significantly outperformed GPT-4o (42%) and typical human performance (15-30%) on the MIT Integration Bee.",
+ "limitations": "Approximately 8% of generated variants were effectively unsolvable (requiring more than 5 seconds for symbolic solution), and many were substantially harder than intended despite being designed as simpler variants. The numerical verifier may not be 100% accurate. Harder variants consumed significant computational resources during verification attempts and represented wasted generation capacity.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.07639",
+ "tldr": "Fast ECoT accelerates Embodied Chain-of-Thought reasoning by caching reusable high-level reasoning across timesteps, parallelizing reasoning step generation, and using an asynchronous scheduler to decouple reasoning from action decoding, achieving up to 7.7× latency reduction without model changes or additional training.",
+ "contributions": [
+  "Proposing Fast ECoT, an inference-time acceleration method exploiting structured temporal locality in ECoT reasoning",
+  "Caching and reusing high-level reasoning segments (e.g., planning, subtasks) across timesteps based on low update ratios",
+  "Parallelizing modular reasoning step generation using continuous batching via vLLM",
+  "Introducing an asynchronous scheduler that decouples slow reasoning updates from fast action decoding",
+  "Demonstrating improvements in both simulation (LIBERO) and real-world robot tasks"
+ ],
+ "methods": "The authors analyzed ECoT reasoning patterns on Bridge V2 and LIBERO-Goal, finding that high-level reasoning components like planning have low update ratios (e.g., 8.4%), meaning ~92% of content is reusable across timesteps. They reformulated each reasoning step as an independent generation task using prior context as prefix, enabling parallel generation. Continuous batching via vLLM handles variable-length inputs efficiently. An asynchronous mechanism allows the controller to decode actions from cached high-level reasoning while reasoning traces update in the background.",
+ "results": "In LIBERO simulation, Fast ECoT achieves 80.0% average success rate (highest among all methods) with 2156±353 ms latency (2.3× faster than ECoT's 4997±691 ms). Fast ECoT (Async) reaches 686±412 ms (nearly 7× faster) with 77.5% success rate and best LIBERO-Long performance (69%). In real-world experiments, Fast ECoT achieves 68.3% average success rate, while Fast ECoT (Async) delivers 716±529 ms latency (7.7× speedup over ECoT's 5556±384 ms) with 65.3% average success rate.",
+ "limitations": [
+  "Fast ECoT (Async) shows sensitivity to object layouts, with reduced performance on LIBERO-Object (75% vs 83% for standard Fast ECoT)",
+  "Async reasoning introduces temporal mismatch between cached reasoning and rapidly evolving actions",
+  "Prior ECoT variants either sacrifice task performance or suffer high inference latency",
+  "Low-level reasoning components refresh more frequently, limiting reuse opportunities for those steps"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

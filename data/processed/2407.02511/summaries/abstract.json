@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.02511",
+ "tldr": "LLM-A* combines A*'s precise local search with LLMs' global reasoning to reduce computational and memory costs in large-scale path planning while maintaining 100% path validity.",
+ "contributions": [
+  "Proposed LLM-A*, a hybrid path planning method integrating LLM-generated waypoints with A* heuristic search",
+  "Introduced three LLM prompting strategies: few-shot learning, chain-of-thought, and Recursive Path Evaluation (RePE)",
+  "Evaluated LLM pathfinding abilities in continuous environments with a novel benchmark incorporating spatial and temporal reasoning",
+  "Demonstrated significant operation and storage efficiency gains over A* across scalable environments"
+ ],
+ "methods": "LLM-A* uses an LLM to generate a target waypoint list T from start to goal via prompt, then runs A* while navigating toward each waypoint sequentially, recomputing f-costs as each target is reached. The method was tested using GPT-3.5-TURBO and LLAMA3-8B-16bit with three prompting techniques: 5-shot few-shot learning, 3-shot chain-of-thought, and 3-shot Recursive Path Evaluation. Experiments were conducted on 50×30 maps (original scale) and scaled from 1× to 10× to evaluate efficiency and scalability across increasing environmental complexity.",
+ "results": "On 50×30 maps, LLM-A* with GPT-3.5 achieved 57.39% operations and 74.96% storage relative to A*, with a 2.44% increase in relative path length. With LLAMA3, it achieved 44.59% operations and 64.02% storage with a 2.47% path length increase. LLM-A* maintained 100% valid path ratio across all scenarios. RePE showed marginal path length improvement (2.41%) for GPT-3.5 but underperformed in operation and storage ratios compared to CoT and few-shot. The LLM-only approach underperformed both LLM-A* and A* in path efficiency and validity. Efficiency gains were most pronounced at 10× scale where A*'s inefficiencies became increasingly pronounced.",
+ "limitations": "LLMs struggle with complex spatial and temporal reasoning, often generating invalid or ungrounded paths when used alone. The discretization of continuous environments is a necessary simplification. RePE underperforms on operations and storage for long-horizon tasks due to suboptimal intermediate points. LLM-A* introduces additional computational overhead from recomputing f-costs, scaling linearly with target list length and OPEN list size. The LLM-only approach lacks deterministic guarantees and heuristic guidance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

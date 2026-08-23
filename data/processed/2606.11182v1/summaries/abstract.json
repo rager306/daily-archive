@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11182v1",
+ "tldr": "Eevee is the first multi-dataset test-time prompt learning framework for LLM agents that uses a learned router to partition heterogeneous inputs into task clusters with specialized prompts, co-evolving both through interleaved phases to reduce cross-dataset interference.",
+ "contributions": [
+  "First multi-dataset test-time prompt learning framework for real-world heterogeneous task streams",
+  "A router that partitions inputs into task clusters assigned to specialized prompt configurations",
+  "A router-prompt co-evolution strategy with interleaved optimization phases",
+  "Demonstration of strong gains across four benchmarks with cross-model and cross-task generalization"
+ ],
+ "methods": "Eevee maintains a fixed target model M, a prompt set P={p1,...,pK}, and a learned router R. At inference, R selects a prompt slot for each input x. Learning proceeds in three stages: (1) Initialization greedily selects diverse prompts from a Pareto-front pool to create specialized behaviors; (2) Exploration alternates lightweight router evolution (scoring candidates by accuracy, consistency, and balance with annealed weights) and prompt evolution on routed data; (3) Convergence fixes the stable router and spends a larger budget optimizing each slot prompt. Router candidates are evaluated on downstream accuracy, compactness/separation of same-label examples, and balance of label usage.",
+ "results": "On Qwen3-4B-Instruct, Eevee reaches 51.75 average score, improving over baseline by +10.38 points and outperforming GEPA by 14.02 and ACE by 16.83 points. On DeepSeek-V3.2, it reaches 64.07 average, improving over baseline by +24.32 and over GEPA by 8.24 points, surpassing SOTA by up to 37.2% (GEPA) and 48.2% (ACE). HumanEval gains were +23.17 (Qwen3) and +50.00 (DeepSeek). In task scaling, Eevee ends at +41.53 cumulative retention after four tasks while GEPA and ACE drop below zero. Cross-model generalization raises DeepSeek-V3.2 from 39.75 to 54.10. Eevee uses 4.32k tokens per example vs. ACE's 21.30k. Ablations show learned routing (+8.17 over default router) and co-evolution (+8.87 over no-co-evolution) are both critical.",
+ "limitations": [
+  "Stochastic search cannot guarantee exact performance reproduction across runs",
+  "Relies on ground-truth or rule-based labels rather than being fully reflection-only",
+  "Requires a prepared adaptation set rather than operating on a completely online stream",
+  "Distribution mismatch risk: noisy or misaligned adaptation data may cause weak generalization or performance degradation",
+  "GPQA Diamond showed more regressions than recoveries, as learned reasoning can underweight domain knowledge"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.12519",
+ "tldr": "RaDAgent is a rational decision-making agent that learns internal utility judgment through an iterative framework of Experience Exploration (MCTS-style) and Elo-based Utility Learning, avoiding reliance on external performance measures. It achieves approximately 7.8% average improvement over baselines across four datasets.",
+ "contributions": [
+  "Proposes RaDAgent, a rational decision-making agent that constructs internal rationality without relying on external performance measures",
+  "Devises Elo-based Utility Learning, which assigns Elo scores to individual decision steps via pairwise comparisons to learn internal utility judgment",
+  "Demonstrates effectiveness and efficiency through extensive experiments on Game of 24, WebShop, ToolBench, and RestBench datasets"
+ ],
+ "methods": "RaDAgent operates through an iterative two-phase framework. In Experience Exploration, it uses a Monte Carlo Tree Search fashion, selecting decision steps with higher Elo scores via a temperature-modulated probability distribution (including a rejection option to explore new decisions). In Utility Learning, newly generated decision sequences are pairwise compared using the Elo rating system (with Elo coefficient r=173.72 and update step K=50), and Elo scores are propagated from final to intermediate decision steps using a weighted sum based on subsequent children's scores. The process repeats until the computational budget is exhausted, and the decision sequence with the highest final-step Elo score is selected.",
+ "results": "RaDAgent outperforms all baselines across Game of 24, WebShop, ToolBench, and RestBench, achieving about 7.8% improvement on average. On RestBench, it achieves a Correct Path Rate of 84.0% (TMDB) and 80.7% (Spotify). The method also reduces ChatGPT API call costs. For WebShop, gains are marginal due to the dataset having only one 'golden answer' while multiple alternative items satisfy the requirement.",
+ "limitations": [
+  "WebShop shows only marginal gains because the dataset's single golden answer underestimates valid alternative solutions",
+  "The approach relies on multiple iterative comparisons for Elo scores to converge, which may be computationally demanding",
+  "A maximum limit of 12 steps per decision sequence is imposed to manage API costs, potentially restricting exploration on longer-horizon tasks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

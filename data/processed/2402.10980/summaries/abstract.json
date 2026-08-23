@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.10980",
+ "tldr": "ChemReasoner is an AI-guided framework that combines LLM-driven heuristic search with quantum-chemistry-based feedback from graph neural networks to autonomously discover high-efficiency catalysts for target reactions.",
+ "contributions": [
+  "Introduction of CHEMREASONER, a novel hypothesis generation and testing framework unifying heuristic search over an LLM's knowledge-space with quantum chemistry-guided feedback",
+  "Demonstration that automated planning methods outperform expert-selected chemical descriptors in two out of three evaluation categories, with zero human input required",
+  "Establishment of domain-grounding of language models via quantum chemical property feedback, reasoning beyond adsorption energies to include reaction pathways and energy barriers"
+ ],
+ "methods": "CHEMREASONER formulates catalyst discovery as an uncertain environment where an LLM agent performs iterative tree-structured heuristic search, proposing candidate catalysts based on natural language prompts. Each candidate is transformed into a 3D atomistic representation and evaluated using a reward function derived from a GemNet-dT graph neural network trained on density functional theory simulations. Two reward functions are used: an adsorption energy-based reward and a reaction pathway-based reward that considers energy barriers across multi-step pathways. A planner component automatically generates context-aware actions to expand the search, and beam search pruning retains top-scoring nodes at each depth level until the maximum search depth is reached.",
+ "results": "Both CHEMREASONER variants significantly outperform the GPT-4 baseline. CHEMREASONER-Planner with GPT-4 performs best for OpenCatalyst and BioFuels categories, while CHEMREASONER-Expert performs best for CO2-Conversion queries. The top-1 prediction of CHEMREASONER-Expert shows high similarity to the current commercial catalyst for methanol synthesis. GPT-4 leads to an 11.28% reduction in average search depth. The evaluation covers three datasets: OpenCatalyst (86 queries), BioFuels (39 queries), and CO2-Fuel/CO2-Conversion (20 queries).",
+ "limitations": "LLaMA2's instruction-following capabilities were found too limited for evaluation in this domain. The Expert variant relies on a static action space defined by human experts. Some reaction pathways proposed by the LLM had to be manually narrowed from 5 down to 2 due to redundancy. The planner-guided approach's actions are context-dependent but the expert-guided approach cannot adapt to changing search contexts.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

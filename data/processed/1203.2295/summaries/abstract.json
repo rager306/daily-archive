@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1203.2295",
+ "tldr": "The paper compares three algorithms—backtracking, simulated annealing, and alternating projections—for solving Sudoku puzzles, finding that backtracking is infallible for 9×9 puzzles but scales poorly, while approximate methods like alternating projections may handle higher-dimensional combinatorial problems better.",
+ "contributions": [
+  "Systematic comparison of backtracking, simulated annealing, and alternating projections on Sudoku puzzles of varying difficulty",
+  "Demonstration that backtracking solves all tested 9×9 puzzles reliably while approximate methods falter on hard instances",
+  "Application of alternating projections to a continuous relaxation of Sudoku via probability tensors and simplex projections"
+ ],
+ "methods": "The paper implements three algorithms for solving 9×9 Sudoku puzzles. Backtracking constructs candidate solutions in dictionary order ordered by list cardinality, pruning infeasible branches. Simulated annealing operates on board states with cost equal to constraint violations, using non-uniform cell selection proportional to exp(i) constraint violations and a geometric cooling schedule starting at temperature 200. Alternating projections solves a continuous relaxation by projecting a 3D probability tensor onto 324 affine constraints (row, column, subgrid, and simplex constraints) using the Duchi et al. simplex projection algorithm.",
+ "results": "Backtracking solved 100% of all puzzles: 87 easy, 130 medium, 100 hard, and 95 very hard benchmarks. Simulated annealing succeeded on 85% easy, 89% medium, 72% hard, and only 3% of the 95 benchmark puzzles. Alternating projections succeeded on 100% easy, 100% medium, 97% hard, and 41% of benchmark puzzles. Backtracking was fastest overall with median times of 0.008s across all categories. Simulated annealing's maximum time reached 7.2 seconds on hard puzzles. On benchmark puzzles where alternating projections succeeded, it was often faster than backtracking.",
+ "limitations": "Backtracking does not scale well to high-dimensional combinatorial optimization problems. Simulated annealing gets trapped in local minima on very hard puzzles, which admit many near-solutions with few constraint violations. The alternating projection method's heuristic of imputing the most probable integer from a feasible probability tensor can fail to produce valid integer solutions, as counterexamples exist.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.03903",
+ "tldr": "The paper introduces the LLM-Coordination Benchmark, evaluating LLMs in pure coordination games through multi-turn agentic tasks and a 198-question CoordinationQA suite, finding that LLMs excel in environment-focused coordination but face significant challenges in Theory of Mind reasoning and joint planning.",
+ "contributions": [
+  "Introduction of the LLM-Coordination Benchmark featuring multi-turn Agentic Coordination and single-turn CoordinationQA tasks across four pure coordination games (Hanabi Challenge, Overcooked-AI, Collab Capture, Collab Escape)",
+  "Holistic evaluation of LLM agents in self-play and cross-play settings with detailed comparison against RL baselines",
+  "Component-level investigation of Environment Comprehension, Theory of Mind, and Joint Planning as essential coordination capabilities"
+ ],
+ "methods": "LLMs are scaffolded with a cognitive architecture comprising Memory (long-term, working, episodic), Reasoning, and Grounding modules, with optional ToM reasoning steps for Hanabi and Collab Escape. LLM agents are evaluated across four pure coordination games in both self-play and cross-play (zero-shot coordination) settings. A CoordinationQA suite with 198 multiple-choice questions (66 scenarios, 3 question types each) tests Environment Comprehension, Theory of Mind, and Joint Planning. RL baselines include PPO, Population-Based Training, BAD, SAD, and Off-Belief Learning.",
+ "results": "In Overcooked-AI self-play, GPT-4-turbo scores 13.33±0.88, matching or exceeding trained RL baselines. In Hanabi, GPT-4-turbo scores 10.33±0.88 (without verification), while RL baselines achieve ~24. LLM agents fail more severely as model capability decreases (GPT-3.5-turbo: 1.33, Mixtral-8x7b: 0.33). In cross-play, LLM agents collaborate with unseen partners, unlike self-play MARL methods that fail. CoordinationQA shows a marked performance gap between GPT-4-turbo and other LLMs; LLMs are most proficient in Environment Comprehension but face significant challenges in Theory of Mind and Joint Planning, with some LLMs performing worse than random on JP questions.",
+ "limitations": "LLM agents are significantly slower and larger than RL models, making them unsuitable for real-time use. Adding ToM reasoning to Overcooked was constrained by significant latency and cost with only marginal benefits. LLMs face very little margin for error in games like Hanabi. Some LLMs underperform Joint Planning questions at or below random chance, limiting their reliability as coordination partners.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

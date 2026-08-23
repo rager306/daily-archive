@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.08992",
+ "tldr": "CodeChain is an inference framework that improves LLM code generation on complex programming tasks by decomposing solutions into modular sub-modules and iteratively revising them through reuse of representative sub-modules from previous iterations.",
+ "contributions": [
+  "Proposing CodeChain, a novel inference framework for modular code generation via chain of self-revisions conditioned on representative sub-modules",
+  "Introducing chain-of-thought prompting to guide LLMs to first outline sub-module signatures before implementing them",
+  "Demonstrating state-of-the-art results on APPS and CodeContests benchmarks with relative pass@1 improvements of 35% and 76% respectively"
+ ],
+ "methods": "CodeChain first uses chain-of-thought prompting to instruct LLMs to decompose solutions into modular sub-modules (function headers and docstrings) before implementation. It then iterates up to 5 self-revision rounds: extracting sub-modules from N=20 generated samples per round, performing K-means clustering on their StarEncoder embeddings, selecting centroid sub-modules as representative and reusable components, and augmenting the prompt with these representatives to guide the LLM to reuse or adapt them in subsequent generations.",
+ "results": "CodeChain achieved relative pass@1 improvements of 35% on APPS and 76% on CodeContests. On APPS validation, CodeChain+GPT3.5 achieved 30.24% pass@1 (35.34% on filtered samples), and WizardCoder 15B achieved 10.50% pass@1, establishing new SoTA results. Improvements were consistent across both OpenAI LLMs and open-sourced models like WizardCoder (1B to 34B). Ablation studies showed that centroid-based sub-module selection (C-M) outperformed random sampling and whole-program reuse approaches.",
+ "limitations": "Chain-of-thought prompting alone was found to adversely impact correctness of end-to-end solutions (Table 3 shows CoT-only achieves only 26.00% pass@1 on APPS vs 33.50% with self-revision). The method requires a generation budget of N=20 samples per problem and up to 5 revision rounds, increasing computational cost. Not all current LLMs are pretrained to generate perfectly functioning modularized programs, necessitating the self-revision pipeline.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

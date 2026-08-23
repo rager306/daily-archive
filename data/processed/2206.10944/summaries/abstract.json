@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2206.10944",
+ "tldr": "POGEMA is a fast, flexible, and scalable sandbox environment for benchmarking partially observable multi-agent pathfinding (PO-MAPF) problems, supporting both planning-based and reinforcement learning approaches.",
+ "contributions": [
+  "Introduction of POGEMA, a grid-based sandbox for PO-MAPF that is flexible, tunable, and scalable",
+  "Procedurally generated maps with four difficulty levels across four grid sizes (8x8 to 64x64) to ensure generalization",
+  "Built-in baseline policies including search-based (A*) and learning-based (QMIX, VDN, IQL, APPO) methods",
+  "Out-of-the-box integration with PettingZoo and Gym interfaces, plus SampleFactory for distributed RL training",
+  "Public release of code and baselines at https://github.com/AIRI-Institute/pogema"
+ ],
+ "methods": "POGEMA is a 4-connected grid environment where each agent has a user-defined ego-centric observation radius R, receiving only local information about obstacles, other agents, and goal projections encoded as three matrices. Agents choose from move or wait actions, with infeasible (colliding) actions rejected. The environment supports custom maps via YAML, procedural generation with seeding, and provides reward of 1.0 upon reaching the goal. It offers built-in benchmarks at scales 8x8, 16x16, 32x32, 64x64 with obstacle density around 30% and observation radius of 5.",
+ "results": "The planning baseline using A* with greedy actions and loop-fix enhancements achieved up to 100% success on easy/normal tasks across all scales, but performance dropped significantly on harder settings—for example, A*+GA+FL solved only 22% of 32x32 extra-hard instances versus 100% on 8x8 extra-hard. Learning-based methods (PyMARL: QMIX, VDN, IQL) were evaluated on 8x8 extra-hard over 2 million steps, with centralized methods outperforming decentralized IQL due to cooperative requirements. APPO trained on 32x32 configurations at 100 million steps showed decreasing performance with increased agent density and map size. Sample efficiency reached up to 10k FPS for single-agent cases. Environment benchmarking showed 83,000 FPS for POGEMA vs. 184,000 for MAgent and 156 for Flatland (80 agents).",
+ "limitations": "Current observation space only includes ego-centric grid patches without inter-agent communication, which simulates challenging PO-MAPF but limits applicability; less restrictive observation designs are planned for future work. Centralized training algorithms are restricted to the exact PO-MAPF domain since state space varies with agent count and grid size. Planning baselines struggle significantly on larger, denser, extra-hard configurations. The reward function is sparse (only 1.0 at goal), though shaped rewards can be added via Gym wrappers.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

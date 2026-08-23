@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2603.03836",
+ "tldr": "SkillVLA addresses combinatorial diversity in bimanual manipulation by discovering latent skill structures from demonstrations and flexibly reusing/recombining single-arm skills, achieving 51% success on unseen skill combinations where baselines fail near-zero.",
+ "contributions": [
+  "Identified the skill entanglement issue in current VLAs (action entanglement via concatenated outputs and latent entanglement in action-expert architectures) and formally formulated the bimanual skill reuse problem",
+  "Proposed SkillVLA, a two-level reasoning architecture with a collaboration estimator that enables flexible skill reuse and adaptive per-arm vs. cooperative action generation",
+  "Validated SkillVLA on a real dual-arm robot across 20 manipulation tasks, two long-horizon multi-stage tasks, and a continual-learning study, demonstrating combinatorial generalization while maintaining cooperative performance"
+ ],
+ "methods": "SkillVLA uses a frozen high-level VLM (PaliGemma backbone from π0.5) that generates per-arm natural-language sub-prompts as skill descriptors, decoupling left and right arm selections. At the low level, separate fine-tuned streams (e.g., via LoRA) process visual input and per-arm prompts independently for single-arm skills. An adaptive cross-attention mechanism between action experts captures inter-arm dependence, gated by a cooperation estimator that predicts a scalar α ∈ [0,1]. The estimator is trained with a communication usefulness objective: L_coop = λ·L_on_BC − L_off_BC_sg · α_t, increasing α when cross-attention reduces behavioral cloning error. Additional regularization includes VLM-derived cooperation priors, sticky gating for temporal smoothness, and an optional discretization to α ∈ {0,1} with binary cross-entropy loss for stability.",
+ "results": "On unseen skill-recomposition tasks, strong bimanual VLA baselines achieve near-zero success due to skill entanglement, while SkillVLA raises success to 51%. On three highly-cooperative tasks, SkillVLA matches baseline performance, confirming preserved inter-arm coordination. On two multi-stage long-horizon tasks interleaving collaborative and independent phases, SkillVLA correctly identifies cooperation levels and reduces execution time by 21% by recomposing skills to parallelize arms. In continual learning with limited demonstrations, SkillVLA effectively reuses existing behaviors for acquiring new skills, achieving significantly better performance.",
+ "limitations": [
+  "The single-arm skill library is not explicitly available in practice; the model must discover and instantiate skill representations implicitly, which may limit discoverability for complex or ambiguous demonstrations",
+  "The cooperation estimator relies on behavioral cloning signals, which may not fully capture all nuanced coordination requirements in novel scenes",
+  "The paper notes that a continuous gate α_t can exhibit small persistent fluctuations that destabilize action generation, requiring optional discretization as a remedy",
+  "Evaluation is limited to 20 manipulation tasks and 2 long-horizon tasks on a single real dual-arm robot platform"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

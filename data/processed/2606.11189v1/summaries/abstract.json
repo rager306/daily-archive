@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11189v1",
+ "tldr": "The paper reinterprets supervised fine-tuning (SFT) as target distribution design rather than loss objective design, introducing the Q-target framework that decomposes SFT into trust in observed tokens and allocation of residual probability mass, and proposes TARGET-SFT which consistently outperforms baselines across 10 dataset-model settings.",
+ "contributions": [
+  "Introduce a target-distribution perspective on SFT, showing arbitrary token-level SFT losses can be understood through induced target distributions",
+  "Propose the Q-target framework unifying existing SFT variants via two explicit choices: how much to rely on observed tokens and how to allocate remaining probability mass",
+  "Propose TARGET-SFT as a concrete instantiation combining probability-proxy trust estimates with teacher-guided residual distribution, validated across 10 dataset-model settings"
+ ],
+ "methods": "The Q-target framework reparameterizes SFT supervision as Q_t = γ_t δ_{y_t} + (1-γ_t)π_t, where γ_t controls trust in the observed token and π_t specifies alternative probability allocation. Many existing SFT variants (token-weighted methods like p-loss, distributional methods like label smoothing and KL-constraints) are shown to correspond to implicit choices of (γ_t, π_t). For any differentiable loss, the induced target is derived as Q_k = p_k - g_k where g_k is the logit gradient. TARGET-SFT sets γ_t using the model probability p_y as a proxy for label trust, and constructs π_t via KL-regularized reward shaping with a teacher distribution, yielding π_guided_t ∝ π_θ^{1-η} π_T^η.",
+ "results": "TARGET-SFT achieves the highest Average@16 accuracy consistently across all 10 dataset-model settings evaluated on mathematical reasoning (NuminaMath-CoT-67k, OpenR1-Math-15k) and broader scientific reasoning (m23k). Standard SFT yields only modest gains in many cases and even hurts performance for Qwen3-1.7B on NuminaMath-CoT (14.26→12.99). Probability-weighted SFT (p-loss) performs relatively strongly but TARGET-SFT improves over p-loss in every case.",
+ "limitations": "The paper does not explicitly state limitations, but evident ones include: the framework assumes a teacher distribution is available for constructing π_t; the probability-proxy for γ_t relies on model probabilities which may not perfectly capture label uncertainty; and the evaluation is limited to mathematical/scientific reasoning datasets.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

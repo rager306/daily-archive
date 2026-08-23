@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.14314",
+ "tldr": "The paper proposes Reinforced Advantage (ReAd), a closed-loop feedback framework that uses learned multi-agent advantage functions to efficiently refine LLM-generated plans for embodied multi-agent collaboration, reducing excessive LLM queries and environmental interactions.",
+ "contributions": [
+  "Proposes ReAd (Reinforced Advantage), introducing two plan refinement schemes: ReAd-J (joint plan refinement) and ReAd-S (sequential individual plan refinement)",
+  "Extends advantage-weighted regression from single-agent RL to multi-agent settings with theoretical analysis",
+  "Introduces DV-RoCoBench, a difficult variant of RoCoBench, and adapts Overcooked-AI for evaluation"
+ ],
+ "methods": "The authors learn a sequential advantage function via critic regression on LLM-planned data, treating the LLM planner as an optimizer that generates actions maximizing the advantage function. They derive optimal joint and individual policies by extending advantage-weighted regression to multi-agent settings using multi-agent advantage decomposition (Lemma 1). A pre-trained critic network estimates advantage scores, and plans are refined when scores fall below a threshold, eliminating the need for physical verification or repeated LLM self-reflection.",
+ "results": "Experiments on DV-RoCoBench and adapted Overcooked-AI show that ReAd surpasses baselines (including RoCo, L2CAO, MARS) in success rate while significantly decreasing both agent interaction steps and LLM query rounds. RoCo is noted to suffer from poor efficiency due to excessive interactions and queries, resulting in failure in some cases.",
+ "limitations": "The method assumes the option of taking a WAIT (no-action) is available to each agent. Out-of-distribution (OOD) action estimation requires trajectory augmentation. The approach requires collecting a dataset D following the LLM behavior policy and training a critic network, adding setup complexity. Performance depends on the quality of the LLM planner as the baseline policy.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

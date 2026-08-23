@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.14322",
+ "tldr": "RET-LLM equips LLMs with a scalable, updatable, interpretable, and aggregatable external memory unit that stores knowledge as triplets, enabling explicit read-write operations for improved question answering, especially on temporal facts.",
+ "contributions": [
+  "A novel RET-LLM framework with a triplet-based memory unit inspired by Davidsonian semantics",
+  "A text-based Memory-API enabling LLMs to generate read/write calls to an external memory",
+  "Fine-tuning of Alpaca-7B using LoRA on synthetic data to learn memory API invocation",
+  "Demonstration of superior performance over baselines in QA, including temporal question answering"
+ ],
+ "methods": "The RET-LLM framework consists of three components: a fine-tuned LLM (Alpaca-7B with LoRA), a controller, and a triplet-based memory unit. The LLM is fine-tuned on synthetic datasets encoding relationships between people and organizations to learn generating memory API calls (MEM_WRITE and MEM_READ). Knowledge is extracted and stored as triplets in a three-column table, with average vector representations also stored in a Locality-Sensitive Hashing (LSH) table for fuzzy search. During retrieval, the system first attempts exact match lookups, then falls back to LSH-based vector similarity search.",
+ "results": "Qualitative evaluations demonstrate that RET-LLM outperforms baseline approaches like Alpaca-7B in question answering tasks. In zero-shot evaluations, Alpaca-7B produced incorrect answers even when all required information was present in the context, while RET-LLM stored extracted triplets and answered correctly without reinputting the context. The framework also handled temporal-based QA tasks effectively, such as tracking changing facts like US presidency, which standard LLMs struggle with due to static training data.",
+ "limitations": [
+  "Evaluation is primarily qualitative rather than quantitative",
+  "The synthetic dataset used for fine-tuning is limited in scope (single domain of people-relationship-organizations)",
+  "LSH-based retrieval may not always find a match, resulting in empty query outputs",
+  "No large-scale benchmarking across diverse domains is presented"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

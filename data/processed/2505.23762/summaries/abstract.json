@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.23762",
+ "tldr": "ZeroGUI is a scalable online learning framework that automates GUI Agent training at zero human cost through VLM-based automatic task generation, automatic reward estimation, and two-stage online reinforcement learning, significantly improving performance on OSWorld and AndroidLab.",
+ "contributions": [
+  "Proposes ZeroGUI, a fully automated online training framework for GUI agents with zero human annotation cost",
+  "Introduces VLM-based automatic task generation that produces diverse training tasks from random initial states, including infeasible tasks",
+  "Introduces VLM-based automatic reward estimation using a voting mechanism to reduce false positives",
+  "Adapts GRPO to multi-step trajectories with a modified KL loss term for improved training stability",
+  "Demonstrates significant performance gains on two advanced GUI agents (UI-TARS and Aguvis) across desktop and mobile environments"
+ ],
+ "methods": "ZeroGUI operates as a Markov Decision Process where GUI agents interact with environments through screenshots. It uses GPT-4o to generate training tasks (10 tasks per step for OSWorld, 5 for AndroidLab) via example-guided prompting and multi-candidate generation, including intentionally infeasible tasks. Reward estimation uses Qwen2.5-VL-32B queried 4 times with unanimous agreement voting, excluding agent responses to avoid hallucination-driven false positives. Two-stage online RL extends GRPO to multi-step trajectories, normalizing rewards within groups for advantage estimation, and replaces the k3-estimator KL loss with a k2-estimator (per-token MSE) for stability. Training used group size G=64, KL coefficient β=0.1, AdamW with learning rate 2e-6, and DAPO dynamic sampling.",
+ "results": "On OSWorld feasible subset: ZeroGUI-UI-TARS-7B achieves +4.5 absolute (+40% relative) improvement; ZeroGUI-Aguvis-7B achieves +2.1 absolute (+88% relative) improvement. On full OSWorld test set: UI-TARS-7B improves +2.5 absolute (+14% relative), Aguvis-7B improves +1.9 absolute (+63% relative). Generated task training significantly improves pass@4 (capability coverage), while test-time training primarily boosts all-pass@4 (consistency). More than 4,000 Ubuntu-based tasks and 225 Android-based tasks were generated, with 725 Ubuntu and 175 Android tasks sampled for training (approximately twice the test set size).",
+ "limitations": [
+  "VLM-based reward estimation is imperfect and may produce false positives or false negatives, with false positives having greater impact on policy improvement",
+  "Relies on screenshot-only evaluation mode; XML or SoM modes were not tested",
+  "GPT-based evaluation for certain AndroidLab query-detecting tasks is noted as not fully reliable",
+  "The two-stage approach requires additional computational cost for VLM-based task generation and reward estimation at each step",
+  "Training stability improvements required modifying the KL loss term, suggesting the original GRPO formulation is not directly applicable to multi-step GUI interaction settings"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

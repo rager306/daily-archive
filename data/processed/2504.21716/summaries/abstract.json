@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.21716",
+ "tldr": "The paper presents an LLM-driven agent-orchestration system for autonomous household robotics that combines memory-augmented task planning with RAG-based long-term memory, using three specialized agents (routing, task planning, and knowledge base) without explicit model training.",
+ "contributions": [
+  "A long-horizon task planner for household tasks leveraging in-context learning and offline LLMs",
+  "Use of RAG for efficient memory retrieval and object tracking",
+  "A modular agent-orchestration system with routing, task planning, and knowledge base agents",
+  "Evaluation of the system across three real-world household scenarios"
+ ],
+ "methods": "The system uses an agent-orchestration framework with three specialized LLM-powered agents. A routing agent directs incoming requests to either a task planning agent (for action commands) or a knowledge base agent (for history queries). Object detection is performed using Grounded SAM and LLaMa3.2-Vision, while RAG with BGE-M3 embeddings and ChromaDB enables memory retrieval from past interactions. The architecture was evaluated using OpenAI Swarm, testing Qwen2.5-32B, LLaMA3.1-8B, and Gemma2-27B across three household scenarios (dining table cleanup, living room cleanup, desk organization), each executed five times per model.",
+ "results": "Qwen2.5-32B achieved the highest task planning accuracy at 77.2% strict and 84.3% lenient total accuracy. With RAG, Qwen2.5 achieved 91.3% total validity in the knowledge base (100% response validity, 90% error detection, 75% trash status). LLaMA3.1-8B achieved the highest routing accuracy at 92.5%. RAG notably enhanced knowledge base performance: LLaMA3.1 improved from 80% to 100% total validity, and Qwen2.5 from 80% to 91.3% with RAG. Gemma2 achieved 68.7% strict task planning accuracy and 70.0% knowledge base validity with RAG.",
+ "limitations": "RAG struggles with repeated object interactions and long histories, making full-history queries impractical. Implicit queries where relevant information is not always found remain challenging. Some models occasionally produce invalid structured outputs leading to execution failures. Evaluating task execution is difficult due to subjective human preferences. The system does not integrate VLMs into the agent orchestrator beyond generating object lists.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

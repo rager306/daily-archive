@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.07553",
+ "tldr": "COMMA is a novel multimodal multi-agent benchmark using puzzles to evaluate collaborative performance through language communication between agents with unequal information access, revealing surprising weaknesses in state-of-the-art models including strong proprietary ones.",
+ "contributions": [
+  "Introduction of COMMA, a multimodal agent benchmark using puzzles to test language communication between multiple agents",
+  "Evaluation of state-of-the-art multimodal models (o4-mini, GPT-4o, Gemini, QwenVL, etc.) in collaborative settings with recorded conversations and performance metrics",
+  "Categorization of agent capabilities tested and common failure modes to inform future research directions"
+ ],
+ "methods": "The benchmark features a Solver agent (with visual access to puzzles) and an Expert agent (with instruction manuals but no visual access) that communicate via natural language to solve multimodal puzzles. The setup uses 10 puzzles across 4 categories (ATM, Telehealth, Color, Keypad, LED, Maze, Memory, Password, Who, Wire), each with 100 fixed initializations for 1000 total conversations. Experiments limit conversations to 10 turns and 3 mistakes, using greedy decoding for most models and temperature 0.6 for reasoning models, all inferred on a single NVIDIA A100 GPU.",
+ "results": "Human solver achieved 69.01% overall partial success rate, outperforming all models. Among AI models, o4-mini scored best at 53.98%, followed by GPT-4o at 41.74% and Gemini at 33.37%. Reasoning models struggled significantly: R1-OneVision scored 16.81% and LLaVA-CoT scored 14.97%, performing near the random baseline of 18.70%. Models generally performed better on wire puzzles (up to 99% for o4-mini) and struggled on Password puzzle (near 0% for most models).",
+ "limitations": "Human experiments used authors role-playing rather than dedicated participants; o3 was excluded due to similar performance to o4-mini at higher computational cost; conversation length limited to 10 turns and mistakes to 3; most models use greedy decoding while reasoning models use temperature 0.6, which may affect comparability",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

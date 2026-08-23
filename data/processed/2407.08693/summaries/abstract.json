@@ -1,0 +1,28 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.08693",
+ "tldr": "The paper introduces Embodied Chain-of-Thought (ECoT) reasoning for vision-language-action (VLA) models, training them to generate multi-step reasoning about plans, sub-tasks, motions, and visual features before predicting robot actions. ECoT increases the absolute success rate of OpenVLA by 28% across challenging generalization tasks without additional robot training data.",
+ "contributions": [
+  "Introduction of Embodied Chain-of-Thought (ECoT) reasoning for VLAs, combining semantic-level sub-task reasoning with grounded visual and embodied reasoning",
+  "A scalable pipeline for synthetically generating ECoT training data using pre-trained vision and language foundation models",
+  "Demonstration that ECoT improves OpenVLA's success rate by 28% on challenging generalization tasks without additional robot training data",
+  "Showing that ECoT makes policy failures more interpretable and correctable via natural language feedback",
+  "Demonstrating transfer of ECoT reasoning to unseen embodiments and tasks",
+  "Efficient inference strategies (synchronous and asynchronous execution) to address the slowdown from additional reasoning tokens"
+ ],
+ "methods": "The authors train VLA policies to autoregressively generate multi-step embodied chain-of-thought reasoning before predicting robot actions. The reasoning chain includes: rephrasing the task instruction, predicting a high-level plan, identifying the current sub-task, predicting low-level movement primitives, and grounding reasoning in visual features like object bounding boxes and end-effector positions. Since current open-source VLAs have relatively weak LLM backbones, they designed a synthetic data generation pipeline using Prismatic-7B VLM for scene descriptions, Grounding DINO for object detection, OWLv2 and SAM for end-effector localization, templated motion primitives from proprioception, and Gemini 1.0 to generate the final reasoning chains. The pipeline was run on the Bridge v2 dataset (2.5M transitions over 7 days). For efficient inference, they propose synchronous execution (updating high-level reasoning every N steps) and asynchronous execution (one policy instance updating reasoning while another predicts actions).",
+ "results": "ECoT increases the absolute success rate of OpenVLA by 28% across challenging generalization tasks involving new objects, scenes, viewpoints, and instructions, with no additional robot training data. ECoT makes policy failures more interpretable and allows humans to correct behavior via natural language feedback. The model learns to transfer ECoT reasoning to unseen embodiments and tasks. Synchronous and asynchronous execution strategies were evaluated as trade-offs between performance and inference speed.",
+ "limitations": [
+  "Relatively small LLM backbones in open-source VLAs struggle to perform involved reasoning when simply prompted (motivating the need for explicit training)",
+  "Additional reasoning tokens significantly increase inference time (from 7 tokens to 350 tokens per timestep for OpenVLA vs ECoT)",
+  "The choice of reasoning tasks and their ordering was not exhaustively explored; testing alternatives and automatically determining reasoning chains is left for future work",
+  "Runtime improvements discussed are orthogonal to other throughput optimization approaches like speculative decoding, which were not explored",
+  "Fair comparison with RT-2-X is limited since it was trained on additional datasets beyond Bridge V2"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.02937",
+ "tldr": "Existing heuristic multimodal RAG methods suffer from rigid retrieval processes that fail on dynamic questions; the authors propose Dyn-VQA, a dataset of 1,452 complex dynamic questions, and OmniSearch, a self-adaptive retrieval planning agent that significantly outperforms existing methods.",
+ "contributions": [
+  "Propose Dyn-VQA, a dataset of 1,452 dynamic questions spanning three types: rapidly changing answers, multi-modal knowledge requirements, and multi-hop reasoning.",
+  "Benchmark various mRAG methods with leading MLLMs on Dyn-VQA, demonstrating their flaws in handling dynamic questions.",
+  "Propose OmniSearch, the first self-adaptive multimodal retrieval agent that dynamically decomposes complex questions into sub-question chains with retrieval actions.",
+  "Show through extensive experiments that OmniSearch (GPT-4V) significantly outperforms state-of-the-art MLLMs with heuristic mRAGs and commercial generative search engines."
+ ],
+ "methods": "The authors constructed Dyn-VQA through a three-step annotation process: textual question writing categorized by answer update frequency, modality, and reasoning hops; multimodal rewriting replacing visual concepts with co-references paired with real images; and Chinese-English translation with manual verification. They then proposed OmniSearch, a self-adaptive planning agent consisting of three modules: a planning agent that decomposes questions into sub-questions and plans retrieval actions (self-thought, sub-question, retrieval API, and query), a retriever executing web/image searches, and a sub-question solver generating feedback. Two versions were developed based on GPT-4V and Qwen-VL-Chat, with the latter trained using a retrieval API dataset synthesized from GPT-4V and Infoseek.",
+ "results": "OmniSearch (GPT-4V) significantly outperforms other models including state-of-the-art MLLMs with heuristic mRAGs and commercial generative search engines. Even Qwen-VL-Chat-based OmniSearch surpasses considerably larger GPT-4V equipped with two-step heuristic mRAG. Commercial generative search engines perform poorly, with best-performing Gemini only matching GPT-4V with two-step mRAG. Using GPT-4V as sub-question solver significantly enhances Qwen-VL-Chat-based OmniSearch performance. Despite achieving more than 50% performance, Dyn-VQA remains formidable, with fast-changing, >2-hop, and external visual knowledge questions posing the most intractable challenges.",
+ "limitations": [
+  "Significant gap remains between OmniSearch and human performance on the three most challenging subcategories (fast-changing, >2-hop, requiring external visual knowledge).",
+  "Retriever tools are limited to web search, image search with text, and image retrieval with images.",
+  "Questions requiring rapidly changing knowledge pose the most intractable challenge as such knowledge cannot be internalized by MLLMs.",
+  "All models consistently underperform on questions necessitating multi-step retrieval or additional visual knowledge."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

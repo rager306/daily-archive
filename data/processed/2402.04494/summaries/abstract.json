@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.04494",
+ "tldr": "This paper demonstrates that large-scale transformers trained via supervised learning on 10 million chess games can approximate search-based value estimation without explicit search, achieving grandmaster-level play (Lichess blitz Elo 2895) with non-trivial generalization to novel board states.",
+ "contributions": [
+  "Introduction of ChessBench, a large-scale benchmark dataset of 530M board states from 10M Lichess games annotated with Stockfish 16, providing 15.3B action-value estimates",
+  "Training transformers up to 270M parameters to predict action-values via supervised learning, with resulting policies achieving Lichess blitz Elo of 2895 and puzzle solving ability up to Elo 2867 without explicit search",
+  "Extensive ablations on model size, dataset size, architecture, prediction targets (action-values, state-values, behavioral cloning), and loss functions",
+  "Open sourcing of the ChessBench dataset, model weights, and training/evaluation code"
+ ],
+ "methods": "The authors extracted 10 million games from Lichess and annotated all unique board states with Stockfish 16 as the value oracle (50ms per board), computing state-values (win percentages) and action-values for all legal moves. They trained decoder-only transformers with up to 270M parameters (16 layers, 8 heads, embedding dimension 1024) via supervised learning using cross-entropy loss with HL-Gauss label smoothing. Three prediction targets were compared: action-value prediction (predicting Q-values for state-action pairs), state-value prediction (predicting V-values for board states), and behavioral cloning (predicting oracle best actions). Policies were constructed by either selecting the action with maximal predicted action-value, the action leading to the state with worst opponent value, or the highest-probability cloned action.",
+ "results": "The 270M parameter transformer achieved a tournament Elo of 2299 against other agents and a Lichess blitz Elo of 2895 against humans (grandmaster level), with puzzle accuracy on challenges rated up to Elo 2867. Action accuracy increased with model scale: 9M params (2025 Elo), 136M params (2259 Elo), 270M params (2895 Elo). The largest model achieved 95.4% puzzle accuracy. Stockfish 16 with 50ms time limit (the oracle) achieved 2713 Elo vs bots and 99.8% puzzle accuracy, while Stockfish with 1.5s per board achieved 2935-2940 Elo. Leela Chess Zero with 400 MCTS simulations achieved 2858 tournament Elo. All tested models showed non-trivial generalization to novel board states.",
+ "limitations": "Perfect distillation of Stockfish's search-based algorithm remains beyond reach, with a persistent performance gap between supervised transformers and search-based engines like Stockfish 16 (2895 vs 2940 Elo) and Leela Chess Zero with MCTS (2858 tournament Elo). 14.7% of the i.i.d. test set boards overlap with training data (mostly early-game states). The FEN-based input is technically non-Markovian since it cannot capture threefold repetition draws without move history. Playing strength dropped when facing bots versus humans on Lichess, potentially due to different player pools.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

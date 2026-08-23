@@ -1,0 +1,31 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.02158",
+ "tldr": "The paper introduces Reflection-Augmented Planning (ReAP), a web navigation system that stores and retrieves self-reflections from prior successful and failed trajectories, enabling agents to learn from past experiences without additional training. ReAP improves success rates by 11 points overall and by 29 points on previously failed tasks while reducing execution costs.",
+ "contributions": [
+  "Proposing ReAP, a retrieval-based memory system that stores key insights (reflections) from prior web navigation trajectories rather than full workflow examples",
+  "Demonstrating that reflection-based prompting improves performance on both previously seen tasks (+5 points SR, +20 points on previously failed tasks) and novel/transfer tasks (+11 points overall, +29 points on previously failed tasks)",
+  "Showing significant cost reductions: up to 74% token reduction and 51% time reduction with the Summary method, and 29.1% step reduction on unseen tasks with the Reflection method",
+  "Evaluating multiple embedding models for semantic task retrieval and demonstrating effective knowledge transfer between similar but distinct web navigation tasks"
+ ],
+ "methods": "The authors propose Reflection-Augmented Planning (ReAP), a two-phase pipeline. In the memory-building phase, the system collects trajectories from a baseline agent (AgentOccam using gpt-4o-2024-08-06) on WebArena tasks and generates structured reflections using LLM prompts. Three knowledge types are tested: (1) One-shot with reward label (raw trajectory), (2) Summary with reward label (high-level plan summary), and (3) Web-Reflection with reward label (structured insights covering useful subgoals, backtracking/challenges, limited functionalities, shortcuts, and feedback). During inference, the current task is embedded using gte-Qwen2-7B-instruct, the top-k=5 most relevant reflections are retrieved via cosine similarity, and incorporated into the agent's prompt. Experiments evaluate performance on 70 WebArena tasks across both previously seen tasks (Hypothesis 1) and a train-test split for unseen task transfer (Hypothesis 2).",
+ "results": [
+  "Previously seen tasks: All reflection methods improved baseline by +5 points overall. On previously failed tasks, agents improved by +20 points when provided reflections from failed trajectories. Best methods (Summary and Reflection) reached 84% SR on previously successful tasks, indicating some negative transfer.",
+  "Unseen/transfer tasks: Overall +11 point SR improvement. Previously failed tasks showed a +29 point improvement (paper abstract states 29 points; section 5 states 28 points from previously failed trajectories). Reflection outperformed baseline by 14.2 points (GitLab), 23.1 points (map), 12.6 points (shopping), and 14.3 points (shopping_admin). Reddit showed performance decreases (-22.2 points for seen, -11.1 points for unseen).",
+  "Cost reductions for seen tasks: Reflection method reduced steps by 15.4% (11.92 to 10.08), and Summary cut tokens by ~74% (221k to 58k) and execution time by 51% (682s to 334s).",
+  "Cost reductions for unseen tasks: Steps reduced by 29.1% overall and 37.1% on previously failed tasks. Reflection required only 83k tokens vs. 221k baseline.",
+  "Embedding evaluation: llama8b-nnetnav-wa struggled to separate shopping from shopping_admin. gte-Qwen2-7B-instruct was selected despite some difficulty distinguishing these categories, contributing +12 points on both task types."
+ ],
+ "limitations": [
+  "Evaluation is bounded to the WebArena benchmark; extending to more realistic benchmarks like Mind2Web and WebVoyager was not feasible due to resource limitations (Mind2Web's automated evaluation operates at ~85% accuracy, WebVoyager requires human annotators)",
+  "Experiments focused on a single base agent (AgentOccam); performance with open-source models and diverse architectures remains untested",
+  "Some negative transfer observed, particularly on Reddit tasks where performance decreased (-22.2 points for seen tasks, -11.1 points for unseen tasks)",
+  "Best reflection methods achieved only 84% SR on previously successful tasks, indicating imperfect retention of prior knowledge"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

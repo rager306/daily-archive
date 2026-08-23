@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.00070",
+ "tldr": "ROBOT-R1 is a reinforcement learning framework that trains 7B-parameter Large Vision-Language Models to predict next keypoint states for robot control through multiple-choice QA tasks optimized via GRPO, outperforming SFT methods and GPT-4o on embodied reasoning benchmarks.",
+ "contributions": [
+  "ROBOT-R1 framework using RL (GRPO) to enhance embodied reasoning for robot control",
+  "Reformulation of continuous next-state prediction into discrete multiple-choice QA tasks (waypoint prediction, current state prediction, movement prediction)",
+  "ROBOT-R1 Bench: a new open-ended benchmark evaluating planning, high-level action reasoning, movement reasoning, and spatial reasoning",
+  "Demonstration that a 7B-parameter model surpasses GPT-4o on low-level action control reasoning tasks"
+ ],
+ "methods": "The authors use GRPO (Group Relative Policy Optimization) to reinforce reasoning pathways in a 7B LVLM (Qwen2.5-7b-VL-Ins). Next-state prediction is reformulated as multiple-choice QA from expert demonstrations in RLBench (5 tasks, ~7.5K QA pairs). Three QA tasks are used: predicting next waypoint state, current state prediction, and rule-based movement prediction (e.g., 'move up'). Metadata encoding environmental details, coordinate systems, and object dimensions is incorporated as conditional input. Reward consists of format reward plus answer correctness reward. Training uses batch size 128 over 5 epochs with 5 samples per prompt.",
+ "results": "ROBOT-R1-trained model outperforms all evaluated commercial models on the ROBOT-R1 Bench. Improvements over SFT: >28% on ROBOT-R1 Bench, 31% on EmbodiedBench Manipulation, ~40% on SpatialRGPTbench quantitative metrics, and ~60% on SpatialRGPTbench qualitative metrics. The 7B-parameter ROBOT-R1 surpasses GPT-4o on spatial and movement reasoning tasks. Outperforms both Direct SFT and CoT SFT baselines.",
+ "limitations": "Evaluation is limited to table-top manipulation scenarios; robot state simplification considers only Cartesian position (x,y,z) ignoring orientation and gripper state. High-level reasoning shows higher variability due to inherently diverse valid actions. Benchmark uses LLM-as-judge evaluation via GPT-4o which may introduce bias. Effectiveness on real-world physical robots is not demonstrated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:14Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

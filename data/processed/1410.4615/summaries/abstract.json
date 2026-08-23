@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1410.4615",
+ "tldr": "LSTMs can learn to evaluate short computer programs character-by-character in a single left-to-right pass when trained with a novel curriculum learning strategy, achieving 99% accuracy on adding two 9-digit numbers.",
+ "contributions": [
+  "Demonstrating that LSTMs can map character-level representations of simple programs to correct outputs, a domain previously seen as too complex for neural networks",
+  "Proposing a new curriculum learning strategy (combined) that outperforms both baseline training and naive curriculum learning across all experimental conditions",
+  "Introducing input transformations (reversing and replicating input sequences) that improve LSTM performance on memorization tasks"
+ ],
+ "methods": "The authors trained deep LSTMs (2 layers, 400 cells per layer, 50 unrolled steps, ~2.5M parameters) on a constrained class of Python-like programs evaluable in O(n) time and constant memory with a single left-to-right pass. Programs consisted of addition, subtraction, multiplication, variable assignments, if-statements, and single for-loops with bounded nesting. Four curriculum learning strategies were evaluated: no curriculum (baseline), naive curriculum (gradually increasing length then nesting), mixed strategy (random sampling across difficulty levels), and combined strategy (mixing naive and mixed approaches). Two input transformations—reversing and doubling the input sequence—were also applied to the memorization task.",
+ "results": "The combined curriculum strategy outperformed all other strategies in every configuration on program evaluation. On the addition task, it achieved 99% accuracy on adding two 9-digit numbers, a dramatic improvement over naive curriculum learning. For the memorization task (copying sequences of lengths 5 to 65), the combined strategy did not always outperform the mixed strategy, but both were better than baseline and naive curriculum. Simultaneously applying input doubling and reversing achieved the best memorization results.",
+ "limitations": [
+  "Programs are restricted to those evaluable in linear time and constant memory with a single pass and no double loops",
+  "One multiplication operand and for-loop ranges are constrained to a smaller range [1, 4*length] due to model limitations",
+  "Accuracy was measured using teacher forcing, which likely overestimates real performance without teacher forcing",
+  "The naive curriculum learning strategy sometimes performed worse than the baseline with no curriculum",
+  "The hidden state allocation hypothesis explaining curriculum effectiveness is presented as a plausible explanation rather than proven fact"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

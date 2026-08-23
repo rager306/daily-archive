@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.12391",
+ "tldr": "The paper introduces TAIS (Team of AI-made Scientists), a multi-agent LLM framework with five specialized roles that automates gene expression data analysis to identify disease-predictive genes under various conditions, achieving a 69.08% success rate on a benchmark of 457 trait-condition questions.",
+ "contributions": [
+  "Introduced the TAIS system, an agent system simulating scientific research activities for analyzing genes predictive of disease under various conditions",
+  "Introduced crucial pipeline steps including confounding factor correction and two-step regression to account for missing conditions",
+  "Developed the Genetic Question Exploration (GenQEX) benchmark with 457 trait-condition pairs and gold-standard solutions for evaluation"
+ ],
+ "methods": "TAIS employs five LLM-based roles—Project Manager, Data Engineer, Statistician, Domain Expert, and Code Reviewer—organized in a two-stage pipeline for data preparation and regression-based association testing. Agents collaborate via a Write-Run-Audit pattern where code is reviewed by a Code Reviewer in bounded rounds, and biomedical decisions are delegated to a Domain Expert. For regression, the system uses Lasso for variable selection, eigenvalue gap analysis for confounding detection, linear mixed models for confounding correction, and a two-step residualization approach to estimate missing conditions from common genes across datasets. The GenQEX benchmark comprises 457 question pairs derived from 67 traits across 9 categories, paired with demographic attributes or other traits, sourced from TCGA, GEO, and NCBI Gene.",
+ "results": "End-to-end TAIS achieves Success Rate 69.08%, Precision 33.91%, Recall 31.70%, F1 30.27%, and Jaccard 21.13%. Single-step tasks are substantially easier than two-step tasks (F1 45.05% vs 19.21%). With gold-standard preprocessed inputs, the Statistician alone reaches F1 89.30% with 2 review rounds (up from 55.95% with 0 reviews). With TAIS-preprocessed data and gold-standard regression, F1 improves from 14.41% (0 reviews) to 33.01% (2 reviews), with SR increasing from 34.83% to 74.02%. A case study on pancreatic cancer and Vitamin D levels identified 20+ genes with 80% cross-validation accuracy, four of the top five (SLC11A1, SOCS1, CD207, LILRB3, SPA17) corroborated by existing biomedical literature.",
+ "limitations": "The dominant bottleneck is data preprocessing rather than regression, with two-step tasks remaining particularly challenging due to difficulty extracting and harmonizing condition signals from heterogeneous metadata. The end-to-end F1 (30.27%) remains far below the regression-only setting (89.30%), primarily due to preprocessing quality. The system uses off-the-shelf LLMs without domain-specific fine-tuning, and performance on two-step tasks with TAIS-preprocessed data only reaches F1 22.33% even with 2 review rounds.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

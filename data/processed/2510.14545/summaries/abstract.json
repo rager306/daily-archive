@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.14545",
+ "tldr": "AEPO is an agentic RL algorithm that balances entropy during both rollout and policy update phases to address two inherent challenges in entropy-driven web agent training: high-entropy rollout collapse and high-entropy token gradient clipping.",
+ "contributions": [
+  "Systematic identification and quantification of two entropy-driven issues: High-Entropy Rollout Collapse (93.4% of branches concentrate on 1-3 trajectories) and High-Entropy Token Gradient Clipping (significant gradient clipping in the very first policy update).",
+  "Dynamic Entropy-Balanced Rollout mechanism using entropy pre-monitoring for adaptive global/branch sampling budget allocation and a consecutive branch penalty strategy to prevent over-branching.",
+  "Entropy-Balanced Policy Optimization incorporating a stop-gradient operation into the high-entropy clipping term to preserve gradients on high-entropy tokens, plus entropy-aware advantage estimation to prioritize learning on high-uncertainty tokens.",
+  "Comprehensive evaluation on 14 datasets showing AEPO consistently outperforms 7 mainstream RL algorithms."
+ ],
+ "methods": "AEPO operates in two phases. First, a Dynamic Entropy-Balanced Rollout uses entropy pre-monitoring to adaptively allocate global and branch sampling budgets based on the entropy gap between input questions and tool-call results, derived from an information gain perspective. It then applies a consecutive branch penalty that reduces sampling probability as the number of consecutive high-entropy branches increases. Second, Entropy-Balanced Policy Optimization inserts a stop-gradient operation into the high-entropy clipping term during policy updates, preserving and rescaling gradients of high-entropy tokens during backpropagation while leaving the forward pass unchanged. It also incorporates entropy-aware advantage estimation that integrates token entropy into advantage shaping to distinguish exploratory from non-exploratory tokens.",
+ "results": "AEPO was evaluated on 14 challenging datasets covering deep information seeking, knowledge-intensive reasoning, and computational reasoning. With only 1K RL samples, Qwen3-14B with AEPO achieved: 47.6% on GAIA, 11.2% on Humanity's Last Exam, and 43.0% on WebWalkerQA for Pass@1; 65.0% on GAIA, 26.0% on HLE, and 70.0% on WebWalkerQA for Pass@5. Pilot experiments found 56.5% of high-entropy tool-call turns are consecutive (vs 43.5% isolated), with up to 6 consecutive high-entropy turns, and 93.4% of branches concentrate on 1-3 trajectories. AEPO improves rollout sampling diversity while maintaining stable policy entropy.",
+ "limitations": [
+  "The method is built on top of ARPO as the backbone algorithm, inheriting its tree-structured rollout framework.",
+  "Pre-monitoring requires generating complete tool-integrated trajectories before allocating budgets, adding computational overhead.",
+  "The experimental validation focuses on three representative tools (Web Search Engine, Web Browser, Code Executor), potentially limiting generalization to other tool-use scenarios."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:30Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

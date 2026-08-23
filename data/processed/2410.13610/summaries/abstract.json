@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.13610",
+ "tldr": "MeNTi is a universal LLM agent architecture for medical calculator tasks that introduces a meta-tool mechanism for flexible tool selection in large toolkits and a nested calling mechanism to handle unit conversions and complex parameter slot filling in clinical scenarios.",
+ "contributions": [
+  "Introduces CalcQA, a benchmark with 100 case-calculator pairs based on real patient cases and a toolkit of 281 medical tools (44 calculators and 237 unit conversion tools), annotated by board-certified physicians",
+  "Develops the generalized MeNTi agent architecture using meta-tool and nested calling mechanisms to address tool selection and complex tool application challenges",
+  "Demonstrates that MeNTi achieves significant performance improvements, especially in unit conversion accuracy and end-to-end calculator assessment, compared to baselines including CRAFT and basic reasoning approaches"
+ ],
+ "methods": "The authors introduce CalcQA, a benchmark constructed from real clinical cases with physician-selected calculators and diagnostic pathways, using GPT-4 to simulate dialogue scenarios. They develop MeNTi, which employs a meta-tool mechanism for tool selection (calculator classifier, query rewriter, dense retrieval with multi-key reranking via Reciprocal Rank Fusion, and a dispatcher) and a nested tool calling mechanism that iteratively selects additional tools when slot filling encounters unit mismatches or missing information. The toolkit includes 44 widely used medical calculators and conversion tools for 237 common medical units. Evaluation uses four metrics: Calculator Selection Accuracy (CSA), Slot Filling Accuracy (SFA), Unit Converting Accuracy (UCA), and Calculator Calculation Accuracy (CCA).",
+ "results": "MeNTi demonstrates significant performance improvements over baselines, with notable enhancements in GPT-4o. The meta-tool's application to 237 unit conversion tools significantly advances UCA. Basic reasoning approaches show significant performance degradation, especially in small models processing long contexts. The CRAFT framework shows limited improvement even with GPT-4o, confirming simple tool application strategies are inadequate. MeNTi represents the first full-process LLM implementation for calculator assessments in real medical scenarios.",
+ "limitations": [
+  "The benchmark contains only 44 commonly used medical calculators, which may limit the demonstrated impact of the meta-tool on CSA",
+  "The significant advancements in UCA slightly undermine SFA, possibly due to the increased complexity introduced by unit conversion handling",
+  "The approach may face challenges with the vast number of existing calculators (over 700 in use) and the continuous publication of new calculators yearly, though the meta-tool is designed to address this"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

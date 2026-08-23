@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.15021",
+ "tldr": "EmbodiedGPT is an end-to-end multi-modal foundation model that integrates embodied chain-of-thought planning with low-level control, using a novel dataset EgoCOT derived from Ego4D egocentric videos.",
+ "contributions": [
+  "End-to-end multi-modal foundation model EmbodiedGPT featuring chain-of-thought capability for embodied AI",
+  "Two datasets: EgoCOT (embodied planning with chain-of-thought instructions) and EgoVQA (egocentric VQA), built from 200M annotated Ego4D videos",
+  "Cost-effective prefix tuning approach on a 7B LLaMA model and a paradigm for extracting task-relevant instance-level features from LLM-generated planning queries to form a closed loop between high-level planning and low-level control"
+ ],
+ "methods": "The authors built the EgoCOT dataset by filtering the Ego4D dataset (3,670 hours across 9,645 videos from 931 people), generating chain-of-thought plans and verb-noun action pairs via ChatGPT, then applying CLIP-based similarity filtering and human verification. EmbodiedGPT comprises a frozen ViT-G/14 vision encoder, a frozen 7B LLaMA language model, an Embodied-Former with learnable query embeddings that bridges visual and language modalities, and a policy network (MLP). Training occurs in three stages: (1) image-text alignment pre-training on COCO/CC3M/LAION data, (2) reasoning enhancement using Complex_Reasoning_77k and LLaVA_Instruct_150K, and (3) embodied chain-of-thought pre-training on EgoCOT via prefix tuning of the patch embedding, language projection, and prefix adapter. Generated plans are used to query task-relevant instance-level visual features through cross-attention in the Embodied-Former, feeding a policy network for low-level control.",
+ "results": "EmbodiedGPT outperforms BLIP-2 fine-tuned on Ego4D and R3M on Franka Kitchen (margin of 22.1% over BLIP-2, 5.5% over R3M) and Meta-World (margin of 22.5% over BLIP-2, 4.2% over R3M). The success rate on Franka Kitchen increases 1.6 times compared to the BLIP-2 baseline, and 1.3 times on Meta-World. The policy network achieves low-level control with fewer than 25 demonstrations. State-of-the-art or comparable performance is achieved on embodied planning, embodied control, video captioning, and video QA.",
+ "limitations": "The dataset relies on machine-generated chain-of-thought plans via ChatGPT that require human verification, introducing potential errors from the generation process. The model uses a fixed 7B LLaMA architecture (10B total), which may limit capacity compared to larger models. The quality of generated plans depends on the Ego4D narration quality and the CLIP-based filtering process. Simulation-to-real gap concerns remain despite using real egocentric videos.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

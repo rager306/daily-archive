@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.11133",
+ "tldr": "MasRouter is proposed as the first high-performing, cost-effective, and inductive solution for Multi-Agent System Routing (MASR), which integrates collaboration mode determination, role allocation, and LLM routing through a cascaded controller network to balance effectiveness and efficiency in LLM-based multi-agent systems.",
+ "contributions": [
+  "First formal definition of Multi-Agent System Routing (MASR), specifying requirements for assigning collaboration modes, agent roles, and LLMs to each query",
+  "Proposal of MasRouter, a modular MASR solution using a cascaded controller network with a variational latent variable model for collaboration mode determination, a structured probabilistic cascade for role allocation, and a multinomial distribution approach for LLM routing",
+  "Extensive experimental validation across five benchmarks demonstrating superior performance and cost efficiency"
+ ],
+ "methods": "MasRouter employs a cascaded controller network F_θ = F_θm ∘ F_θr ∘ F_θt that progressively constructs a MAS for each query. The collaboration mode determiner uses a variational latent variable model with a text encoder (e.g., Sentence-BERT or MiniLM) to map queries to suitable collaboration modes (Chain, Tree, Graph, LLM-Debate, Self-Consistency, etc.) and determines agent count via a learnable complexity mapping function. The role allocator progressively generates agent roles through a structured probabilistic cascade, computing role assignments sequentially based on prior roles. The LLM router models backbone assignment as a multinomial distribution problem, selecting from a pool of LLMs (gpt-4o-mini, claude-3.5-haiku, gemini-1.5-flash, llama-3.1-70b) based on query, collaboration mode, and assigned roles. Training uses policy gradient optimization balancing utility (performance) and cost with trade-off parameter λ.",
+ "results": "MasRouter achieves the best performance across all five benchmarks (MMLU, GSM8K, MATH, HumanEval, MBPP), outperforming RouterDC (SOTA routing method) by 3.51% on average. On MBPP, it outperforms AgentPrune by 8.20% and AFlow by 1.80% at pass@1. It reduces overhead on HumanEval from $0.363 to $0.185 (up to 52.07% reduction compared to SOTA methods). When integrated with mainstream MAS frameworks, it reduces overhead by 17.21%–28.17%. It generalizes to unseen LLM backbones (validated with Deepseek-v3) and unseen collaboration modes.",
+ "limitations": "The approach requires a predefined search space of collaboration modes, agent roles, and LLM backbones. The number of agents k involves a non-differentiable rounding operation that is approximated using the Gamma function for gradient flow. The paper notes that existing single-agent routing methods are limited to single-agent scenarios and their unawareness of inter-agent topology constrains applicability to MAS, though this is a limitation of prior work rather than MasRouter itself.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

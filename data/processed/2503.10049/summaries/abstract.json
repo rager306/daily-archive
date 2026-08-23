@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.10049",
+ "tldr": "The paper proposes LGC-MARL, a framework combining LLM-based planning with graph-based multi-agent reinforcement learning to enable efficient, scalable collaboration among multiple agents in complex tasks.",
+ "contributions": [
+  "Development of the LGC-MARL framework integrating LLMs with MARL via task decomposition and action dependency graphs",
+  "Introduction of a graph-based collaboration meta policy with meta-learning for rapid adaptation to new environments",
+  "Design of an LLM-based reward function generator that produces modular reward functions considering both individual and team rewards",
+  "A critic-equipped LLM planner that validates plans and mitigates LLM hallucinations through feedback loops"
+ ],
+ "methods": "The framework uses a pre-trained LLM planner to decompose complex task instructions into executable subtasks and construct an action dependency graph (DAG). A separate LLM critic evaluates the plans for factual errors and provides feedback for revision. An LLM-based reward function generator creates modular reward functions considering individual and team objectives. The graph-based collaboration meta policy uses the adjacency matrix derived from the DAG to guide MARL agents' coordinated decision-making, with meta-learning enabling adaptation to new task environments. Experiments were conducted on the AI2-THOR 3D simulation platform across 4 scenes with 4 agents using GPT-4.",
+ "results": "LGC-MARL achieved an average success rate of 0.89, 0.84, 0.86, and 0.80 across Scenes 1-4 respectively, outperforming centralized LLM (0.6, 0.54, 0.57, 0.51) and LLM dialogue (0.68, 0.61, 0.64, 0.60) baselines. It achieved the lowest normalized token cost (1.0) and competitive completion times (66.47s to 89.31s). Ablation studies showed the critic module improved success rate (0.92 vs 0.89), the graph structure reduced communication overhead, and the reward generator enhanced MARL learning. LGC-MARL also demonstrated superior scalability as agent numbers increased compared to baselines that suffered significant performance declines.",
+ "limitations": "The approach relies on GPT-4, creating dependency on proprietary LLMs and associated computational costs. The centralized LLM baseline's poor performance highlights challenges in managing complex inter-agent interactions. The method requires careful prompt design for the LLM reward generator. Hallucination risks persist, though mitigated by the critic module. The framework's effectiveness was demonstrated only in the AI2-THOR simulation environment, limiting evidence of real-world generalizability.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

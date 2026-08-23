@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.01495",
+ "tldr": "Re-ReST introduces a reflector that refines low-quality model-generated samples during self-training using environmental feedback, enabling autonomous improvement of open-source language agents without relying on human annotations or stronger proprietary models.",
+ "contributions": [
+  "Proposing Reflection-Reinforced Self-Training (Re-ReST), which uses a reflector model to improve low-quality self-generated samples by leveraging external environmental feedback such as unit test results and task success/failure signals.",
+  "Demonstrating self-training and Re-ReST across five tasks: multi-hop question answering (HotpotQA), sequential decision-making (AlfWorld), code generation (MBPP), visual question answering (GQA), and text-to-image generation.",
+  "Showing Re-ReST outperforms prior methods that rely on GPT-3.5/4 (e.g., FireAct, LUMOS) using only open-source models and a free Wikipedia API.",
+  "Demonstrating a method to employ reflection during inference without ground-truth feedback via self-consistency decoding."
+ ],
+ "methods": "The method involves two models: a language agent M that generates thought-action trajectories, and a reflector R that improves incorrect samples using environmental feedback E(x, ŷ). During data generation, the agent samples k=3 generations per instance; correct samples are added directly to training data D_M, while incorrect ones are sent to the reflector, which produces a corrected sample ỹ added to D_R if it passes the threshold. The reflector is first trained on a mix of agent-generated preference pairs and its own zero-shot data, then used to generate D_R. Finally, the agent is jointly trained on D_M ∪ D_R via maximum log-likelihood. During inference, only the agent M is used without the reflector.",
+ "results": "Self-training improved baselines by 7.6% on HotpotQA (Llama-2: 20.0%→27.6%, Llama-3: 30.0%→34.4%) and 28.4% on AlfWorld (success rate 8.9%→37.3%). Re-ReST further boosted performance by an additional 2.0% on HotpotQA and 14.1% on AlfWorld. On MBPP code generation, self-training improved pass rate from 48.6% to 54.5%, with additional gains from the reflector. Training the reflector specifically (vs. using a pretrained LLM) further improved agent performance, achieving 29.6% EM on HotpotQA with Re-ReST vs. 28.8% without reflector training. Only 37.1% (Llama-2) and 48.3% (Llama-3) of training instances were correctly solved by the agent alone.",
+ "limitations": "The reflector requires access to external environmental feedback during training, which is not always available. The reflection procedure is limited to a single iteration per sample for efficiency. During inference, the reflector cannot be used directly since ground-truth feedback is unavailable, though self-consistency decoding is proposed as a partial workaround. Models must be trained with LoRA and multiple epochs, which may limit scalability for very large models.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

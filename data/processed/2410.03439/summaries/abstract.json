@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.03439",
+ "tldr": "ToolGen integrates tool retrieval and execution directly into an LLM's generative process by representing each tool as a unique virtual token, eliminating the need for separate retrieval mechanisms.",
+ "contributions": [
+  "A novel framework, ToolGen, that integrates tool retrieval and execution into the LLM's generative process using virtual tokens.",
+  "A three-stage training process (tool memorization, retrieval training, and end-to-end agent-tuning) enabling efficient and scalable tool retrieval and API calling.",
+  "Experimental validation on 47,000 tools demonstrating comparable performance to current best retrieval methods with significantly less cost and higher efficiency, surpassing traditional tool learning paradigms."
+ ],
+ "methods": "ToolGen maps each tool to a unique virtual token via atomic indexing, expanding the LLM vocabulary by 46,985 tokens. It undergoes three training stages: (1) tool memorization, where the LLM learns to predict tool tokens from tool descriptions; (2) retrieval training, where the model learns to generate relevant tool tokens from user queries; and (3) end-to-end agent-tuning, fine-tuned on task completion trajectories. Constrained beam search restricts output tokens to the predefined tool token set during inference. Experiments used Llama-3-8B as the foundation model, trained with 8 epochs for memorization and 1 epoch for retrieval on 4x A100 GPUs, evaluated on the ToolBench dataset of 47,000 APIs.",
+ "results": "On the ToolBench dataset with 47,000 tools, ToolGen achieved strong retrieval performance across both In-Domain and Multi-Domain settings. In In-Domain retrieval, ToolGen achieved NDCG@5 scores of 92.67 (domain I1), 91.13 (domain I2), and 90.16 (domain I3), outperforming ToolRetriever (84.39, 70.35, 64.70) and matching or exceeding IterFeedback. In Multi-Domain retrieval, ToolGen achieved NDCG@5 scores of 91.54, 88.84, and 84.79 across domains, substantially outperforming ToolRetriever (74.99, 63.61, 42.92). Atomic indexing was shown to be more efficient and hallucination-resistant than numeric, hierarchical, or semantic indexing alternatives.",
+ "limitations": "Expanding the vocabulary by ~47,000 tokens increases model size and introduces computational overhead. The constrained beam search, while reducing hallucination, imposes generation constraints. Performance drops in Multi-Domain settings compared to In-Domain, reflecting increased task complexity. The tool memorization and retrieval stages still rely on supervision from existing datasets. Unsupervised baselines (BM25, EmbSim, Re-Invoke) significantly underperform trained methods, indicating dependence on training data.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

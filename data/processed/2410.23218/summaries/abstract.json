@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.23218",
+ "tldr": "OS-Atlas is a foundation action model for generalist GUI agents that achieves state-of-the-art GUI grounding across desktop, mobile, and web platforms through a 13-million-element cross-platform corpus and a unified action space that resolves action naming conflicts.",
+ "contributions": [
+  "First multi-platform GUI grounding data synthesis toolkit covering Windows, macOS, Linux, Android, and Web",
+  "Largest open-source cross-platform GUI grounding corpus with over 13 million elements across 2.3 million screenshots",
+  "OS-Atlas foundation action model with a unified action space addressing action naming conflicts across platforms",
+  "ScreenSpot-V2 with re-annotated corrections for 11.32% incorrect samples in the original benchmark",
+  "Comprehensive evaluation across six benchmarks on three platforms showing superior performance over prior SOTA models"
+ ],
+ "methods": "The training process consists of two phases: GUI Grounding Pre-training on a large multi-platform corpus of screenshot-instruction-coordinate triplets, followed by Action Fine-tuning using multitask imitation learning on agent trajectory datasets. Data was collected via automated crawling for web (3.7M initial, filtered to 1.6M screenshots with 7.7M elements) and via simulation environments using A11y trees with DFS and Random Walk exploration for desktop and mobile platforms. Instruction grounding data was synthesized using GPT-4o with Set-of-Mark prompting on existing trajectory datasets (Mind2Web, AMEX, AITZ, AndroidControl, Wave-UI). A unified action space was introduced with standardized Basic Actions (click, type, scroll) and platform-specific Custom Actions to resolve cross-platform action naming conflicts such as 'tap' vs 'click'. Models were built on Qwen2-VL and InternVL-2 backbones.",
+ "results": "OS-Atlas-Base achieves state-of-the-art results on ScreenSpot across mobile, desktop, and web platforms under both Grounding Mode (with planner) and Standard settings. Grounding accuracy and IoU show clear positive correlation with data scaling, particularly for IoU in the web domain where nearly 10 million elements were available. Ablation studies show that referring expression data is nearly sufficient for training a strong grounding model, but pre-training solely on web data struggles to generalize to desktop and mobile platforms, confirming the importance of cross-platform data. ScreenSpot was found to have approximately 11.32% annotation errors, corrected in ScreenSpot-V2.",
+ "limitations": "The ScreenSpot benchmark contained ~11.32% annotation errors requiring re-annotation. The standard grounding accuracy metric does not capture fine-grained localization errors, necessitating IoU as a supplementary metric. GPU constraints limited ablation experiments to the smaller InternVL-2-4B backbone. Many existing competing corpora are not open-sourced or are available only at small scales. Open-source VLMs still face a performance gap compared to closed-source counterparts like GPT-4o, particularly in OOD scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

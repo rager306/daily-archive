@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.12599",
+ "tldr": "Kimi k1.5 demonstrates that scaling reinforcement learning with large language models using long context (128k) and improved policy optimization achieves state-of-the-art reasoning performance without complex techniques like MCTS or value functions.",
+ "contributions": [
+  "Long context scaling to 128k with partial rollouts for training efficiency",
+  "A simplistic RL framework using a variant of online mirror descent without Monte Carlo tree search, value functions, or process reward models",
+  "A length penalty mechanism to address overthinking during RL training",
+  "Effective long2short methods using length penalty with long-CoT activations and model merging",
+  "Joint multimodal training on text and vision data"
+ ],
+ "methods": "The team trained Kimi k1.5 through pretraining, vanilla SFT, long-CoT SFT, and RL stages. They curated an RL prompt set using automatic filters for diverse coverage, balanced difficulty (assessed via model pass rates), and accurate evaluability, while removing easy-to-hack prompts (e.g., multiple-choice, true/false). The RL algorithm uses a variant of online policy mirror descent with off-policy sampling from the reference policy, excluding value networks. They introduced a length reward to penalize excessive response growth, applied curriculum and prioritized sampling strategies, and used automatic test case generation via CYaRon for coding problems.",
+ "results": "Long-CoT version: 77.5 on AIME, 96.2 on MATH 500, 94th percentile on Codeforces, 74.9 on MathVista—matching OpenAI's o1. Short-CoT version: 60.8 on AIME, 94.6 on MATH 500, 47.3 on LiveCodeBench—outperforming GPT-4o and Claude Sonnet 3.5 by up to +550%. For coding test case generation, approximately 614 out of 1,000 online contest problems did not require a special judge, with 463 producing at least 40 valid test cases.",
+ "limitations": [
+  "Potential reward hacking risk, though mitigated by prompt filtering; the paper notes developing more advanced verification models remains an open direction",
+  "Length penalty may slow training during initial phases",
+  "The approach relies on verifiable problems with objective evaluation criteria, which excludes certain question types"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

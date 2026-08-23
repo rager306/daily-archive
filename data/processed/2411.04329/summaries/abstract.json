@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.04329",
+ "tldr": "CodeTree is an agent-guided tree search framework that uses a heterogeneous tree structure with specialized LLM agents to explore diverse coding strategies and iteratively refine solutions, achieving top results on multiple code generation benchmarks.",
+ "contributions": [
+  "A unified tree-based search framework (CodeTree) for efficient exploration of code generation search spaces across different stages",
+  "Four specialized agents (Thinker, Solver, Debugger, and Critic) that collaborate through tree expansion guided by both execution-based and AI feedback",
+  "Demonstration of significant performance gains across 7 benchmarks, achieving top results on HumanEval, MBPP, and CodeContests"
+ ],
+ "methods": "CodeTree builds a heterogeneous tree for each coding problem, where the root is the problem specification and subsequent nodes are generated code solutions. A Thinker Agent generates diverse high-level coding strategies, a Solver Agent implements strategy-specific code candidates, and a Debugger Agent refines solutions using execution feedback and reflections from the Thinker. A Critic Agent dynamically guides tree expansion by scoring nodes based on test case execution and strategy adherence, then deciding to Refine (continue exploring), Abort (prune), or Accept (terminate) each node.",
+ "results": "Using GPT-4o as the base model, CodeTree achieved pass@1 scores of 95.1% on HumanEval, 98.7% on MBPP, and 43.0% on CodeContests. On CodeContests, this represents a 22.4% performance gain over the Resampling baseline. CodeTree outperformed all baselines in 4 out of 5 benchmarks for both GPT-4o-mini and GPT-4o. CodeTree-BFS consistently outperformed CodeTree-DFS. For larger width (w=5) and smaller depth (d=2), performance improved on harder problems like CodeContests. However, on Llama-3.1-8B, Resampling achieved the best results on 4 benchmarks, indicating small models may not suit multi-agent frameworks.",
+ "limitations": [
+  "Small language models (e.g., Llama-3.1-8B) may not be suitable for multi-agent frameworks like CodeTree, as they struggle to follow task-specific roles and instructions with sufficient accuracy",
+  "The method struggles with very difficult/competition-level problems",
+  "Inference time requires limiting the number of exploration steps to avoid large computation overhead",
+  "DFS search depth beyond d=3 did not significantly boost performance"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.13652",
+ "tldr": "The paper introduces two guided search strategies—1-step lookahead and trajectory selection—guided by a learned action-value function that significantly improve LLM agent performance in non-serializable RL environments like Docker-based SWE-agent, doubling success rates on SWE-bench Verified to 40.8%.",
+ "contributions": [
+  "Introduced the notion of non-serializable RL environments and highlighted the inapplicability of powerful guided search techniques like MCTS to these settings",
+  "Systematically studied two guided search methods (1-step lookahead and trajectory selection) applicable to non-serializable environments using SWE-agent on SWE-bench Verified",
+  "Achieved a best-in-class success rate of 40.8% on SWE-bench Verified with an open-weights model (Qwen-72B)",
+  "Demonstrated transferability of the proposed methods to proprietary models (GPT-4o) with similar improvements"
+ ],
+ "methods": "The authors formulated the problem as a POMDP with sparse terminal rewards and trained a critic (action-value function estimator) using LLaMA3.1-70B initialized from 80,000 trajectories collected via bootstrapping with Qwen2.5-72B. They then applied two search strategies: (1) 1-step lookahead, which samples K=4 candidate actions from the base policy and selects the one with the highest estimated Q-value, and (2) trajectory selection, which generates N complete trajectories (N=5 or N=10) and selects the one with the highest terminal action-value. Both were evaluated on SWE-bench Verified using the SWE-agent scaffold in its non-serializable Docker environment, with an iterative 'until submitted' execution strategy allowing up to 10 additional attempts.",
+ "results": "Both guided search methods individually achieved significant improvements over the base policy. When combined, they delivered a 2-fold improvement in success rate for both the Qwen-based policy and GPT-4o, reaching 40.8% on SWE-bench Verified—the new state-of-the-art for open-weights models. Performance improved monotonically with increasing N (number of trajectory selection candidates) without reaching a plateau. The combination narrowed the gap between pass@N and trajectory selection as N grew, suggesting convergence toward similar solutions with sufficient compute. Experiments were run 10 times with distinct random seeds, reporting mean success rate and standard error of the mean.",
+ "limitations": [
+  "Non-serializability prevents rollback, state copying, and branching search methods like MCTS",
+  "Stochastic transitions due to process scheduling, inter-process communications, and entropy sources make exact state reproduction via action replay unreliable",
+  "Critic model lacked GPT-4o-specific trajectories in training data, yet was still able to evaluate GPT-4o policies via a unseen policy identifier",
+  "Replaying action sequences is computationally expensive and may produce different trajectories due to non-determinism",
+  "The paper was truncated before full discussion of all limitations"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

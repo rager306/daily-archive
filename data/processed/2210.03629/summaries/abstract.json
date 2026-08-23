@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2210.03629",
+ "tldr": "ReAct interleaves verbal reasoning traces and task-specific actions in language models, demonstrating that reasoning guides acting and acting provides external information for reasoning, outperforming baselines on knowledge-intensive and decision-making tasks.",
+ "contributions": [
+  "Introducing ReAct, a prompt-based paradigm to synergize reasoning and acting in language models for general task solving",
+  "Extensive experiments across diverse benchmarks (HotpotQA, Fever, ALFWorld, WebShop) showing few-shot advantages over prior approaches that perform reasoning or action generation in isolation",
+  "Systematic ablations and analysis demonstrating the importance of acting in reasoning tasks and reasoning in interactive tasks",
+  "Analysis of ReAct limitations under prompting and initial finetuning experiments showing potential with additional training data"
+ ],
+ "methods": "The authors prompt PaLM-540B to generate interleaved thoughts (reasoning traces) and actions across four benchmarks. For knowledge-intensive tasks (HotpotQA, Fever), dense thought-action-observation trajectories are constructed with 6 and 3 in-context examples respectively, using a Wikipedia API with search, lookup, and finish actions. For decision-making tasks (ALFWorld, WebShop), sparse thoughts appear at relevant positions while the model decides when to insert them. Fine-tuning experiments used 3,000 ReAct-generated trajectories to train smaller PaLM-8/62B models.",
+ "results": "On HotpotQA, ReAct scored 27.4 EM vs. Act's 25.7, while ReAct→CoT-SC achieved 35.1. On Fever, ReAct scored 60.9% accuracy vs. Act's 58.9%, while CoT-SC→ReAct achieved 64.6%. For decision-making, ReAct outperformed imitation and RL methods by absolute success rates of 34% on ALFWorld and 10% on WebShop with only 1-2 in-context examples. ReAct had a 6% hallucination rate vs. CoT's 14% false positives. Fine-tuned PaLM-8B ReAct outperformed all PaLM-62B prompting methods.",
+ "limitations": [
+  "ReAct's structural constraint of interleaving reduces flexibility in formulating reasoning steps, leading to higher reasoning error rates than CoT (47% vs 16%)",
+  "Non-informative search results account for 23% of ReAct's errors",
+  "Model can get stuck in repetitive loops of previous thoughts and actions",
+  "Limited support of reasoning and acting behaviors under the prompting setup",
+  "HotpotQA questions may contain outdated answer labels",
+  "Prompting ReAct performs worst among methods for small models (PaLM-8/62B) due to difficulty learning both reasoning and acting from in-context examples"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

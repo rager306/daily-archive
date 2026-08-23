@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.01476",
+ "tldr": "The paper proposes an inference-time best-first tree search algorithm for LM agents operating in interactive web environments, enabling explicit exploration and multi-step planning. Applying this search to GPT-4o agents yields a state-of-the-art 26.4% success rate on VisualWebArena, a 39.7% relative improvement, and demonstrates performance scaling with increased test-time compute.",
+ "contributions": [
+  "First tree search algorithm for LM agents that operates in the actual environment space of realistic web tasks",
+  "A best-first search method with a value function implemented via multimodal LM prompting and self-consistency averaging over 20 reasoning paths",
+  "Demonstration that search is compatible with existing base agents without retraining and that performance scales with test-time compute"
+ ],
+ "methods": "The authors propose a best-first search algorithm loosely inspired by A* search that operates over the actual environment space of web simulators. At each step, the algorithm extracts the highest-scoring state from a priority queue frontier, evaluates it using a value function (a multimodal LM prompted with task instructions and trajectory screenshots, scoring success/failure/partial with self-consistency averaging over 20 samples), and expands candidate branches by sampling b=5 actions from the base LM agent via nucleus sampling. The search has hyperparameters depth d=5, branching factor b=5, and search budget c=20, terminating when a threshold θ is reached or the budget is exceeded, then committing to the best state found.",
+ "results": "On VisualWebArena (910 tasks), GPT-4o with search achieves 26.4% success rate (+39.7% relative over the 18.9% baseline), setting a new SOTA. On WebArena (812 tasks), GPT-4o with search achieves 19.2% (+28.0% relative over 15.0% baseline). Llama-3-70B-Instruct on VWA improves from 7.6% to 16.7% (+119.7% relative). Medium-difficulty tasks see a 75% relative increase (12.7% to 22.2%). Ablations show success rate increases with search budget: c=5 yields 32.0%, c=20 yields 37.0% on a 200-task subset. A re-ranking baseline with trajectory sampling plateaus at 30% (n=7), underperforming the search approach.",
+ "limitations": [
+  "Strict maximum of 5 actions per task limits applicability to harder tasks that require 10+ actions even for humans",
+  "Search depth of 5 may be insufficient for hard tasks, suggesting deeper search could help but is constrained by compute",
+  "The value function is an approximation (ground truth value function achieves 43.5% vs 37.0% with LM-based value function)",
+  "The constraint of 5 max actions means some tasks are inherently intractable regardless of search"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:30Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

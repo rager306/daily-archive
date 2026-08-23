@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.03003",
+ "tldr": "MobileGPT is an LLM-based mobile task automator equipped with a human-like hierarchical app memory that decomposes tasks into reusable sub-tasks, enabling accurate, efficient, and adaptable task automation.",
+ "contributions": [
+  "Introduced MobileGPT, an LLM-based mobile task automator that emulates human cognitive processes (explore, select, derive, recall) for mobile task learning and execution.",
+  "Designed a three-level hierarchical memory structure (tasks, sub-tasks, actions) with function-call formatted sub-tasks for efficient storage and flexible retrieval.",
+  "Developed a dual-strategy correction mechanism combining self-correction through feedback generation and human-in-the-loop (HITL) task repair.",
+  "Evaluated MobileGPT on 185 tasks across 18 mobile apps, demonstrating superior performance over Auto-Droid and AppAgent."
+ ],
+ "methods": "MobileGPT converts mobile screens into simplified HTML representations using Android Accessibility Service, reducing tokens by an average of 84.6%. It operates via an Explore-Select-Derive-Recall cycle: the offline Explore phase uses random explorer and user trace monitor to pre-collect sub-tasks per screen; the Select phase chooses relevant sub-tasks from memory; the Derive phase incrementally generates low-level actions (click, input, scroll). A hierarchical transition graph stores memories, with sub-tasks parameterized in function-call format. Self-correction detects errors like invalid UI interactions and screen loops, while HITL repair allows users to intervene at Explore, Select, or Derive stages.",
+ "results": "MobileGPT achieved an 82.7% task completion rate on new tasks, outperforming Auto-Droid by 8% and AppAgent by 15.3%. It achieved a 98.75% success rate in adapting learned tasks to new instructions with different parameters. Recall of learned tasks reduced task completion time by 62.5% and LLM query costs by 68.8%. Screen representation pruning reduced token counts by an average of 84.6%. A usability study with 23 participants confirmed the effectiveness of the HITL repair mechanism.",
+ "limitations": [
+  "LLMs are inherently non-deterministic and unpredictable, requiring error correction mechanisms.",
+  "Certain critical actions (e.g., sending a message, deleting a contact) cannot be undone once executed, requiring manual app restoration.",
+  "The offline Explore phase, while conducted locally, could benefit from server offloading for enhanced efficiency."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

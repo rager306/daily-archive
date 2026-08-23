@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.17553",
+ "tldr": "OmniACT is a dataset and benchmark of 9,802 natural language tasks with UI screenshots and PyAutoGUI scripts across desktop and web applications, designed to evaluate multimodal agents for computer automation.",
+ "contributions": [
+  "Release of a novel dataset with over 9.8K annotated pairs of UI screenshots and PyAutoGUI scripts across desktop and web applications",
+  "Proposal of DetACT, a module that converts UI screenshots into structured textual representations using OCR, icon-template matching, and color detection",
+  "Comprehensive benchmarking and analysis of state-of-the-art LLMs and multimodal models, with custom evaluation metrics (Sequence Score and Action Score)"
+ ],
+ "methods": "The authors collected 9,802 data points across 22 macOS apps, 8 Linux apps, 8 Windows apps, and 27 web applications, with tasks categorized into Shopping, Entertainment, Service, Government, Travel, and Health. Each data point consists of a UI screenshot, a natural language task description, and a ground-truth PyAutoGUI script. For dataset creation, they built bounding boxes around UI elements, labeled them by functionality via MTurk annotators, had college students write executable PyAutoGUI scripts, and filtered out syntactically incorrect or non-working examples. They evaluated baselines including LLaMA, Vicuna, Palmyra-X, GPT-3.5, GPT-4, LLaVA-v1.5, Gemini-Pro, and GPT-4-Vision, with fine-tuning via QLoRA for some models. They also introduced DetACT, using EasyOCR for text extraction, SAM for segmentation, icon template matching via SSIM, and color detection.",
+ "results": "GPT-4 is the strongest baseline but achieves only 15% of human proficiency in generating executable scripts capable of completing tasks. The dataset was split 7:1:2 for train/validation/test. The benchmark shows OmniACT is a challenging task for even the best LLM agents today, with existing models far below human performance.",
+ "limitations": "The task remains very difficult for current models, with the best agent reaching only 15% of human proficiency. HTML-based agents are limited to web applications and cannot interact with native desktop applications. The dataset focuses on single-screen tasks, and visual cues remain crucial for desktop applications that lack DOM hierarchies, exposing a gap in multimodal understanding.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

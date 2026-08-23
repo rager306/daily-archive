@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.14239",
+ "tldr": "InfiGUI-R1 introduces the Actor2Reasoner framework, a two-stage training approach that transforms MLLM-based GUI agents from reactive actors into deliberative reasoners using spatial reasoning distillation and reinforcement learning with sub-goal guidance and error recovery.",
+ "contributions": [
+  "Proposes the Actor2Reasoner framework, a novel two-stage training methodology to transform MLLM-based GUI agents from Reactive Actors into Deliberative Reasoners",
+  "Introduces three technical innovations: Spatial Reasoning Distillation for cross-modal reasoning, Sub-goal Guidance for planning, and Error Recovery Scenario Construction for reflective self-correction",
+  "Develops InfiGUI-R1-3B, an MLLM-based GUI agent demonstrating state-of-the-art performance"
+ ],
+ "methods": "The Actor2Reasoner framework has two stages. Stage 1 (Reasoning Injection) identifies reasoning bottleneck samples where the base MLLM fails without sub-goals but succeeds with them, then uses a teacher model to generate explicit spatial reasoning trajectories from accessibility tree information, followed by supervised fine-tuning to establish a Perception→Reasoning→Action pattern. Stage 2 (Deliberation Enhancement) applies REINFORCE Leave-One-Out reinforcement learning with rule-based rewards, incorporating sub-goal guidance (rewarding accurate intermediate sub-goal generation) and error recovery scenario construction (creating failure-and-recovery training scenarios) to enhance planning and self-correction capabilities.",
+ "results": "InfiGUI-R1-3B achieves 87.5% average accuracy on ScreenSpot (cross-platform GUI grounding benchmark) and a 71.1% success rate on AndroidControl-High (long-horizon task execution benchmark), performing competitively against previous agents including those with significantly larger parameters.",
+ "limitations": "The paper does not explicitly state limitations; however, the framework relies on a powerful teacher model (e.g., Qwen2.5-VL-32B-Instruct) for distillation, and the RL stage requires carefully constructed reward functions and error recovery scenarios that may be challenging to generalize across all GUI environments.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.00430",
+ "tldr": "The RR-MP framework uses multiple collaborative reactive and reflection agents to enhance LLM reasoning accuracy in complex scientific tasks, preventing the Degeneration-of-Thought that plagues single-agent self-reflection.",
+ "contributions": [
+  "Proposes the Reactive and Reflection agents with Multi-Path Reasoning (RR-MP) framework as a post-hoc error-correction approach for complex scientific reasoning",
+  "Introduces a multi-path reasoning mechanism with parallel reactive agents generating diverse reasoning paths to improve accuracy and robustness",
+  "Conducts comparative analysis of reactive and reflection agents under various prompt types and communication modes (collaboration vs. debate)",
+  "Provides theoretical proof that increasing the number of reasoning paths reduces error probability"
+ ],
+ "methods": "The RR-MP framework employs a multi-path reasoning mechanism where each path consists of a reactive agent (generating preliminary answers) and a reflection agent (analyzing and refining those answers) collaborating through a shared memory module. Multiple diverse reasoning paths are generated using role-playing prompts (e.g., physicists and mathematicians), and a summarizer consolidates insights across paths. The approach requires no additional training and was tested in zero-shot and few-shot (5 examples) settings on three MMLU datasets: College Physics, College Mathematics, and Moral Scenarios, using gpt-3.5-turbo-0613 as the backbone model.",
+ "results": "The Different-Domain Collaboration paradigm achieved the best overall performance with an average accuracy of 75.94%, outperforming all baselines. In few-shot settings, Different-Domain Collaboration reached 89.21% on College Physics and 91.18% on College Mathematics, significantly exceeding single-path variants (e.g., Single-Domain Collaboration: 85.29% and 86.27% respectively). Same-Domain Debate achieved 87.25% on Physics (few-shot). The method significantly outperformed baselines including Chain-of-Thought, Self-Consistency, and Self-Refine in zero-shot settings.",
+ "limitations": [
+  "Resource limitations restricted experiments to gpt-3.5-turbo-0613 as the backbone model",
+  "Single-agent self-reflection remains prone to Degeneration-of-Thought, where agents become incapable of generating novel insights once confident in erroneous initial responses",
+  "The multi-path approach increases computational overhead compared to single-agent methods",
+  "The framework's effectiveness relies on the quality of role-playing prompts and agent specialization"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

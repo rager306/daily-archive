@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.04405",
+ "tldr": "MedAgentGym is a scalable interactive training environment with 72,413 code-centric biomedical reasoning tasks across 129 categories from 12 real-world scenarios, enabling LLM agents to be fine-tuned via RL to match proprietary models like gpt-4o.",
+ "contributions": [
+  "A comprehensive benchmark of 72,413 biomedical coding task instances across 129 categories grounded in 12 real-world biomedical scenarios",
+  "An executable sandbox training infrastructure using Docker containers with multi-threaded trajectory sampling, interactive feedback, and verifiable ground truth",
+  "Extensive benchmarking of 29 LLMs revealing performance gaps between commercial and open-source models in biomedical data science",
+  "Med-Copilot, a fine-tuned coding agent achieving competitive performance with gpt-4o via offline and online reinforcement learning"
+ ],
+ "methods": "MedAgentGym was constructed by integrating 12 real-world biomedical datasets (e.g., MIMIC-III, eICU, BioCoder, EHRSQL) into a unified benchmark of 72,413 task instances across 129 categories, each encapsulated in isolated Docker environments with pre-installed biomedical dependencies. Interactive feedback mechanisms parse LLM output into structured JSON and translate error messages into natural language for improved debugging. Efficient trajectory collection was enabled via multi-threaded rollouts using Ray and Joblib backends, generating 2,137 successful trajectories (avg. 9.25 turns), 1,646 offline preference pairs, and 2,939 online preference pairs from gpt-4.1-mini. Med-Copilot was trained using a two-stage fine-tuning framework: SFT warm-up followed by offline DPO or online RL (PPO/GRPO).",
+ "results": "Benchmarking of 29 LLMs revealed substantial performance disparities between commercial and open-source models. Base Qwen2.5-7B-Instruct scored 16.89% average success rate, which improved to 53.87% (+36.98) with SFT, 59.90% (+43.02) with DPO, and 62.17% (+45.28) with GRPO. Base Qwen2.5-14B-Instruct scored 20.12%, improving to 69.56% (+49.44) with GRPO. Med-Copilot-7B achieved performance comparable to gpt-4o on both in-distribution and out-of-distribution tasks across 4,203 tasks from 4 external datasets.",
+ "limitations": [
+  "Significant performance gap between commercial API-based LLMs and open-source LLMs in biomedical coding",
+  "Both specialized coding LLMs and medical domain-specific LLMs deliver suboptimal performance, indicating coding-based biomedical reasoning is not adequately captured by either specialization alone",
+  "LLMs perform notably worse on open-ended tasks (data analysis, ML prediction) compared to structured tasks (database queries, medical calculations)",
+  "Only four out-of-distribution datasets were used for external evaluation, limiting generalization assessment"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

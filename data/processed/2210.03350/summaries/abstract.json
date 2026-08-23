@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2210.03350",
+ "tldr": "The compositionality gap—the fraction of compositional questions a model answers incorrectly despite knowing the sub-answers—remains roughly constant at ~40% across GPT-3 model sizes, but elicitive prompting (especially self-ask) significantly narrows it.",
+ "contributions": [
+  "Introducing the 'compositionality gap' metric to quantify compositional reasoning failure",
+  "Creating the Compositional Celebrities (CC) dataset of 8.6k automatically generated 2-hop questions",
+  "Demonstrating that the compositionality gap does not decrease with model scale in GPT-3",
+  "Proposing self-ask prompting, which decomposes questions into follow-up sub-questions",
+  "Creating the Bamboogle dataset of 125 manually constructed 2-hop questions",
+  "Showing self-ask integrates with a search engine for further accuracy improvements"
+ ],
+ "methods": "The authors generated the CC dataset by crawling celebrity birth facts and combining pairs of unrelated facts into 2-hop questions across 17 templates. They also manually constructed the 125-question Bamboogle dataset, filtering questions that a search engine could not answer. Models were evaluated using direct prompting, chain of thought, self-ask (where the model explicitly asks and answers follow-up questions before giving a final answer), and self-ask combined with a search engine (SA+SE), where sub-questions are answered via API calls rather than by the model itself. All evaluations used few-shot prompting with demonstrations.",
+ "results": "The compositionality gap remained at approximately 40% across all GPT-3 model sizes (Ada 0.35B through Davinci 175B) and InstructGPT variants. GPT-3 (davinci-002) correctly answered 45.4% of 2-hop CC questions but 80% of sub-questions. Model confidence correlated strongly with compositional success: when maximal sub-question perplexity was between 1.000–1.002, 81.1% of compositional questions were answered correctly versus 42.6% when perplexity was between 1.232–6.738. Self-ask achieved 79.6% (InstructGPT-Davinci-002) and 54.2% (Davinci) accuracy on CC, compared to 'Let's think step by step' which achieved only 45.7%/1.1%. SA+SE further improved performance beyond self-ask alone.",
+ "limitations": [
+  "No publicly shared details about ChatGPT or GPT-4 training data or architecture prevent analysis of their impact; observed compositionality gaps were estimated at 42.9% (ChatGPT) and 23.0% (GPT-4), but the GPT-4 result may be invalid if CC was included in its training set. The CC dataset uses only 17 question templates, limiting diversity compared to the handcrafted Bamboogle. The paper does not show gap-narrowing on datasets other than CC due to lack of sub-question annotations. Evaluation was limited to the GPT-3 family; results may not generalize to all model architectures."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

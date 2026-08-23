@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.07112",
+ "tldr": "ROCODE integrates a backtracking mechanism with program analysis into LLMs for code generation, detecting errors in real-time during generation and strategically rolling back to prevent error accumulation rather than revising after completion.",
+ "contributions": [
+  "ROCODE: a novel model-agnostic code generation approach that integrates backtracking and program analysis to prevent error accumulation during LLM decoding",
+  "Incremental error detection using compiler-based program analysis on incomplete code (syntax, type, runtime, and repeat pattern errors)",
+  "Strategic rollback strategies that use error reports and model uncertainty (entropy) to determine optimal rollback points",
+  "Constraint regeneration with exponentially decaying penalties on erroneous token paths to avoid recurrence",
+  "Trie Tree modeling of non-linear code generation trajectories with rollbacks and regenerations"
+ ],
+ "methods": "ROCODE performs incremental error detection by running compiler-based program analysis after each generated statement to identify syntax, type, runtime, and repeat pattern errors. When an error is detected, a strategic rollback is triggered: either rolling back to the error's reported location or to the highest-entropy token position, determined via model uncertainty analysis. Constraint regeneration then applies exponentially decaying penalties (PN(v|y<t) = λ^(t-r)) to tokens on the erroneous path, and the entire process is modeled using a Trie Tree to manage non-linear generation trajectories.",
+ "results": "ROCODE achieves a compilation pass rate of 99.1% and improves test pass rate by up to 23.8% compared to the best baseline. Token cost is reduced by 19.3% compared to post-revising baselines. It achieves a relative improvement of 34.2% in pass rate for multilingual code generation and an average improvement of 18.2% across nine representative LLMs. Ablation studies confirm that incremental error detection, rollback strategies, and constraint regeneration all contribute to performance improvement.",
+ "limitations": "The paper does not explicitly discuss limitations. However, the approach may face challenges with complex semantic/dependency errors where the root cause is difficult to pinpoint, and the penalty-based constraint regeneration risks inadvertently suppressing benign tokens that share prefixes with erroneous paths.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

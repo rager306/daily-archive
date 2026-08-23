@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.05902",
+ "tldr": "WILBUR is a web agent that uses adaptive in-context learning with a trained demonstration ranking model, instruction synthesis from positive and negative examples, and an intelligent backtracking mechanism to improve task success rates on real websites.",
+ "contributions": [
+  "First web agent to recover from delayed mistakes via graph exploration-based backtracking to previous navigational states",
+  "Demonstration ranking model that re-ranks action demonstrations using embeddings of observations, plans, and actions to predict success likelihood",
+  "Synthesis of both positive and negative demonstrations into succinct instructions to maximize context window utility",
+  "First application of an LLM-based autocurriculum with automatic scoring to generate training data without human annotation for web agents",
+  "State-of-the-art text-only result of 53% on WebVoyager, beating prior text-only approaches by 8%"
+ ],
+ "methods": "WILBUR operates as a browser-based agent using a domain-specific language for web actions. At each step, it retrieves goal-conditioned and website-conditioned demonstrations (both successful and unsuccessful) from a knowledge bank using cosine similarity, then re-ranks action demonstrations with a trained MLP ranking model that combines observation, plan, and action embeddings to predict execution success. A synthesizer LLM distills demonstrations into concise instructions. An actor LLM predicts the next action, an executor runs it via a browser interpreter, and a reflection module assesses whether the action contributed progress, triggering backtracking to the most recent URL-based state if needed. An autocurriculum generates goals conditioned on website DOMs, runs the agent, and uses an LLM self-evaluator to score trajectories, training the ranking model on binary cross-entropy loss.",
+ "results": "WILBUR achieves 53% on the WebVoyager benchmark (643 goals across 15 real websites), which is a new text-only state-of-the-art, surpassing the previous best by 8%. Performance gains vary by website, reaching up to 36% on certain sites. It performs within 5% of a strong multi-modal model despite using only textual inputs. Backtracking and loop detection improves performance by 6% over a baseline with retrying but no backtracking. Adaptive in-context learning and autocurriculum contribute an additional 12% improvement. The zero-shot baseline is outperformed by 18% overall.",
+ "limitations": [
+  "Only receives textual inputs (DOM text) and does not use screenshots, yet still reaches within 5% of a multi-modal model",
+  "Not all state changes can be reverted during backtracking because the backend is real rather than simulated; only states corresponding to navigation events (URL changes) can be returned to",
+  "Substantial number of failures are attributed to engineering challenges of operating the web rather than reasoning limitations",
+  "Context window limits the number of demonstrations that can be included"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

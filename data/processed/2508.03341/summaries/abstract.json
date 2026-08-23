@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.03341",
+ "tldr": "NEMORI is a training-free, management-agnostic adaptive memory distillation framework for LLM agents that uses prediction error—inspired by Predictive Coding Theory—to identify and retain information worth remembering. It achieves strong performance surpassing Full Context on LoCoMo while significantly reducing token consumption and storage.",
+ "contributions": [
+  "Formalizing the distinction between distillation and management in memory construction and deriving three priors (structure, representation, distillation) from general data properties and cognitive principles.",
+  "Implementing NEMORI, a management-agnostic adaptive memory distillation framework with a native management system.",
+  "Demonstrating strong experimental performance with pronounced advantages in longer context, and showing that NEMORI enhances third-party systems (A-MEM, MemoryOS) with 45-64% storage reduction while maintaining performance."
+ ],
+ "methods": "NEMORI comprises two cascading modules guided by three priors. The Episodic Memory Integration module partitions raw interactions into discrete episodes, transforms them into coherent narrative representations via LLM prompting, and integrates semantically continuous episodes using associative retrieval. The Semantic Knowledge Distillation module synthesizes an anticipatory schema from existing knowledge, predicts what happened in each incoming episode, and extracts semantic insights from the discrepancy between the prediction and actual content. A generic Consolidate interface handles knowledge entry (new, merge, or conflict resolution). Embeddings are generated with text-embedding-3-small.",
+ "results": "On LoCoMo with gpt-4.1-mini, NEMORI achieved an average LLM-judge score of 80.8, slightly exceeding Full Context (80.6) and surpassing LangMem (73.4) by 10.1%. With gpt-4o-mini, NEMORI scored 73.0, exceeding Mem0 (61.3) by 19.1% and slightly beating Full Context (72.3). NEMORI excelled in Temporal Reasoning (+15.9% over A-MEM with gpt-4.1-mini, +14.8% over Zep with gpt-4o-mini). In memory construction, NEMORI reduced LLM calls by 59.5%, input tokens by 31.5%, output tokens by 59.2%, and total tokens by 38.7% compared to baselines. Integration with A-MEM and MemoryOS yielded 45-64% storage reduction while maintaining performance.",
+ "limitations": [
+  "The distillation process risks irreversible information distortion if heuristic biases are introduced.",
+  "Systemic bloat can occur when over-storing to avoid information loss, amplifying retrieval noise.",
+  "Only the top-2 episodic memories include raw conversation text; higher-similarity episodes provide narrative only, trading precision for efficiency.",
+  "Open Domain performance is slightly lower than the strongest baseline, as those questions require both memory and the backbone model's prior knowledge.",
+  "The framework's complex pipeline with multiple specialized prompts adds implementation overhead."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.01587",
+ "tldr": "PlanAgent is the first closed-loop mid-to-mid autonomous driving planning system based on a Multi-modal Large Language Model (MLLM), achieving state-of-the-art performance on nuPlan benchmarks in both common and long-tailed scenarios.",
+ "contributions": [
+  "Proposes PlanAgent, the first closed-loop mid-to-mid autonomous driving planning agent system based on an MLLM",
+  "Introduces an Environment Transformation module using lane-graph representation for efficient multi-modal scene information extraction, requiring only one-third of the tokens needed by existing LLM-based methods",
+  "Designs a Reasoning Engine with hierarchical chain-of-thought for in-context learning from scene understanding to planner code generation, plus a Reflection module that simulates and scores planners to filter unreasonable proposals",
+  "Demonstrates state-of-the-art performance on nuPlan Val14 (common) and Test14-hard (long-tailed) benchmarks"
+ ],
+ "methods": "PlanAgent uses an MLLM as a cognitive agent with three core modules. The Environment Transformation module constructs a Bird's Eye View (BEV) map for global semantic information and converts lane-graph-based textual descriptions for local motion information into multi-modal prompts. The Reasoning Engine employs a hierarchical chain-of-thought that guides the MLLM through in-context learning from scene understanding to lateral/longitudinal motion instructions, culminating in planner code generation based on the Intelligent Driver Model (IDM). The Reflection module simulates and scores generated planners to filter out unreasonable proposals and reduce MLLM uncertainty.",
+ "results": "PlanAgent achieves state-of-the-art performance on the nuPlan Val14 benchmark for common scenarios and demonstrates superior generalization on the challenging Test14-hard long-tailed benchmark, outperforming both rule-based method PDM-Closed and learning-based methods PlanTF and DTPP. The approach requires only one-third of the tokens needed for textual scene descriptions compared to existing LLM-based state-of-the-art methods.",
+ "limitations": [
+  "The study is based on the nuPlan benchmark dataset, which may limit generalizability to other environments",
+  "The MLLM used (GPT-4V) is not fine-tuned on autonomous driving data, relying instead on in-context learning, which may constrain reasoning accuracy in complex scenarios",
+  "The Reflection module relies on simulation and scoring thresholds (score < λ and executions < max_exec) to filter planners, which may not capture all safety-critical edge cases",
+  "The method uses predefined IDM planner parameters rather than learning a fully adaptive controller"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

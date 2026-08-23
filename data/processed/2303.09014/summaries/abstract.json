@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.09014",
+ "tldr": "ART is a framework that uses frozen LLMs to automatically generate multi-step reasoning programs for new tasks, dynamically retrieving demonstrations and seamlessly calling external tools (search, code execution) during generation without fine-tuning.",
+ "contributions": [
+  "A framework for automatic decomposition of tasks into multi-step reasoning programs using frozen LLMs",
+  "A task library of 15 Big-Bench tasks organized into five skill clusters (arithmetic, code, search, free-form reasoning, string operations)",
+  "A flexible query language/grammar enabling cross-task generalization and extensible tool use",
+  "A human feedback mechanism allowing users to edit programs and add tools without retraining"
+ ],
+ "methods": "ART uses InstructGPT (text-davinci-002) as a frozen LLM. Given a new task, it retrieves similar task demonstrations from a task library and constructs a prompt containing programs written in a custom parsing expression grammar. During generation, ART parses the LLM's output incrementally and pauses whenever a tool call is encountered, executing the tool (e.g., SerpAPI search, Codex code generation, Python code execution) and resuming generation after incorporating the tool output. The task library was seeded with programs for 15 Big-Bench tasks across five clusters, and two task retrieval strategies were explored.",
+ "results": "ART matches or outperforms auto-generated CoT on 32/34 BigBench and all MMLU tasks by an average of over 22 percentage points. Tool use improves performance by an average of over 12.3 percentage points compared to no tool use. ART improves over direct few-shot prompting by 10.8% on average across unseen BigBench and MMLU tasks. On arithmetic and algorithmic reasoning tasks, ART improves over direct few-shot by 12.5% and over previous best GPT-3 results by 6.1 percentage points. With human feedback on 12 test tasks, ART surpasses best-known GPT-3 results by an average of over 20 percentage points.",
+ "limitations": [
+  "Requires a manually constructed task library with seed demonstrations",
+  "Tool-specific prompts and implementations need to be defined for new tools",
+  "Performance on some tasks may still require human feedback for substantial improvement",
+  "Evaluation limited to BigBench, MMLU, and a subset of QA benchmarks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.10062",
+ "tldr": "SMART-LLM is a framework that uses large language models to convert high-level natural language task instructions into executable multi-robot task plans through decomposition, coalition formation, and task allocation.",
+ "contributions": [
+  "A benchmark dataset of 36 high-level instructions across four complexity categories (elemental, simple, compound, complex) in the AI2-THOR simulation platform, with ground truth states and robot utilization metrics",
+  "A four-stage LLM-based framework (task decomposition, coalition formation, task allocation, execution) using Pythonic few-shot prompts to generate executable multi-robot task plans",
+  "Evaluation of the framework in both simulated (AI2-THOR) and real-world settings"
+ ],
+ "methods": "The framework operates in four stages: (1) Task Decomposition — the LLM breaks a high-level instruction into ordered sub-tasks given environment details and robot skills encoded as Python dictionaries; (2) Coalition Formation — the LLM identifies which robots or robot teams can perform each sub-task based on skill matching and constraint handling; (3) Task Allocation — the LLM assigns specific robots or coalitions to sub-tasks and generates executable Python code; (4) Task Execution — an interpreter executes the generated code via API calls to robot skills. Pythonic few-shot prompts with commented examples guide the LLM throughout all stages.",
+ "results": "The benchmark dataset contains 36 tasks: 6 elemental, 8 simple, 14 compound, and 8 complex. Evaluation was conducted in both the AI2-THOR simulation platform and real-world scenarios, demonstrating promising results for generating multi-robot task plans. The dataset includes ground truth final states and robot transition counts for measuring parallelization effectiveness.",
+ "limitations": "The paper notes that natural language instructions can be incomplete and ambiguous (e.g., missing implicit steps like turning off lights before watching TV in a dim room), requiring extensive prior knowledge to interpret. Fixed-algorithm traditional methods require substantial code modifications for different tasks, while prior LLM-based methods either require extensive task-specific demonstration data lacking generalizability, are limited to specific tasks, or rely on separate LLMs per robot. The paper does not present detailed quantitative comparison numbers against baselines.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

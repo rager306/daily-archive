@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.05080",
+ "tldr": "ScienceAgentBench is a benchmark of 102 code generation tasks extracted from 44 peer-reviewed publications across four disciplines, used to rigorously evaluate LLM-based agents for data-driven scientific discovery; results show current agents can only solve ~32-42% of tasks even with multiple attempts.",
+ "contributions": [
+  "ScienceAgentBench: a benchmark of 102 tasks from 44 peer-reviewed publications in Bioinformatics, Computational Chemistry, Geographical Information Science, and Psychology & Cognitive Neuroscience",
+  "Multi-metric evaluation framework including Valid Execution Rate, Success Rate, CodeBERTScore, API Cost, GPT-4o figure evaluation, and rubric-based grading",
+  "Two strategies to mitigate data contamination and agent shortcut concerns (removing test data points and replacing test labels with dummy values)",
+  "Comprehensive evaluation of five LLMs across three agent frameworks (direct prompting, OpenHands CodeAct, self-debug)"
+ ],
+ "methods": "Tasks were annotated from peer-reviewed publications by nine graduate students following five steps: identifying self-contained code examples, collecting/preprocessing datasets, annotating reference programs, implementing success criteria, and writing instructions. Nine subject matter experts validated each task through a questionnaire covering realism, accuracy, supplementary knowledge, and rubric refinement. Two additional contamination mitigation strategies were applied: randomly removing five test data points and replacing test labels with dummy values for model development tasks. Five LLMs (Llama-3.1-Instruct-70B/405B, Mistral-Large-2-123B, GPT-4o, Claude-3.5-Sonnet) were evaluated with direct prompting, OpenHands CodeAct, and self-debug frameworks, each given three attempts per task.",
+ "results": "The best-performing agent solved 32.4% of tasks independently and 34.3% with expert-provided knowledge (across three attempts per task). Claude-3.5-Sonnet with self-debug solved 10.8% more tasks than with OpenHands CodeAct while costing 17 times less in API fees. OpenAI o1-preview achieved 42.2% performance with direct prompting and self-debug, but at over 10 times the cost of other LLMs. Even with expert-provided knowledge, agents fell short of utilizing it effectively.",
+ "limitations": [
+  "Benchmark covers only four disciplines",
+  "Scale of 102 tasks is smaller than benchmarks with synthetic or easier tasks, though justified by annotation difficulty and evaluation cost",
+  "Rubric-based evaluation currently requires human evaluation and has not yet been automated (e.g., with an LLM-based judge)",
+  "Agents still cannot automate essential tasks in data-driven discovery, let alone end-to-end research pipelines"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.12216",
+ "tldr": "The authors propose d1, a two-stage framework combining masked supervised fine-tuning and a novel critic-free policy gradient algorithm (diffu-GRPO) to scale reasoning capabilities in masked diffusion large language models (dLLMs).",
+ "contributions": [
+  "A masked SFT technique to distill reasoning knowledge from datasets like s1K (1000 high-quality reasoning questions with step-by-step traces)",
+  "diffu-GRPO, the first integration of policy gradient methods to masked dLLMs, featuring an efficient one-step per-token log-probability estimation with random prompt masking",
+  "Demonstration that d1 significantly improves a state-of-the-art dLLM (LLaDA-8B) across mathematical reasoning, planning, and coding benchmarks"
+ ],
+ "methods": "The framework first performs masked SFT on LLaDA-8B using the s1K reasoning dataset for 20 epochs with a sequence length of 4096, where tokens are randomly masked according to a time-varying schedule. Then it applies diffu-GRPO, a policy gradient RL algorithm adapted for masked dLLMs, using a mean-field approximation for sequence log-probability and a one-step per-token log-probability estimator with random prompt masking (probability p_mask). During RL, on-policy generations are sampled and the prompt is randomly masked at each gradient update iteration, providing regularization that allows scaling to higher numbers of gradient updates (up to µ=24). Reward functions combine formatting and correctness signals, with online generation sequence length capped at 256 tokens.",
+ "results": "diffu-GRPO outperforms both LLaDA-8B-Instruct baseline and SFT alone in all 12 setups (four tasks × three sequence lengths). d1-LLaDA (SFT + diffu-GRPO) outperforms pure diffu-GRPO in 11 out of 12 setups. Gains vary by task: modest improvements on GSM8K (3.9%) and MATH500 (4.0%), but significantly larger gains on Countdown (26.2%) and Sudoku (10.0%). Random masking at p_mask=0.1–0.3 improves stability and performance, while higher rates (0.5, 0.7) cause instability. Scaling µ to 12 or 24 with random masking reduces wall clock training time substantially. A unified model trained across all four tasks retains strong performance. diffu-GRPO also improves coding performance on KodCode-Light-RL-10K. Performance gains were observed beyond the 256-token training sequence length at both 128 and 512 tokens.",
+ "limitations": [
+  "Online generations are computationally expensive, limiting generation sequence length to 256 during RL training",
+  "s1K is not suitable for coding tasks as it lacks code-related data points",
+  "Performance decreases with increasing sequence length for Sudoku across all models",
+  "No significant Chain-of-Thought length growth was observed post-RL training compared to autoregressive models",
+  "Further scaling requires larger generation lengths during RL training, currently infeasible due to slow generation speed",
+  "Higher masking rates (p_mask=0.5, 0.7) introduce training instability, especially after ~3000 steps"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

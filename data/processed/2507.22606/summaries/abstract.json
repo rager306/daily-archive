@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.22606",
+ "tldr": "MetaAgent is a finite state machine-based framework that automatically designs and optimizes multi-agent systems from task descriptions, enabling tool use, state traceback, and null-transitions to outperform other auto-designed methods and match human-designed systems.",
+ "contributions": [
+  "Proposing MetaAgent, an FSM-based framework that automatically designs multi-agent systems for a broad spectrum of tasks from natural language descriptions",
+  "Designing an LLM-based optimization algorithm that merges redundant FSM states without requiring external data or extensive training",
+  "Demonstrating that existing multi-agent structures (linear, decentralized debate, orchestrator-coordinated) are special cases of FSMs",
+  "Enabling state traceback and null-transitions for iterative refinement and error correction during deployment"
+ ],
+ "methods": "MetaAgent takes a general task description and first uses a designer LLM to analyze the task and generate a parsimonious set of agents with names, system prompts, and assigned tools (code interpreter and search engine). It then constructs an FSM where each state contains a task-solving agent, state instructions, a condition verifier, and listener agents. An optimization algorithm performs pairwise comparisons of all state pairs using an adaptor LLM to merge redundant states until the state set stabilizes. During deployment, the FSM starts at s0, processes user queries through task-solving agents, and transitions between states based on condition verifier evaluations, with listeners receiving outputs and traceback enabled when errors are detected.",
+ "results": "In text-based tasks, MetaAgent surpasses previous prompt-based SOTA methods by 9%. In Machine Learning tasks, MetaAgent achieved 97% of the average performance of the best human-designed multi-agent system, surpassing all other human-designed and auto-designed frameworks. In software development tasks, MetaAgent passed 50% more checkpoints than the human-designed system. Ablation studies on tool usage, optimization, and traceback all showed performance decreases on the aforementioned tasks.",
+ "limitations": "The initial FSM design often produces an excessively large number of states with redundant or consolidatable states, requiring the optimization algorithm to address. The framework relies on external tools (code interpreter and search engine) for practical deployment. SPP, AutoAgents, and EvoAgent produce multi-agent systems that handle only specific cases without generalization to other cases in the same task domain.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

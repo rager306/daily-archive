@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.01928",
+ "tldr": "MALT introduces a post-training strategy that jointly trains three specialized heterogeneous LLM agents (Generator, Verifier, Refiner) in a sequential pipeline, using value iteration-based credit assignment to automatically generate preference data and significantly improve reasoning performance on math and commonsense benchmarks.",
+ "contributions": [
+  "Introducing MALT (Multi-Agent LLM Training), a novel post-training strategy that decomposes reasoning into generation, verification, and refinement steps using a sequential pipeline of heterogeneous agents",
+  "Proposing a value iteration approach to propagate reward signals backward through a multi-agent search tree, automatically producing training data without human or teacher-model supervision",
+  "Demonstrating off-policy training that allows each agent to specialize by learning from both correct and incorrect trajectories",
+  "Showing strong generalization from GSM8K to the more challenging GSM-Symbolic-P1 benchmark, with performance comparable to a much larger 70B model"
+ ],
+ "methods": "The method uses three specialized LLM agents—Generator, Verifier, and Refinement model—in a sequential pipeline. During data generation, each agent is repeatedly sampled with a branching factor of n=3 to form a multi-agent search tree, producing 27 trajectories per question. Final outputs are graded against ground truth using an outcome reward function, and value iteration propagates these rewards backward to compute expected values for intermediate Generator and Verifier outputs. Values are binarized using a 0.5 threshold to create preference pairs for post-training. Each role-conditioned model is trained with LoRA-based SFT on positive samples, and DPO is applied to the Verifier and Refinement models (but not the Generator, due to its existing preference training). At inference, three sequential passes through the agents are performed with a three-vote self-consistency mechanism.",
+ "results": "On MATH, MALT achieves 57.25% accuracy (vs. 49.50% baseline), a relative improvement of 15.66%. On CSQA, it achieves 81.50% (vs. 74.50%), a 9.40% relative improvement. On GSM8K, it achieves 90.50% (vs. 84.25%), a 7.42% relative improvement. On the generalized GSM-Symbolic-P1 benchmark, MALT achieves 84.75 ± 3.30%, comparable to Llama-3.1-70B's 88.25 ± 2.95%. On Qwen-2.5-1.5B-Base with GSM8K, it achieves 74.50%, a 20.65% relative improvement. MALT outperforms all baselines including multi-agent debate and STaR variants.",
+ "limitations": "Training small models on long sequences of text can lead to instability and hallucinations. The Generator model only receives SFT training rather than DPO because the base LLM (Llama-3.1-8B-Instruct) is already extensively post-trained on preferences as a generator. The method requires multiple sequential inference passes through three models, though this is mitigated by parallelization during data generation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

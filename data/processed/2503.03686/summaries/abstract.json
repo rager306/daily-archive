@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.03686",
+ "tldr": "MAS-GPT reframes building LLM-based multi-agent systems (MAS) as a generative language task, producing a query-adaptive executable MAS within a single LLM inference instead of relying on manual design or costly iterative LLM calls.",
+ "contributions": [
+  "Reframing MAS construction as a generative language task with unified executable Python code representation",
+  "A consistency-oriented data construction pipeline (inter-consistency pair selection and intra-consistency refinement) for creating query-MAS training pairs",
+  "MAS-GPT, a model trained via SFT on ~11k query-MAS pairs using Qwen2.5-Coder-32B-Instruct",
+  "Experiments showing consistent outperformance of 10+ baselines across 9 benchmarks and 5 LLMs"
+ ],
+ "methods": "The authors represent MAS as executable Python forward functions where agent prompts are variables, LLM calls are functions, and inter-agent interactions are string concatenations, building a base MAS pool of 40+ designs. They construct a dataset from queries across MATH, GSM8K, MBPP, MMLU, and SciQ, evaluate N×M query-MAS pairs for correctness, select pairs using inter-consistency clustering (grouping similar queries and assigning each group the highest-scoring MAS), and refine pairs using an advanced LLM to adjust agents query-dependently and add reasoning statements (intra-consistency). The resulting ~11k triplets are used for supervised fine-tuning of Qwen2.5-Coder-32B-Instruct on 16 A100s for 3 epochs at learning rate 1e-5.",
+ "results": "MAS-GPT consistently outperforms 10+ baseline MAS methods across 9 benchmarks using 5 LLMs. It brings a 13.3% gain on AIME-2024 when combined with o1 and a 10.0% gain with DeepSeek-R1. Experiments span math (MATH, GSM8K, GSM-Hard), coding (HumanEval, HumanEval+), general QA (MMLU), and science (GPQA, SciBench) domains.",
+ "limitations": "The paper notes that existing methods rely on manual crafting or multiple LLM inferences, which MAS-GPT aims to replace but does not deeply analyze its own failure modes or limitations. The dataset covers only verifiable queries with ground-truth answers from five specific domains, potentially limiting generalization to open-ended or non-verifiable tasks. The 40+ base MAS designs may not cover all possible task structures.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2207.01780",
+ "tldr": "CodeRL is a framework that applies actor-critic deep reinforcement learning to pretrained language models for program synthesis, using unit test signals as dense feedback to improve both training and generation, achieving new state-of-the-art results on APPS and MBPP benchmarks.",
+ "contributions": [
+  "Proposing CodeRL, an actor-critic RL framework that formulates program synthesis as an RL problem to optimize pretrained LMs using unit test signals",
+  "Introducing a critic model trained as an error predictor to provide dense token-level feedback signals during training",
+  "Designing a novel inference-time generation procedure with critical sampling that uses example unit tests and critic scores to regenerate and repair programs",
+  "Extending CodeT5 with enhanced pretraining objectives (including NTP), larger model sizes, and 10x larger pretraining data (GCPY, 10.5B tokens)",
+  "Achieving new SOTA on APPS and zero-shot SOTA on MBPP, releasing improved CodeT5-large (770M)"
+ ],
+ "methods": "The authors formulate program synthesis as an RL problem where the pretrained LM acts as an actor policy that samples synthetic programs, and a critic model predicts functional correctness (CompileError, RuntimeError, FailedTest, PassedTest). The critic is trained to minimize cross-entropy loss on unit test outcomes and provides token-level value estimates via max-pooled hidden states. Training uses REINFORCE with a greedy decoding baseline and critic-weighted intermediate returns to reduce gradient variance. During inference, a critical sampling strategy regenerates programs for candidates passing example unit tests, and repairs failed programs using compiler error information concatenated with top critic-ranked candidates.",
+ "results": "CodeRL achieves new SOTA on the APPS benchmark with more than 2% pass@1, 6% pass@5, and 20% pass@1000. It sets a new zero-shot SOTA on MBPP with 63.0% pass@80, surpassing a finetuned GPT-137B's 61.4%. The RL method is model-agnostic and produces consistent gains across various large-scale models. The released CodeT5-large (770M) outperforms many pretrained LMs of much larger sizes.",
+ "limitations": "Existing models trained with next-token prediction in a teacher-forcing manner accumulate errors during test time when conditioning on previously sampled tokens rather than ground-truth tokens, an issue that worsens for complex competition-level problems. Token-matching scores like BLEU poorly correlate with functional correctness of complete programs, making evaluation non-trivial. Prior RL-based and execution-guided synthesis approaches were limited to domain-specific programming languages, whereas this work targets general-purpose languages like Python with natural language problem specifications.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

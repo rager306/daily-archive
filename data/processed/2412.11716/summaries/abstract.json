@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.11716",
+ "tldr": "EvoPatient is a multi-agent coevolution framework that enables LLMs to autonomously simulate standardized patients through unsupervised doctor-patient dialogues, improving requirement alignment by over 10% compared to existing reasoning methods.",
+ "contributions": [
+  "A novel simulated patient framework (EvoPatient) that uses unsupervised agent coevolution without human supervision or weight updates",
+  "A simulated flow that models the diagnostic process into phases (complaint generation, triage, interrogation, conclusion)",
+  "An attention library and trajectories library that store validated dialogues to refine patient responses and doctor questioning patterns",
+  "A multidisciplinary consultation recruitment process enabling doctor agents to dynamically recruit agents from other disciplines"
+ ],
+ "methods": "The framework employs a patient agent and multiple doctor agents engaged in multi-turn diagnostic dialogues across simulated phases. An unsupervised coevolution mechanism validates and stores high-quality dialogues in two libraries: an attention library containing refined requirements and few-shot demonstrations, and a trajectories library storing prediction-trajectories to guide professional questioning. Doctor agents can recruit colleagues from different disciplines via a directed acyclic graph process. The system uses RAG for answer generation, instant and summarized memory, and converges after evolving over 200 cases (approximately 10 hours). Evaluation used medical records from two collaborating hospitals plus MTSamples and MIMIC-II datasets, encompassing over 20,000 distinct cases.",
+ "results": "EvoPatient improves over existing reasoning methods by more than 10% in requirement alignment and achieves better human preference. It raises the Ability metric (combining relevance, faithfulness, and robustness) from 0.7542 (self-alignment) and 0.7626 (few-shot) to 0.8597. Doctor agents autonomously asked approximately 3,000 questions across 150 cases, outperforming all baselines across all metrics. EvoPatient achieved higher preference rates than all baselines in both standard and cheat-question scenarios according to both human experts and GPT-4 evaluations. The average response time was 6.6922 seconds, with notable reductions in prompt input length and token cost while improving answer quality.",
+ "limitations": "The framework was evolved on only 200 default training cases, and convergence was determined by no new items being added for six consecutive cases, which may limit the breadth of learned patterns. A library formed from transferred online doctor-patient dialogues (1,000 arrays, significantly larger than the self-evolved library) performed unsatisfactorily, only surpassing prompt engineering baselines. The approach relies on medical records from collaborating hospitals and public datasets (MTSamples, MIMIC-II), and its generalizability across diverse medical conditions and languages has not been fully established.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

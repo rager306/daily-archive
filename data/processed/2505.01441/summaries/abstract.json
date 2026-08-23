@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.01441",
+ "tldr": "ARTIST is a unified framework that couples agentic reasoning, reinforcement learning, and tool integration for LLMs, enabling models to autonomously decide when, how, and which tools to invoke within multi-turn reasoning chains using outcome-based RL.",
+ "contributions": [
+  "A unified agentic RL framework (ARTIST) that tightly couples agentic reasoning, dynamic tool integration, and reinforcement learning for LLMs",
+  "Generalizable tool use and environment interaction supporting arbitrary external tools and environments",
+  "Extensive evaluation across mathematical reasoning and multi-turn function calling benchmarks with detailed ablations and metric analyses"
+ ],
+ "methods": "ARTIST interleaves tool queries and tool outputs directly within reasoning chains, alternating between text-based thinking () and tool interactions (<tool_name>... </tool_name>). Training uses Group Relative Policy Optimization (GRPO) with a loss masking strategy that excludes deterministic tool output tokens from gradient computation, focusing optimization on the agent's reasoning and decision-making. A composite reward mechanism provides fine-grained feedback through three components: answer reward (2 points for correct final answer), format reward (encouraging correct tag structure and ordering), and tool execution reward (proportional to fraction of successful tool calls).",
+ "results": "ARTIST achieves up to 22% absolute improvement over base models on mathematical reasoning benchmarks (MATH-500, AIME, AMC, Olympiad Bench). It surpasses GPT-4o and other leading models on AMC, AIME, and Olympiad. For multi-turn function calling, ARTIST more than doubles the accuracy of base and prompt-based models on τ-bench and achieves strong gains on the hardest BFCL v3 subsets. Results are reported for both 7B and 14B Qwen2.5-Instruct models. The framework exhibits emergent agentic behaviors including adaptive tool selection, iterative self-correction, and context-aware multi-step reasoning.",
+ "limitations": "The paper mentions that current tool-integration strategies face scalability and robustness challenges, and most prior approaches rely on hand-crafted prompts or fixed heuristics that do not generalize to complex or unseen scenarios. While ARTIST addresses these through RL, the paper notes that supervision-free training (outcome-based only) may not provide step-level guidance for tool invocation decisions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

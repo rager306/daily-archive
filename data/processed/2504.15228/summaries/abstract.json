@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.15228",
+ "tldr": "SICA is a self-improving coding agent that autonomously edits its own codebase to improve benchmark performance without gradient-based training, achieving gains from 17% to 53% on a random subset of SWE-Bench Verified.",
+ "contributions": [
+  "A self-improving coding agent (SICA) that eliminates the distinction between meta-agent and target agent, capable of editing its own codebase to improve itself with respect to cost, speed, and benchmark performance.",
+  "Empirical evidence that self-referential agents can effectively improve their own implementations.",
+  "Open-source implementation of SICA shared with the community."
+ ],
+ "methods": "SICA runs in a loop where the best-performing agent from an archive is selected as the meta-agent to identify improvements and implement them in its own codebase. A utility function combining normalized benchmark performance (w=0.5), cost (w=0.25, capped at $10), and wall-clock time (w=0.25, capped at 300s timeout) determines the best agent. The initial agent includes tools for file editing, shell commands, sub-agents, and an asynchronous overseer running every 30s to detect pathological behavior. Experiments ran 15 iterations using Sonnet 3.5 (v2) for most agents and o3 mini for the reasoning agent.",
+ "results": "On a random subset of 50 SWE-Bench Verified problems, accuracy improved from 17% to 53%. File editing benchmark improved from 0.82 to 0.96 accuracy over 15 iterations. Symbol location benchmark improved from 0.35 to 0.53. LiveCodeBench saw modest improvement (0.65 to 0.71). On reasoning-heavy tasks (AIME 2024 and GPQA Diamond), improvements were marginal—base o3-mini alone scores 87% and 79%, while the agent system averaged only 76%, suggesting the scaffolding sometimes interfered with reasoning models' chain of thought. Total API cost was approximately $7,000 for the 15-iteration run.",
+ "limitations": "Difficulty generating truly novel modification ideas autonomously; path dependency where poor initial feature suggestions lower subsequent idea quality; short 5-minute timeouts and cost limits depress initial benchmark scores; improvements from speed/cost optimization not fully reflected in SWE-Bench numbers.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

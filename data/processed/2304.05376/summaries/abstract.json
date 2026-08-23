@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.05376",
+ "tldr": "ChemCrow is an LLM-powered chemistry agent that integrates 18 expert-designed tools to autonomously plan and execute chemical tasks including organic synthesis, drug discovery, and materials design.",
+ "contributions": [
+  "Development of ChemCrow, an LLM chemistry agent integrating 18 expert-designed tools",
+  "Autonomous planning and execution of syntheses of an insect repellent (DEET) and three organocatalysts via RoboRXN platform",
+  "Guided discovery of a novel chromophore through human-AI collaboration",
+  "Demonstration that GPT-4 as evaluator cannot distinguish clearly wrong completions from ChemCrow's performance"
+ ],
+ "methods": "The authors integrated 18 expert-designed chemistry tools (covering reactions, molecules, safety, search, and standard functions) with GPT-4 using a ReAct/MRKL framework. The LLM follows a Thought-Action-Action Input-Observation iterative chain-of-thought process, querying tools and incorporating their outputs until reaching final answers. Tools include LitSearch/WebSearch, Name2SMILES, ReactionPlanner, and ReactionExecute. Syntheses were executed on IBM Research's RoboRXN cloud-connected robotic platform, with an ActionCleaner function enabling autonomous adaptation of invalid procedures.",
+ "results": "ChemCrow autonomously synthesized DEET and three known thiourea organocatalysts (Schreiner's, Ricci's, and Takemoto's) successfully. It guided discovery of a novel chromophore with predicted absorption closest to 369nm target (measured at 336nm, RMSE of 37nm for the Random Forest model). Expert chemists preferred ChemCrow over GPT-4 across all three evaluation metrics (correctness of chemistry, quality of reasoning, degree of task completion), especially on complex tasks. GPT-4 only outperformed ChemCrow on easier tasks where answers could be memorized from training data. EvaluatorGPT (GPT-4 as evaluator) concluded GPT-4 was better on average, revealing its inability to assess factuality.",
+ "limitations": [
+  "Current results limited by the amount and quality of the 18 chosen tools",
+  "Evaluation tasks are limited in scope and variety",
+  "Tool outputs depend on underlying tool quality, which may contain inaccuracies",
+  "LLM may struggle to analyze observations due to limited chemistry concept understanding",
+  "Synthesis procedures from predicted plans are not always directly executable and require adaptation",
+  "GPT-4 as evaluator fails to provide trustworthy assessments when factuality is key"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

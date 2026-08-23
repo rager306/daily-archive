@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.16369",
+ "tldr": "SARATHI improves LLM inference efficiency by splitting prefill requests into chunked compute-units and piggybacking memory-bound decode operations onto them, achieving up to 10× decode throughput improvement and 1.91× end-to-end speedup.",
+ "contributions": [
+  "Chunked-prefills that split a prefill request into equal compute-sized chunks to create uniform, compute-saturating work units",
+  "Decode-maximal batching that constructs hybrid batches from a single prefill chunk with remaining slots filled by decodes that 'piggyback' at much lower cost",
+  "Application of chunked-prefills and decode-maximal batching to pipeline parallelism, significantly reducing pipeline bubbles",
+  "Extensive evaluation across multiple models and hardware demonstrating up to 1.91× improvement in end-to-end throughput"
+ ],
+ "methods": "The paper introduces chunked-prefills, which split a prefill request into equal-sized chunks (e.g., 256 tokens) chosen to saturate GPU compute while incurring only marginal throughput loss (e.g., 12.5% at 256 tokens vs. 512). It then employs decode-maximal batching, constructing a batch with a single prefill chunk and populating remaining slots with decode requests that 'piggyback' at a fraction of the cost of a decode-only batch. These uniform hybrid batches are used with pipeline parallelism to ensure consistent micro-batch compute times, reducing pipeline bubbles. The approach is evaluated on LLaMA-13B/A6000, LLaMA-33B/A100, and GPT-3 with 8-way pipeline and tensor parallelism across 64 A100 GPUs.",
+ "results": "For LLaMA-13B on A6000, SARATHI improves decode throughput by up to 10× and end-to-end throughput by up to 1.33×. For LLaMA-33B on A100, decode throughput improves by up to 4.25× and end-to-end throughput by 1.25×. With pipeline parallelism on GPT-3, SARATHI reduces pipeline bubbles by 6.29×, yielding a 1.91× end-to-end throughput improvement. The decode cost per token can be up to ~200× the prefill cost per token at batch size 1, and prefill saturates GPU compute at batch size 1 with sequence length ≥512.",
+ "limitations": "Large batch sizes needed for efficient decode are infeasible due to KV-cache memory footprint (e.g., max batch size of 18 for LLaMA-13B at 1K sequence length on A6000). The optimal chunk size depends on model architecture and GPU characteristics. The paper notes that standard iteration-level scheduling in existing systems does not account for varying compute times across micro-batches, leading to pipeline bubbles.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

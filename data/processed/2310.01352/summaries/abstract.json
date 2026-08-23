@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.01352",
+ "tldr": "RA-DIT is a lightweight dual instruction tuning methodology that retrofits any LLM with retrieval capabilities by separately fine-tuning the language model to better use retrieved information and the retriever to return more relevant results aligned with the LM's preferences.",
+ "contributions": [
+  "Proposing RA-DIT, a two-step fine-tuning approach that retrofits off-the-shelf LLMs with retrieval capabilities without expensive pre-training modifications",
+  "Demonstrating that separate fine-tuning of the LM and retriever, then combining them, yields significant performance gains on knowledge-intensive benchmarks",
+  "Showing that RA-DIT 65B achieves state-of-the-art performance, outperforming both in-context RALM approaches and extensively pre-trained RALMs like ATLAS"
+ ],
+ "methods": "The authors introduce a two-step fine-tuning process. First, language model fine-tuning (LM-ft) uses a label-loss objective where each fine-tuning prompt is augmented with a retrieved background field prepended to instructions, guiding the LLM to optimally utilize retrieved information and ignore distracting content. Second, retriever fine-tuning (R-ft) updates the query encoder using a generalized LM-Supervised Retrieval (LSR) objective that minimizes KL-divergence between retriever scores and LLM preference scores, aligning the retriever with the LM's preferences. They use LLAMA as the base LLM and DRAGON+ as the retriever, with parallel in-context retrieval augmentation where top-k chunks are prepended to prompts and predictions are ensembled weighted by relevance scores.",
+ "results": "RA-DIT 65B achieves state-of-the-art performance across knowledge-intensive zero- and few-shot benchmarks, outperforming REPLUG by +8.9% in 0-shot and +1.4% in 5-shot on average over MMLU, NQ, TQA, and ELI5. Specific gains include MMLU (+8.2% 0-shot, +0.7% 5-shot) and Natural Questions (+22% 0-shot, +3.8% 5-shot). RA-DIT outperforms ATLAS 11B by +7.2% on average in a 64-shot fine-tuning setting. On commonsense reasoning tasks, RA-DIT demonstrates improvements over base LLAMA on 7 out of 8 evaluation datasets, preserving parametric knowledge.",
+ "limitations": [
+  "Iterative dual instruction tuning (fine-tuning retriever using LSR scores from RA-IT LM or vice versa for multiple iterations) did not yield further gains in preliminary experiments",
+  "Fine-tuning both query and document encoders hurt performance; only the query encoder was fine-tuned",
+  "The approach was primarily evaluated on knowledge-intensive tasks, with limited evaluation on other domains"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

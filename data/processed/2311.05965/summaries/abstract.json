@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.05965",
+ "tldr": "LLMs can generate novel, validated hypotheses from testing literature in zero-shot settings, with findings suggesting they can serve as catalysts for scientific discovery.",
+ "contributions": [
+  "First work to formally design experiments investigating zero-shot hypothesis generation capacity of LLMs, using temporal biomedical instruction data",
+  "Demonstrates LLMs possess rudimentary higher-order knowledge reasoning capabilities and can propose new hypothesis statements",
+  "Designed four evaluation metrics (novelty, relevance, significance, verifiability) for both ChatGPT-based and human evaluations with strong correlation (>0.7 Pearson/Spearman)"
+ ],
+ "methods": "The authors constructed a biomedical literature dataset with background knowledge and hypothesis pairs, partitioned by publication date (training: pre-January 2023; unseen test: August 2023). They evaluated various LLMs (ChatGPT, Llama-based models, domain-specific models like PMC-LLaMA and MedAlpaca) across zero-shot, few-shot (5-shot), and fine-tuning settings. A multi-agent cooperative framework with role design and search tools was introduced. Hypotheses were evaluated using BLEU, ROUGE, and four novel metrics (novelty, relevance, significance, verifiability) assessed via ChatGPT and human evaluators with biomedical backgrounds.",
+ "results": "Zero-shot outperformed few-shot for extra-large models (Llama-2-70b-chat, WizardLM-70B-V1.0). LLMs performed better on the unseen test set than the seen test set. Few-shot examples enhanced verifiability but decreased novelty. Fine-tuning WizardLM-13B-V1.2 surpassed both gpt-3.5-turbo and WizardLM-70B-V1.0. Domain adaptation improved word overlap metrics but had minimal effect on ChatGPT-based evaluation. Human evaluations showed strong correlation with ChatGPT evaluations (Pearson and Spearman coefficients >0.7). Multi-agent collaborative approaches introducing uncertainty significantly improved zero-shot generalization.",
+ "limitations": "Word overlap metrics (BLEU, ROUGE) showed lower coherence with human scores, indicating insufficient evaluation metrics. Domain adaptation produced conflicting results across different evaluation methods. Integrating few-shot examples and external tools may reduce hypothesis generation proficiency by decreasing uncertainty. The study is limited to the biomedical domain. The findings rely on ChatGPT-based evaluation which may not fully capture hypothesis quality.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

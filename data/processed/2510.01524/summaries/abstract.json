@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.01524",
+ "tldr": "WALT is a framework that reverse-engineers website-provided functionality into reusable, validated tools, shifting browser automation from brittle step-by-step UI interactions to reliable high-level tool invocation.",
+ "contributions": [
+  "A two-stage pipeline (tool discovery and construction/validation) that autonomously learns website-specific tools",
+  "A demonstrate-generate-validate loop with multi-objective optimization minimizing fail rate, step count, and agentic ratio",
+  "URL reverse-engineering to promote multi-step UI sequences into robust parameterized URL operations",
+  "Multimodal DOM parser and external verification as generic supporting tools"
+ ],
+ "methods": "WALT uses a two-agent system where a browser agent demonstrates tool candidates to produce execution traces, and a tool construction agent analyzes traces to induce structured action scripts with validated input schemas. The pipeline prioritizes deterministic DOM/navigation operations with targeted agentic fallbacks for dynamic elements, and attempts to replace UI sequences with URL manipulation. Discovered tools cover discovery (search, filter, sort), content management (create, edit, delete), and communication (comment, message, upvote). Validation is iterative: failures yield feedback that refines selectors, schemas, and scripts until a robust tool is produced.",
+ "results": "WALT achieves 52.9% average success on VisualWebArena and 50.1% on WebArena, outperforming prior work. On VisualWebArena, it reaches 64.1% on Classifieds (+12.1 absolute over SGV), 53.4% on Shopping, and 39.0% on Reddit (+6.0 absolute). It nearly doubles the Claude Computer Use baseline and outperforms test-time search and tool-use baselines by 15-20 points. Over 50 reusable tools were discovered. Ablation studies show 10%-30% success rate gains and 1.3-1.4x fewer steps on average from discovered tools, multimodal DOM parsing, and external verification.",
+ "limitations": "WALT underperforms SGV on Shopping (53.4% vs 57.0%). The approach was evaluated only on simulated benchmarks (VisualWebArena and WebArena), not production websites. Tool discovery is website-specific and requires offline exploration before deployment. The method relies on GPT-5 as the base agent.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

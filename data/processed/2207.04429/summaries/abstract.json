@@ -1,0 +1,18 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2207.04429",
+ "tldr": "LM-Nav combines three off-the-shelf pre-trained models—GPT-3 (LLM), CLIP (VLM), and ViNG (VNM)—to enable robotic navigation from natural language instructions without any fine-tuning or language-annotated robot data.",
+ "contributions": [
+  "Large Model Navigation (LM-Nav), the first embodied instruction-following system to combine pre-trained vision-and-language models with a goal-conditioned controller without any fine-tuning in the target environment",
+  "Demonstration of long-horizon navigation through complex outdoor environments from natural language instructions, with goal distances up to 800 meters"
+ ],
+ "methods": "LM-Nav constructs a topological 'mental map' of the environment using a visual navigation model (ViNG) from raw visual observations and GPS. Given free-form text instructions, GPT-3 parses them into a sequence of textual landmarks, which are then visually grounded onto graph nodes using CLIP by computing cosine similarity between image and text embeddings. A dynamic-programming-based graph search algorithm maximizes a probabilistic objective combining landmark grounding likelihoods and traversability likelihoods (derived from ViNG's predicted temporal distances), yielding an optimal walk executed by the VNM.",
+ "results": "Evaluated on 20 queries across varying outdoor environments totaling over 6 km. Successfully followed natural language instructions with multiple landmarks, disambiguated paths with same start-goal locations using fine-grained commands, and reached goals up to 800 meters away. CLIP was found unable to retrieve a small number of hard landmarks including fire hydrants and cement mixers, leading to missed intermediate landmarks in some cases.",
+ "limitations": "Relies on landmarks existing in the environment and being identifiable by CLIP; VLM failures on 'hard' landmarks (e.g., fire hydrants, cement mixers) can cause missed intermediate stops. The approach does not handle environments requiring fine-tuning or annotated data. Prompt engineering for the LLM was required for nuanced instructions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.11833",
+ "tldr": "Recent LLM-based planning methods abandon soundness and completeness for inefficiency; the authors propose 'Thought of Search' which uses LLMs to generate code for search components (successor functions and goal tests), achieving 100% accuracy with only a few LLM calls while maintaining soundness and completeness.",
+ "contributions": [
+  "Analysis of soundness, completeness, and LM evaluation complexity of recent LLM planning approaches",
+  "Proposal of Thought of Search approach using LLMs to produce Python implementations of successor functions and goal tests",
+  "Demonstration on four representative search problems showing significant efficiency gains",
+  "Argument for responsible use of compute resources in LLM-based planning research"
+ ],
+ "methods": "The authors analyze recent LLM-based planning methods (IO prompting, CoT, ReAct, ReWOO, RAP, ToT, GoT, Reflection, LATS, AoT) for soundness, completeness, and complexity. They propose using LLMs to generate Python code for two critical search components: successor functions and goal tests. These functions are then used with standard BFS/DFS algorithms. The approach is exemplified on the 24 game and other search problems, with experiments repeated 5 times using GPT-4 in chat mode. Code validation is performed with user guidance.",
+ "results": "The proposed approach achieved 100% accuracy on tested datasets with only a few LLM calls. For the 24 game (1362 instances), the model required 1.2 average interactions for the successor function and 1 interaction for the goal test. BFS found solutions in all 1361 solvable cases and correctly identified the 1 unsolvable case. Total solving time ranged from 1.92s to 6.83s across 5 variants, comparable to a single GPT-4 evaluation (~7s). In contrast, ToT reported ≈100 LLM calls with 75% success rate on a subset of problems.",
+ "limitations": [
+  "The approach assumes iterative, user-guided validation by a person capable of validating obtained code",
+  "Correctness of generated successor functions and goal tests must be validated, though this is seen as a strength for debugging",
+  "Some successor function implementations show efficiency variations (1.92s to 6.83s)",
+  "The approach currently focuses only on successor functions and goal tests, leaving heuristic functions to future work"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

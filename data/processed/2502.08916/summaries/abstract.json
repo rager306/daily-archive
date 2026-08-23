@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.08916",
+ "tldr": "PathFinder is a multi-modal, multi-agent framework that emulates expert pathologist decision-making by iteratively navigating whole slide images, generating descriptions of relevant patches, and synthesizing findings into a diagnosis, achieving state-of-the-art performance in skin melanoma classification.",
+ "contributions": [
+  "Introduction of PathFinder, a multi-modal multi-agent system with four collaborating AI agents (Triage, Navigation, Description, and Diagnosis) that mimics the iterative diagnostic process of expert pathologists",
+  "A text-conditioned visual navigation approach using a lightweight U-Net that generates importance maps conditioned on accumulated textual descriptions",
+  "First AI-based system to surpass the average performance of pathologists on the challenging M-Path melanoma classification task",
+  "Inherent explainability through natural language descriptions of diagnostically relevant patches, rated comparable to GPT-4o by pathologists"
+ ],
+ "methods": "PathFinder uses four agents operating iteratively: the Triage Agent classifies WSIs as benign or risky using a transformer-based model with Quilt-Net embeddings; the Navigation Agent employs a text-conditioned U-Net to generate importance maps over the WSI, guided by aggregated textual descriptions from previous iterations, and probabilistically samples significant patches; the Description Agent, an instruction-tuned Quilt-LLaVA 7B model, generates concise natural language descriptions of sampled patches; and the Diagnosis Agent, a fine-tuned GPT-2 LLM with LoRA, synthesizes all gathered patch descriptions into a final diagnostic classification across classes 2-4. Training used the M-Path Skin Biopsy dataset (238 cases, 168/35/35 split) and pathologist viewport data.",
+ "results": "PathFinder achieved 74% accuracy on the M-Path Skin Biopsy dataset, representing an 8% improvement over the best baseline (66% accuracy) and a 9% improvement over the average pathologist performance (65%). Qualitative evaluation by two expert pathologists found the Description Agent's outputs to be of high quality and comparable to GPT-4o.",
+ "limitations": [
+  "Limited training dataset size led to overfitting issues in the initial Navigation Agent design (LLM-based approach), requiring a switch to a more data-efficient U-Net-based approach",
+  "Resource constraints necessitated using GPT-2 as the base model for the Diagnosis Agent rather than a larger LLM",
+  "The Triage Agent performs only binary classification (class 1 vs. rest) rather than multi-class classification across all four diagnostic categories",
+  "The Navigation Agent's performance depends on the quality of textual descriptions from the Description Agent, creating a cascading dependency"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

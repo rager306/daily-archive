@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.12917",
+ "tldr": "SCoRe is a multi-turn online reinforcement learning approach that significantly improves LLM self-correction using only self-generated data, achieving state-of-the-art results with 15.6% and 9.1% absolute gains on MATH and HumanEval respectively over base Gemini models.",
+ "contributions": [
+  "SCoRe: a multi-turn RL approach for teaching LLMs to self-correct using entirely self-generated data without external models or teacher supervision",
+  "Empirical analysis demonstrating that SFT-based approaches fail due to distribution mismatch and behavior collapse",
+  "Two-stage RL training design that prevents behavior collapse through constrained policy initialization and reward shaping"
+ ],
+ "methods": "SCoRe uses a two-stage multi-turn RL approach. Stage I trains on a base model with constraints to keep the first-turn distribution close to the base model, generating a policy initialization less susceptible to behavior collapse. Stage II performs multi-turn RL on both attempts using a reward shaping term that rewards progress toward self-correction rather than just final response correctness, combined with KL regularization to prevent excessive deviation from the base policy. The authors also analyze failure modes of SFT (STaR and Pair-SFT) approaches on self-generated correction traces.",
+ "results": "On Gemini 1.0 Pro and 1.5 Flash models, SCoRe achieves absolute gains of 15.6% on MATH and 9.1% on HumanEval for self-correction. Base model showed Accuracy@t1 of 52.6% and Accuracy@t2 of 41.4% (delta of -11.2%), with 4.6% of incorrect-first attempts corrected and 15.8% of correct-first attempts incorrectly modified. STaR and Pair-SFT methods showed minimal self-correction improvement (0.4% and 1.8% respectively), with SFT models being overly conservative in edits.",
+ "limitations": "The approach requires access to an oracle reward function (answer checker) during training, though not at test time. Multi-turn RL is computationally more expensive than single-turn approaches. The two-stage training adds complexity compared to standard SFT. Standard multi-turn RL without the proposed initialization stage suffers from poor exploration and behavior collapse.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

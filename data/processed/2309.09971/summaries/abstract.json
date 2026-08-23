@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.09971",
+ "tldr": "The paper introduces MindAgent, an infrastructure for evaluating emergent multi-agent planning and coordination capabilities of LLMs, along with CUISINEWORLD—a virtual kitchen benchmark where LLMs coordinate multiple agents to complete dish orders.",
+ "contributions": [
+  "Establishment of CUISINEWORLD, a new gaming scenario and benchmark based on a multi-agent virtual kitchen environment with 10 location types, 27 ingredient types, and 33 unique dishes across 12 levels.",
+  "Introduction of MindAgent, an infrastructure for interactive multi-agent planning with LLMs using in-context learning, few-shot demonstrations, planning rationals, and environmental feedback.",
+  "Extensive evaluations with multiple LLMs (GPT-4, Claude, LLaMA) demonstrating generalist multi-agent planner potential.",
+  "Deployment into real-world gaming scenarios including a customized VR version of CUISINEWORLD and adaptation to Minecraft."
+ ],
+ "methods": "The authors designed CUISINEWORLD as a text-based virtual kitchen game formulated as an MDP, where a centralized LLM dispatcher issues scheduling commands (goto, get, put, activate, noop) to N agents to complete dish orders before they expire. They introduced a Collaboration Score (CoS) metric measuring average task completion rate across different task-interval conditions. MindAgent leverages in-context learning with prompt components including recipes, instructions, inference knowledge, one-shot demos, current state observations, and memory history, with action extraction via regex and validation via look-ahead checking.",
+ "results": "Zero-shot multi-agent planning: powerful pretrained LLMs like GPT-4 can schedule 2-4 agents to complete dishes and collaborate with human players using only simple game instructions. In-context learning with few-shot demonstrations, Chain-of-Thought rationals, and on-the-fly feedback significantly boosted planning performance. LLMs showed strong generalization from fewer-agent to more-agent coordination and adaptation to new domains like Minecraft.",
+ "limitations": "Multi-agent planning with LLMs is bottlenecked by challenging computation cost, context length limitation, and non-optimal plans. Full interaction history cannot fit into context windows, requiring selection of a fixed horizon. The problem is NP-hard (cannot be solved in polynomial time), and the centralized planning approach may not scale indefinitely.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

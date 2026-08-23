@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.11857",
+ "tldr": "Hermes 3 is a series of neutrally-aligned instruct and tool-use models fine-tuned from Llama 3.1 (8B, 70B, 405B) that achieve state-of-the-art performance among open-weight models on several benchmarks, with strong reasoning, creative, and agentic capabilities.",
+ "contributions": [
+  "Release of Hermes 3, an instruct-tuned model series with strong reasoning, creative, and tool-use abilities.",
+  "Demonstration that the 405B variant achieves state-of-the-art performance among open-weight models on multiple public benchmarks.",
+  "Introduction of agentic capabilities using XML-tagged structured reasoning, scratchpads, internal monologues, planning, execution, reflection, and RAG with citation tags.",
+  "Open-sourcing of weights for all model sizes."
+ ],
+ "methods": "Hermes 3 models were created by supervised fine-tuning (SFT) and direct preference optimization (DPO) on Llama 3.1 base models (8B, 70B, 405B). The SFT dataset contained ~390 million tokens (69% output, 31% input) curated from general instructions, domain-specific data, and synthetic generation. Training used AdamW with cosine decay, sample packing via Flash Attention 2, and a target sequence length of 8192. DPO was applied using LoRA adapters (r=32, α=16) with RMSProp, but yielded only moderate improvements for the 8B model and negligible gains for larger sizes. Evaluations covered benchmarks such as GPT4All, AGIEval, IFEval, MT-Bench, BBH, MATH, GPQA, MuSR, and MMLU.",
+ "results": "On final downstream evaluations, Hermes 3 405B outperformed Llama 3.1 Instruct 405B on AGIEval 0-shot (61.84 vs 58.60), ARC-Challenge 0-shot (69.45 vs 66.04), ARC-Easy 0-shot (86.24 vs 85.40), Hellaswag 10-shot (90.19 vs 88.34), IFEval Strict (84.87 vs 87.09), MT-Bench Avg (8.93 vs 9.17), MuSR 0-shot (48.26 vs 47.58), OpenbookQA 0-shot (48.80 vs 48.60), PiQA 0-shot (85.96 vs 84.93), TruthfulQA MC2 0-shot (65.57 vs 64.83), and Winogrande 5-shot (86.27 vs 86.82). For the 70B model, Hermes 3 scored 56.18 on AGIEval 0-shot vs 48.26 for Llama 3.1 Instruct, and 8.99 on MT-Bench Avg vs 8.93. The 8B model achieved 41.26 on AGIEval 0-shot vs 40.49 and 8.27 on MT-Bench Avg vs 8.39. DPO on the 8B model improved GPT4All from 72.03 to 72.30, AGIEval from 40.17 to 41.26, and TruthfulQA from 56.43 to 58.69.",
+ "limitations": "DPO provided only negligible performance improvements for the 70B and 405B models, so final checkpoints remained from the SFT phase. Training the 405B model required CPU parameter offloading, which caused an estimated 45% drop in training efficiency. The model's high sensitivity to system prompts means an empty system prompt does not necessarily elicit a helpful-assistant persona, as noted for the 405B variant. The paper also acknowledges that higher-dimensional parallelism (data + tensor parallelism) would be necessary for future 405B training runs to avoid overly large batch sizes.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

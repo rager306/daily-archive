@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.15471",
+ "tldr": "CoLA is a flexible LoRA architecture with an extended PiSSA initialization and three collaborative strategies that outperform existing PEFT methods, especially in low-sample scenarios.",
+ "contributions": [
+  "Proposed CoLA, a flexible LoRA architecture that frees the fixed relationship between the number of matrices A and B (#A=M, #B=N)",
+  "Extended the PiSSA initialization scheme to CoLA by distributing principal singular vectors evenly across all A_i and B_j matrices",
+  "Designed three collaborative strategies: Fully collaborative CoLA⊺, Random collaborative CoLA†, and Heuristic collaborative CoLA‡",
+  "Demonstrated through experiments on Llama-3.1-8B and Llama-3.2-3B that CoLA outperforms existing PEFT methods, particularly in data-scarce settings"
+ ],
+ "methods": "CoLA generalizes LoRA by allowing independent hyperparameters M and N for matrices A and B, avoiding the constraints of symmetric (#A=#B) or asymmetric (#A=1, #B=N) architectures. The extended PiSSA initialization divides the top singular vectors of the pre-trained weight matrix and distributes them evenly across all M matrices of A and N matrices of B. Three collaborative strategies are introduced: CoLA⊺ uses ∆W=(B_1+...+B_N)(A_1+...+A_M) for deep parameter sharing; CoLA† randomly pairs each A with a B for robustness with lower energy cost; CoLA‡ combines one-to-one and one-to-many relationships as a hybrid approach.",
+ "results": "CoLA⊺ and CoLA‡ consistently achieve top performance across single-domain benchmarks on Llama-3.1-8B: 58.04% on Generality (CoLA⊺), 58.21% (CoLA‡), 56.11% on Medicine (CoLA⊺), and 59.14% on Math (CoLA‡), both statistically significant at p<0.01. In multi-task evaluation on Llama-3.2-3B, CoLA⊺ achieves 36.87% vs. base model's 29.36%. On Llama-3.1-8B multi-task, CoLA† reaches 43.62% vs. base 29.47%. LoRA's generalization deteriorates sharply when sample size drops below 300, a scenario where CoLA excels.",
+ "limitations": [
+  "CoLA† (random collaborative) does not yield expected results, described as a 'pseudo-LoRA implementation' that averages a matrix B, contradicting the quantitative relationships between matrices A and B",
+  "The fully collaborative CoLA⊺ introduces higher energy/computation consumption",
+  "CoLA's advantage is specifically over fixed-structure methods, implying it may still face challenges in extremely resource-constrained inference settings"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

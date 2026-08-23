@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.18021",
+ "tldr": "CRISPR-GPT is an LLM agent augmented with domain knowledge and external computational tools that automates and enhances the design process of CRISPR-based gene-editing experiments, addressing the hallucinations and domain gaps of general-purpose LLMs.",
+ "contributions": [
+  "Introduction of CRISPR-GPT, an LLM agent that combines domain knowledge with external tools for automated CRISPR experimental design",
+  "Four-module architecture (LLM planner, Tool provider, Task executor, LLM Agent) with 22 tasks organized as state machines",
+  "Three operational modes: Meta Mode (predefined pipelines), Auto Mode (custom task decomposition), and Q&A Mode (ad hoc queries)",
+  "Human evaluation with 12 CRISPR experts comparing against ChatGPT 3.5 and 4.0",
+  "Real-world wet-lab validation of CRISPR-GPT-assisted gene knockout experiments"
+ ],
+ "methods": "CRISPR-GPT uses a four-module architecture where an LLM planner decomposes user requests into dependent tasks via ReAct prompting, a Tool provider wraps external APIs (guideRNA libraries, Primer3, web search) with user-friendly interfaces, a Task executor implements 22 tasks as state machines with sub-goal decomposition, and an LLM Agent acts as the user-facing intermediary making sequential decisions. The system was evaluated through human assessment by 12 CRISPR experts rating responses on a 1-5 scale and through wet-lab validation where an independent scientist used CRISPR-GPT to design and execute Cas12a-mediated knockouts of TGFBR1, SNAI1, BAX, and BCL2L1 in A375 cells via lentiviral delivery, followed by sequencing confirmation.",
+ "results": "CRISPR-GPT supports multiple gene-editing scenarios including single gene knockout, base editing, prime editing, and CRISPR activation/interference. Human evaluation compared CRISPR-GPT outputs against ChatGPT 3.5 and ChatGPT 4.0 rated by 12 experts. Wet-lab validation successfully produced CRISPR-Cas12a knockouts: 4 crRNAs were cloned via Golden Gate assembly into a Cas12a backbone, lentivirus was packaged in HEK-293T cells and used to transduce A375 cells, and sequencing confirmed editing at target loci.",
+ "limitations": [
+  "General-purpose LLMs hallucinate incorrect gRNA sequences with high confidence (e.g., for EMX1 and EGFR targets)",
+  "Current CRISPR-GPT version does not allow dynamic addition or deletion of new tasks during automatic execution",
+  "System restrictions prevent use in human subjects",
+  "Responses from general LLMs often lack essential experimental details and contain irrelevant information"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

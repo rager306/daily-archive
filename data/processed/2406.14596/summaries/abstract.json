@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.14596",
+ "tldr": "The paper proposes In-Context Abstraction Learning (ICAL), a method that enables VLM agents to transform suboptimal/noisy trajectories into high-quality training data by generating multimodal programs of thought (causal relationships, state changes, subgoals, and visual abstractions) through self-reflection and human feedback.",
+ "contributions": [
+  "Introduction of ICAL, a method for VLMs to abstract noisy trajectories into optimized programs of thought with causal, temporal, and visual annotations",
+  "A two-phase process combining VLM-driven abstraction with human-in-the-loop verification and refinement",
+  "Demonstration that ICAL-generated examples improve both retrieval-augmented generation and supervised fine-tuning across multiple benchmarks",
+  "Showing that as the example library grows, abstraction becomes more efficient, requiring 38.8% fewer environment steps and 71.6% less human feedback"
+ ],
+ "methods": "ICAL operates in two phases. First, an abstraction phase (F_abstract) where a VLM (GPT-4V) takes a noisy trajectory, task instruction, and top-k previous examples to correct action errors and generate four types of cognitive abstractions: task/causal relationships, object state changes, temporal subgoals/step-by-step plans, and task-relevant visual state abstractions. Second, a human-in-the-loop phase where the optimized trajectory is executed in the environment; if an action fails, a human provides natural language feedback, which the VLM uses to revise the trajectory and update thoughts via an update function. Successful examples are stored in a growing memory set M. For deployment, examples are retrieved via weighted similarity (instruction, textual, and visual cosine similarity) for retrieval-augmented generation, or used for supervised fine-tuning (e.g., Qwen2-VL-7B fine-tuned for 10 epochs with learning rate 5e-6).",
+ "results": "In TEACh unseen validation, ICAL with retrieval-augmented generation outperforms raw demonstrations by 17.9% absolute SR over predicted-action demos and 8.6% over true-action demos, and surpasses the previous SOTA HELPER by 12.6% in goal-condition success and 0.6% in task success. Combining fine-tuning with retrieval on ICAL examples improves GPT-3.5 by 11.4% task success and 15.7% goal-condition success, with an additional 4.9% GC over retrieval alone. In VisualWebArena, retrieval-augmented GPT-4V with ICAL improves task success from 14.3% to 22.7% (1.6x), and fine-tuned Qwen2-VL improves from 2.9% to 8.2% (2.8x). In Ego4D action forecasting, ICAL reduces noun edit distance by 6.4 and action edit distance by 1.7 compared to few-shot GPT-4V with chain of thought, while using 639x less in-domain training data than supervised baselines. Scaling analysis shows 2x better scaling than raw demonstrations, with 38.8% fewer environment steps and 71.6% less human feedback required in the latter half of demonstrations.",
+ "limitations": "The human-in-the-loop phase requires ongoing human feedback, with a predefined maximum number of feedback iterations (N_feedbacks) after which unsuccessful examples are discarded. Some demonstrations (8/100 in Ego4D) failed due to GPT content filters. The approach's improvement from combining fine-tuning with retrieval was modest (0.7% SR, 4.9% GC) over retrieval alone. Evaluation is limited to three benchmarks (TEACh, VisualWebArena, Ego4D). Noisy trajectories may stem from human non-expert demonstrations, inverse dynamics model errors, or agent exploration/failures.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.13382",
+ "tldr": "LM Assertions are a programming construct that integrates computational constraints into the DSPy framework, enabling self-refinement via assertion-driven backtracking and compile-time optimizations like example bootstrapping and counterexample bootstrapping.",
+ "contributions": [
+  "Introducing LM Assertions (Assert and Suggest constructs) as a programming abstraction for enforcing constraints on LM outputs in pipelines",
+  "Assertion-driven backtracking for inference-time self-refinement when constraints fail",
+  "Assertion-driven example bootstrapping to generate higher-quality few-shot demonstrations",
+  "Counterexample bootstrapping to teach models to avoid repeating errors",
+  "Evaluation on four knowledge-intensive tasks showing significant improvements"
+ ],
+ "methods": "The authors integrate LM Assertions into the DSPy framework, defining two constructs: Assert (hard constraints that halt the pipeline after max retries) and Suggest (soft constraints that log warnings but continue execution). Three assertion-driven optimizations were developed: (1) assertion-driven backtracking allows the pipeline to retry failing LM modules with error feedback injected into prompts, (2) assertion-driven example bootstrapping uses assertions as filters during the BootstrapFewShot optimizer to ensure intermediate outputs are correct, and (3) counterexample bootstrapping collects failure traces as negative demonstrations. Evaluation was conducted on four tasks from HotPotQA: MultiHopQA, LongFormQA, TweetGen, and QuizGen, using intrinsic quality (constraint compliance) and extrinsic quality (downstream performance) metrics.",
+ "results": "In QuizGen, well-formatted JSON quizzes improved from 37.6% to 98.8% with assertion-driven backtracking. In TweetGen, writing more engaging tweets increased from 2.0% to 73.0% with example and counterexample bootstrapping. For generating valid quiz questions, gains reached up to 30.5% to 87.2% with all optimizations combined. Assertions were passed up to 164% more often, and up to 37% more higher-quality responses were generated. On MultiHopQA, retriever recall improved by 6.5%-7.9% and answer accuracy by 3.4%-14.4% with two simple suggestions.",
+ "limitations": "The evaluation is limited to four tasks, all derived from the HotPotQA dataset, which may not fully represent the diversity of LM applications. The paper does not extensively report on computational overhead introduced by backtracking and retry mechanisms, nor does it explore scaling to larger or more complex pipelines beyond the reported case studies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

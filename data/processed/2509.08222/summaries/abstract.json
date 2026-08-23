@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.08222",
+ "tldr": "ExRAP is a framework that combines LLM-based reasoning with environmental context memory and information-based exploration to enable embodied agents to continuously follow multiple conditional instructions in non-stationary environments, outperforming state-of-the-art planners in task success rate and execution efficiency.",
+ "contributions": [
+  "Proposes ExRAP framework integrating LLM reasoning with environmental context memory for continual instruction following in non-stationary embodied environments",
+  "Introduces information-based exploration estimation to balance exploitation and exploration in task planning",
+  "Devises temporal consistency-based refinement for memory-augmented query evaluation to address knowledge decay",
+  "Demonstrates superior performance across VirtualHome, ALFRED, and CARLA benchmarks"
+ ],
+ "methods": "The ExRAP framework decomposes each conditional instruction into a query (for checking environmental conditions) and an execution (for task completion). It maintains an environmental context memory using a temporal embodied knowledge graph (TEKG) that accumulates observations over time. Query evaluation uses a memory-augmented LLM with entropy-based temporal consistency refinement to address information decay. Task planning integrates an exploitation planner (using in-context learning with expert demonstrations) and an exploration planner (using information-based mutual information estimation) to select skills that maximize both task progress and memory relevance.",
+ "results": "ExRAP was evaluated in VirtualHome (100 trajectories, 10 environment settings), ALFRED (50 trajectories), and CARLA (50 trajectories) with 16-19 distinct instructions per task. The framework demonstrates robustness across different instruction scales, types, and non-stationarity degrees. It consistently outperforms state-of-the-art LLM-based task planning approaches including ZSP, SayCan, ProgPrompt, and LLM-Planner in both goal success rate and execution efficiency (average pending steps). Integrated planning achieved a pending step of 7 versus 9.2 for instruction-wise planning in the illustrative example.",
+ "limitations": "The paper notes that computing G_{t+1} directly is impractical without actual skill execution, requiring approximation of exploration value. The method relies on access to an expert planning dataset D_e for in-context learning demonstrations. The approximation assumes entropy reaches zero when the TEKG is fully synchronized with the environment. The paper does not report results on all baselines (text truncated before full baseline comparisons).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

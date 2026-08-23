@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.06596",
+ "tldr": "AndroidArena is a new Android-based benchmark and environment for evaluating LLM agents on cross-APP collaboration and constraint-adherent tasks, revealing that even state-of-the-art LLM agents struggle significantly due to weaknesses in understanding, reasoning, exploration, and reflection.",
+ "contributions": [
+  "Open-sourced AndroidArena, a scalable benchmark based on Android OS for evaluating cross-APP collaboration and constrained tasks, with a semi-automated task construction method that reduces manpower costs.",
+  "Demonstrated that SOTA LLM agents underperform in daily OS tasks with success rates below 60% in cross-APP scenarios, and proposed fine-grained metrics identifying four key capability areas for improvement.",
+  "Provided empirical analysis on reflection failures and achieved a 27% improvement in success rate by integrating historical visited information and balancing exploration-exploitation."
+ ],
+ "methods": "The authors built AndroidArena on the Android OS using UIAutomator for direct UI component operations, supporting both screenshot and compressed XML textual observations. They designed a Mobile Task Generator (MTG) that extracts APP functionalities via search engines and vector databases, generates instructions using LLMs with an Evol-Instruct strategy, and employs human annotators for verification. Evaluation uses adaptive metrics including longest common subsequence (LCS)-based alignment, Task Reward (TR), Task Completion Ratio (TCR), Reversed Redundancy Ratio (RRR), and GPT-4 judged Success Rate (SR).",
+ "results": "All SOTA LLM agents achieved less than 60% success rate in cross-APP scenarios. GPT-3.5 achieved a 6x higher success rate than LLaMA2-70B. LLaMA2 exhibited weaknesses across all four dimensions (understanding, reasoning, exploration, reflection), and even GPT-4 showed weak reflection and exploration abilities. Integrating historical visited information into prompts and balancing exploration and exploitation improved success rate by 27%. The XML compression method achieved an 86.6% compression ratio.",
+ "limitations": "The compressed XML observation still exceeds 10,000 tokens on average across tested APPs, posing context length challenges. The evaluation is limited to 13 pre-installed Google suite APPs. Existing step-wise matching metrics are imprecise for non-unique action sequences. Reflection weakness is attributed to low-quality trajectories and sparse environmental feedback, which remain partially unresolved.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

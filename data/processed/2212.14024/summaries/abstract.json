@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2212.14024",
+ "tldr": "The paper introduces DEMONSTRATE-SEARCH-PREDICT (DSP), a framework that composes frozen language models and retrieval models in sophisticated pipelines, rather than simple retrieve-then-read approaches, for knowledge-intensive NLP tasks.",
+ "contributions": [
+  "A composable DSP framework with DEMONSTRATE, SEARCH, and PREDICT stages that pass natural language text between frozen LMs and RMs",
+  "A bootstrapping mechanism that programmatically annotates intermediate transformations from end-task labels using weak supervision",
+  "Novel DSP programs for open-domain, multi-hop, and conversational question answering",
+  "New state-of-the-art in-context learning results on Open-SQuAD, HotPotQA, and QReCC"
+ ],
+ "methods": "The authors propose DSP, implemented in Python, where composable transformations manipulate Example data structures by passing text between a frozen LM and a frozen RM. The DEMONSTRATE stage bootstraps training examples by invoking the SEARCH and PREDICT pipeline zero-shot and caching correct intermediate annotations as demonstrations. The SEARCH stage uses the LM to generate intermediate queries across multiple hops, with the RM retrieving passages iteratively. The PREDICT stage generates grounded final answers conditioned on retrieved passages and demonstrations. Evaluation used GPT-3.5 (text-davinci-002) and ColBERTv2 with no fine-tuning on Open-SQuAD, HotPotQA, and QReCC.",
+ "results": "DSP programs deliver 37-120% relative gains against vanilla GPT-3.5, 8-39% gains against a standard retrieve-then-read pipeline, and 80-290% gains against a contemporaneous self-ask pipeline across open-domain, multi-hop, and conversational question answering benchmarks, establishing new state-of-the-art in-context learning results.",
+ "limitations": "Results are preliminary, using only one frozen LM (GPT-3.5/text-davinci-002) and one RM (ColBERTv2) with no fine-tuning; additional test tasks and LM choices are deferred to future versions of the report.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

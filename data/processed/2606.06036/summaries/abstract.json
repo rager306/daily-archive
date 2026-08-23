@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.06036",
+ "tldr": "MRAgent introduces an active memory reconstruction paradigm where LLM reasoning is integrated directly into memory access over a Cue-Tag-Content graph, dynamically adapting retrieval based on intermediate evidence rather than using fixed passive retrieval policies.",
+ "contributions": [
+  "Active memory reconstruction: integrating memory access into the reasoning process to dynamically adapt search strategies based on intermediate evidence",
+  "Cue-Tag-Content memory graph: associative tags mediate retrieval between cues and content, enabling path selection and branch pruning",
+  "Theoretical proof that active retrieval policies are strictly more expressive than passive retrieval (Theorem 4.1)",
+  "Multi-granular memory layers (episodic, semantic, topic abstractions) organized in a heterogeneous graph",
+  "Significant improvements up to 23% over strong baselines on LOCOMO and LONG-MEMEVAL benchmarks with reduced token and runtime cost"
+ ],
+ "methods": "The authors propose MRAgent, which organizes external memory as a Cue-Tag-Content heterogeneous graph where fine-grained cues connect to memory contents through associative tags. Memory is populated via an LLM-based distillation pipeline that segments dialog streams into episodic units, extracts tags and cues, and constructs a multi-layer graph (episodic, semantic, and topic abstraction layers). During inference, MRAgent performs iterative active reconstruction: an LLM reasons over the query and accumulated evidence to select traversal actions (forward Cue→Tag and (Cue,Tag)→Content, reverse Content→(Cue,Tag)), then routes and prunes candidate nodes, updating the reconstruction state each step until sufficient evidence is accumulated.",
+ "results": "Experiments on the LOCOMO and LONG-MEMEVAL benchmarks show MRAgent outperforms strong baselines by up to 23%. The method also substantially reduces token and runtime costs compared to passive retrieval approaches. The theoretical analysis proves that for any retrieval budget T ≥ 2, the passive hypothesis class is strictly contained in the active hypothesis class: H_LM_passive(T) ⊊ H_LM_active(T), meaning active retrieval can implement any function passive retrieval can plus additional ones.",
+ "limitations": "The approach relies on LLM-based distillation for memory construction, which may introduce extraction errors in tag and cue generation. Fixed traversal action sets may not cover all possible memory navigation patterns. The theoretical analysis assumes arbitrary heterogeneous graphs but practical performance depends on effective graph construction from real interaction streams.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

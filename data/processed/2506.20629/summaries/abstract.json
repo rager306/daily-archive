@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.20629",
+ "tldr": "PLoP is a lightweight module placement method that uses normalized feature norms to automatically identify which module types should receive LoRA adapters, consistently outperforming common placement strategies across supervised finetuning and reinforcement learning tasks.",
+ "contributions": [
+  "Theoretical framework studying module-data alignment via feature norm growth",
+  "PLoP method that identifies optimal LoRA adapter placement using normalized feature norms computed with few forward passes",
+  "Extensive experiments validating PLoP in supervised finetuning (classification, text generation) and reinforcement learning for mathematical reasoning"
+ ],
+ "methods": "PLoP computes feature norms of all modules on a finetuning dataset and normalizes them against a Gaussian random baseline (defined as NFN(W, x) = ||W z_in(x)|| / ||W z_in^rand(x)||) to produce alignment scores. Modules with NFN > 1 are considered well-aligned with the task data and selected for LoRA insertion. The method uses only standard forward propagation—no gradients, no extensive forward passes, and no storage of intermediate calculations—making it suitable for resource-constrained environments.",
+ "results": "PLoP consistently outperforms commonly used placement strategies (attention-module placement and MLP-module placement) and in the worst case competes with them. Empirical validation spans three post-training scenarios: supervised finetuning for classification, supervised finetuning for text generation, and reinforcement learning for mathematical reasoning.",
+ "limitations": "The theoretical analysis relies on simplifying assumptions including single-datapoint training, linear networks, and µP scaling rules. The growth property is rigorously shown for linear networks but the authors acknowledge it may not follow the exact quadratic form in realistic models. The method is evaluated in only three post-training scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

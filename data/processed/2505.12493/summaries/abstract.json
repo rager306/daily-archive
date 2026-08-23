@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.12493",
+ "tldr": "The paper proposes GUI-Shift, a self-supervised reinforcement learning framework that trains VLM-based GUI agents using a K-step GUI Transition task with GRPO, eliminating the need for costly human-annotated instructions and achieving up to an 11.2% accuracy improvement on GUI automation benchmarks.",
+ "contributions": [
+  "Introduction of K-step GUI Transition, a self-supervised inverse dynamics training task that leverages unlabeled GUI trajectories without requiring textual annotations",
+  "Proposal of GUI-Shift, a self-supervised RL framework using Group Relative Policy Optimization (GRPO) with rule-based rewards to address action multiplicity limitations of SFT",
+  "Demonstration that VLMs enhanced with GUI-Shift generalize to both GUI automation and grounding tasks, with up to 11.2% accuracy gains across four VLMs and four benchmarks"
+ ],
+ "methods": "The authors introduce K-step GUI Transition, where a VLM predicts the first action transforming screenshot S_t toward a future state S_{t+k} extracted from unlabeled GUI trajectories. Training uses GRPO with a rule-based reward combining format reward (output enclosed in <answer> tags) and action reward (verifying predicted action type and parameters against ground truth). A data filtering pipeline generates 8 candidate actions per sample and retains only pairs with both correct and incorrect predictions. Only the language model is fine-tuned while the vision encoder and projector are frozen, trained on 2K samples per k value from AndroidControl across k ∈ {1, 2, 3, 4}.",
+ "results": "GUI-Shift-Qwen (k=1) achieved 90.6% TM and 90.6% EM on AndroidControl-Low (+3.1% TM, +6.8% EM), 85.9% TM and 70.4% EM on AndroidControl-High (+13.0% TM, +11.2% EM), and 78.5% TM and 54.8% EM on GUI Odyssey (+18.7% TM, +9.9% EM). GUI-Shift-Intern (k=4) reached 78.5% TM and 56.6% EM on AndroidControl-High (+7.0% TM, +6.8% EM) and 59.6% TM and 23.3% EM on GUI Odyssey (+10.8% TM, +3.0% EM). Training required 9 hours on 2K samples without reasoning traces, nearly 50% faster than with reasoning. For Qwen2.5-VL-7B, unfiltered data was used due to exceptionally high proportion of entirely correct/incorrect responses.",
+ "limitations": "Training data is sourced solely from AndroidControl; the approach may not generalize to other platforms without additional data. Only 2K samples per model per k value were used despite larger pools being available. The base VLMs' pretraining data likely already included GUI content, potentially confounding results. Training was conducted only on Android GUI trajectories without evaluation on iOS or other platforms.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

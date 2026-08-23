@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.18968",
+ "tldr": "MedAgent-Pro is an agentic reasoning framework that decouples medical diagnosis into disease-level guideline-based planning (via RAG) and patient-level step-by-step evidence-based reasoning with quantitative tool integration, outperforming mainstream VLMs and medical agentic systems.",
+ "contributions": [
+  "Proposes MedAgent-Pro, the first agentic paradigm with systematic evidence-based reasoning for medical diagnosis aligned with modern clinical workflows.",
+  "Introduces a hierarchical structure with disease-level planning (RAG-based guideline retrieval) and patient-level reasoning (quantitative analysis and evidence-based verification).",
+  "Validates comprehensively across 10+ imaging modalities, 20+ anatomies, and 50+ diseases, showing superior performance over VLMs, agentic systems, and task-specific models."
+ ],
+ "methods": "MedAgent-Pro employs a hierarchical workflow: at the disease level, a RAG agent queries a domain-specific knowledge base built from MedlinePlus (1,000+ disease entries, 4,000+ articles) to generate standardized diagnostic plans with clinical indicators and tool assignments. At the patient level, the system orchestrates step-by-step execution of the plan, invoking specialized tools (segmentation models like MedSAM, grounding models, and LLM-based coding tools) for quantitative analysis. An evidence-based reasoning paradigm evaluates the reliability of each step via a VLM-implemented state assessment function, assigning Continue/Terminate/Complete status before final diagnosis.",
+ "results": "MedAgent-Pro outperforms GPT-4o by 34.0% in balanced accuracy and 55.3% in F1 score on glaucoma diagnosis (REFUGE2), and by 21.0% in bAcc and 44.2% in F1 on heart disease diagnosis (MITEA). On the NEJM dataset (10+ modalities, 50+ diseases), it achieves an overall improvement of 7.9%, with a 13.7% average gain on chest X-ray tasks. It also surpasses task-specific SOTA models by 6.8% AUC on glaucoma diagnosis despite zero-shot VLM use. Ablation studies show planning improves performance significantly, quantitative analysis increases F1 by 34.5% (glaucoma) and 20.7% (heart disease), and evidence-based reasoning provides further gains. Qualitative analysis with a domain-specific model (VisionUnite) showed only marginal improvement over GPT-4o.",
+ "limitations": [
+  "Non-clinical images (e.g., everyday photographs) often lack compatible tool support, limiting performance in those cases.",
+  "The approach relies on visual tool availability, which is not universal across all imaging domains.",
+  "The knowledge base is built from MedlinePlus, which may not cover all medical conditions comprehensively.",
+  "VLMs in MedAgent-Pro remain zero-shot, potentially limiting specialized domain expertise compared to fine-tuned models."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

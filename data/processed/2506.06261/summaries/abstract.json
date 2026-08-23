@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.06261",
+ "tldr": "RefPlan is a novel doubly Bayesian offline model-based planning approach that unifies epistemic uncertainty modeling with MB planning by recasting planning as Bayesian posterior estimation, updating beliefs over environment dynamics in real-time and marginalizing uncertainty during deployment.",
+ "contributions": [
+  "Recasting offline MB planning within the control-as-inference framework with an explicit prior policy",
+  "Adapting variational inference techniques from meta-RL to approximate epistemic uncertainty over environment dynamics",
+  "Unifying uncertainty modeling and MB planning by marginalizing over latent variables to improve test-time performance of offline RL policies"
+ ],
+ "methods": "RefPlan combines two components: (1) a sampling-based offline MB planning algorithm derived from control-as-inference, where trajectories are sampled from a prior policy and the learned dynamics model, then weighted by exponentiated returns; (2) a variational autoencoder-based approach adapted from VariBAD to approximate the posterior belief over environment dynamics given observed trajectories. The encoder q_φ approximates the belief distribution while the decoder p_ψ learns transition dynamics and rewards conditioned on a latent variable m. These are integrated by marginalizing the planning objective over the latent variable using Monte Carlo sampling, enabling real-time belief updates during deployment.",
+ "results": "RefPlan consistently mitigates performance degradation due to out-of-distribution initialization across HalfCheetah, Hopper, and Walker2d environments. When CQL is used as the prior policy, RefPlan improves normalized scores from 111.4 to 112.1 on Hopper R, from 94.6 to 98.1 on MR, and from 60.9 to 82.6 on ME. For MAPLE as prior, scores improve from 31.5 to 31.6 on Hopper R and from 61.0 to 82.6 on MR. RefPlan demonstrates superior resilience to OOD states, shifting environment dynamics, and limited data availability compared to LOOP and other baselines.",
+ "limitations": "Direct planning with sampling methods like Sequential Importance Sampling (SIR) may be better suited for multi-modal problems but was left for future work. The approach relies on the accuracy of the variational approximation and learned dynamics model, and performance depends on the quality of the offline dataset coverage.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

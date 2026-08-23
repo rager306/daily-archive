@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.15655",
+ "tldr": "The paper proposes CAST (Chunking via Abstract Syntax Trees), a structure-aware chunking method for RAG pipelines that recursively splits and merges AST nodes to produce semantically coherent code chunks, improving both retrieval and generation performance across multiple benchmarks.",
+ "contributions": [
+  "CAST: an AST-based recursive split-then-merge chunking algorithm that preserves syntactic integrity and maximizes information density",
+  "Demonstration of improved retrieval (Recall@5 +4.3 on RepoEval) and generation (Pass@1 +2.67 on SWE-bench) performance",
+  "Cross-language consistency showing up to 4.3-point gains on CrossCodeEval",
+  "Metadata retention benefits for hybrid code+natural language tasks"
+ ],
+ "methods": "Source code is parsed into ASTs using the tree-sitter library. A recursive, split-then-merge algorithm traverses the tree top-down, greedily fitting large AST nodes into chunks when possible; nodes exceeding the size limit are recursively broken into smaller children. Adjacent small sibling nodes are then merged to maximize per-chunk information density. Chunk size is measured by non-whitespace character count rather than lines, with max_context_length set to 4000 for RepoEval and SWE-Bench and 10000 for CrossCodeEval.",
+ "results": "CAST improves Retrieval@5 by 4.3 points on RepoEval and Pass@1 by 2.67 points on SWE-bench. StarCoder2-7B sees an average 5.5-point gain on RepoEval. Precision gains range from 1.2-3.3 points and Recall from 1.8-4.3 points on RepoEval across all retrievers. On NL-to-code retrieval (SWE-Bench), gains are 0.5-1.4 in Precision and 0.7-1.1 in Recall. CrossCodeEval shows up to 4.3-point gains with largest improvements on TypeScript. Merging ablations show both retrieval and generation decline under split-only strategies.",
+ "limitations": [
+  "Lacks explicit contextual awareness from higher chunking units in the AST hierarchy",
+  "Only explores chunking with pure code files, without multi-view inputs like comments, natural language descriptions, or pseudo code",
+  "Relies on static AST analysis only, without execution traces, type inference, or compilation awareness for per-query adaptiveness"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.04903",
+ "tldr": "RCR-Router is a role-aware, token-budgeted context routing framework for multi-agent LLM systems that dynamically selects semantically relevant memory subsets per agent, reducing token usage by 25-47% while improving or maintaining answer quality across multi-hop QA benchmarks.",
+ "contributions": [
+  "Proposes RCR-router, a lightweight modular routing strategy for multi-agent LLM systems that improves answer quality and reduces token usage",
+  "Designs an iterative routing mechanism with feedback enabling agents to exchange structured output and progressively refine contextual understanding",
+  "Formalizes role-aware and task-stage-aware routing policies supporting both heuristic and learned approaches with role-specific token budget constraints",
+  "Introduces an Answer Quality Score metric to capture LLM-generated explanations beyond standard QA accuracy",
+  "Demonstrates token savings of 25-47% across HotPotQA, MuSiQue, and 2WikiMultihop without compromising performance"
+ ],
+ "methods": "RCR-Router operates on a Shared Memory Store encoding agent interaction history, task-relevant knowledge, and structured state representations. At each interaction round, a Token Budget Allocator assigns per-agent token budgets based on role and priority, an Importance Scorer computes relevance scores combining role-specific keywords, task stage priority, and recency, and a Semantic Filter greedily selects memory items within the budget. Agent outputs are iteratively integrated back into shared memory through output extraction, relevance filtering, semantic structuring, and conflict resolution, enabling progressive context refinement across rounds.",
+ "results": "On HotPotQA, RCR-Router achieved answer quality 4.91 with 3.77K tokens and 93.52s runtime, outperforming Static Routing (4.35) and Full-Context (4.17). On MuSiQue, it achieved 4.61 quality with 11.89K tokens and 45.09s runtime vs. Static (4.32) and Full-Context (4.16, 13.41K tokens). On 2wikimultihop, it achieved 4.83 quality with 1.24K tokens and 82.5s runtime, outperforming Static (1.42K) and Full-Context (2.34K). Token consumption reduced by 25-47% across benchmarks. Ablation showed performance saturating beyond B=2048 token budget, and iterative routing showed diminishing returns beyond 3-4 iterations.",
+ "limitations": "The current importance scorer is heuristic-based rather than learned, which may limit optimality. Performance gains from token budget saturate beyond 2048 tokens, indicating diminishing returns. Iterative routing shows diminishing quality improvements beyond 3-4 iterations. The routing policy is described as stateless and purely role- and stage-conditioned. The paper notes code will be released upon acceptance but does not provide preliminary results beyond three benchmarks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

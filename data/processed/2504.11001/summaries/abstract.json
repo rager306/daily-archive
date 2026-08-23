@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.11001",
+ "tldr": "ReZero is a reinforcement learning framework that improves LLM search ability in RAG systems by explicitly rewarding the act of retrying a search query after an initial failed attempt, leading to significantly higher accuracy compared to a baseline without retry incentives.",
+ "contributions": [
+  "Proposing ReZero, a novel RL-based framework that explicitly rewards the act of retrying search queries within a RAG system, fostering persistence in information seeking.",
+  "Introducing a modified reward function (reward retry) that incentivizes the retry mechanism, encouraging exploration and better performance on complex knowledge-intensive tasks.",
+  "Positioning ReZero relative to existing work on RAG reasoning and query optimization, highlighting its unique focus on rewarding persistence rather than solely immediate outcomes."
+ ],
+ "methods": "ReZero employs Group Relative Policy Optimization (GRPO) to fine-tune a pre-trained LLM (Llama3.2-3B-Instruct) directly from base weights without intermediate supervised fine-tuning. The model interacts with a search engine verifier in an iterative rollout loop, generating search queries, receiving retrieved chunks, and potentially retrying. A suite of reward functions guides training: reward correctness (binary, self-judged), reward format (binary), reward retry (positive signal for subsequent search queries conditional on eventual correct answer completion), reward em chunk (binary exact match), reward search strategy (graded 0.0-1.0), and reward search diversity (graded 0.0-1.0). Noise injection at the vector database level simulates imperfect retrieval to strengthen generalization of retry strategies.",
+ "results": "ReZero achieved a peak accuracy of 46.88% at 250 training steps, nearly double the Baseline model's peak accuracy of 25.00% at 350 steps. The ReZero model also demonstrated a faster initial learning rate. Both models exhibited a decline in accuracy after reaching their peaks, eventually collapsing to 0% accuracy on the evaluation set. Experiments used the Apollo 3 mission dataset (341 chunks, 32 held-out for evaluation) trained for 1000 steps (~3 epochs) on a single NVIDIA H200 GPU.",
+ "limitations": "Both models showed a notable decline in accuracy after reaching peak performance, eventually collapsing to 0%, suggesting potential overfitting, instability in GRPO over extended training, or suboptimal balancing of reward components. The relatively short training duration (1000 steps, 3 epochs) may be insufficient for stable convergence. The precise interaction between noise injection and the reward retry mechanism warrants further study.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.09766",
+ "tldr": "The authors propose iTool, an iterative reinforced fine-tuning strategy that combines MCTS-based path exploration with SimPO preference optimization to address the decay of training gains when scaling synthetic tool-use data, achieving ~13% improvement over the base LLaMA3.1-8B model.",
+ "contributions": [
+  "Diagnosis that training gains significantly decay as synthetic tool-use data scales, with limitations manifesting as fragment-level parameter errors (parameter name/value mismatches)",
+  "An easy-to-hard warm-up SFT strategy that divides data into easy/medium/hard subsets for curriculum-based learning",
+  "An iterative reinforced fine-tuning method (iTool) using step-wise MCTS to explore response diversity and collect fine-grained preference pairs for targeted deficiency correction",
+  "Demonstrating that an 8B model outperforms larger open-source and closed-source models on tool-use benchmarks"
+ ],
+ "methods": "The method consists of two stages: (1) Warm-up training uses an easy-to-hard curriculum SFT, dividing the ToolACE dataset into three subsets and sequentially fine-tuning the LLM on each. (2) Iterative Reinforcement Learning refreshes a replay buffer by sampling the top 10% highest-perplexity (complex) samples, then applies step-wise MCTS with PUCT to explore response paths and collect preference pairs based on action values Q. SimPO (a reference-model-free variant of DPO) is used for preference optimization, and the process iterates. Parameter-efficient training uses LoRA for SFT and QLoRA for reinforcement learning.",
+ "results": "iTool-8B achieves 63.26 overall accuracy on BFCL v3, outperforming the base LLaMA3.1-8B-Instruct (50.15) by ~13%. It scores 88.82 on Non-live, 78.29 on Live (complex), and 23.84 on Multi-turn. It improves 6.5% over SFT baseline in complex scenarios and outperforms larger models including GPT-4-series and xLAM-8x22b-r (by 5.27 points). On API-Bank, iTool-8B achieves 78.89 overall accuracy and 52.87 on L2. Ablation shows warm-up SFT contributes +2.3 points and IRL contributes +4.2 points on Multi-turn respectively.",
+ "limitations": [
+  "Parameter errors (name/value mismatches) constitute only a small fragment of responses while the majority remains consistent with ground truth, making targeted correction challenging",
+  "Training gains decay significantly after ~30% of synthetic data is used under standard SFT",
+  "The approach's effectiveness in even more complex or out-of-distribution tool-use scenarios is not thoroughly evaluated"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

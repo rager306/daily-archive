@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.10031",
+ "tldr": "LLaMAR is an LM-based cognitive architecture using a plan-act-correct-verify framework for long-horizon multi-agent planning in partially observable environments, achieving state-of-the-art results without relying on oracles or simulators.",
+ "contributions": [
+  "LLaMAR: An LM-based long-horizon planner for multi-agent robotics that operates iteratively without prior environmental knowledge or oracle feedback",
+  "MAP-THOR: A benchmark suite of household tasks within the AI2-THOR simulator under partial observability to standardize evaluation of multi-agent planning",
+  "Semantics-guided exploration strategy using CLIP embeddings to guide agents in unexplored environments"
+ ],
+ "methods": "LLaMAR employs four specialized LM modules operating iteratively at each high-level decision step: a Planner that decomposes tasks into subtasks, an Actor that selects high-level actions for each agent, a Corrector that identifies and corrects execution failures with reasoning, and a Verifier that self-verifies subtask completion from image observations. Low-level primitive actions are handled by pre-trained RL, behavior cloning, or heuristic policies. A semantically-guided exploration strategy uses CLIP image and text embeddings to determine exploration directions when agents cannot locate task-relevant objects.",
+ "results": "LLaMAR achieves a 30% higher success rate than other state-of-the-art LM-based multi-agent planners in MAP-THOR and Search & Rescue tasks. It outperforms methods like SmartLLM, Two-Step, CoELA, and S-ATLAS, particularly on complex, multi-room household tasks and SAR scenarios with partial observability.",
+ "limitations": "Experiments are conducted only in the AI2-THOR simulator and have not been validated in real-world robotic environments. The approach requires pre-trained low-level primitive action policies (via RL, behavior cloning, or heuristics). Multiple LMs (Planner, Actor, Corrector, Verifier) increase computational overhead compared to single-LM approaches.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

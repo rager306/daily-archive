@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.07241",
+ "tldr": "CAPEAM (Context-Aware Planning and Environment-Aware Memory) improves embodied instruction-following agents by explicitly predicting task-relevant objects (context) and tracking dynamic object states via environment-aware memory, achieving state-of-the-art performance on a challenging interactive instruction-following benchmark.",
+ "contributions": [
+  "Proposes context-aware planning (CAP) that divides long-horizon planning into two phases: context prediction of task-relevant objects and detailed sub-goal action planning conditioned on that context.",
+  "Proposes environment-aware memory (EAM) that stores object states and masks in a semantic spatial map to track object interactions over time and handle appearance changes due to occlusion.",
+  "Achieves state-of-the-art success rates and goal-conditioned success rates in seen and unseen environments on benchmark [36], ranking first in the leaderboard at submission time and winning the 1st generalist language grounding agents challenge at the Embodied AI Workshop in CVPR 2023."
+ ],
+ "methods": "The agent receives a natural language instruction and first predicts three task-relevant objects (context): the primary object to manipulate (c_O), a carrier/container (c_M), and a destination/receptacle (c_R) using finetuned pretrained language models. A sub-goal frame sequence generator then produces sub-goals with meta-class placeholders (x_O, x_M, x_R), which are filled with the predicted contexts to form complete sub-goals. Each sub-goal is translated into executable detailed actions by dedicated detailed planners learned via self-attention LSTM in a supervised manner. Simultaneously, the environment-aware memory maintains a semantic spatial map built from predicted depth maps and object masks backprojected to 3D world coordinates, tracking object states and masks across time steps to handle occlusion and repeated interactions.",
+ "results": "The agent achieves state-of-the-art performance in seen and unseen environments on the interactive instruction following benchmark [36], with improvements of up to +10.70% in unseen success rate (SR) and goal-conditioned success rates (GCSR). It ranks first in the leaderboard at the moment of submission and won 1st place in the generalist language grounding agents challenge at the Embodied AI Workshop in CVPR 2023 using a templated approach with minor engineering.",
+ "limitations": "The context predictor is limited to predicting only three task-relevant objects (primary object, carrier, and destination), which may not cover tasks requiring more context objects. The approach assumes the language model can correctly identify these three contexts, and tasks where objects or roles do not fit this triplet structure may be challenging. Additionally, the detailed planners are learned in a supervised manner, which may limit generalization beyond trained action types.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:52Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

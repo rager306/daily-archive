@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.16504",
+ "tldr": "The paper investigates whether open-source LLMs can be enhanced to match closed LLM APIs like GPT-4 in tool manipulation with practical human supervision, demonstrating that model alignment with programmatic data, in-context demonstration retrieval, and system prompts can boost open-source LLMs by up to 90%, achieving competitiveness in 4 out of 8 benchmark tasks.",
+ "contributions": [
+  "Identifies three key challenges impeding open-source LLMs in tool manipulation: difficulty in API selection, confusion in populating arguments, and non-executable generation",
+  "Adapts three techniques from LLM literature (model alignment with programmatic data, in-context demonstration retriever, system prompt) to enhance open-source LLMs for tool manipulation with minimal human supervision",
+  "Introduces ToolBench, the first open-sourced benchmark with pre-defined test cases for quantitative evaluation across 8 diverse tools",
+  "Demonstrates that the adapted techniques boost leading open-source LLMs by up to 90% success rate, matching or exceeding GPT-4 in 4 out of 8 tasks"
+ ],
+ "methods": "The authors identify three failure modes in open-source LLMs for tool manipulation and propose three corresponding enhancement techniques. First, model alignment via instruction tuning with programmatically generated data: humans curate O(n) templates mapping goal descriptions to API calls, with placeholder pairs filled from candidate value pools. Second, an in-context demonstration retriever module selects semantically similar examples from a human-curated repository of O(n) demonstrations during inference. Third, a system prompt provides inference-time guidelines regulating LLMs to exclusively generate executable API calls in a specific format. They evaluate on ToolBench, a benchmark of 8 tools (2–108 API functions each, ~100 test cases per tool), using success rate as the primary metric.",
+ "results": "On a weather query tool, GPT-4 achieves 77% success rate while leading open-source LLMs achieve only 19% to 7% success rates (failure rates of 61%–93%). Open-source LLMs show up to 78% lower success rate compared to GPT-4. With all three techniques combined, open-source LLMs improve by up to 90%, attaining results competitive with or better than GPT-4 in 4 out of 8 ToolBench tasks. On the home search task with 15 APIs and only 10 human-curated demonstrations, success rates boost by up to 79% across open-source LLMs, making GPT-4 nearly perfect. On average, one developer day is sufficient to curate templates and demonstrations for one tool.",
+ "limitations": [
+  "Requires human-curated templates and demonstration examples for each tool (though approximately one developer day per tool)",
+  "The O(n) demonstration requirement scales with the number of API functions, which can be large for complex tools (up to 108 APIs in Google Sheets)",
+  "System prompts and templates are one-time curation tasks and may not generalize to unseen tool types without additional effort",
+  "Evaluation is limited to 8 tools in ToolBench, and the approach's scalability to arbitrary new tools is not fully demonstrated"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

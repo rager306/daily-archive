@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.06677",
+ "tldr": "The paper proposes LLMPA (LLM-Based Process Automation), a novel virtual assistant that automatically performs multi-step mobile app operations based on natural language instructions, demonstrated on the Alipay platform.",
+ "contributions": [
+  "Novel LLMPA architecture optimized for app process automation",
+  "Methodology for applying LLMs to mobile apps",
+  "Demonstrations of multi-step task completion in a real-world environment",
+  "First real-world deployment and extensive evaluation of an LLM-based virtual assistant in a widely used mobile application with hundreds of millions of users"
+ ],
+ "methods": "The LLMPA Agent comprises five modules: (1) Instruction Chains Generator, which decomposes tasks into abstract and elaborate step descriptions; (2) Previous Action Description Generator, using a recursive LLM-based model to generate semantically coherent action descriptions; (3) Object Detection, employing a YOLOX model for bounding box detection and page section grouping; (4) Action Prediction, constructing prompts from task descriptions, instruction chains, history actions, extracted text, and candidate elements to predict next actions; and (5) Controllable Calibration, using a CTR binary classification model to verify executability and checking for logical loops. The system was deployed and evaluated in Alipay, trained on 32 NVIDIA A-100 GPUs with 100 A-40 GPUs for online inference, using weekly fine-tuning.",
+ "results": "The object detection model achieved mAP0.92@IoU75 on their dataset. Over 20 real-world scenarios were covered in online deployment on Alipay, with 2000 manually annotated different tasks. Evaluation metrics include Step Success Rate (Step SR) and Task Success Rate (Task SR), where a step succeeds when the selected element and predicted action match ground truth, and a task succeeds when all constituent steps succeed. An ablation study was conducted to evaluate the impact of different components.",
+ "limitations": "The paper acknowledges that LLMs have inherent hallucination issues, which the controllable calibration module attempts to mitigate. The elaborate instruction chains require a greater quantity of high-quality samples in the relevant field. No explicit limitations beyond these are stated in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

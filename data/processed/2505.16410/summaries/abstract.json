@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16410",
+ "tldr": "Tool-Star is an RL-based framework that empowers LLMs to autonomously invoke multiple external tools during stepwise reasoning through a two-stage training process combining cold-start fine-tuning and a multi-tool self-critic RL algorithm with hierarchical rewards.",
+ "contributions": [
+  "A two-stage training framework for multi-tool collaborative reasoning: cold-start supervised fine-tuning and a multi-tool self-critic RL algorithm with hierarchical reward design",
+  "A general tool-integrated reasoning data synthesis pipeline combining tool-integrated prompting with hint-based sampling, plus quality normalization and difficulty-aware classification",
+  "Experimental validation on over 10 challenging reasoning benchmarks demonstrating effectiveness, efficiency, and reliability in tool usage"
+ ],
+ "methods": "The authors first design six tools (three for training: search engine, web browser agent, code interpreter; three for inference: code debugger, tool-use backtracer, reasoning chain refiner) and create a data synthesis pipeline that generates tool-use trajectories via tool-integrated prompting and hint-based sampling, followed by quality normalization and difficulty-aware classification to organize data from easy to hard. They then implement a two-stage training framework: (1) cold-start supervised fine-tuning on the curated dataset to establish initial tool-use capability, and (2) a multi-tool self-critic RL algorithm using GRPO with a hierarchical reward mechanism that provides correctness rewards, format rewards, and additional rewards for effective multi-tool collaboration, interleaved with self-critic reward fine-tuning to help the model internalize reward principles.",
+ "results": "Experiments on over 10 challenging reasoning benchmarks (including AIME24, MATH500, WebWalker, and HotpotQA) demonstrate that Tool-Star achieves strong overall reasoning performance while ensuring both efficiency and reliability in tool usage. The code is available at https://github.com/dongguanting/Tool-Star.",
+ "limitations": "The paper does not explicitly state limitations, but the methodology reveals constraints: the framework requires significant tool infrastructure and integration (six specialized tools), the quality of training depends heavily on the synthesized data pipeline's ability to filter and classify samples appropriately, and the hierarchical reward design with self-critic mechanisms introduces algorithmic complexity. The approach is evaluated primarily on computational and knowledge-intensive reasoning tasks, potentially limiting generalization to other reasoning domains.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

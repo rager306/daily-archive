@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.09516",
+ "tldr": "SEARCH-R1 is a reinforcement learning framework that enables LLMs to autonomously generate search queries during step-by-step reasoning with real-time retrieval, improving QA performance over RAG baselines without requiring process-level rewards.",
+ "contributions": [
+  "Analysis of challenges and perspectives for implementing RL to improve LLM reasoning with search engine results",
+  "Proposal of SEARCH-R1, a novel RL framework supporting multi-turn interleaved reasoning and search with retrieved token masking and an outcome-based reward function",
+  "Systematic experiments on seven question-answering datasets demonstrating effectiveness and providing insights into RL method selection, LLM choices, and response length dynamics"
+ ],
+ "methods": "SEARCH-R1 extends RL frameworks (PPO and GRPO) by modeling the search engine as part of the environment, enabling sampled trajectories that interleave LLM token generation with search retrievals. It introduces retrieved token masking to ensure the policy gradient objective is computed only over LLM-generated tokens, excluding retrieved content to stabilize training. The model uses special tokens (<search>/<information>/<think>/<answer>) to support multi-turn reasoning and search interactions iteratively until a final answer is produced. A simple rule-based outcome reward function (exact match between predicted and ground truth answers) is used, avoiding complex process-based or neural reward models.",
+ "results": "Experiments on seven question-answering datasets show SEARCH-R1 improves performance by 24% (Qwen2.5-7B) and 20% (Qwen2.5-3B) over various RAG baselines under the same setting. The abstract reports these as average relative improvements. Both PPO and GRPO were evaluated, with detailed comparisons provided. Results demonstrate effectiveness across general QA (NQ, TriviaQA, PopQA) and multi-hop QA (HotpotQA, 2WikiMultiHopQA, Musique, Bamboogle) datasets.",
+ "limitations": [
+  "The reward function relies solely on simple outcome-based rewards; the paper notes that more complex format rewards are left for future work",
+  "Neural reward models are not explored, motivated by sensitivity of LLMs to reward forms and computational costs",
+  "The approach's effectiveness depends on retrieval quality from the search engine, which could vary across domains",
+  "Only Qwen2.5-3B and Qwen2.5-7B models were evaluated"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.04983",
+ "tldr": "DINO-WM is a task-agnostic world model trained on offline trajectories using frozen DINOv2 patch features and a ViT transition model to predict future latent states, enabling zero-shot visual planning at test time without reward signals, expert demonstrations, or inverse models.",
+ "contributions": [
+  "A new world model (DINO-WM) that models visual dynamics in latent space without reconstructing pixels",
+  "Use of pre-trained DINOv2 patch features as a frozen observation model, providing spatial and object-centric representation priors",
+  "A ViT-based transition model with causal frame-level attention for autoregressive latent prediction",
+  "Demonstration of zero-shot planning via model predictive control with cross-entropy method optimization across diverse robotics tasks",
+  "Decoupled decoder for interpretability that does not affect planning capability"
+ ],
+ "methods": "DINO-WM encodes RGB observations (224x224) into spatial patch embeddings using a frozen DINOv2 observation model. A ViT-based transition model with causal attention predicts future latent states given a history of past latents and actions, trained with teacher forcing via a latent consistency loss (MSE between predicted and encoded next-frame latents). The optional decoder, trained independently with a reconstruction loss, aids visualization but is not used during planning. At test time, planning is formulated as visual goal reaching: given a current observation and goal image, a sequence of actions is optimized via model predictive control using the cross-entropy method to minimize MSE between the predicted final latent state and the goal's latent encoding.",
+ "results": "On LPIPS metrics for the hardest tasks, DINO-WM improves upon prior state-of-the-art by 56%. For reaching arbitrary goals on the hardest tasks, DINO-WM improves upon prior work by 45% on average. DINO-WM achieves zero-shot behavioral solutions across six environments (Maze, Wall, PushT, Reach, Rope, Granular) without expert demonstrations, reward modeling, or pre-learned inverse models, outperforming baselines including IRIS, DreamerV3, TD-MPC2, and AVDC across diverse task families such as arbitrarily configured mazes, push manipulation with varied object shapes, and multi-particle scenarios.",
+ "limitations": "The method requires sufficient coverage in the offline dataset for robust generalization. The cross-entropy method for planning may be computationally intensive compared to gradient-based approaches, and the authors note that gradient descent was empirically outperformed by CEM. Regularization during training and in planning objectives could further improve performance but was left as future work. The world model is trained only on information available from offline trajectory data and does not incorporate task-specific signals like rewards or termination conditions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

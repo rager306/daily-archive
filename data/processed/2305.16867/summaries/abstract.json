@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.16867",
+ "tldr": "LLMs perform well in self-interested games like the iterated Prisoner's Dilemma but poorly in coordination games like the Battle of the Sexes; a 'social chain-of-thought' (SCoT) prompting strategy improves both LLM-LLM and LLM-human coordination performance.",
+ "contributions": [
+  "Large-scale evaluation of multiple LLMs (GPT-4, text-davinci-002, text-davinci-003, Claude 2, Llama 2 70B) across all known types of 2×2 repeated games",
+  "Identification of LLM strengths in self-interested games and weaknesses in coordination games",
+  "Demonstration that GPT-4 can predict alternating patterns but fails to act on them when itself a player",
+  "Introduction of Social Chain-of-Thought (SCoT) prompting to improve LLM coordination behavior",
+  "Human experiments showing SCoT improves human-LLM coordination and perceived humanness"
+ ],
+ "methods": "The authors had multiple LLMs play finitely repeated 2×2 games against each other and against human-like strategies over 10 rounds, covering 1224 games across families including win-win, Prisoner's Dilemma, unfair, cyclic, biased, and second-best games. They conducted robustness checks varying prompts, option orders, utility representations (points/dollars/coins), cover stories, and game horizons. Two focal games—Prisoner's Dilemma and Battle of the Sexes—were analyzed in depth, including prediction scenarios and a Social Chain-of-Thought (SCoT) prompting intervention where LLMs predicted their opponent's move before acting. A human experiment with 195 participants compared base GPT-4 versus SCoT-prompted GPT-4 in both games.",
+ "results": "All LLMs performed best in win-win and Prisoner's Dilemma games; larger models generally outperformed smaller ones, with GPT-4 best overall. In Prisoner's Dilemma, GPT-4 was unforgiving—it permanently defected after a single defection by the opponent (t(153.4)=3.91, p<.001, d=0.33, BF=7.1), and this persisted even when told the opponent would cooperate. In Battle of the Sexes, GPT-4 failed to coordinate with an alternating strategy, choosing its preferred option repeatedly and achieving successful coordination rates of only 0.5 (p=.005, d=0.28, BF=3.56). Robustness checks confirmed these were not prompt artifacts. GPT-4 could correctly predict alternating patterns when framed as observer (from round 3) or as player (from round 5). SCoT prompting improved GPT-4 to alternate from round 5 onward. In human experiments (n=195), SCoT increased human scores in Battle of the Sexes (β=0.74, p<.001, BF=80.6) and successful coordination (β=0.33, p<.001, BF=13.4), with no difference in Prisoner's Dilemma. Humans were more likely to believe SCoT models were human (β=0.54, p<.001, BF=17.6).",
+ "limitations": "Games were finitely repeated with a known number of rounds, which changes the strategic landscape compared to infinite repetitions. The study focused only on 2×2 games. GPT-4's strong defection in Prisoner's Dilemma, while equilibrium-optimal, may not generalize to other settings. LLM behavior was tested primarily in simulated environments with simplistic human-like strategies rather than diverse human opponents. The study used a narrow set of prompting interventions (SCoT) and does not explore other potential improvements.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.18866",
+ "tldr": "LightMem is a lightweight memory system for LLMs inspired by the Atkinson-Shiffrin human memory model, using three stages—sensory memory with compression and topic segmentation, topic-aware short-term memory, and offline sleep-time long-term memory updates—to dramatically reduce computational overhead while improving QA accuracy.",
+ "contributions": [
+  "Introduction of LightMem, a memory system balancing performance and efficiency for LLMs in long-context and multi-turn scenarios",
+  "A cognition-inspired sensory memory module that pre-compresses inputs via LLMLingua-2 and segments by topic using attention and similarity-based boundary detection",
+  "A topic-aware short-term memory module that groups related utterances into coherent segments instead of using fixed window sizes",
+  "A sleep-time update mechanism for long-term memory that decouples expensive consolidation from online inference, enabling parallel offline updates"
+ ],
+ "methods": "LightMem processes interactions through three stages. First, a pre-compressing submodule uses LLMLingua-2 to filter redundant tokens based on retention probability, followed by a topic segmentation submodule that identifies boundaries as the intersection of attention-based local maxima and semantic similarity thresholds below τ. Second, topic-aware short-term memory accumulates compressed tokens in a 512-token buffer until a threshold is reached, then invokes an LLM to summarize each topic segment. Third, long-term memory inserts entries with soft (timestamped) updates at test time for low latency, then performs offline parallel updates using top-k semantic similarity retrieval with temporal constraints (only later entries update earlier ones).",
+ "results": "On LONGMEMEVAL, LightMem improves QA accuracy by 2.09%-6.40% (GPT) and up to 7.67% (Qwen) over strongest baseline A-Mem. On LOCOMO, it achieves 6.10%-29.29% higher accuracy. Total token usage is reduced by up to 38× (GPT) and 20.9× (Qwen) on LONGMEMEVAL, and 20.92× (GPT) and 18.02× (Qwen) on LOCOMo. API calls are reduced by up to 30×/55.5× on LONGMEMEVAL and 39.78×/55.48× on LOCOMo. Purely online test-time costs show even larger gains: up to 106×/117× token reduction and 159×/310× fewer API calls. Runtime is accelerated by up to 12.4× (GPT) and 8.21× (Qwen). Compression ratios of 50%-80% yield comparable performance to uncompressed input.",
+ "limitations": [
+  "Requires an additional model (LLMLingua-2) for pre-compression, introducing some GPU memory overhead (under 2GB reported)",
+  "Online inference is decoupled from offline consolidation, meaning long-term memory updates are not immediate but deferred to sleep periods",
+  "Evaluation is limited to two benchmarks (LONGMEMEVAL and LOCOMO), potentially limiting generalizability claims",
+  "The approach relies on the quality of LLMLingua-2 as the pre-compression model, which may not generalize equally well to all domains"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

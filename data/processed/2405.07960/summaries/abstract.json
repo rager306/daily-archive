@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.07960",
+ "tldr": "AgentClinic is introduced as a multimodal agent benchmark for evaluating LLMs in interactive, dialogue-driven clinical simulations, revealing that sequential decision-making diagnostic accuracy can drop to below a tenth of static MedQA accuracy. Claude-3.5-Sonnet outperforms other LLMs across most settings, but agents vary drastically in their ability to benefit from tools like notebooks, with Llama-3 showing up to 92% relative improvement.",
+ "contributions": [
+  "An interactive, dialogue-driven sequential decision-making benchmark for medical diagnosis, moving beyond static multiple-choice QA",
+  "A system incorporating 24 cognitive and implicit biases into patient and doctor agents, showing how biases affect diagnostic accuracy and patient perception",
+  "Patient agents built from real clinical sources (USMLE, MIMIC-IV, NEJM case challenges) across 9 medical specialties and 7 languages",
+  "Tool-use evaluation for doctor agents including web browsing, textbook access, reflection cycles, and persistent notebook writing"
+ ],
+ "methods": "AgentClinic uses four language agents (patient, doctor, measurement, moderator) each with unique instructions and information. Cases are sourced from USMLE diagnostic questions, deidentified electronic health records (MIMIC-IV), and NEJM case challenges, populated into structured JSON and manually validated with GPT-4. Doctor agents perform up to N=20 patient and measurement interactions before diagnosing. The benchmark covers 9 medical specialties and 7 languages (English, Chinese, French, Spanish, Hindi, Persian, Korean), with 24 biases introduced via system prompts. Bias effects are measured on both diagnostic accuracy and patient-centric metrics (confidence, compliance, consultation ratings).",
+ "results": "On AgentClinic-MedQA: Claude-3.5 achieved 62.1%±3.3, OpenBioLLM-70B 58.3%±4.2, human physicians 54%±28.5, GPT-4 51.6%±3.3, Llama 2 70B-chat 4.5%±1.3. On AgentClinic-MIMIC-IV: Claude-3.5 scored 42.9%±3.3 vs GPT-4 at 34.0%±3.1. MedQA accuracy was only weakly predictive of AgentClinic-MedQA accuracy. Reducing interactions from N=20 to N=10 decreased accuracy from 52% to 25%. Llama-3 showed up to 92% relative improvement with the notebook tool. GPT-4's accuracy dropped minimally under bias (max 4% absolute, avg 1.5%), while Mixtral-8x7B dropped substantially (implicit bias: 37% to 32.7%). Implicit biases profoundly affected patient perception scores, with education bias consistently reducing confidence, compliance, and consultation ratings across all categories.",
+ "limitations": [
+  "MedQA accuracy is only weakly predictive of sequential diagnostic performance, suggesting prior benchmarks incompletely capture clinical reasoning ability",
+  "GPT-4 sometimes refuses to execute bias instructions (25 occurrences out of 215 dialogues with gender bias), limiting its utility for studying bias effects",
+  "Patient agents are simulated by language models and may not fully capture real human patient complexity, so confidence/compliance/consultation ratings may not perfectly reflect real-world perceptions",
+  "Some models demonstrated decreased accuracy when given tools rather than improvement"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.09177",
+ "tldr": "The paper proposes an Online Agent (OA) that learns a Follow-The-Leader shallow world model online and plans with model predictive control to solve continual reinforcement learning tasks without catastrophic forgetting, achieving a proven regret bound of O(K^2 D log(T)).",
+ "contributions": [
+  "Proposing the FTL Online Agent (OA) that incrementally learns online world models and plans actions via MPC for continual RL",
+  "Proving a regret bound of O(K^2 D log(T)) under mild assumptions for the sparsely updating online world model",
+  "Designing Continual Bench, a lightweight CRL benchmark with consistent state space that evaluates both forgetting and transfer",
+  "Demonstrating empirically that OA outperforms deep world model baselines with continual learning techniques"
+ ],
+ "methods": "The agent learns a world model of the form y = Wσ(Px), where P is a fixed random Gaussian projection matrix and W is learned online via Follow-The-Leader regularized least squares. A sparse incremental update rule is used so that only K≪D activated features are updated at each time step, keeping overhead constant. The planner uses model predictive control with the cross-entropy method to optimize action sequences from the current world model. A dedicated benchmark called Continual Bench is designed with unified dynamics and consistent state space. Comparisons are made against strong baselines under the same model-planning framework.",
+ "results": "The theoretical analysis proves a regret bound of O(K^2 D log(T)) for the sparse online model learning under mild assumptions. Empirical results on Continual Bench show that OA learns continuously to solve new tasks while not forgetting old skills, outperforming agents built on deep world models with various continual learning techniques.",
+ "limitations": "The approach relies on mild assumptions including bounded inputs/outputs and feature covariance stabilization (Assumptions 1-3). The sparse update requires careful choice of hyperparameter K depending on spectral properties of the feature matrix. Existing CRL baselines using deep world models still exist as competitors. The motivating example and benchmark use simple state-based dynamics rather than image-based observations, though the paper notes image-based benchmarks demand prohibitive computation resources.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

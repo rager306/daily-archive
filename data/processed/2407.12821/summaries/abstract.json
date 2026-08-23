@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.12821",
+ "tldr": "AutoFlow is a framework that automatically generates agent workflows in natural language using LLMs, outperforming manually designed workflows and significantly reducing human labor in workflow creation.",
+ "contributions": [
+  "Proposes AutoFlow, a framework for automatically generating workflows for LLM-based agents using natural language programs (CoRE language).",
+  "Introduces two workflow generation methods: a fine-tuning method using LoRA adapters with reinforcement learning for open-source LLMs, and an in-context learning method for closed-source LLMs.",
+  "Demonstrates that AutoFlow-generated workflows significantly outperform manually designed workflows on the OpenAGI benchmark."
+ ],
+ "methods": "AutoFlow employs a workflow generator LLM that produces executable workflows in CoRE language (containing Process, Decision, and Terminal steps), and a workflow interpreter LLM that executes them step by step. For open-source LLMs (e.g., Mixtral-8x7B), LoRA fine-tuning with the REINFORCE algorithm optimizes the generator using average validation dataset score as reward over up to 30 iterations, with GPT-4 used as a post-processing parser for grammar validation. For closed-source LLMs (e.g., GPT-4), in-context learning incorporates the reward value directly into the prompt to iteratively refine the generated workflow. Experiments were conducted on the OpenAGI benchmark using CLIP Score, BERT Score, and ViT Score as evaluation metrics.",
+ "results": "AutoFlow achieved over 40% improvement compared to the best baseline (CoRE) when using Mixtral as the interpreter LLM, and over 5% improvement when using GPT-4 as the interpreter. AutoFlow reached the highest score for each individual task type in both settings. An interesting finding was that mixing generator and interpreter models (e.g., GPT-4 as generator with Mixtral as interpreter, and vice versa) produced the best average scores, suggesting a synergistic effect.",
+ "limitations": "The reinforcement learning-based learning process may not be the most efficient method compared to gradient-based or few-shot learning approaches. The framework currently uses a collaborative learning paradigm between generator and interpreter LLMs, but other paradigms (e.g., teacher-student or adversarial learning) were not explored. Additionally, open-source LLMs cannot consistently generate grammatically valid workflows without post-processing via an external parser like GPT-4.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

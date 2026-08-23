@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.05592",
+ "tldr": "R1-Searcher is a two-stage outcome-based reinforcement learning approach that enables LLMs to autonomously invoke external search systems during reasoning, without requiring process rewards or SFT distillation, significantly outperforming existing RAG methods.",
+ "contributions": [
+  "Introduced R1-Searcher, a two-stage RL framework enabling autonomous retrieval during the reasoning process",
+  "Demonstrated consistent and significant surpassing of existing RAG methods, including those based on GPT-4o-mini",
+  "Showed the approach works exclusively with RL without distillation or cold start, with generalization to out-of-domain datasets and online search scenarios"
+ ],
+ "methods": "The authors propose a two-stage outcome-based RL approach. In Stage-1, a retrieve-reward (0.5 for n≥1 invocations) and format reward (0.5 for correct tag format) incentivize the model to learn retrieval invocation without considering answer accuracy. In Stage-2, the format penalty changes to -2 for incorrect format, and an answer reward based on F1 score (2*IN/(PN+RN)) is added. The training algorithm modifies Reinforce++ with RAG-based rollout (pausing generation at query tags to retrieve documents) and retrieval mask-based loss calculation (masking document tokens). Data was selected from HotpotQA and 2WikiMultiHopQA training sets, categorized by difficulty (easy/medium/hard based on rollout counts).",
+ "results": "On Qwen-2.5-7B-Base, R1-Searcher surpassed ReARTeR (GPT-4o-mini baseline) by up to 48.22% on HotpotQA and 21.72% on 2Wiki. On LLaMA-3.1-8B-Instruct, improvements were 48.2% on HotpotQA, 21.7% on 2Wiki, and 4.0% on Bamboogle. The model achieved an 11.4% performance improvement on Bamboogle compared to Search-o1 (32B parameters). F1-based reward outperformed EM by up to 52.6% average. GRPO showed better generalization to out-of-domain datasets while Reinforce++ showed superior in-domain learning efficiency. RL outperformed SFT in both in-domain and out-of-domain settings.",
+ "limitations": "Training used only 8148 samples from HotpotQA and 2WikiMultiHopQA. The model's performance on Musique (out-of-domain) was lower than on other benchmarks. SFT-trained models tend to rely on internal knowledge and generate less relevant queries at inappropriate times compared to RL-trained models. The approach relies on an external retrieval system, and the retrieval mask strategy means the model does not generate document tokens directly.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

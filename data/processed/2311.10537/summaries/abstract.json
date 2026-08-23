@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.10537",
+ "tldr": "MEDAGENTS is a training-free, multi-agent collaboration framework that uses LLM-based agents in role-playing settings to improve zero-shot medical reasoning by conducting multi-round collaborative discussions across disciplines.",
+ "contributions": [
+  "First proposed multi-agent framework for the medical domain that explores how multi-agent communication can reach consensus decisions in medical question answering.",
+  "Enhanced faithfulness and interpretability through role-playing and collaborative agent discussion without requiring retrieval-augmented generation (RAG).",
+  "Demonstrated general effectiveness of MEDAGENTS across nine datasets, with human evaluation identifying and categorizing common error types."
+ ],
+ "methods": "The MEDAGENTS framework operates in five stages: (1) Expert Gathering—assigning LLMs roles as question and option domain experts; (2) Analysis Proposition—each expert generates domain-specific analyses; (3) Report Summarization—synthesizing all analyses into an initial report; (4) Collaborative Consultation—iterative multi-round discussions where experts vote on and modify the report until unanimous approval or max attempts (set to 5); (5) Decision Making—deriving a final answer from the unanimous report. Experiments were conducted in the zero-shot setting using GPT-3.5-Turbo and GPT-4 on Azure OpenAI Service.",
+ "results": "On nine datasets (MedQA, MedMCQA, PubMedQA, and six MMLU medical subtasks), MEDAGENTS outperformed zero-shot baselines by a large margin and achieved comparable performance to Few-shot CoT+SC in the zero-shot setting. MEDAGENTS with GPT-3.5 scored 64.1% on MedQA and 59.3% on MedMCQA; with GPT-4, scores were 83.7% and 74.8% respectively. The method surpassed open-source medical models including MedAlpaca-7B (55.2%/45.8%), BioMedGPT-10B (50.4%/42.2%), BioBERT (36.7%/37.1%). Ablation studies showed analysis proposition contributed the most (55.0%→62.0%), with report summarization and collaborative consultation providing smaller gains (62.0%→65.0%/67.0%). Cost was $1.41 per 100 QA examples (~¢1.4/question) with ~40s inference time per example.",
+ "limitations": "Human evaluation identified four error categories: (i) lack of domain knowledge, (ii) mis-retrieval of domain knowledge, (iii) consistency errors, and (iv) CoT errors. Domain knowledge-related errors (lack + mis-retrieval) accounted for 77% of errors. The method's performance is bounded by the intrinsic medical knowledge in the base LLM, and additional refinement is needed to address hallucinations and inconsistent reasoning.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

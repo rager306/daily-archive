@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.03797",
+ "tldr": "NESTFUL is a benchmark of 1,800+ executable nested API call sequences designed to evaluate LLMs on their ability to handle nested function calling, where the output of one API is passed as input to subsequent calls. The best-performing model, GPT-4o, achieved only 28% full sequence match accuracy and a 60% win rate.",
+ "contributions": [
+  "Introduction of NESTFUL, a benchmark with over 1,800 nested API call sequences featuring executable tools",
+  "A dataset spanning two domains: mathematical reasoning (from MathQA) and coding (from StarCoder2-Instruct)",
+  "Evaluation of 19 state-of-the-art proprietary and open-source models, revealing significant gaps in nested sequencing capability"
+ ],
+ "methods": "NESTFUL was constructed from MathQA (1,415 samples across 40 tools with average 5.1 tool calls per sample) and StarCoder2-Instruct (446 samples across 881+ tools with average 2.1 tool calls per sample). Tool specifications and Python implementations were created for each function, and samples were filtered by executing nested sequences to verify they produce the gold answer. The authors evaluated 19 models using direct prompting (one-shot and three-shot ICL) and a zero-shot ReAct agent, measuring Full Match Accuracy, Partial Match Accuracy, Win Rate, and F1 scores.",
+ "results": "GPT-4o achieved the best performance with 28% full sequence match accuracy and 60% win rate. DeepSeek-V3 also achieved a 60% win rate. Models struggled as nesting depth and data dependencies increased. Common failure modes included assigning variables, utilizing output parameter details from API specifications, and correctly passing variable names to subsequent APIs. In most experiments, three-shot ICL outperformed one-shot ICL, and Partial Sequence Match scores were consistently higher than Full Sequence Match scores.",
+ "limitations": "Models perform poorly on this task (best win rate only 60%), indicating significant scope for improvement. The coding domain data is synthetically generated and lacks the human validation present in MathQA. Open models were not trained with the label assignment syntax in the output API sequence. Performance degrades as nesting depth and data dependencies increase.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

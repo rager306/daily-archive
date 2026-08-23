@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2511.21689",
+ "tldr": "ToolOrchestra trains an 8B orchestrator model via reinforcement learning to coordinate diverse tools and specialist models, achieving higher accuracy at lower cost than monolithic frontier models on complex benchmarks like HLE, τ²-Bench, and FRAMES.",
+ "contributions": [
+  "Introduce ToolOrchestra, a method for training a small LLM as an orchestrator of a heterogeneous toolkit including classical tools and specialist/generalist models",
+  "Novel end-to-end RL reward design balancing outcome correctness, cost/latency efficiency, and user-preference alignment",
+  "Orchestrator-8B surpasses frontier models (including GPT-5) on multiple benchmarks while using a fraction of compute and cost, with robust generalization to unseen tools"
+ ],
+ "methods": "The authors train an 8B-parameter model (backbone: Qwen3-8B) end-to-end using Group Relative Policy Optimization (GRPO) to learn multi-turn tool-use trajectories. The reward function combines three components: outcome reward (binary accuracy judged by GPT-5), efficiency rewards (negative monetary cost and wall-clock latency), and preference rewards (normalized dot product with user-specified preference vectors over tool usage, cost, and latency). They synthesize training data via ToolScale, an automatic pipeline generating thousands of verifiable multi-turn tool-use examples across 10 domains with database schemas, tools, and gold trajectories. A unified tool-calling interface exposes both deterministic tools (search, code interpreter) and intelligent models (GPT-5, GPT-5-mini, Qwen2.5-Coder-32B, Qwen2.5-Math-72B, etc.) as callable tools.",
+ "results": "On HLE, Orchestrator scores 37.1%, outperforming GPT-5 (35.1%) at 2.5× more efficient. On τ²-Bench, Orchestrator surpasses GPT-5 by a wide margin while using only ~30% of the cost and calling GPT-5 in only ~40% of steps. On FRAMES, Orchestrator similarly exceeds GPT-5 at ~30% cost. Baselines such as prompting GPT-5 or Qwen3-8B directly show systematic biases (overuse of self-variants or defaulting to strongest tools). Simple tool-augmented monolithic models (e.g., Claude Opus 4.1 with tools) improve accuracy but incur 2.8× costs and 4× latency on HLE.",
+ "limitations": "The approach relies on a curated evaluation toolkit with fixed tools and pricing; real-world tool availability and costs may differ. Training uses simulated database environments that may not fully capture all real-world tool-use complexities. The method assumes verifiable ground-truth solutions for training data synthesis, limiting applicability to open-ended tasks without objective answers. Specific limitations of the reward design (e.g., normalization instabilities when batch min=max) are noted but not extensively explored.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

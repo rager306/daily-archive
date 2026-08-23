@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.10775",
+ "tldr": "COMBO learns a compositional world model that factorizes joint actions of multiple agents into text prompts, enabling accurate simulation of world dynamics from partial egocentric observations for embodied multi-agent cooperative planning via tree search.",
+ "contributions": [
+  "A compositional world model using composable video diffusion models to simulate dynamics conditioned on an arbitrary number of agents' actions",
+  "Agent-Dependent Loss Scaling to improve modeling accuracy for multi-agent interactions",
+  "COMBO framework integrating world state estimation, VLM-based Action Proposer, Intent Tracker, and Outcome Evaluator with tree search for online cooperative planning",
+  "Two new challenging benchmarks, TDW-Game and TDW-Cook, in ThreeDWorld for 2-4 agent visual cooperation tasks"
+ ],
+ "methods": "COMBO first estimates the overall world state by reconstructing partial point clouds from egocentric RGBD views into a top-down orthographic image, then inpainting with a diffusion model. The compositional world model treats the current world state as the initial frame and factorized agent actions as text prompts, using a two-stage trained video diffusion model where stage one learns single-agent action conditioning and stage two fine-tunes for joint action composition using composed score functions. An Agent-Dependent Loss Scaling technique weights the denoising loss by each agent's reachable region in the image. Planning uses a tree search procedure integrating VLM-based modules (Action Proposer, Intent Tracker, Outcome Evaluator) with the compositional world model, keeping B best plan beams with P action proposals over D rollout steps.",
+ "results": "Evaluated on TDW-Game, TDW-Cook benchmarks with 2-4 agents and adapted 2D-FetchQ. The compositional world model delivers accurate video synthesis conditioned on multiple sets of actions from an arbitrary number of agents. COMBO enables embodied agents to cooperate efficiently with different agents across various tasks and arbitrary numbers of agents. Results are compared against baselines including Recurrent World Models, MAPPO, CoELA, LLaVA, and Shared Belief Cooperator.",
+ "limitations": [
+  "The Outcome Evaluator may exploit irregular artifacts of the Compositional World Model to get artificially high scores, such as objects being teleported to desired positions; mitigated by using default scores when new states suspiciously increase the score above a threshold",
+  "Partial egocentric observations lead to noisy and incomplete top-down orthographic world state representations",
+  "Partial observability remains a fundamental challenge requiring generative reconstruction of the overall world state"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

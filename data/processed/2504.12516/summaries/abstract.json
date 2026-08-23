@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.12516",
+ "tldr": "BrowseComp is a benchmark of 1,266 challenging web-browsing questions that require persistent, creative searching through many websites to find hard-to-discover, entangled information with short, easily verifiable answers.",
+ "contributions": [
+  "Introduction of BrowseComp, a new benchmark with 1,266 questions designed to measure agents' ability to persistently browse the web for obscure information",
+  "Human performance baseline showing trainers solved only 29.2% of questions even after up to 2 hours of effort",
+  "Evaluation of OpenAI models including GPT-4o, GPT-4.5, OpenAI o1, and Deep Research, revealing that both reasoning and tool use contribute to performance",
+  "Demonstration that test-time compute scaling and aggregation strategies (best-of-N voting) substantially improve performance, with Deep Research reaching ~50% under parallel sampling"
+ ],
+ "methods": "The dataset was collected purely by human trainers who created fact-seeking questions with single short answers that were extremely challenging: existing models could not solve them, the answers were not found on the first pages of five Google searches, and another person could not solve them within ten minutes. Questions were designed by starting with a seed fact and inverting it into a constrained query with a large search space. Grading was performed using an AI model to compare predicted answers for semantic equivalence against reference answers. Models were evaluated including GPT-4o, GPT-4.5, OpenAI o1, GPT-4o with browsing, and Deep Research, with additional analysis of calibration error, test-time compute scaling, and parallel sampling with voting strategies (majority, weighted, and best-of-N across 64 outputs per question).",
+ "results": "Human trainers solved 29.2% of 1,255 attempted questions, with 86.4% agreement between trainer answers and reference answers. Model accuracies: GPT-4o 0.6%, GPT-4o w/ browsing 1.9%, GPT-4.5 0.9%, OpenAI o1 9.9%, Deep Research 15.1%. Deep Research with 64 parallel samples and best-of-N voting improved by 15-25% over single attempts. Deep Research perfectly solved 16% of tasks and failed entirely on 14%. 21 of 118 zero-pass-rate tasks were removed due to incorrect, ambiguous, or mismatched ground-truth answers, reducing the dataset from 1,287 to 1,266 tasks. Models with browsing exhibited higher calibration error (e.g., Deep Research: 91% vs GPT-4o: 9%).",
+ "limitations": [
+  "Questions may have multiple valid answers since they are constructed in an inverted fashion, making it impossible to guarantee uniqueness without exhaustive checking",
+  "BrowseComp sidesteps challenges of true user query distributions such as generating long answers or resolving ambiguity",
+  "Performance on BrowseComp does not guarantee generalization to all browsing tasks, analogous to how programming competition performance does not guarantee general coding helpfulness",
+  "The Deep Research model is trained on data that specifically teaches it to perform well on BrowseComp-like tasks",
+  "Human trainers were not competition-level internet browsers, so many unsolved questions may be solvable by experienced professionals"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

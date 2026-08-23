@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.07086",
+ "tldr": "Hypothetical Minds is an LLM-based agent with a Theory of Mind module that generates, evaluates, and refines natural-language hypotheses about other agents' latent strategies, enabling adaptive decision-making in competitive, collaborative, and mixed-motive multi-agent environments.",
+ "contributions": [
+  "Proposes Hypothetical Minds (HM), an embodied LLM agent integrating modular perception, memory, and hierarchical planning conditioned on Theory of Mind inferences",
+  "Introduces a novel Theory of Mind module that generates, evaluates, and refines hypotheses about other agents' strategies or goals in natural language, with hypothesis evaluation identified as critical via ablations",
+  "Demonstrates effectiveness across 30 evaluation scenarios in collaborative, competitive, and mixed-motive domains on the Melting Pot benchmark, significantly outperforming both LLM-agent and RL baselines"
+ ],
+ "methods": "Hypothetical Minds uses a cognitively-inspired architecture with modules for perception (textual map/state representation), memory (logs rewards, observations, inventories), and hierarchical planning over two abstraction levels. The novel Theory of Mind module generates hypotheses about other agents' latent variables (strategies, goals, competence) in natural language via LLM inference conditioned on memory, then scores each hypothesis based on its predictive accuracy about other agents' future behavior using a likelihood function. Hypotheses are evaluated with a self-supervised intrinsic reward system (correct prediction gives +c, incorrect gives -c) and updated via a Rescorla-Wagner rule with learning rate α. Validated hypotheses condition high-level plans, which are decomposed into subgoals by a Subgoal module and executed by an action planner. The system was evaluated on four Melting Pot environments across 30 distinct scenarios against LLM baselines (ReAct, Reflexion, PlanReAct) and RL baselines (PPO, OPRE).",
+ "results": "Hypothetical Minds significantly outperforms both LLM-agent and RL baselines across multiple environments. It surpasses LLM baselines on a majority of evaluation scenarios in every environment and performs better than MARL baselines in 3/4 environments despite those methods being trained on upwards of a billion steps. In Running With Scissors (competitive), HM consistently achieves large positive rewards across all nine scenarios including static strategies (rock/paper/scissors loops) and the adaptive best-response bot (scenario 1), while OPRE gets rewards near zero. The agent is described as the first LLM agent for diverse multi-agent environments with strong performance across collaborative, competitive, and mixed-motive domains.",
+ "limitations": [
+  "MARL baselines were trained on upwards of a billion steps while HM operates online without training, representing a compute imbalance",
+  "The ToM module incurs higher computational cost when hypotheses are not yet validated (3 + top k LLM calls per step vs 2 after validation), though it scales sublinearly when hypotheses are frequently validated",
+  "The work notes that even sophisticated MARL approaches like OPRE struggle to generalize in complex environments like Running With Scissors, highlighting ongoing challenges in the domain"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

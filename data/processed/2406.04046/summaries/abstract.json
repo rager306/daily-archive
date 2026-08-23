@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.04046",
+ "tldr": "The paper introduces ACTIONREASONINGBENCH, a diagnostic benchmark with 8 domains and up to 19-step action sequences, revealing that LLMs handle basic RAC dimensions with moderate accuracy but struggle significantly on complex and ramification-constraint questions.",
+ "contributions": [
+  "Introduced ACTIONREASONINGBENCH, a diagnostic RAC benchmark spanning 8 domains with questions for up to 19 action sequences",
+  "Decomposed RAC into six categories: Fluent Tracking, State Tracking, Action Executability, Effects of Actions, Numerical RAC, and Composite Questions",
+  "Introduced novel ramification constraints capturing indirect effects of actions up to four dependency levels deep",
+  "Evaluated four state-of-the-art LLMs (GPT-4o, o1-preview, Llama-3.1-8B-Instruct, Llama-3.1-70B-Instruct) across zero-shot-CoT and few-shot-3 prompting"
+ ],
+ "methods": "The authors selected 8 IPC domains and translated their PDDL descriptions into natural language. A four-stage pipeline generated questions: (1) generating initial/goal pairs and validating action sequences with a PDDL solver, (2) converting to Answer Set Programming (ASP), (3) extracting state spaces and fluents via ASP solvers, and (4) templating questions paraphrased through Llama-3.1-70B-Instruct and reviewed by three annotators. The benchmark contains 152,737 unique questions across 8 domains with action sequence lengths of 1, 5, 10, 15, and 19, split into 3,498 test and 149,237 train questions. Four LLMs were evaluated using both zero-shot-CoT and few-shot-3 prompting.",
+ "results": "LLMs achieved average accuracies of 73.55%, 65.63%, 58.73%, and 62.38% on the first four RAC dimensions. Performance dropped to 33.16% on Numerical RAC and 51.19% on Composite Questions, a 17.9% decline. GPT-4o failed to produce any correct answers on ramification-constraint questions, while o1-preview scored only 18.42% on the ramification subset. GPT-4o achieved the best overall accuracy of 59.91% on basic categories. LLMs showed a 12.16% performance drop when reasoning involved mixed true and false fluents compared to exclusively true or false fluents. Fine-tuning Llama-3.1-8B on the training set improved performance to 81%.",
+ "limitations": "The benchmark evaluates only four LLMs across two prompt settings. o1-preview was restricted to the ramification subset due to cost, limiting its evaluation breadth. The paper notes that integrating external tools (e.g., formal solvers) could improve performance but was excluded to assess intrinsic reasoning. Ramification-related free-form answers required human evaluation, which is acknowledged as not scalable. Fine-tuning experiments were limited to Llama-3.1-8B due to constrained computing resources.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

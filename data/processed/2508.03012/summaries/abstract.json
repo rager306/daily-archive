@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.03012",
+ "tldr": "ToolTrain is a two-stage tool-integrated training framework combining rejection-sampled SFT and tool-integrated reinforcement learning that significantly improves LLMs' ability to perform Repo Deep Search for issue localization in code repositories.",
+ "contributions": [
+  "Designed RepoSearcher, a lightweight issue localization agent with simple and easy-to-use retrieval tools",
+  "Proposed ToolTrain, a two-stage tool-integrated training approach combining rejection-sampled SFT and rule-based RL with nDCG@k reward",
+  "Constructed around 28k high-quality localization training examples from GitHub (issue, pull request) pairs",
+  "Demonstrated state-of-the-art performance among same-size LLMs, with the 32B model surpassing Claude-3.7 on function-level localization"
+ ],
+ "methods": "The authors designed RepoSearcher, an LLM-based agent equipped with six repository search tools (GetRepoStructure, GetImportOfFile, SearchClass, SearchFunction, SearchClassMethod, and Exit) for navigating code repos. They constructed ~28k training examples by pairing resolved GitHub issues with their corresponding pull requests from 600 high-quality repositories, excluding those in the SWE-Bench-Verified evaluation set. Training used a two-stage process: first, rejection-sampled supervised fine-tuning on high-quality tool-use trajectories that hit the ground-truth answer; second, tool-integrated reinforcement learning using nDCG@k as a rule-based reward signal to evaluate both recall and ranking quality of predicted functions.",
+ "results": "ToolTrain-trained models achieve state-of-the-art performance on issue localization among same-size LLMs. The 32B model surpasses Claude-3.7 on function-level localization. Improved localization performance translates to better end-to-end issue resolution performance. The analysis confirms that RL effectively enhances the LLM's tool-calling and reasoning abilities, enabling more efficient and precise repository exploration.",
+ "limitations": [
+  "The paper notes that excessive SFT fine-tuning alone risks compromising the model's generalization capabilities by causing the model to 'memorize' superficial patterns from a small number of successful examples",
+  "Ensuring the reliability of ground-truth answers for issue localization training data is identified as a difficult and underexplored problem",
+  "The training data was constructed from 600 GitHub repositories, which may limit generalization to other codebases"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

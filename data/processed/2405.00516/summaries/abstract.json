@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.00516",
+ "tldr": "The paper proposes combining supervised and reinforcement learning with hierarchical planning to improve LLM-based web navigation agents on MiniWoB++, revealing that prior models memorize target element distributions rather than truly understanding HTML structure.",
+ "contributions": [
+  "Insights into agent capabilities for navigating diverse web interfaces",
+  "Robust evaluation exposing memorization tendencies of prior models and methods to correct them",
+  "New baseline results on MiniWoB++ accounting for overfitting through environmental attacks",
+  "Hierarchical planning approach fine-tuned on sub-task planning datasets",
+  "Hybrid CC-NeT5 model combining T5 with CC-Net architecture trained via SL and RL phases"
+ ],
+ "methods": "The authors use the MiniWoB++ benchmark with 40 selected tasks from 13,000 human demonstrations. They fine-tune T5-based models (WebN-T5, T5-Hierarchy, CC-NeT5) using hierarchical planning, where high-level instructions are decomposed into sub-tasks and actionable plans. To address memorization, they randomize DOM reference numbers, forcing models to rely on element features. The hybrid CC-NeT5 model integrates the fine-tuned T5 with a multimodal architecture using ResNet-processed screenshots, transformer-embedded language inputs, and an LSTM block, trained via V-MPO reinforcement learning alternating with offline supervised learning phases.",
+ "results": "T5-large fine-tuned on hierarchical tasks achieved 43.58% average accuracy, outperforming T5-base at 39.78%. The hybrid CC-NeT5 model achieved 36.69% accuracy in the supervised learning phase, but dropped to 33.86% after the RL phase due to covariate shift. Ablation studies showed T5-large hierarchical models are nearly unaffected by removing action history (0.2% decrease vs. 14% for T5-base hierarchical and 6.4% reported in prior work). Randomizing references validated that prior models relied on memorizing target element distributions. Reference number randomization improved reproduction of WebN-T5 results.",
+ "limitations": "The combined T5-CC-Net model suffers from performance degradation after the RL phase due to covariate shift toward the T5 model. The multimodal model is heavily dependent on T5-large output, with complete failure when T5 output is removed. Visual input removal sometimes improves performance, indicating complex modality interactions. The RL training is sensitive to hyperparameter tuning. The approach struggles with complicated episodes or environmental changes when the agent rigidly follows its original plan. ROUGE loss metrics used for fine-tuning are designed for text summarization, not action sequence prediction, and do not account for temporal order and structural dependencies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

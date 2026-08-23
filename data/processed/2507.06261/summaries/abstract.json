@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.06261",
+ "tldr": "The Gemini 2.X model family introduces Gemini 2.5 Pro and 2.5 Flash as significant advances in reasoning, coding, multimodal understanding, and agentic capabilities over Gemini 1.5, while maintaining robust safety metrics.",
+ "contributions": [
+  "Introduction of Gemini 2.5 Pro and 2.5 Flash as sparse MoE transformers with native multimodal support, long context (1M+ tokens), and thinking/reasoning capabilities",
+  "Training infrastructure advances on TPUv5p including slice-granularity elasticity and split-phase SDC detection",
+  "Thinking model trained with RL to use additional inference-time compute, with controllable thinking budget",
+  "Agent capabilities demonstrated through Gemini Deep Research reaching SoTA on Humanity's Last Exam",
+  "Video processing improved to handle up to 3 hours of content within 1M token context"
+ ],
+ "methods": "The models are sparse mixture-of-experts (MoE) transformers trained on TPUv5p architecture using synchronous data-parallel training across multiple 8960-chip pods. Pre-training datasets include web documents, code, images, audio, and video with improved filtering and deduplication. Post-training involves SFT, reward modeling, and RL with verifiable and model-based generative rewards. Smaller Flash models use distillation with k-sparse approximation of teacher distributions. Thinking models are trained with RL to spend additional inference-time compute reasoning before responding.",
+ "results": "Gemini 2.5 Pro achieves LMArena Elo score over 120 points higher than Gemini 1.5 Pro; LiveCodeBench increased from 30.5% to 74.2%; Aider Polyglot from 16.9% to 82.2%; SWEBench-verified from 34.2% to 67.2%; LMArena WebDev Arena Elo increased by over 500 points. Gemini 2.5 Flash gained 111 LMArena Elo points. Gemini Deep Research achieved 26.9% on Humanity's Last Exam (32.4% with higher compute), up from 7.95% in December 2024. Models support 3-hour video processing and 1M+ token context.",
+ "limitations": "Gemini 2.5 Pro showed increased capabilities in some areas (CBRN, cybersecurity, ML R&D, deceptive alignment) but did not reach Critical Capability Levels in any area, indicating the model still has developmental gaps. Some features are noted as limited to Experimental or Preview status. Flash-Lite and 2.0 Flash are positioned as lower-tier models for specific latency/cost trade-offs rather than frontier performance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

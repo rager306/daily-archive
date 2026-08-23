@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.11974",
+ "tldr": "EMMA-X is a 7B-parameter embodied multimodal action model that enhances VLA models with grounded chain-of-thought reasoning and look-ahead spatial reasoning, achieving superior performance over baselines on real-world robotic tasks requiring spatial reasoning.",
+ "contributions": [
+  "A 7B-parameter embodied multimodal action model (EMMA-X) fine-tuned from OpenVLA with grounded chain-of-thought reasoning data.",
+  "A synthetically constructed hierarchical embodiment dataset from BridgeV2 containing 60,000 robot manipulation trajectories with 3D spatial movements, 2D gripper positions, and grounded reasoning.",
+  "A novel trajectory segmentation strategy leveraging gripper opening/closing states and robot arm motion trajectories.",
+  "Significant performance improvements over competitive baselines on real-world robot tasks, especially spatial reasoning tasks."
+ ],
+ "methods": "The authors construct a hierarchical embodiment dataset from BridgeV2 with 60,000 robot manipulation trajectories. They propose a trajectory segmentation strategy using HDBSCAN clustering based on a custom distance metric combining 3D position, orientation, temporal distance, and gripper state changes. For each segment, they generate look-ahead 2D gripper positions (using OWLv2 and SAM), 3D spatial movement plans, and grounded task reasoning using Gemini with visual inputs. The EMMA-X model is built by fine-tuning the 7B-parameter OpenVLA model on this dataset for 3 epochs, adding chain-of-thought training with current gripper position prompts before predicting the next 7D action policy.",
+ "results": "EMMA-X achieves superior performance over competitive baselines (OpenVLA, OpenVLA w/ FT, ECoT) on 12 real-world robot tasks tested on a 6-DoF WidowX robot arm. Performance improvements are particularly significant in tasks requiring spatial reasoning. Each task was evaluated over 10 trials using success and half-success metrics.",
+ "limitations": "The paper does not explicitly enumerate limitations, but the approach relies on Gemini for reasoning generation which may introduce its own constraints, and the trajectory segmentation depends on the custom distance metric hyperparameters (λ=1, β=0.03). The model's effectiveness is evaluated primarily on BridgeV2-derived tasks which may limit generalization scope.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

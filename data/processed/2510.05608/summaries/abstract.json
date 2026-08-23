@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.05608",
+ "tldr": "The paper proposes EAGLET, a plan-and-execute framework that trains a plug-and-play global planner via homologous consensus filtering and rule-based RL, enabling executor agents to achieve state-of-the-art performance on long-horizon tasks while reducing training costs by 8x without manual effort or extra training data.",
+ "contributions": [
+  "A plug-and-play plan-and-execute framework that decouples high-level global planning from local action execution to mitigate planning hallucinations",
+  "Homologous consensus filtering (HCF) strategy to automatically synthesize and filter high-quality plans without human effort, using both expert-level and novice-level executor agents for quality evaluation",
+  "Executor capability gain reward (ECGR) for rule-based RL training that assesses plan quality by measuring improvement across multiple homologous executor agents with different capability levels, including a decay factor to encourage shorter trajectories",
+  "Demonstrated state-of-the-art results on three long-horizon agent benchmarks (ScienceWorld, ALFWorld, WebShop) with 8x training cost reduction compared to RL-based baselines"
+ ],
+ "methods": "The authors first query advanced LLMs (GPT-5, DeepSeek-V3.1-Think) to synthesize expert-level global plans and chain-of-thought from task trajectories, then apply homologous consensus filtering where two homologous executor agents (expert-level and novice-level, sharing the same pretraining stage and architecture) evaluate each plan by comparing task completion rates with and without it. Low-quality plans are filtered out before supervised fine-tuning (SFT) serves as a cold start for the global planner. Subsequently, rule-based RL using GRPO is applied with a composite reward combining executor capability gain reward (ECGR) — measuring whether plans help both expert and novice executors achieve higher completion rates within fewer interactions using a gamma-decay factor — and a format reward ensuring adherence to a predefined output structure.",
+ "results": "Executor agents equipped with the trained planner outperform existing methods on three long-horizon agent tasks (ScienceWorld, ALFWorld, WebShop), achieving new state-of-the-art performance. EAGLET reduces training time/costs by 8x compared to RL-based baselines. The approach generalizes across different executor backbones (Llama-3.1 vs Qwen-2.5), parameter sizes (8B vs 70B), and prompting strategies (ReAct, Reflexion). Generated plans outperform GPT-4.1-generated plans across correctness, followability, and standardization dimensions. Insertion of plans into the task instruction yields the best performance among tested positions.",
+ "limitations": "Plan quality during synthesis depends on the capability of the advanced LLM used (e.g., GPT-5), which may propagate biases or limitations. The approach requires access to homologous executor models sharing the same pretraining stage and architecture, limiting flexibility in executor selection. The SFT-initialized planner still struggles to generalize to harder samples without the subsequent RL stage, indicating data distribution limitations. The reward function relies on task completion rates which may not capture all aspects of plan quality.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

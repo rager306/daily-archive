@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.13378",
+ "tldr": "DrugAgent is an LLM-based multi-agent system that integrates machine learning predictions, knowledge graph evidence, and retrieval-augmented generation literature evidence into structured representations to assess drug-target interactions with explicit modeling of agreement, conflict, and uncertainty.",
+ "contributions": [
+  "Introduction of DrugAgent, a multi-agent DTI evidence integration system that jointly combines ML, KG, and RAG evidence into a shared structured representation",
+  "A reasoning module that summarizes agreement and conflict across evidence sources before rule-guided final decision-making",
+  "Evaluation on two benchmarks: a kinase inhibition dataset (900 pairs across 178 kinases and 42 inhibitors) and a Tox21 AR antagonist benchmark (500 pairs)",
+  "Strategies for modeling agreement, conflict, and uncertainty in biomedical evidence integration",
+  "Open-source code release at https://github.com/sciluna/DrugAgent"
+ ],
+ "methods": "DrugAgent uses specialized modules to generate source-specific evidence from ML (DeepPurpose-based), knowledge graph (path-based KG with TransE, ComplEx, RotatE), and RAG-based literature retrieval (separated into pair-level, drug-level, and target-level). Agent outputs are converted into a shared structured representation, then a reasoning module summarizes agreement and conflict before applying rule-guided final decision-making. The system was evaluated using LLM-as-a-Judge diagnostics for faithfulness and biological plausibility, stability analysis across repeated runs (N=100 pairs, k=3), and ablation studies comparing full DrugAgent against ML+KG, ML+RAG, and KG+RAG configurations.",
+ "results": "DrugAgent outputs were judged faithful in 889/900 cases (98.8%). Overall, 76.3% of outputs were both not contradicted and plausible, with 98.9% considered at least plausible. Plausibility by ground-truth class: 79% of Weak, 81% of Moderate, and 77% of Strong activity cases received scores of 3-4 out of 5; Strong cases received more score-5 judgments (15%) than Weak (1%) or Moderate (3%). Label stability showed 98% agreement across runs (mean 0.983, median 1.000). Reasoning stability had mean cosine similarity of 0.881. Under full conflict among evidence sources, DrugAgent assigned 68% of cases to Moderate. Retrieval-augmented literature provided the greatest benefit when direct drug-target evidence was available. Ablation showed ML mostly helps suppress biologically implausible conclusions, while removing ML increased the contradicted-and-not-plausible fraction to 8.7%.",
+ "limitations": "Plausibility scores were only weakly aligned with actual ground-truth activity labels and not directly predictive of correctness. Less constrained ablated explanations (e.g., ML+KG) could achieve higher plausibility scores despite reduced evidential grounding, suggesting LLMaJ plausibility evaluation has limitations. Literature evidence availability was uneven—pairs with no retrieved papers received the lowest plausibility scores. The system is not designed as an optimized standalone DTI predictor. Results depend heavily on evidence availability from retrieved literature.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.13050",
+ "tldr": "FlowMind is a framework that automatically generates workflows using LLMs by first providing a structured 'lecture' on context and APIs, grounding LLM reasoning to reduce hallucinations and protect data privacy.",
+ "contributions": [
+  "Proposal of FlowMind, a novel automatic workflow generation system using LLMs with a generic lecture prompt recipe",
+  "Integration of a user feedback mechanism allowing inspection and refinement of auto-generated workflows",
+  "Introduction of NCEN-QA, a new benchmark dataset of 600 question-answer pairs in 3 difficulty levels for evaluating workflow generation in finance"
+ ],
+ "methods": "FlowMind operates in two stages: first, it lectures the LLM on task context, available APIs (with function names, inputs, and outputs), and the need to write workflow code. Then the LLM generates workflow code using those APIs to answer user queries. An optional feedback loop provides high-level plain-language descriptions of generated workflows for user review and refinement. The system was evaluated on NCEN-QA, a dataset of 600 QA pairs (200 easy, 200 intermediate, 200 hard) derived from N-CEN reports covering funds. Six domain-specific APIs were built for retrieval, partition, and extraction tasks. GPT-3.5-turbo (temperature=0) was used as the LLM.",
+ "results": "FlowMind significantly outperformed the GPT-Context-Retrieval baseline even without user feedback. Ablation studies confirmed the importance of each component in the lecture prompt recipe (context, APIs, code). Incorporating user feedback further boosted FlowMind's performance.",
+ "limitations": "LLMs have inherent limitations including hallucination, token restrictions, and lack of direct interaction with proprietary data/code. The system was evaluated only on GPT-3.5-turbo with temperature 0, potentially limiting generalizability. The NCEN-QA dataset is specific to U.S. SEC N-CEN reports, constraining domain scope.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

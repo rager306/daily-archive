@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.11067",
+ "tldr": "IntellAgent is a scalable, open-source multi-agent framework that automatically generates diverse synthetic benchmarks to comprehensively evaluate conversational AI agents using policy-driven graph modeling and interactive simulations.",
+ "contributions": [
+  "A scalable multi-agent evaluation framework that automatically generates diverse, realistic scenarios tailored to conversational AI challenges",
+  "Fine-grained diagnostics using a policies graph where nodes represent policies and edges denote likelihood of co-occurrence",
+  "An open-source, extensible framework supporting seamless integration of new domains, policies, APIs, and database schemas"
+ ],
+ "methods": "IntellAgent constructs a policy graph from system prompts and documents, where nodes represent individual policies (weighted by complexity) and edges represent co-occurrence likelihood. It then samples policy combinations using a weighted random walk algorithm with uniformly distributed complexity levels (2-11). An event generator agent creates valid events with symbolic database representations and initial database states. Finally, it simulates multi-turn dialogues between a user agent and the target chatbot, followed by a critique component that assesses policy adherence and generates performance reports.",
+ "results": "Evaluated 6 proprietary LLMs (GPT-4o, GPT-4o-mini, Gemini-1.5-pro, Gemini-1.5-flash, Claude-3.5-sonnet, Claude-3.5-haiku) across airline and retail environments with 1,000 synthetic events each. Strong correlation between IntellAgent and τ-bench: Pearson coefficient of 0.98 for Airline and 0.92 for Retail. Model performance decreases with increasing complexity levels, though the rate of decline varies significantly across models. Policy-specific evaluation revealed significant variations in model capabilities across different policy categories.",
+ "limitations": "Evaluated only on two domains (airline and retail) from τ-bench; scalability and generalizability to other domains remains to be demonstrated. The framework relies entirely on LLM-generated synthetic data, which may not fully capture all real-world edge cases. The original τ-bench it was compared against has limited manual samples (50 airline, 115 retail).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

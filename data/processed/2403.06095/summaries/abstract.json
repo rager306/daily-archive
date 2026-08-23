@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.06095",
+ "tldr": "RepoHYPER is a repository-level code completion framework that uses a Repo-level Semantic Graph (RSG) and an Expand-and-Refine retrieval method (Search-then-Expand plus Link Prediction re-ranking) to outperform existing similarity-based approaches.",
+ "contributions": [
+  "Introduction of REPOHYPER, a novel framework with three modules for repository-level end-to-end code completion",
+  "Development of the Repo-level Semantic Graph (RSG), a graph representation capturing global repository context including non-similar but semantically relevant contexts",
+  "Implementation of an Expand and Refine retrieval method via Search-then-Expand strategies and a Link Prediction algorithm on the RSG",
+  "Extensive evaluation on RepoBench showing significant improvements over state-of-the-art methods, with ablation studies confirming each component's role"
+ ],
+ "methods": "The authors introduce a Repo-level Semantic Graph (RSG) that represents a repository as nodes (functions/methods, classes, and script nodes) interconnected by five relation types: Import, Invoke, Ownership, Encapsulate, and Class Hierarchy. Retrieval proceeds in two stages: (1) Search-then-Expand, which performs kNN search on encoded queries to find anchor nodes, then expands using either Exhausted Search (BFS with depth and node limits) or Pattern Search (filtering BFS by frequent path types discovered from training data); (2) Re-ranking as Link Prediction, where the query is embedded as a node in the RSG and a GraphSAGE-based message passing network scores connections between the query and expanded nodes, with top-N2 contexts selected for code completion by an LLM.",
+ "results": "On RepoBench, REPOHYPER outperforms similarity-based approaches by an average of 49% in Context Retrieval accuracy (using the same encoders: UniXCoder and CodeT5+). For End-to-End Code Completion, it surpasses RepoCoder and other RepoBench baselines with an improvement of +4.1 in Exact Match (EM) and +5.6 in CodeBLEU scores. The method was evaluated using GPT-3.5-Turbo and DeepSeek-Coder-33B as the LLM backends.",
+ "limitations": "The implementation is currently designed for Python and would require adaptation (different program elements and relations) for other languages like Java or C++. The Search-then-Expand strategy can still retrieve many irrelevant contexts, requiring the link prediction re-ranking step to filter noise. Setting BFS depth D >= 3 may cover nearly 50% of the graph, necessitating additional constraints on the number of expanded nodes per BFS.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

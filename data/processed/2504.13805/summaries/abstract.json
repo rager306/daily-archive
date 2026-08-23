@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.13805",
+ "tldr": "LearnAct is a few-shot demonstration-based learning framework for mobile GUI agents that uses a multi-agent system to extract, retrieve, and apply knowledge from human demonstrations, significantly improving performance on long-tail tasks. LearnGUI, the accompanying dataset, is the first benchmark designed for studying demonstration-based learning in mobile GUI agents with 2,252 offline and 101 online tasks.",
+ "contributions": [
+  "LearnGUI: the first dataset designed for studying demonstration-based learning in mobile GUI agents, comprising 2,252 offline and 101 online tasks with high-quality human demonstrations",
+  "LearnAct: a multi-agent framework with three specialized components (DemoParser, KnowSeeker, ActExecutor) that systematically extracts, retrieves, and leverages knowledge from human demonstrations",
+  "Unprecedented performance gains: a single demonstration improved Gemini-1.5-Pro's accuracy by 198.9% in offline tests and UI-TARS-7B-SFT's online task success rate from 18.1% to 32.8%"
+ ],
+ "methods": "The authors built LearnGUI by restructuring the AMEX dataset (2,946 tasks) and AndroidWorld environment through three modifications: action space standardization (removing inconsistent TASK_IMPOSSIBLE actions, enhancing TASK_COMPLETE for information retrieval), k-shot task combinations (selecting k=1,2,3 most similar tasks within the same application as support demonstrations using instruction, UI, and action similarity metrics), and collection of 101 human demonstration trajectories for online evaluation. They then designed LearnAct, a multi-agent framework where DemoParser extracts structured knowledge from raw demonstration trajectories, KnowSeeker retrieves relevant demonstration knowledge from the knowledge base using similarity search, and ActExecutor combines user instructions, real-time GUI observations, and retrieved knowledge to execute tasks.",
+ "results": "A single demonstration dramatically improved model performance: Gemini-1.5-Pro accuracy increased from 19.3% to 51.7% (198.9% relative improvement); CityMapper accuracy improved from 14.1% to 69.4%; To-Do apps from 17.4% to 69.2%. In online evaluations, UI-TARS-7B-SFT task success rate improved from 18.1% to 32.8% (+14.7%). The LearnGUI dataset covers 73 applications with an average of 13.2 steps per task, with similarity thresholds of 0.9447 for UI similarity and 0.9015 for action similarity used to classify tasks into high/low similarity categories.",
+ "limitations": [
+  "The approach focuses on within-application task learning rather than cross-application knowledge transfer, which the authors note remains an interesting research direction",
+  "Pre-training or fine-tuning datasets cannot feasibly cover the immense variety of 1.68 million applications on Google Play alone, representing the broader challenge the method addresses but does not fully solve",
+  "The original AMEX dataset had issues including inconsistent TASK_IMPOSSIBLE labeling that required removal, suggesting quality challenges in existing data sources"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

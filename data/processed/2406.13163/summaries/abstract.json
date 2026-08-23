@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.13163",
+ "tldr": "LLMatDesign is a novel language-based framework that uses LLM agents with self-reflection and computational tools to autonomously discover new materials with user-defined target properties in a zero-shot, small-data regime.",
+ "contributions": [
+  "Introduction of LLMatDesign, an interpretable, LLM-powered autonomous materials design framework that eliminates the need for large training datasets",
+  "Demonstration of zero-shot adaptability to new tasks and target properties via prompt modification",
+  "Closed-loop design process with self-reflection on past modifications incorporated into iterative decision-making",
+  "Systematic evaluation showing effective materials design for band gap and formation energy targets with small data"
+ ],
+ "methods": "LLMatDesign uses LLM agents (GPT-4o and Gemini-1.0-pro) to propose one of four modifications—addition, removal, substitution, or exchange—to a starting material's composition and structure. Each proposed modification includes a hypothesis explaining the reasoning. The framework then applies the modification, relaxes the structure using a machine learning force field (MLFF), and predicts properties using a machine learning property predictor (MLPP). If the predicted property does not meet the target within tolerance, the LLM performs self-reflection on the outcome, and a modification history message is fed back into subsequent iterations. Experiments used 10 starting materials from the Materials Project database, with up to 50 modifications per run, repeated 30 times, targeting a band gap of 1.4 eV (±10% tolerance) and minimum formation energy per atom.",
+ "results": "For band gap design, GPT-4o with history required an average of 10.8 modifications to reach 1.4 eV (target), compared to 13.7 for Gemini-1.0-pro with history and 27.4 for the random baseline. GPT-4o with history achieved an average final band gap of 1.39 eV. For formation energy, GPT-4o variants achieved the lowest average formation energies at -1.97 eV/atom (with history) and -1.99 eV/atom (historyless), with GPT-4o with history reaching the lowest minimum of -2.72 eV/atom. Both LLMs consistently outperformed the random baseline across all tasks. History inclusion improved convergence speed for both models.",
+ "limitations": [
+  "Neither GPT-4o nor Gemini-1.0-pro could improve upon the formation energy of starting materials, likely because these materials were already at or near their lowest energy states",
+  "Gemini-1.0-pro occasionally suggested chemically infeasible modifications involving noble gases",
+  "Historyless variants exhibited oscillation between the same modifications and lack of diversity in generated materials",
+  "Self-reflection was only implemented for GPT-4o, not Gemini-1.0-pro",
+  "Property validation used surrogate ML models rather than DFT calculations"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

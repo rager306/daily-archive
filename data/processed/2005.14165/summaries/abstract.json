@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2005.14165",
+ "tldr": "Scaling up language models dramatically improves task-agnostic, few-shot learning: GPT-3 (175B parameters) achieves strong performance on many NLP datasets without any fine-tuning or gradient updates, sometimes matching or surpassing state-of-the-art fine-tuned approaches.",
+ "contributions": [
+  "Training GPT-3, an autoregressive language model with 175B parameters (10x larger than any previous non-sparse language model)",
+  "Systematic evaluation of zero-shot, one-shot, and few-shot (in-context) learning across 42+ NLP benchmarks",
+  "Scaling study across 8 model sizes from 125M to 175B parameters",
+  "Systematic analysis of data contamination from large web corpora"
+ ],
+ "methods": "GPT-3 was trained as an autoregressive language model with 175B parameters (96 layers, 12288 model dimension, alternating dense and sparse attention) on approximately 400 billion byte-pair-encoded tokens from filtered Common Crawl plus high-quality corpora (WebText, Books1, Books2, Wikipedia). Evaluation used no gradient updates or fine-tuning: tasks were specified purely via text prompts in three settings—zero-shot (instruction only), one-shot (one demonstration plus instruction), and few-shot (10–100 demonstrations within a 2048-token context window). Performance was tested on over two dozen NLP datasets including translation, question answering, cloze tasks, arithmetic, and on-the-fly reasoning tasks.",
+ "results": "GPT-3 achieves 85.0 F1 on CoQA (few-shot), 84.0 F1 (one-shot), and 81.5 F1 (zero-shot). It reaches 71.2% accuracy on TriviaQA (few-shot, state-of-the-art in closed-book setting), 68.0% (one-shot), and 64.3% (zero-shot). Performance improves steadily and smoothly with model size across all three settings, with the gap between zero-, one-, and few-shot growing for larger models. GPT-3's few-shot news article generation was difficult for human evaluators to distinguish from human-written articles. Some datasets showed struggles, including ANLI (natural language inference), RACE, and QuAC (reading comprehension). Data contamination had minimal effect on most datasets but was identified on a few.",
+ "limitations": "GPT-3 struggles on certain tasks including natural language inference (ANLI) and some reading comprehension datasets (RACE, QuAC). Data contamination from training on large web corpora can inflate results on some datasets. Zero-shot settings can be ambiguously specified, making them 'unfairly hard.' The model may exploit spurious correlations present broadly in pre-training data. Fine-tuning evaluation was left for future work.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

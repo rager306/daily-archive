@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.17399",
+ "tldr": "MultiChallenge is a realistic multi-turn conversation benchmark with four challenge categories that even frontier LLMs struggle with, achieving less than 50% accuracy, despite near-perfect scores on existing benchmarks.",
+ "contributions": [
+  "MultiChallenge benchmark with four challenge categories: instruction retention, inference memory, reliable versioned editing, and self-coherence",
+  "LLM-as-a-judge system with instance-level rubrics achieving 93% alignment with human raters",
+  "Multi-agent synthetic data generation system (MMSE) with human review and editing pipeline",
+  "Evaluation of 6 frontier LLMs showing all score below 50%, with Claude 3.5 Sonnet achieving the best at 41.4%"
+ ],
+ "methods": "The authors built MultiChallenge using a multi-agent synthetic data generation system (MMSE) with three agent types: Planner Agent, User Agent, and Responder Agent. MMSE generates conversation backbones and attempts to elicit model failures based on evaluation configs for each challenge category. Human annotators then review and edit synthetic data across three quality criteria: alignment with challenge definitions, naturalness/realism, and whether at least 3 of 6 frontier models fail. For evaluation, they developed an LLM-as-a-judge approach where human raters provide binary rubric questions per instance (yes/no), enabling automatic evaluation with 93% alignment to experienced human raters.",
+ "results": "All frontier LLMs scored below 50% on MultiChallenge. Claude 3.5 Sonnet (June 2024) achieved the highest performance at 41.4% average accuracy, followed by o1-preview at 37.23%. Instruction retention was the most difficult category (GPT-4o scored only 14.29%, Claude 3.5 Sonnet scored 58.57%), while self-coherence was comparatively easier. The automatic evaluation method achieved 93% alignment with human raters, compared to only 36% alignment when directly prompting LLMs as judges with raw conversation context.",
+ "limitations": "The benchmark requires human raters to create instance-level rubric questions for automatic evaluation, introducing some human dependency. The conversation lengths in MultiChallenge are relatively small compared to current models' max token lengths, suggesting the difficulty comes from inherent reasoning rather than length alone, but this also means the benchmark may not fully test very long-context scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

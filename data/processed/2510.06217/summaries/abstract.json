@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.06217",
+ "tldr": "The paper proposes TATTOO, a table-grounded process reward model that provides reliable step-level supervision for large reasoning models on tabular reasoning by integrating tool-based verification, overcoming key limitations of existing PRMs that fail at table retrieval and schema interaction.",
+ "contributions": [
+  "Identified critical limitations of existing PRMs in tabular reasoning: failure at table retrieval (insensitivity to retrieval correctness) and schema interaction (missing attention collapse due to locality bias)",
+  "Proposed TATTOO, a novel table-grounded PRM framework with tool integration that decomposes rewards into table-grounded and inner-reasoning components",
+  "Designed a scalable data curation pipeline producing over 60k high-quality step-level annotations with tool-augmented verification rationales",
+  "Introduced a dual-stage training paradigm: SFT to capture tool-use patterns followed by RL with tool-grounded reward shaping",
+  "Demonstrated 30.9% improvement on 5 tabular reasoning benchmarks with only 8B parameters, surpassing baselines like Qwen-2.5-Math-PRM-72B with up to 9x parameter efficiency"
+ ],
+ "methods": "The authors first conducted an error analysis on 500 erroneous Best-of-N responses, classifying errors into tabular error types and reasoning-step categories. They identified that existing PRMs fail at Table Retrieval steps (cannot verify if the correct sub-table was extracted) and Schema Interaction steps (miss long-range dependencies due to locality bias in attention). TATTOO addresses this through a data curation pipeline with three stages: (1) collecting reasoning trajectories from expert LRMs (DeepSeek-R1, Claude-Opus-4.1) on benchmarks like TableInstruct, HybridQA, ToTTo, and WikiTQ; (2) synthesizing step-level verification rationales with reward assignment using LLM-as-a-judge and table prefix augmentation; (3) augmenting with tool invocations (computation tools like Python/SQL, lookup tools like Polars). Training uses a dual-stage paradigm: SFT for tool-integrated verification patterns, then RL with a modified GRPO using a reward shaping function combining label-matching, confidence calibration, and tool-grounding signals.",
+ "results": "Incorporating 8B-parameter TATTOO improves downstream policy LRMs by 30.9% across 5 tabular reasoning benchmarks (numerical reasoning, fact-checking, data analysis, table-based QA). TATTOO surpasses Qwen-2.5-Math-PRM-72B and GenPRM-32B with up to 9x parameter efficiency. The dual-stage training paradigm yields a 10.2% improvement over standard PRM training. TATTOO demonstrates strong generalizability across diverse TTS strategies including Beam Search and DVTS. When adding table prefixes to existing PRMs, performance improved but was limited by inability to automatically identify schema interaction steps and verify table correctness.",
+ "limitations": "Existing PRMs fail at table retrieval because they cannot distinguish whether retrieved table content corresponds to the query (nearly identical reward distributions for real vs. random sub-tables). PRMs miss schema interaction failures due to inability to capture long-range dependencies between distant steps caused by auto-regressive locality bias in attention. Current PRMs also introduce supervision errors from inaccurate table lookups or failed operations. The proposed table-prefix solution requires PRMs to automatically identify schema interaction steps and have correct table prefixes, which remains challenging without proper supervision.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.17651",
+ "tldr": "SELF-REFINE is an iterative self-refinement algorithm where a single LLM generates an initial output, provides feedback on it, and refines itself using that feedback, improving outputs across diverse tasks without additional training.",
+ "contributions": [
+  "Introducing SELF-REFINE, an iterative refinement approach that uses a single LLM as generator, refiner, and feedback provider without requiring supervised training data or reinforcement learning",
+  "Demonstrating consistent improvements across 7 diverse tasks including dialogue generation, code optimization, math reasoning, and constrained generation",
+  "Showing that even state-of-the-art LLMs like GPT-4 can be further improved at test-time using this simple standalone approach"
+ ],
+ "methods": "SELF-REFINE starts by generating an initial output using an LLM M given input x and a few-shot prompt p_gen. The same model M then provides feedback f_b on its own output using a feedback prompt p_fb, generating specific and actionable feedback. The model then refines the output using the feedback with a refinement prompt p_refine. This feedback-REFINE cycle iterates up to 4 times until a stopping condition is met, with previous outputs and feedback appended to maintain history.",
+ "results": "SELF-REFINE consistently improves over base models across all tasks. GPT-4+SELF-REFINE achieved absolute improvements of 21.6-49.2% in preference-based tasks: Sentiment Reversal (30.4 to 36.2), Dialogue Response Generation (25.4 to 74.6, +49.2), Code Optimization (27.3 to 36.0, +8.7), Acronym Generation (30.4 to 56.0, +25.6), and Constrained Generation (15.0 to 45.0, +30.0). Average improvement across all tasks was ~20% absolute. Improvement was consistent across GPT-3.5, ChatGPT, and GPT-4. Specific actionable feedback was crucial: removing it caused significant performance drops, and generic feedback performed worse than specific feedback.",
+ "limitations": [
+  "Math Reasoning showed only modest gains because LLMs struggle to accurately identify nuanced errors in their own reasoning chains; 94% of ChatGPT feedback was 'everything looks good'",
+  "Weaker models like Vicuna-13B struggled significantly with the refinement process, failing to generate feedback in the required format and often repeating outputs or hallucinating instead of refining",
+  "Diminishing returns occur with more iterations, and in multi-aspect tasks, quality can vary during iteration with improvement in one aspect but decline in another"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

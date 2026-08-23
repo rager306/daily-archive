@@ -3,7 +3,7 @@ paper_id: 2606.11190v1
 source:
   code: arxiv
   identity_ref: null
-lifecycle: extracted
+lifecycle: summarized
 lifecycle_events:
 - stage: parsed
   recorded_at: '2026-08-23T05:49:40.893803+00:00'
@@ -17,6 +17,10 @@ lifecycle_events:
   recorded_at: '2026-08-23T05:49:40.897404+00:00'
   actor: rule-based-extractor
   evidence_sha256: 0acd0b339a012b8096f345a2e56c19d9dd583b93168cbaa35b8bb2de3abdd65b
+- stage: summarized
+  recorded_at: '2026-08-23T12:01:50Z'
+  actor: agnes-ai/agnes-2.5-flash
+  evidence_sha256: 91f103ff8bb6cd9cd5a2f31b4b9ddc91762a791e286dbe53240828dcec0836bc
 artifacts:
   parsed:
     file: parsed/article.json
@@ -96,7 +100,16 @@ artifacts:
     derived_from:
     - parsed
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from:
+    - parsed
+    - enriched
+    sha256: 91f103ff8bb6cd9cd5a2f31b4b9ddc91762a791e286dbe53240828dcec0836bc
+    built_at: '2026-08-23T12:01:50Z'
+    actor: agnes-ai/agnes-2.5-flash
+    stats:
+      tldr_chars: 329
+      contributions: 4
   quality_signals:
     file: quality_signals.json
     derived_from:

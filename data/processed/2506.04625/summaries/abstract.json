@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.04625",
+ "tldr": "Tool-MVR is a tool-augmented LLM that achieves comprehensive System 2 reasoning by combining Multi-Agent Meta-Verification (MAMV) to build a high-quality dataset (ToolBench-V) and Exploration-based Reflection Learning (EXPLORE) to enhance error correction capabilities, outperforming both ToolLLM and GPT-4 on StableToolBench while achieving a 58.9% error correction rate.",
+ "contributions": [
+  "Propose Tool-MVR, achieving SOTA performance on StableToolBench, surpassing ToolLLM by 23.9% and GPT-4 by 15.3% while reducing API calls by 31.4%",
+  "Develop MAMV for systematic instruction data verification, improving query validity from 52.7% to 98.8% and trajectory accuracy from 25.6% to 81.3%",
+  "Introduce EXPLORE learning algorithm enabling 58.9% error correction rate on RefineToolBench vs ToolLLM's 9.1%",
+  "Introduce RefineToolBench, the first benchmark designed to measure tool reflection capabilities"
+ ],
+ "methods": "The authors first propose Multi-Agent Meta-Verification (MAMV), a pipeline using multiple GPT-4-powered agents to validate APIs (via APIOptAgent with Validator, Simulator, and DocRefiner), queries (via QueryVerifyAgent with Feasibility Checker and Quality Assessor scoring 1-10), and API-call trajectories (via APICallAgent with step-wise Format/Semantic/Execution Checkers) to produce ToolBench-V with 11,765 instances. Second, they develop Exploration-based Reflection Learning (EXPLORE), which actively samples step-level error actions online, categorizes errors into API Calling and API Planning types, and leverages tool feedback with GPT-4 to construct reflection data forming a dynamic Error → Reflection → Correction paradigm, producing ToolBench-R. Finally, they fine-tune open-source LLMs (e.g., Qwen-2.5-7B) on both datasets to obtain Tool-MVR.",
+ "results": "On StableToolBench, Tool-MVR surpasses ToolLLM by 23.9% and GPT-4 by 15.3% while reducing API calls by 31.4%. MAMV improved query validity from 52.7% to 98.8% and trajectory accuracy from 25.6% to 81.3%. On RefineToolBench, Tool-MVR achieved a 58.9% error correction rate versus ToolLLM's 9.1%. ToolLLM abandons over 25% of tasks when encountering errors. ToolBench-V contains 11,765 multi-turn tool interaction instances derived from filtering 62,147 initial queries down to 23,903 high-quality queries, with 6,770 functional APIs validated and 6,334 API documents enhanced.",
+ "limitations": "The paper notes that prior approaches discard failed cases rather than utilizing them as learning signals, and existing methods like DFSDT and AnyTool handle errors through simple backtracking or complete restarts, leading to inefficient reasoning. ToolLLM abandons over 25% of tasks due to inability to correct errors from multi-turn interactions, achieving only 9.1% error correction on RefineToolBench.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

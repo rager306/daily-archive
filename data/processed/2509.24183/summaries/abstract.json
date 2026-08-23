@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.24183",
+ "tldr": "RAG-GUI is a lightweight, model-agnostic VLM adapter that retrieves and summarizes web tutorials at inference time to guide GUI agents, trained via supervised finetuning and self-guided rejection sampling finetuning, achieving consistent gains of 2.6% to 13.3% across multiple benchmarks.",
+ "contributions": [
+  "Proposing RAG-GUI, a plug-and-play retrieval-augmented framework that generates task-aware guidance from web tutorials at inference time without modifying the agent backbone",
+  "Introducing a two-stage training pipeline combining SFT warmup with an expert VLM (GPT-4.1-mini) and self-guided rejection sampling finetuning (RSF) that filters guidance based on whether it leads to correct actions",
+  "Curating a dataset of approximately 2.6M high-quality GUI tutorials from MINT, OmniCorpus, and WikiHow via multi-stage filtering (FastText, deduplication, LLM labeling)",
+  "Demonstrating consistent improvements across three benchmarks (AndroidWorld, AndroidControl, Multimodal-Mind2Web) with both 7B and 72B backbones"
+ ],
+ "methods": "The authors collected approximately 2.6M GUI tutorials from MINT, OmniCorpus, and WikiHow using FastText filtering, content-based deduplication, and LLM labeling with Qwen2.5-7b-it. At inference, a lightweight guideline generation model f_θ (built on Qwen-2.5-VL-7B) retrieves up to k=3 tutorials using E5 embeddings and generates both a binary relevance label and a concise summary for each. Training proceeds in two stages: first, SFT warmup using synthetic guidance from GPT-4.1-mini as a teacher; second, self-guided RSF that samples candidate guidances, retains only those leading to the ground-truth action, and fine-tunes on the filtered set. The agent backbone remains frozen throughout.",
+ "results": "RAG-GUI achieves 13.3% absolute gain on AndroidWorld (7B backbone) and 10.7% (72B backbone) over direct inference. On offline tasks, it gains 4.4% on Multimodal-Mind2Web and 6.3% on AndroidControl. It consistently outperforms naive RAG pipelines and AgentTrek (trained on synthetic tutorial trajectories). Retrieving k=3 tutorials yields optimal performance. RAG-GUI also outperforms frozen Qwen2.5-VL-7B/72B used directly as textual guidance generators for both backbone sizes.",
+ "limitations": "Experiments are limited exclusively to Qwen-VL-series models, constraining generalizability to other architectures such as LLaVA. The study evaluates only at inference time without finetuning the agent backbone, potentially limiting achievable gains. Incorporating guideline generation introduces additional inference latency, though the authors note the improvements justify the overhead.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

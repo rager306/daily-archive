@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.06471",
+ "tldr": "GLM-4.5 is an open-source Mixture-of-Experts LLM with hybrid reasoning modes that achieves strong performance across agentic, reasoning, and coding benchmarks while being more parameter-efficient than several comparable proprietary and open-source models.",
+ "contributions": [
+  "Release of GLM-4.5 (355B total parameters, 32B activated) and GLM-4.5-Air (106B total parameters, 12B activated) with hybrid thinking/direct-response reasoning modes.",
+  "Introduction of a multi-stage training pipeline combining pre-training on 23T tokens, mid-training for reasoning and agentic capabilities, and post-training with expert model iteration and reinforcement learning.",
+  "Open-sourcing of the models, code, and an evaluation toolkit to promote reproducibility and advance research in reasoning and agentic AI."
+ ],
+ "methods": "The model employs a MoE architecture with loss-free balance routing and sigmoid gates, using a deeper configuration (more layers, smaller width) to enhance reasoning capacity. Pre-training curates data from webpages, code repositories, math/science sources, and multilingual content with quality-based up-sampling and deduplication. Mid-training extends sequence length from 4K to 128K across stages focused on repo-level code, synthetic reasoning data, and long-context/agent trajectories. Post-training splits into expert model iteration (specialized reasoning, agent, and general-chat models) and unified training via self-distillation and reinforcement learning (GRPO-based algorithm) with difficulty-based curriculum learning.",
+ "results": "GLM-4.5 scores 70.1% on TAU-Bench (agentic), 91.0% on AIME 24 (reasoning), and 64.2% on SWE-bench Verified (coding). It ranks 3rd overall and 2nd on agentic benchmarks among evaluated models, outperforming or matching proprietary systems like Claude Sonnet 4 and Gemini-2.5-pro while using fewer parameters. GLM-4.5-Air matches or exceeds Qwen3-235B-A22B and MiniMax-M1 at the 100B scale.",
+ "limitations": "No explicit limitations are stated in the provided text. An evident limitation is the model's size (355B total parameters), though it is more parameter-efficient than competitors such as DeepSeek-R1 (671B) and Kimi K2 (1043B). The hybrid reasoning mode requires careful balancing between thinking and direct-response modes for optimal task performance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

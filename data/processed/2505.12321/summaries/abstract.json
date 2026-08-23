@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.12321",
+ "tldr": "BeliefNest is an open-source Minecraft-based simulator that dynamically constructs hierarchical belief simulators, enabling embodied agents to explicitly represent nested belief states and infer others' beliefs in Theory of Mind tasks.",
+ "contributions": [
+  "Introduction of BeliefNest, an open-source simulator for collaborative embodied agents with Theory of Mind capabilities",
+  "Explicit representation of nested belief states using hierarchically structured simulators in Minecraft",
+  "Prompt generation mechanism based on each belief state to facilitate LLM-based agent control design and evaluation",
+  "Demonstration of accurate first-order and second-order false-belief reasoning in controlled experiments"
+ ],
+ "methods": "BeliefNest implements a real-world simulator plus multiple belief simulators that hierarchically represent nested belief structures within isolated Minecraft regions. Each simulator operates in either control mode (where agents generate virtual timelines) or follow mode (where belief updates propagate from shallower simulators), with asynchronous belief updating via observation, belief update, and propagation steps. The system provides action primitives for movement, block breaking, crafting, and item management, and includes a Jinja2-based prompt generation template that inserts simulator state representations for LLM-based agent control. Experiments were conducted using the Sally-Anne first-order false-belief task under three spatial visibility conditions and the Ice Cream Van second-order false-belief task, with GPT-4o generating agent actions from belief-informed prompts.",
+ "results": "In the Sally-Anne task, Condition 1 (Sally did not observe the move) correctly inferred Sally believed the diamond remained in the left box and predicted she would open the left box. Condition 2 (observer knew Sally observed the move) inferred Sally believed the diamond was in the right box and predicted opening the right box. Condition 3 (observer could not confirm Sally's observation) inferred Sally believed the diamond was in the left box. In the Ice Cream Van task, the observer correctly inferred John's second-order belief that Mary believed the ice cream seller was at location B, leading to the correct prediction that Mary would go to location B.",
+ "limitations": "The paper focuses exclusively on validating core functionality through false-belief scenarios; broader applicability to joint action research remains untested. The system's performance depends on LLM-based action generation (GPT-4o was used), and the complexity of belief nesting and prompt construction is left to user design without standardized evaluation protocols.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

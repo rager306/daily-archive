@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.19470",
+ "tldr": "ReSearch is a novel framework that trains LLMs to reason with external search via reinforcement learning (GRPO) without any supervised reasoning data, treating search operations as integral parts of the reasoning chain.",
+ "contributions": [
+  "Proposes ReSearch, a framework using reinforcement learning to train LLMs to reason with search from scratch without supervised data on reasoning steps",
+  "Demonstrates effectiveness across multiple multi-hop QA benchmarks by training on both 7B and 32B Qwen2.5 models, showing strong generalizability from training on only one dataset (MuSiQue)",
+  "Shows that ReSearch naturally elicits advanced reasoning capabilities such as reflection and self-correction during RL without relying on pre-defined heuristics"
+ ],
+ "methods": "The authors propose ReSearch, which uses Group Relative Policy Optimization (GRPO) to train LLMs where rollouts contain text-based thinking (<think>), search queries (<search>), and retrieval results (<result>). Search operations are masked in loss calculation so the policy is not biased toward retrieved tokens. A rule-based reward function combines F1 score for answer correctness with a format reward for proper tag usage. Training was conducted from scratch on Qwen2.5-7B and Qwen2.5-32B (both base and instruction-tuned variants) using only the MuSiQue training set (19,938 samples, 2 epochs) with Wikipedia-based retrieval via FlashRAG and E5-base-v2 retriever.",
+ "results": "ReSearch achieves significant absolute improvements over baselines: average improvement of 15.81% in exact match and 17.56% in LLM-as-a-judge for 7B models, and 14.82% in exact match and 15.46% in LLM-as-a-judge for 32B models, across HotpotQA, 2WikiMultiHopQA, MuSiQue, and Bamboogle benchmarks. Training from instruction-tuned models further improved performance over base models. Response length and number of search operations both increased during training, indicating the model learned iterative multi-hop search behavior.",
+ "limitations": "Training was conducted on only one dataset (MuSiQue), though generalization to other benchmarks was demonstrated. The method relies on a simple rule-based reward function. The paper notes that collecting labeled reasoning data with search for supervised fine-tuning is impractical due to costs, but does not explore alternative reward designs or larger-scale training datasets.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

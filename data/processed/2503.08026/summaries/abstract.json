@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.08026",
+ "tldr": "The paper proposes Reflective Memory Management (RMM), a novel mechanism for long-term personalized dialogue agents that combines topic-based memory organization (Prospective Reflection) with online RL-based retrieval refinement using LLM attribution signals (Retrospective Reflection), outperforming existing memory management approaches.",
+ "contributions": [
+  "Proposes RMM, a novel memory management mechanism employing topic-based memory organization optimized for future retrieval and leveraging attribution signals for unsupervised online retrieval refinement.",
+  "Conducts extensive experiments on two long-term personalized dialogue benchmarks (MSC and LongMemEval) demonstrating RMM's effectiveness over strong baselines.",
+  "Performs detailed analysis on the impact of various design choices to pinpoint limitations of existing memory management mechanisms with fixed granularity and retrievers."
+ ],
+ "methods": "RMM integrates two mechanisms: (1) Prospective Reflection decomposes and summarizes dialogue histories into topic-based memory representations at utterance, turn, and session levels, then merges or adds entries to a memory bank based on semantic similarity. (2) Retrospective Reflection uses a lightweight reranker with embedding adaptation and Gumbel-trick stochastic sampling to refine Top-K retrieved memories to Top-M candidates. The reranker is updated via REINFORCE-based online reinforcement learning, where rewards are derived from LLM-generated citations—+1 if a memory is cited in the response (Useful) and -1 otherwise.",
+ "results": "RMM demonstrates consistent improvement across metrics on MSC and LongMemEval benchmarks. It shows more than 10% accuracy improvement over the baseline without memory management on LongMemEval, and more than 5% improvement over the strongest baseline across memory retrieval and response generation metrics. The No History baseline achieved only 5.2% METEOR on MSC and 0.0% accuracy on LongMemEval, while Long Context baselines scored below 20% METEOR and under 58% accuracy on LongMemEval.",
+ "limitations": "The paper notes that existing approaches with fixed granularity lead to fragmented and incomplete memory representations. The LLM's inability to naturally retain and recall information beyond context windows is a fundamental limitation. Additionally, collecting labeled data for training personalized retrievers presents a substantial barrier. The full performance comparison results were truncated in the provided text, limiting complete reporting.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

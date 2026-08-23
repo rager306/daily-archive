@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.08066",
+ "tldr": "The AI Scientist-v2 is an end-to-end agentic system that autonomously formulates hypotheses, designs and executes experiments, analyzes data, and authors manuscripts—producing the first fully AI-generated paper to successfully pass peer review at an ICLR workshop.",
+ "contributions": [
+  "Eliminating dependency on human-authored code templates for greater autonomy and cross-domain generalization",
+  "Introducing an experiment manager agent with a novel progressive agentic tree-search algorithm for deeper hypothesis exploration",
+  "Integrating a Vision-Language Model (VLM) feedback loop for iterative refinement of figures, captions, and text",
+  "Demonstrating that an AI-generated manuscript can pass peer review at a recognized ML workshop (ICLR 2025 ICBINB)",
+  "Open-sourcing the full codebase and experiment data"
+ ],
+ "methods": "The AI Scientist-v2 operates through four stages: preliminary investigation, hyperparameter tuning, research agenda execution, and ablation studies. An experiment manager agent coordinates these stages, while an agentic tree-search algorithm expands experimental nodes in parallel—selecting buggy nodes for debugging and non-buggy nodes for refinement via best-first search guided by an LLM evaluator. The system generates Python code autonomously, executes it, produces visualizations critiqued by a VLM, and writes manuscripts using single-pass generation followed by a reflection stage powered by reasoning models. Dataset loading is handled via Hugging Face Hub.",
+ "results": "Three fully autonomous manuscripts were submitted to the ICLR 2025 ICBINB workshop. One manuscript achieved an average reviewer score of 6.33, placing it roughly in the top 45% of submissions and exceeding the average human acceptance threshold—the first fully AI-generated paper to pass peer review. The accepted paper investigated compositional regularization in neural networks but found it did not yield significant improvements and occasionally harmed performance. Reviewers appreciated the clear identification of challenges and negative results but noted insufficient justification for the regularization method, potential dataset overlap issues, and inaccuracies in figure captions.",
+ "limitations": "Dataset loading via Hugging Face Hub is acknowledged as 'somewhat ad-hoc' since not all dataset repositories support this method. Reviewers identified insufficient justification and intuitive explanations for why the chosen regularization method would enhance compositionality. The authors note additional potential improvements including clearer specification of which network component is regularized, dataset overlap issues, and inaccuracies in figure captions. The VLM feedback integration and tree-search approach introduce higher computational demands and complexity compared to linear approaches.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

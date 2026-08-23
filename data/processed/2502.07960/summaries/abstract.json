@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.07960",
+ "tldr": "ARIA is a four-agent, multi-LLM framework that automates literature review and research procedure planning across science and engineering domains, demonstrated to streamline research tasks within an hour in a dropwise condensation case study.",
+ "contributions": [
+  "An automated, agent-based workflow that addresses the literature review bottleneck by querying three database APIs (ScienceDirect, Web of Science, and Scopus) and screening thousands of articles",
+  "A novel research procedure planning approach using dynamic, user-targeted retrieval-augmented generation via LlamaIndex's hierarchical composable graph index structure",
+  "A screening pipeline combining frequency-based ranking with semantic-based filtering via SciBERT vector embeddings"
+ ],
+ "methods": "ARIA employs a four-agent architecture: a Conversation Agent for eliciting and refining the user's research focus through in-context learning prompts, a Retriever Agent for search phrase expansion, Boolean query generation, multi-database API querying, and article screening, a Processor Agent for cleaning and indexing retrieved full texts, and a Suggester Agent for synthesizing literature into step-by-step research procedures. The framework uses LlamaIndex for hierarchical index construction and SciBERT for semantic similarity screening. A snowballing approach via the Semantic Scholar API broadens the literature search beyond initial database queries.",
+ "results": "In the dropwise condensation case study, the Retriever Agent retrieved 313 article identifiers from three database APIs within minutes. Snowballing added 1,314 papers, totaling 1,627 articles. Frequency-based ranking identified 29 high-frequency articles, and semantic screening via SciBERT found 53 additional relevant articles from the low-frequency bin, bringing the Final List to 82 articles. Approximately 28 full-text papers were retrieved. The framework accomplished literature review tasks that typically require several months within an hour.",
+ "limitations": "The framework was demonstrated on only a single case study (dropwise condensation enhancement), limiting evidence of cross-domain generalizability. LLMs inherently face token limits and cost per token usage, though the authors note the approach aims to reduce token traffic. The system still relies on LLM capabilities that may falter in niche domains without sufficient training data representation. Full availability of articles through APIs may be constrained by database access restrictions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

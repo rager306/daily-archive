@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2302.08468",
+ "tldr": "LEVER improves language-to-code generation by training verifiers to evaluate candidate programs using their natural language input, program text, and execution results, then reranking candidates by combining verification scores with LLM generation probabilities.",
+ "contributions": [
+  "Proposes LEVER, a learning-to-verify approach that trains verifiers to distinguish correct from incorrect programs based on NL descriptions, program surface form, and execution results",
+  "Introduces a reranking strategy that combines verification probability with LLM generation probability and marginalizes over programs with identical execution results",
+  "Demonstrates consistent improvements across four datasets (Spider, WikiTQ, GSM8K, MBPP) and three code LLMs (Codex, InCoder, CodeGen)",
+  "Shows LEVER achieves new state-of-the-art results without task-specific model architecture or prompting methods"
+ ],
+ "methods": "The approach samples k programs from a code LLM via temperature sampling, deduplicates them, and executes each candidate. A binary classification verifier is trained using negative log-likelihood loss to predict correctness (v=1 if execution result matches gold) based on the concatenation of the problem description, candidate program, and execution result representation. During inference, the reranking score is computed as the joint probability of the LLM generation probability and verification probability, then aggregated across programs sharing the same execution result. The final output is the program with the highest aggregated score.",
+ "results": "LEVER with code-davinci-002 improves over base code LLMs by 4.6% to 10.9% and achieves new state-of-the-art results on all four benchmarks. On Spider, LEVER reaches 81.9±0.1% execution accuracy (vs. 77.3% for EP+ML). On WikiTQ, it achieves 75.4±0.7% dev and 68.9±0.4% test accuracy. On GSM8K, it improves over greedy by 6.6% to 17.3%. On MBPP, it reaches new SOTA. Improvements range up to 30.0% for weaker models (InCoder, CodeGen) on Spider. Ablations show execution results are crucial: removing them causes performance drops of 3.0% (Spider), 6.6% (WikiTQ), 5.6% (MBPP), and 1.2% (GSM8K). LEVER also works well in weakly-supervised settings with at most 1.1% absolute performance drop.",
+ "limitations": [
+  "Execution result aggregation provides only marginal benefit for SQL datasets and can negatively impact performance when incorrect programs accumulate enough probability mass on trivial wrong results (e.g., '0' or empty tables)",
+  "Large sample sizes (up to 100) can cause GPU memory issues during verifier training, requiring random downsampling each epoch",
+  "Beam search is not available or efficiently implemented for all tested LLMs (e.g., Codex), limiting decoding options",
+  "The method's synergy with advanced prompting methods or model architectures is left as future work"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

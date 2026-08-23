@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.10701",
+ "tldr": "This study evaluates LLM-based agents in multi-agent cooperative text-based tasks requiring Theory of Mind (ToM) inference, finding emergent collaborative behaviors and high-order ToM capabilities in GPT-4 agents, while identifying systematic failures in long-horizon context management and hallucination that can be mitigated through explicit belief state representations.",
+ "contributions": [
+  "Evaluation of LLM-based agents' embodied interaction capability in multi-agent collaborative tasks against reinforcement learning and planning-based baselines",
+  "Identification of systematic failures limiting LLM-based agent collaboration efficiency, with a proposed prompt-engineering method using explicit belief state representations to mitigate those failures",
+  "Proposal of a novel evaluation of LLMs' high-order ToM in interactive teamwork scenarios encompassing dynamic belief state evolution and rich intent communication between multiple agents"
+ ],
+ "methods": "The authors designed a multi-agent cooperative text game simulating a search and rescue mission with three agents (Alpha, Bravo, Charlie) navigating a five-room environment containing five color-coded bombs with multi-phase defusing sequences. Agents could move, inspect bombs, or use wire-cutters, with information limited to current room contents and periodic updates about teammates. LLM-based agents (GPT-3.5-turbo and GPT-4) interacted via a rule-based text interface maintaining 4096 tokens of history. A belief state module was introduced where agents explicitly updated textual belief descriptions about world knowledge during interactions. ToM inferences were evaluated across three levels: introspection, first-order ToM (estimating others' mental states), and second-order ToM (inferring what others believe about one's own mental state). Results were compared against MARL (MAPPO) and planning-based (CBS) baselines over three repeated trials per condition.",
+ "results": "The CBS Planner completed the task in 6.0 rounds as an optimal baseline. MAPPO completed the task in 11.0 rounds after 45 million timesteps of training. ChatGPT failed to complete the task in all experiments, averaging a team score of 43.3. GPT-4 teams achieved full scores; those with explicit belief representations completed the task in 12.3 rounds versus 28.3 rounds without. All LLM-based teams achieved better than random baseline performance. Agents showed strong introspection performance (>80%) in understanding world knowledge and situation modeling. GPT-4+Belief teams demonstrated emergent collaborative behaviors and high-order ToM capabilities.",
+ "limitations": [
+  "LLM-based agents suffer from systematic failures in managing long-horizon contexts and hallucination about the task state due to model input size limitations (4096 tokens)",
+  "ChatGPT (GPT-3.5) completely failed to complete the task",
+  "High-order ToM inferences involving communication are naturally ambiguous, requiring human annotator discussion to establish consistent standards",
+  "The evaluation is limited to a specific text-based game environment, and results may not generalize to other multi-agent scenarios"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

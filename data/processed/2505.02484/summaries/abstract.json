@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.02484",
+ "tldr": "El Agente Q is an LLM-based multi-agent system with a hierarchical cognitive architecture that dynamically generates and executes quantum chemistry workflows from natural language prompts, demonstrating >87% average task success across university-level exercises and two real-world case studies.",
+ "contributions": [
+  "Introduction of El Agente, a novel hierarchical cognitive architecture for language agents integrating working memory, long-term memory (procedural, semantic, episodic), and an LLM reasoning core",
+  "Development of El Agente Q, an application of El Agente to automate quantum chemistry workflows including geometry optimization, DFT calculations, error recovery, and file I/O",
+  "Hierarchical multi-agent design with three functional modules: geometry, quantum calculation, and file I/O, enabling task decomposition and adaptive tool selection",
+  "Automated error handling and in situ debugging capabilities, including runtime error recovery and imaginary frequency resolution",
+  "Action trace export to Jupyter notebooks for reproducibility and workflow adaptation"
+ ],
+ "methods": "The authors designed El Agente Q as a hierarchical multi-agent system where a top-level computational chemist agent plans tasks and delegates to lower-level specialized agents within three modules (geometry, quantum calculation, file I/O). Each agent has domain-specific context, semantic memory, callable tools/modules, and delegates subtasks downward. The system was benchmarked on six university-level quantum chemistry exercises (covering geometry optimization, thermodynamic stability, and electronic structure analysis) and two case studies (solvent effects on IR spectra of alanine, and lanthanoid complex generation/optimization). All evaluations ran in fully autonomous mode with only one user input prompt. Success rate was measured as the percentage of successful runs out of 10 trials per exercise.",
+ "results": "El Agente Q achieved an average success rate of >88.8% for Level 1 and >87.6% for Level 2 difficulty across all university-level exercises. Specific results include: Organic compounds (Level 1: ±10%, Level 2: ±17%), Inorganic compounds (Level 1: ±9%, Level 2: ±7%), Relative stability of carbocations (Level 1: ±18%, Level 2: ±13%), Ring strain of cycloalkanes (Level 1: ±7%, Level 2: ±11%), pKa of common acids (Level 1: ±16%, Level 2: ±16%), Absorption spectrum of organic molecules (Level 1: ±0%, Level 2: ±0%). The system successfully resolved ORCA runtime errors from hallucinated keywords, recovered from incorrect XYZ input file specification by switching to one-at-a-time submission, automatically corrected imaginary frequencies in cyclobutane and carbocation structures, and debugged energy convergence issues. In case studies, it correctly allocated 8, 16, and 24 cores for gas-phase, CPCM, and explicit-CPCM models respectively.",
+ "limitations": [
+  "Episodic memory is disabled in the current implementation of El Agente Q",
+  "Performance variability exists across runs, with standard deviations ranging from ±0% to ±18%",
+  "Level 2 absorption spectrum exercise had 0% success, indicating challenges with unconstrained complex tasks",
+  "Hallucinated non-existent ORCA keywords (e.g., DOSINGLET, DOTRIPLET, NROOTS_TRIPLET) were initially generated before being corrected",
+  "The system sometimes requires iterative debugging rather than succeeding on first attempt"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

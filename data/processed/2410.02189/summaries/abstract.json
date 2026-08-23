@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.02189",
+ "tldr": "The paper proposes AOP, a framework for agent-oriented planning in multi-agent systems guided by three design principles—solvability, completeness, and non-redundancy—using a reward model for efficient task evaluation and a feedback loop for iterative improvement.",
+ "contributions": [
+  "Identification of three critical design principles (solvability, completeness, non-redundancy) for agent-oriented planning",
+  "Proposal of AOP, a novel framework with fast task decomposition and allocation",
+  "Introduction of a reward model for efficient solvability evaluation without requiring actual agent calls",
+  "Integration of a feedback loop for ongoing enhancements in the problem-solving process"
+ ],
+ "methods": "AOP first performs fast task decomposition and allocation by providing the meta-agent with instructions that integrate the user query and all agent descriptions, along with structured sequential decomposition and agent suggestions. A reward model is then trained on a dataset of sub-task, agent description, and score tuples to predict sub-task solvability without executing actual agent calls; the loss function minimizes squared discrepancies between predicted scores and scorer annotations. Based on reward model predictions, sub-tasks are either accepted, replanned (if no agent can resolve them), or further assessed via a representative works mechanism, while a detector identifies missing key information or redundant content to ensure completeness and non-redundancy. A feedback loop is integrated to enable the meta-agent to make adjustments to sub-tasks and scheduling.",
+ "results": "Extensive experiments on reasoning datasets requiring multi-agent collaboration demonstrate AOP's advancement over both single-agent systems and existing planning strategies for multi-agent systems. Ablation studies confirm the contributions of different AOP components. Specific quantitative results were truncated in the provided text.",
+ "limitations": [
+  "Suboptimal task decomposition and allocation can occur because the meta-agent relies solely on agent descriptions, which may be concise and highly generalized rather than adequately illustrating capabilities",
+  "A concise agent description may not specify the extent of an agent's knowledge base, making it difficult for the meta-agent to ascertain suitability for assignment"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

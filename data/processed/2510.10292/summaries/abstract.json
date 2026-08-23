@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.10292",
+ "tldr": "FactoredScenes generates realistic 3D indoor scenes by factoring generation into a learned program library for room layout structure and a program-conditioned pose prediction model, producing scenes difficult for humans to distinguish from real ScanNet data.",
+ "contributions": [
+  "Library-learning approach using a wake-sleep LLM framework to capture reusable programmatic room structure from synthetic 3D-Front data",
+  "Program-conditioned hierarchical object pose prediction model that leverages dependency relationships between objects, trained on limited ScanNet data",
+  "Significant improvements over prior work in FID and KID metrics for ScanNet-oriented layout generation",
+  "Human study demonstrating generated scenes are hard to distinguish from real ScanNet rooms"
+ ],
+ "methods": "FactoredScenes decomposes scene generation into five steps: (i) learning a library of reusable layout functions from 3D-Front via an alternating wake-sleep LLM framework, (ii) generating scene programs with an LLM regularized by the learned library and few-shot parsed ScanNet examples, (iii) executing programs via Python to produce axis-aligned bounding box layouts, (iv) hierarchically predicting object orientations by first modeling primary objects then dependent objects conditioned on their dependency targets, and (v) retrieving 3D object instances matched by nearest-neighbor dimensions and scaled/rotated to predicted poses. Object pose prediction uses a multi-head attention model with cross-entropy loss over 36 discretized 5-degree orientation classes.",
+ "results": "FactoredScenes achieves FID scores of 67.51 (bedroom) and 83.49 (living room), and KID scores of 0.020 and 0.024 respectively, outperforming prior methods including LayoutGPT (FID: 109.40/157.69, KID: 0.102/0.142). The learned library shows a 644.1% relative improvement in function use over an inference-only library. The object pose model achieves an 11.4% relative improvement in dependent object pose prediction. Human studies confirm generated scenes are difficult to distinguish from real ScanNet scenes.",
+ "limitations": "Trained on limited real-world data (707 ScanNet scenes), operates on only two room types (bedroom and living room), relies on LLM-based program generation which may introduce variability, and uses axis-aligned bounding boxes as intermediates before pose prediction.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.14414",
+ "tldr": "System-1.x is a controllable hybrid planning framework that uses a controller to classify sub-goals as easy (fast System-1) or hard (slow System-2), balancing accuracy and computational cost based on a user-specified hybridization factor x.",
+ "contributions": [
+  "Proposing the System-1.x Planner, a unified framework combining fast System-1 and slow System-2 planning modes in LLMs",
+  "Introducing train-time and test-time controllability via a hybridization factor x governing the degree of System-1 vs System-2 usage",
+  "Demonstrating a neuro-symbolic variant by replacing the System-2 Planner with a symbolic solver (A*)",
+  "Showing generalizability across different search algorithms (BFS, DFS, A*) used for training"
+ ],
+ "methods": "System-1.x consists of three LLM-based components trained on a single base LLM using only search traces as supervision: a controller, a System-1 Planner, and a System-2 Planner. Training data is automatically generated from gold plans and search trajectories using a hardness function and a user-specified hybridization factor x. The controller decomposes planning problems into 1-3 sub-goals and classifies each as easy (System-1) or hard (System-2) using a sliding window optimization that maximizes the hardness of the chosen System-2 segment. During inference, the controller generates a meta-plan, each sub-goal is solved by the appropriate planner, and sub-plans are concatenated.",
+ "results": "On Maze Navigation and Blocksworld tasks, System-1.x outperforms System-1 Planner, System-2 Planner, and their simple combination at all state exploration budgets, generating up to 33% more valid plans. The neuro-symbolic variant beats A* by up to 39% at a fixed budget of explored states and matches it at maximum budget. Increasing x (e.g., System-1.75 vs System-1.5) trades efficiency for greater accuracy. Performance is robust across BFS, DFS, and A* training algorithms, with exploration behavior resembling the trained algorithm.",
+ "limitations": "The method depends on having access to gold plans and search trajectories for training data generation. It requires a hardness function for sub-goal classification, which must be constructed per domain (though the authors note standard heuristics often exist). Sub-goal decomposition introduces susceptibility to decomposition errors. System-1 Planner generates plans directly without explicit search or backtracking, making it less reliable for harder problems.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

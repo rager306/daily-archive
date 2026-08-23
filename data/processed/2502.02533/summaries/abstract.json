@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.02533",
+ "tldr": "The paper proposes Multi-Agent System Search (Mass), a multi-stage optimization framework that interleaves block-level prompt optimization, workflow topology optimization, and workflow-level prompt optimization to automate the design of effective multi-agent systems, outperforming existing baselines across reasoning, multi-hop understanding, and code generation tasks.",
+ "contributions": [
+  "In-depth analysis of MAS design factors, revealing that prompts are influential design components and only a small fraction of topologies are beneficial",
+  "Proposal of Mass, a novel multi-stage optimizer that automates MAS design by interleaving prompt and topology optimization over a pruned, influential search space",
+  "Demonstration of significant performance improvements on multiple benchmarks, along with design guidelines for effective multi-agent systems"
+ ],
+ "methods": "Mass operates in three stages: (1) Block-level prompt optimization using MIPRO to jointly optimize instructions and exemplars for each agentic building block, measuring incremental influence as the performance ratio relative to an initial optimized agent. (2) Workflow topology optimization where topologies with low influence are rejected via probabilistic pruning (sampling threshold based on softmax-weighted influence), then valid configurations are sampled within a maximum agent budget and arranged in a predefined rule-based order (summarize, reflect, debate, aggregate). (3) Workflow-level prompt optimization performing joint prompt optimization over all agents simultaneously conditioned on the best-found topology.",
+ "results": "Mass-optimized multi-agent systems outperform existing manually-crafted MAS baselines and automatically-generated alternatives by a substantial margin across benchmarks including MATH, DROP, HotpotQA, MuSiQue, 2WikiMultiHopQA, MBPP, HumanEval, and LiveCodeBench test output prediction. Prompt optimization demonstrated significant token-effectiveness advantages over scaling agents with self-consistency, self-refine, and multi-agent debate. On HotpotQA, only debate brought a 3% gain while other topologies failed to improve or degraded performance, illustrating that beneficial topologies represent a small fraction of the full design space.",
+ "limitations": "Not all topologies have positive influence on MAS performance; in some cases (e.g., HotpotQA), only a small subset of topologies such as debate provide gains while others degrade systematic performance. The search space for valid agentic configurations and the combinatorial complexity remain challenging, requiring careful pruning and budget constraints.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

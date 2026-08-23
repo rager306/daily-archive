@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.09187",
+ "tldr": "GuardAgent is the first LLM agent guardrail framework that safeguards target LLM agents by translating textual safety guard requests into executable code via knowledge-enabled reasoning, rather than relying on traditional text-only harm detection.",
+ "contributions": [
+  "Proposes GuardAgent, the first LLM agent framework providing guardrails to other target LLM agents via knowledge-enabled reasoning to address diverse safety guard requests.",
+  "Introduces a novel agent design leveraging a memory module for in-context demonstration retrieval, followed by guardrail code generation and execution with an extendable function toolbox.",
+  "Creates two novel benchmarks: EICU-AC (access control for healthcare agents) and Mind2Web-SC (safety control for web agents).",
+  "Demonstrates over 98% guardrail accuracy on EICU-AC and 83% on Mind2Web-SC across four different core LLMs without affecting target agent task performance."
+ ],
+ "methods": "GuardAgent operates in two steps. First, it generates a step-by-step action plan by prompting an LLM with safety guard requests, target agent specifications, inputs, and outputs, supplemented by k demonstrations retrieved from a memory module based on Levenshtein distance similarity. Second, it generates guardrail code from the action plan using a set of callable functions and executes it via an external engine. Both steps use in-context learning with a memory module that archives past inputs, outputs, action plans, and guardrail codes; users can also manually inject demonstrations into new agent scenarios.",
+ "results": "GuardAgent achieves over 98% guardrail accuracy on EICU-AC and 83% guardrail accuracy on Mind2Web-SC, evaluated across four different core LLMs, without affecting the task performance of the target agents. EICU-AC contains 316 examples (52, 57, and 45 positive examples for physician, nursing, and general administration roles respectively, with 46, 55, and 61 negative examples). Mind2Web-SC contains 100 balanced examples per class with unique tasks spanning six safety rules for web agents.",
+ "limitations": "The approach relies on code execution through an external engine, which may not cover all possible safety guard requests. GuardAgent was evaluated only on two agent types (healthcare and web agents); generalization to other agent types remains unverified. The memory module's effectiveness depends on sufficient prior demonstrations being available. The text was truncated before full limitations were stated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

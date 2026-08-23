@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.07559",
+ "tldr": "PaperQA is a retrieval-augmented generation (RAG) agent that dynamically searches, gathers evidence, and answers questions over full-text scientific literature, outperforming existing LLMs and matching human experts on scientific QA benchmarks.",
+ "contributions": [
+  "PaperQA, an agent-based RAG system for scientific question answering with modular search, evidence gathering, and answer generation tools",
+  "LitQA, a new benchmark of 50 multiple-choice questions from biomedical literature published after September 2021, requiring retrieval and synthesis from full-text papers",
+  "Demonstration that PaperQA outperforms existing LLMs and commercial tools and matches human expert performance"
+ ],
+ "methods": "PaperQA is an agent built on LangChain using four LLM instances (GPT-4 as agent, answer, and ask LLM; GPT-3.5 as summary LLM) with three tools: search (queries Google Scholar for top-5 accessible papers, chunks text into 4,000-character pieces embedded with text-embedding-ada-002), gather evidence (retrieves relevant chunks via vector search with max marginal relevance and scores them 1-10 via a summary LLM), and answer question (uses a priori prompting via ask LLM then generates a cited answer). The agent iteratively searches and gathers evidence until at least five pieces of evidence are collected from multiple sources.",
+ "results": "PaperQA scored 86.3% on PubMedQA blind compared to GPT-4's 57.9% (30-point improvement). On LitQA, PaperQA outperformed all tested models and commercial tools and was comparable to human experts in both performance and time (~2.4 hours vs. humans' 2.5 hours), at a cost of $0.18 per question (~$3.75/hour). PaperQA produced zero hallucinated citations, while GPT-3.5, GPT-4, and Claude-2 all hallucinated citations at notable rates. PaperQA also exhibited better uncertainty calibration, answering incorrectly at a lower rate than competing tools.",
+ "limitations": [
+  "PDF parsing errors and search engine/API failure rates exist",
+  "PaperQA may cite secondary sources mentioned in primary sources it cannot directly access, potentially leading to hallucination",
+  "Some LitQA questions may still be partially answerable via latent pre-training knowledge, as GPT-4 and Claude-2 performed above random despite post-cutoff questions",
+  "Standard QA benchmarks (MedQA, MMLU, etc.) test commonly known facts not typically found in academic papers, which PaperQA may not perform as well on"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:30Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

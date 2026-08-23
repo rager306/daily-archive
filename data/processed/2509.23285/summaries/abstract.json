@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.23285",
+ "tldr": "Tool-Light is a framework that combines entropy-guided self-evolved sampling with a two-stage DPO training pipeline to improve the efficiency and accuracy of tool-integrated reasoning (TIR) in LLMs, reducing excessive/insufficient tool calls and overthinking.",
+ "contributions": [
+  "Information entropy analysis of TIR reasoning chains showing that tool call results cause distinct entropy changes and low-entropy chains correlate with fewer tool calls",
+  "A continuous self-evolved sampling strategy combining vanilla and entropy-guided sampling for dataset construction",
+  "A two-stage self-evolved DPO training pipeline with pre-aligned and self-evolved alignment phases",
+  "Extensive evaluation on 10 datasets across mathematical reasoning and knowledge-intensive tasks demonstrating improved efficiency and necessity"
+ ],
+ "methods": "The authors first analyzed information entropy in TIR paths using the Search-R1 model, classifying chains as 'more' or 'less' tool calls. They constructed source data from SFT training, retaining only samples where the model's inference was incorrect. Two sampling strategies were designed: vanilla TIR sampling and entropy-guided sampling that identifies high-entropy steps and generates branched outputs at those positions, reducing computational complexity from O(mn) to O(n log m). The training pipeline first performs SFT to produce M_sft, then applies pre-aligned DPO training using criteria based on hard/easy set classification (by F1 score correctness ratio) to form positive-negative pairs, yielding M_dpo1. A second self-evolved DPO alignment stage uses M_dpo1 to resample data with new criteria, iterating until convergence to produce the final M_dpo2.",
+ "results": "Tool-Light achieves the best performance on Efficiency and Necessity metrics across 10 datasets. It achieves optimal performance on 4 mathematical reasoning datasets and ranks top-2 on all knowledge-intensive datasets. Compared to prompt-based methods, fine-tuning improves performance by 21.3 on average; Search-R1 outperforms Search-o1 by 5.7 on average. Tool-Light produces shorter output sequences than Tool-Star with lower entropy distributions, effectively mitigating overthinking. It outperforms most GRPO-trained baselines using only DPO.",
+ "limitations": "The entropy-guided sampling relies on approximating token-level entropy over limited subsequences (first 10, 20, 30, 40, 50 tokens). The approach uses F1 score with strict thresholds (0 or 1) for trajectory classification, which may not capture partial credit. Single-tool trained models show poor generalization to other task domains, though this is attributed to the training setup rather than Tool-Light itself.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

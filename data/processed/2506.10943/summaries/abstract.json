@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.10943",
+ "tldr": "SEAL is a framework that enables LLMs to self-adapt by generating their own finetuning data and optimization directives through reinforcement learning, with self-edits applied via LoRA-based weight updates.",
+ "contributions": [
+  "Proposing Self-Adapting LLMs (SEAL), a framework where models generate their own training data and update directives in response to new inputs",
+  "Training self-edit generation via an RL loop using downstream task performance as reward signal",
+  "Demonstrating SEAL on knowledge incorporation (SQuAD) and few-shot learning (ARC-AGI)",
+  "Showing SEAL-generated synthetic data outperforms GPT-4.1-generated data for knowledge incorporation"
+ ],
+ "methods": "SEAL uses a nested-loop approach with an outer RL loop and an inner SFT update loop. Given a context C, the model generates a self-edit (SE)—synthetic data or tool configurations—which is then used to update model parameters via LoRA finetuning (θ' ← SFT(θ, SE)). Performance on a downstream evaluation τ provides a binary reward, and the self-edit policy is trained using ReST EM (filtered behavior cloning / rejection sampling + SFT). Two domain instantiations are used: (1) knowledge incorporation, where the model generates implications of a passage, and (2) few-shot learning on ARC, where the model selects data augmentations and optimization hyperparameters via tool invocation.",
+ "results": "In knowledge incorporation on no-context SQuAD, SEAL improved accuracy from 33.5% (base) to 47.0%, outperforming GPT-4.1-generated synthetic data (46.3%) and passage-only finetuning (32.7%). In few-shot learning on ARC, SEAL achieved a 72.5% success rate versus 20% for self-edits without RL training and 0% for no adaptation. Continued pretraining experiments also showed improvements over baselines.",
+ "limitations": "Performance remains below Oracle TTT (100%) in few-shot learning, suggesting room for improvement. The method was evaluated on only 11 ARC training tasks and a subset of ARC-AGI. The reward signal is binary (success/failure), and the on-policy RL approach may produce stale (state, action, reward) triples as the model updates.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

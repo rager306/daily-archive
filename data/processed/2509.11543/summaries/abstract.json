@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.11543",
+ "tldr": "UI-S1 introduces Semi-online RL, a paradigm that simulates online rollout dynamics using offline trajectories to bridge the gap between training stability and multi-turn reasoning capability in GUI agents.",
+ "contributions": [
+  "Semi-online RL paradigm that simulates online rollout dynamics using static trajectories with a Patch Module to recover from action mismatches",
+  "Incorporation of discounted future returns and dual-level advantages (step-level and episode-level) into policy optimization",
+  "Semi-Online Performance (SOP) metric with strong correlation (R²=0.934) to real-world online evaluation",
+  "UI-S1-7B achieves SOTA among 7B open-source models, with +12.0% on AndroidWorld and +23.8% on AITW-Gen over base"
+ ],
+ "methods": "The authors propose Semi-online RL that maintains policy-generated history during training rollouts rather than conditioning on ground-truth expert history. When action mismatches occur, a Patch Module recovers divergence by injecting expert actions with synthetic reasoning (Thought-Free, Off-Policy Thought, or On-Policy Thought variants). Policy optimization uses a composite reward combining formatting, action type, and accuracy signals, with discounted future returns (R^i_t = sum of gamma-weighted future rewards) and dual-level advantages: step-level advantages compare returns across trajectories at the same timestep, while episode-level advantages capture global task completion. The Semi-Online Performance (SOP) metric evaluates multi-turn execution by maintaining model-generated history until action mismatch or task termination.",
+ "results": "UI-S1-7B achieves state-of-the-art performance among 7B/8B open-source models. Compared to Qwen2.5VL-7B base: +19.1% on AndroidWorld, +23.8% on AITW-Gen, +15.5% on AndroidControl-High SR, +7.1% on GUI Odyssey SR. Outperforms MobileGUI-7B and achieves 34.0% on AndroidWorld (vs 16.4 for offline AgentCPM-GUI-8B). SOP shows R²=0.934 correlation with AndroidWorld, far exceeding AndroidControl-High (R²=0.470) and GUI Odyssey (R²=0.398). Patch threshold analysis shows SOP increases from 22.3 to 25.7 (15% relative improvement) with Thought-Free Patch as threshold increases. Larger patch thresholds maintain greater policy entropy, preventing premature convergence.",
+ "limitations": "The approach still relies on offline trajectories and expert demonstrations for guidance, rather than true online environment interaction. The Patch Module injects synthetic reasoning content (via auxiliary models or policy hints) rather than learning from actual environmental feedback. While SOP correlates well with online performance, it remains an approximation. The method selects ϵ=1 as optimal patch threshold, suggesting a tradeoff between trajectory utilization and computational overhead. Single-turn performance shows mixed results (e.g., -3.6 on OS-Genesis-7B baseline), indicating potential minor capabilities tradeoffs in some settings.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

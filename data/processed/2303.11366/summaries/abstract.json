@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.11366",
+ "tldr": "Reflexion is a framework that reinforces LLM-based agents through verbal self-reflection rather than weight updates, storing reflective summaries in episodic memory to improve performance over sequential trials.",
+ "contributions": [
+  "Proposed Reflexion, a new paradigm for 'verbal reinforcement' that parameterizes a policy as an agent's memory encoding paired with LLM parameters",
+  "Empirically demonstrated that self-reflection helps LLMs learn complex tasks over a handful of trials",
+  "Introduced LeetcodeHardGym, a code-generation RL gym with 40 challenging Leetcode hard-level questions in 19 programming languages",
+  "Showed state-of-the-art results on code generation benchmarks, achieving 91% pass@1 on HumanEval"
+ ],
+ "methods": "The Reflexion framework uses three models: an Actor (M_a) that generates text and actions, an Evaluator (M_e) that scores outputs, and a Self-Reflection model (M_sr) that generates verbal feedback. After each trial, the Self-Reflection model analyzes the trajectory and reward signal to produce a textual summary stored in long-term episodic memory. This memory is then used as additional context in subsequent trials. The authors tested the approach across three task types: sequential decision-making in AlfWorld, reasoning in HotPotQA, and programming in HumanEval, MBPP, and LeetcodeHardGym. Self-evaluation was implemented via heuristics, LLM-based classification, or self-generated unit tests depending on the task.",
+ "results": "Reflexion achieved a 91% pass@1 accuracy on HumanEval, surpassing the previous SOTA GPT-4 result of 80%. It improved by an absolute 22% on AlfWorld decision-making tasks over 12 iterative learning steps, by 20% on HotPotQA reasoning tasks, and by 11% on HumanEval programming tasks. On HotPotQA with ground truth context, Reflexion improved accuracy by 14% over CoT (GT). Ablation studies showed self-reflection provides an 8% absolute boost over episodic memory alone. Reflexion eliminated nearly all hallucination errors in AlfWorld where baseline agents converge at a 22% hallucination rate.",
+ "limitations": "The approach relies on the power of the LLM's self-evaluation capabilities (or pre-defined heuristics) and does not have a formal guarantee for success. Memory is bounded (typically 1-3 stored experiences) due to maximum context window limitations of LLMs. The system requires generating useful reflective feedback, which depends on the model's ability to perform credit assignment—understanding where mistakes were made in a trajectory.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

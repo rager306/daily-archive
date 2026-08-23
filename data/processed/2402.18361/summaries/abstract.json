@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.18361",
+ "tldr": "The paper develops a theoretical framework using statistical physics to explain why shaping—learning task primitives before compositional tasks—leads to faster and more robust learning in reinforcement learning. The analysis shows that the total training time under primitives pre-training is dominated by primitive learning, which scales exponentially with episode length, while compositional generalization after pre-training is comparatively fast.",
+ "contributions": [
+  "A teacher-student model of compositional RL tasks with primitives, deriving asymptotically exact ODEs for learning dynamics in the high-dimensional limit",
+  "Analysis comparing two curricula: primitives pre-training and vanilla training",
+  "Quantification of learning timescales showing why pre-training primitives leads to faster compositional generalization",
+  "Demonstration that initial context alignment modulates primitive learning speed in vanilla training"
+ ],
+ "methods": "The authors use a teacher-student framework where K primitive tasks are modeled as RL perceptrons with high-dimensional inputs, and compositional tasks are formed by linearly combining primitives via context weights. Policy gradient learning with sparse rewards (only updated when all T choices in an episode are correct) is modeled. Using tools from statistical physics in the N→∞ limit, they derive exact ODEs governing the evolution of order parameters (norms and alignments of student/teacher weights) under two curricula: primitives pre-training (primitives learned to expert level first) and vanilla training (direct compositional task learning).",
+ "results": "Primitive learning timescale scales exponentially with episode length T: τ_primitive ~ 1/(η_w(T-2)) × 2^(T-2). After pre-training, compositional generalization time is τ_composition ~ 1/(η_v(T-1)) × P_0^(2-T), where P_0 depends on initial context alignment. Total curriculum time is τ_curriculum ~ (K × 2^(T-2) + P_0^(2-T)), with primitive training dominating as T increases. In vanilla training, each primitive has a distinct learning timescale determined by initial context alignment: τ_vanilla,k ~ 1/(η_w(T-2)) × 2^(T-2) / (V_0k × V*_k)^2, meaning better initial alignment yields faster learning.",
+ "limitations": "The analysis focuses on a simplified model with orthogonal/linearly combined primitives and assumes the spherical case (||V*|| = ||V|| = 1, S_k = Q_k = 1). The compositional structure relies on separate networks per primitive, representing only one form of compositional learning. The analysis is restricted to K=2 for vanilla training in detail, and results are derived in the asymptotic high-dimensional limit (N→∞).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

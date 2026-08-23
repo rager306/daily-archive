@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.15155",
+ "tldr": "MDAgents is an adaptive multi-agent framework that dynamically assigns solo or collaborative LLM structures based on medical query complexity, achieving superior accuracy across medical benchmarks while maintaining efficiency.",
+ "contributions": [
+  "First adaptive decision-making framework for LLMs that mirrors real-world medical decision-making via dynamic collaboration based on task complexity",
+  "Superior accuracy over previous solo and group methods on 7 out of 10 medical benchmarks with effective trade-off between performance and efficiency",
+  "Rigorous robustness testing across hyperparameters and ablations demonstrating effective medical complexity determination"
+ ],
+ "methods": "MDAgents operates in four stages: (1) A moderator agent classifies each medical query as low, moderate, or high complexity; (2) Based on complexity, a recruiter agent assembles either a single Primary Care Clinician (low), a Multi-disciplinary Team (moderate), or an Integrated Care Team (high); (3) Analysis and synthesis occurs through prompting (solo), iterative group consensus with moderator review (MDT), or phased report generation (ICT); (4) A decision-maker agent synthesizes all inputs into a final answer using ensemble techniques. The framework was evaluated across 10 medical benchmarks using 50 samples each with GPT-4 as the base model.",
+ "results": "MDAgents achieved best performance in 7 out of 10 benchmarks, with a significant improvement of up to 4.2% (p < 0.05) compared to previous methods' best performances. The combination of moderator review and external medical knowledge in group collaboration resulted in an average accuracy improvement of 11.8%. Average inference times were: low complexity 14.7s, moderate 95.5s, and high 226s. Evaluation covered 10 datasets including MedQA, PubMedQA, DDXPlus, SymCat, JAMA, MedBullets, Path-VQA, PMC-VQA, MIMIC-CXR, and MedVidQA.",
+ "limitations": [
+  "Static architecture of prior methods may lead to suboptimal configurations; the framework's complexity classification relies on GPT-4 as moderator, which may limit generalizability to other models",
+  "Multi-agent approaches risk being computationally inefficient or expensive, requiring justification through noticeable performance gains",
+  "The framework was tested with 50 samples per dataset, and evaluation focused on GPT-4-based implementations"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

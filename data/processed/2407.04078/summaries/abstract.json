@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.04078",
+ "tldr": "DotaMath introduces a novel mathematical reasoning paradigm that decomposes complex problems into subtasks, leverages Python code with intermediate process display, and incorporates self-correction, enabling 7B open-source models to surpass larger proprietary and open-source models on challenging math benchmarks.",
+ "contributions": [
+  "Proposed DotaMath, a decomposition-of-thought paradigm with code assistance and self-correction for complex mathematical reasoning",
+  "Introduced DotaMathQA, a 574K-sample instruction-tuning dataset built from GSM8K and MATH using GPT-4 annotation and query augmentation",
+  "Demonstrated that 7B models fine-tuned with DotaMath outperform most 70B open-source models and even Claude-3 Opus on MATH"
+ ],
+ "methods": "The DotaMath paradigm decomposes mathematical problems into logical subtasks and generates Python code to solve them, with intermediate results printed within the code for fine-grained feedback from a Python interpreter. If results are incorrect, the model reflects on errors and iteratively corrects its approach (self-correction). The training dataset DotaMathQA (574K samples) was constructed by using GPT-4 to generate single-turn and multi-turn QA data, with query augmentation and rule-based error correction. Four base models were fine-tuned: Llama2-7B, Llama3-8B, Llemma-7B, and DeepSeekMath-Base-7B.",
+ "results": "DotaMath-DeepSeek-7B achieved 64.8% on MATH, outperforming all open-source models and surpassing Claude-3 Opus, and 86.7% on GSM8K. It averaged 80.1% across two in-domain and four out-of-domain benchmarks, outperforming DeepSeek-MATH-Instruct by 4.4 points on average. Ablation studies showed decomposition contributed +3.0% (GSM8K) and +6.0% (MATH), intermediate process display contributed +1.1% and +2.7%, and self-correction contributed +1.3% and +3.9%. Data augmentation improved accuracy by 4.7% on GSM8K and 9.8% on MATH, with an 18.7% gain at MATH Level 5 (35.5% to 41.9%).",
+ "limitations": "The approach's effectiveness is more pronounced on harder problems, as data augmentation yields diminishing returns on simpler tasks like GSM8K where non-augmented models already achieve high accuracy. The construction of multi-turn self-correction data via GPT-4 was observed to have relatively low efficiency due to GPT-4's limited success rate in correcting incorrect responses.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

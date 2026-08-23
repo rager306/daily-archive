@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.14932",
+ "tldr": "The paper proposes ARG (Active Self-Reflection framework for Knowledge Graph reasoning), an end-to-end trained framework that uses special self-reflection tokens to actively decide when to retrieve knowledge, assess relevance, and iteratively reason over knowledge graphs with interpretability.",
+ "contributions": [
+  "An end-to-end training framework enabling iterative reasoning over structured graphs with active knowledge retrieval decisions",
+  "Introduction of special self-reflection tokens for evaluating and critiquing the reasoning process",
+  "A hypo-generator during inference to enhance retrieval efficiency by generating candidate relations"
+ ],
+ "methods": "ARG trains a generator model on weakly supervised reasoning paths extracted from knowledge graphs, augmented with self-reflection tokens. The model learns to predict four types of tokens: Retrieval Token (deciding whether to retrieve relations or entities, or output an answer), Relevance Token (assessing relevance of retrieved knowledge as Relevant, Partially Relevant, or Unrelevant), Rationality Token (evaluating path coherence as Reasonable or Unreasonable), and Utility Token (scoring final answer quality). During inference, a tree-based reasoning approach with hop-level beam search explores parallel paths, while a hypo-generator predicts hypothetical relation candidates to improve retrieval accuracy.",
+ "results": "On WebQSP, ARG (Exhausted) achieved 93.5% accuracy, outperforming baselines including RoG (85.7%) and ToG w/GPT-4 (82.6%). On CWQ, ARG (Exhausted) achieved 79.8% accuracy, surpassing KG-Agent (72.2%) and ToG w/GPT-4 (67.6%). ARG with beam width 3 achieved 90.2% on WebQSP and 72.4% on CWQ. The method achieves state-of-the-art results on WebQSP and outperforms all IR-based and LLM-based models on CWQ.",
+ "limitations": "The paper acknowledges that existing SP-based methods struggle to capture procedural information underlying comprehension of structured knowledge graphs, and IR-based methods exhibit low retrieval efficiency due to disparities between natural language and structured graph representations. While ARG addresses these through self-reflection tokens and a hypo-generator, the approach relies on shortest-path extraction as weak supervision, which may not always correspond to optimal reasoning paths. The evaluation is limited to two Freebase-based datasets (WebQSP and CWQ), and training required 29,117 samples across both datasets.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

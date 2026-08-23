@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.08558",
+ "tldr": "The paper introduces 'early experience'—a paradigm where language agents learn from their own exploratory actions and resulting future states as supervision without reward signals—using two strategies (implicit world modeling and self-reflection) that consistently improve effectiveness and out-of-domain generalization.",
+ "contributions": [
+  "Formalizing the early experience paradigm as a practical and scalable bridge between imitation learning and reinforcement learning",
+  "Proposing two training strategies under this paradigm: implicit world modeling (modeling environment dynamics from collected experience) and self-reflection (distilling lessons from the agent's own suboptimal actions)",
+  "Comprehensive evaluation across eight diverse environments and multiple model families showing consistent improvements in task effectiveness, out-of-domain generalization, and downstream RL performance"
+ ],
+ "methods": "Starting from expert trajectories, the agent proposes its own alternative actions at each state to collect next states, forming a rollout dataset. Two strategies use this data: (1) Implicit World Modeling trains the policy as an auxiliary next-state prediction task—predicting the outcome state from state-action pairs—to internalize environment dynamics during a warm-up stage before imitation learning fine-tuning. (2) Self-Reflection prompts the same language model to generate chain-of-thought explanations comparing expert actions against alternative actions, using the resulting reasoning as training signals alongside expert demonstrations via next-token prediction loss.",
+ "results": "Both methods consistently outperform purely imitation learning baselines across eight diverse environments spanning embodied navigation, web navigation, multi-turn tool use, and long-horizon planning. Early experience achieves strong out-of-domain generalization, requires only half or less of the expert data for comparable or superior performance, and scales effectively to larger models. In environments with verifiable rewards, initializing RL with early experience checkpoints leads to substantially stronger performance compared to standard imitation-learning warm starts.",
+ "limitations": "The paper notes that SFT-based agents remain limited because they do not interact with the environment during training, cannot learn from failure, and generalize poorly to unseen situations. Rollout data collection itself depends on the initial policy's ability to propose diverse alternative actions. The paper is truncated before presenting detailed numerical results, specific benchmark scores, or an explicit limitations section.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

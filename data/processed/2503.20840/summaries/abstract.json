@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.20840",
+ "tldr": "CodeTool is a stepwise code generation framework that enhances LLM tool invocation by combining On-the-spot Reward (verifying executable code at each step) and Latent Reward (assessing step contribution to task completion via a trained Process Reward Model).",
+ "contributions": [
+  "Propose CodeTool, a stepwise code generation framework leveraging process supervision for LLM tool invocation",
+  "Design two process rewards—On-the-spot Reward and Latent Reward—for immediate feedback and long-term potential evaluation",
+  "Demonstrate superior performance over existing methods on StableToolBench and RestBench-TMDB benchmarks"
+ ],
+ "methods": "CodeTool uses stepwise code generation where the LLM produces Python code at each step to invoke tools, with intermediate results parsed from previous responses. Two process rewards guide the reasoning: On-the-spot Reward (binary, based on whether code executes successfully via a Python interpreter) and Latent Reward (computed via MCTS rollouts or a trained PRM, measuring the proportion of successful paths to task completion with penalties for long/redundant steps). A generative Process Reward Model is trained on Qwen2.5-7B-Instruct using SFT-style training with special tokens for 'more potential'/'less potential' labels.",
+ "results": "On StableToolBench, CodeTool outperforms CoT and DFSDT baselines: Qwen2.5-Coder-7B with CodeTool achieves 69.75% average SoPR vs 60.52% for DFSDT; GPT-4-Turbo with CodeTool achieves 71.05% vs 62.03% for DFSDT. On RestBench-TMDB, CodeTool achieves 92% success rate and 91.15% path rate, outperforming ATC (89% success, 84.75% path rate). Ablation shows removing On-the-spot Reward drops SCEP to 69.46%. CodeTool reduces tool invocation interactions by nearly half compared to JSON-based methods while maintaining comparable token consumption to DFSDT.",
+ "limitations": "The Latent Reward originally relies on MCTS rollouts which are time-intensive and costly. Estimating rollout success without ground-truth data is challenging. Different models exhibit varying preferences in answer resolution, causing unstable evaluations (addressed by introducing clearer evaluation criteria). The approach assumes access to documented tool protocols with URLs and argument requirements.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

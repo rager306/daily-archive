@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.03916",
+ "tldr": "DOLPHIN is a closed-loop LLM-driven auto-research framework that iteratively generates ideas, verifies them through code execution and debugging, and feeds experimental results back to improve subsequent idea generation.",
+ "contributions": [
+  "A closed-loop auto-research framework covering idea generation, experimental verification, and results feedback.",
+  "Task-attribute-guided paper ranking to filter relevant reference papers for idea generation.",
+  "Exception-traceback-guided debugging process to improve code execution success rates.",
+  "Demonstrated on benchmark datasets that DOLPHIN generates ideas outperforming human-designed baselines like PointNet, WideRes-Net, and BERT-base."
+ ],
+ "methods": "DOLPHIN operates in three stages forming a research loop. First, it retrieves papers via Semantic Scholar API and ranks them by topic relevance and task attribute alignment (model input/output characteristics), filtering out papers scoring below 8. Novel and independent ideas are generated using embeddings and cosine similarity filtering (threshold 0.8). Second, experimental plans are generated and reference codes are modified; an exception-traceback-guided debugger analyzes local code structure around errors to iteratively fix code (max 5 debugging attempts). Third, results are categorized as improvement, maintenance, or decline relative to baselines, and performance-enhancing ideas are fed back into the next loop's idea generation prompt while ineffective ideas are stored to avoid redundancy.",
+ "results": "On 3D classification (ModelNet40) with PointNet baseline, DOLPHIN achieved an average improvement of 1.0% OA over two loops (40 ideas), with a maximum accuracy of 93.9% OA compared to PointNet's 91.0%, matching the SoTA GPSFormer at 93.8%. Ablation studies showed novel ideas increased from 8/20 (naive generation) to 19/20 with paper ranking. For keywords in retrieved papers, irrelevant detection/completion topics dropped substantially after filtering. Experiments were conducted on CIFAR-100, ModelNet40, SST-2, and MLE-bench using gpt-4o-2024-08-06 and deepseek-v2.5.",
+ "limitations": [
+  "The paper notes that prior works relying on simple self-constructed datasets limit meaningful comparison; DOLPHIN addresses this but evaluation is limited to a few benchmarks.",
+  "LLMs encounter challenges modifying code with complicated nested relationships, though debugging mitigates this.",
+  "Only 5 out of 40 ideas achieved performance gains in the 3D classification two-loop experiment, suggesting most generated ideas do not improve over baselines.",
+  "The framework uses predefined baselines (PointNet, WideResNet, BERT-base) and may not generalize beyond evaluated modalities and tasks."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

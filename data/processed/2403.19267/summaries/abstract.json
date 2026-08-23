@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.19267",
+ "tldr": "MineLand is a large-scale multi-agent Minecraft simulator supporting 64+ agents with limited multimodal senses and physical needs, paired with the Alex VLM-based agent framework featuring a multitasking mechanism, enabling more ecologically valid multi-agent social simulations.",
+ "contributions": [
+  "A multi-agent Minecraft simulator (MineLand) introducing large-scale scalability, limited multimodal senses, and physical needs",
+  "A benchmark suite with 4499 programmatic tasks, 1536 creative tasks, and 18 hybrid tasks (Construction and Stage Performance), doubling MineDojo's task count",
+  "An AI agent framework (Alex) with a multitasking component inspired by cognitive multitasking theory, supporting interruption-based coordination"
+ ],
+ "methods": "MineLand is built from three modules: Bot, Environment, and Bridge. It imposes limited sensory perception via distance attenuation, environmental obstructions, and directional constraints on visual, auditory, and tactile modalities. Physical needs (hunger, oxygen) are integrated into the state space alongside task-oriented activities. Communication uses a distance-constrained mechanism where messages are only received within a threshold, and an interrupt mechanism allows new messages to pause ongoing code execution (steps last 50-200ms with New/Resume gate control). The benchmark includes programmatic tasks (goal, guidance, initial conditions, success criteria), creative tasks, and hybrid tasks evaluated via VLM-based scoring and LCS-based metrics. Alex is a VLM-based agent with memory, planning, acting, and multitasking components.",
+ "results": "MineLand supports 32 agents with visual display (2.81% CPU, 7.07GB memory) and 64 agents without vision (2.87% CPU, 6.30GB) on a consumer desktop (Intel i5-12400F, 64GB RAM). At 8 agents, MineLand uses approximately 1/3 of Malmo's CPU (35.6%) and memory (38.0%). In the 'unlocking tools' task, cooperative agents show reduced workload per agent but higher communication expenses, while competitive agents require fewer code iterations but make more mistakes. With high extraversion and agreeableness personality traits, agents collaborated >8 out of 10 times; without personality settings, they worked independently (0 out of 10 times).",
+ "limitations": "The benchmark evaluation results for Alex on construction tasks are truncated in the provided text. The paper does not report quantitative performance numbers for the Alex agent framework on the benchmark suite. Limited multimodal senses (distance attenuation, obstructions, directional constraints) inherently restrict agent awareness, which while increasing ecological validity, may also constrain task completion in complex scenarios. The paper notes that personality affects social dynamics but does not explore a full range of trait combinations.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

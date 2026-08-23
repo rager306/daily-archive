@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.10134",
+ "tldr": "CLIN is a language-based agent that uses a persistent, dynamic textual memory of causal abstractions to continually improve across trials without parameter updates, outperforming reflective agents like Reflexion and generalizing to new tasks and environments.",
+ "contributions": [
+  "Show that memory of causal abstractions is effective for helping agents learn over extended periods and varying conditions.",
+  "Describe and evaluate CLIN, an architecture for a novel nonparametric learning paradigm using frozen LLMs.",
+  "Demonstrate that CLIN learns faster than prior systems and generalizes better to new tasks and new environments, achieving state-of-the-art."
+ ],
+ "methods": "CLIN operates in the ScienceWorld text-based simulator using three modules—memory, controller, and executor—plus a memory generator updated after each trial. The memory stores causal abstractions as natural language sentences (e.g., 'X is NECESSARY to Y', 'X DOES NOT CONTRIBUTE to Y') with uncertainty qualifiers ('may', 'should'). The controller retrieves relevant memories and generates the next goal; the executor converts the goal into a valid action, using embeddings to map to valid actions. A meta-memory is generated across episodes for generalization by selecting the best trials from prior episodes (archive size 10) via prioritized level replay.",
+ "results": "CLIN outperforms state-of-the-art reflective language agents like Reflexion by 23 absolute points on repeated trials in the same task and environment. It transfers learning to new environments, improving zero-shot performance by 4 points, and to new tasks by 13 points. Through continual memory updates, it further enhances performance by an additional 17 points (7 points for new tasks). Evaluations were conducted on 18 tasks (two instances from 9 classes) across 164 task-environment combinations in ScienceWorld.",
+ "limitations": "CLIN's exploration can be limited in early trials due to the incredibly large action space, leading to uncertainty in extracted insights. The approach relies on sparse rewards provided only after task subgoals are completed. Memory content quality depends on the frozen LLM's ability to generate useful causal abstractions, and incomplete exploration may produce insights with varying degrees of uncertainty.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

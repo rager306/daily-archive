@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.11699",
+ "tldr": "Retrieval-Augmented Embodied Agents (RAEA) equips robots with an external policy memory bank, using a multi-modal policy retriever and Transformer-based policy generator to recall analogous scenarios and improve manipulation task performance with limited training data.",
+ "contributions": [
+  "Introduction of RAEA, an embodiment agent that leverages an external policy memory bank containing multi-embodiment data (from Open X-Embodiment) to facilitate robotic action prediction.",
+  "Design of a multi-modal policy retriever using a mixed-modal encoder (ImageBind) capable of processing text, audio, images, videos, and point clouds, paired with a policy generator that uses cross-attention to integrate retrieved policies into the main policy network.",
+  "Extensive evaluation across two simulated benchmarks (Franka Kitchen, Meta-World, Maniskill-2) and real-world settings, demonstrating superior generalization over baseline methods."
+ ],
+ "methods": "The authors introduce RAEA, which uses Open X-Embodiment as an external policy memory bank. A policy retriever employs a bi-encoder architecture with a mixed-modal encoder (ImageBind) to encode multi-modal inputs (instructions: text/audio; observations: images/videos/point clouds) and retrieve the top-k most relevant policies via cosine similarity. A policy generator then processes the retrieved policies using Transformer-based cross-attention, fusing retrieved policy tokens (instruction, observation, action, proprioception) into the main policy network. The system is trained via behavior cloning with mean squared error loss. Diversity in retrieval is maintained by skipping candidates with relevance scores exceeding 0.9 and by applying ~70% random token dropout during training.",
+ "results": "RAAEA was evaluated on Franka Kitchen, Meta-World, and Maniskill-2 benchmarks, as well as real-world experiments. It was compared against R3M, BLIP-2, and Embodied-GPT using few-shot learning with 10 or 25 demonstrations. The approach showed superior performance and improved generalization over traditional methods. The policy memory bank was carefully curated to exclude any data from the training/test datasets to prevent bias.",
+ "limitations": "The approach depends on the diversity and quality of the external policy memory bank; redundant or overly similar retrieved policies can detrimentally impact generator performance. The method requires careful tuning of retrieval diversity (e.g., relevance threshold of 0.9, token dropout rate). Cross-embodiment data is used even when the target robot differs from source embodiments, which may introduce domain gaps. The results section in the provided text is truncated, so specific quantitative success rates are not fully available.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.20262",
+ "tldr": "The paper introduces ELITR-Bench, a benchmark for evaluating long-context LLMs on a realistic meeting assistant task using noisy ASR transcripts, and demonstrates that while recent open models approach GPT-4 on clean transcripts, significant robustness gaps remain under noise.",
+ "contributions": [
+  "ELITR-Bench: a benchmark built on the ELITR Minuting Corpus with 271 manually crafted questions (141 dev, 130 test) and ground-truth answers focused on a meeting assistant scenario",
+  "Noisy transcript variants simulating ASR errors at target Word Error Rate levels of 20%, 40%, 60%, 80%, and 100%",
+  "Evaluation of 12 long-context proprietary and open LLMs across QA and conversation settings in single-turn and multi-turn modes",
+  "Validation of GPT-4-based LLM evaluation against human judges via a crowdsourcing study"
+ ],
+ "methods": "ELITR-Bench was built on the ELITR English meeting transcripts (10 dev, 8 test meetings, averaging ~11-13K tokens each). Questions span Who, What, When, and How many types, with answers annotated by position (Beginning, Middle, End, Several). Noisy transcripts were generated using over 86,000 substitution rules derived from a 500k ASR transcript corpus. Twelve LLMs were evaluated using a GPT-4 judge (gpt-4-0613) with a 1-10 score rubric, comparing against human evaluators (crowdsourcing and experts). Both standalone QA and multi-turn conversation settings were tested.",
+ "results": "GPT-4 and GPT-4o achieved average scores above 8 across all settings, dominating other models. GPT-3.5 scored around 7, while LLaMA-3.1-8B and Phi-3-small outperformed it and all LLaMA-2-based models. LLaMA-2 models showed large single-turn vs multi-turn discrepancies (scores ~4-6 in multi-turn), whereas GPT-4/4o and newer open models maintained performance. No strong 'lost in the middle' effect was found. Under noise, the gap between open models and GPT-4o widened significantly; GPT-4o maintained an average score above 6 even at 80-100% target WER. GPT-4 scores aligned with human judges but could distinguish only beyond three quality levels despite the 10-point scale.",
+ "limitations": "Only 16 (dev) and 17 (test) questions differentiate the QA and Conv settings, limiting analysis of conversational dependency effects. The small number of How many questions (8 in test set) limits interpretability of numerical reasoning findings. The effective WER after noise injection is generally lower than target levels, and some answers remain inferable even at 100% target WER. GPT-4's evaluative discrimination is limited to approximately three distinguishable score levels.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

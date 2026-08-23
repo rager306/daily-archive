@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.02172",
+ "tldr": "Lyfe Agents is a low-cost, real-time generative agent framework that achieves human-like social reasoning through three brain-inspired techniques—option-action selection, asynchronous self-monitoring, and a Summarize-and-Forget memory mechanism—while operating at 10-100x lower computational cost than prior approaches.",
+ "contributions": [
+  "An option-action framework that reduces the cost of high-level decisions by using hierarchical action selection inspired by reinforcement learning and prefrontal cortex function",
+  "An asynchronous self-monitoring module that maintains a narrative summary of recent events to improve self-consistency and goal perseverance",
+  "A Summarize-and-Forget (SaF) memory mechanism using dual-memory architecture (recentmem/longmem) with clustering, summarization, and redundancy removal",
+  "A custom 3D virtual environment platform called LyfeGame (SakuraMachi) supporting multi-agent group conversations and real-time social scenarios"
+ ],
+ "methods": "The authors developed Lyfe Agents with three core architectural components inspired by neuroscience and cognitive science. The option-action framework uses a cognitive controller (like HRL's manager) to select high-level options via LLM calls, while termination conditions are checked by fast non-LLM methods. An asynchronous self-monitoring module generates narrative summaries of recent goal-relevant events. A hierarchical memory system transitions memories from recentmem to longmem through clustering and LLM-based summarization, while a forgetting algorithm removes redundant older memories. They evaluated agents in a custom Unity-based 3D environment (LyfeGame/SakuraMachi) across three scenarios: a murder mystery, a school club selection task, and a medicine-seeking scenario, with ablation studies on each component.",
+ "results": "Lyfe Agents operate at computational costs 10-100 times lower than existing alternatives like Park et al. (2023). In the murder mystery scenario, a police officer agent identified Francesco as the primary suspect over 60% of the time within 15 minutes of agent-agent interactions, even in a challenging 9-agent setting. Agents demonstrated the ability to resist and filter distracting information through reflection and reasoning. Agents equipped with all three techniques showed human-like self-motivated social reasoning, including solving crimes through autonomous collaboration. Ablation studies showed that removing self-monitoring or SaF memory dramatically lowered performance, while removing option-action selection did not improve performance despite significant cost increases. Memory-augmented LLM agents alone were insufficient for sustaining goal-oriented social behavior.",
+ "limitations": [
+  "Ablation results showed that simple memory-augmented LLM architectures without the proposed techniques are insufficient for goal-oriented social behavior",
+  "Information transmission across the agent group has bottlenecks, with information having only a reasonable chance of being spread or lost at every step",
+  "The evaluation consists of preliminary tests in curated scenarios rather than large-scale real-world deployment",
+  "The murder mystery still faced challenges from interpersonal complexities, diversions, and witnesses with conflicting motives, suggesting limitations in handling highly nuanced social deception"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

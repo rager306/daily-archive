@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.08582",
+ "tldr": "TREE-PLANNER reframes LLM-based close-loop task planning into plan sampling, action tree construction, and grounded deciding phases, reducing token consumption by up to 92.2% while achieving state-of-the-art performance.",
+ "contributions": [
+  "Proposing TREE-PLANNER that decomposes LLM queries into a single plan-sampling call and multiple grounded-deciding calls",
+  "Introducing an action tree structure that aggregates sampled plans to enable efficient backtracking during error correction",
+  "Demonstrating significant token and correction efficiency improvements on VirtualHome household tasks"
+ ],
+ "methods": "TREE-PLANNER operates in three phases: (1) Plan Sampling — an LLM samples N potential plans in a single call using commonsense knowledge; (2) Action Tree Construction — sampled plans are aggregated into a tree where shared prefixes are merged into common branches; (3) Grounded Deciding — the LLM makes top-down decisions at each node based on real-time observations, choosing among child nodes. When an action fails, the method marks invalid subtree nodes and backtracks to the nearest valid fork node rather than replanning from scratch.",
+ "results": "TREE-PLANNER achieves state-of-the-art results in VirtualHome, surpassing best baselines by 1.29% (with correction) and 3.65% (without correction) in success rate. Token costs are reduced by 53.29% vs ITERATIVE-PLANNER (no correction), 74.36% vs LOCAL REPLAN, and 92.24% vs GLOBAL REPLAN. Error corrections decrease by 37.99% vs LOCAL REPLAN and 40.52% vs GLOBAL REPLAN. Formal analysis derives a critical value of N < 197.72 for token efficiency.",
+ "limitations": [
+  "Requires heuristic setting of sampling number N (set to 25 or 50 in experiments)",
+  "Manual error analysis identifies potential areas for improvement",
+  "The approach is evaluated only in the VirtualHome simulated environment",
+  "Dependence on OpenAI GPT-3.5 API limits generalizability to other LLM backbones"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

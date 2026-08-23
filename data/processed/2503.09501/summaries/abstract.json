@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.09501",
+ "tldr": "ReMA is a multi-agent reinforcement learning framework that decouples LLM reasoning into a high-level meta-thinking agent and a low-level reasoning agent, enabling LLMs to learn to think about thinking and outperforming single-agent RL baselines on complex reasoning tasks.",
+ "contributions": [
+  "Introducing ReMA, the first framework to formally define and optimize a multi-agent meta-thinking reasoning process (MAMRP) through multi-agent reinforcement learning",
+  "Decoupling reasoning into hierarchical agents: a high-level meta-thinking agent for strategic oversight and a low-level reasoning agent for detailed execution",
+  "Extending ReMA to multi-turn interaction settings with turn-level ratio and parameter sharing to improve training efficiency",
+  "Demonstrating superior out-of-distribution generalization on mathematical benchmarks and LLM-as-a-Judge tasks across multiple backbone models"
+ ],
+ "methods": "ReMA formulates reasoning as a Markov Game between two LLM agents: a high-level agent π_h generates meta-thoughts (plans, monitors, revises strategy), and a low-level agent π_l executes detailed problem-solving under those instructions. Training uses REINFORCE++/GRPO with aligned reward functions. For single-turn MAMRP, two separate model copies are used. For multi-turn MAMRP, parameter sharing is adopted (both agents share weights θ, distinguished only by role-specific system prompts) to enable larger batch sizes and avoid GPU swap inefficiencies. A turn-level ratio is introduced instead of token-level ratio to stabilize multi-turn training by clipping at the turn level rather than per token.",
+ "results": "Single-turn ReMA outperforms all baselines on average, with a maximum improvement of 6.68% on mathematical benchmarks and 8.49% on LLM-as-a-Judge benchmarks. Notable OOD gains include +20% on AMC23 (Llama-3-8B-Instruct), +13.33% on AIME24 (Qwen2.5-7B-Instruct), and +14.23% on RewardBench970 (Llama-3.1-8B-Instruct). Larger LLMs (Llama-3.1-8B) adapt meta-thinking strategies based on problem difficulty, while smaller LLMs (Llama-3.2-1B) collapse to the simplest EMPTY action. RL under meta-thinking achieves the best learning dynamics and generalizes better to hard problems compared to SFT or RL from base.",
+ "limitations": [
+  "Single-turn MAMRP lacks ability for immediate, fine-grained cognitive switching during reasoning, limiting effectiveness on complex long-horizon planning tasks",
+  "RL training on instruction-tuned LLMs yields smaller accuracy gains compared to base models, due to higher initial performance and relatively fixed output distributions",
+  "Smaller LLMs struggle to maintain valid JSON formatting while exploring diverse reasoning strategies, causing convergence to simpler outputs"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.21760",
+ "tldr": "MemInsight is an autonomous memory augmentation framework that extracts semantically meaningful attributes from user-agent interactions to improve structured memory representation and retrieval in LLM agents.",
+ "contributions": [
+  "Proposes a structured autonomous approach that adapts LLM agents' memory representations while preserving context across extended conversations",
+  "Designs memory retrieval methods leveraging generated augmentations to filter irrelevant memory while retaining key historical insights",
+  "Demonstrates effectiveness on conversational recommendation, question answering, and event summarization tasks"
+ ],
+ "methods": "MemInsight comprises three core modules: attribute mining, annotation, and memory retrieval. Attribute mining extracts structured, semantically meaningful attributes from dialogues using entity-centric and conversation-centric perspectives at turn-level or session-level granularity, guided by a backbone LLM. Annotation aggregates attribute-value pairs into augmented memory instances, with a Priority Augmentation variant that sorts attributes by relevance. Memory retrieval operates through attribute-based filtering or embedding-based dense vector similarity search (using Titan Text Embedding + FAISS) to retrieve top-k relevant memories, which are then integrated into the current context.",
+ "results": "On the LLM-REDIAL dataset for conversational recommendation, MemInsight boosts persuasiveness of recommendations by up to 14% compared to the baseline. On the LoCoMo dataset, it outperforms a DPR (RAG) baseline by 34% in recall. For question answering, MemInsight achieves significantly higher overall accuracy than baselines including MemoryBank and ReadAGent, with priority augmentation yielding a 35% overall improvement in recall. It shows substantial gains on multi-hop questions and notable improvements on single-hop, temporal, and adversarial questions. The 'genre' attribute was the most frequently occurring generated attribute across the LLM-REDIAL dataset. Only 0.1% of movies failed augmentation due to LLM recognition or policy conflicts.",
+ "limitations": "Some generated attribute relevance varies, requiring prioritization. A small fraction (0.1%) of movies failed augmentation because the LLM could not recognize certain movie titles or due to conflicts with LLM safety policies. DPR achieved slightly higher accuracy than MemInsight on temporal and adversarial questions in LoCoMo. Genre match results were comparable when considering all attributes, suggesting not all augmentations improve every metric.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

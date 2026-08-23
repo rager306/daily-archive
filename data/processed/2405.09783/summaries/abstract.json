@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.09783",
+ "tldr": "The paper introduces Scientific Generative Agent (SGA), a bilevel optimization framework that combines LLMs for discrete hypothesis search with differentiable simulations for continuous parameter optimization, enabling automated discovery of constitutive laws and molecular designs.",
+ "contributions": [
+  "A generic framework for physical scientific discovery combining LLMs with physical simulations",
+  "A bilevel optimization approach with LLMs for discrete-space search-based optimization and differentiable simulations for continuous-space gradient-based optimization",
+  "Extensive experiments in constitutive law discovery and molecular design showing SGA outperforms baselines and produces novel yet sensible solutions"
+ ],
+ "methods": "SGA employs a bilevel optimization pipeline: the outer level uses an LLM to propose scientific expressions (E) and continuous parameterization (Θ) based on past simulation feedback, while the inner level performs gradient-based optimization of continuous parameters (θ) via differentiable simulation. The LLM generates offspring solutions using an exploit-and-explore strategy with tuned decoding temperatures (T_l=0.5 for exploitation, T_h=1.0 for exploration, with a 1:3 ratio). Observational feedback from simulation, including loss curves and intermediate results, is fed back to the LLM iteratively. Experiments use a differentiable Material Point Method (MPM) simulator for constitutive law discovery and UniMol for molecular quantum property evaluation.",
+ "results": "SGA achieves the lowest loss across all 8 benchmark tasks. For constitutive law search, SGA achieves losses of 5.2e-5 (task a), 2.1e-1 (task b), 6.0e-2 (task c), and 1.4e-12 (task d), significantly outperforming baselines such as CoT (298.5, 1462.3, 150.0, 384.1), FunSearch (210.3, 872.2, 82.8, 139.5), Eureka (128.0, 531.0, 101.7, 150.1), and OPRO (136.2, 508.3, 99.2, 128.8). For molecule design, SGA achieves 1.3e-4 (task e), 1.1e-1 (task f), 5.4e-1 (task g), and 3.6e-5 (task h). Ablation shows disabling bilevel optimization degrades performance substantially, while the no-exploit variant also underperforms the full method.",
+ "limitations": [
+  "M_exploit often produces repetitive solutions from previous iterations",
+  "M_explore tends to yield solutions too random or invalid (violating simulation constraints), providing little feedback signal",
+  "Requires domain experts to craft functions for extracting relevant observational feedback from simulations",
+  "Relies on bootstrapping examples to ensure success rate for complex tasks",
+  "Performance may depend on initial guesses and prompt engineering"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

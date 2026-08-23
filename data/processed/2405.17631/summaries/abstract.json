@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.17631",
+ "tldr": "BioDiscoveryAgent is an LLM-based AI agent that designs genetic perturbation experiments by reasoning over prior knowledge and experimental results, outperforming trained Bayesian optimization baselines across multiple datasets.",
+ "contributions": [
+  "Introduction of BioDiscoveryAgent, an interpretable LLM agent for closed-loop design of genetic perturbation experiments.",
+  "Demonstration on single-gene perturbation across six datasets, showing improved hit detection compared to Bayesian optimization baselines.",
+  "Extension to two-gene combinatorial perturbation, a previously unexplored setting for closed-loop experiment design.",
+  "Integration of tools for literature search, biological database queries, and AI-based critique to augment agent predictions."
+ ],
+ "methods": "BioDiscoveryAgent uses an LLM (tested across 9 models) in a multi-round experimental loop where each prompt includes the task description and results from previous rounds. The agent selects batches of genes to perturb, leveraging its biological knowledge without requiring a trained machine learning model or explicit acquisition function. It is augmented with tools: PubMed literature search, Reactome pathway-based gene search, and an AI critic agent that critiques predictions. Performance was evaluated on six single-gene perturbation datasets (including one unpublished) and one two-gene perturbation dataset, using hit ratio as the primary metric.",
+ "results": "Using Claude 3.5 Sonnet, BioDiscoveryAgent achieved an average 21% improvement in predicting relevant genetic perturbations across six single-gene datasets and a 46% improvement for non-essential gene perturbations, compared to Bayesian optimization baselines. For two-gene combinatorial perturbations, it predicted gene pairs more than twice as accurately as a random baseline (170% improvement). Tool augmentation improved performance for Claude 3 Haiku but not consistently for Claude 3.5 Sonnet.",
+ "limitations": "Tool integration did not uniformly improve performance across all LLMs (e.g., for Claude 3.5 Sonnet, tools sometimes hurt performance). The agent's gene selection may still be constrained by the LLM's context window, requiring summarization of large gene lists. Evaluation was limited to five experimental rounds per dataset, and the two-gene perturbation task used only one dataset. Essential genes were filtered out in harder evaluations because they are easily detected, potentially limiting insight into their biological relevance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

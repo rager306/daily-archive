@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.09736",
+ "tldr": "M3-Agent is a multimodal agent with long-term memory that processes real-time visual and auditory inputs to build episodic and semantic memories in an entity-centric structure, outperforming prompting-based baselines on long-video question answering benchmarks.",
+ "contributions": [
+  "Introduction of M3-Agent, a multimodal agent framework with long-term episodic and semantic memory organized in an entity-centric multimodal graph",
+  "Development of M3-Bench, a long-video QA benchmark with 100 robot-perspective videos (M3-Bench-robot) and 920 web-sourced videos (M3-Bench-web), featuring five question types including cross-modal reasoning, multi-evidence reasoning, multi-hop reasoning, person understanding, and general knowledge extraction",
+  "Demonstration that RL-trained M3-Agent outperforms strongest prompting baselines (Gemini-1.5-pro and GPT-4o) on multiple benchmarks"
+ ],
+ "methods": "M3-Agent operates through two parallel processes: memorization, which continuously processes real-time video and audio streams to generate episodic memories (concrete events) and semantic memories (general knowledge), integrated into an entity-centric multimodal graph; and control, which iteratively reasons over stored memories and retrieves relevant ones to execute instructions. The agent is trained via reinforcement learning. For evaluation, the authors create M3-Bench with 100 first-person robot-perspective videos (filmed with human actors wearing head-mounted cameras across 51 locations) and 920 diverse web videos, annotated with open-ended QA pairs covering five reasoning types. Automatic evaluation uses GPT-4o, validated to achieve 96% agreement with human judges on a 100-sample test set.",
+ "results": "M3-Agent outperforms the strongest baseline (a prompting agent using Gemini-1.5-pro and GPT-4o) by 6.7% accuracy on M3-Bench-robot, 7.7% on M3-Bench-web, and 5.3% on VideoMME-long. M3-Bench contains 100 robot videos (average length 2,039.9 seconds, 1,276 QA pairs) and 920 web videos (average length 1,630.7 seconds, 3,214 QA pairs) across 46 distinct video categories.",
+ "limitations": [
+  "M3-Bench-robot uses only 100 videos collected from human actors simulating robot behavior rather than actual robots, which may limit ecological validity",
+  "For M3-Bench-web, all question timestamps are set to the end of the video, potentially not reflecting realistic agent interaction patterns",
+  "Automatic evaluation relies on GPT-4o as a judge with 96% human agreement, leaving room for evaluator bias or errors",
+  "The benchmark focuses on QA-style evaluation and may not fully capture dynamic, real-time agent interaction scenarios"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

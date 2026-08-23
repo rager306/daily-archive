@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.05707",
+ "tldr": "The paper proposes finetuning a multiagent society of language models (generation and critic agents) from the same base model, where each agent is independently specialized on its own generated data, enabling sustained self-improvement over many fine-tuning rounds by preserving diverse reasoning chains.",
+ "contributions": [
+  "Proposing multiagent interaction as an approach to self-improvement with language models",
+  "Specializing models with distinct roles (generation and critic agents) to enable detailed feedback and improve output quality",
+  "Quantitatively verifying applicability across a wide suite of reasoning tasks on both open-source and proprietary language models",
+  "Demonstrating that finetuned agents generalize across different datasets in a zero-shot manner"
+ ],
+ "methods": "The authors propose a multiagent finetuning approach starting from the same base LLM, copying it into N generation agents and N critic agents. Using multiagent debate (with summarization of other agents' responses), generation agents produce initial responses and critic agents evaluate and refine them. Each agent is finetuned on independent datasets: generation agents on first-round responses matching the majority-voted final answer, and critic agents on debate trajectories where some start incorrect but are corrected. This process is iterated for L rounds.",
+ "results": "The method was evaluated on Arithmetic, GSM, and MATH datasets using Phi-3 4B, Mistral 7B, LLaMA-3 8B, and GPT-3.5, finetuning on 500 examples. Across all models and tasks, the method outperformed baselines (Base, Majority, Debate, STaR, Majority FT). With 5 finetuning iterations on MATH, Phi-3 accuracy increased from 58.8% to 66.0%, and Mistral from 22.5% to 28.2%. Multiagent FT with five rounds was 12.6% more accurate than the best baseline for Phi-3 and 9.31% more accurate for Mistral. Ablation studies confirmed that critic agents, multiagent finetuning, multiagent debate, and summarization all contribute to performance.",
+ "limitations": "Single-agent finetuning shows performance saturation after one iteration and subsequent drops due to overfitting and reduced diversity, whereas the multiagent approach mitigates this but the paper primarily reports results on reasoning tasks (Arithmetic, GSM, MATH), with generalization tested only in zero-shot settings on other datasets. Additionally, the method requires multiple agents and debate rounds, increasing computational overhead compared to single-model approaches.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

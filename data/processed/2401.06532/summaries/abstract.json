@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.06532",
+ "tldr": "The paper introduces INTERS, a novel instruction tuning dataset of 200k examples spanning 20 tasks across 43 datasets, designed to significantly improve LLMs' performance on information retrieval tasks through supervised fine-tuning.",
+ "contributions": [
+  "INTERS dataset with 20 tasks across three IR categories (query understanding, document understanding, query-document relationship understanding) derived from 43 distinct datasets",
+  "Manually crafted 12 unique templates per dataset plus detailed task descriptions",
+  "Comprehensive evaluation showing INTERS consistently boosts performance of LLaMA, Mistral, and Falcon models",
+  "Ablation studies on instruction design, template diversity, few-shot demonstrations, data volume, and ranking strategies"
+ ],
+ "methods": "The authors constructed INTERS by collecting 43 publicly available IR datasets covering 20 tasks, then manually crafted 12 natural-language templates per dataset (including inverse templates), wrote detailed task descriptions, and generated zero-shot to five-shot examples filtered at 2,048 tokens. They compiled 200k examples using an examples-proportional mixing strategy capped at 5k per dataset. Four open-source LLMs (Falcon-RW-1B, Minima-2-3B, Mistral-7B, LLaMA-2-7B) were fine-tuned on INTERS and evaluated in-domain and out-of-domain across query understanding, document understanding, and query-document relationship understanding tasks.",
+ "results": "INTERS fine-tuning consistently improved all models across IR tasks compared to untuned baselines. Average performance increased from 13.18 (No FT) to 46.42 (INTERS) across task categories. Category-level ablation showed query understanding, document understanding, and query-document relationship understanding are complementary (removing any category reduced performance). Task-level generalization was observed: models fine-tuned without query intent classification still outperformed untuned models on that task. Dataset-level generalization showed strong zero-shot transfer to unseen datasets. Custom templates and task descriptions significantly improved performance over no-template/no-description variants.",
+ "limitations": "INTERS-Falcon performed worse than untuned Falcon on query-document relationship understanding tasks, attributed to the complexity of these tasks. Larger models without fine-tuning could still outperform smaller fine-tuned models on some relationship tasks. The optimal combination of datasets for instruction tuning remains unclear, as removing XSum from training unexpectedly improved performance on MultiNews.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

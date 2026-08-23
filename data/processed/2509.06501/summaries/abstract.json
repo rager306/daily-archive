@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.06501",
+ "tldr": "WebExplorer introduces a systematic data generation approach using model-based exploration and iterative long-to-short query evolution to create challenging QA pairs, enabling training of an 8B web agent that achieves state-of-the-art performance on information-seeking benchmarks.",
+ "contributions": [
+  "A model-based exploration approach where LLMs autonomously navigate the web to construct information spaces from seed entities, eliminating the need for heuristic graph construction",
+  "An iterative query evolution method that increases difficulty by removing salient information and introducing obfuscation (long-to-short evolution rather than short-to-long)",
+  "The WebExplorer-QA dataset of approximately 40K challenging QA pairs synthesized through this process",
+  "WebExplorer-8B, trained via SFT and RL, achieving best-in-class results among models up to 100B parameters"
+ ],
+ "methods": "The method operates in two stages: first, model-based exploration uses LLMs starting from seed entities (collected from Wikipedia with BrowseComp-en exemplars) to conduct iterative search and browse actions, constructing information spaces and synthesizing initial QA pairs. Second, iterative query evolution refines these queries through 5 cycles by removing salient information, introducing strategic obfuscation of dates/locations/proper names, and replacing explicit references with vague descriptions. The resulting ~40K evolved QA pairs are used for SFT with rejection-sampled trajectories, followed by RL using the GRPO algorithm with a composite reward function balancing format correctness (weight 0.2) and answer accuracy evaluated by DeepSeek-V3 as automated judge.",
+ "results": "WebExplorer-8B (RL) achieves 15.7% on BrowseComp-en and 32.0% on BrowseComp-zh, outperforming WebSailor-72B (12.0%/30.1%). It reaches 62.7% on WebWalkerQA and 75.7% on FRAMES, the best among models up to 100B parameters. On HLE, it scores 17.3%, surpassing WebThinker-32B (15.8%). After RL training, the model searches over an average of 16 turns. The evolution process increases average tool calling turns from 7.9 to 9.9 while dropping Claude-4-Sonnet accuracy from 86.6% to 67.1%.",
+ "limitations": "A gap remains between the evolved QA pairs and BrowseComp-en difficulty in terms of tool calling turns. BrowseComp-en presents excessive difficulty with accuracy below 20% on most open-source models, so completely mirroring its difficulty level was deemed unnecessary. The approach relies on commercial models for trajectory collection during SFT cold start.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

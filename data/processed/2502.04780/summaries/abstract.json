@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.04780",
+ "tldr": "SIRIUS is a self-improving, reasoning-driven optimization framework for multi-agent LLM systems that builds an experience library of high-quality reasoning trajectories and uses supervised fine-tuning to iteratively improve agent policies.",
+ "contributions": [
+  "An experience library construction approach that retains successful reasoning trajectories as training data for multi-agent optimization",
+  "A trajectory augmentation procedure that refines unsuccessful trajectories using feedback from an additional grounded agent",
+  "A unified framework demonstrating improvements across problem-solving, actor-critic, and competitive multi-agent settings",
+  "Demonstration of generalization capability in competitive settings with novel initial resource configurations"
+ ],
+ "methods": "SIRIUS iteratively improves agent policies over T fine-tuning iterations. At each iteration, action sampling generates agent responses conditioned on prior agents' outputs, trajectories are evaluated using a reward threshold epsilon, and high-reward trajectories are collected into a good trajectory set. Unsuccessful trajectories undergo augmentation by generating feedback, combining it with the original response, and regenerating solutions. Policy parameters are then updated via supervised fine-tuning on the curated experience library.",
+ "results": "SIRIUS improves reasoning and biomedical QA accuracy by 2.86% to 21.88%. In the Actor-Critic setting on PubMedQA, SIRIUS achieves notably higher True Positive Accuracy compared to baselines like Self-Correct and Prompt, with GPT-3.5-Turbo and GPT-4o-mini both benefiting. In competitive settings, SIRIUS as the winning player shows increased win rate and payoff, while as the losing player it experiences fewer losses. In Resource Exchange scenarios, fine-tuned SIRIUS demonstrates significant improvement in win rate and payoff, with generalization validated across different Initial Resource configurations (25Xs+5Ys, 5Xs+25Ys tested on 35Xs+15Ys and 15Xs+35Ys). In Multi-Turn Ultimatum Game, SIRIUS Player 1 secures a higher share of the split, maintaining utility gains when trained at Resource=100 and tested at Resource=1000. In Buyer-Seller scenarios, SIRIUS as a seller shows significant improvement, consistently selling at price 50.",
+ "limitations": "The Judgment Agent has limited ability to differentiate between correct and incorrect solutions, leading to two failure modes: correct solutions may be mistakenly judged as incorrect and modified, and incorrect solutions may be judged as correct without receiving corrections. GPT-3.5-Turbo struggles more than GPT-4o-mini with misjudging correct answers as incorrect. TextGrad faced significant challenges with long context and instruction-following, particularly on PubMedQA where it could not parse instructions. The good trajectory set tends to be small due to the difficulty of tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

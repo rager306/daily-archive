@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.18102",
+ "tldr": "AgentRxiv is a collaborative autonomous research framework that enables LLM agent laboratories to share and build upon each other's research via a centralized preprint server, achieving iterative performance improvements over isolated agents.",
+ "contributions": [
+  "Introduced AgentRxiv, an open-source framework for archiving and disseminating research outputs from autonomous agents, enabling cumulative knowledge building.",
+  "Demonstrated that each generation of papers produces measurable improvements, with MATH-500 accuracy increasing from 70.2% to 78.2% (11.4% relative improvement).",
+  "Showed discovered reasoning strategies generalize across benchmarks (GPQA, MMLU-Pro, MedQA) and five language models (DeepSeek-v3 to Gemini-2.0 pro), improving performance by an average of 3.3%.",
+  "Introduced a parallelized mode where multiple agent laboratories share research simultaneously, achieving an additional 6.0% improvement on MATH-500 with 3 parallel labs."
+ ],
+ "methods": "The authors built on the Agent Laboratory framework, running N=40 paper generations using o3-mini as the LLM backend. Agents were given a research direction to improve MATH-500 accuracy via reasoning and prompt engineering, using gpt-4o mini during experimentation. During literature review, agents accessed N=5 prior papers from AgentRxiv plus N=5 from arXiv. An ablation removed access to prior AgentRxiv research (N=0). A parallelized mode was also tested with 3 simultaneous labs sharing findings. The best discovered technique, Simultaneous Divergence Averaging (SDA), was evaluated across GPQA, MMLU-Pro, and MedQA benchmarks, and across five language models.",
+ "results": "Baseline gpt-4o mini accuracy on MATH-500 was 70.2%, reaching 78.2% with SDA (11.4% relative improvement). Without access to prior research, accuracy plateaued at ~73.4-73.8%. SDA generalized to GPQA (+6.8%), MMLU-Pro (+12.2%), and MedQA (+8.9%), averaging +9.3% on MATH-500-discovered benchmarks. Cross-model generalization yielded an average +3.3% improvement across five models. Parallel mode with 3 labs added +6.0% improvement but at higher computational cost.",
+ "limitations": "Parallelized mode introduces trade-offs between speed and computational efficiency, with discoveries occurring faster but at higher cost. SDA requires temperature sampling, which is disabled for some reasoning models (e.g., R1, o1, o3-mini), limiting applicability to those models.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

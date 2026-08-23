@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.01472",
+ "tldr": "BenchMARL is introduced as the first MARL training library designed to enable standardized, reproducible benchmarking across different algorithms, models, and environments by leveraging TorchRL as its backend.",
+ "contributions": [
+  "A unified MARL benchmarking library with standardized configuration and reporting",
+  "Unifying abstractions over MARL training components (experiments, benchmarks, algorithms, tasks, models)",
+  "Integration with TorchRL for high performance and state-of-the-art single-agent RL implementations",
+  "Support for vectorized simulation, vectorized training, and HPC cluster execution via SLURM",
+  "Direct integration with statistically-rigorous reporting tools from Gorsane et al. [2022]"
+ ],
+ "methods": "The authors designed BenchMARL with five core components: experiments (agnostic to algorithm/model/task choices), benchmarks (collections of experiments varying in components), algorithms (9 available plus novel MASAC/ISAC), tasks from 7 environments (VMAS, SMACv2, MPE, etc.), and neural network models (MLP, GNN, CNN, LSTM, GRU, Deep Sets). The library uses Hydra for structured YAML configuration, agent grouping mechanisms from TorchRL for heterogeneous multi-agent setups, and supports vectorized environments on GPU for performance. Algorithms leverage TorchRL backends with vectorized simulation, torch.vmap for vectorized training, and optional SLURM launcher for HPC clusters.",
+ "results": "Benchmark results over 3 VMAS tasks (Navigation, Sampling, Balance) with 9 algorithms across 3 random seeds showed that multi-agent versions (MASAC, MADDPG, MAPPO) obtained the best overall performance due to centralized critics. Q-Learning algorithms (IQL, VDN, QMIX) performed suboptimally, likely because they were trained on discrete action versions of continuous-control tasks. Median normalized return: MASAC 0.96, MADDPG 0.96, MAPPO 0.92, IQM values followed similar ranking. Results matched previously published values from Bou et al. [2024] and Bettini et al. [2022].",
+ "limitations": "The initial benchmark was limited to only 3 VMAS tasks representing high-level multi-robot control problems. Q-Learning algorithms performed suboptimally because they were implemented for discrete actions while the tasks had continuous action spaces. The library currently focuses on the PyTorch domain, though JAX-based alternatives exist. Coverage is around 90% through CI tests.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

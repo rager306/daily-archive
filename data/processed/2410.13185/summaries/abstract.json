@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.13185",
+ "tldr": "The Chain-of-Ideas (CoI) agent organizes relevant literature in a chain structure mirroring progressive research development, enabling LLMs to generate novel, human-comparable research ideas and experimental designs at low cost.",
+ "contributions": [
+  "Propose the CoI agent framework that organizes literature in a chain structure to mirror progressive research development, improving LLM ideation capabilities",
+  "Propose Idea Arena, a pairwise evaluation protocol using Round-Robin tournament ELO scoring that shows high agreement (70.8%) with human researchers",
+  "Demonstrate through extensive experiments that CoI agent consistently outperforms all automated baselines and generates ideas comparable to human experts"
+ ],
+ "methods": "The CoI agent operates in three stages: (1) CoI Construction — given a research topic, the LLM generates multiple perspective queries to retrieve anchor papers, then extends each chain backward (via references) and forward (via citing papers) using Semantic Scholar and embedding-based ranking, terminating at milestone papers or preset length; (2) Idea Generation — the LLM predicts future trends from each CoI, consolidates ideas step-by-step (motivation → impact → realization), and a novelty-checker agent iteratively refines drafts against existing literature; (3) Experiment Design — the LLM designs experiments using few-shot examples from existing papers, refined iteratively by a review agent. The best idea across branches is selected via pairwise comparison.",
+ "results": "CoI agent consistently ranks first among all automated baselines in both model-based and human evaluations, surpassing the second-best methods (GPT-Researcher and RAG) by 108 and 56 ELO scores respectively. Performance is on par with the Real Paper baseline and excels in Novelty and Significance. Human-model agreement reaches 70.8% average. The agent costs a minimum of $0.50 to generate a candidate idea and its corresponding experimental design.",
+ "limitations": "CoI agent still lags considerably behind Real Paper in Clarity, Feasibility, and Expected Effectiveness under human evaluation, attributed to the absence of extensive experimental validation for model-generated ideas. The paper also notes that a single CoI may be insufficient to capture the most promising direction, requiring multiple branches.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

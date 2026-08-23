@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.16673",
+ "tldr": "The paper introduces GEM, a game-theoretic framework for supervised fine-tuning that preserves output diversity in LLMs by reformulating SFT as a distribution matching problem with reverse KL minimization and entropy regularization, instead of standard cross-entropy loss.",
+ "contributions": [
+  "A game-theoretic framework for SFT with an auxiliary variable (meta-controller) that enables controlled diversity preservation",
+  "Theoretical proof that the framework achieves distribution matching via reverse KL minimization with maximum entropy regularization",
+  "Development of GEM (Game-theoretic Entropy Maximization), a computationally efficient training algorithm",
+  "Empirical validation showing improved test-time scaling performance and reduced alignment tax"
+ ],
+ "methods": "The authors frame SFT as a two-player game: one player minimizes a loss that maximizes log-probability for real data while minimizing it for model-generated data, and an auxiliary variable q (meta-controller) is optimized to select source tokens for probability transfer with entropy regularization controlled by temperature β. They prove the game has a unique Nash equilibrium corresponding to reverse KL divergence minimization with entropy regularization. The GEM algorithm iteratively transfers logits from selected source tokens to target tokens with adaptive termination (stopping when the target becomes the most probable token). They evaluate on pre-trained models from 3B to 70B parameters, including Llama-3.1-8B.",
+ "results": "GEM achieves comparable downstream performance to CE while significantly enhancing output diversity. On Llama-3.1-8B, GEM outperforms CE by 5 points in chatting and 8 points in code generation through repeated sampling. GEM often requires only 0.5x the sampling budget to match baseline performance. GEM also reduces alignment tax by 83%, demonstrating effective mitigation of knowledge forgetting.",
+ "limitations": [
+  "The simplified per-token analysis may not fully capture the complexity of full neural network training",
+  "The stopping criterion and sparse update mechanisms require careful design when extended beyond the simplified prototype to full LLM fine-tuning",
+  "The choice of β is non-trivial: β=0 corresponds to the sparse prototype, β=1 reduces to CE, and intermediate values require tuning",
+  "The theoretical guarantee assumes p(y|x) > 0 for all y, which may not hold in practice"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:52Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.04353",
+ "tldr": "COPRA is an in-context learning agent that uses a general-purpose LLM (GPT-4) within a stateful backtracking search to generate formal proofs in Lean and Coq, outperforming few-shot prompting and competing with finetuned approaches like REPROVER.",
+ "contributions": [
+  "A new approach called COPRA combining in-context learning with search, knowledge retrieval, and rich feedback from the proof environment",
+  "A systematic study comparing GPT-4-based COPRA against few-shot GPT-4, GPT-3.5 ablations, and state-of-the-art finetuned baselines",
+  "An open-source implementation supporting both Lean and Coq proof environments"
+ ],
+ "methods": "COPRA performs a GPT-4-directed depth-first search over tactic sequences in formal proof environments. At each step, it retrieves relevant lemmas/definitions from an external database, serializes the current proof state stack, failure history, and optional informal proof context into a prompt, and queries GPT-4 to propose the next tactic. Executed tactics are fed back into the search: successful progress continues the search, while errors or non-progress states are recorded in a failure dictionary and the search backtracks. A symbolic progress check based on a partial order over proof states prevents cyclic tactic sequences.",
+ "results": "On miniF2F-test (244 Lean theorems), COPRA achieved pass@1 of 26.63% without retrieval, 29.09% with retrieval, and 29.92% with retrieval plus informal proofs, outperforming REPROVER (25.00%), LLEMMA-34b (25.82%), and LLEMMA-7b (26.23%). COPRA solved more than twice as many problems as few-shot GPT-4 (13.52%). On the CompCert Coq benchmark (118 theorems), COPRA also outperformed few-shot baselines. COPRA found correct proofs using approximately 16x fewer queries than REPROVER and proved them almost 3x faster. GPT-3.5 and CodeLlama instantiations were significantly weaker (9.02% and 5.73% respectively).",
+ "limitations": [
+  "Evaluation on CompCert used only 118 of 501 theorems due to budgetary constraints",
+  "COPRA with weaker models (GPT-3.5, CodeLlama) performed substantially worse, indicating GPT-4-scale models are critical",
+  "The approach relies on a black-box LLM, making it dependent on the capabilities of underlying model quality",
+  "Cost and latency are concerns due to repeated GPT-4 queries, though the method uses far fewer queries than finetuned baselines"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

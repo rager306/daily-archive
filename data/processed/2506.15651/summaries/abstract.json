@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.15651",
+ "tldr": "AUTORULE automatically extracts alignment rules from LLM-generated reasoning chains on preference data and uses them as an auxiliary rule-based reward during GRPO training, improving preference alignment and reducing reward hacking.",
+ "contributions": [
+  "Introduction of AUTORULE, a framework for automatic extraction of alignment rules from preference data via LLM-generated reasoning chains",
+  "Demonstration that rule-based rewards derived via AUTORULE improve preference alignment and instruction following compared to standard baselines",
+  "Evidence that AUTORULE reduces reward hacking and yields interpretable, dataset-adaptive rules"
+ ],
+ "methods": "Given preference pairs, a reasoning model (Deepseek-R1) generates step-by-step justifications for why one response is preferred. Explicit rules are extracted individually from each reasoning chain, aggregated across examples, and merged into a compact final rule set (reduced to ~1-2% of original size). During training, a verifier (Llama-3-8B-Instruct) scores each output as binary rule satisfaction, producing a mean rule score as auxiliary reward combined with the learned reward model. This composite reward is used within the GRPO algorithm for policy optimization.",
+ "results": "Training Llama-3-8B with AUTORULE achieves a 28.6% relative improvement in length-controlled win rate on AlpacaEval2.0 and a 6.1% relative gain in second-turn performance on a held-out MT-Bench subset versus GRPO baseline. Individual rules show good agreement with ground-truth preferences, with higher agreement on MT-Bench than UltraFeedback. Mean determinism scores are 83.6% (UltraFeedback rules) and 82.5% (MT-Bench rules). AUTORULE consistently outperforms GRPO baselines in out-of-distribution generalization, achieving ~5 percentage point improvement in AlpacaEval 2.0 win rate after two episodes. In reward hacking experiments, GRPO+LP baselines decline after step 52 while AUTORULE maintains high win rates.",
+ "limitations": [
+  "Rule extraction quality depends on the reasoning model's ability to generate coherent justifications and extract meaningful rules",
+  "The binary rule satisfaction simplification may miss nuanced preference distinctions that continuous reward models capture",
+  "Rules are dataset-specific (UltraFeedback rules emphasize conversational quality, MT-Bench rules prioritize instruction adherence)",
+  "The approach was evaluated over only two training episodes in the reward hacking analysis"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

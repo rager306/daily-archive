@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.18279",
+ "tldr": "The paper introduces Collaborative Memory, a framework enabling safe, efficient cross-user knowledge sharing in multi-agent LLM systems by combining two-tier memory (private/shared) with dynamically evolving, asymmetric access controls formalized as bipartite graphs.",
+ "contributions": [
+  "First formulation of memory sharing that explicitly accounts for fine-grained access asymmetries in multi-agent, multi-user systems",
+  "Dynamic bipartite access graphs formalizing time-dependent user-to-agent and agent-to-resource permissions",
+  "Two-tier memory architecture with private and shared fragments carrying immutable provenance attributes",
+  "Configurable read and write policies at global, user, agent, and temporal granularities with provenable adherence to policies"
+ ],
+ "methods": "The framework models users (U), agents (A), and resources (R) with time-varying bipartite graphs G_UA(t) and G_AR(t) encoding who can invoke which agents and which resources each agent may access. Memory is partitioned into private fragments (visible only to their originating user) and shared fragments, each annotated with provenance (creation time, contributing agents/resources). A read policy projects allowed fragments into filtered views per agent; a write policy transforms and allocates outputs into private or shared tiers. Implementations use gpt-4o for LLM components and text-embedding-3-large for vector embeddings, with cosine-similarity retrieval of top-k fragments from both user-specific and cross-user tiers.",
+ "results": "In Scenario 1 (Fully Collaborative Memory, MultiHop-RAG with 2,556 questions across 6 domains and 5 users), collaborative memory maintained accuracy above 0.90 and reduced resource utilization by up to 61% at 50% query overlap and 59% at 75% overlap compared to isolated memory. In Scenario 2 (Asymmetric Collaborative Memory, 200 synthetic business queries with 4 role-based users), partial sharing reduced redundant tool/resource calls, with the Strategy Director eliminating significant redundant work before consolidation. Scenario 3 (Dynamic permissions on SciQAG) was introduced but results were truncated in the provided text.",
+ "limitations": "Scenario 2 lacks ground truth answers (evaluation relies solely on resource utilization as a proxy metric). Some experimental results for Scenario 3 were truncated in the provided text. The write/read policies use LLM-based transformations, which may introduce latency and non-determinism. The framework's scalability beyond the tested configurations is not empirically validated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

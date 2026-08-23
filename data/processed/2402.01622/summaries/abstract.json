@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.01622",
+ "tldr": "The paper introduces TravelPlanner, a benchmark with 1,225 travel planning queries and ~4 million data records to evaluate language agents on complex real-world planning with multiple constraints. Current LLM-based agents, even GPT-4, perform very poorly, achieving only a 0.6% final pass rate on the test set.",
+ "contributions": [
+  "Propose TravelPlanner, a new planning benchmark focused on travel planning as a realistic, multi-constraint real-world scenario",
+  "Build a rich sandbox environment with ~4 million data entries and six tools, plus 1,225 curated query-plan pairs across nine difficulty groups",
+  "Comprehensively evaluate five LLMs and four planning strategies, identifying common failure modes such as argument errors, dead loops, and hallucinations"
+ ],
+ "methods": "TravelPlanner comprises 1,225 queries divided into nine groups based on trip duration (3, 5, or 7 days) and number of hard constraints (easy, medium, or hard). The dataset has 45 training pairs, 180 validation queries, and 1,000 test queries. Evaluation metrics include Delivery Rate, Commonsense Constraint Pass Rate, Hard Constraint Pass Rate, and Final Pass Rate, assessed via micro and macro strategies. Five LLMs (GPT-4-Turbo, GPT-3.5-Turbo, Gemini Pro, Mixtral-8x7B-MoE, Mistral-7B-32K) were tested with two planning strategies: Sole-planning (direct) and Two-stage (ReAct + refinement). Reference plans were manually annotated by 20 graduate students, averaging $0.80 per plan.",
+ "results": "GPT-4-Turbo achieves the best result with a 0.6% Final Pass Rate on the test set and 2% Hard Constraint Pass Rate. GPT-3.5-Turbo reaches 0.6% Final Pass Rate on the test set but 0% on hard constraints in two-stage mode. Mixtral-8x7B-MoE achieves 0.4% and Gemini Pro achieves 0.1% Final Pass Rate on the test set. Mistral-7B-32K scores 0% across all final metrics. In the sole-planning direct setting, GPT-3.5-Turbo achieves 0.6% Final Pass Rate. Delivery rates are high for GPT-4-Turbo (93.1%) and GPT-3.5-Turbo (91.8%) on the test set, but Final Pass Rates remain very low.",
+ "limitations": "The benchmark uses a static, closed sandbox environment with pre-crawled data, which may not fully capture the dynamic nature of real-world travel information. The two-stage evaluation separates tool-use and planning phases, whereas real-world planning is more interleaved. The paper notes that even the best model (GPT-4) achieves only 0.6% success, indicating the task remains extremely challenging. Only five LLMs and four planning strategies were evaluated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

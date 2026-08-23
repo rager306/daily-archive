@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1207.4167",
+ "tldr": "Predictive State Representations (PSRs) provide a more general framework for modeling discrete-time dynamical systems than nth-order Markov models or HMMs/POMDPs, with the system-dynamics matrix serving as a unifying construct.",
+ "contributions": [
+  "Introduction of the system-dynamics matrix D as a mathematical construct representing any controlled or uncontrolled dynamical system",
+  "Formal proof that PSRs are more general than both nth-order Markov models and HMMs/POMDPs",
+  "Definition of linear dimension of a dynamical system as the rank of its system-dynamics matrix",
+  "Demonstration that nonlinear PSRs can achieve exponentially smaller model sizes than linear PSRs for certain systems"
+ ],
+ "methods": "The authors define the system-dynamics matrix D whose entries are history-conditional predictions of tests, then use the rank of D to define the linear dimension of a dynamical system. They show that any system with linear dimension k can be modeled by a linear PSR with k core tests, and prove that finite-order Markov models and POMDPs with k states are limited to linear dimension at most k. They also examine nonlinear PSRs using examples like the float-reset POMDP and the rotate register system.",
+ "results": "A dynamical system with linear dimension k can always be modeled by a linear PSR with k core tests (Lemma 4), and a linear PSR with k core tests cannot model systems with linear dimension greater than k (Lemma 5), establishing equivalence (Theorem 6). An nth-order Markov model cannot exceed linear dimension k = (|A||O|)^n (Theorem 1). A POMDP with k nominal states cannot exceed linear dimension k (Theorem 2). There exist systems where nonlinear PSRs use k+1 core tests versus 2^k for linear PSRs or POMDPs (Theorem 7), as demonstrated by the rotate register system.",
+ "limitations": "The paper notes that PSR model parameters may contain negative numbers, unlike POMDP parameters, which could present practical challenges. While nonlinear PSRs can be exponentially more compact than linear PSRs, explicit nonlinear update functions are not always constructed. The analysis assumes discrete-time, finite-actions, and finite-observations systems.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.14992",
+ "tldr": "The paper proposes Reasoning via Planning (RAP), a framework that repurposes LLMs as both world models and reasoning agents, using Monte Carlo Tree Search to enable deliberate planning-like reasoning that balances exploration and exploitation.",
+ "contributions": [
+  "Introducing RAP, a framework that augments LLMs with an internal world model by repurposing the same LLM to predict state transitions",
+  "Applying Monte Carlo Tree Search (MCTS) for strategic exploration of reasoning spaces with a principled balance between exploration and exploitation",
+  "Demonstrating RAP's effectiveness across diverse reasoning tasks including plan generation, math reasoning, and logical inference"
+ ],
+ "methods": "RAP repurposes the LLM as both a world model (predicting next states given current states and actions) and a reasoning agent. It defines task-specific states and actions, uses reward functions (action likelihood, state confidence, self-evaluation, task-specific heuristics) to assess reasoning steps, and employs MCTS to iteratively build a reasoning tree through selection, expansion, simulation, and back-propagation. An aggregation mechanism (RAP-Aggregation) combines multiple reasoning traces for tasks requiring only final answers.",
+ "results": "In Blocksworld plan generation, RAP achieves 64% average success rate on 2/4/6-step problems while CoT fails almost completely. LLaMA-33B with RAP surpasses GPT-4 with CoT by 33% relative improvement. In math reasoning (GSM8K) and logical inference (PrOntoQA), RAP consistently improves over strong baselines including CoT, least-to-most prompting, and their self-consistency variants.",
+ "limitations": "The approach relies on repurposing the same LLM as both agent and world model, which may limit the quality of state predictions. The reasoning tree simulation is entirely internal without interacting with external real environments. Computing resources are a constraint, as the authors note comparisons with GPT-4 were only done 'when computation resources allow.'",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

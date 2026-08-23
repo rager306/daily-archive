@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.19056",
+ "tldr": "OFFICEBENCH is one of the first office automation benchmarks evaluating LLM agents' ability to handle realistic multi-application workflows; GPT-4 Omni achieves the highest pass rate of 47.00%, still far below human performance.",
+ "contributions": [
+  "Introduced OFFICEBENCH, a benchmark for evaluating LLM agents in realistic office automation across multiple applications",
+  "Designed a multi-application environment with 9 applications (Word, Excel, PDF, Calendar, Email, OCR, ChatGPT, Shell, System) and a large combined action space",
+  "Proposed customized evaluation methods including exact matching, fuzzy matching, and execution-based evaluation tailored to each task",
+  "Annotated 300 tasks across Single App (93), Two Apps (95), and Three Apps (112) categories",
+  "Evaluated state-of-the-art LLMs (GPT-3.5, GPT-4, Gemini-1.0, Gemini-1.5, Llama 3, Qwen 2) and analyzed failure patterns"
+ ],
+ "methods": "OFFICEBENCH is implemented in a Docker environment pre-installed with office applications, where LLM agents interact via a transition system: the current application is the state, operations are transitions, and full execution history is provided as observation. Agents operate within a restricted action space specific to the current application plus switch_app and submit operations. Tasks were annotated across three difficulty categories by involving increasing numbers of applications, and synthetic documents/emails/calendar events were generated using ChatGPT and Python random generators. Evaluation uses three customized methods—Exact Matching, Fuzzy Matching, and Execution-Based Evaluation—tailored per task and file format.",
+ "results": "GPT-4 Omni achieved the highest pass rate of 47.00% among all tested models (GPT-3.5, GPT-4, Gemini-1.0, Gemini-1.5, Llama 3, Qwen 2), demonstrating decent but insufficient performance for real-world office workflows. Performance was well below human accuracy standards. Failure analysis revealed issues related to operation redundancy, hallucinations, and limitations in switching between multiple applications.",
+ "limitations": [
+  "GPT-4 Omni's pass rate of 47.00% is far below accuracy standards required by real-world office workflows",
+  "Current LLM agents struggle with operation redundancy and hallucinations",
+  "Agents show limitations in switching between multiple applications",
+  "Complex cross-application planning remains challenging for current LLMs",
+  "Maximum iteration limit of 50 steps and stagnation detection (5 consecutive repeated operations) may prematurely terminate tasks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

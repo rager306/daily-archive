@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.22678",
+ "tldr": "MedAgentSim is an open-source multi-agent simulated clinical environment that evaluates and enhances LLM diagnostic performance through interactive doctor-patient conversations, measurement agent test requests, and self-improvement mechanisms including memory retrieval, chain-of-thought reasoning, and ensembling.",
+ "contributions": [
+  "A game-based hospital simulation with open-source LLMs supporting fully automated and user-controlled modes for doctor-patient interaction",
+  "A multi-agent framework where doctors start with no prior patient knowledge and must actively gather information through multi-turn dialogue and request tests from a measurement agent",
+  "A multi-agent diagnostic pipeline with self-improvement mechanisms: multi-agent discussion, chain-of-thought reasoning, and experience-based knowledge retrieval for progressive learning"
+ ],
+ "methods": "MedAgentSim consists of three agent types: doctor, patient, and measurement agents operating in a simulated hospital environment. The process has two phases: a Conversation Phase where doctors interact with patients and request tests (e.g., blood pressure, ECG, X-Ray, MRI) from the measurement agent only when explicitly requested, and an Experience Replay Phase where past interactions are retrieved using k-nearest neighbors from Medical Records Buffer (correct diagnoses) and Experience Records Buffer (corrected misdiagnoses). Retrieved cases enrich context, multiple doctor agents independently assess via chain-of-thought reasoning, and diagnoses are aggregated through majority-vote ensembling. Correct diagnoses are stored as CLIP embeddings; incorrect cases undergo reflection before a second attempt, with only successfully corrected insights stored.",
+ "results": "MedAgentSim significantly outperforms the baseline Multi-Agent Clinic across all benchmarks. On NEJM, MedAgentSim achieves 26.7% with LLaMA 3.3 vs 20.0% baseline; on NEJM Extended, 28.3% vs 24.2%. In MedQA, 70.8% vs 62.3% baseline; in MedQA Extended, 72.0% vs 63.6%. The largest improvement is in MIMIC-IV at 79.5% vs 42.7% baseline. With LLaMA 3.3 70B, incremental strategies yield: Baseline 54.7% → +Measurement 59.4% → +Memory 65.1% → +COT 68.9% → +Ensembling 70.8%, a total boost of 16.1%. Human study showed doctors failed to identify human agents in 62.5% of cases, indicating high behavioral realism.",
+ "limitations": "Existing datasets (NEJM, MedQA, MIMIC-IV) were originally formatted for QA tasks and required preprocessing via GPT-4o to convert into structured JSON, introducing potential conversion errors. The evaluation uses an LLM as the accuracy evaluator, which may introduce variability. Mixtral and Mistral models showed greater susceptibility to patient cognitive biases compared to LLaMA and GPT. Some models achieved zero or near-zero accuracy on certain benchmarks (e.g., Qwen2 VL-7B scored 0.0% on NEJM). The human study was preliminary with limited sample size.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:05Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

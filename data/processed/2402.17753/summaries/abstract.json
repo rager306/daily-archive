@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.17753",
+ "tldr": "The paper introduces LOCOMO, a dataset of very long-term multimodal conversations averaging 300 turns and 9K tokens across 19 sessions, along with an evaluation benchmark showing that even long-context LLMs and RAG methods substantially lag behind human performance in long-term conversational memory.",
+ "contributions": [
+  "LOCOMO dataset: 50 very long-term dialogues averaging 304.9 turns, 9,209.2 tokens, over 19.3 sessions (up to 35), generated via an LLM-human pipeline with personas and temporal event graphs",
+  "Three-task evaluation benchmark: question answering, event graph summarization, and multi-modal dialogue generation",
+  "Comprehensive evaluation showing LLMs struggle with long-range temporal/causal understanding in very long conversations"
+ ],
+ "methods": "LLM-based generative agents (gpt-3.5-turbo) were initialized with unique personas and temporal event graphs containing up to 25 causally linked events spread over 6-12 months. Agents used a reflect-and-respond mechanism with short-term summaries and long-term observations, plus image sharing and reaction capabilities. Human annotators edited ~15% of dialogue turns and removed/substituted ~19% of images for consistency. Evaluation used instruction-based LLMs, long-context LLMs (gpt-3.5-turbo-16k), and RAG with DRAGON retriever.",
+ "results": "GPT-4-turbo achieved the highest QA score of 32.4 vs. human benchmark of 87.9. Long-context LLMs improved memory by 22-66% but lagged humans by 56%, especially in temporal reasoning (73% gap). Long-context LLMs performed 83% worse than base models on adversarial questions and were prone to misassigning dialogs/events to wrong speakers. Event graph summarization performance lagged base models by 14%. RAG combining short-context accuracy with wide-context comprehension performed well when dialogues were transformed into a database of assertions about each speaker.",
+ "limitations": "Existing long-term dialogue evaluations were limited to ~5 chat sessions; retrieval accuracy can be compromised since retrievers are trained on semantic similarity rather than dialogue-specific tasks; real-world dialogues feature co-references and anaphora that complicate retrieval; long-context LLMs grasp factual elements but do not accurately comprehend context; reasoning over time intervals remains challenging.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

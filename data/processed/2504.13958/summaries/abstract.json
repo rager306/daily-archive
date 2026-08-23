@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.13958",
+ "tldr": "The paper presents ToolRL, the first comprehensive study on reward design for tool selection and application in LLMs within the RL paradigm, achieving 17% improvement over base models and 15% gain over SFT models across diverse benchmarks.",
+ "contributions": [
+  "First systematic study on RL-based training for general-purpose tool selection and application in LLMs",
+  "A principled reward design framework for TIR that decomposes rewards into format and correctness components (tool name, parameter name, and parameter value matching)",
+  "Extensive experiments analyzing reward strategies across four dimensions (type, scale, granularity, dynamics), distilled into actionable insights for LLM agent training"
+ ],
+ "methods": "The authors formalize Tool-Integrated Reasoning (TIR) as a multi-step process where the LLM selects tools and generates parameterized invocations to maximize cumulative reward. They design a rule-based reward combining a binary format reward (checking structural token order) and a fine-grained correctness reward ranging from -3 to 3, computed via optimal matching of predicted vs. ground-truth tool calls across tool names, parameter names, and parameter values. The reward is applied within the Group Relative Policy Optimization (GRPO) framework with group-wise normalized advantages and no KL penalty against a reference model. Training uses a mixed dataset of 2K examples from ToolACE, 1K from Hammer (Masked), and 1K from xLAM, with 512 batch size, 4 responses per query, and 15 training epochs.",
+ "results": "The approach achieves a 17% improvement over base models and a 15% gain over SFT models across multiple tool use and QA benchmarks. Key insights from systematic reward exploration include: (1) longer reasoning traces are not inherently better and length rewards can degrade performance, (2) dynamic reward scale helps models transition smoothly from simple to complex behaviors, and (3) fine-grained reward decomposition leads to more stable and effective learning. The trained model also shows strong generalization to unseen scenarios and task objectives.",
+ "limitations": "The paper does not explicitly enumerate limitations, but several are evident: (1) the current reward design relies on ground-truth tool calls at each step during training, requiring labeled data, (2) the study focuses on GRPO and PPO and may not generalize equally to all RL algorithms, (3) prior works like Search-R1 and TORL are acknowledged as narrow (constrained to either search or code tools), suggesting general-purpose tool use across diverse tool sets remains challenging, and (4) the dataset sizes (2K-3K examples total) may limit the scope of generalization claims.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

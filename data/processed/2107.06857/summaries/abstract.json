@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2107.06857",
+ "tldr": "Melting Pot is a scalable multi-agent reinforcement learning evaluation suite that assesses generalization to novel social situations by using pre-trained background agents to generate test scenarios, revealing weaknesses in MARL policies not apparent from training performance alone.",
+ "contributions": [
+  "A MARL evaluation suite focused on generalization to novel situations as its primary objective, filling a gap left by existing benchmarks",
+  "A method using reinforcement learning to reduce human labor for creating novel test scenarios, leveraging the fact that one agent's behavior constitutes part of another agent's environment",
+  "Over 80 unique test scenarios covering social dilemmas, reciprocity, resource sharing, and task partitioning",
+  "Benchmark results demonstrating that maximizing collective reward often produces policies less robust to novel social situations than maximizing individual reward"
+ ],
+ "methods": "The authors define a scenario as a substrate (a partially observable general-sum Markov game) combined with a background population of pre-trained agents. Focal agents are tested zero-shot in these scenarios without test-time learning. Three test modes are used: resident mode (focal agents outnumber background), visitor mode (background agents outnumber focal), and universalization mode (all agents use the same sampled policy). The suite includes purely competitive games, common-interest games, team-based competitive games, and mixed-motivation games with 2 to 16 players. Performance is measured by expected per-capita return of the focal population, with secondary metrics assessing impacts on the background population.",
+ "results": "Over 80 unique test scenarios were created covering a broad range of research topics. Key finding: maximizing collective reward often produces policies that are less robust to novel social situations than policies obtained by maximizing individual reward. The suite revealed weaknesses in standard MARL training algorithms not apparent from training performance alone. Substrates include Running with Scissors in the Matrix, Capture the Flag, King of the Hill, Clean Up, Commons Harvest variants, Prisoner's Dilemma, Chicken, Territory variants, Collaborative Cooking, Pure Coordination, Rationalizable Coordination, Bach or Stravinsky, Stag Hunt, and Allelopathic Harvest.",
+ "limitations": "The protocol is agnostic to training methods and only evaluates at test time, so it does not prescribe how agents should be trained. Policies are not transferable between substrates since observation and action spaces can differ. Heterogeneous specialization is penalized since policies must be independently sampled at test time. The evaluation assumes sufficient similarity between training and test populations for meaningful generalization measurement.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

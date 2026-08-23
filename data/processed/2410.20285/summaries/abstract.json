@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.20285",
+ "tldr": "SWE-Search is a multi-agent framework integrating Monte Carlo Tree Search (MCTS) with iterative self-refinement to enhance LLM-based software agents on repository-level tasks, achieving a 23% relative performance improvement on SWE-bench compared to standard open-source agents without MCTS.",
+ "contributions": [
+  "Proposing SWE-Search, a multi-agent framework that combines MCTS with a self-improvement mechanism for repository-level software tasks",
+  "Introducing a hybrid value function leveraging LLMs for both numerical value estimation and qualitative natural language evaluation",
+  "Designing a Discriminator Agent that facilitates multi-agent debate for collaborative solution selection",
+  "Demonstrating that performance scales with increased inference-time compute through deeper search, without requiring larger models or additional training data"
+ ],
+ "methods": "The framework builds on the moatless-tools framework and consists of four components: a SWE-Agent with a flexible state space and git-like commit tree enabling backtracking, a Value Agent providing utility estimates and natural language explanations for iterative feedback, a modified MCTS search algorithm with a heuristic-based UCT function featuring early depth bonuses and late depth penalties, and a Discriminator Agent conducting structured multi-agent debate over up to five candidate solutions. The UCT function balances exploitation and exploration using visit counts, value estimates, and depth-dependent terms, with a heuristic rule to abandon nodes with consecutive low rewards.",
+ "results": "On the SWE-bench-lite benchmark, SWE-Search demonstrates a 23% relative performance improvement across five models compared to standard open-source agents without MCTS. The analysis shows performance scales with increased inference-time compute through deeper search.",
+ "limitations": "The paper notes that repeated trajectory sampling with the same agent/model setup can yield results with high variance. The system requires multiple LLM calls per step (Action Agent, Value Agent, and potentially Discriminator Agent), which increases computational overhead. The heuristic abandonment rule for low-reward nodes and the fixed set of constants (C, α, β, γ) controlling exploration-exploitation balance represent simplifying assumptions that may not generalize across all software engineering tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.04736",
+ "tldr": "Step-Wise Reinforcement Learning (SWiRL) is an offline multi-step RL methodology that decomposes trajectories into sub-trajectories per action, applies process-filtered synthetic data, and optimizes step-wise rewards without golden labels, outperforming baselines across multi-step reasoning and tool use tasks with cross-task generalization.",
+ "contributions": [
+  "Proposing SWiRL, an offline multi-step RL optimization technique that decomposes trajectories per action and learns from process-filtered synthetic data without golden labels",
+  "Demonstrating that process-only filtering consistently outperforms outcome-based filtering in multi-step tool-use settings",
+  "Showing cross-task generalization: training on HotPotQA improves zero-shot GSM8K performance by 16.9% relative",
+  "Demonstrating improved average process reward on out-of-distribution tasks"
+ ],
+ "methods": "The authors first generate multi-step synthetic trajectories by augmenting language models with tools (search engine, calculator) and iteratively prompting them across up to 5 steps for HotPotQA and 10 for GSM8K. Four filtering strategies are applied: no filtering, process filtering (each step judged reasonable by Gemini 1.5 Pro Thinking), outcome filtering (final answer matches golden label), and combined process+outcome filtering. SWiRL then decomposes each trajectory into sub-trajectories corresponding to each action and applies step-wise policy gradient optimization using a generative reward model (Gemini 1.5 Pro) that scores each action given context, with no golden labels used during RL.",
+ "results": "SWiRL outperforms baseline approaches by 21.5% (GSM8K), 12.3% (HotPotQA), 14.8% (CofCA), 11.1% (MuSiQue), and 15.3% (BeerQA) in relative accuracy. Training only on HotPotQA improves zero-shot GSM8K by a relative 16.9%. Process-only filtering consistently yields the highest accuracy. SWiRL-trained Gemma-2-27b achieves 67.8% on HotPotQA vs. 58.6% base. SFT degrades performance compared to base, while SWiRL improves it.",
+ "limitations": "Smaller models (Gemma-2-2b and 9b) benefit from in-domain SWiRL but do not display the same generalization as the larger Gemma-2-27b. A limited dataset of 100 data points appears insufficient for effective generalization. Supervised fine-tuning (SFT) on the same synthetic data degrades performance compared to base, unlike SWiRL. Model-based evaluation introduces stochasticity compared to exact match metrics.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

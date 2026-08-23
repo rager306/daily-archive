@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.04578",
+ "tldr": "The paper introduces HVR, a neuro-symbolic system that integrates hierarchical planning, symbolic verification, and Knowledge Graph-based RAG to enhance LLM-based robotic planners for complex, long-horizon tasks.",
+ "contributions": [
+  "HVR: a novel neuro-symbolic method combining hierarchical planning, symbolic verification, and KG-RAG for improved planning accuracy and formal correctness",
+  "A diverse set of metrics and tasks for robotic simulators to evaluate planning systems and assess LLM reasoning and compositional capabilities",
+  "A reusable macro-action library enabling knowledge transfer across agents and robots with varying hardware"
+ ],
+ "methods": "The method uses a dynamic Knowledge Graph built from an ontology (OntoThor) and real-time sensor data. A KG-based RAG component retrieves relevant object states and properties to augment LLM prompts. Hierarchical plan generation decomposes tasks into macro actions (MAs) via policy φ, which are then expanded into atomic action (AA) sequences via policy π, with RAG applied at each step. A Symbolic Validator checks plans against PDDL specifications, correcting errors via heuristic adjustments or LLM backprompting, and also acts as a runtime failure detector by aligning expected and observed world states.",
+ "results": "HVR significantly outperforms all baselines across both small and large LLMs and tasks of varying complexity (moderate: up to 20 steps; high: more than 20 steps with more than three objects). For smaller LLMs, RAG compensates for limited reasoning; for larger LLMs, hierarchical planning is most impactful. The combination of all three components achieves the best overall performance. LLM-based planners tend to generate unnecessarily long plans with extra steps, and struggle with generic or open-ended objectives.",
+ "limitations": "LLM-based planners generate unnecessarily long plans with extra steps, indicating room for improvement. They perform well on tasks with specific goal states but struggle with more generic or open-ended objectives. The evaluation relies on freely available LLMs; newer paid models may offer better general performance but would also benefit from the proposed method.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

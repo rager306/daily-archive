@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.18449",
+ "tldr": "SWE-RL is the first reinforcement learning approach to enhance LLM reasoning for real-world software engineering tasks using rule-based rewards on open-source software evolution data. Llama3-SWE-RL-70B achieves 41.0% on SWE-bench Verified, outperforming medium-sized LLMs and matching leading proprietary models, while also generalizing to out-of-domain reasoning tasks.",
+ "contributions": [
+  "Introduction of SWE-RL, the first RL approach using software evolution data (PRs) and rule-based rewards to improve LLMs on SE tasks",
+  "Development of Llama3-SWE-RL-70B achieving 41.0% on SWE-bench Verified, best among models <100B and comparable to GPT-4o",
+  "First demonstration that RL on real-world SE tasks enhances general reasoning abilities transferable to out-of-domain tasks"
+ ],
+ "methods": "The authors curate 273k high-quality pull request seeds from GitHub as the RL training dataset. A rule-based reward function penalizes incorrect formatting (-1) and rewards patch similarity (0-1 via difflib.SequenceMatcher) against oracle patches. Policy optimization uses Group Relative Policy Optimization (GRPO) with a global batch size of 512, sampling 16 rollouts per problem across 32 problems. Llama-3.3-70B-Instruct is trained for 1,600 steps on 512 H100 GPUs over ~32 wall-time hours. An SFT baseline (Llama3-SWE-SFT-70B) trained on synthetic Magicoder-style chain-of-thought data is used for comparison.",
+ "results": "Llama3-SWE-RL-70B achieves 41.0% pass@1 on SWE-bench Verified, outperforming the base Llama-3.3-70B-Instruct (12.2% greedy, 16.6% majority voting) and the SFT baseline (29.6%). On out-of-domain tasks, it improves over both base and SFT: HumanEval+ (79.9 vs 76.2 vs 73.2), BigCodeBench-Hard-I (28.4 vs 28.4 vs 25.7), CRUXEval-I (71.6 vs 60.5 vs 68.4), CRUXEval-O (75.5 vs 61.9 vs 75.1), MATH strict (73.7 vs 63.2 vs 54.0), MMLU (86.82 vs 86.49 vs 85.26). Scaling analysis shows pass@1 increases from 33.6 to 40.0 when repair samples grow from 20 to 160, plateauing beyond 160.",
+ "limitations": "The reward function relies on patch similarity via difflib.SequenceMatcher, which may not capture semantic correctness. The model was trained exclusively on issue-solving data with no explicit training on subtasks like test generation or multi-step localization, though generalization emerged. The SFT baseline uses additional synthetic data and a data mixture, making it not a perfectly controlled comparison. Performance plateaus at 160 repair samples and 20 reproduction tests in scaling analysis.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

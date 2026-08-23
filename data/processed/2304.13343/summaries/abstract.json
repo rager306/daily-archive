@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.13343",
+ "tldr": "The Self-Controlled Memory (SCM) framework enables LLMs to process ultra-long texts up to 2 million tokens without modification or fine-tuning by dynamically retrieving and utilizing relevant long-term and short-term memories through an intelligent memory controller.",
+ "contributions": [
+  "Proposed the Self-Controlled Memory (SCM) framework that unlocks infinite-length input capacity for LLMs by controlling when and how to introduce memory information",
+  "Contributed an annotated evaluation dataset covering long-term dialogues (18 instances, 420k tokens), book summarization (10 instances, 8M tokens), and meeting summarization (20 instances, 632k tokens)",
+  "Designed a plug-and-play framework requiring no modification or fine-tuning of underlying LLMs"
+ ],
+ "methods": "The SCM framework consists of three components: an LLM-based agent (text-davinci-003 or gpt-3.5-turbo), a memory stream storing interaction records with embeddings via text-embedding-ada-002, and a memory controller that decides when and how to retrieve memories. The controller uses two memory types—activation memory (long-term) and flash memory (short-term from the previous turn)—ranked by recency and cosine similarity relevance scores. It self-asks whether memory activation is needed and whether summaries suffice for memories exceeding 800 tokens when total activation memory exceeds 2000 tokens, selecting top K=3-10 memories.",
+ "results": "SCM davinci003 achieved 77.1% answer accuracy, 94.0% memory retrieval recall, 79.6% single-turn accuracy, and 75.0% multi-turn accuracy on 105 dialogue questions, outperforming SCM turbo (68.3%, 93.5%, 79.6%, 64.3%). Removing activation memory caused a dramatic ~60% drop to 10.5% accuracy with 0% recall and 0% multi-turn accuracy. Removing the memory controller dropped multi-turn accuracy by 25.6 percentage points. For summarization, SCM davinci003 provided better coverage than SCM turbo with comparable coherence, while frameworks without memory produced unsatisfactory results.",
+ "limitations": "Without the memory controller, concatenating and truncating all retrieved memories when exceeding 2500 tokens causes significant information loss. The SCM turbo variant showed conservative behavior leading to hesitation on privacy-related questions. Flash memory removal caused only minor drops because it provides fewer clues, but activation memory is essential for long-distance dependencies. The framework's effectiveness depends on the underlying LLM's capabilities.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

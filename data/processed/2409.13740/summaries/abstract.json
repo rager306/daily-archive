@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.13740",
+ "tldr": "PaperQA2, a frontier language model agent optimized for factuality, matches or exceeds subject matter expert performance on three real-world scientific literature tasks—retrieval, summarization, and contradiction detection—without restrictions on human participants.",
+ "contributions": [
+  "Developed LitQA2, a benchmark of 248 multiple-choice questions requiring retrieval from the full scientific literature, to guide and evaluate AI system design.",
+  "Built PaperQA2, a RAG agent with iterative search, evidence gathering with reranking and contextual summarization, and citation traversal tools.",
+  "Created WikiCrow to generate cited Wikipedia-style articles on human protein-coding genes.",
+  "Developed ContraCrow and the ContraDetect benchmark to detect contradictions in scientific literature at scale."
+ ],
+ "methods": "The authors developed LitQA2, a benchmark of 248 multiple-choice questions with answers appearing in paper bodies but not abstracts, to drive the design of PaperQA2—a RAG agent that decomposes literature search into multiple tools: Paper Search, Gather Evidence (using dense vector retrieval plus LLM reranking and contextual summarization), Generate Answer, and Citation Traversal. They then evaluated PaperQA2 on three tasks: answering scientific questions (LitQA2), generating cited Wikipedia-style summaries of protein-coding genes (WikiCrow), and detecting contradictions across the literature (ContraCrow). Human annotators with PhDs or PhD enrollment answered LitQA2 questions using any tools over approximately one week, while human experts graded and validated outputs across all three tasks.",
+ "results": "PaperQA2 achieved 85.2% ± 1.1% precision and 66.0% ± 1.2% accuracy on LitQA2, outperforming human annotators at 73.8% ± 9.6% precision and 67.7% ± 11.9% accuracy (superhuman precision, p = 0.0036). WikiCrow generated 240 articles averaging 1219.0 ± 275.0 words at $4.48 ± $1.02 per article; it had significantly fewer cited-but-unsupported statements than human Wikipedia (13.5% vs 24.9%, p = 0.0075), 3.9× lower uncited rate (3.5% vs 13.6%, p < 0.001), and higher precision (86.1% vs 71.2%, p = 0.0013). ContraCrow achieved 73% accuracy and 88% precision on ContraDetect (AUC 0.842), correctly identified lack of evidence 98% of the time on no-evidence statements, and detected 2.34 ± 1.99 contradictions per biology paper (N = 93), with 70% validated by human experts (F1 = 0.82).",
+ "limitations": [
+  "The LitQA2 questions were deliberately designed to be difficult (obscure intermediate findings from very recent papers), which may not represent all scientific retrieval scenarios.",
+  "Human annotators received financial incentives ($3–12 per question), which could affect performance comparisons.",
+  "Summarization was evaluated only on human protein-coding genes, limiting generalizability to other topic types.",
+  "Smaller LLMs (GPT-3.5-Turbo, Llama3 70B) decreased accuracy when used for contextual summarization, indicating a comprehension threshold requirement.",
+  "Contradiction detection used a Likert scale threshold (≥8) that may influence the reported false positive rate and validation metrics.",
+  "The study focused primarily on biology-related papers, and broader discipline coverage is not demonstrated."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

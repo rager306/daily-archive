@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.25140",
+ "tldr": "ReasoningBank is a memory framework that distills generalizable reasoning strategies from both successful and failed agent experiences, enabling agents to self-evolve over time; paired with MaTTS (memory-aware test-time scaling), it creates a synergistic feedback loop between memory quality and exploration depth.",
+ "contributions": [
+  "ReasoningBank: a novel memory framework that distills transferable reasoning strategies from self-judged successful and failed experiences",
+  "MaTTS (Memory-aware Test-Time Scaling): a parallel and sequential scaling approach that establishes bidirectional synergy between memory and test-time compute allocation",
+  "Extensive evaluation on WebArena, Mind2Web, and SWE-Bench-Verified showing up to 20% relative improvement in effectiveness and up to 16% fewer interaction steps versus baselines"
+ ],
+ "methods": "The authors propose ReasoningBank, a closed-loop memory system where an agent retrieves relevant structured memory items via embedding-based similarity search, uses them as system instructions during task execution, then extracts new memory items from both successful and failed trajectories using an LLM-as-a-Judge for proxy correctness signals. Memory items contain a title, description, and content capturing distilled reasoning patterns. They also introduce MaTTS in two variants—parallel scaling (multiple independent trajectories per task) and sequential scaling (iterative self-refinement within a single trajectory)—to generate diverse exploration that provides contrastive signals for synthesizing higher-quality memory.",
+ "results": "ReasoningBank outperforms baselines (No Memory, Synapse, AWM) across all datasets and both Gemini-2.5 and Claude-3.7 backbones. On WebArena, ReasoningBank improves overall success rate by +8.3 (Gemini), +7.2, and +4.6 over memory-free agents. On the Multi subset (cross-website generalization), it achieves a +4.6 averaged SR gain over the strongest baseline. On SWE-Bench-Verified, it reduces average steps by 2.8 (Gemini) and 1.3 (Claude) compared to baselines. MaTTS further amplifies gains: on WebArena with Gemini-2.5, ReasoningBank+MaTTS achieves 54.0 SR vs 51.9 without; on the Shopping subset scaling study, MaTTS with memory shows clear scaling trends while MaTTS without memory or without aggregation performs worse.",
+ "limitations": "The paper notes that vanilla test-time scaling (without memory-aware curation) is suboptimal because it does not leverage contrastive signals from redundant exploration. Existing baselines (Synapse, AWM) rely on narrow, homogeneous memory from successful trajectories only and fail to provide gains or even degrade in cross-domain generalization settings. No explicit limitations of ReasoningBank itself are stated in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

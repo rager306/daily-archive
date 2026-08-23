@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.01346",
+ "tldr": "The paper introduces T-RAG, a table-corpora-aware RAG framework using hierarchical memory indexing, multi-stage retrieval, and graph-aware prompting, along with MultiTableQA—a large-scale benchmark of 57,193 tables and 23,758 questions—where T-RAG achieves state-of-the-art accuracy, recall, and runtime.",
+ "contributions": [
+  "A table-corpora-aware RAG framework (T-RAG) comprising a hierarchical memory index, multi-stage retrieval pipeline, and graph-aware prompting mechanism",
+  "The MultiTableQA benchmark, spanning 3 task types, 57,193 tables, and 23,758 questions sourced from real-world scenarios",
+  "Holistic evaluation comparing table retrieval methods, RAG methods, and table-to-graph representation learning methods, showing T-RAG leads in accuracy, recall, and running time"
+ ],
+ "methods": "T-RAG constructs a heterogeneous hypergraph over the table corpus by linearizing each table into a token sequence and extracting three feature types (semantic via sequence encoder, structural via spaCy, heuristic via TF-IDF). KMeans clustering on each feature type produces heterogeneous hyperedges. Coarse-grained multi-way retrieval selects representative typical nodes per cluster and assigns the query to optimal clusters across all feature types. Fine-grained retrieval builds a local subgraph from selected clusters and applies iterative Personalized PageRank to rank tables. Finally, graph-aware prompting injects weighted inter-node scores and instructs the LLM to perform hierarchical long chain-of-thought reasoning.",
+ "results": "T-RAG achieves state-of-the-art performance across all three task types in MultiTableQA (single-table QA, single-hop multi-table QA, multi-hop multi-table QA) in terms of accuracy, recall@k (k=10,20,50), and runtime efficiency. It outperforms table retrieval baselines (DTR, Table-Contriever, Table-E5, Table-LLaMA) and RAG baselines (RALM, ColBERT). Table-LLaMA achieves the best among table retrieval baselines with accuracy of 53.5% and recall@10 of 59.2% on TFV Single-hop TQA. Across different LLM backbones (Qwen-2.5, Claude-3.5, GPT-4o), T-RAG consistently improves inference ability.",
+ "limitations": "The benchmark is constructed by decomposing existing single-table datasets (HybridQA, SQA, Tabfact, WikiTables) rather than from entirely novel multi-table sources, which may not fully capture the complexity of real-world cross-table retrieval. The approach relies on linearization of tables, which may lose structural information. The hypergraph construction depends on KMeans clustering with a fixed number of clusters K, and the Personalized PageRank stage uses a similarity threshold tau that could miss relevant connections.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

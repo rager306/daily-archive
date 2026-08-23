@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.16779",
+ "tldr": "CoTools is a fine-tuning-based tool learning method that enables frozen LLMs to efficiently select and call massive unseen tools during Chain-of-Thought reasoning by leveraging the model's hidden state semantic representations.",
+ "contributions": [
+  "Chain-of-Tools (CoTools): a fine-tuning-based tool learning method that uses frozen LLMs to utilize massive unseen tools efficiently in CoT reasoning via hidden state semantic representations, without introducing external retrievers.",
+  "SimpleToolQuestions (STQuestions): a new dataset with 1836 tools (999 seen, 837 unseen in test set) designed to evaluate tool selection in massive unseen tool scenarios.",
+  "Experiments on four benchmarks (GSM8K-XL, FuncQA, KAMEL, STQuestions) showing CoTools outperforms baselines, plus discovery of key hidden state dimensions for tool selection that enhance model interpretability."
+ ],
+ "methods": "CoTools freezes the foundation LLM and trains three post-processing modules built on top of hidden states: a Tool Judge (a gating-based binary classifier that predicts at each token whether to call a tool), a Tool Retriever consisting of a Query Encoder and Tool Encoder that compute vectors for contrastive learning-based tool selection via dot product similarity, and a Tool Calling component that uses ICL prompting to generate tool parameters and executes the selected tool. The initial input is prompted with ICL and CoT instructions.",
+ "results": "CoTools outperforms baselines across all benchmarks. On KAMEL with synthetic training data (KAMEL(syn)), CoTools exceeds ToolkenGPT by more than 20%. On STQuestions with 999 seen tools, CoTools outperforms baselines by more than 10%. For KAMEL(sup), CoTools remains nearly 100% correct within the top 5 selected tools. CoTools generalizes to 837 unseen tools in STQuestions by using tool descriptions for retrieval, whereas ToolkenGPT can only use trained tools.",
+ "limitations": "On KAMEL with synthetic training data (KAMEL(syn)), the authors note that even CoTools 'is still a long way from being usable,' indicating limitations with low-quality/generated training data. The paper also notes that Prompting methods are inefficient in massive tool scenarios and hard to guarantee results.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.02412",
+ "tldr": "The PET (Plan, Eliminate, Track) framework leverages pre-trained LLMs to help embodied agents by breaking tasks into sub-tasks, filtering irrelevant observations via zero-shot QA, and tracking progress—achieving a 15% improvement over SOTA on the AlfWorld benchmark for generalization to human goal specifications.",
+ "contributions": [
+  "PET framework that uses LLMs to assist rather than act as the agent, preserving trainable actor compatibility",
+  "Action Attention agent handling variable action spaces in text environments",
+  "15% improvement over SOTA for generalization to human goal specifications via sub-task planning and tracking"
+ ],
+ "methods": "The PET framework has three modules: (1) Plan uses a pre-trained LLM with in-context examples (top-5 training tasks by RoBERTa similarity) to generate high-level sub-task lists from task descriptions; (2) Eliminate uses a zero-shot QA model (Macaw-11b) to score and mask irrelevant objects/receptacles below a threshold of 0.4; (3) Track uses the same QA model to determine sub-task completion via Yes/No classification on recent observation history. The low-level Action Attention agent is a 12-layer transformer (12 heads, hidden dim 384) that scores permissible actions using attention over averaged historical observations and individually encoded actions, trained via behavior cloning on the AlfWorld benchmark.",
+ "results": "PET achieves a 15% improvement over SOTA (GPT fine-tuned) for generalization to human goal specifications. On human goals specifically, PET outperforms GPT by 25% on seen splits and 5% on unseen splits. GPT suffers a 50% relative performance drop transferring from template to human-goal specifications, while PET incurs only a 15-25% drop. PET outperforms BUTLER with DAgger by more than 2x despite using only behavior cloning (6 hours vs 3 weeks). LLMs remove 40% of task-irrelevant objects and generate high-level sub-tasks with 99% accuracy. Adding Plan and Track together improves completion rate by 60% relatively in ablations.",
+ "limitations": "PET under-performs fine-tuned GPT on template goal specifications. The fine-tuned GPT baseline requires fully text-based expert trajectories and a consistent text-based action space, limiting generalizability to other domains. Premature task tracking can occur (discussed in terms of precision and recall in Section 4.4). The Plan module relies on in-context examples from the training set, and the framework was evaluated only on the AlfWorld text-based benchmark.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

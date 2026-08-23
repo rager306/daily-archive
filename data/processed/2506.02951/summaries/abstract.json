@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.02951",
+ "tldr": "Adaptive Graph Pruning (AGP) is a task-adaptive multi-agent collaboration framework that jointly optimizes agent quantity (hard pruning) and communication topology (soft pruning) to dynamically construct optimized sub-graphs tailored to individual tasks.",
+ "contributions": [
+  "A novel task-adaptive multi-agent collaboration framework that dynamically constructs optimized communication topologies tailored to individual tasks",
+  "A two-stage training strategy that jointly optimizes agent quantity (hard-pruning) and communication topology (soft-pruning)",
+  "State-of-the-art performance with excellent inference token economy (90%+ decrease) and high training efficiency (surpassing baselines after ~10 training steps)"
+ ],
+ "methods": "The method uses a two-stage training strategy. In Stage I, the COLLECTOR samples complete sub-graphs from a pool of heterogeneous LLM agents and fine-tunes each on its associated task to obtain accuracy scores; the top-2 performers per task are lifted to an Nmax-node reference frame to create supervision pairs (A_gt, y), resulting in a corpus of 460 supervision graphs across three domains (200 General Reasoning, 100 Mathematical Reasoning, 160 Code Generation). In Stage II, a shared latent space connects a soft-pruning path (GCN backbone with edge-weight head using bilinear projector) and a hard-pruning path (node-mask head using two-layer MLP with sigmoid), trained jointly via edge loss (MSE on positive edges, pushing negatives toward 0) and node loss (BCE with sparsity and coherence penalties), using Gumbel-Sigmoid for continuous-discrete gradient flow with temperature annealing from 1.0 to 0.1.",
+ "results": "AGP achieves state-of-the-art results across six benchmarks (MMLU, GSM8K, MultiArith, SVAMP, AQuA, HumanEval) with overall accuracy of 91.04%, surpassing G-Designer by +1.48 and Self-Consistency by +5.62. Per-task gains range from +2.58% (MultiArith) to +9.84% (MMLU). On MultiArith, AGP solves 179/180 problems (99.44%). On HumanEval, AGP attains 90.62% despite MetaGPT specializing in code. Token consumption decreases by over 90%. Performance surpasses existing baselines after approximately 10 training steps across all six benchmarks.",
+ "limitations": "The paper evaluates only on six benchmarks across three task families (general reasoning, mathematical reasoning, code generation) using primarily gpt-4o-mini, which limits claims about generalization to other domains, agent types, or model architectures. The fixed maximum complete graph with Nmax=16 agents means very simple tasks may still incur overhead from evaluating a large pool, and the two-stage approach depends on the quality and coverage of the collected graph pool.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2512.10999",
+ "tldr": "KBQA-R1 reframes Knowledge Base Question Answering as a multi-turn reinforcement learning interaction problem, where an LLM navigates a knowledge base via a structured action space and learns from executable feedback, achieving state-of-the-art results on three Freebase benchmarks.",
+ "contributions": [
+  "KBQA-R1, a multi-turn RL framework that grounds LLM reasoning in verifiable KB actions through closed-loop interaction",
+  "Referenced Rejection Sampling (RRS), a data synthesis strategy that aligns reasoning traces with ground-truth action sequences to mitigate hallucination during warm-start training",
+  "State-of-the-art performance on WebQSP, GrailQA, and GraphQuestions using only a Llama-3.1-8B backbone with over 70% fewer LLM calls than GPT-4-based prompting methods"
+ ],
+ "methods": "KBQA-R1 treats KBQA as a sequential decision process where an LLM policy emits reasoning (<think>) and executable actions (<action>) in a compact typed action space (Find_relation, Merge, Order, Compare, Time_constraint, Count), receives KB feedback (<information>), and iterates until producing a final answer. A Relation Retrieval and Confidence Gating (RRCG) module validates proposed relations via dense retrieval against schema neighbors using similarity thresholds. Training begins with Referenced Rejection Sampling (RRS), which conditions rollout generation on ground-truth action sequences, filters for F1 >= threshold and correct structure, strips reference hints, and fine-tunes via SFT. The policy is then optimized with GRPO using a composite reward of outcome (F1 between predicted and gold answers) and format bonuses.",
+ "results": "On GrailQA (i.i.d. split), KBQA-R1 improves EM by ~+12% and F1 by ~+6% over KBQA-o1; on the compositional split, ~+5% F1; on zero-shot, EM by >+15% and F1 by ~+9%. On WebQSP, KBQA-R1 achieves 83.4% F1, outperforming graph-retrieval baselines and exceeding MCTS-KBQA by ~+7% absolute F1. KBQA-R1 requires over 70% fewer LLM calls than GPT-4-based prompting methods (ToG, PoG) while using only a Llama-3.1-8B backbone.",
+ "limitations": "RRS uses a stronger backbone (Qwen-2.5-72B-Instruct) to generate high-quality trajectories before distilling into the smaller Llama-3.1-8B policy, implying a dependency on a more capable model during training. The paper notes that standard rejection sampling from raw prompts suffers very low acceptance rates due to the task complexity and weak zero-shot ability of base LLMs on structured KB queries.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

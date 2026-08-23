@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.00717",
+ "tldr": "The paper introduces Preference-Based Multi-Agent Reinforcement Learning (PbMARL), proving that unilateral dataset coverage is necessary and sufficient for learning Nash equilibria from preference-only offline data, and proposing two algorithmic techniques (MSE temporal regularization and dataset-distribution-based pessimism) to improve practical performance.",
+ "contributions": [
+  "Establishing the theoretical foundations of PbMARL by characterizing dataset coverage conditions for learning Nash equilibria in general-sum Markov games with preference feedback",
+  "Proving that single-policy coverage (sufficient in single-agent RLHF) is inadequate for multi-agent settings, while unilateral coverage (covering all unilateral deviations from a Nash equilibrium) is sufficient",
+  "Introducing MSE regularization along the time axis to produce more uniform reward distributions and mitigate sparse/spiky reward learning",
+  "Proposing dataset distribution-based pessimism via an imitation-learned behavior policy to reduce extrapolation errors in offline MARL"
+ ],
+ "methods": "The paper formulates offline PbMARL where each agent receives only binary preference signals (via the Bradley-Terry-Luce model) over trajectory pairs rather than explicit rewards. The pipeline first trains a reward prediction model using negative log-likelihood loss plus MSE temporal regularization (Equation 1-2), while an imitation learner models the behavior policy for distribution-based pessimism. In Step 2, agents maximize a standardized predicted reward combined with a penalty term log π_b(s,a) scaled by coefficient β (Equation 3) using a DQN-based Value Decomposition Network (VDN). Theoretical analysis uses covariance matrices Σ_r^D and Σ_P^{D,h} to quantify reward and transition uncertainty, defining single-policy, unilateral, and uniform coverage measures.",
+ "results": "Experiments across three MPE scenarios (Spread-v3, Tag-v3, Reference-v3) and the Overcooked environment validate that unilateral datasets are advantageous and augmenting expert demonstrations with trivial trajectories significantly improves performance. Dataset diversity contributes to lower variance. Ablation studies confirm the effectiveness of both MSE regularization (coefficient α=1) and the pessimism penalty (coefficient β), with Table 4 showing hyperparameter tuning is critical for training stability. A principled standardization technique enables efficient hyperparameter transfer across environments and datasets.",
+ "limitations": [
+  "The theoretically optimal algorithm from Theorem 2 is not computationally efficient, necessitating the use of simplified practical techniques",
+  "The approach relies on a linear Markov game assumption (Assumption 1) with bounded feature norms",
+  "Single-policy coverage alone is provably insufficient, meaning datasets must be carefully curated to ensure unilateral coverage",
+  "The DQN-based VDN was chosen for simplicity and controllability rather than representing the state-of-the-art in MARL architectures"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

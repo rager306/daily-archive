@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2207.01206",
+ "tldr": "WebShop is a large-scale simulated e-commerce environment with 1.18 million real-world products and 12,087 crowd-sourced instructions for training and evaluating language-grounded agents that navigate webpages to find and purchase products matching natural language instructions.",
+ "contributions": [
+  "Introduction of WebShop benchmark as a scalable interactive web-based environment for language understanding and decision making",
+  "Collection of 1,181,436 products scraped from amazon.com and 12,087 linguistically diverse crowd-sourced instructions",
+  "Training and evaluation of agents using reinforcement learning, imitation learning, and pre-trained models achieving 29% task success rate",
+  "Demonstration of sim-to-real transfer to amazon.com and ebay.com, showing agents outperform rule-based baselines"
+ ],
+ "methods": "WebShop is formulated as a POMDP with four page types (search, results, item, item-detail). Agents perform high-level actions: searching text queries or choosing text buttons. A modular architecture uses a ResNet-50 for images, BERT for observations, BART for search generation, and an attention fusion layer. Imitation learning uses 1,600+ human demonstrations with BART fine-tuned for search and BERT cross-attention for action choice. Reinforcement learning fine-tunes the choice model via policy gradients with a BERT-based value baseline while freezing BART for search generation.",
+ "results": "The best agent achieves a task success rate of 29% (28.7%) and an average score of 62.4/100, outperforming the rule-based heuristic baseline at 9.6% (45.6 score). Human experts achieve 59% (59.6%) success rate and 82.1 score. Agents trained on WebShop show sim-to-real transfer to amazon.com and ebay.com, achieving similar performances and consistently outperforming a rule baseline of using the first search result on commercial engines.",
+ "limitations": "Agent performance (29%) remains far below human expert performance (59%). The reward function relies on text-matching heuristics that may not fully capture product similarity. The paper identifies several identified failure modes including the need for more robust search generation, explicit memory modules, and better handling of noisy web text. The deterministic search engine and simplified observation mode used for training may not fully capture real-world web complexity.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:56Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

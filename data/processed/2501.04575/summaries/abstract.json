@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.04575",
+ "tldr": "InfiGUIAgent is an MLLM-based GUI agent trained via a two-stage supervised fine-tuning pipeline that enhances both fundamental GUI understanding/grounding and native reasoning abilities (hierarchical and expectation-reflection reasoning), achieving competitive performance on GUI benchmarks.",
+ "contributions": [
+  "A two-stage supervised fine-tuning pipeline to improve both fundamental abilities and advanced reasoning of GUI Agents.",
+  "Synthesis of SFT data incorporating hierarchical reasoning and expectation-reflection reasoning, enabling native complex reasoning.",
+  "InfiGUIAgent-2B demonstrating competitive performance on multiple GUI benchmarks."
+ ],
+ "methods": "In Stage 1, the authors collected ~1M samples across five categories (GUI understanding, grounding, QA, general knowledge, tool usage) from multiple datasets to train fundamental GUI understanding and instruction grounding. Data was standardized with a [0,1000] coordinate system and a Reference-Augmented Annotation format for spatial grounding. In Stage 2, 45K reasoning-enhanced samples were synthesized from existing trajectories using Qwen2-VL-72B, incorporating hierarchical reasoning (strategic and tactical layers) and expectation-reflection reasoning (expectation generation, action, reflection cycle). The model was continual SFT on Qwen2-VL-2B across 8 A800 80GB GPUs.",
+ "results": "On ScreenSpot, InfiGUIAgent-2B achieved 76.3% average accuracy, surpassing ShowUI-2B (75.1%) and UGround-7B (73.3%), with per-platform scores of Mobile: 82.8% text / 60.4% icon, Desktop: 78.0% text / 52.0% icon, Web: 72.2% text / 30.0% icon. On AndroidWorld, InfiGUIAgent-2B achieved a 0.09 success rate, outperforming ShowUI-2B (0.07), LLaVA-OV-7B (0.00), and Qwen2-VL-72B (0.05). Experiments used raw screenshots without Set-of-Marks annotations.",
+ "limitations": [
+  "AndroidWorld success rate is only 0.09, indicating limited effectiveness on complex multi-step task automation.",
+  "The model does not rely on SoM annotations but this also means it must handle raw screenshots without enhanced visual grounding, potentially limiting performance compared to models using such aids.",
+  "No ablation on the individual contribution of hierarchical vs. expectation-reflection reasoning is explicitly reported in the provided text."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

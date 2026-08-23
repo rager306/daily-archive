@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.23292",
+ "tldr": "Tool-integrated reasoning failures often stem from misaligned tool-use patterns (calculator vs. algorithmic); a two-stage framework building code competence then aligning pattern preferences with DPO substantially improves both code reliability and accuracy on math benchmarks.",
+ "contributions": [
+  "Identification and formalization of pattern mismatch in TIR, showing misaligned tool-use strategies derail otherwise sound reasoning.",
+  "A two-stage learning framework: (1) code competence acquisition via SFT on both calculator and algorithmic patterns, and (2) pattern preference alignment via DPO with teacher signals.",
+  "Empirical results on MATH500, AIME24, GSM8K, and R1Math demonstrating substantial gains in Code@1 and Pass@1."
+ ],
+ "methods": "The authors define two tool-use patterns: calculator-pattern (Python as a direct computation/verification tool) and algorithmic-pattern (encoding problems as full programs). In Stage 1 (Code Competence Acquisition), the model is trained via SFT on paired solutions using both patterns, minimizing negative log-likelihood over response tokens. In Stage 2 (Pattern Preference Alignment), a teacher model (Gemini-2.5-flash-lite) labels a preferred and dispreferred solution for each problem, and DPO is applied with a frozen SFT reference policy to align pattern selection with teacher preferences.",
+ "results": "Code@1 on MATH500 improved from 64.0% to 70.5%; AIME24 Pass@1 rose from 26.7% to 50.0%; GSM8K Code@1 increased from 72.0% to 80.1%; AIME24 Code+Pass@1 improved from 6.6% to 26.7%. R1Math Code@1 reached 72.2% and Pass@1 reached 55.5% after SFT+DPO.",
+ "limitations": "The approach relies on a teacher model (Gemini-2.5-flash-lite) to generate labels, which may introduce bias or errors. The paper evaluates primarily on math benchmarks (MATH500, AIME24, GSM8K, AMC23) without demonstrating generalization to non-mathematical tool-use scenarios. Base model performance on AIME24 was near zero (0.0% Code@1), suggesting limitations for harder or more diverse problem types.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

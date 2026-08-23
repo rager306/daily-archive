@@ -1,0 +1,34 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.04644",
+ "tldr": "Agentic Reasoning is a framework that enhances LLM reasoning by integrating three external agents—Web-Search, Code, and Mind-Map—enabling dynamic tool use during reasoning chains. Deployed on DeepSeek-R1, it achieves state-of-the-art results among public models, narrowly closing the gap to proprietary systems like OpenAI Deep Research.",
+ "contributions": [
+  "Proposed Agentic Reasoning, a streamlined framework integrating external LLM-based agentic tools (web-search, coding, and Mind-Map agents) into reasoning processes",
+  "Explored Web-Search agent design, identifying a strategy combining query breakdown, reranking, RAG, and Mind-Map reasoning context that outperforms prior search/RAG approaches",
+  "Developed a knowledge-graph-based Mind-Map agent that constructs structured knowledge graphs for memory, improving coherence in long reasoning chains and handling complex logical relationships",
+  "Evaluated on expert-level benchmarks (Humanity's Last Exam, GPQA, GAIA) and deep research tasks, achieving new SOTA among public models and surpassing proprietary baselines like Gemini Deep Research"
+ ],
+ "methods": "The framework uses DeepSeek-R1 as the primary reasoning model, which dynamically embeds specialized tokens during reasoning to call external agents: a Web-Search agent (using Bing with Cohere Rerank 3.5, query breakdown via DeepSeek-V3, and threshold-based iterative refinement capped at three iterations), a Code agent (using Claude-3.5-Sonnet for code generation and Python 3.11 for execution), and a Mind-Map agent (using DeepSeek-V3 for knowledge graph construction and GraphRAG retrieval). The reasoning process temporarily halts when agent tokens are detected, dispatches queries with reasoning context from the Mind-Map, and reintegrates results back into the chain in an iterative retrieve-and-reason cycle.",
+ "results": [
+  "Humanity's Last Exam: 23.8% accuracy with DeepSeek-R1, a +14.4% improvement over the base model's 9.4%, narrowing the gap to OpenAI Deep Research (26.6%) to just 2.8%",
+  "GPQA: achieved new SOTA among public models, surpassing OpenAI o3-mini-high and outperforming Search-O1 by approximately 5%",
+  "GAIA: established new SOTA among publicly available methods, surpassing OpenAI Deep Research on Level 1 (74.36% vs 74.29%) and Level 2 (69.21% vs 69.06%), with a 2.26% gap on Level 3",
+  "Deep research: consistently outperformed RAG, RAgent, Search-O1, STORM, and Gemini Deep Research across all benchmarks",
+  "Werewolf game: achieved 72% win rate with Mind-Map versus 36% without, significantly surpassing human expert performance",
+  "Tool ablation showed web search performed best among single tools, and combining all three tools yielded synergistic improvements exceeding the sum of individual gains"
+ ],
+ "limitations": [
+  "Adding more tools beyond the three selected agents often degrades performance due to increased risk of inappropriate tool selection",
+  "Many capabilities (e.g., translation, code interpretation) are already embedded within the reasoning model, making external integration redundant",
+  "Inaccuracies in external tool outputs can negatively affect overall response quality",
+  "Knowledge Refinement component was found redundant with Rerank and became ineffective when combined with other Web-Search components",
+  "Open-source approaches still trail proprietary models (e.g., 2.8% gap to OpenAI Deep Research on Humanity's Last Exam, which benefits from a stronger internal reasoning model)",
+  "OpenAI Deep Research experiments were restricted by a high paywall, limiting direct comparison"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

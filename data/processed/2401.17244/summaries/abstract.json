@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.17244",
+ "tldr": "LLaMP is a multimodal retrieval-augmented generation framework using hierarchical ReAct agents to interact with the Materials Project database and run atomistic simulations, enabling accurate, hallucination-resistant retrieval and generation of materials science knowledge without fine-tuning.",
+ "contributions": [
+  "Introduction of a multimodal RAG framework employing hierarchical ReAct agents that dynamically interact with the Materials Project database.",
+  "Proposal of a statistical metric (Self-consistency of Response) to assess the reproducibility and usability of LLM responses in high-precision scientific settings.",
+  "Evaluation of LLaMP against vanilla LLMs on predicting bulk moduli, electronic bandgaps, formation energies, and magnetic orderings.",
+  "Demonstration of real-world applications in inorganic synthesis recipe extraction and crystal structure generation/editing.",
+  "Integration of high-throughput atomistic simulation workflows with pre-trained machine-learning interatomic potentials."
+ ],
+ "methods": "The authors developed LLaMP, a hierarchical orchestration system where a supervisor ReAct agent delegates queries to specialized assistant agents that interact with the Materials Project API and other tools. They defined a Self-consistency of Response (SCoR) metric combining precision and confidence to evaluate response reproducibility. The framework was benchmarked on material property prediction tasks (bulk modulus, bandgap, formation energy, magnetism) and real-world applications such as crystal structure editing and annealing molecular dynamics simulations using pre-trained ML force fields.",
+ "results": "LLaMP reduces the mean absolute error for bulk modulus prediction from ~40 GPa (vanilla LLMs) to 14.57 GPa. For bandgap retrieval, LLaMP achieves a Self-consistency of Response (SCoR) of 0.938. In magnetic ordering classification, LLaMP with GPT-4 backend achieves 0.98 accuracy and an R² of 0.992 for magnetization prediction. Vanilla LLMs exhibit large variances (MAE 1.5–5.5 eV) for formation energies and hallucinate elastic tensor components (e.g., predicting C₁₁ = 289.2 GPa for NaCl instead of the DFT value of 76 GPa).",
+ "limitations": "Vanilla LLMs suffer from hallucination, low-fidelity knowledge retrieval, and inability to handle higher-order data such as tensors and 3D crystal structures without external grounding. Fine-tuning approaches lack scalability and long-term memory retention. Flat planning strategies fail due to excessive cognitive load and schema‑parsing errors. GPT-3.5‑based LLaMP struggles to distinguish total magnetization from magnetization per formula unit and cannot differentiate ferromagnetic from ferrimagnetic orderings.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

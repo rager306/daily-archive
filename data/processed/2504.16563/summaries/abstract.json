@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.16563",
+ "tldr": "GoalAct is a novel LLM-based agent framework that integrates a continuously updated global planning mechanism with hierarchical execution to address limitations in task planning and execution, achieving state-of-the-art performance on LegalAgentBench.",
+ "contributions": [
+  "Proposes GoalAct, a framework combining continuously updatable global planning and hierarchical execution",
+  "Decomposes task execution into high-level skills (searching, coding, writing, reasoning) to reduce planning complexity",
+  "Introduces LegalAgentBench evaluation results demonstrating SOTA performance with 12.22% average success rate improvement over baselines",
+  "Demonstrates scalability by enabling dynamic addition and selection of skills across diverse task scenarios"
+ ],
+ "methods": "GoalAct maintains a continuously updated global plan G = (P1A1, P2A2, ..., PnAn) where Pi denotes high-level skill steps and Ai represents corresponding actions, dynamically adjusted based on real-time observations. The hierarchical execution framework decomposes tasks into distinct high-level skills—Searching (simple text/JSON tool invocation), Coding (Python-based complex logic with loops/branches), Writing (specialized document generation), and others—allowing agents to select appropriate skills based on task complexity rather than attempting all actions in a single stage. Planning focuses only on specifying high-level skills and their objectives, while execution handles tool selection and parameter configuration separately.",
+ "results": "GoalAct achieves SOTA performance on LegalAgentBench (300 tasks across six types: 1-hop through 5-hop reasoning and Writing) with an average improvement of 12.22% in success rate over existing methods. Relative improvements over the second-best method increase with task difficulty: 3.26% for 1-hop, 7.98% for 2-hop, 20% for 3-hop, 9.86% for 4-hop, 15.5% for 5-hop, and 12.74% for Writing tasks. Evaluated across GLM-4-Plus, Qwenmax, and GPT-4o-mini. Ablation study shows removing global planning reduces performance by 8.14% overall (8.04% for Searching, 14.06% for Coding, 4.46% for Writing).",
+ "limitations": "Existing baseline methods face limitations: Plan-and-Solve lacks adaptability due to static plans; Plan-and-Execute generates plans that may be non-executable; ReAct gets stuck in local branches due to limited action space; CodeAct introduces execution errors when invoking multiple tools in single code. The framework requires external tool invocation and legal knowledge, suggesting dependency on available tools and domain-specific benchmarks. The paper notes future work is needed to integrate reflection and memory mechanisms.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

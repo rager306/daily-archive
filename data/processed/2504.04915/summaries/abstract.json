@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.04915",
+ "tldr": "Collab-RAG is a collaborative RAG framework that pairs a white-box small language model (SLM) as a query decomposer with a black-box large language model (LLM) as a reader, using iterative preference optimization with feedback from an affordable black-box LLM (GPT-4o-mini) to improve complex multi-hop question answering.",
+ "contributions": [
+  "Problem-wise: Proposes dynamic collaboration between white-box SLMs and black-box LLMs for complex QA in RAG, an area not widely explored.",
+  "Methodology-wise: Introduces iterative preference optimization using outcome feedback from black-box LLMs without requiring distillation from frontier LLMs; trained solely on GPT-4o-mini feedback yet generalizes across various LLMs.",
+  "Experimentally: Outperforms both black-box LLM-only and SLM fine-tuning baselines by 1.8%-14.2% across five multi-hop QA datasets, with a fine-tuned 3B SLM surpassing a frozen 32B LLM in question decomposition."
+ ],
+ "methods": "The framework uses a white-box SLM as a query decomposer that breaks complex questions into step-by-step sub-questions, which guide retrieval and synthesis by a black-box LLM reader. The RAG system is treated as an interactive environment where decomposition quality is evaluated via a reward function combining format and accuracy (Exact Match and Accuracy). Training begins with supervised fine-tuning (SFT) via rejection sampling on high-reward decompositions, followed by iterative Direct Preference Optimization (DPO) that constructs preference pairs from best-of-N and worst-of-N decompositions across iterations, using feedback signals solely from GPT-4o-mini.",
+ "results": "Evaluated on five multi-hop QA datasets (HotpotQA, 2WikiMQA, MusiQue, StrategyQA, Bamboogle), Collab-RAG outperforms existing baselines by 1.8%-14.2% on average. On StrategyQA with GPT-4o-mini reader, Collab-RAG 3B achieves 82.0 EM (vs. 79.0 for RAFE and 73.0 for Iter-RetGen); on 2WikiMQA it reaches 79.4 EM/74.5 Acc. With GPT-4o as reader, Collab-RAG 8B achieves 82.9 EM on StrategyQA and 81.0 EM on 2WikiMQA. Notably, the fine-tuned 3B SLM surpasses a frozen 32B LLM (Search-o1) in question decomposition performance.",
+ "limitations": [
+  "Direct use of SLMs for question decomposition is often ineffective due to their limited reasoning capabilities without training.",
+  "Collecting large-scale, high-quality annotations for training is resource-intensive (the method avoids this but still requires iterative LLM feedback).",
+  "The approach relies on an affordable black-box LLM (GPT-4o-mini in this work) for supervision signals, which may limit applicability if such access is unavailable.",
+  "Evaluation is limited to five multi-hop QA datasets; generalization beyond these remains to be fully validated."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

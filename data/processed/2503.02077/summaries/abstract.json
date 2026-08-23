@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.02077",
+ "tldr": "M³HF is a framework that integrates multi-phase human feedback of mixed quality into multi-agent reinforcement learning, using LLMs to parse feedback and adaptively update reward functions through predefined templates and weight adjustments.",
+ "contributions": [
+  "Proposing the Multi-phase Human Feedback Markov Game (MHF-MG) to address reward sparsity and complexity in MARL through iterative human guidance",
+  "Developing the M³HF framework that leverages LLMs to parse diverse human feedback and dynamically incorporates it into agents' reward functions",
+  "Providing theoretical analysis justifying rollout-based performance estimates and a weight decay mechanism that mitigates low-quality feedback impact",
+  "Demonstrating through experiments in Overcooked that M³HF consistently outperforms strong baselines"
+ ],
+ "methods": "The authors introduce MHF-MG, extending Markov Games with a human feedback component over discrete generations. Agents collect experience, then periodically pause to generate evaluation rollouts (X independent trajectories) that humans observe and comment on. An LLM parses each human utterance into agent-specific or collective feedback. Predefined reward function templates (distance-based, action-based, status-based) are parameterized from parsed feedback to shape new reward components. Final rewards are weighted combinations updated via exponential weight decay (factor α) and performance-based adjustments (factor β), where improved original-reward performance increases a component's weight.",
+ "results": "Extensive experiments in Overcooked (including environments A, B, C and complex recipes like Lettuce-Tomato salad and Lettuce-Onion-Tomato salad) demonstrate that M³HF consistently outperforms strong baselines. Human interactions are limited to at most five times across the entire training process.",
+ "limitations": [
+  "Human feedback quality is mixed, including potentially sub-optimal non-expert input",
+  "The method requires periodic rollout generation and LLM parsing, which may be computationally costly",
+  "The human policy is assumed initially superior but may be sub-optimal",
+  "Low-quality feedback robustness is analyzed theoretically but remains a practical challenge"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

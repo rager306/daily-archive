@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.05221",
+ "tldr": "The paper introduces AutoRace, a fully automated method for evaluating LLM-generated reasoning chains, and LLM Reasoners, a unified library implementing diverse reasoning algorithms under a shared search-reward-world model formulation, enabling systematic comparison and analysis.",
+ "contributions": [
+  "AutoRace: fully automated reasoning chain evaluation that automatically constructs task-specific evaluation criteria from LLM-generated incorrect reasoning chains and uses GPT-4 for accurate evaluation without human input",
+  "LLM Reasoners: a unified formulation and modular library implementing diverse reasoning algorithms (CoT, ToT, RAP, etc.) under a shared framework of search, reward, and world model components",
+  "Extensive empirical analysis across 6 reasoning tasks revealing insights about reward guidance, breadth-vs-depth tradeoffs, world models, and prompt formats"
+ ],
+ "methods": "AutoRace first collects LLM-generated incorrect reasoning chains from a subsampled training set, then uses GPT-4 to identify specific errors and summarize them into a criteria list, which is then used to evaluate new reasoning chains. The authors formulate reasoning algorithms as a search process maximizing accumulated rewards with three components: a world model (state transitions), a reward function (step preferences), and a search algorithm. They implement this in the LLM Reasoners library and evaluate across 6 tasks: GSM8K, MultiArith, DROP, Cosmos-QA, Logical-Deduction, and Word-Sorting, plus StrategyQA.",
+ "results": "AutoRace achieves the best average accuracy among reasoning chain metrics at 0.86, excelling in 3 out of 6 tasks. It manages to detect 70.4% of false positive reasoning chains (those with correct final answers but flawed reasoning) on average. Answer-based evaluation achieved 0.85 average accuracy. SocREval mistakenly classifies many correct chains as incorrect. AutoRace is the only metric that is fully automated with no human inputs specific to reasoning tasks.",
+ "limitations": [
+  "Only 4 incorrect reasoning chains per task were collected to construct the criterion list (may limit criteria richness)",
+  "SocREval, a baseline method, fails when GPT-4 cannot solve the problem itself and generates a flawed reference",
+  "Some metrics like Direct (trace) perform poorly on certain tasks (e.g., 0.21 on MultiArith)",
+  "The paper acknowledges that different prompt format designs might inadvertently lead to false positive reasoning chains"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.07903",
+ "tldr": "SEM is a post-training reinforcement learning framework that uses GRPO to train LLMs to distinguish between questions answerable from internal knowledge and those requiring external search, significantly reducing redundant search while maintaining or improving accuracy.",
+ "contributions": [
+  "Proposed SEM, a novel RL-based post-training framework for optimizing LLM search behavior",
+  "Designed a structured reward policy using GRPO that penalizes unnecessary search and rewards judicious retrieval",
+  "Constructed a balanced training dataset combining Musique and MMLU to teach models when search is needed",
+  "Demonstrated significant reduction in redundant searches while maintaining or improving answer accuracy"
+ ],
+ "methods": "The authors combine Musique (multi-hop fact-based questions beyond model knowledge) and MMLU (academic questions within existing knowledge) into a balanced training dataset. They employ Group Relative Policy Optimization (GRPO) with a custom reward function that rewards correct answers without search, incentivizes search when initial answers are incorrect (below threshold τ), and penalizes unnecessary search invocation. Models follow a structured template with <think>, <answer>, <search>, and <result> tags. Evaluation uses Exact Match (EM), LLM-as-a-Judge (LJ), and Search Ratio (SR) metrics across Musique, HotpotQA, MMLU, and GSM8K benchmarks using Qwen2.5-7B and 14B base models trained for 200 steps on 8 A100 GPUs.",
+ "results": "SEM-trained models significantly reduce redundant searches: Qwen2.5-14B-Instruct achieved 79.37% EM on GSM8K with only 0.76% search invocation rate, compared to 50.41% EM with ReSearch. SEM consistently outperforms ReSearch across 7B and 14B model sizes with smoother and more stable learning trajectories. The 14B model maintained a significantly higher F1 score throughout training compared to ReSearch. Case studies showed SEM avoids unnecessary search for trivial questions like '1+1=?' while efficiently handling multi-hop queries like the Tyler Redenbach draft question with fewer, more focused searches than ReSearch.",
+ "limitations": "The approach was evaluated on a limited set of benchmarks (Musique, HotpotQA, MMLU, GSM8K). The reward function relies on an F1 score threshold (τ) for confidence detection, which may not generalize well to all question types. The method was tested only on Qwen models. Training was limited to 200 steps, and the long-term stability of learned search behaviors remains unvalidated. ReSearch comparison showed degradation due to gradient explosion issues with their dataset composition.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

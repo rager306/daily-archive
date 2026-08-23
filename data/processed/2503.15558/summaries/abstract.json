@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.15558",
+ "tldr": "Cosmos-Reason1 is a family of multimodal LLMs (7B and 56B) that perceive the physical world from video, reason through long chain-of-thought, and generate embodied decisions in natural language, trained via physical AI SFT and RL with rule-based rewards.",
+ "contributions": [
+  "Two ontologies: a hierarchical physical common sense ontology (Space, Time, Fundamental Physics with 16 subcategories) and a two-dimensional embodied reasoning ontology (4 capabilities across 5 agent types)",
+  "Two multimodal LLMs (Cosmos-Reason1-7B dense and Cosmos-Reason1-56B hybrid Mamba-MLP-Transformer) trained in two stages: Physical AI SFT and Physical AI RL",
+  "Rule-based, verifiable RL rewards from MCQs, including human-annotated and self-supervised video-structure-based rewards (shuffled spatiotemporal patches, arrow of time prediction)",
+  "Novel fully asynchronous RL training framework with ~160% efficiency improvement over colocated frameworks",
+  "Comprehensive benchmarks: 1,214 questions (604 for physical common sense from 426 videos; 610 for embodied reasoning from 600 videos)",
+  "Open-source code and models under NVIDIA Open Model License"
+ ],
+ "methods": "The authors define physical common sense and embodied reasoning ontologies, then curate ~4M video-text annotations through human curation and model distillation from DeepSeek-R1 for Physical AI SFT. They train two models: Cosmos-Reason1-7B (Qwen2.5-VL backbone) and Cosmos-Reason1-56B (InternViT-300M-V2.5 vision encoder + Nemotron-H hybrid Mamba-MLP-Transformer backbone). Post-SFT, they apply GRPO-based RL using rule-based MCQ rewards—both human-annotated and self-supervised (e.g., shuffled video patches, forward/backward video classification). A novel asynchronous training framework enables efficient distributed RL training across policy and actor nodes.",
+ "results": "Physical AI SFT and RL bring significant improvements across all benchmarks. Training with rule-based, verifiable rewards in RL post-training leads to improvements in all evaluated benchmarks for physical common sense and embodied reasoning. The evaluation covers 1,214 questions across 12 benchmarks spanning humans, robot arms, humanoid robots, and autonomous vehicles. The asynchronous RL framework achieves approximately 160% improvement in training efficiency compared to colocated frameworks.",
+ "limitations": [
+  "Model capabilities in 'Learn from Interaction' (4th embodied reasoning capability) are explicitly left as future work",
+  "Physical AI reasoning is acknowledged as 'an open problem that is far from being solved'",
+  "RL training relies on rule-based MCQ rewards, which may not fully capture the complexity of real-world physical interactions",
+  "Only video input is considered as sensory modality; other modalities are not explored"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:56Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

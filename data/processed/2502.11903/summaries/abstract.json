@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.11903",
+ "tldr": "MMRC is a large-scale benchmark of 5,120 real-world conversations with 28,720 manually labeled questions evaluating six core MLLM abilities, revealing significant accuracy drops and four common failure patterns in sustained multimodal conversations, which can be mitigated by a NOTE-TAKING strategy.",
+ "contributions": [
+  "Introduction of MMRC, the first Multi-Modal Real-World Conversation benchmark with 5,120 conversations and 28,720 manually annotated questions covering six core abilities: information extraction, cross-turn reasoning, information update, image management, memory recall, and answer refusal.",
+  "Development of DialogFlow, a free online dialogue platform used to collect diverse real-world conversation data from 354 users over 8 months.",
+  "Identification of four common failure patterns in MLLMs: long-term memory degradation, inadequacies in updating factual knowledge, accumulated error propagation, and reluctance to refuse answers.",
+  "Proposal of a NOTE-TAKING strategy that records key conversation information and provides structured prompts, demonstrating significant performance improvements across six MLLMs."
+ ],
+ "methods": "The authors built DialogFlow, an online dialogue platform featuring 20 MLLMs, and collected 87,912 raw dialogues from 354 users over 8 months. After cleaning sensitive content through manual review, they curated 5,120 conversations across 14 categories and annotated 28,720 QA pairs. Evaluation used a hybrid framework combining GPT-based scoring (0-5 scale), human evaluation (93% similarity to GPT), and objective precision metrics (EP, IMP, RP). Twenty MLLMs (open-source and closed-source) were evaluated, and a NOTE-TAKING strategy was tested on six models to mitigate identified failure patterns.",
+ "results": "GPT-4o achieved the highest scores among open-source models but still fell short of human-level performance (human average: 4.79 vs. GPT-4o: 4.09-4.10). Closed-source models averaged 4.09 across abilities while open-source averaged 2.55. Performance declined significantly with conversation length: from 4.89 on [4,6)-turn conversations to 1.52 on [20,22]-turn conversations. Answer refusal was the weakest ability (closed-source avg: 3.17). LLaVA-Next excelled in memory recall but struggled with image management; Qwen2VL excelled in cross-turn reasoning but had weak answer refusal. Error analysis showed 55.9% of update failures were failure to recognize updates, 25.2% old-new confusion, and 18.9% incomplete updates.",
+ "limitations": "The dataset was collected from only 354 users, which may limit demographic diversity. The cleaning pipeline required manual review, constraining scalability. Open-ended questions complicate evaluation, necessitating costly GPT-based and human assessment rather than simple accuracy metrics. Memory degradation was found to be most severe in the middle of conversations (not beginning or end), suggesting inherent architectural limitations in current MLLMs' attention distribution that the NOTE-TAKING strategy only partially addresses.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

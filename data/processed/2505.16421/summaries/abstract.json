@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16421",
+ "tldr": "WEBAGENT-R1 is an end-to-end multi-turn reinforcement learning framework that trains web agents directly from online interactions with binary rewards, significantly outperforming existing methods on the WebArena-Lite benchmark.",
+ "contributions": [
+  "An end-to-end multi-turn RL framework with dynamic context compression and parallel trajectory rollout mechanisms",
+  "Substantial improvements on WebArena-Lite: Qwen-2.5-3B from 6.1% to 33.9% and Llama-3.1-8B from 8.5% to 44.8%",
+  "Extensive analyses validating behavior cloning, thinking-based prompting, and test-time scaling strategies for web agents"
+ ],
+ "methods": "The framework uses behavior cloning (SFT on expert demonstrations) as a warm-up initialization stage, then applies multi-turn group relative policy optimization (M-GRPO) with on-policy updates. Two key mechanisms enable efficiency: dynamic context compression simplifies earlier HTML observations to preserve only a few tokens while maintaining complete action history, and parallel trajectory rollout spawns multiple independent browser instances to generate diverse trajectories simultaneously. Rewards are binary, derived from rule-based functions using string matching, URL matching, and program execution.",
+ "results": "On WebArena-Lite, WEBAGENT-R1 boosted Qwen-2.5-3B from 6.1% to 33.9% (BC alone achieved 20.0%) and Llama-3.1-8B from 8.5% to 44.8% (BC alone achieved 20.6%). It outperformed WebRL (42.4% on 8B) and strong proprietary models including OpenAI o3 (39.4%). Ablations showed skipping BC (WEBAGENT-R1-ZERO) resulted in only 6.1% initial SR with slight deterioration after RL, while long-CoT data augmentation during BC improved performance. Training dynamics showed three phases: initial skill acquisition, exploration, and policy stabilization.",
+ "limitations": "The method focuses solely on text-based HTML decision-making without incorporating visual inputs like screenshots. It requires a fixed dataset of expert demonstrations for the behavior cloning warm-up stage. Some per-website success rates remain low (e.g., Llama-3.1-8B achieved only 23.1% on Map). The parallel trajectory rollout introduces computational overhead due to managing multiple independent browser instances.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

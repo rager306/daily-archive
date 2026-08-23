@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2307.16789",
+ "tldr": "ToolLLM is a framework that enables open-source LLMs like LLaMA to master tool use by constructing ToolBench—a dataset of 16,464 real-world APIs across 49 categories—and fine-tuning LLaMA-2 7B to achieve performance comparable to ChatGPT.",
+ "contributions": [
+  "ToolBench: an automatically constructed instruction-tuning dataset with 16,464 real-world RESTful APIs spanning 49 categories, including ~200k instruction-API pairs and 126,486 (instruction, solution path) pairs",
+  "DFSDT (Depth-First Search-based Decision Tree): a novel reasoning algorithm that expands the search space by evaluating multiple reasoning traces",
+  "ToolEval: an automatic evaluator with pass rate and win rate metrics, achieving 87.1% and 80.3% agreement with human evaluation respectively",
+  "ToolLLaMA: LLaMA-2 7B fine-tuned on ToolBench with a neural API retriever, showing comparable performance to ChatGPT and strong zero-shot generalization to unseen APIs"
+ ],
+ "methods": "The authors constructed ToolBench in three stages: (1) collected 16,464 high-quality REST APIs from RapidAPI Hub across 49 categories after filtering from an initial 53,190 APIs; (2) used ChatGPT (gpt-3.5-turbo-16k) with function call capabilities to generate diverse instructions covering single-tool and multi-tool scenarios (87,413 single-tool, 84,815 intra-category multi-tool, 25,251 intra-collection multi-tool); (3) employed DFSDT to annotate solution paths, where the model explores multiple reasoning branches via depth-first search and can retract or proceed. They trained a Sentence-BERT based neural API retriever using contrastive learning, and fine-tuned LLaMA-2 7B on the resulting 126,486 (instruction, solution path) pairs.",
+ "results": "ToolLLaMA outperforms Text-Davinci-003 and Claude-2, achieves comparable performance to ChatGPT, and is only slightly inferior to GPT-4. It shows robust generalization to unseen APIs requiring only API documentation. On APIBench (OOD), ToolLLaMA performs on par with Gorilla. The API retriever achieves NDCG@1 scores of 84.2 (I1), 68.2 (I2), 81.7 (I3). DFSDT achieves 63.8% average pass rate vs 35.3% for ReACT and 44.5% for ReACT@N. ToolEval shows 87.1% agreement with humans on pass rate and 80.3% on win rate.",
+ "limitations": "Some APIs returned 404 or internal errors requiring rigorous filtering (from 53,190 down to 16,464). Multi-tool instruction retrieval is harder than single-tool (lower NDCG scores). DFSDT consumes significantly more OpenAI API calls than ReACT. The approach relies on ChatGPT for both data construction and evaluation. Real-world API temporal variability makes fixed ground-truth solution paths infeasible.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

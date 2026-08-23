@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.05657",
+ "tldr": "We introduce LUMOS, an open-source framework for training language agents with a unified modular architecture (planning, grounding, execution) trained on ~55K high-quality annotations converted from diverse benchmarks, demonstrating superior performance over closed-source GPT agents and larger open-source agents across QA, web, math, and multimodal tasks.",
+ "contributions": [
+  "A generalizable open-source agent learning framework with unified modular architecture (planning, grounding, execution) supporting one-pass and iterative interaction formulations.",
+  "A dataset of approximately 55,382 (planning) and 55,499 (grounding) high-quality training annotations, converted via LLM style-transfer from ground-truth reasoning steps across multiple task types.",
+  "Empirical demonstration that LUMOS outperforms existing open-source agents (including much larger ones) and surpasses GPT-based agents on held-out QA and web tasks, while showing strong cross-task generalization to unseen environments and actions."
+ ],
+ "methods": "LUMOS employs a three-module architecture: a planning module decomposes tasks into high-level subgoals, a grounding module translates subgoals into executable actions using provided action interfaces, and an execution module carries out actions via off-the-shelf tools. Two interaction formulations are proposed: LUMOS-OnePass (generates all subgoals/actions in a single call) and LUMOS-Iterative (generates subgoal-action pairs sequentially, conditioning on previous execution results). To obtain training data, existing benchmark annotations are converted into a unified format using LLMs (GPT-4/GPT-4V) with few-shot prompts that extract subgoals, actions, and intermediate execution results. The modules are fine-tuned on decoder-only base models (LLaMA-2-7B/13B) using causal language modeling loss computed only on the response tokens.",
+ "results": "Evaluated on 9 datasets (QA, web, math, multimodal), LUMOS consistently outperforms various open-source agents, even when those baselines use 2–10× larger models. On held-out datasets, LUMOS exceeds GPT-based agents: +5.0% step success over GPT-4 on Mind2Web, and +4.1% and +3.5% accuracy over ReAct and ReWOO (GPT-3.5-turbo based) on HotpotQA. It also improves by 24.5% and 14.1% step success over WizardLM-30B and AgentLM-70B on Mind2Web, respectively. On unseen tasks, LUMOS surpasses 30B-scale agents, gaining nearly 20 reward points on WebShop. In cross-task comparisons, LUMOS-I achieves 67.3% accuracy on ScienceQA versus 53.3% for the task-specific AutoAct-7B, and outperforms Orca-Platypus-13B by 8.6% on SVAMP.",
+ "limitations": "The paper notes that converting annotations relies on strong LLMs (GPT-4) as a style-transfer tool, which may propagate errors or biases from the source benchmarks. Additionally, the framework's effectiveness is demonstrated on a set of complex interactive tasks (QA, web, math, multimodal); generalization to other task domains or novel tool sets beyond those included in training is not extensively validated. The annotation conversion process filters out samples with mismatched parentheses or invalid execution outputs, potentially discarding useful training data.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

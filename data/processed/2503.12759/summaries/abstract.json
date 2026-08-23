@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.12759",
+ "tldr": "RAG-RL trains an answer generation model with reinforcement learning and curriculum learning to both generate answers and identify relevant citations from retrieved contexts, shifting retrieval burden from the retriever to the generator and achieving significant gains in answer and citation accuracy.",
+ "contributions": [
+  "Introduction of RAG-RL, an RLM trained for answer generation in RAG using GRPO with rule-based rewards and curriculum learning.",
+  "Benchmarking of a comprehensive set of curriculum construction and curriculum learning settings.",
+  "Empirical insights on the effectiveness of different curriculum learning settings and how various post-training components (training set construction, rule-based rewards, sample ordering) impact final model performance."
+ ],
+ "methods": "The authors train Qwen2.5-7B-Instruct using Group Relative Policy Optimization (GRPO) with rule-based rewards comprising answer correctness (weight 5), citation recall minus incorrect citation penalty (weights 5 and 2), and formatting rewards. Curriculum construction uses two difficulty axes: synthetic difficulty based on the number of distractor documents (levels 1 to K, where K=10/20/10 for HotpotQA/MuSiQue/2Wiki) while keeping all gold documents, and accuracy-based difficulty partitioning samples by base model pass@k. Three synthetic curricula are tested: Max (all samples at difficulty K), Linear (difficulty increasing from 1 to K), and Min-Max (half easiest, half hardest). Training uses ~5,000 QA pairs per dataset for one epoch.",
+ "results": "Across three datasets (HotpotQA, MuSiQue, 2Wiki) in both distractor and ideal retrieval settings, min-max and linear curricula outperform the max baseline by 3-8 points in joint F1. Best results: MuSiQue ideal retrieval with linear curriculum achieves Answer F1=61.10, Citation F1=73.90, Joint F1=66.89; 2Wiki ideal retrieval with linear curriculum achieves Answer F1=74.31, Citation F1=88.82, Joint F1=80.92. Min-max curriculum shows faster citation reward learning. Easy training samples help models acquire citation skills with greater sample efficiency.",
+ "limitations": [
+  "Training limited to 5,000 samples due to computational constraints, though larger runs are reported in appendices.",
+  "The vast majority of questions across datasets are 2-hop, limiting granularity of hop-based difficulty.",
+  "Negative correlation between model performance and number of hops observed.",
+  "Gradual curriculum ordering (linear) performs worse than min-max, suggesting granular difficulty scaling is not necessary.",
+  "Benefits of deliberate easy-to-hard sample ordering are not conclusively supported."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

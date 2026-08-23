@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.13818",
+ "tldr": "PODS (Policy Optimization with Down-Sampling) decouples rollout generation from policy updates in LLM RLVR by training only on a strategically selected max-variance subset of rollouts, achieving vanilla GRPO's peak accuracy at least 1.7× faster across benchmarks and hardware configurations.",
+ "contributions": [
+  "Introducing PODS, a framework that decouples inference and policy-update phases in GRPO by down-sampling rollouts",
+  "Proposing max-variance down-sampling with a provable O(n log n) algorithm that selects the most informative rollouts by maximizing reward variance",
+  "Demonstrating empirical speedups of at least 1.7× across Qwen2.5 and Llama3.2 models (3B–7B) on GSM8K, MATH, and Chemistry benchmarks across single-GPU and multi-GPU setups"
+ ],
+ "methods": "The framework generates n rollouts in parallel via autoregressive sampling from the policy, computes discrete rewards using a rule-based reward model, then selects a subset S of size m < n using max-variance down-sampling. The algorithm sorts rollouts by reward in O(n log n) time and searches over all split points k between lowest and highest rewards, using prefix sums to compute subset variance in O(1), yielding an overall O(n log n) procedure. Policy updates are then performed using the GRPO objective computed only on the selected subset, with advantage normalization based on the subset's mean and standard deviation.",
+ "results": "GRPO-PODS reaches peak test accuracy of vanilla GRPO at least 1.7× faster across all tested configurations (single-GPU L40S and multi-GPU H100/A100). On single-GPU settings with Qwen2.5 (3B), PODS converges faster on GSM8K, MATH, and Chemistry benchmarks. Optimal rollout size is around n=64, with performance degrading beyond n=128 due to GPU memory saturation. Training batch sizes as small as m=4 remain viable (down-sampling ratio up to 16×). Max-variance down-sampling consistently outperforms random, percentile, and max-reward down-sampling rules.",
+ "limitations": "Increasing rollout size n beyond ~64 yields diminishing returns and performance degradation due to GPU memory saturation and computational overhead. Very small batch sizes (m ≤ 4) do degrade performance. Max-reward down-sampling alone significantly degrades performance by depriving the policy of negative feedback. The method's effectiveness depends on appropriate tuning of n and m, with practical guidelines recommended rather than a universal setting.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

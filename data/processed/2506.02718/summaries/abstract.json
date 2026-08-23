@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.02718",
+ "tldr": "The paper introduces Multi-Agent Heterogeneous Group Policy Optimization (MHGPO), a critic-free reinforcement learning method that optimizes multi-agent search systems by estimating relative advantages across heterogeneous groups of rollouts, shifting optimization focus from local agent performance to global system success.",
+ "contributions": [
+  "Reformulates MARL as multi-task optimization using parameter sharing and critic-free training, achieving cheaper and more stable learning than PPO-based methods",
+  "Introduces backward reward propagation combined with heterogeneous-group advantage estimation to capture indirect inter-agent dependencies and implicit cross-trajectory correlations",
+  "Proposes and studies three group rollout sampling strategies—Independent Sampling (IS), Fork-on-first (FoF), and Round-robin (RR)—with analysis of their efficiency-effectiveness trade-offs",
+  "Formalizes the first connection between MHGPO and single-context GRPO, showing near-aligned pertoken advantage under an idealized context-sufficiency assumption",
+  "Demonstrates consistent outperformance of strong baselines in both task performance and computational efficiency on mainstream benchmarks"
+ ],
+ "methods": "The authors design a three-agent Multi-Agent Search System (MASS) comprising a Rewriter (generates retrieval queries), a Reranker (selects relevant snippets), and an Answerer (produces final answers), all instantiated from a single shared LLM backbone. MHGPO samples multiple rollouts per question using one of three group rollout sampling strategies (IS, FoF, or RR), then estimates advantages via group-wise relative rewards without a critic network. Backward reward propagation computes shared rewards from terminal outputs and aggregates them backward across agent dependencies, while heterogeneous-group normalization compares rollouts from the same root query but differing intermediate decisions to capture cross-trajectory correlations. Training uses a GRPO-style objective averaged across all agents.",
+ "results": "Evaluated on HotpotQA, 2WikiMultihopQA, and MuSiQue using Llama3.1-8B-Instruct as the backbone with group size G=4, batch size 512, and one epoch of training. MHGPO consistently outperforms MAPPO-optimized MAS, single-context RAG systems (Search-o1 and R1-Searcher), and ablated variants (IS, FoF(os)) in both accuracy/EM/F1 metrics and computational efficiency. MAPPO exhibited noisier optimization with a lower performance ceiling and substantially higher GPU memory and wall-clock costs. The RR variant reduced compute and memory usage while matching or surpassing stronger baselines. FoF(os) achieved the best validation-F1 trajectory with improved generalization.",
+ "limitations": "Heterogeneous grouping introduces additional variance in the relative-reward signal as a trade-off for global optimization. The homogeneous-only IS strategy was found to underperform because independent optimization within homogeneous groups fails to capture inter-agent dependencies. The theoretical connection to GRPO relies on an idealized context-sufficiency assumption. The study focuses on a simple three-agent MASS architecture, and the full scope of applicability to more complex multi-agent configurations is not explored.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

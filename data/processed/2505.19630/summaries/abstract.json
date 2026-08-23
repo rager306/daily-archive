@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.19630",
+ "tldr": "DoctorAgent-RL is an RL-based multi-agent framework that trains a doctor agent via Group Relative Policy Optimization to master strategic questioning in multi-turn medical consultations, achieving 70% exact diagnostic match rate with real patients and outperforming frontier models.",
+ "contributions": [
+  "DoctorAgent-RL: a multi-agent collaborative RL framework modeling medical consultation as a Markov Decision Process with Doctor Agent, Patient Agent, and Consultation Evaluator components",
+  "MTMedDialog: a novel English multi-turn medical consultation dataset with 8,086 training and 2,082 test samples across eight disease categories, designed for dynamic interactive training",
+  "A two-stage training paradigm (SFT + GRPO) with dynamic turn budget mechanism for robust adaptive questioning strategies",
+  "Real-world validation including blinded human assessments and prospective trials with actual patients"
+ ],
+ "methods": "The framework trains a doctor agent initialized from Qwen2.5-7B-Instruct through a two-stage process: supervised fine-tuning on 1,000 reasoning-augmented dialogues to establish behavioral baselines, followed by Group Relative Policy Optimization (GRPO) with interactive feedback from a high-fidelity patient agent and multi-dimensional rewards from a consultation evaluator assessing diagnostic accuracy, information responsiveness, and question standardization. A dynamic turn budget mechanism assigns random dialogue length constraints during RL training to encourage efficient information gathering under varying time pressures.",
+ "results": "DoctorAgent-RL achieved a comprehensive average score of 53.9% on diagnostic and recommendation accuracy, outperforming all frontier, open-source base, and domain-specific models. It achieved the highest median score with the narrowest interquartile range across all eight disease categories. In real clinical trials with actual patients, it achieved a 70% exact diagnostic match rate. Human blinded evaluation confirmed superior performance in Diagnostic Accuracy, Question Quality, and Information Coverage. Ablation studies showed removing RL caused a 6.5% score drop, removing SFT caused a 5.5% drop, and removing dynamic turn budgeting caused a 1.2% drop.",
+ "limitations": "Automated evaluations using LLM-simulated patient datasets may not fully capture real-world dynamic conversational interactions. The single-question-per-turn instruction constraint may not reflect all real clinical scenarios. The model was trained on simulated data from an LLM-based patient agent, and its performance with genuinely unpredictable real patients still requires broader validation. The paper notes that while SFT-only training achieved high turn counts, it lacked strategic questioning understanding.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

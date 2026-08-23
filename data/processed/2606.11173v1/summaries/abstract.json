@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11173v1",
+ "tldr": "The structure of feedback context is a central determinant of self-distillation effectiveness: step-aligned critique (StepAlignFB) outperforms both GRPO and reference-solution-conditioned self-distillation by providing dense, token-level credit assignment through structural alignment with the solver's reasoning trace.",
+ "contributions": [
+  "First systematic study of how the design of feedback context affects what a model learns in self-distillation",
+  "Introduction of StepAlignFB, a step-aligned critique method using a frozen critic that copies correct steps verbatim and rewrites incorrect ones",
+  "Mechanistic analysis via per-token advantage plots revealing that induction-head copying is the key to effective feedback design",
+  "Demonstration that verbatim repetition of correct prefixes concentrates learning signal at errors while preserving correct reasoning"
+ ],
+ "methods": "The authors implement a solver-critic setup where a trainable solver (Qwen3-1.7B) generates step-tagged reasoning traces for math questions, and a frozen critic (Qwen/QwQ-32B) produces feedback. They compare three conditions: (i) GRPO with binary rewards and group normalization, (ii) RefSol using a reference chain-of-thought solution as context, and (iii) StepAlignFB where the critic produces per-step feedback, copying correct steps verbatim and fixing incorrect ones. Training uses forward KL divergence on a filtered subset of OpenMathReasoning (312 samples), with on-policy rollouts, LoRA adapters (r=64, α=128), and evaluation via Avg@12, Majority-Vote@12, and Pass@12 over 12 samples per problem.",
+ "results": "StepAlignFB outperforms GRPO by 16.11 points and RefSol by 5.27 points on Avg@12. StepAlignFB also shows +2.33 Pass@12 and +13.33 Majority-Vote@12 gains over RefSol. Token-level analysis shows StepAlignFB produces a PRM-like signal: large negative advantages at incorrect steps and positive advantages at correct steps, whereas RefSol produces diffuse negative advantages even at fully correct steps due to stylistic divergence from the reference solution.",
+ "limitations": "The approach requires a capable frozen critic model (Qwen/QwQ-32B), adding inference cost. The feedback prompt is deliberately long, though prefix caching mitigates overhead. Self-distillation benefits from early stopping (5-6 epochs suffice vs. 7 planned), meaning fixed end-of-run evaluations may understate the method's ceiling. The study is limited to math reasoning on a filtered 312-sample subset of OpenMathReasoning.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

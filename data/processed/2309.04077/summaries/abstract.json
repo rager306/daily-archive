@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.04077",
+ "tldr": "SayNav is a novel approach that leverages Large Language Models (LLMs) for dynamic planning in complex multi-object navigation tasks within unknown large-scale environments, achieving state-of-the-art results.",
+ "contributions": [
+  "First LLM-based high-level planner specifically designed for navigation tasks in large-scale unknown photo-realistic environments with incremental step-by-step dynamic planning",
+  "Novel grounding mechanism that incrementally builds and expands a 3D scene graph during exploration, using text prompts from selected subgraphs to ground LLMs for feasible navigation planning",
+  "Introduction of a benchmark dataset for the MultiON task across different houses using the ProcTHOR framework"
+ ],
+ "methods": "SayNav employs a two-level planning architecture with three modules: Incremental Scene Graph Generation, High-Level LLM-based Dynamic Planner, and Low-Level Planner. The agent incrementally builds a layered 3D scene graph (representing small objects, large objects, rooms, and houses) from RGBD images and semantic segmentation during exploration. A subgraph centered around the agent's current position is converted into text prompts and fed to a pre-trained LLM, which generates short-term step-by-step navigation instructions with conditional statements and fallback options. These plans are executed by a pre-trained low-level planner that treats each step as a short-distance point-goal navigation sub-task. The system uses few-shot in-context learning and LLMs to augment the scene graph, such as annotating room types based on perceived objects.",
+ "results": "SayNav achieves state-of-the-art results on the MultiON task and outperforms an oracle-based baseline with strong ground-truth assumptions by more than 8% in terms of success rate. The method demonstrates the ability to dynamically generate plans for successfully locating objects in large-scale new environments.",
+ "limitations": "The approach relies on pre-trained LLMs requiring some in-context learning examples. The low-level planner still requires pre-training for executing navigation sub-tasks. The 3D scene graph construction depends on RGBD perception capabilities, and the method's performance in environments significantly different from the training distribution is not addressed.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

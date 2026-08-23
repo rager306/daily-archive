@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.08997",
+ "tldr": "Intrinsic Memory Agents is a multi-agent LLM framework where each agent maintains an independent, evolving memory derived from its own outputs, addressing context window limitations and improving memory consistency in collaborative multi-agent systems.",
+ "contributions": [
+  "Intrinsic Memory Updates: memory updates derived from agent outputs rather than external summarization",
+  "Agent-Specific Memory: independent memories maintained per agent to preserve perspective autonomy",
+  "Generic memory template applicable to new problems without hand-crafting specific memory prompts",
+  "Benchmarking on PDDL, FEVER, and ALFWorld datasets plus a data pipeline design case study"
+ ],
+ "methods": "The framework defines a multi-agent system A = {A1, A2, ..., AN} where each agent has a role specification Rn, evolving memory Mn, and an LLM instance LLMn. Each agent constructs input context from conversation history and its own prior memory, generates an output via its LLM, and then updates its memory intrinsically using a prompted LLM operation. A consensus check determines when the cycle continues or terminates. The context construction algorithm prioritizes the initial task description, the agent's structured memory, and the most recent conversation turns. Evaluation uses Gemma3:12b on a high-performance computing cluster with A100 GPUs, compared against the G-Memory framework.",
+ "results": "On PDDL, Intrinsic Memory outperformed all other memory mechanisms with mean rewards of 0.260 (generic) and 0.254 (LLM-generated template). On FEVER, it ranked second (generic) and fourth (LLM-generated) with the lowest standard deviation of all approaches. On ALFWorld, it placed third (0.048) and fourth (0.045) but with significantly lower variance (0.0083 and 0.0003) compared to the best performers Voyager (0.072, std 0.035) and Generative (0.061, std 0.031). In the data pipeline design case study with 8 specialized agents, the intrinsic memory system produced higher quality designs across 5 metrics: scalability, reliability, usability, cost-effectiveness, and documentation. Ablation showed generic/dynamic LLM-generated templates consistently outperformed hand-crafted templates.",
+ "limitations": "Gemma3:12b was used for benchmarks after initial tests with Llama3.1:3b found poor results across all benchmarks and memory frameworks. The FEVER dataset showed memory methods in general are less applicable, suggesting the approach is less impactful for fact-extraction tasks dominated by reasoning over raw memory. The approach uses more tokens per round due to structured template generation per agent.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

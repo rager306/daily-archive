@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.14283",
+ "tldr": "Q* casts LLM multi-step reasoning as a heuristic search problem using A* with a plug-and-play Q-value model, guiding LLMs to select the most promising next reasoning step without fine-tuning.",
+ "contributions": [
+  "Formalized multi-step reasoning as a Markov Decision Process (MDP) with states as concatenated prompts and reasoning traces, actions as next steps, and outcome-based rewards.",
+  "Presented three general approaches to estimate optimal Q-values: offline reinforcement learning (fitted Q-iteration), learning from rollout/MCTS, and completion with stronger LLMs.",
+  "Developed a deliberation framework based on A* search that uses process-based reward aggregation and Q-value models as heuristics to guide best-first search.",
+  "Demonstrated significant reasoning improvements on GSM8K, MATH, and MBPP benchmarks."
+ ],
+ "methods": "The authors cast multi-step LLM reasoning as an MDP and solve it via A* heuristic search. A proxy Q-value model approximates optimal Q-values using one of three training strategies: fitted Q-iteration on offline data, rollouts from state-action pairs, or trajectory completion with a stronger LLM. A process-based reward function (e.g., PRM from PRM800K for math, syntax penalties for code) aggregates step utilities, while the Q-value serves as the heuristic. During planning, the top-K (K=6) candidates per state are expanded in best-first fashion, collecting N=6 trajectories per question with the highest f-value selected.",
+ "results": "On GSM8K with Llama-2-7b fine-tuned on MetaMath (65.2% baseline), Q* combining PRM and QVM achieved 80.8%, surpassing ChatGPT-turbo. On MATH, DeepSeek-Math-7b (50.8% baseline) improved to 55.4% with Q*, surpassing Gemini Ultra (4-shot). Q* consistently outperformed Best-of-N across all datasets and base models. Using Q-values for verification also outperformed using them for RLHF alignment.",
+ "limitations": "The method assumes access to ground-truth labels or a process reward model for training, which may not always be available. For MATH, g(s_t) was set to 0 to avoid data leakage from PRM800K, reducing the utility aggregation signal. A* search explores top-K branches at each step, which is cheaper than MCTS rollouts but still adds computational overhead compared to pure auto-regressive decoding.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.15777",
+ "tldr": "Tina demonstrates that parameter-efficient reinforcement learning with LoRA can achieve strong reasoning performance in tiny 1.5B parameter models at a fraction of the cost of full-parameter training approaches.",
+ "contributions": [
+  "Demonstrates surprising effectiveness of efficient RL reasoning via LoRA, with Tina models competitive with or surpassing SOTA full-parameter models on the same base",
+  "Proposes a Rapid Reasoning Format Adaptation Hypothesis that LoRA rapidly adapts the model to reasoning output format while preserving base model knowledge",
+  "Democratizes RL-based reasoning with highly cost-effective, reproducible training at only $9 for the best checkpoint and $526 total across all experiments"
+ ],
+ "methods": "The authors post-train a 1.5B parameter base model (DeepSeek-R1-Distill-Qwen-1.5B) using parameter-efficient reinforcement learning with LoRA adapters and a GRPO-style algorithm. They evaluate across multiple open-source reasoning datasets (STILL-3, DeepScaleR, Open-RS1/2/3) and six benchmarks (AIME24/25, AMC23, MATH500, GPQA, Minerva), all trained with a fixed set of default hyperparameters from prior work. Training runs on just two NVIDIA L40S GPUs with data parallelism, co-locating vLLM inference and RL training to minimize hardware requirements.",
+ "results": "The best Tina model achieves >20% reasoning performance increase and 43.33% Pass@1 accuracy on AIME24. Tina models achieve average scores of 48.16%-50.60% across six benchmarks. Tina-Open-RS2 achieved the highest average at 50.60%. Nearly all Tina models outperform their corresponding full-parameter-trained baseline models. The best checkpoint costs only $9 to reproduce (vs. an estimated 260x cost reduction). Total cost for all experiments including ablations was $526.",
+ "limitations": "The approach relies on a single, fixed set of hyperparameters without costly search procedures. The base model is limited to 1.5B parameters, which may cap ceiling performance compared to larger models. The reasoning format adaptation hypothesis has only partial support. Training on two GPUs results in longer wall-clock time compared to setups with dedicated inference GPUs.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

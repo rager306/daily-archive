@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.02592",
+ "tldr": "WebSailor is a post-training methodology that instills superhuman reasoning in open-source web agents by generating high-uncertainty training tasks through graph-based QA synthesis and information obfuscation, combined with a novel RL algorithm called DUPO.",
+ "contributions": [
+  "SailorFog-QA: scalable graph-synthesized QA generation creating Level 3 tasks with high intrinsic uncertainty through random-walk knowledge graphs and deliberate information obfuscation",
+  "A reasoning reconstruction pipeline that extracts concise action-oriented thoughts from expert LRM trajectories, avoiding stylistic contamination and context overload",
+  "A two-stage training methodology combining rejection sampling fine-tuning (RFT) cold start with reinforcement learning",
+  "DUPO (Duplicating Sampling Policy Optimization): an efficient agentic RL algorithm with dynamic pre-training and in-training sampling strategies achieving 2-3x speedup over DAPO",
+  "WebSailor model family (3B, 7B, 32B, 72B) that outperforms all open-source agents on BrowseComp-en/zh and surpasses proprietary LRMs like Grok-3 and DouBao when equipped with browsing capabilities"
+ ],
+ "methods": "The authors generate Level 3 training tasks by constructing knowledge graphs through random walks on real-world websites, sampling subgraphs, and applying information obfuscation (e.g., vague time references, masked names, qualitative descriptions). Expert open-source LRMs like QwQ-32B generate solution trajectories, but their verbose thoughts are discarded and reconstructed into concise, action-oriented reasoning via prompt-based short-CoT reconstruction. Training begins with RFT cold start (2k+ high-quality examples) that retains only correct trajectories under 32k tokens with more than 5 tool calls. This is followed by DUPO, which filters out entirely correct/incorrect rollouts before training and duplicates remaining samples during training instead of sequential rollouts, using a rule-based reward combining format validation (10%) and answer validation via LLM judge (90%).",
+ "results": "WebSailor models (3B, 7B, 32B, 72B) significantly outperform all open-source agents on BrowseComp-en/zh, matching proprietary agents' performance. Some generated questions are so challenging that proprietary model o3 requires up to 40 tool calls. The models also surpass proprietary LRMs Grok-3 and DouBao when they are combined with browsing capabilities. Post-training exhibits downward compatibility, achieving promising performance on simpler tasks including GAIA, XBench-DeepSearch, and SimpleQA.",
+ "limitations": "The paper notes that existing open-source LLMs and web agents exhibit near-zero accuracy on BrowseComp, highlighting the severity of the capability gap. The RFT cold start relies on filtering trajectories to under 32k tokens, implying a length constraint. The generated questions are described as intractable even for human researchers under typical time constraints (e.g., within two hours), suggesting the difficulty of the task space. The approach's effectiveness beyond web information-seeking (limited evidence on other domains beyond downward compatibility tests) is not extensively validated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

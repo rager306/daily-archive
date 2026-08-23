@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2302.04761",
+ "tldr": "Toolformer trains language models to decide when and how to call external APIs (calculator, QA, search, translation, calendar) in a self-supervised manner, using only a few demonstrations per API and without large-scale human annotations.",
+ "contributions": [
+  "Introduction of Toolformer, a self-supervised approach for LMs to learn tool use via API calls",
+  "A method that samples API calls using in-context learning, filters them by loss reduction, and finetunes the model on useful calls",
+  "Demonstration that a 6.7B-parameter Toolformer outperforms much larger models (OPT 66B, GPT-3 175B) on zero-shot downstream tasks while preserving language modeling abilities"
+ ],
+ "methods": "Starting from a pretrained GPT-J (6.7B) model and a CCNet dataset, the authors generate potential API calls at sampled positions using in-context learning, with only a handful of demonstrations per tool. Calls are executed against five tools (QA via Atlas, calculator, Wikipedia search via BM25/KILT, translation via NLLB 600M, calendar). Each call is filtered by comparing weighted cross-entropy loss with and without the API call and result; only calls reducing loss by at least threshold τ_f are kept. The model is then finetuned on the augmented dataset using a standard language modeling objective, preserving exposure to the original pretraining text.",
+ "results": "On LAMA, Toolformer improved over the best GPT-J baseline by 11.7 (SQuAD), 5.2 (Google-RE), and 18.6 (T-REx) points, using the QA tool in 98.1% of cases. On math benchmarks, Toolformer scored 40.4 (ASDiv), 29.4 (SVAMP), and 44.0 (MAWPS), more than doubling performance over the disabled version and outperforming GPT-3 (175B); the calculator was used in 97.9% of examples. On Web Questions, Natural Questions, and TriviaQA, Toolformer relied on Wikipedia search in 99.3% of cases but still lagged behind GPT-3 (175B). On MLQA, API calls improved performance across all languages; translation tool usage ranged from 63.8% to 94.9% depending on language, except Hindi (7.3%).",
+ "limitations": "The Wikipedia search engine is simple and often returns poor-match results; Toolformer cannot interact iteratively with tools (e.g., reformulating queries or browsing multiple results). Performance on question-answering benchmarks still trails GPT-3 (175B). The approach may struggle with low-resource languages, as shown by limited tool usage for Hindi. Inference is limited to at most one API call per input to avoid loops.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

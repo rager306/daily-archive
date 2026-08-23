@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.13194",
+ "tldr": "PAE is a learning system that enables foundation model agents to autonomously discover and practice skills through a context-aware task proposer, agent policy, and VLM-based evaluator in an online RL loop, achieving significant zero-shot generalization gains on web navigation benchmarks.",
+ "contributions": [
+  "Proposed PAE (Proposer-Agent-Evaluator), the first effective learning system applying autonomous task proposal with RL for internet agents that generalizes to real-world human-annotated benchmarks",
+  "Introduced a context-aware task proposer that generates feasible tasks using environment context such as user demos or website names alone",
+  "Designed an image-based outcome evaluator that provides robust sparse 0/1 rewards without accessing hidden state information",
+  "Incorporated a chain-of-thought reasoning step before actual web actions to improve generalization to unseen human requests",
+  "Demonstrated that agents can autonomously discover useful skills even when the task proposer and evaluator are significantly worse than the agent model"
+ ],
+ "methods": "PAE operates as a context-aware Markov Decision Process where a VLM-based task proposer generates tasks conditioned on environment context (e.g., website names or user demo screenshots), an agent policy attempts these tasks with chain-of-thought reasoning followed by grounded web operations, and an image-based evaluator assesses success from the final three screenshots and agent answers to produce 0/1 reward signals. The agent policy is trained via Filtered Behavior Cloning, which imitates thoughts and actions from successful trajectories with negative log-likelihood loss, using a simple online policy optimization approach. The system was evaluated on vision-based web navigation across real-world websites (Amazon) from WebVoyager and self-hosted websites from WebArena.",
+ "results": "PAE with LLaVa-1.6 (7B) achieves a 30% relative improvement in average success rate compared to the baseline, enabling it to reach performance comparable to LLaVa-1.6-34B fine-tuned with demonstration data despite using 5x fewer test-time compute. Against state-of-the-art open-source VLM agents including Qwen2VL-72B, PAE achieves an absolute performance gain of over 10% (from 22.6% to 33.0%). Experiments were conducted on WebVoyager and WebArena benchmarks spanning more than 100 domains.",
+ "limitations": [
+  "The system relies on infrastructure complexity involving thousands of distributed fully-functioning web browsers",
+  "The evaluation results may differ from reported values in other papers due to the dynamic nature of online websites",
+  "Performance depends on the capability of the task proposer and evaluator models, though experiments show robustness even when they are worse than the agent",
+  "The study focuses specifically on vision-based web navigation agents, so generalization to other domains (e.g., physical robots) is not validated"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

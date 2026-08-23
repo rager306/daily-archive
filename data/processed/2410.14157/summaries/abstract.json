@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.14157",
+ "tldr": "Discrete diffusion models, particularly the proposed Multi-Granularity Diffusion Modeling (MGDM), significantly outperform autoregressive models on complex reasoning and planning tasks like Countdown, Sudoku, and SAT without requiring search techniques.",
+ "contributions": [
+  "Formalizing the concept of subgoal imbalance to explain why autoregressive models struggle with complex planning tasks",
+  "Providing theoretical and empirical evidence that diffusion models effectively learn difficult subgoals through multi-view learning",
+  "Proposing Multi-Granularity Diffusion Modeling (MGDM) with adaptive token-level reweighting for prioritizing difficult subgoals during training",
+  "Demonstrating superior performance on Countdown, Sudoku, and Boolean Satisfiability Problems without search augmentation"
+ ],
+ "methods": "The authors analyze subgoal imbalance in planning tasks where some subgoals are inherently more difficult than others, using a synthetic graph path-finding task with adjustable Planning Distance. They then propose MGDM, which extends discrete diffusion modeling with a token-level reweighting mechanism v(x_{t,n}) = α(1 - exp(-u(•)))^β that emphasizes harder tokens during training. For inference, MGDM uses an easy-first TopK decoding strategy. Experiments were conducted on Countdown (3/4/5-digit variants), Sudoku, and SAT problems, comparing against autoregressive models (GPT-2, LLaMA), Stream-of-Search, and other diffusion models (D3PM, RDM).",
+ "results": "MGDM achieves 91.5% accuracy on Countdown (vs. 45.8% for autoregressive models) and 100% on Sudoku (vs. 20.7% for autoregressive models), without using search techniques. In synthetic planning tasks, diffusion models achieve perfect accuracy across all planning distances with only 50k training data, while autoregressive models barely outperform random guessing for Planning Distance ≥ 2. Scaling AR models up to 85M, 303M, and 1.5B parameters still failed to resolve all planning distances; only fine-tuning a 7B LLaMA model succeeded. The 6M diffusion model outperformed both the 303M GPT-2 scratch model and the pretrained 13B LLaMA model.",
+ "limitations": "Autoregressive models require exponentially larger amounts of data to solve challenging subgoals and only achieved success on all planning distances after scaling to a substantially larger 7B parameter model (LLaMA). Search-augmented approaches like Stream-of-Search face challenges with long trajectory lengths (e.g., Countdown 5 trajectories can span 60,000 tokens). The synthetic planning task used only one distracting path, potentially underestimating real-world complexity.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

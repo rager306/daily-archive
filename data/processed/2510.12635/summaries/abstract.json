@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.12635",
+ "tldr": "MemAct reformulates working memory management as learnable policy actions within a unified action space, using end-to-end reinforcement learning with a Prune&Write operator and Dynamic Context Policy Optimization to enable agents to autonomously curate their context.",
+ "contributions": [
+  "Memory-as-Action paradigm that treats context curation as an intrinsic, learnable policy capability rather than an external mechanism",
+  "MDP formulation with ID-based addressable decision sequences and the Prune&Write operator for fine-grained in-place context editing",
+  "Dynamic Context Policy Optimization (DCPO), a trajectory segmentation algorithm enabling efficient RL training with non-sequential context updates",
+  "Empirical demonstration that learned memory strategies are efficient, adaptive to model capabilities, and generalize across task complexity"
+ ],
+ "methods": "MemAct integrates context management into the policy's action space using a Prune&Write operator, where the agent generates memory actions consisting of ID-targeted pruning and synthesized content insertion. The problem is formalized as an MDP with working memory as state, task and memory actions as the action space, and in-place filtering transitions for memory edits. Training uses DCPO, which segments non-continuous trajectories at memory edit points into logically consistent independent segments with fixed context prefixes, then optimizes using a group-relative normalized GRPO objective with sparse terminal rewards (+1.0 for success, -0.1 for constraint violations). SFT initialization used DeepSeek-V3.1 to synthesize trajectories, followed by RL on Qwen2.5-7B/14B-Instruct backbones using DCPO with N_traj=5 and N_seg=12.",
+ "results": "MemAct-RL-14B achieves 59.1% multi-objective accuracy, outperforming Qwen3-235B (53.1%) and Tongyi-DeepResearch (56.0%), while using only 3,500 tokens average context per step (~50% shorter than Qwen3-235B). Total token cost was 8.2×10⁴, a 51% reduction vs Qwen3-235B (16.7×10⁴) and 57% vs Search-R1-14B (19.3×10⁴). MemAct-RL-7B reduced total latency by 40% compared to Search-R1. Baselines like A-MEM achieved lower cost (3.9×10⁴) but much lower accuracy (39.9%). Performance scaled stably with task complexity while baselines saturated.",
+ "limitations": [
+  "Training data limited to tasks with at most three objectives, requiring generalization to higher-complexity inference scenarios (4-8 objectives)",
+  "SFT initialization relies on synthetic trajectories from DeepSeek-V3.1 with injected hints that must be removed post-training",
+  "DCPO requires trajectory segmentation and re-optimization of independent segments rather than standard monotonic RL training",
+  "Inference latency analysis was conducted using SGLang and may not generalize across all production engines"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:30Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

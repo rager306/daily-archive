@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.16084",
+ "tldr": "TTRL (Test-Time Reinforcement Learning) enables LLMs to self-improve via RL on unlabeled test data by using majority voting as a proxy reward signal, without requiring ground-truth labels.",
+ "contributions": [
+  "Introducing TTRL, a novel method for training LLMs using RL on unlabeled data at test time",
+  "Demonstrating that majority voting yields effective reward estimation for unsupervised RL",
+  "Showing TTRL can surpass the initial model's maj@n upper bound despite being supervised by it",
+  "Proving TTRL performance approaches direct RL training on test data with ground-truth labels"
+ ],
+ "methods": "TTRL generates multiple candidate outputs through repeated sampling from the model's policy, then derives a consensus estimate (e.g., via majority voting) to serve as a proxy label. A rule-based reward is computed comparing each sampled output to this consensus. Parameters are updated via gradient ascent using RL algorithms (GRPO, PPO, or PRIME) to maximize expected reward. The process runs at test time without access to ground-truth labels.",
+ "results": "TTRL boosts pass@1 of Qwen-2.5-Math-7B by approximately 211% on AIME 2024 (from 12.9 to 40.2) using only unlabeled test data. Average gain of 76% across AIME 2024, AMC, MATH-500, and GPQA. Consistent improvements across 6 models spanning 4 families (Qwen, LLaMA, Mistral, DeepSeek) with minimum 105% improvement on AIME 2024. TTRL avg@64 consistently outperforms initial model maj@64 across all benchmarks. TTRL performance closely approaches RL trained directly on labeled test data (RL leakage). Small models also improve significantly: Qwen-2.5-Math-1.5B improved by 123.2% on MATH-500 (32.7 to 73.0). Improvements generalize across tasks and scales.",
+ "limitations": [
+  "Relies on majority voting accuracy for reward estimation, which may be less reliable on very hard tasks",
+  "Performance is bounded by the initial model's ability to generate reasonable samples",
+  "Unlabeled data setting means reward signals contain inaccuracies compared to ground-truth supervision",
+  "Computational cost of generating 64 responses per prompt for rollout"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

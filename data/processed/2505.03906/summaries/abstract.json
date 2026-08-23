@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.03906",
+ "tldr": "MARCO is a multi-agent framework that iteratively optimizes LLM-generated code for high-performance computing using specialized agents and real-time web-search integration, achieving up to 14.6% average runtime reduction over Claude 3.5 Sonnet and an additional 30.9% improvement from the web-search component.",
+ "contributions": [
+  "Specialized Agent Architecture: separation of code generation, performance evaluation, and testing agents for distinct expertise development",
+  "Adaptive Feedback Mechanism: iterative feedback loop where performance metrics inform progressive optimization attempts",
+  "Real-time Knowledge Integration: web-search component retrieving latest optimization techniques from research publications and conference proceedings",
+  "Cost-Effective Implementation: minimized token usage and API calls as an alternative to expensive model fine-tuning"
+ ],
+ "methods": "MARCO employs a multi-agent architecture with three specialized agents: a code optimizer applying cache locality, OpenMP/CUDA parallelization, and vectorization strategies; a testing agent evaluating execution time, memory consumption, algorithmic complexity, and correctness; and a web-search component retrieving recent HPC optimization techniques from IEEE, ACM, and arXiv. These agents operate through an iterative feedback loop where performance metrics from the testing agent drive subsequent optimization attempts. Evaluation was conducted on the LeetCode 75 problem set plus 10 additional hard problems, using an AMD EPYC 7502 32-Core Processor with NVIDIA A100 GPUs and 256 GB RAM, with each experiment repeated 5 times.",
+ "results": "On the LeetCode 75 problem set, MARCO achieved a 14.6% average runtime reduction compared to Claude 3.5 Sonnet alone (mean runtime 49.1 ms vs. 57.5 ms), matching or outperforming in 44 out of 75 cases. For hard problems, MARCO outperformed Claude 3.5 Sonnet in all 10 cases with a 51.9% average runtime improvement. The web-search component yielded an additional 30.9% performance improvement over the base MARCO system. Runtime breakdowns by difficulty: Easy (9.3 ms vs 11.8 ms, 21.2% improvement), Medium (65.9 ms vs 78.1 ms, 15.6% improvement), Hard (138.5 ms vs 288.1 ms, 51.9% improvement). MARCO solutions ranked in the top 20% of all LeetCode submissions for 7 out of 10 hard problems. API costs were approximately $0.00369 per query on average.",
+ "limitations": "Certain limitations existed due to library import restrictions in the LeetCode evaluation framework. The ParEval benchmark cited in the paper reveals that all evaluated LLMs demonstrate markedly lower accuracy when generating parallel implementations compared to serial code, indicating a persistent knowledge gap. Additionally, parallel code generation has common pitfalls such as performance degradation in small workload scenarios due to thread creation overhead.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.04268",
+ "tldr": "ProtAgents is a multi-agent framework powered by GPT-4 that collaboratively designs and analyzes de novo proteins by integrating language reasoning with physics simulations, generative AI, and knowledge retrieval.",
+ "contributions": [
+  "Introduction of ProtAgents, a dynamic LLM-based multi-agent platform for autonomous de novo protein design and analysis",
+  "Integration of specialized agents (planner, assistant, critic) with custom tools spanning physics simulations, generative models, and literature retrieval",
+  "Demonstration of automated, multi-step protein analysis combining conditional logic, secondary structure prediction, natural frequency computation, and structure classification"
+ ],
+ "methods": "The framework employs four agent roles—user_proxy, planner, assistant, and critic—orchestrated by a chat manager via dynamic group chat. Agents access a library of customized functions including physics simulators for solving PDEs to obtain vibrational properties, a denoising diffusion model for de novo protein design, a fine-tuned transformer for mechanical property prediction, and a retrieval agent for knowledge extraction. The system iteratively plans, executes, critiques, and corrects multi-step workflows with minimal human intervention.",
+ "results": "In Experiment I, the planner correctly retrieved PDB IDs for experimentally studied proteins, though mismatches occurred due to poor retrieval function performance. For a conditional computational task on the first 10 PDB IDs, the system correctly fetched structures, evaluated sequence lengths, and skipped proteins exceeding 128 residues (e.g., PDB 1hz6 returned length 216). For valid proteins like PDB 1wit (length 93), it computed secondary structure composition (H: 0%, B: 3.23%, E: 51.61%, etc.) and natural frequencies without errors.",
+ "limitations": "The retrieval function exhibited poor performance, causing PDB ID mismatches that the agent team could not mitigate due to lack of database access. Complex protein design tasks require specialized external tools and nonlinear adaptation beyond simple code execution, and the system's effectiveness depends on the quality and availability of integrated knowledge databases.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

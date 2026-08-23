@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.18431",
+ "tldr": "GEAR is a graph-enhanced agent for retrieval-augmented generation that improves multi-hop QA by combining an LLM-based initial triple selection with a lightweight semantic model for efficient graph expansion, achieving state-of-the-art results with fewer iterations and tokens than existing methods.",
+ "contributions": [
+  "A novel graph-based retriever called SyncGE that uses an LLM to locate initial triples and a dense embedding model to diversely expand triple beams for multi-hop passage retrieval.",
+  "An agent framework (GEAR) incorporating SyncGE within a multi-step retrieval process with gist memory, query re-writing, and termination reasoning.",
+  "State-of-the-art retrieval performance across three multi-hop QA benchmarks (MuSiQue, HotpotQA, 2WikiMultihopQA), with over 10% improvement on MuSiQue."
+ ],
+ "methods": "GEAR operates in two stages. Offline, passages are aligned with extracted triples to form an index. At retrieval time, an LLM reads initially retrieved passages and summarizes them as proximal triples, which are linked to the triple index to seed graph expansion. A diverse triple beam search then expands the graph using a dense embedding model (not an LLM) to score candidate triple sequences by cosine similarity to the query, while maintaining beam diversity. For multi-step retrieval, an agent maintains a gist memory of accumulated proximal triples across iterations, re-writes the query based on reasoning output, and terminates when the LLM determines sufficient evidence exists. Final passage ranking uses Reciprocal Rank Fusion of graph-expanded and iteratively retrieved passages.",
+ "results": "GEAR achieves state-of-the-art multi-step retrieval results across MuSiQue, HotpotQA, and 2WikiMultihopQA, with improvements exceeding 10% on MuSiQue. Hybrid + SyncGE outperforms HippoRAG by up to 9.8% at R@15 on MuSiQue in single-step retrieval. Diverse triple beam search consistently outperforms standard beam search across all datasets and recall ranks. GEAR reaches strong performance in a single iteration, unlike IRCoT-oriented methods requiring at least 2 iterations. GEAR uses fewer LLM tokens and fewer iterations than competing systems. Performance remains consistent across chunks with varying triple densities, with significantly lower standard deviations than NaiveGE and HippoRAG w/ IRCoT.",
+ "limitations": "The paper does not explicitly state limitations. Evidently, the approach depends on the quality of triple extraction and base retriever performance. The scoring function evaluated is limited to dense embedding cosine similarity, with other implementations left for future work. Experiments on HotpotQA used a limited experimental setting (following HippoRAG's setup) to control costs.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

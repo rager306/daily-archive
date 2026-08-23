@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.06201",
+ "tldr": "EASYTOOL is a framework that transforms diverse and lengthy tool documentation into unified, concise tool instructions, significantly reducing token consumption and improving LLM-based agents' tool utilization across real-world tasks.",
+ "contributions": [
+  "Analysis of current tool utilization limitations in LLM-based agents, identifying three key deficiencies in tool documentation: inconsistency, redundancy, and incompleteness",
+  "Proposal of EASYTOOL, a two-stage framework that generates high-quality, concise tool instructions from diverse tool documentation to facilitate tool usage",
+  "Extensive experiments on three datasets (ToolBench, Gorilla, HotPotQA) from distinct domains demonstrating effective and efficient improvement in LLM tool utilization"
+ ],
+ "methods": "EASYTOOL operates in two stages. First, Tool Description Generation uses ChatGPT to convert raw tool documentation into concise descriptions capturing general purpose and built-in functions, eliminating irrelevant information. Second, Tool Functionality Guidelines Construction uses ChatGPT to generate structured examples including usage scenarios and parameter names/values for each tool function. The framework processes tool documentation from sources like RestBench and ToolBench, filtering out redundant metadata (URLs, IDs, etc.) and filling gaps with generated demonstrations to create standardized, plug-and-play tool instructions.",
+ "results": "EASYTOOL reduced average tool documentation tokens by 70.43% (ToolBench: 2,530→748) and 97.35% (RestBench: 3,881→103). On ToolBench I2-Category and I3-Instruction subsets, ChatGPT-ReACT+EASYTOOL achieved 64% pass rate (vs 56% baseline), GPT-4-ReACT+EASYTOOL achieved 69% pass rate (vs 62%), and Vicuna-7B-ReACT+EASYTOOL achieved 53% pass rate (vs 35%). On Gorilla dataset, ChatGPT-ReACT improved from 27% to 58% accuracy, GPT-4-ReACT from 45% to 78%, and Vicuna-7B-ReACT from 22% to 45%. On HotPotQA complex math problems, ChatGPT-ReACT improved from 70.9% to 74.6% and Vicuna-7B-ReACT from 45.3% to 54.4%.",
+ "limitations": [
+  "The framework relies on ChatGPT for generating tool descriptions and guidelines, introducing dependency on a closed-source model",
+  "The approach works well for black-box LLMs but struggles with some open-source LLMs due to poor instruction-following capability (e.g., ToolLLaMA-7B could not be applied with EASYTOOL)",
+  "Tool documentation completeness varies across sources, and the quality of generated examples depends on the capability of the underlying LLM used for generation"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

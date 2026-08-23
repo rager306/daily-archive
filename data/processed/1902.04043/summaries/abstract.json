@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1902.04043",
+ "tldr": "The paper introduces the StarCraft Multi-Agent Challenge (SMAC), a standardized benchmark for cooperative multi-agent RL based on StarCraft II micromanagement, where each unit is controlled by an independent agent with partial local observations.",
+ "contributions": [
+  "Introducing SMAC as a diverse set of challenging cooperative multi-agent RL scenarios with partial observability and decentralized execution",
+  "Open-sourcing PyMARL, a modular deep MARL learning framework built on PyTorch with implementations of QMIX, QTRAN, COMA, VDN, and IQL",
+  "Providing baseline results and best-practice guidelines for benchmarking and evaluation"
+ ],
+ "methods": "SMAC is built on the StarCraft II game engine via the SC2LE environment. Each unit in micro combat scenarios is controlled by an independent agent receiving local observations within a sight range of 9, including distances, health, shields, unit types, and terrain features. Training uses centralized access to full global state (all unit positions, Medivac energy, cooldowns), while execution is fully decentralized. The default shaped reward is based on hit-point damage dealt and enemy units killed, plus a bonus for winning; a sparse alternative gives +1 for a win and -1 for a loss. Evaluation measures test win rate across 14 scenarios with greedy decentralized action selection during testing.",
+ "results": "Figure 3 reports median test win percentage averaged across all 14 scenarios and the number of scenarios in which each algorithm achieves the highest median win rate. Some scenarios remain out of reach for good performance. Specific numerical results are in Appendix D (referenced but not included in the provided text).",
+ "limitations": "Not intended for training agents for full StarCraft II gameplay; focuses exclusively on micromanagement. Agents are 'excessively restricted' compared to normal gameplay due to strict decentralization and local observability. Some challenging environments remain unsolved even by state-of-the-art methods. Existing benchmarks in the field rely on one-off toy problems that are overly simple or tuned to specific algorithms.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

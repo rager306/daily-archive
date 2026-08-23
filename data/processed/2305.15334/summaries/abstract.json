@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.15334",
+ "tldr": "Gorilla is a fine-tuned LLaMA-7B model that surpasses GPT-4 in generating accurate API calls across massive, overlapping API sets from TorchHub, TensorHub, and HuggingFace, while retrieval-aware training reduces hallucination and enables adaptation to documentation changes.",
+ "contributions": [
+  "Gorilla: a retrieval-aware, fine-tuned LLaMA-7B model for accurate API call generation",
+  "APIBench: a comprehensive benchmark of 1,645 ML APIs from TorchHub (94), TensorFlow Hub (626), and HuggingFace (925) with 16,450 instruction-API pairs",
+  "A retrieval-integrated training paradigm that improves accuracy and reduces hallucination",
+  "AST sub-tree matching evaluation metric for functional correctness of generated API calls"
+ ],
+ "methods": "The authors constructed APIBench by scraping API documentation from three major model hubs and using GPT-4 with self-instruct to generate 10 synthetic instruction-API pairs per API (16,450 total). They fine-tuned a base LLaMA-7B model using instruction tuning in a chat-style format, both with and without document retrieval. During inference, a retriever (BM25 or GPT-Index) fetches the top-1 relevant API documentation, which is concatenated to the user prompt. Functional correctness is evaluated using AST sub-tree matching, where generated code is parsed and compared against reference API calls in the dataset.",
+ "results": "Gorilla outperforms GPT-4 by 20.43% and ChatGPT by 10.75% in zero-shot API call generation, and by 83% compared to base LLaMA-7B. Fine-tuning without retrieval was more effective than adding a non-optimal retriever at test time, which caused significant drops (21.50% in TorchHub and 47.57% in HuggingFace). Retrieval-aware training enabled the model to adapt to test-time documentation changes and substantially reduced hallucination errors, where hallucination is defined as an API call that is not a sub-tree of any API in the database.",
+ "limitations": "Adding a non-optimal retriever at test time can misguide the model and significantly hurt performance. The HuggingFace portion of the dataset is not exhaustive, covering only the top 20 models per domain rather than all ~203,681 models. Many HuggingFace models have poor documentation, lacking dependencies or model card information, requiring filtering. The evaluation is limited to ML API calls from three specific model hubs.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.05501",
+ "tldr": "L3MVN leverages large language models to impart common-sense knowledge for visual target navigation, eliminating the need for extensive scene prior learning. The framework uses language-based semantic reasoning to select relevant frontiers from semantic maps for efficient exploration.",
+ "contributions": [
+  "A framework that builds environment maps and selects long-term goals based on frontiers using large language model inference for efficient exploration",
+  "Two paradigms (zero-shot and feed-forward) for semantic reasoning about objects using language models",
+  "Real-world robot evaluation demonstrating applicability and discussion of simulation-to-reality gap"
+ ],
+ "methods": "The framework constructs a semantic map from RGB-D images and extracts frontiers using a cost-utility scoring approach. For each frontier, objects are detected and filtered using entropy-based selection (top 15 lowest-entropy objects). Two LLM paradigms are used: (i) zero-shot uses pre-trained RoBERTa-large to score query strings like 'A frontier area containing [objects], [target]' for each target category, selecting the frontier with highest probability; (ii) feed-forward embeds a single query string and passes it through a fine-tuned three-layer neural network head to predict target category distributions. Frontier selection combines LLM scores with cost-utility scores using a bound B=[0.15, 0.3]. Local navigation employs the Fast Marching Method (FMM) with module-based obstacle avoidance.",
+ "results": "On Gibson dataset: L3MVN zero-shot achieved 0.761 success rate (SPL 0.377, DTG 1.101), feed-forward achieved 0.769 success rate (SPL 0.388, DTG 1.008), outperforming SemExp (0.652 SR) and PONI (0.736 SR). On HM3D dataset: zero-shot achieved 0.504 success rate (SPL 0.231, DTG 4.427), feed-forward achieved 0.542 success rate (SPL 0.255, DTG 3.934), surpassing SemExp (0.379 SR). The method was also validated in real-world experiments for finding objects like sofas.",
+ "limitations": [
+  "The paper acknowledges significant room for improvement in language-based approaches compared to task-specific learning",
+  "There remains a gap between simulation and real-world performance that requires further investigation",
+  "The approach depends on semantic segmentation accuracy from the finetuned RedNet model",
+  "Frontier areas may contain uninformative or unrelated objects (e.g., sofa in toilet), though entropy filtering partially addresses this"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

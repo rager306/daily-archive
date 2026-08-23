@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.07472",
+ "tldr": "MP5 is an open-ended multimodal embodied system built on Minecraft that uses a goal-conditioned active perception scheme to decompose tasks into sub-objectives and execute context-aware plans, achieving 22% success on diamond-level process-dependent tasks and 91% on complex context-dependent tasks.",
+ "contributions": [
+  "Introduction of MP5, a five-module embodied system (Parser, Percipient, Planner, Performer, Patroller) for solving long-horizon open-world tasks in Minecraft",
+  "A goal-conditioned active perception scheme enabling multi-round interaction between Percipient and Patroller to gather objective-relevant environmental information",
+  "A MineLLM (MineCLIP + LoRA-fine-tuned Vicuna-13B-v1.5) for Minecraft-specific perception",
+  "Demonstration that MP5 can solve novel open-ended tasks with both heavy process dependency and context dependency"
+ ],
+ "methods": "MP5 comprises five modules: Parser decomposes long-horizon tasks into sub-objectives using RAG-enhanced GPT-4; Percipient is a LoRA-enabled MLLM (MineCLIP vision encoder + Vicuna-13B-v1.5) that answers questions about observed images; Planner schedules action sequences based on situation-aware context from active perception; Performer executes actions and interacts with the environment; Patroller queries Percipient about necessary environmental factors and verifies execution correctness. The core innovation is an active perception scheme where Patroller iteratively asks Percipient multi-round questions conditioned on the current sub-objective and action, gathering relevant context (objects, mobs, time, weather, etc.) before planning or executing. Failed executions trigger re-planning with updated sub-objectives.",
+ "results": "MP5 achieved a 22% success rate on diamond-level (hardest) process-dependent tasks and a 91% success rate on complex context-dependent tasks requiring perception of 4-6 key items. MP5 outperformed LLaVA-1.5 and GPT-4V in context-dependent tasks. Active perception focused on objective-related information and produced more accurate results than fine-grained global perception. The system could also successfully address open-ended tasks never seen before with heavy process and context dependency. Experiments used 50 games per context-dependent task and 30 games per process-dependent task, with a 10-minute (12,000 steps at 20Hz) time limit.",
+ "limitations": "The success rate on diamond-level process-dependent tasks was only 22%, indicating significant difficulty with the hardest long-horizon tasks. The system relies on GPT-4 and pre-trained MLLMs, which may limit accessibility. Context-dependent tasks used predetermined environmental details (biomes, weather) to ensure target availability, limiting full open-ended evaluation in that category. Execution failures are detected but the system's robustness to all failure modes is not fully demonstrated. Some results were truncated in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

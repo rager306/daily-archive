@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.02259",
+ "tldr": "MEMAGENT introduces a novel agent workflow that processes arbitrarily long documents segment-by-segment with a fixed-length memory updated via an overwrite strategy, trained end-to-end using a multi-conversation DAPO algorithm to achieve extrapolation from 8K to 3.5M context with less than 10% performance loss.",
+ "contributions": [
+  "A novel approach enabling LLMs to process arbitrarily long inputs within a limited context window under linear time complexity during inference",
+  "An agent workflow with end-to-end training using the multi-conversation DAPO algorithm",
+  "Empirical demonstration of RL-trained models extrapolating to vastly long documents (up to 3.5M tokens) with minimal performance degradation"
+ ],
+ "methods": "The MEMAGENT workflow processes input text as a stream of chunks, where the model iteratively reads each chunk and overwrites a fixed-length (1024-token) memory with updated summaries. Inference is decomposed into a Context-Processing module (iterative memory updates) and an Answer-Generation module. Training uses Multi-Conv DAPO, an extension of the DAPO algorithm where each sample generates multiple context-independent conversations, with the advantage computed from the final answer conversation and uniformly applied to all preceding conversations. The model is trained on 60K length documents using a rule-based verifier as outcome reward, with an 8K context window (1024 tokens for query, 5000 for chunk, 1024 for memory, 1024 for output).",
+ "results": "MEMAGENT extrapolates from 8K training context to 3.5M QA tasks with less than 10% performance loss. It achieves over 95% on the 512K NIAH test. On LongBench-QA, it outperforms larger long-context and reasoning models. On NIAH across three difficulty levels, RL-MEMAGENT shows minimal performance loss of less than 5% at 512K. On LongBench-SUM, RL-MEMAGENT achieves SOTA on almost all ROUGE-{1,2,L} metrics. Without RL training, performance declines substantially as input length increases.",
+ "limitations": "The approach requires reinforcement learning training to achieve robust memory abilities—without RL, the model exhibits substantial performance decline as input length increases. The system relies on a rule-based verifier for outcome reward, which may limit applicability to tasks with unverifiable answers. The evaluation focuses primarily on QA and summarization tasks, with less emphasis on other long-context application domains.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

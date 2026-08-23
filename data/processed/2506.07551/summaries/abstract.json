@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.07551",
+ "tldr": "CheMatAgent integrates 137 chemistry tools with an LLM-based agent using a Hierarchical Evolutionary Monte Carlo Tree Search (HE-MCTS) framework, enabling decoupled tool planning and execution with self-generated training data that surpasses GPT-4o on chemistry QA and discovery tasks.",
+ "contributions": [
+  "The largest chemistry and materials tool pool with 137 tools covering information retrieval to reaction predictions",
+  "A dataset curation pipeline generating ChemToolBench, containing over 28,000 single-calling and multiple-calling examples across comprehensive chemistry and materials science splits",
+  "The HE-MCTS framework enabling independent optimization of tool selection (Policy Model) and parameter generation (Execution Model)",
+  "Self-training approach for step-level fine-tuning of the policy model plus task-adaptive PRM and ORM that surpass GPT-4o without manual annotation"
+ ],
+ "methods": "The authors collected 137 chemistry tools from 5 sources, standardized their formats into a uniform JSON structure, and refined code to decouple tools from original packages. They built ChemToolBench via a self-instruct pipeline: generating parameter examples from PubChem/LLMs/code, producing single-tool data by executing tool calls and back-generating queries, and decomposing multi-tool data into candidate selection, chain generation, and query generation steps with manual verification. The HE-MCTS framework decouples a Policy Model (selects tools) from an Execution Model (fills parameters), with hierarchical MCTS guided by trained PRM and ORM. Training uses multi-path reasoning with noise filtering and robustness reasoning with noise retention strategies, plus self-generated trajectories for PRM/ORM training.",
+ "results": "GPT-4o-mini-M and Claude-3.5-S-M with HE-MCTS outperform their base models on Chemistry QA and discovery tasks. The -M2 Policy Model surpasses GPT-4o-mini-M and Claude-3.5-S-M in tool selection. Trained PRM and ORM in -M3 outperform both GPT-4o and the Policy Model. The decoupled framework improves parameter generation accuracy by reducing the action space. Cross-split generalization was observed: models trained on the Comprehensive Chemistry split perform on the Materials Science split.",
+ "limitations": "Tools require slight free online services despite preferring local execution. The dataset construction relies on LLM-generated data that requires manual checking, especially for pymatgen tools. Multi-tool calling data generation is complex, requiring a three-step decomposition to ensure quality. The evaluation uses GPT-4o for result accuracy assessment, which may introduce bias. Not all limitations are explicitly stated in the paper text provided.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

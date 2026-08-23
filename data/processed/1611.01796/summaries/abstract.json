@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1611.01796",
+ "tldr": "The paper presents a framework for multitask deep reinforcement learning guided by policy sketches—abstract symbolic sequences of named subtasks that provide high-level structure without low-level implementation details. By associating each subtask symbol with a modular subpolicy and tying parameters across shared subpolicies, the approach learns reusable primitive behaviors that generalize across tasks.",
+ "contributions": [
+  "A general paradigm for multitask, hierarchical, deep reinforcement learning guided by abstract policy sketches",
+  "A concrete learning recipe built on modular deep policy representations and a multitask actor-critic training objective",
+  "Demonstration that sketches induce a library of interpretable primitive behaviors that can be recombined for zero-shot transfer and rapid adaptation to new tasks"
+ ],
+ "methods": "Each high-level symbolic action in a policy sketch is associated with a neural network subpolicy π_b that maps states to distributions over low-level actions plus a STOP token. Task-specific policies are formed by concatenating subpolicies in sequence according to the sketch. Subpolicies sharing the same symbol have tied parameters, enabling knowledge transfer across tasks. Optimization uses a decoupled actor-critic where each task has its own critic c_τ, and gradient updates sum across all tasks in which a subpolicy participates. Curriculum learning starts with short sketches and gradually increases complexity once average reward thresholds are met.",
+ "results": "Experiments in three environments—a 2D Minecraft-inspired crafting game, a 2D maze navigation task with keys and doors, and a 3D quadrupedal locomotion task—show the approach substantially outperforms unsupervised option discovery (Bacon & Precup, 2015), Hierarchical Abstract Machines (Parr & Russell, 1998), and standard policy gradient baselines. Tasks with four or five high-level actions are essentially unsolvable by flat policies receiving only terminal rewards. The approach also enables zero-shot learning on held-out tasks given only a sketch, and rapid adaptation when sketches are hidden.",
+ "limitations": "For the most challenging tasks involving sequences of four or five high-level actions, a task-specific agent following a random policy essentially never discovers the reward signal, requiring the hierarchical sketch structure to solve them. The approach assumes sketches are available as supervision, and performance depends on the quality of the high-level symbolic decomposition. The paper does not address automatic sketch inference for novel tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

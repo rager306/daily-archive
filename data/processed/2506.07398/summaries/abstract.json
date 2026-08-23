@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.07398",
+ "tldr": "G-Memory is a hierarchical graph-based memory system for multi-agent systems that manages lengthy inter-agent collaboration via three-tier graph structures (insight, query, and interaction graphs), enabling cross-trial knowledge reuse and self-evolution. Experiments show improvements of up to 20.89% in embodied action and 10.12% in knowledge QA accuracy.",
+ "contributions": [
+  "Identification of the bottleneck in self-evolving capabilities of MAS attributed to oversimplified memory architectures",
+  "Proposal of G-Memory, a plug-and-play hierarchical agentic memory architecture for MAS using insight, query, and interaction graphs",
+  "Extensive experimental evaluation across five benchmarks, three LLM backbones, and three MAS frameworks demonstrating superior performance and resource efficiency"
+ ],
+ "methods": "G-Memory manages MAS interaction history through a three-tier hierarchical graph structure: (1) Insight Graph stores distilled generalizable insights with supporting query sets, (2) Query Graph encodes task queries with metadata (status, difficulty) and semantic connections, and (3) Interaction Graph stores fine-grained agent utterance trajectories. Upon a new query, it performs coarse-grained similarity-based retrieval on the query graph followed by hop expansion, then executes bi-directional traversal: upward to retrieve high-level insights and downward to extract core interaction subgraphs via an LLM-facilitated sparsifier. Each agent receives role-specific memory augmentation. After task execution, the hierarchy is updated by assimilating new trajectories, insights, and query connections based on environmental feedback.",
+ "results": "G-Memory improves success rates by up to 20.89% on embodied action tasks and 10.12% on knowledge QA tasks across five benchmarks, three LLM backbones, and three MAS frameworks (AutoGen, DyLAN, ComplexCoT/CoT). It maintains comparable or lower token usage than mainstream memory designs. The system achieves these gains without any modifications to the original frameworks, demonstrating its plug-and-play capability.",
+ "limitations": [
+  "Existing MAS memory mechanisms are overly simplistic, disregarding nuanced inter-agent collaboration trajectories",
+  "Cross-trial memory in prior work remains rudimentary, typically only transmitting condensed artifacts (final solutions) rather than meaningful collaborative experience",
+  "Naive feeding of entire long-context trajectories without proper abstraction poses challenges for traditional retrieval-based memory designs",
+  "Transfer of single-agent memory mechanisms to MAS is not straightforward due to substantially longer task-solving trajectories (up to 10x more tokens)"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:23Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

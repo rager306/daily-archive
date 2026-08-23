@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.20025",
+ "tldr": "GOPlan is a model-based offline goal-conditioned RL algorithm that uses advantage-weighted CGAN pretraining and model-based reanalysis planning to achieve strong performance with limited data and OOD goal generalization.",
+ "contributions": [
+  "Proposes GOPlan, a novel model-based offline GCRL algorithm addressing limited data and OOD goals",
+  "Introduces a two-stage framework: pretraining a prior policy via advantage-weighted CGAN and finetuning with imagined trajectories from intra/inter-trajectory reanalysis",
+  "Demonstrates state-of-the-art performance on multi-goal navigation and manipulation benchmarks, including small data and OOD goal settings"
+ ],
+ "methods": "GOPlan uses a two-stage approach. First, it pretrained an advantage-weighted CGAN prior policy to capture multi-modal action distributions while avoiding OOD actions, alongside learning an ensemble of N deterministic dynamics models via supervised learning. Second, during reanalysis, it performs model-based planning for both intra-trajectory goals (along the same trajectory) and inter-trajectory goals (from different trajectories), generating imagined trajectories scored by cumulative returns. Uncertainty is quantified via ensemble disagreement, and only low-uncertainty trajectories are stored in a reanalysis buffer for iterative policy finetuning through advantage-weighted CGAN optimization.",
+ "results": "GOPlan achieves state-of-the-art performance across multiple offline multi-goal navigation and manipulation tasks. It demonstrates superior ability to handle small data budgets and generalize to out-of-dataset (OOD) goals compared to prior methods. Experiments show that advantage-weighted CGAN produces more distinct mode separation and fewer OOD actions than Gaussian, CVAE, and unweighted CGAN baselines.",
+ "limitations": "The method uses deterministic dynamics models chosen for simplicity; the authors note that extension to recurrent models would be needed for high-dimensional state spaces. The approach also relies on sparse reward functions during evaluation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

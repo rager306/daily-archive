@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.15144",
+ "tldr": "This paper introduces GUI-Owl, a foundational GUI agent model, and Mobile-Agent-v3, a general-purpose GUI agent framework built on it, both achieving state-of-the-art results among open-source models across desktop and mobile GUI benchmarks.",
+ "contributions": [
+  "GUI-Owl-7B achieves 66.4 on AndroidWorld and 29.4 on OSWorld-Verified; Mobile-Agent-v3 further improves to 73.3 and 37.7 respectively, setting new SOTA among open-source GUI agent frameworks",
+  "A self-evolving GUI trajectory production framework using cloud-based virtual environments across Android, Ubuntu, macOS, and Windows that generates high-quality interaction data with reduced manual annotation",
+  "Scalable environment RL framework with Trajectory-aware Relative Policy Optimization (TRPO) achieving 34.9 on OSWorld-Verified",
+  "Diverse foundational agent capabilities including grounding, planning, action semantic recognition, and multi-agent integration"
+ ],
+ "methods": "GUI-Owl is initialized from Qwen2.5-VL and trained in three stages: pre-training on large-scale UI understanding and reasoning data, iterative tuning via real-world task execution with filtered trajectories, and reinforcement learning using async rollout infrastructure. The self-evolving trajectory pipeline generates rollouts, evaluates correctness via step-level and trajectory-level critics, and feeds improved data back into training. Data synthesis includes open-source grounding datasets, A11y tree extraction, SAM-based dense grounding on PC images, fine-grained OCR grounding, task planning distilled from historical trajectories and large LLMs, action semantic datasets, and reasoning data from offline hint-guided rejection sampling and multi-agent distillation.",
+ "results": "GUI-Owl-7B scores 66.4 on AndroidWorld and 29.4 on OSWorld-Verified. Mobile-Agent-v3 improves these to 73.3 on AndroidWorld and 37.7 on OSWorld-Verified. TRPO alone achieves 34.9 on OSWorld-Verified. The model is evaluated across ten GUI benchmarks covering grounding, question answering, planning, decision-making, and procedural knowledge on both desktop and mobile.",
+ "limitations": "The self-evolving trajectory production still relies on some manual annotation and LLM-assisted generation for query creation and correctness judgment. Fine-grained grounding remains challenging, with the paper noting scarcity of PC grounding data. Multi-turn interactions can cause conversation history to become excessively long, requiring compression strategies. The GRPO sampling uses n_g=8, which may limit exploration diversity.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.03610",
+ "tldr": "RAP is a novel framework that enhances LLM agents' planning capabilities by storing past successful experiences in memory and retrieving relevant ones based on similarity to the current context, working in both textual and multimodal environments.",
+ "contributions": [
+  "Proposed RAP framework that strategically enriches decision-making by storing past experiences and intelligently retrieving them based on similarity to the current situation.",
+  "First framework to employ memory retrieval techniques for multimodal embodied agents, applicable in both textual and multimodal environments.",
+  "Empirical validation across textual and multimodal benchmarks showing significant improvements over prior SOTA methods."
+ ],
+ "methods": "RAP consists of four core components: a Memory module that stores logs of prior successful task executions (including task info, overall plans, and trajectories); a Reasoner that generates overall plans, action plans, and retrieval keys based on the current situation; a Retriever that computes a weighted similarity score combining task similarity, overall plan alignment, and retrieval key congruence using cosine similarity (text via sentence-transformers, images via CLIP-based Vision Transformer); and an Executor that uses in-context learning with retrieved experiences to generate the next action. Retrieval windows are adaptive, extracting only trajectories centered around the most similar action to reduce noise.",
+ "results": "RAP achieves 33.6%, 13.0%, 18.2%, and 12.7% gains over ReAct on ALFWorld, Webshop, Franka Kitchen, and Meta World benchmarks respectively. On ALFWorld with GPT-3.5, RAP achieves 85.8% success rate and RAP train achieves 91.0%, compared to ReAct at 52.2%, Reflexion at 74.6%, and ADaPT at 71.6%. On WebShop with GPT-3.5, RAP achieves 48.0% success rate and 76.1% overall reward score, compared to ReAct and Reflexion at 35.0% and 61.8% respectively, and ADaPT at 43.0% and 64.0%. RAP with GPT-3.5 matches ReAct with GPT-4 on ALFWorld, and RAP with training memory surpasses ReAct with GPT-4.",
+ "limitations": "The framework's performance depends on having sufficient successful task executions to build the memory database. In environments with constrained task spaces (e.g., Franka Kitchen with only 5 tasks), the approach relies heavily on task similarity for retrieval, which may limit generalization to unseen task types. Additionally, the memory augmentation requires initial data collection through agent trials, and while adaptive retrieval windows reduce noise from full trajectories, the approach may still be sensitive to the quality and diversity of stored experiences.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

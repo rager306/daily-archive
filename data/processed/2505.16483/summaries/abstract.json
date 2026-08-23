@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16483",
+ "tldr": "CANOE is a framework that synthesizes short-form QA data and uses Dual-GRPO, a rule-based reinforcement learning method with three tailored rewards, to improve LLM faithfulness across short-form and long-form tasks without human annotations.",
+ "contributions": [
+  "Proposes CANOE, a systematic post-training framework to reduce faithfulness hallucinations in LLMs without human annotation",
+  "Synthesizes 10,000 short-form QA pairs from Wikidata triples using GPT-4o across four diverse task types (straightforward, reasoning-required, inconsistent, and counterfactual contexts)",
+  "Introduces Dual-GRPO with three rule-based rewards (accuracy, proxy, and format) that simultaneously optimize both short-form and long-form response generation",
+  "Demonstrates state-of-the-art performance across 11 downstream tasks, outperforming GPT-4o and OpenAI o1 on open-source models"
+ ],
+ "methods": "The authors first collected ~30,000 head-relation-tail triples from Wikidata and used GPT-4o to synthesize contextual passages and questions, using the tail entity as the ground-truth answer, producing 10,000 QA pairs across four task types. They then propose Dual-GRPO, a variant of GRPO where the LLM generates a reasoning process, a long-form answer, and a concise short-form answer for each input. Three rule-based rewards are applied: accuracy reward (exact match on short-form), proxy reward (replacing context with the long-form answer to see if it drives correct short-form output), and format reward (adherence to structured tags). The rewards are summed into a composite reward for policy optimization.",
+ "results": "CANOE significantly improves faithfulness across 11 tasks. For LLaMA-3-Instruct-8B, the overall score improved from 57.4% to 73.6% (+16.2). CANOE outperformed GPT-4o (65.3 average) with LLaMA-3-Instruct-8B at 73.6 and Qwen-2.5-Instruct-14B at 77.2. On ConFiQA, LLaMA-3-Instruct-8B improved from 49.2% to 73.5%, and Qwen-2.5-Instruct-7B from 52.5% to 67.6%. FaithScore on XSum for LLaMA-3-Instruct-8B improved from 64.2% to 74.4%.",
+ "limitations": "The proxy reward for long-form faithfulness is an indirect evaluation that depends on whether the long-form response can drive correct short-form answers, which may not fully capture all faithfulness dimensions. Evaluation relies on MiniCheck and GPT-4o for long-form faithfulness scoring. The 10,000 synthesized training samples may limit generalization to domains beyond the knowledge base source. Long-form faithfulness evaluation via rule-based verification remains an acknowledged open challenge.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.08529",
+ "tldr": "CoMAS enables LLM-based agents to self-evolve autonomously by learning from inter-agent interactions without external reward signals, using an LLM-as-a-judge mechanism to derive intrinsic rewards from collaborative and critical discussion dynamics, then optimizing policies via REINFORCE++.",
+ "contributions": [
+  "A novel CoMAS framework for decentralized, scalable self-evolution of LLM agents through multi-agent interactions without external supervision",
+  "An interaction-based intrinsic reward formulation using LLM-as-a-judge that creates a zero-sum game between solvers and evaluators",
+  "Demonstration of state-of-the-art performance across single-agent and multi-agent setups on math, coding, science, and general knowledge benchmarks",
+  "Ablation studies confirming interaction-based rewards prevent training collapse and reward hacking, and show scalability with agent number and diversity"
+ ],
+ "methods": "CoMAS uses three interaction patterns—Solution, Evaluation, and Scoring—where agents iteratively propose solutions, critically evaluate each other's solutions, and assign scores (1-3). An LLM-as-a-judge mechanism extracts scores and converts them into normalized rewards in [0,1], creating a zero-sum game between solver and evaluator. Policy optimization uses REINFORCE++ with token-level credit assignment, KL-divergence regularization against a reference policy, and batch-normalized advantages. The system supports heterogeneous agents (different foundation models) trained in a decentralized manner, with uniform random agent selection balancing training load.",
+ "results": "CoMAS achieves absolute gains over untrained agents of up to 2.20% (Vanilla), 3.66% (Consistency), 19.80% (AutoGen), and 6.10% (Debate). Under Vanilla setup, CoMAS reaches best results on GSM8K (85.40%), HumanEval (70.73%), SciBench (34.67%), and MMLU (62.40%). Under AutoGen, CoMAS delivers large improvements especially on GSM8K (72.40%), HumanEval (50.61%), and MMLU (50.60%). Training dynamics show rewards converging around 0.5 across agents, with consistent growth in response length.",
+ "limitations": "Discussion history is compressed to the last κ=2 rounds to avoid exceeding context limits, potentially losing earlier information. The scoring step generates m•n additional outputs per question, adding computational overhead. Baseline TTRL, while strong on math, fails on non-math tasks (e.g., HumanEval 73.78%, GPQA 27.33%), suggesting evaluation scope may still benefit from broader task coverage.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

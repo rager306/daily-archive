@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.20073",
+ "tldr": "The paper proposes StarPO, a trajectory-level reinforcement learning framework for training LLM agents, and introduces RAGEN, a modular system to study multi-turn agent RL. It identifies an \"Echo Trap\" failure mode where agents collapse into repetitive reasoning, and finds that stable training requires diverse rollouts, frequent updates, and fine-grained reasoning-aware rewards.",
+ "contributions": [
+  "StarPO: a general framework for multi-turn, trajectory-level agent RL that optimizes entire interaction trajectories.",
+  "RAGEN: a modular system for training and evaluating LLM agents in controlled environments.",
+  "Systematic analysis of multi-turn agent RL training dynamics, identifying the \"Echo Trap\" failure mode.",
+  "StarPO-S: a stabilized variant using trajectory filtering, critic incorporation, and gradient stabilization.",
+  "Design principles for effective rollout sampling, including diverse initial states and interaction granularity."
+ ],
+ "methods": "The authors formulate LLM agent training as a Markov Decision Process (MDP) with multi-turn interactions and stochastic feedback. They propose StarPO, which optimizes entire reasoning-augmented trajectories using policy gradient methods like PPO and GRPO. They implement RAGEN, a modular training and evaluation system, and test it on four environments: Bandit, Sokoban, Frozen Lake, and WebShop. To address instability, they introduce StarPO-S, which filters low-uncertainty trajectories and applies gradient shaping techniques like KL term removal and asymmetric clipping.",
+ "results": "Baseline StarPO with PPO or GRPO often collapses in symbolic environments (Bandit, Sokoban) due to the \"Echo Trap\"—agents overfit to repetitive reasoning templates. StarPO-S delays or eliminates this collapse, improving success rates and reducing update steps, especially with PPO. Training on high-variance prompts was most effective. Better generalization required higher task diversity (fewer responses per prompt), allowing up to 5-6 actions per turn, and frequent rollout updates. Without reasoning-aware rewards, models regressed to shallow strategies or hallucinated thoughts.",
+ "limitations": "Single-turn RL adaptations like vanilla PPO and GRPO fail in multi-turn settings without stabilization. Models without fine-grained, reasoning-aware reward signals regress to direct action selection or produce hallucinated reasoning. The effectiveness of trajectory filtering may vary across tasks, and aggressive filtering (e.g., retaining only 25% of rollouts) may not be optimal for all scenarios. The study focuses on controlled symbolic environments and a single real-world task (WebShop), limiting conclusions about broader generalization.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

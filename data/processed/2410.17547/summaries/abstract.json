@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.17547",
+ "tldr": "The paper introduces a Planning Neural Operator (PNO) that learns a single resolution-invariant operator mapping cost functions to value functions via the Eikonal PDE, enabling zero-shot super-resolution (16× training resolution) and generalization across environments and goals without retraining.",
+ "contributions": [
+  "Formulating motion planning as an optimal control problem whose value function satisfies the Eikonal PDE, and proving the existence of a neural operator approximation to the Eikonal PDE solution operator to arbitrarily tight accuracy",
+  "Designing the Planning Neural Operator (PNO) architecture with hard-encoded obstacle geometries and an inductively biased output layer that enforces the triangle inequality",
+  "Demonstrating four experiments: zero-shot super-resolution on 2D city maps, optimal planning on 3D iGibson building environments, 4-DOF robotic manipulators, and deployment as an ϵ-consistent heuristic in A* reducing expanded nodes by 33%"
+ ],
+ "methods": "The authors recast solving the Eikonal PDE as an operator learning problem between function spaces. They build a PNO architecture based on the Fourier neural operator (FNO), extending it with a smoothed indicator function χ_PNO that hard-codes obstacle geometry into the Fourier layers, and an inductively biased DeepNorm projection layer that guarantees the predicted value function satisfies the triangle inequality. A secondary FNO learns the signed distance field (SDF) from binary occupancy maps to compute the smoothing function efficiently. Training uses a combination of supervised loss and a PINN loss enforcing the Eikonal equation gradient constraint. The model is trained on coarse-resolution data and evaluated on higher-resolution test maps.",
+ "results": "PNO achieves accurate value function approximation at 16× the training resolution on the MovingAI Lab 2D city dataset. It successfully plans optimal paths on 3D scenes from the iGibson building dataset and on 4-DOF robotic manipulators. When deployed as a heuristic in A*, PNO achieves a 30-33% decrease in nodes visited compared to classical methods (A*, RRT*) while obtaining near-optimal path lengths. The PNO heuristic is proven to be ϵ-consistent.",
+ "limitations": "Computing the signed distance field (SDF) for the smoothing function can be computationally challenging in large motion planning problems, requiring an additional neural operator approximation. The approach assumes uniform positivity and equicontinuity of cost functions (Assumption 2), which requires smooth boundaries around obstacles with strictly positive motion cost. The PINN loss weighting parameter ξ requires careful tuning, as a large ξ causes the PINN loss to dominate.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

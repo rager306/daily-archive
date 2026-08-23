@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.09970",
+ "tldr": "The paper introduces Pre-Act, an enhanced version of ReAct that improves LLM agent performance through multi-step planning and detailed reasoning for each action. Pre-Act generates a structured execution plan that incrementally incorporates previous steps and tool outputs, refining itself until the final response is obtained.",
+ "contributions": [
+  "Pre-Act: an enhanced version of ReAct that generates a multi-step plan with detailed reasoning for each action, where steps are executed sequentially and the plan is refined after each step using past actions and observations",
+  "A fine-tuning strategy leveraging curriculum learning that enables smaller models (Llama 3.1 8B and 70B) to match or surpass proprietary LLMs up to 20 times larger while reducing latency and cost",
+  "A two-level evaluation framework: (a) turn-level assessing whether predicted actions align with ground truth, and (b) end-to-end measuring goal completion and progress rate"
+ ],
+ "methods": "The approach generates a comprehensive multi-step plan with reasoning that integrates previously executed steps and outlines forthcoming steps. Plan refinement incorporates past actions and observations into context Ct. A curriculum learning strategy is used: initial fine-tuning on the Glaive dataset using ReAct with minimal reasoning, followed by progressive refinement on a proprietary dataset using Pre-Act with LoRA to preserve earlier learning. End-to-end evaluation uses GPT-4 as a synthetic user, milestone dependency graphs (created by GPT-4 and human-verified), and LLM-as-a-judge to assess goal completion and progress rate.",
+ "results": "On the Almita dataset (averaged across five models), Pre-Act outperforms ReAct by 70% in Action Recall. The fine-tuned Llama 3.1 70B model outperforms GPT-4 with a 69.5% improvement in action accuracy (turn-level) and a 28% improvement in goal completion rate (end-to-end) on the Almita out-of-domain dataset. On the in-domain Glaive dataset, the fine-tuned 70B model outperforms GPT-4 and its vanilla counterpart by 7.1% and 27.7% respectively. For end-to-end evaluation on five complex Almita use-cases (50 simulations each), the fine-tuned model achieved an average goal completion rate of 0.82 compared to 0.32 for GPT with ReAct and 0.64 for GPT with Pre-Act. Curriculum learning showed minimal degradation: 0.80% drop in action recall for 8B and 0.36% for 70B models.",
+ "limitations": [
+  "Smaller models crucial for practical applications (where latency and cost are key constraints) often struggle with complex reasoning tasks required for agentic systems",
+  "Existing datasets have limitations: minimal conversational deviations, lack of exception handling, and at most one consecutive tool call",
+  "End-to-end evaluation relies on LLM-as-a-judge which can introduce volatility in assessments",
+  "Most publicly available datasets consist primarily of 'happy path' scenarios, while real-world interactions involve unpredictable user deviations",
+  "Milestone dependency graphs generated automatically may not always be entirely accurate and require human verification"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

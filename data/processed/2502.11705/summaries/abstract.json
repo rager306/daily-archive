@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.11705",
+ "tldr": "TOOLMAKER is an agentic framework that autonomously transforms scientific papers with associated code repositories into LLM-compatible tools, achieving 80% task correctness and substantially outperforming current state-of-the-art software engineering agents.",
+ "contributions": [
+  "A novel agentic framework (TOOLMAKER) that autonomously converts existing scientific code repositories into LLM-compatible tools",
+  "A closed-loop self-correction mechanism for autonomous debugging during tool generation",
+  "TM-BENCH, a benchmark of 15 complex computational tasks across medical and non-medical domains with over 100 unit tests"
+ ],
+ "methods": "TOOLMAKER takes a GitHub URL and task description as input and operates in two stages: environment setup and tool implementation. During environment setup, an INSTALL_REPOSITORY agent clones the repository, reads documentation, and installs dependencies inside a Docker container, recording all write actions as a reproducible snapshot. In the implementation stage, an EXPLORE agent gathers information, a PLAN LLM call creates a step-by-step plan, and an IMPLEMENT LLM call generates candidate Python code. The framework then enters a closed-loop self-improvement loop: the candidate tool is executed, assessed by an LLM, and if failures occur, a DIAGNOSE_ERROR agent identifies root causes and REIMPLEMENT revises the code, with summaries of each iteration appended to the conversation history.",
+ "results": "TOOLMAKER correctly implements 80% of the 15 benchmark tasks on TM-BENCH, substantially outperforming current state-of-the-art software engineering agents. On individual tasks from the table: Pathology conch_extract_features achieved 3/3 task invocations passed and 9/9 tests passed at $0.35 cost; musk_extract_features achieved 3/3 invocations and 6/6 tests at $1.19 cost; pathfinder_verify_biomarker achieved 0/2 invocations but 4/6 tests at $0.61 cost. OpenHands was unable to complete some tasks (e.g., musk_extract_features marked with ✗).",
+ "limitations": "The benchmark contains only 15 tasks, which limits the breadth of evaluation. Some tasks had incomplete success (e.g., pathfinder_verify_biomarker passed 0/2 task invocations). The approach depends on the availability of public code repositories accompanying scientific papers, so it cannot be applied where code is not publicly shared. Tasks required manual pre-implementation verification to ensure they were well-defined and solvable.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

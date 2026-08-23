@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.08901",
+ "tldr": "The paper introduces Welfare Diplomacy, a general-sum variant of the zero-sum board game Diplomacy, as a benchmark for measuring AI cooperative capabilities; while state-of-the-art language models achieve high social welfare through demilitarization, they remain highly exploitable by adversarial agents.",
+ "contributions": [
+  "Proposing the Welfare Diplomacy rules and implementing them via an open-source Diplomacy engine",
+  "Providing theoretical and empirical evidence for the benefits of WD relative to Standard Diplomacy",
+  "Constructing LM scaffolding systems to create competent zero-shot baseline agents for WD",
+  "Benchmarking state-of-the-art models (including GPT-4) on WD, measuring welfare and exploitability with novel exploiter policies"
+ ],
+ "methods": "The authors introduce Welfare Diplomacy, a variant where players earn Welfare Points equal to the difference between controlled supply centers and military units each year, with the game ending after a fixed number of years rather than when one player captures 18 supply centers. They construct baseline agents (WDAgents) using zero-shot prompting of language models including GPT-4, GPT-3.5, Claude-2.0, Claude-instant-1.2, and Llama-2-70B-Chat. They analyze Nash equilibria in a toy version of the game and measure two metrics: Nash welfare (self-play cooperation) and exploitability (measured via coalitions of one or two exploiter agents using a trained SD policy). Experiments used ten-year games with three message rounds per turn, five runs with different random seeds.",
+ "results": "GPT-4 obtained the highest Nash welfare score among tested models, while Claude Instant 1.2 obtained the lowest. Most agents attained high welfare by mutually demilitarizing over time, but all were highly exploitable. Larger models (GPT-4, Claude 2) tended to achieve higher Nash welfare than smaller models (GPT-3.5, Claude Instant 1.2). The Exploiter policy, which switches from WDAgent(GPT-4) play to a trained SD policy when opponents control ten or fewer units or three years pass, was used to measure exploitability in coalitions of size one and two. Conflict rates were significantly higher in Standard Diplomacy compared to Welfare Diplomacy.",
+ "limitations": "The environment lacks skilled human players, making it harder to obtain high-quality human data. Less-capable models showed poor basic proficiency. The NE analysis has shortcomings: it does not require subgame perfection, assumes common knowledge of policies, and does not fully account for deterring deviations by coalitions. The authors hypothesize cooperative capabilities improve with model scale but could not demonstrate this due to computational costs. Exploitability confidence intervals may underestimate uncertainty since only one exploitation experiment per exploiter set was run.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

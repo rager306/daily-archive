@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.01142",
+ "tldr": "DeepRAG models retrieval-augmented reasoning as a Markov Decision Process, enabling LLMs to iteratively decompose queries and dynamically decide whether to retrieve external knowledge or rely on parametric reasoning at each step, boosting answer accuracy by 21.99% while reducing retrieval costs.",
+ "contributions": [
+  "Proposes DeepRAG, a framework that models retrieval-augmented reasoning as a Markov Decision Process for adaptive, step-by-step retrieval",
+  "Introduces two core components: retrieval narrative (structured subquery generation) and atomic decisions (dynamic retrieve-vs-parametric choice per subquery)",
+  "Develops Binary Tree Search for constructing optimal reasoning paths, Imitation Learning for training retrieval patterns, and Chain of Calibration for refining atomic decisions",
+  "Demonstrates end-to-end trainability for arbitrary LLMs without additional parameters or unreliable uncertainty metrics"
+ ],
+ "methods": "DeepRAG formalizes question decomposition and retrieval as an MDP with states (partial solutions), actions (termination and atomic retrieval decisions), and rewards (correctness minus retrieval cost). Binary Tree Search explores both parametric and retrieved paths for each subquery, synthesizing optimal reasoning trajectories via a priority queue (Algorithm 1). Imitation Learning fine-tunes the model on these trajectories using a masked loss to prevent learning noisy retrieved text. Chain of Calibration then further optimizes atomic decisions by synthesizing preference pairs and fine-tuning on them, helping the model recognize its own knowledge boundaries.",
+ "results": "DeepRAG achieves a 21.99% increase in accuracy across in-distribution (HotpotQA, 2WikiMultihopQA), out-of-distribution (CAG, PopQA, WebQuestions, MuSiQue), and time-sensitive datasets. It outperforms baselines including IterDRAG, Auto-RAG, TAARE, FLARE, and DRAGIN. On PopQA and WebQuestions, DeepRAG achieves F1 score improvements of 2.63 and 4.57 respectively, even when relevant information may be absent from the knowledge base. DeepRAG demonstrates higher accuracy with lower average retrieval costs and stronger correlation between retrieval decisions and parametric knowledge compared to competitors. Confidence-based methods like FLARE and DRAGIN often fail to trigger retrieval under default thresholds.",
+ "limitations": [
+  "The reward function uses retrieval cost as a penalty, which may not capture all dimensions of retrieval quality",
+  "Confidence-based baselines show instability due to threshold sensitivity, suggesting similar risks could exist if threshold choices are suboptimal",
+  "On the time-sensitive CAG dataset, CoT-Retrieve slightly outperforms DeepRAG, attributed to the challenge of triggering retrieval most of the time in temporal settings",
+  "The paper notes that aggressive finetuning approaches (CoT*, CoT-Retrieve*) degrade performance by forcing models beyond their knowledge boundaries, implying DeepRAG's careful synthesis is necessary but adds complexity"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

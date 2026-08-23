@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.17506",
+ "tldr": "CLADD is a retrieval-augmented multi-agent LLM framework that dynamically retrieves and integrates external biochemical knowledge from knowledge graphs and annotation databases to support diverse drug discovery tasks without domain-specific fine-tuning.",
+ "contributions": [
+  "Introduction of CLADD, a multi-agent RAG-based framework for zero-shot and open-ended molecular question-answering in drug discovery that dynamically integrates external biochemical data without fine-tuning.",
+  "Demonstration of framework flexibility across diverse tasks: drug-target prediction, property-specific molecular captioning, and biological activity prediction.",
+  "Comprehensive experimental results showing CLADD outperforms general-purpose LLMs, domain-specific LLMs, and standard deep learning/GNN approaches."
+ ],
+ "methods": "CLADD employs a multi-agent collaborative framework with three teams: a Planning Team (MolAnn Planner and KG Planner) that assesses relevant data sources; a Knowledge Graph Team (DrugRel and BioRel Agents) that retrieves contextual information using an anchor drug approach based on GNN-generated molecular embeddings and Tanimoto similarity; and a Molecular Understanding Team that combines external annotations with structural information and KG reports. All agents use off-the-shelf GPT-4o mini via the OpenAI API, with PrimeKG as the knowledge graph, PubChem for annotations, and MolT5 as an external captioning tool.",
+ "results": "In drug-target prediction (Precision @ 5), CLADD achieved 3.04 (BBBP), 4.83 (Sider), 2.67 (ClinTox), and 3.24 (BACE), outperforming fine-tuned GNNs (GraphMVP: 1.76/1.03/1.67/0.73; MoleculeSTM: 1.66/0.89/1.48/0.65) and domain LLMs (Galactica 1.3B fine-tuned: 1.65/1.09/1.37/0.80). For molecular captioning (mean AUROC), CLADD scored 72.28 (BBBP), 66.42 (Sider), 93.80 (ClinTox), and 77.74 (BACE), surpassing GNNs and fine-tuned domain LLMs including BioT5 (69.68/64.65/92.80/77.23).",
+ "limitations": "The framework relies on external knowledge bases (PrimeKG, PubChem) whose coverage may be incomplete, particularly for molecules absent from the knowledge graph. The anchor drug approach requires structurally similar molecules to exist in the KG, limiting applicability to novel scaffolds. The system's performance is contingent on the quality and comprehensiveness of available biomedical annotations, and sparse annotations for many molecules in the vast chemical space may require supplementation from external captioning tools.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

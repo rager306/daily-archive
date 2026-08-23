@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.04625",
+ "tldr": "START integrates external Python code execution into long Chain-of-Thought reasoning via a self-learning framework (Hint-infer and Hint-RFT), enabling the model to perform complex computations, self-check, and self-debug without demonstration data.",
+ "contributions": [
+  "Hint-infer: inserting artificial hints during LRM inference to activate tool-use ability without demonstration data; also serves as a sequential test-time scaling method.",
+  "Hint-RFT: a self-training framework that scores, filters, and modifies reasoning trajectories with tool invocation from Hint-infer, then fine-tunes the LRM via rejection sampling.",
+  "START: the first open-source LRM synergizing long CoT and Python tool invocation, fine-tuned from QwQ-32B-Preview."
+ ],
+ "methods": "The authors trained on 40K math problems (AIME before 2024, MATH, Numina-MATH) and 10K code problems (Codeforces, code contests, LiveCodeBench before July 2024). A Hint-Library of prompts was designed for reflection, verification, exploration, and self-debugging, inserted randomly after high-frequency conjunctions (e.g., \"Alternatively\", \"Wait\") or before the stop token. QwQ-32B-Preview performed greedy and hint-assisted inference to seed D_seed (10K math, 2K code), which was filtered and used to fine-tune QwQ-32B-Preview into START-0. START-0 then generated 16 rounds of sampling (temperature 0.6, top-p 0.95) across all training data for rejection sampling fine-tuning, producing final START.",
+ "results": "START achieves 63.6% on GPQA (+5.5% over QwQ-32B-Preview's 58.1%), 94.4% on MATH500 (+3.8%), 95.0% on AMC23 (+15.0%), 66.7% on AIME24 (+16.7%), 47.1% on AIME25 (+7.1%), and 47.3% on LiveCodeBench (+5.9%). QwQ-RFT (RFT without tools on the same data) performed nearly identically to QwQ-32B-Preview, indicating gains are driven by tool invocation. Hint-infer on QwQ-32B-Preview showed sequential test-time scaling: inserting multiple hints before the stop token increased both thinking time and accuracy. Fine-tuning via Hint-RFT produced significantly larger gains than hint-based prompting alone.",
+ "limitations": "START improves most on medium-difficulty LiveCodeBench questions; for hard questions, the limited number of tool uses (max 6) remains insufficient. Hint-infer is less effective on START than on QwQ-32B-Preview because the hint content overlaps with reasoning already present in START, reducing the information gain from inserted hints.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

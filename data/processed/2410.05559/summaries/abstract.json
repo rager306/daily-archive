@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.05559",
+ "tldr": "The paper proposes a posterior regularization framework for attribute-controlled fine-tuning of LLMs, using KL divergence penalization guided by an auxiliary model that decomposes sequence-level constraints into token-level guidance, demonstrated on detoxification.",
+ "contributions": [
+  "An efficient and effective solution to attribute-controlled fine-tuning using posterior regularization",
+  "Current best tradeoff between attribute control (toxicity) and utility performance against baselines",
+  "Demonstration that models can retain knowledge of an attribute while selectively avoiding its generation"
+ ],
+ "methods": "The method formulates attribute control as a posterior regularization problem, adding a KL divergence penalty between the LLM's distribution and the closest distribution satisfying constraints. An auxiliary NADO (neurally-decomposed oracle) model estimates token-level constraint satisfaction probabilities from sequence-level oracles. The approach supports both sequential iterative updating and parallel fine-tuning where the LLM and auxiliary model are updated simultaneously for 3x speedup.",
+ "results": "On Llama-7B detoxification, the method achieved toxicity scores of 0.259 (sequential) and 0.261 (parallel) versus 0.315 baseline, 0.269 RL, and 0.289 NADO decoding. On ToxiGen, parallel fine-tuning achieved 10.9% toxic generations versus 23.0% baseline. Parallel fine-tuning achieved comparable performance to sequential with 3x speedup.",
+ "limitations": "The approach requires a black-box oracle function to evaluate constraint satisfaction. Training an auxiliary NADO model adds computational overhead, though described as not significant relative to the base LLM. The method assumes the oracle can be decomposed into token-level probabilities, which may limit applicability to certain constraint types.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

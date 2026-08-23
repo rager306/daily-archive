@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.07128",
+ "tldr": "EHRAgent is an LLM agent that uses code generation, execution feedback, and domain knowledge injection to enable few-shot multi-tabular reasoning on EHRs, outperforming the strongest baseline by up to 29.6% in success rate.",
+ "contributions": [
+  "Proposes EHRAgent, an LLM agent augmented with external tools and domain knowledge for few-shot multi-tabular reasoning on EHRs using only four demonstrations",
+  "Formulates complex clinical problem-solving as an executable code plan of action sequences with a code executor",
+  "Introduces interactive coding between the LLM agent and code executor, iteratively refining plan generation by examining environmental feedback",
+  "Demonstrates up to 29.6% improvement in success rate over the strongest baseline on three EHR datasets"
+ ],
+ "methods": "EHRAgent formulates EHR question-answering as a tool-use planning process involving code generation, execution, debugging, and optimization. It integrates query-specific medical information (domain knowledge) to help identify relevant tables and records. A long-term memory stores past successful code snippets and dynamically retrieves the most relevant few-shot examples using negative Levenshtein distance similarity. An interactive coding mechanism creates a multi-turn dialogue between the LLM code planner and a Python code executor, where the agent iteratively refines code based on execution outcomes. A rubber duck debugging pipeline traces error messages to identify underlying causes rather than making superficial modifications.",
+ "results": "EHRAgent outperforms all baselines on three real-world EHR datasets (MIMIC-III, eICU, TREQS) with performance gains of 19.92%, 12.41%, and 29.60% respectively in success rate. CoT, Self-Consistency, and Chameleon all scored below 40% success rate across datasets. ReAct and Reflexion were limited by tool-generated error messages and lack of code interface. LLM2SQL and DIN-SQL showed limited gains due to struggles with SQL generation. EHRAgent achieves strong results with only 4 demonstrations, whereas supervised approaches require over 10K training samples. Interactive coding was identified as the most significant contributing component across all complexity levels.",
+ "limitations": "The approach still faces challenges with increasing question complexity, as performance decreases for both EHRAgent and baselines as task difficulty increases. The system relies on a predefined set of tool functions, which may limit adaptability to unseen EHR schemas. Long-term memory retrieval using negative Levenshtein distance similarity may not capture semantic relevance optimally. Success and completion rates for some baselines decreased as the number of examples increased, suggesting potential overfitting or confusion from too many demonstrations.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

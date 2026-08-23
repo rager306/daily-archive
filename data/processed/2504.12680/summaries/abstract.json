@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.12680",
+ "tldr": "The paper proposes Embodied-R, a collaborative framework that decouples perception (large VLM) from reasoning (small LM) and uses reinforcement learning with a novel logical consistency reward to activate embodied spatial reasoning in foundation models.",
+ "contributions": [
+  "A collaborative framework for large-scale and small-scale foundation models that decouples perception and reasoning for video-based embodied spatial reasoning",
+  "The first work to employ reinforcement learning to enhance embodied spatial reasoning, introducing a novel logical consistency reward to mitigate reward hacking",
+  "Embodied-R achieves performance comparable to state-of-the-art MLLMs (e.g., OpenAI-o1/Gemini-2.5-Pro) on both in-distribution and out-of-distribution benchmarks"
+ ],
+ "methods": "The framework uses a large-scale VLM (Qwen2.5-VL-72B) for perception and a small-scale LM (Qwen2.5-3B) for reasoning. A key-frame extractor based on ORB feature matching and RANSAC homography estimation selects frames with sufficient information gain while reducing redundancy. The VLM sequentially extracts spatial semantic representations (action, spatial relationship changes, and question-related content) from key frames. The small LM is trained with Group Relative Policy Optimization (GRPO), using three rewards: format reward, accuracy reward, and a novel logical consistency reward that verifies the reasoning process can lead to the correct answer by querying the reference model.",
+ "results": "Embodied-R achieves performance comparable to state-of-the-art multimodal large language models such as OpenAI-o1 and Gemini-2.5-Pro on in-distribution benchmarks (VSI-Bench, UrbanVideo-Bench) and out-of-distribution benchmarks (EgoSchema, MVBench). The training dataset comprises 5,415 QA pairs and 1,492 videos across eight task categories. Seven research questions were investigated covering framework performance, RL's role in activating embodied spatial reasoning, and out-of-distribution generalization.",
+ "limitations": "The framework relies on a large-scale VLM for perception, which inherently involves higher computational costs. Video inputs produce long token sequences, further increasing computational demands. The trade-off between model size and computational cost is acknowledged as a central challenge. Additionally, the paper notes that existing supervised fine-tuning methods lack supervision for the reasoning process, which is a limitation of prior approaches that Embodied-R aims to address.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

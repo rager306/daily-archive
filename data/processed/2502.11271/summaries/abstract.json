@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.11271",
+ "tldr": "OctoTools is a training-free, multi-agent framework that uses standardized tool cards and a planner-executor architecture to improve LLMs' performance on complex reasoning tasks across diverse domains, achieving up to 9.3% average accuracy gains over GPT-4o zero-shot prompting.",
+ "contributions": [
+  "OctoTools framework: a training-free, modular, extensible multi-agent system for complex reasoning without fine-tuning",
+  "Planner-executor paradigm with standardized tool cards and a lightweight greedy toolset optimization algorithm",
+  "Large-scale evaluation across 16 diverse benchmarks spanning vision, math, science, medical, and agentic domains",
+  "In-depth analyses disentangling multi-step planning and tool usage contributions, plus open-source codebase release"
+ ],
+ "methods": "OctoTools introduces standardized tool cards that encapsulate tool functionality, metadata, and usage constraints. A planner agent performs high-level and low-level planning by generating text-based actions, while a separate executor agent converts these actions into executable Python commands. The framework includes a context verifier to check solution completeness and a solution summarizer. A greedy toolset optimization algorithm selects task-specific tool subsets from validation performance. The system was evaluated on 16 benchmarks across five domains with 100 validation and 200 test examples per benchmark.",
+ "results": "OctoTools achieved 58.5% average accuracy across 16 benchmarks, representing a 9.3% gain over GPT-4o zero-shot (49.2%) and 7.7% over chain-of-thought (50.8%). It outperformed AutoGen, GPT-Functions, and LangChain by up to 10.6% when given the same tools. Notable individual gains include +22.5% on Game of 24, +22.2% on PathCLS, and +14.5% on CLEVR-Math. With GPT-4o-mini it still achieved a 7.1% average gain, and on Qwen2.5 3B/7B models it improved accuracy by 6.3-13.6%. Full toolset without optimization reached 57.4% accuracy (+3.5% over base), while optimized toolset reached 58.9%.",
+ "limitations": "The greedy toolset optimization does not guarantee a global optimum. Tool limitations can affect performance, as noted in tool metadata (e.g., Image_Captioner may make mistakes in complex scenes). Error analysis shows failures often stem from tool limitations rather than the core system. The framework requires validation examples for toolset optimization, though it remains functional with the full toolset.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

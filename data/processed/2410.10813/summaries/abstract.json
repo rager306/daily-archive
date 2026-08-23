@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.10813",
+ "tldr": "The paper introduces LONGMEMEVAL, a benchmark of 500 questions evaluating five long-term memory abilities in chat assistants, and proposes memory design optimizations across indexing, retrieval, and reading stages that significantly improve performance.",
+ "contributions": [
+  "LONGMEMEVAL benchmark with 500 curated questions covering five core memory abilities: information extraction, multi-session reasoning, temporal reasoning, knowledge updates, and abstention",
+  "Two standard evaluation settings: LONGMEMEVAL S (~115k tokens/question) and LONGMEMEVAL M (500 sessions, ~1.5M tokens)",
+  "A unified three-stage memory framework (indexing, retrieval, reading) with four proposed optimizations"
+ ],
+ "methods": "The benchmark embeds manually created questions into freely scalable, coherent user-assistant chat histories inspired by the needle-in-a-haystack test, with evidence statements hidden across task-oriented dialogues using self-chat LLM generation and manual curation. The authors evaluate commercial systems (ChatGPT, Coze) and long-context LLMs (GPT-4o, Llama 3.1, Phi-3) and propose four memory design optimizations: (1) session decomposition with round-level granularity, (2) fact-augmented key expansion for indexing, (3) time-aware query expansion for retrieval, and (4) Chain-of-Note and structured data formats for reading.",
+ "results": "Long-context LLMs show a 30%-60% performance drop on LONGMEMEVAL S compared to oracle retrieval; commercial systems achieved 30%-70% accuracy in a simplified setting. Fact-augmented key expansion improves memory recall by 9.4% (Recall@k) and downstream QA by 5.4%. Time-aware query expansion improves temporal reasoning recall by 6.8%-11.3%. Chain-of-Note and structured data formats improve QA accuracy by up to 10 absolute points across three LLMs.",
+ "limitations": "Commercial system evaluations used only 97 questions with much shorter chat histories (3-6 sessions, approximately 10x shorter than LONGMEMEVAL S). Even with perfect memory recall, accurately utilizing retrieved items remains non-trivial. The benchmark highlights that current systems tend to overwrite information or fail to record indirectly provided details during sustained interactions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

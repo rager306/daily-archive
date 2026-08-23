@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.12110",
+ "tldr": "A-MEM is a novel agentic memory system for LLM agents inspired by the Zettelkasten method that dynamically organizes memories through interconnected knowledge networks with autonomous linking and evolution, outperforming existing baselines on long-term conversational reasoning tasks.",
+ "contributions": [
+  "Introduction of A-MEM, an agentic memory system that dynamically creates interconnected knowledge networks via note construction, link generation, and memory evolution inspired by the Zettelkasten method",
+  "Demonstration of superior performance across six foundation models on the LoCoMo and DialSim datasets compared to baselines including LoCoMo, ReadAgent, MemoryBank, and MemGPT",
+  "Analysis of scalability showing O(N) space complexity and minimal retrieval time increase even at 1 million memories (0.31µs to 3.70µs)",
+  "Cost-efficiency analysis showing 85-93% token reduction compared to baselines and per-operation cost under $0.0003"
+ ],
+ "methods": "A-MEM draws inspiration from the Zettelkasten method and consists of three core mechanisms. First, note construction: when an agent interacts with its environment, an LLM generates structured notes containing original content, keywords, tags, and contextual descriptions, which are then embedded via a text encoder. Second, link generation: upon adding a new note, top-k semantically similar memories are retrieved via cosine similarity, and an LLM determines meaningful connections between them. Third, memory evolution: existing memories in the nearest neighbor set can have their contextual descriptions, keywords, and tags updated based on their relationship with new memories. For retrieval, query embeddings are computed and the k most relevant memories are retrieved using cosine similarity.",
+ "results": "A-MEM consistently outperforms all baselines (LoCoMo, ReadAgent, MemoryBank, MemGPT) across six foundation models (Qwen-1.5B/3B, Llama 3.2 1B/3B, GPT models). On DialSim, A-MEM achieved an F1 score of 3.45, representing a 35% improvement over LoCoMo (2.55) and 192% higher than MemGPT (1.18). Multi-hop task performance was at least two times better than baselines. Computational efficiency: ~1,200 tokens per memory operation vs. 16,900 tokens for baselines (85-93% reduction), costing less than $0.0003 per operation. Retrieval time at 1M memories increased only from 0.31µs to 3.70µs. Ablation studies confirmed both Link Generation and Memory Evolution modules are critical, with removal causing substantial degradation especially in Multi-Hop and Open Domain tasks. Optimal k value found around 10-40 depending on task.",
+ "limitations": "Increasing k beyond optimal values causes performance to plateau or slightly decrease, suggesting a trade-off between context richness and effective information processing. While A-MEM requires multiple LLM calls during memory processing, it maintains cost-effectiveness but this could be a practical constraint. The system's effectiveness was evaluated primarily on two conversational datasets (LoCoMo and DialSim), and results may vary on other task types. Processing times vary significantly depending on the model used (5.4 seconds with GPT-4o-mini vs. 1.1 seconds with Llama 3.2 1B), which may limit real-time deployment on resource-constrained systems.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

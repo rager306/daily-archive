@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16517",
+ "tldr": "ManipLVM-R1 is a reinforcement learning with verifiable rewards (RLVR) framework for robotic manipulation that eliminates costly human annotations and improves generalization to out-of-distribution scenarios through structured reward design for affordance perception and trajectory prediction.",
+ "contributions": [
+  "Novel adaptation of the RLVR paradigm for robotic manipulation requiring no human annotations",
+  "Structured reward mechanisms for affordance perception and trajectory prediction incorporating spatial precision and path alignment",
+  "Comprehensive evaluation demonstrating superior sample efficiency, task success rate, and generalization compared to supervised fine-tuning approaches"
+ ],
+ "methods": "ManipLVM-R1 decomposes robotic manipulation into two subtasks—affordance perception and trajectory prediction—trained with separate models. For affordance perception, the reward combines a format reward (validating structured output tags) and an IoU-based spatial reward comparing predicted and ground-truth bounding boxes. For trajectory prediction, the reward combines a format reward with trajectory-specific constraints (3-10 points), a path similarity reward aggregating normalized Discrete Fréchet Distance, Hausdorff Distance, and RMSE, and an exponential endpoint distance reward. Group Relative Policy Optimization (GRPO) is used for policy updates with KL divergence regularization against a reference model.",
+ "results": "On in-domain experiments, ManipLVM-R1 achieved an IoU of 31.0 for affordance perception, outperforming RoboBrain-7B (11.79), representing a 144% increase. For trajectory prediction, it achieved an average distance error of 110.87. All results were obtained using only 50% of the ShareRobot training data, while baselines were trained on 100%. In OOD tests, ManipLVM-R1 surpassed all evaluated open-source and SFT models including Qwen2.5-VL-32B-Instruct and RoboBrain-7B.",
+ "limitations": "The OOD trajectory prediction dataset (VAIT subset) contains some noise and annotation inaccuracies requiring manual correction. The paper notes that supervised methods like behavioral cloning focus primarily on endpoint accuracy while overlooking trajectory quality and feasibility.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

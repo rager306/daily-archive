@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.03284",
+ "tldr": "SMoA (Sparse Mixture-of-Agents) is a framework that sparsifies information flows in multi-agent LLMs through response selection and early stopping mechanisms, achieving performance comparable to dense MoA with significantly lower computational costs.",
+ "contributions": [
+  "Proposed a novel SMoA architecture inspired by sparse mixture-of-experts (SMoE) to address token cost and diversity limitations in existing multi-agent LLM frameworks",
+  "Demonstrated through extensive experiments across alignment, reasoning, safety, and fairness benchmarks that SMoA achieves comparable performance to MoA while using significantly fewer computational resources",
+  "Provided further analysis showing SMoA is more stable, promotes diverse thinking, and has greater scalability potential than MoA and MAD"
+ ],
+ "methods": "The authors propose SMoA, which introduces two novel agent roles—a Judge LLM for Response Selection and a Moderator LLM for Early Stopping—into the MoA framework. The Judge evaluates outputs from each layer and selects the top-k highest-quality responses to pass forward, sparsifying information flow. The Moderator dynamically assesses consensus, quality, and contentiousness at each layer to decide whether to stop iteration early. Additionally, distinct role descriptions are assigned to each processor via role-playing to foster diverse and divergent thinking, inspired by the expert diversity principle in SMoE.",
+ "results": "SMoA achieves performance comparable to MoA across Just-Eval (alignment), MMAU (reasoning), and CEB (fairness/toxicity) benchmarks. On cost, SMoA averages 1.75 tokens per dataset versus MoA's 3.25. SMoA is best at reducing toxicity and stereotypes in CEB across three out of four baselines. Ablation shows optimal k=3 for response selection. Removing Early Stopping increases average cost to 3.70 per dataset. Removing Role-playing causes significant performance drops in MMAU and CEB. MAD is the least effective method, causing performance declines in most tasks. SMoA surpasses MoA in performance as the number of processors grows while using significantly fewer tokens.",
+ "limitations": [
+  "Response Selection improves efficiency but appears to reduce performance in MMAU and CEB benchmarks",
+  "Early Stopping sacrifices some performance for efficiency gains",
+  "Performance is sensitive to hyperparameter k, declining when k exceeds 3",
+  "Removing Role-playing leads to significant performance degradation, indicating dependency on diverse agent roles"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

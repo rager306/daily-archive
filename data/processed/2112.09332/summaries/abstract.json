@@ -1,0 +1,18 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2112.09332",
+ "tldr": "WebGPT fine-tunes GPT-3 with a text-based web-browsing environment and human feedback to answer long-form questions, producing answers preferred by humans over both human demonstrators and top Reddit answers.",
+ "contributions": [
+  "A text-based web-browsing environment that allows a fine-tuned language model to interact with Bing search end-to-end for retrieval and synthesis",
+  "Generation of answers with references extracted from web pages, enabling human evaluation of factual accuracy without independent research"
+ ],
+ "methods": "The authors created a text-based web-browsing environment where a language model issues commands (search, click, scroll, quote, answer) to retrieve and synthesize information. They collected ~6,000 human demonstrations and ~21,500 pairwise comparisons on ELI5 questions. Training involved four methods: behavior cloning on demonstrations, reward modeling on comparisons, reinforcement learning (PPO) against the reward model with a KL penalty, and rejection sampling (best-of-n). The best model combined behavior cloning followed by rejection sampling against a reward model.",
+ "results": "The 175B best-of-64 model's answers were preferred by humans 56% of the time against human demonstrators, and 69% of the time against the highest-voted ELI5 Reddit answers. On TruthfulQA, answers were true 75% of the time and both true and informative 54% of the time. Rejection sampling (best-of-64) was preferred 68% of the time over the BC baseline, while RL was preferred 58% of the time over BC. All WebGPT models outperformed base GPT-3 on TruthfulQA.",
+ "limitations": "Training on demonstrations alone is unlikely to lead far beyond human performance. The reward model can be overoptimized, especially by RL. Combining RL and rejection sampling offered little benefit over rejection sampling alone because they optimize against the same reward model. The model falls short of human performance on TruthfulQA. TruthfulQA evaluation was limited to 50-token truncated answers due to the short-form nature of the dataset.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

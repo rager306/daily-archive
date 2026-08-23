@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1206.6423",
+ "tldr": "The paper presents a joint learning approach for language and perception models that induces new grounded concepts (word-classifier pairs) from unlabelled scenes containing sentences, images, and object references. It enables robots to learn previously unknown object attributes by processing descriptions without explicit logical form or classifier labels.",
+ "contributions": [
+  "A joint probabilistic model combining semantic parsing (probabilistic categorial grammar) and visual attribute classifiers for grounded object selection",
+  "An online EM-like learning algorithm that maximizes expected marginal likelihood to co-adapt language and perception components without explicit annotation",
+  "A mechanism for inducing new grounded concepts by aligning unseen words with new attribute classifiers from scene-level supervision alone",
+  "Evaluation on Mechanical Turk-collected data demonstrating effective extension of an incomplete supervised-initialized model"
+ ],
+ "methods": "The authors combine a CCG-based semantic parser (FUBL) with logistic regression classifiers on kernel descriptor features (RGB for color, depth for shape) to model P(G|x,O), the probability of selecting a set of objects G given sentence x and scene objects O. Latent variables include logical forms z and perceptual world assignments w. Learning proceeds online in an EM-like fashion: for each scene, the algorithm estimates expectations over latent z and w using beam search over parses and exact inference under the constrained grammar (conjunctions of unary attribute descriptors), then updates parser and classifier parameters via expected gradients. The model is bootstrapped from a small supervised dataset with labeled logical forms and classifier outputs.",
+ "results": "Data was collected on Amazon Mechanical Turk comprising 142 scenes with Kinect RGB-D videos, covering 12 attributes (6 shapes, 6 colors) and 1003 sentence/annotation pairs. The model was initialized using supervised training on 6 attributes, then jointly learned on the remaining 6 previously unseen attributes with 80% training and 20% held-out testing. Experiments demonstrated that the joint learning approach can effectively extend the set of grounded concepts and enable accurate object set selection for previously unknown words and attributes.",
+ "limitations": [
+  "Logical expressions are currently limited to conjunctions of unary attribute descriptors; more expressive grammars would require approximate inference methods (e.g., MC-SAT)",
+  "The objective function is non-convex, and while the algorithm converges with decayed learning rate, optimality of the solution is not guaranteed",
+  "The approach currently relies on a small supervised bootstrap dataset; learning entirely without D_sup (e.g., via interactive dialog) remains future work",
+  "The exhaustive approach of creating k new classifiers for unseen words may not scale to very large attribute spaces"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

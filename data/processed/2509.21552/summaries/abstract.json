@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.21552",
+ "tldr": "GUI-CURSOR reframes GUI grounding as an interactive search task where a VLM moves a virtual cursor on a GUI image, using rendered visual feedback to iteratively refine predictions, trained with RL and a trajectory-based reward function.",
+ "contributions": [
+  "Reformulating GUI grounding from a static one-step task to a dynamic interactive process, enabling the model to learn coordinate-spatial alignment from visual feedback during training",
+  "Introducing GUI-CURSOR, a GUI grounding model trained with reinforcement learning in the interactive environment using a dense, trajectory-based reward function",
+  "Comprehensive evaluation showing that learning GUI grounding by moving a cursor improves both grounding accuracy and spatial reasoning capability"
+ ],
+ "methods": "The authors reframe GUI grounding as an iterative search task where a VLM controls a virtual cursor on a GUI image. At each step, the model analyzes the target UI element, evaluates spatial relations between the cursor and target, and predicts a new cursor position or STOP. Training uses Group Relative Policy Optimisation (GRPO) with a reward function combining a dense distance-based position reward and four trajectory penalties (false move, false direction, repeated position, and format penalties). For inference efficiency on high-resolution images, a cursor-centric focusing strategy crops around initial predictions for fine-grained refinement.",
+ "results": "GUI-CURSOR based on UI-TARS-1.5-7B achieves the best results on 3 out of 4 grounding benchmarks. On ScreenSpot-Pro, it outperforms the prior leading model GTA1 by 8.1% while using only 8K training samples compared to GTA1's 64K. It solves 95% of instances within two steps and adapts to more steps on difficult tasks. On OSWorld online agentic evaluation, GUI-Cursor-7B achieves 57.1% at 50 action steps, outperforming GTA1-7B (53.1% at 100 steps) and GTA1-32B (55.4% at 100 steps). On UI-Vision, it achieves notably higher accuracy on spatial and fine-grained manipulation tasks. In the cursor-in-box test, GUI-CURSOR obtains higher accuracy without explicit training on spatial reasoning benchmarks.",
+ "limitations": "On OSWorld-G, GUI-CURSOR based on UI-TARS-1.5-7B has a small gap of 2 points compared to GTA1. The iterative nature of the method could be computationally demanding during inference as it processes growing sequences of interaction history, which the cursor-centric focusing strategy partially addresses but does not fully eliminate.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

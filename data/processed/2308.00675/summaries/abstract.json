@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.00675",
+ "tldr": "The paper demonstrates that providing LLMs with tool documentation enables effective zero-shot tool usage, achieving performance on par with or exceeding few-shot demonstration-based approaches.",
+ "contributions": [
+  "Showing that zero-shot prompts with only tool documentation achieve performance comparable to few-shot prompts across 6 tasks",
+  "Introducing the LLM Cloud CLI dataset with 200 available tool APIs to demonstrate scalability",
+  "Demonstrating plug-and-play use of unseen state-of-the-art models (GroundingDINO, Stable Diffusion, XMem, SAM) for image generation and video tracking",
+  "Showing LLMs can re-invent functionalities of Grounded-SAM and Track Anything using only tool documentation"
+ ],
+ "methods": "The authors conduct experiments on 6 tasks across vision and language modalities, comparing LLM performance with varying combinations of demonstrations (few-shot demos) and tool documentation. They evaluate on ScienceQA (7 tools), TabMWP (9 tools), NLVRv2 (20 vision modules), and a newly collected LLM Cloud CLI dataset (200 cloud service commands). For the LLM Cloud CLI, TF-IDF search is used to retrieve relevant documentation due to prompt length constraints. The study uses ChatGPT (gpt-3.5-turbo) as the LLM planner, testing configurations from 0-shot to 16-shot with and without documentation.",
+ "results": "With tool documentation, zero-shot performance is on par with few-shot: TabMWP reaches 92.69% (zero-shot with doc) vs 84.13% (zero-shot without doc); ScienceQA reaches 79.91% (with doc) vs 78.25% (without doc); NLVRv2 reaches 63.40% (with doc) vs 0.00% (without doc). Zero-shot with documentation outperforms few-shot without documentation on the LLM Cloud CLI dataset. Without documentation, performance drops significantly as demos decrease. Model performance with few-shot demos alone is sensitive to demo selection, showing large variances under 5-shot on ScienceQA and 2-shot on NLVRv2.",
+ "limitations": "Due to LLM prompt length constraints, documentation for all 200 tools in the LLM Cloud CLI dataset cannot fit in a single prompt, requiring TF-IDF retrieval and truncation. Demonstration selection remains a challenge when relying on few-shot demos, as performance is sensitive to which demos are chosen and there is no principled selection protocol. Scaling the number of tools makes few-shot demo selection combinatorially intractable.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

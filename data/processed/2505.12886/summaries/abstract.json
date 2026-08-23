@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.12886",
+ "tldr": "The paper investigates reasoning hallucinations in Large Reasoning Models from a mechanistic perspective, introducing a Reasoning Score to quantify reasoning depth, identifying key hallucination patterns, and proposing both a detection framework (RHD) and a reinforcement learning mitigation method (GRPO-R).",
+ "contributions": [
+  "Proposed Reasoning Score, measuring divergence between logits from late LRM layers projected to vocabulary space, to quantify reasoning depth and distinguish shallow pattern-matching from genuine deep reasoning",
+  "Identified three reasoning hallucination patterns: early-stage fluctuation in reasoning depth, incorrect backtracking to flawed prior steps, and overthinking with spurious verification behavior",
+  "Designed Reasoning Hallucination Detection (RHD) framework using Reasoning Score, CV Score, and Attention Score",
+  "Introduced GRPO-R, an enhanced reinforcement learning algorithm incorporating step-level deep reasoning rewards via potential-based reward shaping",
+  "Provided theoretical generalization guarantees for GRPO-R with a uniform convergence bound"
+ ],
+ "methods": "The authors propose a Reasoning Score based on Jensen-Shannon divergence between vocabulary distributions from selected late layers (using LogitLens projection) and the final layer, computing layer-wise thinking depth per reasoning step. They validate this score on GSM-NoOp, a modified GSM8K dataset where No-Op phrases are injected to test shallow pattern-matching susceptibility. For analysis, they use the ReTruthQA dataset spanning Math, Science, and MultiHopQA domains, computing a Coefficient of Variation (CV Score) for early-step fluctuations and an Attention Score measuring how much later steps attend to earlier shallow or overthinking steps. For mitigation, they design GRPO-R with potential-based reward shaping that clips the reasoning score to penalize overthinking, then derive a uniform convergence bound proving improved generalization.",
+ "results": "On GSM-NoOp, reasoning steps misled by No-Op phrases consistently receive significantly lower Reasoning Scores than non-misled steps. On ReTruthQA, hallucinated traces yield significantly higher CV scores and Attention scores than truthful traces across all three domains (Math, Science, MultiHopQA). The RHD method achieves state-of-the-art performance across multiple domains on the reasoning hallucination detection dataset. GRPO-R demonstrates improved reasoning accuracy compared to standard GRPO and reduced hallucination rates.",
+ "limitations": "Outcome-based RL paradigms incentivize correct final answers while neglecting whether intermediate reasoning steps reflect deep and meaningful thinking, which encourages reward-hacking heuristics that may propagate through distillation. The GSM-NoOp dataset is not publicly available and required re-implementation following the original paper's methodology.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

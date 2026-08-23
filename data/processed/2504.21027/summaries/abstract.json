@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.21027",
+ "tldr": "The paper introduces UrbanPlanBench, a benchmark derived from Chinese urban planning qualification exams, and UrbanPlanText, an SFT dataset of over 30,000 instruction pairs, demonstrating that current LLMs significantly underperform professional human planners, especially in management and regulations.",
+ "contributions": [
+  "UrbanPlanBench: a comprehensive benchmark with 300 MCQs across three subjects (fundamental principles, professional knowledge, management and regulations), aligned with the Chinese certified urban planner qualification exam",
+  "UrbanPlanText: the largest-ever SFT dataset for urban planning, comprising over 30,000 instruction pairs from textbooks and past exams",
+  "Extensive evaluation of 25 LLMs (open-source and commercial) on the benchmark, plus analysis of prompting techniques (RAG, CoT) and fine-tuning effects"
+ ],
+ "methods": "The authors constructed UrbanPlanBench with 100 MCQs per subject: 80 single-correct-option questions (25% random guess) and 20 multiple-correct-option questions (4% random guess), sourced from Chinese urban planning qualification exams. They evaluated 25 LLMs by selecting the option with highest output probability. They also built UrbanPlanText from seven textbooks and eight years of past exams, then conducted supervised fine-tuning experiments. Additionally, they tested RAG (using Self-RAG with textbook/exam content as knowledge base) and CoT (few-shot and zero-shot) prompting techniques using GPT-4o-mini as base model.",
+ "results": "All LLMs substantially outperformed random guessing (top model achieved 2.98x, 3.51x, and 3.08x higher accuracy across subjects). Only Qwen2-70B surpassed the 60% certification bar (achieving 62.0%, 71.0%, and 64.0%). 70% of LLMs achieved subpar performance in management and regulations (S3). Average accuracies across 25 LLMs were 38.24% (S1), 44.16% (S2), and 34.52% (S3). RAG improved S1 accuracy by 30.3-45.5% and S2 by over 52.9%. CoT improved MCQ-M accuracy by 100-600% across subjects. Fine-tuning with UrbanPlanText enhanced memorization and comprehension but significant room remains for domain-specific reasoning.",
+ "limitations": "Only Qwen2-70B out of 25 LLMs passed the certification bar (60% in all three subjects). Most LLMs fail on MCQ-M (multiple correct options) questions, with 15 out of 75 cases showing zero accuracy. Scaling model size improves MCQ-S but not MCQ-M performance. Fine-tuned models still struggle with domain-specific terminology and reasoning. English-primary LLMs show significant language bias, underperforming Chinese LLMs by 41.7% in management and regulations.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

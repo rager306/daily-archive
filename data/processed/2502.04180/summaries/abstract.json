@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.04180",
+ "tldr": "MaAS introduces an agentic supernet—a probabilistic, continuous distribution over multi-agent architectures—that samples query-dependent systems at inference time, achieving higher performance at 6–45% of the inference cost of existing handcrafted or automated multi-agent systems.",
+ "contributions": [
+  "Reformulating multi-agent architecture search from optimizing a single monolithic system to optimizing a distribution of architectures (the agentic supernet)",
+  "Proposing MaAS, an automated framework using a controller network to sample task-customized multi-agent systems conditioned on input queries",
+  "Demonstrating superior performance, token economy, cross-dataset/LLM transferability, and inductive generalization to unseen operators across six benchmarks"
+ ],
+ "methods": "MaAS defines an agentic supernet as a cascaded multi-layer workflow over parameterized probability distributions of agentic operators (e.g., CoT, ReAct, Debate, Evaluator-optimizer). A controller network Q_ϕ samples a subnetwork conditioned on each query, with an early-exit operator allowing shallow systems for simple queries. The supernet is optimized via a cost-constrained objective balancing utility and token cost. Distribution parameters are updated via Monte Carlo gradient estimation, while black-box operator components (prompts, tools, model settings) are updated using textual gradient estimation by LLM agents.",
+ "results": "MaAS surpasses handcrafted multi-agent systems by 3.90–6.40% and existing automated methods by 2.07–8.26%, with overall best scores averaging 83.59% on mathematical reasoning and code generation. On GAIA, MaAS improves Level 1 and Level 2 tasks by 18.38% and 17.61%, respectively, compared to modest 3.35% and 2.04% gains for AFlow and ADAS. Training cost on MATH is $3.38 versus $22.50 for AFlow (6.8× cheaper), and MaAS uses only 6–45% of the inference costs of SOTA baselines.",
+ "limitations": "The paper evaluates on seven benchmarks (GSM8K, MATH, MultiArith, HumanEval, MBPP, GAIA) covering code generation, mathematical reasoning, and tool usage; broader evaluation across additional domains is not reported. The controller uses a threshold (thres=0.3) and K=4 sampling iterations, which may limit exploration. Textual gradients for operator updates are approximations and may introduce noise compared to differentiable gradients.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

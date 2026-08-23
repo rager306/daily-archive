@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.00135",
+ "tldr": "HoneyComb is the first LLM-based agent system specifically designed for materials science, combining a curated knowledge base (MatSciKB) and a tool hub (Tool-Hub) to significantly improve accuracy on materials science tasks over baseline LLMs.",
+ "contributions": [
+  "Introduction of HoneyComb, an LLM-based agent system for materials science",
+  "MatSciKB: a curated, structured materials science knowledge base with 16 categories supporting CRUD operations",
+  "Tool-Hub with an Inductive Tool Construction method that decomposes functions into reusable atomic functions",
+  "A hybrid retriever combining BM25 and Contriever for efficient and accurate information retrieval",
+  "Demonstration of significant performance gains across MaScQA and SciQA benchmarks"
+ ],
+ "methods": "HoneyComb uses a two-phase agent-tool interaction protocol: a Tool Assessor selects relevant tools from Tool-Hub, and a Tool Executor iteratively calls tools, decomposing complex queries into sub-questions as needed. A Python REPL environment handles numerical computations. A hybrid retriever first uses BM25 for fast keyword/term-frequency matching to extract N relevant entries, then applies Contriever embeddings for precise semantic retrieval of top 3 results. The MatSciKB knowledge base was constructed from curated sources including arXiv papers, Wikipedia entries, textbooks, datasets, formulas, and GPT-generated examples organized into 16 categories. The Inductive Tool Construction method generates Python functions from training questions, verifies them with human review, and decomposes them into atomic reusable functions.",
+ "results": "On the MaScQA dataset, HoneyBee improved by 16.76% and GPT-4 improved by 20.61% accuracy when augmented with HoneyComb. Both MaScQA (650 questions across 14 domains including thermodynamics, atomic structure, and mechanical behavior) and SciQA (11,679 multiple-choice questions across fundamental sciences) were used as evaluation benchmarks. Models evaluated included HoneyBee, GPT-3.5, GPT-4, LLaMA-2 (7B), and LLaMA-3 (8B). All HoneyComb-augmented models showed significant accuracy improvements over their native LLM counterparts on both datasets.",
+ "limitations": [
+  "The Inductive Tool Construction method requires human verification of generated functions, introducing a manual step",
+  "Specialized computational tools based on proprietary or closed-source data may not be accessible",
+  "The framework was evaluated on only two QA datasets, potentially limiting generalizability claims",
+  "The Contriever component operates at slower computational speed compared to BM25"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

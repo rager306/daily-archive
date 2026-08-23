@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.19828",
+ "tldr": "Memory-R1 is the first reinforcement learning framework for memory-augmented LLMs, using two RL-fine-tuned agents—a Memory Manager for structured CRUD operations and an Answer Agent for memory distillation—trained with only 152 QA pairs to achieve state-of-the-art results on long-horizon reasoning benchmarks.",
+ "contributions": [
+  "Introduction of Memory-R1, the first RL framework for memory-augmented LLMs with a Memory Manager performing ADD/UPDATE/DELETE/NOOP operations and an Answer Agent applying memory distillation over RAG-retrieved entries.",
+  "A data-efficient fine-tuning strategy using PPO and GRPO that achieves strong performance with as few as 152 question-answer pairs.",
+  "In-depth analysis of RL choices, model size scaling, and memory design with actionable insights."
+ ],
+ "methods": "Memory-R1 employs two specialized agents fine-tuned with outcome-driven RL (PPO and GRPO): a Memory Manager that learns structured memory operations (ADD, UPDATE, DELETE, NOOP) over an external memory bank, and an Answer Agent that retrieves candidate memories via similarity-based RAG (60 candidates per question) and applies a memory distillation policy to filter noise before generating answers. Training uses a reward based on exact-match answer correctness, requiring no manual labels. The system is trained only on 152 LoCoMo QA pairs and evaluated zero-shot on MSC and LongMemEval using LLaMA-3.1-8B-Instruct and Qwen-2.5 backbones (3B, 7B, 14B).",
+ "results": "On LoCoMo with LLaMA-3.1-8B, Memory-R1-GRPO improves over MemoryOS by 28.5% F1, 34.0% BLEU-1, and 30.2% LLM-as-a-Judge; PPO improves by 17.2%, 17.6%, and 19.4%. With Qwen-2.5-7B, GRPO surpasses MemoryOS by 24.5% F1, 24.1% B1, and 20.0% J. Memory-R1 consistently outperforms baselines across 3B, 7B, and 14B model scales. Zero-shot transfer to MSC and LongMemEval shows robust generalization. Ablations confirm contributions from the Memory Manager (F1 drops from 45.0 to 37.5 without it under GRPO), the Answer Agent (F1 drops from 45.0 to 33.0), and memory distillation (F1 gain of +4.0 under GRPO). GRPO converges faster initially but reaches comparable final performance to PPO. EM-based rewards yield balanced performance while J-based rewards produce higher J scores but lower F1/BLEU due to verbose outputs.",
+ "limitations": [
+  "Training relies on only 152 QA pairs, which may limit the breadth of learned memory strategies.",
+  "Performance is dependent on the quality of the backbone LLM (stronger managers like GPT-4o-mini yield larger Answer Agent gains).",
+  "EM-based rewards may produce overly concise answers, while LLM-as-a-Judge rewards can lead to verbose outputs that misalign with string-overlap metrics.",
+  "Evaluated only on three benchmarks (LoCoMo, MSC, LongMemEval), with no adversarial subset of LoCoMo used in training/evaluation."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

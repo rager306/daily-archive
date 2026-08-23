@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2605.28617v1",
+ "tldr": "LACUNA is a programming model for LLM agents in which each action is a typed hole filled with model-written code that is compiled and type-checked against the surrounding program before execution, preventing unsafe or partially executed actions.",
+ "contributions": [
+  "A code-as-action model where LLMs write agent actions as code running within their own runtime and checked at the call site before execution",
+  "A safety analysis providing pre-execution rejection of unavailable names and type mismatches, no partial execution of rejected snippets, and permissions/information-flow control",
+  "A demonstration that nested agent calls and ordinary code express common agent patterns (ReAct loops, skills, multimodel planning) as ordinary program control flow",
+  "A Scala 3 realization and evaluation on verifier test cases, BrowseComp-Plus, and τ²-bench"
+ ],
+ "methods": "The authors implement LACUNA in Scala 3, using its ability to compile a fresh snippet within the surrounding program's lexical context and track resource usage. Each agent action is a typed call agent[T](task) where the LLM receives the prompt, expected type T, enclosing source, and available names, then returns Scala code. The host compiler typechecks the generated snippet against T before any execution; if rejected, compiler diagnostics are fed back to drive retries. They also evaluate the system on BrowseComp-Plus and τ²-bench benchmarks.",
+ "results": "On BrowseComp-Plus, 8.6% of generations are rejected before execution, with 0.7 retries per query on average, and the agent reaches 27.1% accuracy. On τ²-bench, LACUNA solves 76.0% of 392 tasks across four domains with a capable model, on par with the baseline agent.",
+ "limitations": "Nested agent calls have no static bound on recursion depth; an accidental infinite recursion can look identical to a genuinely complex task from the outside. The runtime tracks depth with a configurable cap that throws an exception when hit. Additionally, a try block around an outer agent call catches compile failures from any nested agent call inside its snippet, even unrelated ones.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:43Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

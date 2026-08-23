@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2512.13278",
+ "tldr": "AutoTool is a training framework that equips LLM agents with dynamic tool-selection capabilities throughout reasoning trajectories, using a dual-phase optimization pipeline combining trajectory stabilization and KL-regularized Plackett-Luce Ranking for tool selection.",
+ "contributions": [
+  "A dual-phase optimization pipeline: Phase I uses SFT and RL for trajectory stabilization, Phase II refines tool selection via KL-regularized Plackett-Luce Ranking",
+  "Embedding-anchored tool selection that enables generalization to unseen tools through representation alignment rather than memorized identifiers",
+  "A 200k-scale dataset with explicit tool-selection rationales across 1,346 tools and 120 task types spanning math, science, code, and multimodal reasoning",
+  "Demonstrated superior performance and generalization over existing agentic LLM approaches"
+ ],
+ "methods": "The framework trains LLM agents in two phases. Phase I initializes the agent from a reference model using SFT followed by RL policy optimization to stabilize long CoT reasoning trajectories that interleave inner-reasoning, tool-selection, and tool-integration steps. Phase II refines tool selection via a KL-regularized objective optimized under Plackett-Luce ranking, where trajectory rollouts are scored using a process reward model and answer accuracy, then converted into a probabilistic ranking distribution. Tool selection itself uses embedding-anchored sampling: the model generates an anchor token whose embedding is compared via Frobenius norm distance to pre-computed tool embeddings in a shared latent space, enabling selection of both seen and unseen tools.",
+ "results": "Training Qwen3-8B and Qwen2.5-VL-7B with AutoTool across ten benchmarks yielded average gains of 6.4% in math & science reasoning, 4.5% in search-based QA, 7.7% in code generation, and 6.9% in multimodal understanding over prior SFT and GRPO paradigms. The framework shows stronger generalization to unseen tools from evolving toolsets during inference, unlike methods that overfit to fixed tool inventories.",
+ "limitations": "Only 460 out of 1,346 tools (34.2%) were used during training, with the remainder reserved for evaluating generalization to unseen tools—this means performance on the full tool distribution remains untested. The approach also relies on an expert reasoning model for data curation and LLM-as-a-judge filtering, which may introduce biases or inconsistencies. The theoretical equivalence between optimal policy and PL ranking (Theorem 2.1) assumes the KL-regularized RL objective framework.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

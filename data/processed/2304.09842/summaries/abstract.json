@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.09842",
+ "tldr": "Chameleon is a plug-and-play compositional reasoning framework that augments LLMs by synthesizing natural-language-like programs to sequentially compose heterogeneous external tools (e.g., vision models, web search, Python functions) for complex reasoning tasks.",
+ "contributions": [
+  "Development of a plug-and-play compositional reasoning framework, Chameleon, that composes external tools to address inherent limitations of LLMs.",
+  "Use of an LLM as a natural language planner to generate programs without requiring training or carefully curated rules.",
+  "Demonstration of effectiveness on two challenging benchmarks (ScienceQA and TabMWP), significantly surpassing the state of the art."
+ ],
+ "methods": "Chameleon employs an LLM-based planner that, given an input query, module inventory, constraints, and few-shot demonstrations, generates a natural-language-like sequential program of tool names. Each module in the program is executed in order, processing the query and cached context from prior executions, updating both for subsequent steps. The module inventory includes diverse tools such as LLMs, off-the-shelf vision models, Bing Search, Python program generators/verifiers/executors, row/column lookup, text detector, image captioner, knowledge retrieval, and rule-based answer generators.",
+ "results": "On ScienceQA, Chameleon powered by GPT-4 achieves 86.54% overall accuracy, improving the best published few-shot result by 11.37%. On TabMWP, GPT-4-powered Chameleon improves accuracy by 17.0% over the best-published model, lifting the state of the art to 98.78%, and improves by 7.97% over chain-of-thought prompted GPT-4. Analysis shows the GPT-4-powered planner exhibits more consistent and rational tool selection compared to a ChatGPT-powered planner.",
+ "limitations": "The framework relies on the underlying LLM's planning ability, which may be less effective with weaker models (as evidenced by the inferior performance of ChatGPT vs. GPT-4 as planner). Program validity is constrained — if generated programs do not end with Solution Generator and Answer Generator modules, they default to those, potentially limiting flexibility. The update_input and update_cache functions are hand-designed for each module, which may limit ease of extension.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

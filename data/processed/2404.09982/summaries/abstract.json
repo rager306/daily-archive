@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.09982",
+ "tldr": "INMS is an asynchronous multi-agent framework that enables continuous, dialogue-like memory sharing through dynamically generated and scored Prompt-Answer pairs, eliminating reliance on static external databases and improving agent performance across open-ended tasks.",
+ "contributions": [
+  "Introducing the INMS framework, an asynchronous interaction paradigm that leverages dynamically generated and shared conversational memories among agents, evaluated through rigorous scoring criteria, to enhance collective performance and retriever accuracy.",
+  "Addressing the limitations of static external datasets by modeling continuous, interactive memory generation, thereby facilitating a dialogue-driven evolution from isolated agents to collective intelligence.",
+  "Constructing a novel dataset and conducting extensive experiments across three diverse domains (Literary Creation, Unconventional Logic Problem-solving, Plan Generation) to validate INMS efficacy."
+ ],
+ "methods": "INMS operates through an iterative cycle where agents generate Prompt-Answer (PA) pairs during interactions. Each PA pair is scored by an LLM scorer (GPT-4o) against domain-specific rubrics; pairs exceeding a threshold of 81/100 are added to a shared memory pool. A dense retriever retrieves top-k memories via cosine similarity to augment agent queries, and the retriever is continuously retrained online using contrastive learning: new memories are used to label candidates from the pool (positive for high-reference-value pairs, negative for low-reference-value pairs) and minimize a cross-entropy loss. Interactive learning bootstraps the pool from as few as 100 or even one initial PA pair.",
+ "results": "Experiments across 9 agents (3 per domain) and 1000 total instances showed significant performance improvements for all agents using shared memories compared to k=0 (no memories), with further gains as k increased from 1 to 3. Closed-source LLMs (GPT-3.5-turbo, GPT-4o) outperformed the open-source open-mistral-7b under equal memory conditions. INMS was evaluated against baselines including Random, BM25, Contriever, SBERT, TAS-B, and SimCSE using BERTScore, F1, and LLM Judge metrics. The threshold for PA pair selection was set at 81, determined as the average score across all dataset instances (on a 100-point scale).",
+ "limitations": "The framework requires manual review of scoring rubrics and a preliminary manually curated memory subset before deployment, which may limit scalability. The scoring system depends on LLM-based evaluation, introducing potential bias from the scorer model itself. The approach was evaluated only across three domains (poetry generation, unconventional logic, and plan creation), limiting generalization claims. No mention of computational overhead or latency from continuous retriever retraining and scoring.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

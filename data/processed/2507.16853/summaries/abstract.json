@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.16853",
+ "tldr": "MobileUse is a multi-agent GUI framework with hierarchical reflection and proactive exploration that achieves state-of-the-art success rates of 62.9% on AndroidWorld and 44.2% on AndroidLab.",
+ "contributions": [
+  "Hierarchical Reflection: a three-level architecture (Action, Trajectory, Global Reflector) enabling self-monitoring, error detection, and recovery across multiple temporal scales, with a Reflection-on-Demand strategy based on confidence scores and trigger conditions",
+  "Proactive Exploration: a module that enables the agent to autonomously explore unfamiliar apps before task execution, accumulating common knowledge K to address cold-start issues",
+  "SOTA performance on AndroidWorld (62.9%) and AndroidLab (44.2%), plus an open-source out-of-the-box toolkit for physical mobile devices"
+ ],
+ "methods": "MobileUse is built as a multi-agent framework with two stages. Stage I (Proactive Exploration) guides the agent to interact with apps without specific tasks, generating reusable common knowledge K. Stage II (Autonomous Mobile Operation) uses an Operator for decision-making, a Progressor for summarizing task progress, three Hierarchical Reflectors (Action Reflector for per-step visual difference detection, Trajectory Reflector for recent trajectory analysis triggered by repeated actions/screenshots/accumulated errors, and Global Reflector for final task completion validation), and retrieval of relevant knowledge K_I. The Action Reflector uses a Perception module to highlight changed regions between screenshots and is invoked only when action confidence falls below threshold θ.",
+ "results": "MobileUse achieves state-of-the-art performance with a 62.9% success rate on AndroidWorld (116 tasks across 20 apps) and 44.2% on AndroidLab (138 tasks from 9 apps), outperforming baselines including GPT-4o, Claude, Gemini, Qwen2.5-VL, InfiGUIAgent, Aguvis, V-Droid, and UI-TARS.",
+ "limitations": "The framework relies on MLLM capability (e.g., GPT-4o, Claude) for its components, potential latency and computation overhead from multi-agent collaboration and reflection calls, reflection modules themselves can make mistakes that may mislead the Operator, and the cold-start knowledge accumulation depends on the quality and generality of explored trajectories.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

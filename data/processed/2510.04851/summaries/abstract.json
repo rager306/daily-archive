@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.04851",
+ "tldr": "LEGOMem is a modular procedural memory framework that decomposes past task trajectories into reusable full-task and subtask memory units, allocated across orchestrators and task agents in multi-agent LLM systems to improve planning and execution in workflow automation.",
+ "contributions": [
+  "Introduction of LEGOMem, a modular procedural memory framework for multi-agent LLM systems that stores memories as a retrieval augmentation (RAG) layer",
+  "Systematic study of procedural memory design in multi-agent systems, examining where memory should be placed, how it should be retrieved, and which agents benefit most",
+  "Three retrieval strategy variants: vanilla LEGOMem, LEGOMem-Dynamic (just-in-time subtask retrieval), and LEGOMem-QueryRewrite (query rewriting at planning stage)",
+  "Evaluation on the OfficeBench benchmark across LLM-only, hybrid, and small language model agent configurations"
+ ],
+ "methods": "LEGOMem operates in two phases: offline memory construction, where successful task trajectory logs are distilled by an LLM into structured full-task memories (task description, high-level plan, execution traces) and subtask memories (agent-specific behavior and tool-use), stored in a vector database indexed by semantic embeddings; and online memory-augmented inference, where the orchestrator retrieves relevant full-task memories to guide planning and delegates subtask memories to task agents. Three variants were evaluated: vanilla LEGOMem retrieves full-task memories and statically extracts subtask memories, LEGOMem-Dynamic performs per-agent subtask-level retrieval during execution using dedicated per-agent memory banks, and LEGOMem-QueryRewrite uses a query rewriter LLM to generate rewritten subtasks at planning time before task execution. Experiments were conducted on the OfficeBench benchmark with agent teams including Word, Excel, Calendar, Email, System, and OCR-PDF task agents.",
+ "results": "All LEGOMem variants significantly improve task success rates over memory-less and baseline methods. Orchestrator memory is critical for effective task decomposition and delegation. Fine-grained agent memory improves execution accuracy, particularly for smaller language models, narrowing the performance gap with stronger agents. All three variants achieve similar overall performance in full memory settings. LEGOMem-Dynamic and LEGOMem-QueryRewrite outperform vanilla LEGOMem when only task agent-level memory is used and with small language model task agents. Teams composed of smaller language models benefit substantially from procedural memory by leveraging prior execution traces for more accurate planning and tool use.",
+ "limitations": [
+  "Vanilla LEGOMem may occasionally fail to surface relevant subtask memories if retrieved full-task memories differ in subtask structure from the current task",
+  "The framework relies on the availability of past successful execution trajectories for memory construction",
+  "Fine-grained subtask retrieval is particularly beneficial when weaker orchestrator support is present, suggesting dependence on orchestrator quality",
+  "Memory is constructed from successful trajectories only, which may limit generalization to novel task types not covered by prior experience"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

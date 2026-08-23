@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.18798",
+ "tldr": "WebSeer is a search agent trained via a two-stage framework combining cold-start SFT and Self-Reflective Reinforcement Learning (SRRL) with a self-reflection mechanism, enabling deeper tool-use chains and improved accuracy on open-domain multi-hop QA benchmarks.",
+ "contributions": [
+  "A unified two-stage training framework with a self-reflection paradigm that unifies cold start and RL for real-world web-based environments",
+  "A novel multi-turn rejection sampling SFT data synthesis method that encourages proactive tool invocation and reflective reasoning patterns",
+  "State-of-the-art results on HotpotQA (72.3%) and SimpleQA (90.0%) using a single 14B model, with strong generalization to OOD datasets"
+ ],
+ "methods": "The authors design a two-stage training framework: first, multi-turn rejection sampling collects reasoning trajectories enriched with reflective patterns using a reasoner-verifier setup, followed by masked autoregressive SFT that excludes tool observation tokens from the loss. Second, Self-Reflective Reinforcement Learning (SRRL) uses Group Relative Policy Optimization (GRPO) with an asymmetric clip-higher mechanism, allowing the model to submit answers multiple times within a dialogue turn. A trajectory-wise reward combines format penalties (based on output length thresholds) and correctness rewards (F1 score discounted exponentially by the number of submission attempts). The agent uses three tools: a web search API, a webpage reader, and a code executor.",
+ "results": "On HotpotQA, WebSeer achieves 72.3% accuracy (vs. 66.0% for Search-r1); on SimpleQA, 90.0% accuracy. Average accuracy of 82.4% on in-domain tasks, exceeding Search-r1 by 12.5 points. Largest gains: +15.9 points on NQ and +27.2 points on 2Wiki-MultiHopQA. On OOD benchmarks: 55.4% on FanOutQA (nearly matching GPT-4o's 55.8%), 56.1% on FRAMES. The 14B model is the only scale showing consistent improvements across tool usage and accuracy; smaller models (3B, 7B) degrade or show instability.",
+ "limitations": "Smaller models (3B, 7B) suffer from instability, repetitive text, and malformed JSON causing failed tool calls, indicating sufficient model capacity is essential. Training was conducted with site-restricted Wikipedia search, while evaluation used open web search—generalization beyond this setup is not fully demonstrated. The framework relies on a single 14B model achieving SOTA, leaving open whether the approach scales further or transfers to even more complex real-world web scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

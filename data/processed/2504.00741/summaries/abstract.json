@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.00741",
+ "tldr": "MatAgent is a generative AI framework that combines LLM reasoning with diffusion-based crystal structure estimation and iterative feedback to direct inorganic materials exploration toward user-defined target properties.",
+ "contributions": [
+  "A novel MatAgent framework integrating LLMs as central reasoning engines with external cognitive tools (short-term memory, long-term memory, periodic table, materials knowledge base) for interpretable, iterative inorganic materials design",
+  "A diffusion-based Structure Estimator trained on the MP-60 dataset to generate candidate 3D crystal structures from discrete compositions proposed by the LLM",
+  "A GNN-based Property Evaluator trained on MP-60 for predicting formation energy per atom to guide iterative refinement",
+  "Demonstration that tool-assisted Planning and Proposition significantly improve compositional validity, uniqueness, and novelty (V.U.N.) scores"
+ ],
+ "methods": "MatAgent uses an LLM (GPT-4o or o3-mini) in a two-stage Planning and Proposition process, where the LLM iteratively selects from four external tools to guide composition proposals over 15 iterations across 20 independent runs. A conditional diffusion-based Structure Estimator generates candidate 3D crystal structures from proposed compositions, trained on the MP-60 dataset (stable structures with up to 60 atoms from Materials Project). A GNN-based Property Evaluator predicts formation energy per atom, selecting the most stable structure (lowest formation energy) each iteration. The framework was evaluated targeting five quantile-defined formation energy values ranging from -3.8 eV/atom (1.0% quantile) to -1.6 eV/atom (40% quantile), with success defined as achieving predictions within ±0.25 eV/atom of the target.",
+ "results": "GPT-4o with tools achieved a V.U.N. score of 0.60 versus 0.20 without tools when targeting -3.8 eV/atom. o3-mini without tools achieved a V.U.N. score of 0.0 (novelty of 0.0, with ~60% of compositions being HfO2), while o3-mini with tools achieved a V.U.N. score of 0.55, comparable to MatterGen. o3-mini consistently achieved high success rates even at challenging targets (-3.8 and -3.5 eV/atom). Tool-assisted approaches expanded compositional diversity: GPT-4o w/ tools introduced elements such as F, Ca, and Al, while o3-mini w/ tools introduced F, Th, and Y. Without tools, both LLMs produced well-known compounds (TiO2, SrTiO3 for GPT-4o; HfO2 for o3-mini). MatterGen achieved higher success rates at early iterations compared to MatAgent.",
+ "limitations": [
+  "Both MatAgent and MatterGen results are influenced by the same property predictor's accuracy and potential biases, introducing possible error",
+  "No post-processing steps such as structural relaxation or optimization were applied",
+  "Direct novelty comparison between MatAgent and MatterGen is not fully fair due to differences in training (MatterGen fine-tuned on MP-20, LLMs pretrained broadly)",
+  "For the most challenging target (-3.8 eV/atom, lowest 1.0% quantile), even the best-performing configurations exhibited relatively low success rates",
+  "Computational costs increase as iterations progress in the iterative framework"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

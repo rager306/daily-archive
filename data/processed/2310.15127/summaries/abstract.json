@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.15127",
+ "tldr": "HELPER is an embodied agent that uses retrieval-augmented prompting of frozen LLMs with an external memory of language-program pairs to parse free-form human-robot dialogue into executable action programs, achieving new state-of-the-art results on the TEACh benchmark.",
+ "contributions": [
+  "Introducing HELPER, a memory-augmented LLM-based embodied agent for parsing open-domain dialogue, instructions, and corrections into robot action programs",
+  "External non-parametric key-value memory that expands with successful executions to personalize interactions to user routines",
+  "VLM-guided visually-grounded plan correction using failure diagnosis from pixel input",
+  "New state-of-the-art on TEACh benchmark in both EDH and TfD tasks"
+ ],
+ "methods": "HELPER uses retrieval-augmented prompting of frozen LLMs (GPT-4) to map free-form language input into Python programs over parameterized navigation and manipulation primitives. A key-value memory stores language-program pairs, with keys embedded via text-embedding-ada-002; given input context I, the top-K=3 most similar memories are retrieved and included as in-context examples. The Executor module verifies preconditions before each action, uses monocular depth estimation (ZoeDepth) and object detection (SOLQ) for scene perception, and calls an LLM-based Locator for common-sense object search when objects are undetected. Upon execution failure, a VLM (ALIGN) diagnoses the failure from visual input, and the Planner retrieves relevant error-correction examples from memory to generate adjusted programs.",
+ "results": "HELPER sets a new state-of-the-art on the TEACh benchmark in both Execution from Dialog History (EDH) and Trajectory from Dialogue (TfD), with a 1.7x improvement over the previous state-of-the-art for TfD. It improves task success by 1.7x and goal-condition success by 2.1x compared to prior work in TfD. Soliciting and incorporating user feedback provides an additional 1.3x boost in task success.",
+ "limitations": "The method relies on prompt engineering rather than fine-tuning, limiting adaptation to domains not envisioned during prompt design. Fixed prompts approach the maximum context window of widely used LLMs, and adding more examples increases inference time and resource usage due to larger attention operations. The system requests user feedback only after full task completion, which may not catch errors during execution.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.13682",
+ "tldr": "ReMEmbR is a retrieval-augmented memory system for embodied robots that enables long-horizon video question answering by building a queryable vector database of robot histories and using an LLM-agent to retrieve relevant memories to answer spatial, temporal, and descriptive questions.",
+ "contributions": [
+  "Introduction of ReMEmbR, a retrieval-augmented LLM-agent for long-horizon spatio-temporal reasoning in robot navigation",
+  "Construction of the NaVQA dataset with 210 spatial, temporal, and descriptive questions across 7 long-horizon robot navigation videos (15-30 minutes each)",
+  "Real-world robot deployment demonstrating ReMEmbR's ability to handle diverse queries over extended deployments"
+ ],
+ "methods": "ReMEmbR operates in two phases: memory building and querying. During memory building, the robot uses VILA video captioning on consecutive t-second segments of video, embeds captions with mxbai-embed-large-v1, and stores caption embeddings along with position and timestamp vectors into a vector database. During querying, an LLM-agent acts as a state machine that iteratively formulates function calls to retrieve memories from the database via text, position, or time queries, up to k=3 retrieval steps, until the question can be answered, then generates a structured JSON output.",
+ "results": "ReMEmbR with GPT-4o achieved descriptive question accuracy of 0.62 (short), 0.58 (medium), 0.65 (long); positional errors of 5.1m, 27.5m, 46.25m respectively; and temporal errors of 0.3s, 1.8s, 3.6s respectively. It outperformed LLM baselines on long videos and remained competitive with VLM baselines on short videos. For a 21.5-minute video, ReMEmbR took ~25 seconds per question versus ~90 seconds for the VLM on a 5.5-minute video. Overall correctness increased as video length increased. Open-source LLMs (Codestral, Command-R, Llama3.1-8b) performed worse than GPT-4o, and reducing captioning frame rate from 2 FPS to 0.5 FPS decreased performance.",
+ "limitations": "Open-source LLMs struggle with arithmetic reasoning required for temporal and spatial questions. Longer caption lengths were found to help, and lower frame rates (0.5 FPS) caused performance drops due to information loss. The VLM baseline cannot process medium and long videos due to context window constraints. Results show high variance due to differences in question difficulty.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

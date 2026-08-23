@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.12987",
+ "tldr": "The Planning Copilot is a chatbot that integrates external planning tools (classical/numeric planners, VAL validator, simulator) via the Model Context Protocol, enabling LLMs to perform reliable long-horizon PDDL planning tasks without domain-specific fine-tuning.",
+ "contributions": [
+  "Introduction of the Planning Copilot, a chatbot integrating multiple PDDL planning tools (FastDownward for classical planning, Metric-FF for numeric planning, VAL for validation, and a plan simulator) via the Model Context Protocol (MCP)",
+  "A modular architecture allowing any MCP-supporting LLM to invoke planning tools through natural language instructions",
+  "Empirical evaluation showing LLMs augmented with planning tools significantly outperform the same LLMs without tools",
+  "Limited qualitative comparison demonstrating the Planning Copilot significantly outperforms GPT-5 despite using much smaller LLMs"
+ ],
+ "methods": "The authors implemented the Planning Copilot using three MCP functions: a classical planner call (FastDownward), a numeric planner call (Metric-FF), and a VAL wrapper for plan/domain/problem validation. A plan simulation function generates execution traces. Control flow was implemented using LangGraph. They evaluated three open-source LLMs (Qwen3:0.6B, Qwen3:4B, and GPT-OSS:20B) across ten PDDL domains (five classical IPC domains and five numeric domains) in a zero-shot setting, testing five core tasks: syntax validation of domain and problem, solution finding, plan validation, and plan simulation. Each task had 5 prompt variants per problem, with additional multi-step task chains of lengths 1-5.",
+ "results": "LLMs augmented with planning tools consistently outperformed the same LLMs without tools. Without tools, none of the LLMs could reliably simulate plans: Qwen-3:0.6B succeeded 6% of the time, Qwen-3:4B 24%, and GPT-OSS:20B 80%. With tools, GPT-OSS augmented with tools outperformed all other models. Tool selection was most successful for classical planning problems, while numeric planning proved more challenging, likely due to less training exposure. The simulation task was the most difficult for LLMs without planning tools because it requires tracking state changes across multiple steps.",
+ "limitations": [
+  "Numeric planning proved more challenging than classical planning for tool selection, likely due to less representation in LLM training data",
+  "The comparison against GPT-5 was described as 'limited qualitative comparison'",
+  "The evaluation used a limited set of ten PDDL domains (five classical, five numeric)",
+  "Self-loops in LangGraph were capped at 10 iterations, potentially limiting complex multi-step reasoning"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

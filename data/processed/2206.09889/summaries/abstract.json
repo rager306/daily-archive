@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2206.09889",
+ "tldr": "Nocturne is a scalable 2D driving simulator and benchmark for multi-agent coordination under partial observability, using vectorized visibility computations to achieve 2000+ steps-per-second, far faster than camera-based simulators.",
+ "contributions": [
+  "Introduction of Nocturne, a 2D driving simulator with partial observability that computes visible features efficiently without camera rendering",
+  "Construction of the benchmark from open-source Waymo Motion dataset, yielding 134,453 scenes across roundabouts, unsignalized intersections, arterial roads, and parking lots",
+  "Benchmarking of RL (APPO) and imitation learning (Behavior Cloning) baselines, demonstrating agents fall significantly short of human-level coordination"
+ ],
+ "methods": "Nocturne uses the Waymo Motion dataset to construct 2D scenes with polylines and road objects. Partial observability is modeled via a configurable 120-degree, 80-meter view cone with head-tilt support. Visibility is computed using a Bounding Volume Hierarchy for vehicles and a 2D range tree for road points, enabling efficient ray-casting checks. The C++ backend achieves 2000+ steps-per-second. The authors trained APPO (multi-agent RL with shared policy) and Behavior Cloning baselines on 200 validation scenes, with goals defined as reaching the expert's final position, speed, and heading within specified tolerances and 0% collision rate.",
+ "results": "Tuned RL and imitation learning baselines struggle to complete highly interactive scenes. Agents achieve relatively low distance to expert trajectories and deviate significantly from expert trajectories. There does not appear to be a zero-shot coordination problem at this level of agent capability. The benchmark uses 134,453 snippets from Waymo Motion, with approximately 3% of vehicles having infeasible goals (crossing impassible road edges) and 2% initialized in colliding states.",
+ "limitations": "The egocentric data collection means expert trajectories are incomplete and vehicles unpredictably flicker in and out of existence. The current version excludes traffic lights, pedestrians, and cyclists (NocturneV1). The 80-meter view radius and rectangular vehicle representation are overly pessimistic compared to real human vision. The 1-second context window may be insufficient for safe navigation. Roughly 3% of goals in the raw data were infeasible due to labeling errors.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

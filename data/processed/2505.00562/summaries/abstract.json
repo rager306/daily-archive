@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.00562",
+ "tldr": "TeLoGraF is a graph-encoded flow matching model that learns to generate satisfiable trajectories for general Signal Temporal Logic (STL) specifications using a GNN encoder, outperforming classical and learning-based baselines in both satisfaction rate and inference speed.",
+ "contributions": [
+  "First generative model learned for STL-conditioned planning tasks",
+  "Four common STL templates identified and 200K+ diverse specifications collected with paired demonstrations across five simulation environments",
+  "Demonstrated that GNN-based graph encoding of STL syntax trees outperforms alternative encoder architectures (GRU, Transformer, TreeLSTM)",
+  "Code and datasets open-sourced"
+ ],
+ "methods": "The authors identified four STL templates (single-goal, multi-goal, sequential, partial-order) and generated 200K+ specifications with paired demonstrations using off-the-shelf solvers across five simulation environments (Linear/Dubins cars, PointMaze, AntMaze, Franka Panda). STL formulas are represented as syntax trees converted into directed graphs, then encoded via a 4-layer GCN with 256 hidden units. A conditional flow matching backbone (UNet architecture) takes the GNN embedding and initial state to generate trajectories by learning a velocity field, with Euler integration at test time using Ns=100 steps.",
+ "results": "In four out of five benchmarks, TeLoGraF achieved the highest solution quality. In the Franka Panda environment, TeLoGraF (Fast) was 123.6X faster than Grad and 60.7X faster than CEM while achieving a higher satisfaction rate. The GNN encoder outperformed alternative encoders (GRU, Transformer, TreeLSTM). The method also showed robustness to out-of-distribution STL specifications and capability to handle complex STLs.",
+ "limitations": "Atomic proposition semantics are restricted to 'reach' and 'avoid' operations, excluding dexterity or agility skills. The four STL templates, while diverse, may not cover all possible STL forms. Classical baseline methods (Grad, CEM) cannot scale to high-dimensional systems or complex STLs efficiently, and learning-based baselines like CTG and LTL-DoG do not incorporate STL syntax during training.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

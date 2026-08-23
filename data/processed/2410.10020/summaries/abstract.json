@@ -1,0 +1,18 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.10020",
+ "tldr": "The paper introduces an adaptive LLM agent framework with automatic correction that enables doctor agents to iteratively refine reasoning and recover from incorrect diagnoses in simulated clinical environments using the AgentClinic benchmark.",
+ "contributions": [
+  "Introduction of a robust adaptation mechanism for doctor agents that reason/act and observe, enabling improved diagnostic accuracy after initial failures",
+  "Evaluation of the framework in the AgentClinic environment, demonstrating enhanced ability to recover from incorrect diagnoses through adaptive learning"
+ ],
+ "methods": "The authors used the AgentClinic benchmark with the MedQA dataset, comprising 15 scenarios with a maximum of 20 inferences. A four-agent system was employed: a Doctor Agent (the evaluated model), a Patient Agent simulating patient interactions with cognitive and implicit biases, a Measurement Agent providing realistic test results, and a Moderator Agent evaluating diagnostic accuracy. When the doctor agent produced an incorrect diagnosis, a return signal R(τ) was concatenated with self-correction text and used as the initial state for the next trial, with a compression step removing prior dialogue to reduce context length. Both GPT-4 and GPT-3.5 were used as the doctor language agent policy, with GPT-4 serving as patient, measurement, and moderator agents.",
+ "results": "In the first MedQA scenario, GPT-4 correctly diagnosed Myasthenia Gravis in 1 test and 19 questions, while GPT-3.5 initially misdiagnosed it as Guillain-Barré Syndrome. After applying the automatic correction framework, GPT-3.5 correctly diagnosed Myasthenia Gravis in 1 test and 12 questions. Across 15 tasks (Table 1), GPT-4 achieved correct diagnoses on tasks 1, 2, 5, 6, 8, 9, 10, 11, 12, 13, and 14; GPT-3.5 initially got tasks 3 and 6 correct but failed on tasks 2, 4, 5, 7, 8, 9, and 15. The adaptation mechanism enabled recovery from initial failures, reducing the number of interactions needed compared to the uncorrected baseline.",
+ "limitations": "Experiments were limited to 15 scenarios from the MedQA dataset without bias or image requests. Only GPT-4 and GPT-3.5 were evaluated as doctor agents. The detailed case study focused on a single clinical scenario (Myasthenia Gravis diagnosis). The framework has not yet been tested across a wider range of clinical tasks such as differential diagnosis and treatment recommendations, nor with additional large language models, which the authors identify as directions for future work.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

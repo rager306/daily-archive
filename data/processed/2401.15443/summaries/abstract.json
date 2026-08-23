@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.15443",
+ "tldr": "DiffuserLite introduces a progressive refinement planning (PRP) process that generates trajectories coarsely then refines them step-by-step, reducing redundant information modeling and achieving real-time diffusion planning at 122.2Hz (112.7x faster than Diffuser and DD) while maintaining SOTA performance on D4RL benchmarks.",
+ "contributions": [
+  "Introduction of plan refinement process (PRP) for coarse-to-fine-grained trajectory generation, reducing modeling of redundant information.",
+  "Introduction of DiffuserLite, a lightweight diffusion planning framework that significantly increases decision-making frequency via PRP.",
+  "Demonstration that DiffuserLite is a simple and flexible plugin easily combined with other diffusion planning algorithms.",
+  "Achievement of 122.2Hz average decision-making frequency (112.7x faster than predominant frameworks) and SOTA performance across multiple D4RL benchmarks."
+ ],
+ "methods": "The authors propose progressive refinement planning (PRP), which performs rough planning by considering only states at distant intervals, then iteratively refines the first interval by generative interpolation until reaching step-level resolution across L levels. They use a DiT backbone instead of UNet due to reduced sequence lengths (typically ~5), conditional sampling via classifier-free guidance (CFG) for speed, and an inverse dynamic model for action extraction. Optionally, rectified flow is integrated to enable one-step sampling. Three backbone variations were implemented: standard diffusion (D), rectified flow (R1), and rectified flow with reflow (R2), trained on publicly available offline RL datasets.",
+ "results": "DiffuserLite achieves an average decision-making frequency of 122.2Hz (R2 backbone), compared to 1.3Hz for Diffuser and 0.4Hz for DD — a 112.7x speedup. Runtime cost was 0.51% of Diffuser/DD on average. On FrankaKitchen sub-tasks, success rates improved by [41.5%, 56.2%, 55.3%, 8.7%] over Diffuser while being 200-300x faster. On D4RL, DiffuserLite achieved SOTA performance across all benchmarks, with notable gains in MuJoCo sub-optimal datasets and long-horizon Antmaze tasks.",
+ "limitations": [
+  "Sparse reward tasks pose challenges where cumulative reward alone can confuse diffusion models, though addressed with discounted rewards and value function augmentation.",
+  "HDMI results required reproduction since original code was not open-sourced, potentially affecting comparison accuracy.",
+  "The approach assumes redundancy in distant trajectory segments, which may not hold universally across all task domains."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

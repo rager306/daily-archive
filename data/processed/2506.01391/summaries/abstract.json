@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.01391",
+ "tldr": "AgentCPM-GUI is an 8B-parameter visual-language GUI agent trained with a three-stage pipeline (grounding pre-training, supervised fine-tuning, and reinforcement fine-tuning via GRPO) that achieves state-of-the-art performance on English and Chinese mobile GUI benchmarks.",
+ "contributions": [
+  "AgentCPM-GUI: an 8B-parameter GUI agent for robust, low-latency on-device mobile interaction.",
+  "A three-stage progressive training pipeline combining grounding-aware pre-training, supervised imitation learning on Chinese/English trajectories, and reinforcement fine-tuning with GRPO.",
+  "A compact JSON-based action space (average 9.7 tokens per action) designed for efficient edge-device execution.",
+  "CAGUI: the first large-scale Chinese Android GUI benchmark covering grounding and agent tasks.",
+  "Open-source release of all code, model checkpoints, training data, and the CAGUI benchmark."
+ ],
+ "methods": "The agent is built on MiniCPM-V (8B parameters) and trained in three stages. Stage I uses 12M samples of OCR and widget-localization data (mixed with 50% general multimodal SFT data) to enhance visual perception. Stage II performs supervised fine-tuning on 55K curated Chinese Android trajectories (470K steps) plus deduplicated English datasets, incorporating 24K GPT-4o-annotated thought traces and another 50% general multimodal SFT mix (6.9M total instances). Stage III applies Group Relative Policy Optimization (GRPO) with asynchronous rollout and load balancing to improve reasoning and plan robustly in unseen GUI scenarios.",
+ "results": "AgentCPM-GUI achieves state-of-the-art results across five public benchmarks (AndroidControl, GUI-Odyssey, AITZ, plus two others mentioned in the paper) and the new Chinese CAGUI benchmark, reaching 96.9% Type-Match and 91.3% Exact-Match on CAGUI.",
+ "limitations": "The training corpus, while multilingual, is still dominated by Android and may not generalize to iOS or desktop GUIs. The primary Chinese coverage relies on a curated set of 30+ apps across eight domains, which may not capture the full diversity of the Chinese mobile ecosystem. The paper does not report latency/battery measurements on real edge devices beyond the compact action-space design. Reinforcement fine-tuning via GRPO requires additional computational resources and may be sensitive to reward-specification choices.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

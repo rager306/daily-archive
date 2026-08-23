@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.16107",
+ "tldr": "The paper proposes the Agent-derived Multi-Specialist Consultation (AMSC) framework, which uses tuning-free LLM-based specialist agents and an adaptive probability distribution fusion method to simulate real-world clinical multi-specialist consultation for automatic diagnosis.",
+ "contributions": [
+  "Introduction of an agent-based multi-specialist consultation model employing open-source LLMs following real-world clinical scenarios, coupled with an adaptive predictive distribution fusion method for disease diagnosis.",
+  "Experimental demonstration that the approach surpasses existing baselines in performance while requiring significantly less parameter updating and training time (up to 95.5% training time savings).",
+  "Comprehensive analysis of symptomatology in automated diagnosis, exploring the differential impacts of various implicit and explicit symptoms on diagnostic results."
+ ],
+ "methods": "The AMSC framework models LLMs as virtual medical practitioners, restructuring automatic diagnosis as a Multiple-Choice Question-Answering (MCQA) task. Open-source LLMs (Baichuan2chat, 13B parameters) are augmented with specialized disease knowledge profiles from the National Institutes of Health to create agent-specialists, each expert in a singular disease domain. These agents generate probabilistic distributions over potential diseases without parameter updating of the underlying LLM. An adaptive probability distribution fusion (APDF) module based on self-attention is then trained to integrate the diagnostic distributions from multiple agent-specialists, analogous to consensus-building among human specialists.",
+ "results": "AMSC outperformed all baseline models (DQN, HRL, PPO, DxFormer, Diaformer, CoAD) on three real-world datasets (MuZhi-4, MuZhi-10, Dxy), with performance improvements of up to 3.2%. Training time was reduced by up to 95.5% compared to baselines, requiring only 0.09 minutes on the DXY dataset. Training parameters were reduced by up to 99.99%, scaling as 3n^4 + n^3 for n diseases. The framework achieved competitive accuracy using only explicit symptoms without implicit symptom inquiry. On MuZhi-4, AMSC with all symptoms achieved 0.773 accuracy vs. 0.632 for the base LLM alone.",
+ "limitations": "The AMSC framework currently does not incorporate implicit symptoms in its diagnostic process, relying solely on explicit symptoms. The study notes that prior work suggests implicit symptoms could enhance performance, indicating this is an area for future improvement. The approach requires careful selection of backbone models with strong Multiple-Choice Symbol Binding (MCSB) capabilities, with PPA values ranging from 0.78 to 0.94 across evaluated datasets. Additionally, the framework is evaluated only on three datasets from pediatric/general practice contexts (MuZhi-4, MuZhi-10, Dxy).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

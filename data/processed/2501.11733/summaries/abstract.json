@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.11733",
+ "tldr": "Mobile-Agent-E is a hierarchical multi-agent framework with a self-evolution module that uses persistent long-term memory (Tips and Shortcuts) to improve mobile task performance across complex, long-horizon, multi-app interactions, achieving a 22.1% absolute improvement over prior state-of-the-art methods.",
+ "contributions": [
+  "A hierarchical multi-agent framework (Manager, Perceptor, Operator, Action Reflector, Notetaker) that disentangles high-level planning from low-level action execution",
+  "A self-evolution module maintaining persistent long-term memory of Tips (general guidance from past experiences) and Shortcuts (reusable executable operation sequences)",
+  "A new benchmark Mobile-Eval-E featuring 25 complex real-world tasks requiring long-horizon multi-app interactions, with twice the expected operations of prior benchmarks",
+  "A new evaluation metric, Satisfaction Score, based on human-written rubrics accounting for both milestone completion and exploratory behaviors"
+ ],
+ "methods": "The authors propose Mobile-Agent-E, a hierarchical multi-agent framework where a Manager handles high-level planning by decomposing tasks into subgoals, while four subordinate agents handle perception, action execution, error verification, and information aggregation. A self-evolution module uses two Experience Reflectors to update Tips and Shortcuts in long-term memory after each task. They introduce Mobile-Eval-E, a benchmark of 25 manually crafted tasks across 5 real-world scenarios, evaluated via dynamic testing on real Android devices using ADB with human evaluation of screenshots and action histories. They compare against baselines including AppAgent, Mobile-Agent-v1, and Mobile-Agent-v2 across three LMM backbones (GPT-4o, Claude-3.5-Sonnet, etc.).",
+ "results": "Mobile-Agent-E achieves an average absolute gain of 22.1% over previous state-of-the-art approaches across three foundation model backbones. The self-evolution module provides a 6.5% absolute improvement compared to no evolution. Shortcuts reduce computational overhead, achieving speeds comparable to prior models with significantly better performance. Prior state-of-the-art methods achieved only about 50-70% of human satisfaction on Mobile-Eval-E. The benchmark features more than twice the number of expected operations per task compared to previous benchmarks, with a significantly higher proportion of tasks requiring multi-app interactions.",
+ "limitations": "The benchmark contains only 25 tasks due to the long-horizon nature requiring manual crafting and expensive human evaluation. The task set is limited to 5 real-world scenarios. Shortcuts are only applicable under specific preconditions (e.g., a text input box must be present), limiting their universal applicability. Some tasks may exit due to termination errors from reaching maximum iterations (40), consecutive errors (3), or repeated actions (3). Real-world tasks often lack binary success flags or ground truth trajectories, requiring human-evaluated Satisfaction Scores rather than automated metrics.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:05Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

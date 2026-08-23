@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.02616",
+ "tldr": "The paper introduces DynamiCare, a dynamic multi-agent framework that models clinical diagnosis as a multi-round interactive loop, supported by MIMIC-Patient, a patient-level dataset derived from MIMIC-III containing 500 records.",
+ "contributions": [
+  "MIMIC-Patient benchmark: a patient-centric dataset derived from MIMIC-III with structured clinical information supporting interactive and open-ended decision-making tasks",
+  "DynamiCare: a novel multi-agent framework that dynamically adjusts specialist team composition and strategy based on newly acquired patient information",
+  "Extensive experiments establishing a benchmark for dynamic medical agents on MIMIC-Patient and cross-evaluation on MEDIQ"
+ ],
+ "methods": "The authors constructed MIMIC-Patient from MIMIC-III by filtering admissions with fewer than five diagnosed diseases, excluding newborns and deceased patients, retaining one admission per patient, and selecting 500 admissions. Clinical data across multiple relational tables was merged into single JSON files using rule-based extraction for semi-structured text and GPT-4 for discharge summaries. DynamiCare operates via a six-step iterative loop: (1) initializing a visit log from basic patient info, (2) a central agent recruiting specialist agents, (3) specialists generating diagnoses or follow-up questions, (4) a Patient System answering queries using rule-based keyword matching with GPT-4.1 fallback, (5) updating the visit log, and (6) dynamic adjustment of the specialist team before repeating.",
+ "results": "The dynamic multi-agent system consistently outperformed the single-agent variant across Hit@K and Rec@K metrics on MIMIC-Patient using both GPT-4.1 and GPT-4o-mini. GPT-4.1 consistently outperformed GPT-4o-mini. Disease-specific top-5 accuracy ranged from 32% to 100% (mean: 63.4%), and top-10 accuracy ranged from 40% to 100% (mean: 71.6%). Higher-performing categories included musculoskeletal diseases and circulatory system disorders. Manual evaluation of 100 patient Q&A sessions by three medical students rated Truthfulness and Relevance on a 3-point scale (scores reported in Table 4). The system was also evaluated on the MEDIQ benchmark using 140 iCraftMD samples and 200 iMedQA cases.",
+ "limitations": "The dataset is limited to 500 patient records. Some ICD-9 disease classes have insufficient sample sizes, affecting per-class performance analysis. Even under the relaxed criterion of matching the first three digits of ICD-9 codes, the classification task remains extremely challenging with over 1,000 possible code groups. The system uses a manual stopping criterion based on a predefined maximum interaction round limit.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

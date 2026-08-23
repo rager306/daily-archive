@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.01886",
+ "tldr": "GMAI-VL-R1 applies reinforcement learning tuning (RLT) using GRPO to enhance Chain-of-Thought reasoning in multimodal medical vision-language models, achieving superior generalization compared to supervised fine-tuning (SFT) across out-of-distribution medical benchmarks.",
+ "contributions": [
+  "Development of GMAI-VL-R1, the first model to directly apply GRPO-based reinforcement learning tuning to a multimodal medical base model (Qwen-VL 7B) to enhance reasoning beyond pattern memorization",
+  "Construction of GMAI-Reasoning10K, a high-quality dataset of 10,000 medical VQA pairs across 12 imaging modalities with detailed Chain-of-Thought annotations derived from GPT-4o and filtered via rejection sampling",
+  "Demonstration that RLT consistently outperforms both baseline and SFT models on out-of-distribution benchmarks while requiring significantly less training data"
+ ],
+ "methods": "The authors curated GMAI-Reasoning10K by collecting multimodal medical data from 95 public datasets spanning 12 imaging modalities, generating multiple-choice questions via GPT, and applying rejection sampling to retain high-quality samples. Chain-of-Thought reasoning instructions were produced by prompting GPT-4o for each VQA pair, followed by filtering. The RLT pipeline is based on Group Relative Policy Optimization (GRPO), where the model samples k responses per input, evaluates them using a reward function combining accuracy, format correctness, and repetition penalty rewards, computes advantage via group-relative normalization, and updates the policy with a KL divergence regularization term (beta=0.04). Training runs for one epoch with 7 generations per group.",
+ "results": "On MMMU, GMAI-VL-R1 achieved 57.33% accuracy (+2.00% over baseline). On MMMU-pro, it reached 34.03% (+5.56%). On GMAI-MMBench val and test, it scored 43.14% (+3.12%) and 43.84% (+3.25%), remaining 3.48% and 7.72% higher than SFT respectively. It obtained 23.80% (+3.50%) on MedXpertQA-MM and 61.01% (+2.60%) on OmniMedVQA, though OmniMedVQA remained below SFT's 66.34%. SFT degraded on out-of-distribution GMAI-MMBench from 40.02% to 39.65% (val) and 40.59% to 36.12% (test), while RLT improved over baseline across all OOD benchmarks.",
+ "limitations": "RLT underperforms SFT on in-distribution tasks such as OmniMedVQA (61.01% vs 66.34%), suggesting it may not fully capitalize on memorization for familiar data distributions. The model was built on a 7B parameter base, limiting direct comparison with larger state-of-the-art models (e.g., HuatuoVision 34B, MedDR 40B) that use millions of SFT samples. The paper acknowledges that SFT still achieves strong in-distribution performance by leveraging spurious correlations.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

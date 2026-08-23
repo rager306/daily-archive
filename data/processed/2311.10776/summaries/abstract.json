@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.10776",
+ "tldr": "Chemist-X is a three-phase LLM-powered AI agent that uses retrieval-augmented generation to recommend optimal reaction conditions for chemical synthesis and autonomously validates them via controlled wet-lab experiments.",
+ "contributions": [
+  "A three-phase retrieve-recommend-validate pipeline for automated reaction condition optimization",
+  "A top match slice (TMS) in-context learning scheme that improves LLM API code generation accuracy and efficiency",
+  "A novel coarse-label supervised contrastive learning (CL-SCL) fingerprint combining chemistry-informed molecular graphs (CIMG) with contrastive learning for superior RCO recommendations",
+  "A general computer control framework enabling LLM-driven operation of wet-lab platforms without predefined APIs"
+ ],
+ "methods": "Chemist-X operates in three phases. Phase One uses hierarchical matching with exact SMILES lookup and PubChem similarity search, guided by LLM-generated Python code enhanced by top match slice in-context learning (TMS-ICL). Phase Two employs a novel CL-SCL fingerprint fed into ML models (random forest, tabular transformer, XGBoost) to rank promising reaction conditions from a refined chemical subspace. Phase Three uses an LLM-controlled computer automation framework (pyautogui, keyframe detection, OCR) to operate wet-lab equipment such as the iChemFoundry platform and Unchained Lab for autonomous experiment execution and validation.",
+ "results": "In Phase One, TMS-ICL achieved a markedly higher code generation success rate than zero-shot, full-document ICL, and random-slice ICL across ten GPT-4 trials. In Phase Two benchmarking, the CL-SCL fingerprint consistently outperformed DRFP and Mordred fingerprints: with batch size 5 and tabular transformer, µ5 reached 91.363% vs. 89.346% (DRFP) and 85.534% (Mordred); with random forest, µ5 reached 86.551% vs. 88.280% (DRFP) and 83.588% (Mordred). Ablation studies showed removing the CL-SCL network reduced µ5 to 82.273% (TT) and 76.140% (RF), while removing CIMG encoding reduced it to 80.232% (TT) and 81.186% (RF). Phase Three successfully automated a Suzuki-Miyaura coupling on the iChemFoundry platform with autonomous solid dosing, inert gas protection, synthesis, and HPLC characterization.",
+ "limitations": "The wet-lab validation was demonstrated on only a single representative reaction type (Suzuki-Miyaura coupling). The CL-SCL fingerprint and overall framework were primarily validated on the Buchwald-Hartwig training dataset and Suzuki-Miyaura test dataset, limiting evidence of cross-reaction generalization. The system relies on available database APIs and CAD tools, which may not cover all reaction types or bespoke laboratory equipment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.16291",
+ "tldr": "VOYAGER is the first LLM-powered embodied lifelong learning agent in Minecraft that continuously explores, acquires diverse skills, and makes novel discoveries without human intervention by using an automatic curriculum, an ever-growing skill library, and an iterative prompting mechanism with environment feedback.",
+ "contributions": [
+  "Introduction of VOYAGER, the first LLM-powered embodied lifelong learning agent in Minecraft.",
+  "An automatic curriculum that maximizes exploration by proposing progressively harder tasks based on the agent's state and progress.",
+  "An ever-growing skill library of executable code for storing, retrieving, and composing complex behaviors.",
+  "An iterative prompting mechanism that incorporates environment feedback, execution errors, and self-verification for program improvement.",
+  "Demonstration of strong in-context lifelong learning capability and exceptional proficiency in Minecraft, outperforming prior SOTA baselines."
+ ],
+ "methods": "VOYAGER uses GPT-4 via blackbox queries to interact with a Minecraft simulation built on MineDojo and Mineflayer JavaScript APIs. An automatic curriculum prompts GPT-4 to generate diverse tasks based on the agent's current state, exploration progress, and goal of discovering many items. A skill library stores executable code programs indexed by embeddings of their descriptions, enabling retrieval and composition of skills. An iterative prompting mechanism refines generated code through three feedback types: environment feedback (e.g., missing resources), execution errors from a code interpreter, and self-verification by another GPT-4 agent that checks task success and provides critiques if failed.",
+ "results": "VOYAGER obtained 3.3× more unique items (63 items within 160 prompting iterations) and traveled 2.3× longer distances than baselines. It unlocked key tech tree milestones up to 15.3× faster for wooden tools, 8.5× faster for stone tools, and 6.4× faster for iron tools, and was the only method to unlock diamond tools. In zero-shot generalization tests on unseen tasks in a new world, VOYAGER consistently solved all tasks (diamond pickaxe, golden sword, lava bucket, compass) within 50 iterations, while baselines failed. Ablation studies showed that removing the automatic curriculum dropped discovered items by 93%, removing the skill library caused later-stage plateauing, and removing self-verification dropped item count by 73%. Using GPT-4 for code generation yielded 5.7× more unique items than GPT-3.5.",
+ "limitations": [
+  "VOYAGER does not support visual perception because the GPT-4 API used was text-only at the time of writing.",
+  "The approach relies on GPT-4 blackbox queries and in-context learning, which may incur high API costs.",
+  "Baselines (ReAct, Reflexion, AutoGPT) were originally designed for NLP tasks and had to be re-interpreted for Minecraft, potentially limiting direct comparability.",
+  "The paper notes that VOYAGER could get stuck after 4 rounds of code generation, requiring the curriculum to propose another task."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

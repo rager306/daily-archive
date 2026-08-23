@@ -1,0 +1,28 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.10003",
+ "tldr": "The paper combines a ReAct-style LLM agent with a ReST-like iterative self-improvement method, showing that two iterations of AI-feedback-driven fine-tuning on reasoning trajectories produces a small fine-tuned model (two orders of magnitude fewer parameters) with performance comparable to the large prompted teacher model on compositional question-answering benchmarks.",
+ "contributions": [
+  "Building a ReAct agent with self-critique (relevance and grounding self-checks) for long-form question answering",
+  "Defining a proxy evaluation metric based on Bamboogle and newly constructed BamTwoogle datasets with strong emphasis on auto-eval",
+  "Demonstrating effective agent improvement through ReST-style iterative fine-tuning on reasoning traces using purely stepwise AI feedback without human-labeled training data",
+  "Showing synthetic data from iterative self-improvement can distill the agent into models one to two orders of magnitude smaller with comparable performance"
+ ],
+ "methods": "The authors build a ReAct-style Search Agent that interleaves chain-of-thought reasoning with web search tool calls and two self-revision steps (relevance and grounding checks), using Python-code-formatted few-shot prompts. They start from a prompted PaLM 2-L model and generate multi-step trajectories over 2000 questions from HotpotQA and Eli5-derived datasets. For iterative improvement, they sample multiple trajectories per step, rank them using an instruction-tuned PaLM 2-L as a reward model, fine-tune the model (full fine-tuning) on the resulting mixture, and repeat the process for up to two iterations. Smaller models (XS, S) are fine-tuned on the same synthetic trajectories for self-distillation. Evaluation uses Bamboogle (125 questions) and BamTwoogle (100 questions) with LLM-based auto-eval.",
+ "results": "On Bamboogle auto-eval (mean accuracy over 10 runs): the pretrained prompted PaLM 2-L achieved 71.5±2.2%, which improved to 74.0±3.3% after 1st iteration and 76.1±1.3% after 2nd iteration. For the PaLM 2-S model, performance went from 56.6±3.8% (pilot) to 61.9±1.9% (1st gen) to 69.7±1.3% (2nd gen). For the PaLM 2-XS model, performance went from 44.7±3.1% (pilot) to 54.4±3.6% (1st gen) to 65.9±2.6% (2nd gen). Auto-eval showed Pearson correlation of 0.98 and Spearman correlation of 0.83 with human evaluations. Using two trajectories per question gave a 2.2% gain, and quality improvements (1st to 2nd gen) yielded a 9% gain while keeping data size roughly similar. Self-critique steps provided a small positive boost of approximately 0.5-1.0%.",
+ "limitations": [
+  "Computationally and time constrained",
+  "Manually constructed prompts",
+  "Small evaluation datasets (Bamboogle: 125 questions, BamTwoogle: 100 questions)",
+  "Limited set of models tested (only PaLM 2 XS, S, L)",
+  "Only a single tool (web search) used",
+  "Manual filtering of pilot data resulted in a small performance drop (2.5%) versus unfiltered data",
+  "No testing of additional iterations beyond 2, no exploration of unseen tool generalization"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

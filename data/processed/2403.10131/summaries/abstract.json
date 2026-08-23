@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.10131",
+ "tldr": "RAFT (Retrieval-Augmented Fine Tuning) is a post-training recipe that fine-tunes LLMs to effectively use retrieved documents in domain-specific RAG settings by training them to ignore distractor documents, cite relevant text verbatim, and produce chain-of-thought reasoning.",
+ "contributions": [
+  "Proposes RAFT, a novel fine-tuning recipe that combines instruction fine-tuning with retrieval-augmented generation for domain-specific open-book settings",
+  "Demonstrates that training with a mixture of golden and distractor documents (without always including the golden document) improves robustness to retrieval imperfections",
+  "Shows that chain-of-thought reasoning with verbatim citations significantly enhances model performance",
+  "Evaluates RAFT across PubMed, HotpotQA, and Gorilla (HuggingFace, Torch Hub, TensorFlow Hub) datasets, consistently outperforming baselines"
+ ],
+ "methods": "RAFT fine-tunes LLaMA-2-7B on question-answer pairs where the model receives a question along with k retrieved documents (including one golden document D* containing the answer and distractor documents D_i). For P% of training data, the golden document is included; for (1-P)% of data, only distractor documents are provided, forcing the model to sometimes rely on memorization. Answers are generated as chain-of-thought responses that cite verbatim relevant passages using ##begin_quote## and ##end_quote## markers. The approach is tested across PubMed QA (biomedical), HotpotQA (multi-hop Wikipedia), and Gorilla API benchmarks.",
+ "results": "RAFT-7B consistently outperforms all baselines across datasets. On HotpotQA, RAFT achieved 35.28% vs DSF+RAG's 4.41% (a 30.87% gain). On HuggingFace, RAFT scored 74.00% vs DSF+RAG's 42.59% (31.41% gain). On Torch Hub, RAFT scored 84.95% vs DSF+RAG's 82.80%. RAFT surpassed GPT-3.5+RAG on HuggingFace (74.00% vs 29.08%) and Torch Hub (84.95% vs 60.21%). On PubMed QA, RAFT scored 73.30%, comparable to DSF+RAG's 71.6%, with no significant gain due to the binary yes/no nature of questions. Optimal P% varied: 40% for NQ, 60% for TriviaQA, and 100% for HotpotQA.",
+ "limitations": [
+  "On PubMed QA (binary yes/no questions), RAFT showed no significant improvement over DSF+RAG, suggesting limited benefit for this question type",
+  "The optimal proportion P% of golden documents at training time varies across datasets (40%-100%), meaning the approach requires dataset-specific tuning",
+  "RAFT's performance still depends on retriever quality at test time, as it operates in an open-book setting with top-k retrieved documents",
+  "The paper notes that GPT-3.5 remains a strong baseline on some datasets (e.g., PubMed), indicating room for further improvement"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:59Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

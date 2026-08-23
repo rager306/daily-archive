@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.06229",
+ "tldr": "AGENT KB is a universal, cross-framework memory infrastructure that enables AI agents to share problem-solving experiences across heterogeneous agent frameworks without retraining, using hybrid retrieval and a disagreement gate to prevent knowledge interference.",
+ "contributions": [
+  "First cross-framework plug-and-play knowledge base integrating with four open-source agent frameworks (smolagents, OWL, SWE-Agent, OpenHands) without retraining or architectural modifications",
+  "Novel disagreement gate mechanism that ensures only coherent knowledge updates are integrated, addressing knowledge interference in cross-framework transfer",
+  "Two-stage hybrid retrieval system combining planning guidance and feedback-driven refinement",
+  "Comprehensive empirical validation across four benchmarks (GAIA, Humanity's Last Exam, GPQA, SWE-bench) demonstrating consistent gains across diverse model families"
+ ],
+ "methods": "AGENT KB transforms heterogeneous agent execution trajectories into structured experience units E = ⟨π, γ, S, C⟩ via human-guided abstraction and few-shot prompting, storing them in a framework-agnostic knowledge base. At inference time, a two-stage Reason-Retrieve-Refine cycle operates: (1) the planning stage retrieves cross-domain workflows using hybrid BM25+semantic retrieval to seed initial plans, and (2) the feedback stage analyzes execution traces to retrieve diagnostic fixes for errors. A disagreement gate G(ρ, ρ') = 1[cos(ϕ(ρ), ϕ(ρ')) ≥ 0.8] ensures refined plans remain sufficiently aligned with original plans before application. The knowledge base self-evolves through deduplication (similarity threshold τ=0.8) and adaptive eviction based on a learned utility score balancing recency, frequency, and transferability.",
+ "results": "On GAIA with smolagents and GPT-4.1: pass@3 improved from 55.2% to 73.9% (+18.7pp), with Level 2 rising from 53.5% to 73.3% (+19.8pp). With Claude-3.7, pass@3 reached 75.2%. On SWE-bench Lite with OpenHands and GPT-4.1: pass@1 improved from 24.3% to 28.3% (+4.0pp). With Claude-3.7, SWE-bench improved from 30.0% to 51.0% (+21.0pp at 50 iterations). On HLE (Bio/Chem), OpenHands improved from 9.5% to 14.1% at pass@3. On GPQA, OpenHands with GPT-4.1 improved from 62.6% to 72.7%. OWL with GPT-4o improved from 43.6% to 63.6% (+20.0pp) on GAIA. Automatically distilled experiences matched hand-curated ones in ablations.",
+ "limitations": "The system's effectiveness depends on the quality and coverage of the initial seed trajectories; experiences must be framework-agnostically abstractable, which may filter out framework-specific nuances. The disagreement gate (β=0.8) may reject useful but semantically divergent cross-framework experiences. Memory eviction relies on learned utility scores that may not perfectly capture long-term transferability. Evaluation was conducted with top-k=3 and temperature=1.0 as default settings, which may not be optimal across all scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

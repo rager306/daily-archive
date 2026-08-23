@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.02950",
+ "tldr": "LiteWebAgent is an open-source suite for VLM-based web agent applications that provides an extensible core framework with planning, memory, and tree search, along with production-ready deployments via a Vercel-based web app and a Chrome extension.",
+ "contributions": [
+  "An extensible agent framework that decouples action generation from action grounding, supporting FunctionCallingAgents and PromptAgents",
+  "Integration of agent planning, agent workflow memory (AWM), and tree search (BFS, DFS, MCTS) into the framework",
+  "Asynchronous APIs integrating with FastAPI for minimal-effort serverless deployment on platforms like Vercel",
+  "Two deployed systems: a production-ready Vercel-based web application with a remote browser, and a Chrome extension controlling an existing browser via CDP"
+ ],
+ "methods": "The authors designed a VLM-based web agent framework that decouples action generation from action grounding: the policy generates natural language actions via greedy decoding using function calling or prompting, then a separate grounding step transforms actions into executable Playwright code using webpage observations (Accessibility Tree, DOM, screenshots, SOM). They integrated agent planning (basic, high-level, and context-aware variants) and Agent Workflow Memory into the planning/replanning loop. For tree search, they implemented BFS, DFS, and MCTS where MCTS uses a VLM-based value function to score trajectories in [0,1] and balances exploitation/exploration via UCB selection.",
+ "results": "The paper presents a fully functional open-source suite with a deployed frontend at lite-web-agent.vercel.app and code at github.com/PathOnAI/LiteWebAgent. The Vercel-based web app provides users with an agent-controlled remote browser via iframe, with voice integration (TTS/ASR via Deepgram), Set of Marks highlighting, and real-time visualization of intermediate steps. The Chrome extension controls existing browsers via CDP, preserving user sign-in state. The framework supports both synchronous and asynchronous APIs with serverless deployment.",
+ "limitations": "The paper is primarily a system/framework description with no quantitative benchmark results reported. It acknowledges future work is needed for evaluation modules with new metrics, extension to multi-agent frameworks, and a production-ready web agent with tree search. The current implementation uses a simple baseline (recursive function calling) as the default approach.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

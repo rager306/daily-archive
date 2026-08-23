@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1506.02438",
+ "tldr": "The paper introduces Generalized Advantage Estimation (GAE), a variance reduction scheme for policy gradients that balances bias and variance via parameters γ and λ, combined with trust region optimization for both policy and value function neural networks, enabling effective high-dimensional continuous control.",
+ "contributions": [
+  "Novel analysis and justification for generalized advantage estimation (GAE), applicable in both online and batch settings, building on prior work by Kimura & Kobayashi (1998) and Wawrzyński (2009)",
+  "Proposal of trust region optimization for value function training, described as a robust and efficient way to train neural network value functions with thousands of parameters",
+  "An algorithm combining GAE and trust region methods that empirically learns neural network policies for challenging 3D locomotion tasks, extending the state of the art in reinforcement learning for high-dimensional continuous control"
+ ],
+ "methods": "The authors propose GAE(γ,λ), an exponentially-weighted estimator of the advantage function defined as the discounted sum of TD residuals: Â_GAE = Σ(γλ)^l δ_V_{t+l}. The parameter γ acts as a variance reduction factor (introducing bias when <1), while λ controls the bias-variance tradeoff in the advantage estimate. Both policy and value functions are represented by neural networks with over 10^4 parameters each. Policy optimization uses trust region policy optimization (TRPO) with KL divergence constraints, and value function optimization uses a trust region method solved via conjugate gradients with a Gauss-Newton Hessian approximation.",
+ "results": "The algorithm learned complex running gaits for bipedal and quadrupedal simulated robots in 3D locomotion tasks, and learned a policy for getting a biped to stand up from lying on the ground. Policies perform torque-level control of simulated 3D robots with up to 33 state dimensions and 10 actuators. The amount of simulated experience required for 3D biped tasks corresponds to 1-2 weeks of real time. Unlike prior work using hand-crafted policy representations, their neural network policies map directly from raw kinematics to joint torques. The approach is fully model-free.",
+ "limitations": "Using γ < 1 introduces bias into the policy gradient estimate regardless of value function accuracy. Using λ < 1 introduces bias when the value function is inaccurate. The approach requires 1-2 weeks of real simulated time for learning on 3D bipeds. The experiments are conducted in simulation only, with no mention of real-world robot deployment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

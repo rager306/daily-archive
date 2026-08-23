@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2304.11477",
+ "tldr": "LLM+P is a framework that combines large language models with classical planners to solve long-horizon planning problems correctly, significantly outperforming LLMs used alone.",
+ "contributions": [
+  "Introducing LLM+P, the first framework incorporating classical planners into LLMs for natural language planning",
+  "Defining a diverse benchmark set of seven robot planning domains with 20 automatically generated tasks each",
+  "Demonstrating LLM+P enables a home robot to solve complex manipulation tasks specified in natural language"
+ ],
+ "methods": "LLM+P takes a natural language description of a planning problem and first converts it into PDDL format using an LLM with in-context learning (providing a simple example problem-PDDL pair as context). The generated PDDL problem file is then fed into classical planners (FAST-DOWNWARD using SEQ-OPT-FDSS-1 for guaranteed optimal plans and LAMA as a sub-optimal fallback) with a maximum search time of 200 seconds. Finally, the LLM translates the PDDL plan back into natural language. Baselines compared include LLM-AS-P (direct LLM planning without a planner) and Tree of Thoughts (TOT).",
+ "results": "LLM+P achieved high success rates across domains: Blocksworld 90%, Grippers 95% (100% for sub-optimal), Storage 85%, Barman 20% (100% sub-optimal), Tyreworld 10% (90% sub-optimal), and Termes 20%. In contrast, LLM-AS-P and TOT performed poorly, with most domains showing 0-25% success. LLM-AS-P failed primarily because it lacks ability to reason about preconditions (e.g., cannot track ON/CLEAR properties in Blocksworld, fails to clean shot glasses in Barman).",
+ "limitations": [
+  "The LLM does not recognize when a prompt is suitable for the LLM+P pipeline; a robot must know when to trigger it",
+  "Requires a human expert to provide the domain PDDL file (automatic generation of domain descriptions is left as future work)",
+  "Some domains with complex spatial relationships (FloorTile) remain unsolved",
+  "Several domains timed out with optimal planners, requiring sub-optimal fallback"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

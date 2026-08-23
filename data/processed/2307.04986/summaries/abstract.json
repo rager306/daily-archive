@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2307.04986",
+ "tldr": "This paper introduces a generative agent-based epidemic model (GABM) where each agent uses a large language model (ChatGPT) to endogenously reason and decide on behaviors like self-isolation and quarantine, rather than following predefined decision rules.",
+ "contributions": [
+  "A novel generative agent-based modeling (GABM) paradigm that empowers agents with LLM-driven reasoning and decision-making in epidemic contexts",
+  "Demonstration that generative agents mimic real-world behaviors such as self-quarantine when sick and self-isolation when case counts rise",
+  "Empirical evidence that agent interactions produce emergent epidemic patterns including multiple waves and endemic periods, and collectively flatten the epidemic curve",
+  "Individual-level statistical analysis showing how personality traits, age, gender, and health information influence agents' stay-home decisions"
+ ],
+ "methods": "The authors built a generative agent-based model (GABM) combining a large language model (gpt-3.5turbo-0301 via OpenAI API) for agent reasoning with an agent-based disease spread model implemented in Python using the Mesa library. Each agent was given a persona with Big Five personality traits, age (18–64), and memories fed into prompts before daily decisions on whether to go outside. Three experimental conditions were tested: base run (no feedback), self-health feedback (agents informed of symptoms), and full feedback (agents also informed of daily case percentages). Simulations were run for n=100 agents (10 repeats per condition) and n=1,000 agents (across R0 values of 2, 2.5, and 3). Logit regression models were used to analyze agent decisions, with fixed and random effects for personality, health, and societal information.",
+ "results": "In the base run with no feedback, the model replicated a classic single bell-shaped epidemic curve. With self-health feedback, agents with symptoms self-quarantined, reducing mobility and the epidemic peak. With full feedback, agents self-isolated in response to rising cases, substantially flattening the epidemic curve and producing multiple waves (R0=2 and 2.5) or a single wave (R0=3). Herd immunity was achieved at much lower cumulative case counts than the full population. The correlation between past daily cases and agents' decision to go out followed a negative exponential relationship. Regression analysis (Table 1, N=66,960) showed light cough (coeff 5.69, p<0.001) and fever & cough (coeff 5.42, p<0.001) significantly increased staying-home likelihood. Societal health information had a strong positive effect (coeff 3.97, p<0.001) with a diminishing nonlinear response (squared term: -0.65, p<0.001). Conscientiousness (-0.70, p<0.001), emotional stability (-0.59, p<0.01), and intellect (-0.87, p<0.001) significantly predicted staying home, as did gender (-0.84, p<0.001). Pseudo R² improved from 0.12 to 0.46 with added variables.",
+ "limitations": "The study is computationally intensive, with large-scale runs (n=1,000) taking approximately 80 hours each. The model relies on a fictional virus (Catasat) and town (Dewberry Hollow) to avoid LLM biases from real-world events. Decisions are limited to a single behavioral dimension (going to work vs. staying home) and may not capture the full complexity of human responses. The approach depends on the LLM's pretrained knowledge, which may embed cultural or temporal biases. The simulated population sizes, while scaled up to 1,000, remain small relative to real populations. The disease duration is fixed at 6 days with simplified symptomatic progression.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

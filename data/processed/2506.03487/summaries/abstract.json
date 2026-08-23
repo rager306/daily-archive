@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.03487",
+ "tldr": "ProRank is a novel two-stage training approach that combines reinforcement learning prompt warmup (GRPO) with fine-grained score learning to enable small language models to achieve superior document reranking performance, with its 0.5B variant outperforming larger LLM reranking models on the BEIR benchmark.",
+ "contributions": [
+  "Quantitative analysis revealing two key limitations of SLMs for document reranking: narrow representation space and struggle with understanding task prompts without fine-tuning.",
+  "A novel two-stage approach, ProRank, combining reinforcement learning (GRPO) for coarse-grained binary relevance scoring with fine-grained score learning via token logit comparison.",
+  "Extensive evaluations demonstrating ProRank achieves superior reranking performance across English (BEIR), Chinese (CMTEB), and code retrieval (COSQA) benchmarks, with 0.5B ProRank surpassing the 32B finetuned LLM model on BEIR."
+ ],
+ "methods": "The authors propose ProRank, a two-stage approach for SLM-based document reranking using the Cross-Encoder paradigm. In Stage 1, reinforcement learning via GRPO (Group Relative Policy Optimization) is used to teach SLMs to understand task prompts and generate correctly formatted binary relevance scores, optimizing dual rewards for format correctness and relevance accuracy. In Stage 2, fine-grained score learning computes relative scores as Δ = TokenLogit(1) - TokenLogit(0) from the model's last token logits, trained by minimizing binary cross-entropy loss against ground truth labels. The approach uses Qwen as the backbone with LoRA fine-tuning (lora_r=32, lora_alpha=32).",
+ "results": "On the BEIR benchmark, the 1.5B ProRank with fine-grained scoring achieves an average NDCG@10 of 55.93, outperforming all baselines including bge-gemma (2.5B) at 53.42 and mxbai (0.4B) at 50.61. The 0.5B ProRank with fine-grained scoring achieves 55.35 average NDCG@10, surpassing even powerful proprietary models. On additional datasets (Chinese and code retrieval), the 0.5B and 1.5B ProRank deliver average gains of 1.93% and 2.51% respectively over bge-gemma. Ablation shows reinforcement learning prompt warmup provides a 2.04% improvement over training without it, and fine-grained scoring consistently outperforms coarse-grained scoring. GRPO-based prompt warmup outperforms supervised fine-tuning (SFT).",
+ "limitations": "Performance degrades at very large top-k values (e.g., 5,000) due to increased noise from non-relevant documents, indicating sensitivity to candidate pool size. The two-stage training process adds complexity compared to single-stage approaches. Marginal gains are observed beyond top-k=100, suggesting diminishing returns from larger candidate pools.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

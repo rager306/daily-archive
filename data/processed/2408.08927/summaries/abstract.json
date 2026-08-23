@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.08927",
+ "tldr": "VerilogCoder is a multi-AI agent system that autonomously generates syntactically and functionally correct Verilog code using a Task and Circuit Relation Graph (TCRG) planner and an AST-based waveform tracing tool for debugging, achieving 94.2% pass rate on VerilogEval-Human v2.",
+ "contributions": [
+  "First exploration of multi-AI agents for autonomous Verilog code completion including syntax and functional correction",
+  "Novel TCRG-based task planner that creates step-by-step sub-tasks with signal, state transition, and example information",
+  "Novel AST-based waveform tracing tool to assist LLM agents in fixing functional correctness errors",
+  "Achieves 94.2% pass rate on VerilogEval-Human v2, surpassing state-of-the-art by 33.9%"
+ ],
+ "methods": "VerilogCoder uses multiple AI agents operating through the ReAct technique with collaborative Verilog tools (syntax checker, simulator, and AST-based waveform tracer). A TCRG-based task planner decomposes module descriptions into sub-tasks enriched with signal definitions, state transitions, and examples. Code agents write Verilog while a debug agent uses the AST-WT tool to back-trace mismatched signals and fix functional errors iteratively.",
+ "results": "VerilogCoder achieves a 94.2% pass rate (including syntax and functional correctness) on VerilogEval-Human v2 benchmark, surpassing state-of-the-art methods by 33.9%. The average token count is approximately 13x more than the GPT-4 Turbo baseline. On average, the code agent makes 2.37 simulator calls and 1.37 AST-WT calls per problem.",
+ "limitations": "The approach requires significantly more tokens (approximately 13x more than GPT-4 Turbo baseline). The system relies on external toolkits (iverilog simulator) and a provided golden testbench for functional verification. Performance depends on the quality of the TCRG extraction and retrieval process.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

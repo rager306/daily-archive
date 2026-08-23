@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.07496",
+ "tldr": "TEXTGRAD is a framework that performs automatic differentiation via text by backpropagating natural language feedback from LLMs through computation graphs to optimize components of compound AI systems, including code, prompts, molecules, and treatment plans.",
+ "contributions": [
+  "Introduces TEXTGRAD, a framework performing automatic \"differentiation\" via text using LLM-provided feedback as textual gradients",
+  "Demonstrates generalization across diverse domains: coding, QA, reasoning, chemistry, and medicine without modifying the framework",
+  "Opensources the framework following PyTorch's syntax and abstraction"
+ ],
+ "methods": "TEXTGRAD transforms AI systems into computation graphs where variables (code, prompts, molecules, etc.) are optimized by backpropagating natural language feedback collected from LLMs. The gradient operator ∇_LLM takes a variable and its downstream loss feedback to produce textual criticism describing how to improve the variable. Textual Gradient Descent (TGD) then updates variables by prompting an LLM to incorporate criticisms. The framework supports batch optimization, constrained optimization via natural language constraints, and momentum-based updates, with gradient computation following the chain rule across arbitrary functions including LLM API calls, simulators, and numerical solvers.",
+ "results": "TEXTGRAD improves GPT-4o zero-shot accuracy on Google-Proof Question Answering from 51% to 55%. On LeetCode Hard coding problems, TEXTGRAD achieves 36% completion rate (0.36 ± 0.018) versus 31% for Reflexion with demonstrations and 23% for zero-shot GPT-4o baseline. It yields a 20% relative performance gain in optimizing coding solutions. It also designs new druglike small molecules with desirable in silico binding and creates radiation oncology treatment plans with high specificity, pushing GPT-3.5 performance close to GPT-4 on reasoning tasks.",
+ "limitations": "Reliability of natural language constraints can reduce when too many constraints are imposed. The framework's assumption that state-of-the-art LLMs can reason about individual components may limit effectiveness for very small or specialized models. The paper notes results averaged over 5 seeds, suggesting variability. Additional limitations are discussed in the truncated sections.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.22844",
+ "tldr": "RLVMR addresses the 'inefficient exploration' problem in long-horizon agents by integrating dense, process-level supervision through verifiable meta-reasoning rewards, significantly improving generalization to unseen tasks. A 7B model achieves 83.6% success rate on the hardest unseen ALFWorld split.",
+ "contributions": [
+  "Identified and formulated the inefficient exploration problem, where outcome-only RL reinforces flawed or redundant reasoning paths",
+  "Proposed RLVMR, a novel RL framework rewarding verifiable meta-reasoning behaviors (planning, exploration, reflection, monitoring) via lightweight programmatic rules",
+  "Achieved state-of-the-art results on ALFWorld and ScienceWorld benchmarks, including 83.6% on the unseen-L2 split with a 7B model",
+  "Demonstrated that a 1.5B RLVMR model (87.9% on unseen-L1 ALFWorld) outperforms much larger models like GPT-4o (66.0%)",
+  "Provided in-depth analysis confirming gains stem from reduced repetitive actions and enhanced error recovery"
+ ],
+ "methods": "RLVMR extends the ReAct framework with four XML-style meta-reasoning tags: <planning>, <explore>, <reflection>, and <monitor>. Training begins with a cold-start SFT phase on 200 trajectories annotated by a teacher model (e.g., GPT-4) to learn tag syntax. During RL, a composite reward combines sparse outcome rewards with dense process-level rewards: planning rewards upon trajectory success, exploration rewards for targeting new objects/locations, and reflection rewards when followed by corrective action after failures. The framework uses a critic-free policy gradient method (GRPO) for optimization.",
+ "results": "On ALFWorld, the 7B RLVMR model achieves 91.4% on seen tasks (L0), 77.3% on unseen-L1 (L1), and 83.6% on unseen-L2 (L2), surpassing the next-best GiGPO baseline by 16.4 percentage points on L2. On ScienceWorld, it reaches 67.2% on seen tasks. The 1.5B RLVMR model achieves 87.9% on L1, outperforming GPT-4o at 66.0%. By contrast, vanilla GRPO on the 7B model yields only 52.3% on L2 with a 31.2% repetitive action rate, and SFT drops to 37.5% on L2 with 24.5% repetitive actions.",
+ "limitations": "SFT produces efficient but brittle policies that fail to generalize (success drops from 63.3% on L0 to 37.5% on L2 for 7B). GRPO improves generalization but fosters inefficient exploration with high repetitive action rates (31.2% on L2). Scaling model size alone does not resolve reasoning deficiencies—a larger 7B GRPO model exhibits higher repetitive action rates than its 1.5B counterpart. The paper text is truncated, so additional limitations may exist beyond what is stated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:53Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

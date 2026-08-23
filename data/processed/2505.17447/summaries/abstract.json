@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.17447",
+ "tldr": "LeTS is an RL framework that hybridizes rule-based stepwise process rewards with outcome-level rewards to improve think-and-search reasoning in retrieval-augmented generation, reducing redundant/irrelevant searches while boosting accuracy.",
+ "contributions": [
+  "Proposes LeTS, a novel RL framework for RAG that first integrates rule-based process reward with outcome-level reward under think-and-search reasoning scenarios.",
+  "Achieves 2.61% average performance gain across RAG benchmarks, with average generated tokens reduced by 11.15% and search times reduced by 30.85%.",
+  "Demonstrates the potential of process- and outcome-level reward hybridization for boosting LLM reasoning via RL in other scenarios."
+ ],
+ "methods": "Building on Group Relative Policy Optimization (GRPO), LeTS introduces two rule-based process-level reward modules: (1) a rollout-level knowledge redundancy reward using Jaccard similarity to penalize retrieving already-covered documents within a rollout, and (2) a group-level knowledge match reward using the Kuhn-Munkres algorithm to align underperforming rollouts with outperforming ones for stepwise supervision. These process rewards are hybridized with outcome-level rewards through stepwise outcome-level advantage rescaling, modulating the outcome advantage at each reasoning step by a scaled normalized process reward. Models were trained on the MusiQue training set for 2 epochs using Qwen2.5-7B and Qwen2.5-3B backbones.",
+ "results": "LeTS-Qwen-7B-Instruct achieves average improvements of 2.61% (EM) and 2.33% (LJ) over previous RL-based methods on multi-hop benchmarks. On single-hop benchmarks, LeTS outperforms ReSearch with an average of 50.37 vs 49.72. LeTS trained on Qwen2.5-7B-Base achieves performance comparable to methods trained on Qwen2.5-7B-Instruct. On HotpotQA LJ, LeTS-Qwen-7B-Instruct scored 53.75 vs ReSearch-Qwen-7B-Instruct's 51.42; on Bamboogle EM, 41.56 vs 38.95. The average number of generated tokens and search times were reduced by 11.15% and 30.85%, respectively.",
+ "limitations": "Process-level reward is omitted for rollouts with wrong format. The knowledge match reward requires at least one outperforming rollout (exact-match answer) to be available; if none exists, the KM reward is omitted for that group. Qwen2.5-3B-Base was excluded from analysis because reinforcement learning on it quickly degenerates due to reward hacking, resulting in behavior similar to vanilla R1-style methods without retrieval.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

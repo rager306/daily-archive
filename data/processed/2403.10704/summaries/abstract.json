@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.10704",
+ "tldr": "Parameter Efficient Reinforcement Learning from Human Feedback (PE-RLHF) using LoRA achieves performance comparable to standard RLHF while significantly reducing training time (up to 90% faster for reward models, 30% faster for RL) and memory footprint (up to 50% reduction for reward models, 27% for RL).",
+ "contributions": [
+  "First comprehensive benchmark of PE-RLHF against standard RLHF across six diverse datasets and five tasks",
+  "In-depth ablation studies examining the influence of LoRA rank and model size on reward modeling and RL policy training",
+  "Empirical demonstration of substantial memory and training time reductions achieved by PE-RLHF"
+ ],
+ "methods": "The authors evaluate PE-RLHF, which applies LoRA (Low-Rank Adaptation) to fine-tune both the reward model and the reinforcement learning policy, keeping the language model backbone frozen and training only the LoRA adapters. They benchmark across six datasets spanning text summarization (Reddit TL;DR, BOLT Message), harmless response generation (Anthropic-HH), helpful response generation (Stanford Human Preference), UI automation (AndroidControl), and visual question answering (VQAv2). Experiments use PaLM 2 (XXS, XS, S, L) and Gemini Pro models, with reward models evaluated by pairwise accuracy and policies evaluated by a PaLM 2 L judge model.",
+ "results": "PE-RLHF achieves on-par performance with standard RLHF in both reward modeling and reinforcement learning while training less than 0.1% of total parameters for text-only tasks and less than 0.2% for vision-text tasks. PE-RLHF reduces peak HBM usage to 43%-74% for reward model training and 74%-80% for RL. Training speed improvements range from 1.15x to 1.9x for reward models and 1.15x to 1.24x for the RL loop. For the smallest model sizes, PE-RLHF falls marginally short of fully-tuned models, but matches them at the largest sizes. LoRA rank has minimal effect on reward model performance but positively impacts RL policy performance.",
+ "limitations": [
+  "Potential overfitting to training data, common to parameter-efficient fine-tuning methods",
+  "Optimal data requirements for PE-RLHF are not yet determined",
+  "The study focuses solely on LoRA and does not compare with other PEFT methods like DoRA or ReFT approaches",
+  "Generalizability beyond in-domain test sets requires further investigation",
+  "Risk of reward hacking may be more pronounced with parameter-efficient methods"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:56Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

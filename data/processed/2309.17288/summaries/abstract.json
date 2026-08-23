@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.17288",
+ "tldr": "AutoAgents is a framework that adaptively generates and coordinates multiple specialized agents to form customized AI teams for diverse tasks, combining dynamic agent generation with self-refinement and collaborative refinement to improve task-solving quality.",
+ "contributions": [
+  "Proposes AutoAgents, a novel framework that dynamically synthesizes and coordinates multiple expert agents to form customized AI teams for diverse tasks",
+  "Demonstrates through quantitative experiments that AutoAgents significantly improves both knowledge acquisition and reasoning ability in LLMs and outperforms other generated-agent frameworks",
+  "Showcases AutoAgents' ability to adapt to complex tasks in various scenarios such as software development",
+  "Reveals the importance of dynamic agents for accommodating complex tasks, the necessity of self-refinement for proficient agents, and the efficacy of collaborative conversation"
+ ],
+ "methods": "AutoAgents operates in two stages: a Drafting Stage and an Execution Stage. In the Drafting Stage, three predefined agents (Planner, Agent Observer, and Plan Observer) iteratively collaborate over n rounds of dialogue to synthesize a customized agent team and execution plan. Each agent is defined by a prompt, description, toolset, and suggestions. In the Execution Stage, an Action Observer coordinates agents using vertical communication, while agents perform self-refinement (individual agents refine through a cycle of thinking, planning, execution, and feedback) and collaborative refinement (agents sequentially take turns generating responses based on shared chat history until consensus or max iterations). A three-tier memory system (short-term, long-term, and dynamic) manages token constraints.",
+ "results": "Experiments were conducted using the GPT-4 API with temperature set to 0. AutoAgents was evaluated on Open-ended Question Answer tasks and Trivia Creative Writing tasks, demonstrating that it generates more coherent and accurate solutions than existing multi-agent methods. Case studies were also conducted on complex tasks including software development and novel writing. The paper states that AutoAgents significantly improves both knowledge acquisition and reasoning ability in LLMs and outperforms other generated-agent frameworks.",
+ "limitations": "The paper notes that LLMs still face difficulties in avoiding hallucination, employing slow-thinking strategies, ensuring trustworthiness, and combining diverse domain knowledge with long-horizon planning. The framework's performance relies on the GPT-4 API. Token limitations of LLM models constrain how much historical information can be encompassed, necessitating the memory management system. Additionally, manually creating a large number of experts consumes significant resources, which the framework aims to mitigate through automation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

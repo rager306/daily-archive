@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2511.09127",
+ "tldr": "The paper proposes a History-Aware Reasoning (HAR) framework that transforms GUI agents from history-agnostic to history-aware reasoning via reflective learning with tailored correction guidelines and a hybrid RL reward function, equipping agents with stable short-term memory for episodic GUI tasks.",
+ "contributions": [
+  "Proposed HAR framework that employs tailored strategies and reflective learning to transform agent reasoning from history-agnostic to history-aware, enhancing short-term memory for episodic reasoning.",
+  "Developed HAR-GUI-3B, a native end-to-end GUI-tailored model with reliable episodic reasoning and screen perception.",
+  "Demonstrated that HAR-GUI-3B outperforms SOTA methods with similar parameter sizes and competes with much larger models in OOD scenarios."
+ ],
+ "methods": "The HAR framework consists of three training stages. First, a GUI scenario warm-up stage uses supervised fine-tuning (SFT) on domain-specific data including 4k GUI understanding instances, 20k grounding instances, 58k System-2 CoT samples, and 100k Action-to-Summary entries to enhance screen perception and action semantic understanding. Second, Round-1 RL constructs a reflective learning scenario on hard (incorrect) samples, synthesizing up to three tailored error correction guidelines per instance via a teacher model, and applies a hybrid GRPO-based reward function combining format reward, multi-scale coordinate-aware action reward, and model-based Memory-Augmented Reward (MAR) that verifies whether the agent's CoT explicitly references prior interactions. Third, Round-2 RL converts instructions to inference format and employs Task Mixing Training Strategy (TMTS), a multi-task RL approach combining grounding and episodic reasoning tasks to prevent degradation of grounding capability.",
+ "results": "HAR-GUI-3B was evaluated across diverse GUI-related benchmarks and a manually annotated Chinese mini-program benchmark for OOD generalization. It outperforms current advanced methods with similar parameter sizes on multiple GUI benchmarks and rivals much larger models in OOD scenarios. The framework enables consistent and persistent gains across GUI-oriented tasks by transforming the agent's reasoning mode from history-agnostic to history-aware.",
+ "limitations": "The paper notes that reflective training with episodic reasoning data alone weakens the GUI agent's grounding capability, which required the introduction of TMTS to address. Coordinate-based actions (e.g., CLICK) remain challenging for GUI agents in real-world execution. The framework relies on a teacher model (Qwen3-235B-A22B) for synthesizing guidelines and memory reward verification. The MAR function uses a model-based approach rather than rule-based, which may introduce variability.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:35Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

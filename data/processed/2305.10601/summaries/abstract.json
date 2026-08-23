@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.10601",
+ "tldr": "Tree of Thoughts (ToT) is a framework that generalizes Chain-of-Thought prompting by enabling large language models to deliberately explore multiple coherent reasoning paths as a tree of thoughts, significantly improving problem-solving on tasks requiring planning and search.",
+ "contributions": [
+  "Proposed the Tree of Thoughts framework, which allows LMs to perform deliberate decision making by considering multiple reasoning paths, self-evaluating choices, and looking ahead or backtracking.",
+  "Introduced three novel benchmark tasks (Game of 24, Creative Writing, and Mini Crosswords) that require non-trivial planning or search and challenge state-of-the-art LMs like GPT-4.",
+  "Demonstrated dramatic performance gains: in Game of 24, ToT achieved a 74% success rate compared to 4% for Chain-of-Thought prompting.",
+  "Provided a modular and adaptable framework with configurable thought decomposition, generation, evaluation, and search algorithms.",
+  "Showed empirically that ToT produces more coherent creative writing passages than standard prompting baselines."
+ ],
+ "methods": "The authors frame problem-solving as a search over a tree where each node is a partial solution (a state comprising the input and a sequence of thoughts). They define four key components: (1) Thought decomposition into coherent language sequences appropriate for the task (e.g., an intermediate equation or a paragraph plan). (2) Thought generation, using either i.i.d. sampling from a prompt or a sequential 'propose prompt' to generate candidate next thoughts. (3) State evaluation, where the LM heuristically assesses the promise of each state via scalar values or voting comparisons. (4) Search algorithms, specifically Breadth-First Search (BFS) and Depth-First Search (DFS), to systematically explore the tree with lookahead and backtracking. Experiments were conducted using GPT-4 on the three proposed tasks with task-specific prompts and settings.",
+ "results": "On the Game of 24 task, ToT with BFS achieved a 74% success rate, vastly outperforming Input-Output (7.3%), Chain-of-Thought (4.0%), and CoT Self-Consistency (9.0%) baselines. A simple ToT with breadth b=1 already reached 45%. For Creative Writing, ToT achieved an average GPT-4 coherency score of 7.56, surpassing IO (6.19) and CoT (6.93), with human judgments confirming its superiority. On Mini Crosswords, ToT using DFS outperformed IO and CoT baselines, solving a higher portion of games and words (specific numerical results were in the truncated section). Ablation studies highlighted the importance of exploring multiple thoughts and deliberate evaluation.",
+ "limitations": "The framework's effectiveness depends on careful design of thought decomposition, generation, and evaluation prompts. The demonstrated experiments primarily involved relatively shallow trees (e.g., at most 3 thought steps for Game of 24 and Creative Writing). More complex search problems may require advanced algorithms like A* or MCTS, which are left for future work. Additionally, the automatic evaluation metric for creative writing (GPT-4 scoring) is acknowledged to be potentially noisy, despite correlation with human judgments.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:28Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

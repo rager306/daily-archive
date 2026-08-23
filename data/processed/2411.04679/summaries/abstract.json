@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.04679",
+ "tldr": "The paper proposes Cooperative Plan Optimization (CaPo), a framework that enhances LLM-based embodied multi-agent cooperation through long-term meta-plan generation and progress-adaptive execution, outperforming state-of-the-art methods in task completion rate and efficiency.",
+ "contributions": [
+  "Introduces CaPo, a novel framework for enhancing cooperation efficiency of LLM-based embodied agents through multi-turn discussion and strategic planning",
+  "Proposes a two-phase approach: meta-plan generation and progress-adaptive meta-plan with execution",
+  "Demonstrates significant improvements on ThreeDworld Multi-Agent Transport and Communicative Watch-And-Help tasks compared to CoELA"
+ ],
+ "methods": "CaPo operates in two phases. First, meta-plan generation: one agent initialized as the designer creates a long-term meta-plan decomposing the task into subtasks with agent assignments and steps, while other agents evaluate and provide feedback through multi-turn discussions until consensus or communication budget exhaustion. Second, progress-adaptive meta-plan and execution: during task execution, when agents make new progress (e.g., discovering target objects), they dynamically adapt the meta-plan through another round of multi-turn discussion and optimization. Each agent is equipped with five modules from the CoELA framework: perception, memory, communication, plan-phrasing, and execution.",
+ "results": "On the TDW-MAT task, CaPo achieves a completion rate improvement of 16.7% over CoELA with GPT-3.5 agents and 4.7% with GPT-4 agents. Experiments on ThreeDworld Multi-Agent Transport and Communicative Watch-And-Help tasks demonstrate significantly higher task completion rates and cooperation efficiency compared to state-of-the-art methods. Convergence analysis shows agents typically reach consensus within three rounds of discussion.",
+ "limitations": [
+  "Meta-plan generation is biased by the initial designer agent's partial observations before multi-turn evaluation corrects this",
+  "The approach relies on a communication budget (maximum discussion rounds), which may limit plan quality if exhausted before consensus",
+  "Evaluated primarily on two benchmark tasks (TDW-MAT and C-WAH), with limited evidence of generalization to other task domains",
+  "Requires multi-turn LLM communication between agents, which increases computational and temporal costs compared to single-step planning methods"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

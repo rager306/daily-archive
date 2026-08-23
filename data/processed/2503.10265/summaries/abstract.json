@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.10265",
+ "tldr": "The paper introduces SurgRAW, a multi-agent Chain-of-Thought reasoning framework for zero-shot multi-task surgical scene understanding in robotic-assisted surgery, built on the SurgCoTBench benchmark containing 14,256 QA pairs.",
+ "contributions": [
+  "SurgCoTBench: the first reasoning-focused benchmark for RAS with 14,256 QA pairs across five major surgical tasks (2,277 frames from 12 patient videos covering prostatectomy and lobectomy)",
+  "SurgRAW: a hierarchical multi-agent workflow with an orchestrator routing VS and CI reasoning streams to specialized VLM agents",
+  "Panel discussion mechanism for VS tasks using a surgical knowledge graph and inter-agent consistency rubrics",
+  "RAG module integrating MedlinePlus medical resources to bridge domain gaps in CI tasks",
+  "Task-specific CoT prompts designed to reduce hallucinations and enhance interpretability"
+ ],
+ "methods": "SurgRAW uses a top-level orchestrator that classifies questions into Visual-Semantic (VS) or Cognitive-Inference (CI) streams. VS tasks are handled by instrument and action specialists, with a panel discussion moderated by an Action Evaluator using a surgical knowledge graph of permissible instrument-action relationships and two rubrics (Inter-Chain Coherence and Inter-Agents Collaborative Synergy) evaluated out of 5. CI tasks use a RAG module querying MedlinePlus resources. Both streams use task-specific Chain-of-Thought prompts: VS follows a five-stage reasoning process (question analysis, image feature extraction, cross-referencing, option elimination, verification), while CI emphasizes contextual reasoning and clinical logic. The panel discussion iterates up to 3 runs until thresholds are met.",
+ "results": "SurgRAW surpasses mainstream VLMs and agentic systems, and outperforms a supervised model by 14.61% accuracy on SurgCoTBench. The dataset contains 2,277 frames and 14,256 QA pairs across prostatectomy (1,692 frames, 10,417 QA pairs) and lobectomy (585 frames, 3,839 QA pairs) categories.",
+ "limitations": "VLMs struggle with hallucinations, domain gaps from natural-scene training, and weak task-interdependency modeling. Auto-generated CoT explanations can exacerbate hallucinations in the surgical domain due to lack of domain understanding. Existing surgical datasets are fragmented, covering only one to three tasks per scene. The panel discussion is capped at 3 iterations as a pragmatic safeguard. The CI pathway relies on external retrieval which may not cover all surgical scenarios.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

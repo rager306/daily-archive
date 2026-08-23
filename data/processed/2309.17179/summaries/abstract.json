@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.17179",
+ "tldr": "TS-LLM is an AlphaZero-like tree-search framework that uses a learned value function to guide LLM decoding and training, outperforming prior prompt-based tree-search methods and enabling deep search up to depth 64.",
+ "contributions": [
+  "Introducing TS-LLM, an AlphaZero-like tree-search learning framework for LLMs that leverages a learned value function rather than prompt-based self-evaluation",
+  "Demonstrating general applicability across tasks, LLMs of any size (125M to 7B), and varying search depths up to 64",
+  "Proposing an iterative training paradigm where tree search serves as a policy improvement operator, combined with policy distillation and value function training",
+  "Presenting five tree-search algorithms (BFS-V, DFS-V, MCTS, MCTS-α, MCTS-Rollout) and three aggregation methods (majority vote, ORM-Max, ORM-Vote)"
+ ],
+ "methods": "The authors formulate language generation as a multistep Markov Decision Process and learn an LLM-based value function and outcome reward model (ORM) trained on sampled trajectories using TD-λ or Monte-Carlo estimates. They propose multiple tree-search variants including BFS-V, DFS-V, MCTS, MCTS-α (AlphaZero-like with value function approximation), and MCTS-Rollout. For training, they introduce an iterative cycle of policy improvement via tree search, policy distillation via supervised loss on positive trajectories, and policy evaluation by retraining the value function and ORM. Experiments are conducted on five tasks: GSM8K, Game24, PrOntoQA, synthetic RLHF alignment, and chess endgames, using LLaMA2-7B and GPT-2-small (125M).",
+ "results": "TS-LLM outperforms existing approaches (ToT, RAP, CoT greedy, CoT-SC) across reasoning, planning, alignment, and decision-making tasks. It handles trees with depth up to 64, far exceeding ToT's maximum depth of 10 and RAP's maximum depth of 7. TS-LLM works effectively for LLMs ranging from 125M to 7B parameters and provides better evaluation than GPT-3.5 when used as a value function.",
+ "limitations": [
+  "Tree-search algorithms bring additional computation burdens, especially during node expansion for calculating legal child nodes and their values",
+  "Sentence-level action nodes create a search space gap determined by maximum tree width w, since full enumeration of possible sentences is infeasible",
+  "Intra-tree search may reduce diversity of multiple generations because the former tree search influences latter searches and fixed expanded nodes limit resampling"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.08588",
+ "tldr": "Octopus is an embodied vision-language programmer that generates executable code from visual input and environmental feedback, trained via supervised fine-tuning and Reinforcement Learning with Environmental Feedback (RLEF), demonstrated across three simulator environments (OctoGibson, OctoMC, OctoGTA).",
+ "contributions": [
+  "A novel vision-language programming benchmark consisting of three diverse embodied environments: OctoGibson (476 tasks built on OmniGibson), OctoMC (40 tasks on Minecraft), and OctoGTA (25 tasks on GTA-V), with vision-dependent function calls.",
+  "An embodied vision-language programming model (Octopus) based on the Otter architecture (MPT-7B + CLIP VIT-L/14) trained with Reinforcement Learning with Environmental Feedback (RLEF).",
+  "Insights on vision-language programming through extensive exploration of the Octopus model."
+ ],
+ "methods": "Training data was collected using GPT-4 as an explorative agent that formulates action plans and generates executable code in response to environment messages composed of scene graphs, inventory, and observations. For OctoGTA, human labor was used due to difficulty obtaining textual environment messages. Environmental feedback (success/failure at each step) was captured during data collection. The model, based on Otter's architecture with MPT-7B decoder and CLIP VIT-L/14 vision encoder, was first supervised fine-tuned (SFT) on the collected vision-text pairs, then refined using RLEF with PPO. A CodeLLaMA-7B reward model assessed state transitions to guide reinforcement learning.",
+ "results": "Octopus demonstrates strong adaptability across various scenarios, outperforming existing models in task planning, code generation, and execution. The RLEF training approach refines the agent's decision-making and enhances performance beyond SFT-only training. Specific numerical results are presented in tables (e.g., Table 3 on OctoGibson main results), but exact metric values were truncated in the provided text.",
+ "limitations": [
+  "GPT-4 is not infallible and produces errors ranging from syntax errors to physical simulation failures, requiring task resets.",
+  "Standard GPT-4 8K models struggle with long combined system and environment messages, necessitating the more robust GPT-4 32K model.",
+  "Obtaining textual environment messages in GTA is difficult, requiring human labor for dataset creation.",
+  "If a main task remains incomplete after 10 steps, it is terminated due to budget concerns.",
+  "Some existing functions (e.g., explore_until() in Minecraft) were deemed too vision-agnostic and had to be replaced with vision-dependent alternatives."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:10Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

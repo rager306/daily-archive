@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.11536",
+ "tldr": "ReTool integrates code interpreter execution into LLM reasoning via reinforcement learning, enabling models to autonomously learn when and how to use computational tools, achieving 67% accuracy on AIME2024 with only 400 training steps—surpassing text-based RL baselines by 27 percentage points.",
+ "contributions": [
+  "Proposed ReTool, a tool-augmented RL framework that dynamically interleaves real-time code execution within natural language reasoning",
+  "Developed a cold-start data pipeline producing code-augmented long-form reasoning traces for supervised fine-tuning",
+  "Designed a PPO-based RL training with rule-based outcome rewards and a sandbox code interpreter supporting multi-turn execution",
+  "Demonstrated emergent behaviors including code self-correction and adaptive tool selection during RL training"
+ ],
+ "methods": "ReTool employs a two-stage pipeline: first, cold-start supervised fine-tuning on a curated dataset of code-augmented reasoning traces generated via a dual-verification process combining human curation and DeepSeek-R1 evaluation; second, reinforcement learning using a modified PPO algorithm where the policy model generates hybrid trajectories of text and code, with an external sandbox executing code blocks in real-time and feeding back results. The reward is a simple rule-based accuracy signal (+1 for correct answer in boxed format, -1 otherwise). Technical optimizations include KV-cache reuse across code executions, interpreter output masking in loss computation, and an asynchronous distributed code sandbox for parallel rollout.",
+ "results": "ReTool-32B (Qwen2.5 backbone) achieves 67.0% accuracy on AIME2024 and 49.3% on AIME2025 with only 400 training steps, outperforming text-based RL baseline (40.0% and 36.7% with 1080 steps). With DeepSeek-R1-Distill-Qwen-32B backbone, ReTool reaches 72.5% on AIME2024 and 54.3% on AIME2025, surpassing OpenAI o1-preview by 27.9% on AIME2025. Cold-start model achieves 40.9% on AIME2024 vs. base model's 26.7%. After RL, response length decreases by ~40% (10k to 6k tokens), code coverage reaches ~98%, average code lines increase fivefold, and correct code counts rise from 1k to 5k. Emergent code self-correction behavior is observed.",
+ "limitations": "The reward design is simplified to accuracy-only outcome feedback without considering code executability, which may limit some behavioral signals. Evaluation is confined to mathematical reasoning benchmarks (AIME), and generalization to other domains remains untested. The approach requires a curated cold-start dataset generation pipeline with dual verification, adding complexity to deployment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

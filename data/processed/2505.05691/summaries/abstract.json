@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.05691",
+ "tldr": "The paper proposes a self-supervised temporal difference metric learning approach that solves the Eikonal equation more accurately for robot motion planning, outperforming existing methods in complex and unseen environments with robots of 2–12 DOF.",
+ "contributions": [
+  "Introducing temporal difference (TD) learning into physics-informed methods to solve the Eikonal equation as an optimal value function, enforcing Bellman's principle of optimality over finite time steps and combining TD loss with Eikonal loss for enhanced training convergence",
+  "Proposing a novel network architecture for metric learning that preserves geodesic distance properties (triangle inequality, symmetry, non-negativity) by parameterizing the solution within a metric space using a combined L_infinity and L_1 distance in latent space",
+  "Using sampling-based Model Predictive Control (MPC) at inference to minimize the learned value function without gradient computation, with inherent randomness helping escape poorly learned regions"
+ ],
+ "methods": "The approach trains a neural network to approximate the Eikonal equation solution by combining multiple loss terms: an Eikonal loss (L_E) enforcing the infinitesimal-scale optimality, a temporal difference loss (L_TD) derived via Taylor expansion enforcing Bellman's principle over finite time steps, an obstacle-aware normal alignment loss (L_N) that aligns policy with obstacle surface normals near obstacles, and a causality weight (L_C) that prioritizes learning smaller values first. The network architecture uses metric learning with a latent space of dimension a×b, computing distance as D(x,y) = sum_i max_j |x_i,j - y_i,j|, combining L_infinity along one dimension and L_1 along another. During inference, sampling-based MPC minimizes the learned value function.",
+ "results": "The method significantly outperforms prior state-of-the-art self-supervised learning methods in handling complex environments and generalizing to unseen environments, tested on robot configurations ranging from 2 to 12 degrees of freedom (DOF). Comparisons with other metrics commonly used in Reinforcement Learning for value function learning show the proposed metric better captures the key properties of the Eikonal equation, leading to more accurate approximation of its solution.",
+ "limitations": "Prior NTFields methods struggle in complex environments due to inability to fully preserve critical Eikonal equation properties (optimal value function and geodesic distance). The approach relies on differentiable forward kinematics for computing obstacle distances and their gradients. The training uses offline-sampled points, and local mistakes in the value function can be exaggerated through propagation in differential dynamic programming, particularly detrimental at early training stages when the network may predict non-zero velocity inside obstacles.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

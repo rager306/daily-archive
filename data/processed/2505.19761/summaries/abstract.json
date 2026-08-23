@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.19761",
+ "tldr": "GLIDER is an offline hierarchical reinforcement learning framework that introduces a parameter-efficient two-level hierarchy to LLM policies, decomposing long-horizon decision-making tasks into chain-of-thought sub-tasks for improved exploration and credit assignment.",
+ "contributions": [
+  "An offline hierarchical framework GLIDER that empowers LLM agents to tackle complex decision-making tasks via sophisticated exploration and structured reasoning",
+  "Fast offline-to-online adaptation to non-stationary environments through training highly generalizable low-level skills",
+  "Comprehensive studies on ScienceWorld and ALFWorld benchmarks showing consistent performance gains and generalization improvements over baselines"
+ ],
+ "methods": "GLIDER uses a two-layer hierarchical architecture with a high-level policy that plans abstract sub-task goals every c steps and a low-level controller that executes atomic actions. Both policies share a frozen LLM backbone with LoRA adapters for the actor and MLP layers for the critic, achieving parameter efficiency. The pipeline has three stages: (1) base agent construction via supervised fine-tuning (behavior cloning) with length regularization on demonstration trajectories, (2) offline RL refinement using hierarchical actor-critic models where the critic evaluates at the sentence level with implicit Q-learning loss and the actor optimizes via advantage-weighted maximum likelihood at the token level, and (3) offline-to-online adaptation where the low-level skills are frozen and only the high-level policy is fine-tuned on new environments using intrinsic sub-task completion rewards.",
+ "results": "Experiments on ScienceWorld (30 tasks) and ALFWorld (6 types of household manipulation tasks) benchmarks show GLIDER achieves consistent performance gains and enhanced generalization capabilities, surpassing a range of baselines by a significant margin. The method demonstrates strong sample efficiency through offline training and effective offline-to-online adaptation to non-stationary environments. Specific numerical results were not included in the provided text as the experiments section was truncated.",
+ "limitations": "The paper notes that prompt-based methods are prone to exceeding input length limits for long-horizon tasks, and supervised fine-tuning approaches are heavily dependent on expensive expert demonstrations with deficient exploration. Existing RL approaches require tedious and vast environment interactions, leading to brittle performance and poor sample efficiency. Distribution shifts between offline pretraining and online deployment can cause accumulated bootstrap errors. The provided text was truncated before all experimental results and limitations were fully presented.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

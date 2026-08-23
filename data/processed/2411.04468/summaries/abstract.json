@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.04468",
+ "tldr": "Magentic-One is a generalist multi-agent system that autonomously solves complex tasks through coordinated planning, execution, and recovery loops across specialized agents (Orchestrator, WebSurfer, FileSurfer, Coder, ComputerTerminal).",
+ "contributions": [
+  "A novel multi-agent architecture with dynamic routing between specialized agents driven by an Orchestrator",
+  "A nested-loop workflow combining outer-loop task planning with inner-loop execution and recovery",
+  "AutoGenBench, a standalone evaluation tool using freshly initialized Docker containers for independent, safe task evaluation",
+  "Evaluation on three benchmarks: GAIA, AssistantBench, and WebArena"
+ ],
+ "methods": "Magentic-One uses five agents: an Orchestrator that manages task decomposition, planning, and coordination; a WebSurfer for browser-based tasks using set-of-marks prompting; a FileSurfer for handling various file types via a markdown-based preview; a Coder for writing and debugging Python code; and a ComputerTerminal for deterministic execution of code and shell commands. The system employs a nested-loop workflow where an outer loop maintains a task ledger with facts, guesses, and plans, while an inner loop creates progress ledgers by answering five questions (task completion, looping detection, progress, next agent, next instruction). A stall counter with threshold ≤2 triggers recovery and plan revision when agents get stuck.",
+ "results": "Evaluated on GAIA (465 multi-modal QA pairs), AssistantBench (214 QA pairs), and WebArena (812 tasks). GAIA is split into 165 validation and 300 test questions with string-matching evaluation. AssistantBench has 33 validation and 181 test questions with both exact and soft accuracy metrics. WebArena was split by MD5 hash into 422 validation tasks (hash starting with 0-7) and 390 test tasks, evaluated only once on the test set.",
+ "limitations": [
+  "The system operates within a time budget (e.g., 25 minutes) which may constrain complex tasks",
+  "Education guesses are used as fallbacks when agents get stuck or run out of time, indicating potential reliability gaps",
+  "WebArena has no formal validation/test split provided by the dataset, requiring the authors to develop their own",
+  "Agents must clear their contexts and reset states after each plan update, potentially losing information across iterations",
+  "Initial systems evaluated on tasks requiring library installation are disadvantaged compared to later runs since Docker containers are fresh per task"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

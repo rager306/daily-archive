@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.12871",
+ "tldr": "LEO is an embodied multimodal generalist agent that perceives, grounds, reasons, plans, and acts in 3D worlds using a unified architecture combining 2D images, 3D point clouds, and text through a two-stage training pipeline of 3D vision-language alignment and 3D vision-language-action instruction tuning.",
+ "contributions": [
+  "Proposes LEO, the first embodied generalist agent capable of following human instructions to perceive, ground, reason, plan, and act in the 3D world",
+  "Introduces a framework connecting object-centric 3D representation and LLMs to bridge vision, language, and embodied action",
+  "Collects large-scale datasets (LEO-align and LEO-instruct) and proposes an LLM-assisted pipeline with scene-graph-based prompting and object-centric Chain-of-Thought for high-quality 3D VL data generation",
+  "Demonstrates state-of-the-art performance across diverse 3D tasks including captioning, question answering, dialogue, planning, navigation, and manipulation",
+  "Releases data, code, and model weights"
+ ],
+ "methods": "LEO uses a unified architecture with an egocentric 2D image encoder (OpenCLIP ConvNext) and an object-centric 3D point cloud encoder (PointNet++ with Spatial Transformer) whose tokens are interleaved with text and fed into a frozen Vicuna-7B LLM augmented with LoRA. Training follows a two-stage scheme: (i) 3D vision-language alignment on captioning data at object, object-in-scene, and scene levels; (ii) 3D vision-language-action instruction tuning on diverse tasks. All modalities are tokenized into a unified sequence and trained via prefix language modeling. The authors also propose an LLM-assisted data generation pipeline using scene graphs from 3DSSG, object-centric Chain-of-Thought prompting, and refinement procedures including regex matching and scene graph retrieval to reduce hallucination.",
+ "results": "LEO achieves state-of-the-art performance on most 3D VL tasks, surpassing previous task-specific models. It shows proficiency in scene-grounded dialogue and planning with flexible, coherent responses. LEO achieves comparable performance to state-of-the-art task-specific models on navigation and manipulation while exhibiting remarkable generalization. The model demonstrates scaling law behavior. Quantitative assessments show the proposed data generation pipeline (scene-graph-based prompting, O-CoT, and refinement) brings consistent improvement in data quality, outperforming 3D-LLM on object QA accuracy across counting, existence, and non-existence categories.",
+ "limitations": "The paper notes that existing generalist models primarily thrive within 2D domains with limited capacity for 3D input. Previous 3D VL models often rely on strong priors and fall short in embodied tasks. Large-scale unified pretraining and efficient finetuning for 3DVL remain under-explored. The dataset curation depends on LLM-generated data which requires careful refinement to mitigate hallucination, and the continuous actions must be discretized to join a unified discrete action space.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

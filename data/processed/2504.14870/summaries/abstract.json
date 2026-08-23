@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.14870",
+ "tldr": "The paper proposes OTC-PO, an RL-based framework that trains LLMs to produce accurate answers with minimal tool calls by introducing a tool-integrated reward that jointly optimizes correctness and tool use efficiency.",
+ "contributions": [
+  "First RL-based framework to explicitly optimize both efficiency and effectiveness of tool-integrated reasoning",
+  "Introduction of tool productivity metric (ratio of correct answers to total tool calls)",
+  "OTC-PPO and OTC-GRPO implementations that reduce tool calls while preserving accuracy",
+  "Identification of cognitive offloading phenomenon in TIR"
+ ],
+ "methods": "The authors propose Optimal Tool Call-controlled Policy Optimization (OTC-PO), which introduces a tool-integrated reward function that scales traditional correctness rewards with a coefficient reflecting tool efficiency. The method approximates the optimal (minimal) number of tool calls per question-model pair by tracking minimum tool calls across correct trajectories during training. Two variants were implemented: OTC-PPO using a cosine decay reward based on tool call count, and OTC-GRPO using a dynamic reward that assigns highest reward when actual tool calls match the approximated optimal number. Experiments were conducted on Qwen-2.5-3B/7B-Base and Qwen2.5-Math-1.5B/7B-Base models using search and code tools across NQ, HotpotQA benchmarks.",
+ "results": "The approach reduces tool calls by up to 68.3% and improves tool productivity by up to 215.4% while maintaining comparable answer accuracy to baselines. The method was validated across multiple QA benchmarks using Qwen-2.5 and Qwen-Math models.",
+ "limitations": "The true optimal number of tool calls is unknown and must be approximated during training. The PPO variant requires longer training steps due to poor sampling efficiency when tracking minimal tool calls. The framework's performance assumes the existence of an optimal (minimal) tool call count for each question-model pair, which may not always hold.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.14826",
+ "tldr": "The paper proposes ToolPlanner, a two-stage reinforcement learning framework with solution path planning and dual feedback mechanisms (task completion and instruction-following), along with MGToolBench—a multi-granularity instruction dataset—to address the gap between overly detailed training instructions and real-world user behavior in tool-augmented LLMs.",
+ "contributions": [
+  "Constructed MGToolBench, the first multi-granularity instruction dataset with five levels (Statement, Category, Tool, API, Hybrid) to better reflect real-world user behavior in tool-augmented LLM research.",
+  "Proposed ToolPlanner, a two-stage RL framework that uses task completion and instruction-following feedback with pairwise responses to enhance the model's tool usage abilities.",
+  "Introduced a solution path planning mechanism that provides high-level guidance during multi-round reasoning.",
+  "Demonstrated that ToolPlanner significantly outperforms SOTA models on Match Rate (+26.8%), Pass Rate (+20.2%), and Win Rate (+5.6%), with human evaluation confirming alignment of multi-granularity instructions with real-world usage habits."
+ ],
+ "methods": "The authors built MGToolBench from the G3 split of ToolBench, extracting solution paths and tag lists from 4,435 seed tasks to generate 17,740 multi-level tasks (75,888 solution rounds) across five granularity levels via GPT-4 self-instruct. ToolPlanner uses LLaMA-7B as its backbone in two stages: Stage 1 trains an SFT model via cross-entropy loss to generate candidate tag lists, solution paths, and multi-round solution trees. Stage 2 applies reinforcement learning using pairwise responses scored by a reward function based on two metrics—Task Completion (Pass/Not Pass) and Instruction Following (Match/Not Match)—with rewards of 1, -1, -2, or -3. A ranking loss is combined with cross-entropy loss (L = L_l + βL_rank) to reinforce the model.",
+ "results": "ToolPlanner improves Match Rate by 26.8%, Pass Rate by 20.2%, and Win Rate by 5.6% compared to the SOTA model. Human evaluation confirms that multi-granularity instructions better align with real-world user habits across plausibility, conciseness, relevance, and realness metrics. The training dataset contains 17,740 multi-level tasks and 75,888 solution rounds for Stage 1, and 98,950 paired responses for Stage 2. Tree-based decoding methods were found to perform worse on Match Rate because they sacrifice instruction-following ability.",
+ "limitations": [
+  "Coarse-grained instructions (e.g., Statement or Category level) result in a larger solution space, as many APIs/tools may satisfy a single instruction.",
+  "Using only statement or category-level instructions as training data can limit model diversity and usability, as it may only interact with a few common APIs.",
+  "Tree-based decoding methods trade off instruction-following capability for higher Pass and Win Rates."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

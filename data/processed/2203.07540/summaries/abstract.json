@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2203.07540",
+ "tldr": "SCIENCEWORLD is a benchmark testing agents' scientific reasoning in an interactive text environment at the level of elementary school science, revealing that current models struggle to apply scientific knowledge in grounded, novel contexts despite excelling at static question answering.",
+ "contributions": [
+  "Constructed SCIENCEWORLD, a complex interactive text environment with simulation engines for thermodynamics, electrical circuits, chemistry reactions, and biological processes",
+  "Implemented 30 benchmark tasks across 10 topics spanning the elementary science curriculum with parametric variations",
+  "Evaluated 5 state-of-the-art RL and language model agents, showing they perform poorly on tasks 5th graders can handle easily"
+ ],
+ "methods": "The authors built SCIENCEWORLD using 40k lines of Scala with a Python interface, featuring 10 interconnected locations, up to 200 object types, and 25 high-level actions (~200k action-object combinations per step). They created simulation engines for thermodynamics (heat transfer, phase changes), electricity (series circuits), chemistry (mixing substances), life stages, Mendelian genetics via Punnett squares, and friction on inclined planes. Thirty benchmark tasks across 10 science topics were created with 7,200 total parametric variations (10-1,400 per subtask). Five agents were evaluated: Random Baseline, DRRN, KG-A2C, CALM (GPT-2), Behavior Cloning (T5), and Text Decision Transformer. RL models were trained with 8 environment threads at 100k steps per thread.",
+ "results": "All models performed poorly overall, with the best model (DRRN) achieving an average score of only 0.17 across all 30 subtasks. Models that relied on valid action detection aids generally performed better than those learning to generate valid actions. A 1.5 million parameter agent trained interactively for 100k steps outperformed an 11 billion parameter model statically trained for scientific QA from millions of expert demonstrations.",
+ "limitations": "Current state-of-the-art agents perform poorly on elementary science tasks, suggesting they lack reusable reasoning about scientific concepts. Oracle solutions only represent canonical methods rather than all possible solutions. Behavior cloning and Text Decision Transformer generated invalid or unhelpful actions resulting in zero scores, requiring fallback strategies at test time.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

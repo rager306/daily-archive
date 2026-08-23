@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.24332",
+ "tldr": "DeepDiver is an RL framework that cultivates Search Intensity Scaling (SIS), enabling 7B LLMs to dynamically escalate web search frequency and depth, achieving performance comparable to the 671B DeepSeek-R1 on real-web tasks.",
+ "contributions": [
+  "WebPuzzle: a 24k-sample training and 275-sample human-annotated test benchmark evaluating information seeking on the live internet across wiki and open-domain queries",
+  "DeepDiver: an RL-driven framework with cold-start SFT and GRPO-based iterative RAG training with carefully designed reward assignment",
+  "Emergent Search Intensity Scaling (SIS): adaptive escalation of search frequency and depth proportional to problem difficulty",
+  "Demonstration of generalization from closed-ended to open-ended generation tasks such as long-form writing"
+ ],
+ "methods": "The authors introduce WebPuzzle, a dataset synthesized from Wiki-corpus and real-user queries using cross-page question generation and riddle creation, difficulty-tagged via DeepSeek-R1 pass@k. DeepDiver is trained in two phases: cold-start SFT using 2,000 WebPuzzle samples plus reasoning and assistant data distilled from DeepSeek-R1, followed by RL using GRPO extended with iterative RAG over 5,000 samples. The reward function includes format/accuracy rewards plus an extra search-call bonus, applied through a two-stage loose-to-strict LLM-grader schedule.",
+ "results": "DeepDiver-Qwen2.5-7B and DeepDiver-Pangu-7B achieve performance comparable to 671B DeepSeek-R1 on real-web tasks. DeepDiver-Qwen averages 2.51 search rounds versus 1.75 for SFT; DeepDiver-Pangu improves from 30.3 to 38.1 accuracy with search rounds increasing from 1.84 to 2.89. DeepDiver outperforms DeepSeek-R1 by 5.1 points on WebPuzzle when isolating information-seeking behavior. On English benchmarks, DeepDiver leads DeepResearcher by 11.1 points on WebPuzzle-en (26.1 vs 15.0) while maintaining competitive results on Wiki-based datasets despite Chinese-only training.",
+ "limitations": "The 7B model's smaller size limits internal knowledge, causing it to lag behind larger models on full-set tests. Computational constraints restricted training to 7k of the 24k WebPuzzle samples. The method was trained entirely in Chinese yet evaluated on English benchmarks, relying on translation rather than native English training. Performance on some wiki-based datasets remains modest compared to models that have internalized that knowledge.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

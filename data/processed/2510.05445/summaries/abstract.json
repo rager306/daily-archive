@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.05445",
+ "tldr": "AgentRouter is a knowledge-graph-guided framework that formulates multi-agent QA as a routing problem, using a heterogeneous GNN trained on empirical performance signals to learn adaptive collaboration schemes across diverse agents and LLM backbones.",
+ "contributions": [
+  "KG-based formulation of multi-agent QA: first framework converting multi-agent question answering into knowledge graphs where nodes represent queries, agent prompts, fine-grained entities, and contextual interactions",
+  "Graph-supervised collaboration learning: learns adaptive collaboration schemes using supervised graph signals instead of LLM-based judges or heuristic ensembling",
+  "Robust empirical validation: consistently outperforms best single agent and SOTA baselines across benchmarks and LLM backbones"
+ ],
+ "methods": "The authors convert each QA instance (query + context) into a knowledge graph containing query nodes, entity nodes (extracted via spaCy for named entities, temporal expressions, and numerical mentions), and agent nodes (each representing a backbone LLM plus prompting strategy). Edges encode lexical query-entity links, dependency-parse entity-entity relations, agent-identified relevant entities, and trainable query-agent routing connections. A heterogeneous GNN (RouterGNN) performs type-aware message passing across node types with learned gates per edge type. Supervision is derived from temperature-scaled softmax over empirical F1 scores of all candidate agents, minimizing KL divergence. Final predictions use weighted aggregation (e.g., weighted voting) of agent outputs based on learned routing distributions.",
+ "results": "AgentRouter consistently outperforms single-agent, ensemble baselines, and SOTA routing methods (LLM-Blender, HybridLLM, GraphRouter) across four benchmarks: HotpotQA, 2WikiMultiHopQA, NewsQA, and TriviaQA. Gains are especially pronounced on multi-hop datasets. Restricting to top-K agents (K=3, 5, 10) sometimes exceeds the full unrestricted ensemble, with moderate K (around 5-10) working best on multi-hop tasks. A substantial gap to the Oracle (theoretical upper bound using the best agent per question) remains. Performance generalizes across four backbones: Llama-3-8b-instruct, Qwen2.5-7B-Instruct-Turbo, Mixtral-8x7B-Instruct-v0.1, and gpt-oss-20b.",
+ "limitations": [
+  "Substantial gap remains between AgentRouter and Oracle (the theoretical upper bound of always selecting the best agent)",
+  "Top-K clipping behavior varies by task type: helps multi-hop reasoning but single-hop QA benefits from more agents, suggesting inconsistent behavior across QA paradigms",
+  "Evaluated on only four QA benchmarks and four LLM backbones, limiting generalization claims",
+  "Performance differences across RouterGNN hyperparameter configurations (layers, hidden dimensions) were modest but the analysis was truncated in the provided text"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

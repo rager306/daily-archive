@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.08397",
+ "tldr": "VoxelPrompt is an end-to-end medical image analysis agent that jointly trains a language model and vision network to generate executable code for diverse, open-ended neuroimaging tasks from natural language prompts.",
+ "contributions": [
+  "A jointly-trained language model agent and convolutional vision network that generate and execute end-to-end image analysis workflows from natural language",
+  "A vision network integrating language model embeddings as conditioning for fine-grained, language-controlled visual analysis",
+  "An attention-based architecture for processing volumetric features across sequences of arbitrary length",
+  "Native-space processing at variable input resolutions without resampling, enabling memory and runtime efficiency on standard GPUs",
+  "A large neurological dataset combining public cohorts (6,925 3D brain MRI/CT scans), new expert annotations of unlabeled pathological volumes, and simulated lesions covering 185 bilateral anatomical structures and 14 pathology classes"
+ ],
+ "methods": "VoxelPrompt processes 3D volumetric medical images with natural language prompts through an iterative agent-loop architecture. A language model agent α translates prompts into Python code executed in a persistent environment Ω, invoking a jointly-trained convolutional vision network (encoder m_enc and generator m_gen) conditioned by latent embeddings φ. The vision network uses attention to share information across arbitrary numbers of input volumes, and operates in native voxel resolution by tracking spacing throughout multi-scale processing. Both the language agent and vision network are trained from scratch on a curated dataset of 6,925 brain scans using a combined loss: cross-entropy on code prediction plus soft Dice loss on predicted volumes, with prompts synthesized from combinatorial templates.",
+ "results": "VoxelPrompt can delineate hundreds of anatomical and pathological features, measure complex morphological properties, and perform open-language analysis of lesion characteristics. It captures and often exceeds the individual accuracy of many single-task specialist neuroimaging baselines. Demonstrated capabilities include zero-shot lesion segmentation on unseen abnormality datasets, tumor growth tracking (e.g., 1.8x increase (+4.3 ml)), white matter hypointensity volume change (4.4x increase, +9.7 ml), lesion dimension measurement (22.7 x 25.6 x 28.5 mm), and ADC value computation. Training used 4,852 training, 213 validation, and 1,860 test volumes from 15 public datasets across T1w, T2w, FLAIR, PD, GRE, and DWI sequences.",
+ "limitations": [
+  "Evaluation is focused exclusively on brain imaging, limiting generalizability to other anatomical regions",
+  "No benchmark dataset currently exists to evaluate free-form workflow generation outcomes for complex pathology analyses, constraining comprehensive quantitative assessment",
+  "Some demonstrated outputs in Figure 1 appear qualitative in nature rather than fully benchmarked"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

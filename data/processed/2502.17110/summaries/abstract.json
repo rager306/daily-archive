@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.17110",
+ "tldr": "Mobile-Agent-V is a video-guided multi-agent framework that injects operational knowledge into mobile automation by extracting knowledge directly from instructional videos, eliminating the need for manual knowledge authoring and significantly improving task performance.",
+ "contributions": [
+  "Introduction of Mobile-Agent-V, a novel framework that uses video guidance for effortless and efficient knowledge injection in mobile automation.",
+  "Proposal of a multi-agent collaboration strategy featuring a sliding window mechanism, a video agent for adaptive window adjustment, and a deep-reflection agent for refining decisions via long-chain-of-thought reasoning.",
+  "Development of the Mobile-Knowledge benchmark, designed to isolate and evaluate the efficacy of external knowledge utilization in mobile agents."
+ ],
+ "methods": "Mobile-Agent-V processes an input video by uniformly sampling keyframes, removing redundant frames based on similarity thresholds, and filtering temporal gaps. A sliding window mechanism selects a subset of these keyframes relevant to the current operation, which are fed into a decision agent. A video agent dynamically shifts the window starting point after each action based on device state screenshots. A deep-reflection agent validates and refines the decision agent's output by comparing it against the video demonstration, using chain-of-thought reasoning to ensure strict adherence to demonstrated operations.",
+ "results": "On the Mobile-Knowledge benchmark, Mobile-Agent-V achieved a success rate (SR) of 86.7%, completion rate (CR) of 93.4%, and decision accuracy (DA) of 79.4%, outperforming the best baseline (Agent-S2) by up to 23.4% in SR/CR/DA. It reduced the average knowledge injection time to 0.7 minutes compared to up to 5 minutes for expert-written knowledge. On the AndroidWorld-Knowledge benchmark, which tests generalization from a single video per scenario, Mobile-Agent-V achieved an SR of 31.3%, a gain of at least 12.4% over the best baseline.",
+ "limitations": "The framework faces challenges from frequent scene changes and high information density in instructional videos. Current large-scale visual models struggle with processing video input. Performance gains from increasing the sliding window size diminish beyond a certain threshold due to irrelevant information interfering with decisions. Generalization ability declines when videos are misaligned with user tasks, particularly for normal and advanced instructions, though the system仍能 competently complete tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

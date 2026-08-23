@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.13171",
+ "tldr": "Sleep-time compute allows LLMs to reason offline about contexts before queries arrive, reducing test-time compute by ~5× for the same accuracy or boosting accuracy by up to 13-18% when scaled.",
+ "contributions": [
+  "Introduced sleep-time compute, which pre-computes inferences about contexts during model idle time",
+  "Created modified datasets Stateful GSM-Symbolic and Stateful AIME by splitting existing problems into context and question",
+  "Introduced Multi-Query GSM-Symbolic with multiple related queries per context",
+  "Demonstrated Pareto improvements in test-time compute vs. accuracy trade-offs",
+  "Showed amortization benefits reducing average cost per query by 2.5× across shared contexts",
+  "Provided analysis linking sleep-time compute efficacy to query predictability"
+ ],
+ "methods": "The authors modify two reasoning datasets (GSM-Symbolic and AIME) by splitting problems into context and question components, creating stateful testbeds. During sleep-time, an LLM is prompted to generate inferences about the context c, producing a re-represented context c'. At test-time, the model answers queries using a much smaller compute budget b << B given c'. They scale sleep-time compute via parallel generations for non-reasoning models and varying reasoning effort for models like o1 and o3-mini. For amortization analysis, they introduce Multi-Query GSM-Symbolic where a single context has multiple queries, generating additional Q&A pairs using o3-mini. They also analyze query predictability using log-probability under Llama2-70B base model.",
+ "results": "Sleep-time compute reduces test-time compute needed for the same accuracy by ~5× on both Stateful GSM-Symbolic and Stateful AIME. Scaling sleep-time compute further increases accuracy by up to 13% on Stateful GSM-Symbolic and 18% on Stateful AIME. Amortizing across multiple queries reduces average cost per query by 2.5× with 10 queries per context. Sleep-time compute consistently outperforms pass@k parallel scaling at the same test-time token budget. The accuracy gap between sleep-time and standard test-time compute widens as questions become more predictable from context. 5 parallel sleep-time generations generally outperformed 10.",
+ "limitations": [
+  "At high test-time compute budgets, standard test-time compute only slightly outperforms sleep-time compute, hypothesized because standard test-time only includes question-relevant content without distracting information",
+  "Diminishing returns from parallel sleep-time generations (5 outperformed 10)",
+  "Efficacy depends on query predictability from context — less effective for complex, unpredictable queries",
+  "SWE-Features case study evaluation is mentioned but truncated in the provided text"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

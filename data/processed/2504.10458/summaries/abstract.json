@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.10458",
+ "tldr": "GUI-R1 is the first reinforcement learning framework using rule-based reinforcement fine-tuning with a unified action space to enhance LVLMs for high-level GUI agent tasks, achieving state-of-the-art results with only 3K training examples versus 13M used by prior methods.",
+ "contributions": [
+  "Proposes GUI-R1, the first framework utilizing rule-based reinforcement fine-tuning to enhance LVLM reasoning in high-level GUI action prediction tasks",
+  "Designs a rule-based unified action space reward function that validates GUI task responses across different platforms and task granularities",
+  "Constructs GUI-R1-3K, a high-quality fine-tuning dataset of 3K examples with diversity and complexity",
+  "Conducts comprehensive evaluation across three platforms (desktop, mobile, web) and three task granularity levels across eight benchmarks"
+ ],
+ "methods": "The authors collect approximately 14M examples of GUI task data across Windows, Linux, macOS, Android, and Web platforms, then filter using Qwen2.5VL-7B-generated responses and a rule-based reward function, retaining only examples with intermediate difficulty. This produces a balanced dataset of 3K high-quality examples (1.5K high-level + 1.5K low-level). They design a unified action space with verifiable reward functions comprising format rewards and accuracy rewards (action type, click point, and input text rewards). The model is updated using group relative policy optimization (GRPO) with KL divergence constraints.",
+ "results": "GUI-R1 achieves state-of-the-art performance across eight benchmarks. On GUI grounding (ScreenSpot-Pro), GUI-R1-7B achieves 49.4% creative and 42.1% office tasks. On low-level tasks, GUI-R1-3B achieves 89.86% on GUI-Act-Web and 91.86% on OmniAct-Desktop, outperforming OS-Atlas-7B. On high-level tasks, GUI-R1-3B achieves a 21.06 absolute improvement over GPT-4o on AndroidControl-High and a 27.2% lead in step success rate on GUI-Odyssey. The method uses only 0.02% of the data (3K vs 13M) compared to OS-Atlas.",
+ "limitations": "The model uses single-image input training in a non-interactive environment, which may prevent the model from autonomously tracing back sequences of incorrect actions. The 'aha moment' was not observed during training, likely due to this limitation. The authors note that exploring multi-image high-level tasks in interactive environments could be a direction for future work.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

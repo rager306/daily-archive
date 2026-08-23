@@ -1,0 +1,35 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.04103",
+ "tldr": "Combining supervised fine-tuning with on-policy reinforcement learning consistently outperforms either approach alone for training LLM web agents, achieving pure SFT's peak performance with only 55% of the compute and closing the gap with closed-source models.",
+ "contributions": [
+  "First statistically grounded study on compute allocation for LLM web-agent post-training",
+  "Two-stage pipeline (SFT + GRPO) using Llama 3.1 8B student imitating Llama 3.3 70B teacher",
+  "Analysis of 1,370 hyperparameter configurations using bootstrapping to estimate effective hyperparameters",
+  "Actionable recommendations on compute allocation between SFT and RL for web-based multi-step tasks"
+ ],
+ "methods": "The authors use a two-stage training pipeline: first, a Llama 3.3 70B teacher generates K successful trajectories to warm-start a Llama 3.1 8B student via Supervised Fine-Tuning (SFT). Then, branching occurs at fixed intervals along the SFT trajectory, and each checkpoint continues with on-policy reinforcement learning using Group Relative Policy Optimization (GRPO). They sample 1,370 distinct configurations across 10 hyperparameters and apply bootstrap resampling (1,000 iterations) to estimate hyperparameter importance and uncertainty. Evaluation is conducted on MiniWob++ (30 tasks) and WorkArena (33 enterprise tasks), measuring generalization on both held-out goals and held-out tasks.",
+ "results": [
+  "SFT+RL consistently outperforms pure SFT and pure RL on both MiniWob++ and WorkArena",
+  "SFT+RL reaches the maximal performance of pure SFT on MiniWob++ using only ~6 exaFLOPs vs ~11 exaFLOPs for pure SFT, saving ~45% compute (55% of compute to match peak)",
+  "SFT+RL is the only strategy that can close the gap with closed-source models on MiniWob++",
+  "Early branching into RL (but not immediately after SFT) leads to better outcomes",
+  "Zero-advantage filtering in GRPO consistently improves performance",
+  "Curriculum learning and error log feedback help when SFT warmup is limited but become counterproductive afterward",
+  "Decoding temperature is consistently critical; learning rate and discount rate must be carefully tuned",
+  "On WorkArena, student performance still lags behind the teacher and proprietary models even with SFT+RL"
+ ],
+ "limitations": [
+  "WorkArena remains challenging for student models, with performance still lagging behind teachers and proprietary models",
+  "Pure RL from scratch struggles due to sparse rewards and unstable learning dynamics",
+  "Single-seed results are noisy and misleading; exhaustive multi-seed sweeps remain infeasible due to compute cost",
+  "Some hyperparameter effects (advantage normalization, importance ratio) depend on the amount of SFT warmup applied",
+  "The curriculum and error feedback strategies can become counterproductive with sufficient SFT warmup"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

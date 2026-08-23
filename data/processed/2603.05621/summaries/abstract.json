@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2603.05621",
+ "tldr": "RACAS is a robot-agnostic control architecture that decomposes closed-loop robot control into three cooperative LLM/VLM-based modules communicating exclusively through natural language, enabling zero-training generalization across radically heterogeneous robot platforms.",
+ "contributions": [
+  "Proposed RACAS, a cooperative multi-module agentic architecture for closed-loop robot control where all communication occurs in natural language",
+  "Demonstrated that all embodiment-specific and task-specific knowledge can be confined to declarative prompt configurations with no source code, model weight, or reward function modifications",
+  "Showed the first zero-training generalization of a single control framework across three radically heterogeneous robot platforms, including a novel robotic limb unknown to the LLM"
+ ],
+ "methods": "RACAS decomposes robot control into three LLM-based modules: a Controller, Monitors, and a Memory Curator, all communicating through natural language. At each time step, the Controller generates a visual query based on task state, each Monitor (a VLM) processes its camera image conditioned on that query and returns a natural language scene description, and the Controller reasons over observations to select an action dispatched through a hardware abstraction layer. The Memory Curator incrementally rewrites a structured persistent memory after each step, compressing redundant information and inferring cross-modal object positions. Adaptation to new robots requires only replacing prompt configuration files containing the robot description, action definitions, and environment context.",
+ "results": "RACAS was evaluated on three radically heterogeneous platforms: (1) a 4-DOF Alhakami et al. limb with 100×100 px cameras (9 actions, 30 runs for object localization of a fire extinguisher), (2) a Clearpath Dingo wheeled robot in simulation with three 640×480 cameras and in the real world with one 1280×800 camera (4 actions, 10 runs each), and (3) a BlueROV2 underwater vehicle with a single 1920×1080 camera (6 actions, 10 runs). In all cases, the unmodified RACAS successfully completed the assigned tasks. Baselines using randomly selected actions were also established when safe.",
+ "limitations": [
+  "A custom-engineered system would still be needed for production-grade deployment due to the stochastic nature of LLM-based control",
+  "Prior systems using LLM/VLM approaches had only been validated on structurally similar platforms in controlled laboratory settings",
+  "Low-resolution cameras required a learned super-resolution pipeline (Swin2SR) for improved VLM reasoning",
+  "The underwater experiment was conducted with a restricted 512×512 pixel crop to limit the field of view, indicating potential challenges with partial observability"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

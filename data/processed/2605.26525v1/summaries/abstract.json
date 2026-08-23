@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2605.26525v1",
+ "tldr": "The paper introduces Multi-Shot Video Extrapolation (MSVE), a task that extends an observed visual anchor into a cinematically structured sequence of shots while preserving identity, scene, objects, and narrative intent under finite per-call generation budgets. It proposes Recursive Context Allocation (ReCA), an inference-time framework that addresses three coupled bottlenecks—unsupported global plans, diluted shot-level prompts, and lossy temporal chaining—by hierarchically allocating compact, evidence-bounded, and fresh state across recursive generation calls.",
+ "contributions": [
+  "Definition of Multi-Shot Video Extrapolation (MSVE) as a source-grounded long-video generation task unifying single-shot extrapolation (anchor preservation) with multi-shot cinematic structure",
+  "Identification of three coupled bottlenecks in long-video generation: global planning producing unsupported details, shot-level prompting diluting task-relevant state, and temporal chaining creating lossy memory",
+  "Recursive Context Allocation (ReCA), an inference-time framework with three operators—Plan, Allocate, and Refresh—that recursively decomposes MSVE into context-bounded subproblems with only leaf nodes calling the frozen generator",
+  "MSVE-Bench and NB-Q, a source-grounded evaluation protocol purpose-built for 3-5 minute long-video generation with six capability groups and an independent GPT-5.5 API scorer"
+ ],
+ "methods": "ReCA maintains an external structured state S_k comprising visual, narrative, transition, and metadata fields, and recursively decomposes the target video until every leaf call fits within both a duration budget τ_G and a conditioning budget B_G. At each step, the Plan operator emits an evidence-bounded shot schedule optimizing narrative progress, plausible transitions, and a penalty on anchor-unsupported details; the Allocate operator selects a compact prompt slice from persistent state, current shot goal, and visual boundary, maximizing anchor support weighted by salience and freshness while penalizing redundancy; the Refresh operator separates visual boundary from semantic memory, using a lightweight extractor-verifier to produce structured observations and update provenance, confidence, and freshness of state variables. Only leaf nodes invoke the frozen video generator, while internal nodes perform inexpensive context operations, enabling parallel execution of independent sibling subtrees.",
+ "results": "ReCA improves average normalized score by 8-16% over the strongest competing controller and improves multi-shot consistency metrics by 28-43% across multiple backbones including Wan 2.2, Wan 2.7, and HappyHorse 1.0. In user studies on 20 MSVE prompts (80 long videos, 3-5 minutes) scored on six 0-5 Likert criteria, ReCA won every criterion: 4.27 visual appeal, 3.99 script faithfulness, 4.25 character consistency, 3.62 background consistency, 3.74 physical law, and 3.76 narrative coherence, with the largest perceptual gaps on cross-shot state-preservation dimensions where the next-best baseline scored below 2.7.",
+ "limitations": [
+  "ReCA requires a frozen short-video generator with finite per-call duration and conditioning budgets, constraining applicability to models with such bounded operation",
+  "The framework's recursive decomposition and state management introduce inference-time computational overhead beyond the generator call itself",
+  "Evaluation is currently limited to 3-5 minute videos and has not been tested on longer durations",
+  "The paper does not explicitly list limitations, but the approach depends on a Qwen 3.6 Plus planner/allocator/verifier and a GPT-5.5 independent judge, introducing model-family dependencies for the controller and metric respectively"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:02:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

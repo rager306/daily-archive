@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.13032",
+ "tldr": "Agent-E is a novel web agent with a hierarchical architecture, flexible DOM distillation/denoising, and change observation that achieves 73.2% success rate on the WebVoyager benchmark, outperforming prior state-of-the-art text-only and multi-modal web agents by 20% and 16% respectively.",
+ "contributions": [
+  "Novel hierarchical architecture with clear separation between a planner agent and a browser navigation agent",
+  "Flexible DOM distillation approach with three DOM representation implementations and parent-child relationship preservation",
+  "Change observation paradigm that monitors post-action state changes and provides verbal feedback",
+  "First comprehensive evaluation reporting task success rates, error awareness, task completion times, and LLM call counts",
+  "Synthesis of general design principles for agentic systems beyond web automation"
+ ],
+ "methods": "Agent-E was built using the Autogen framework and Playwright for browser control, employing two LLM-powered components (planner agent and browser navigation agent) with GPT-4-Turbo. The planner decomposes user tasks into sub-tasks and delegates them to the browser navigation agent, which selects from three DOM synthesis techniques (text-only, input fields, or all fields) and uses DOM denoising that preserves parent-child relationships. After each action, change observation via Mutation Observer Web API and attribute monitoring provides verbal feedback about state changes. The system was evaluated autonomously on the WebVoyager benchmark across 643 tasks on 15 real websites, with results assessed by 5 human evaluators.",
+ "results": "Agent-E achieved 73.2% overall success rate on WebVoyager, a 20% improvement over the previous text-only SOTA (WILBUR) and 16% over the previous multi-modal SOTA. Performance varied by website from 27.3% (Booking.com) to 95.7% (WolframAlpha), outperforming prior agents on 11 out of 15 websites. Agent-E was self-aware of failures for over 52% of failed tasks. Average task completion time was 150 seconds for successful tasks and 220 seconds for failed tasks. Average LLM calls per task was 25 (6.4 from planner, approximately 18.6 from browser navigation agent).",
+ "limitations": "The WebVoyager benchmark uses static dates making some tasks unachievable, requiring manual date adjustments. Booking.com and Google Flights remain challenging even for Agent-E. The agent does not use task-specific or website-specific prompting, nor vision for page observation, leaving room for improvement. DOM denoising and LLM token counts increase significantly on content-heavy websites like Amazon (3189 DOM elements vs 590 for WolframAlpha). Oblivious failures occur when the agent overlooks task requirements or misinterprets DOM observations.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

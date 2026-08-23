@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2302.01560",
+ "tldr": "The paper proposes DEPS (Describe, Explain, Plan and Select), an interactive LLM-based planning approach that enables multi-task embodied agents to robustly accomplish 70+ open-world Minecraft tasks by iteratively correcting plan errors and selecting efficient sub-goals based on horizon prediction.",
+ "contributions": [
+  "Identifying two key challenges in open-world task planning: long multi-step reasoning requirements and state-dependent sub-goal feasibility",
+  "Proposing DEPS, an interactive planning framework with a descriptor, LLM explainer/planner, and a horizon-predictive goal selector",
+  "First zero-shot multi-task agent to robustly accomplish 70+ Minecraft tasks without any demonstration or planning training",
+  "Demonstrating general effectiveness on non-open-ended domains (ALFWorld and tabletop manipulation)"
+ ],
+ "methods": "The method uses an LLM-based planner to decompose high-level tasks into sub-goal sequences. When execution fails, an event-triggered descriptor summarizes the current state and outcome into structured text feedback. The LLM acts as an explainer to locate errors via self-explanation (e.g., missing required tools), then re-plans with the explanation incorporated. A learned horizon-predictive selector estimates remaining steps to each candidate sub-goal and ranks parallel goals by accessibility, choosing the most efficient path.",
+ "results": "DEPS is the first zero-shot multi-task agent to robustly accomplish 70+ Minecraft tasks within a limited horizon (3000-12000 steps depending on task difficulty). It nearly doubles the overall success rate compared to language planner baselines using the same initial state and goal-conditioned controller. It also achieves on-par to over 50% relative improvement over existing LLM-based planning methods on ALFWorld and tabletop manipulation environments.",
+ "limitations": "The approach relies on a single standardized goal-conditioned controller trained by behavior cloning, and performance may vary across different Minecraft versions with differing rules and items. The paper acknowledges that open-world environments pose unique challenges including abundant object types, complex dependencies, and unpredictable transition dynamics that make flawless initial planning extremely difficult.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

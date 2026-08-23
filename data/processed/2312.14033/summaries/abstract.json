@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2312.14033",
+ "tldr": "T-Eval is a step-by-step tool utilization evaluation benchmark that decomposes tool use into six sub-processes (planning, reasoning, retrieval, understanding, instruction following, and review) to enable fine-grained analysis of LLM tool-agent capabilities.",
+ "contributions": [
+  "Introduces T-Eval, a decomposed benchmark evaluating individual and holistic tool-utilization competencies of LLMs",
+  "Multi-agent data generation pipeline with human expert verification that reduces external factor influence for stable, fair assessment",
+  "Extensive experiments on 20 LLMs revealing bottlenecks in current models and insights into effective training data for tool utilization"
+ ],
+ "methods": "The authors decompose tool utilization into six sub-dimensions: PLAN, REASON, RETRIEVE, UNDERSTAND, INSTRUCT, and REVIEW, each with tailored evaluation protocols. Planning is scored via Sentence-BERT similarity and Hopcroft-Karp matching against golden action sequences. Reasoning uses similarity comparison of generated thoughts. Retrieval is measured as tool name accuracy. Understanding compares generated parameters for similarity. Instruction following checks tool name and parameter accuracy in formatted output. Review is evaluated as a five-option multiple-choice task. Dataset construction uses GPT-3.5 for initial query generation, GPT-4 for refinement, and a three-agent paradigm (planner, executor, reviewer) with human verification, yielding 553 high-quality samples across 23,305 test cases.",
+ "results": "GPT-4 achieves the highest overall score of 86.4. Among open-source models, Qwen-72B scores 71.4%, closing the gap with API-based models. Performance monotonically increases with model scale. Open-source LLMs lack instruction-following ability for strict JSON formats, with Qwen-72B's JSON result more than 20 points lower than its string format score (84.5 vs 83.2). Tool retrieval is challenging even for Qwen-72B at 65.0%, over 20 points below GPT-3.5. Review ability is a major bottleneck: most models score only 50-60%, compared to GPT-4's 95%. Agent-specific training data (AgentLM) outperforms code data (CodeLLaMA) but neither significantly surpasses Vicuna.",
+ "limitations": "Open-source LLMs struggle with JSON format instruction following, causing distorted scores on subsets like PLAN where format failures—not actual capability gaps—drive low scores. The JSON evaluation, while approximating real use cases, fails to provide hierarchical discrimination across models that are not adept at specific formats. Format-following ability appears to need joint training with problem-solving rather than being learnable independently.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

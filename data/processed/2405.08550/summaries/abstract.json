@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.08550",
+ "tldr": "CommFormer learns multi-agent communication by treating the communication architecture as a learnable graph optimized through bi-level optimization, enabling agents to develop coordinated strategies under bandwidth constraints.",
+ "contributions": [
+  "Conceptualizing communication structure as a learnable graph with bi-level optimization for simultaneous optimization of the communication graph and architectural parameters",
+  "Adopting attention units within graph modeling to dynamically allocate credit to received messages with a monotonic performance improvement guarantee",
+  "Demonstrating through extensive experiments that CommFormer outperforms baselines and achieves performance comparable to unrestricted all-to-all information sharing methods across varying agent counts"
+ ],
+ "methods": "The authors propose CommFormer, which models agent communication as a learnable directed graph with a parameterized adjacency matrix α. The approach uses a bi-level optimization formulation where α is optimized at the upper level and encoder/decoder parameters at the lower level. A continuous relaxation via the Gumbel-Max trick (extended to k-hot) enables differentiable gradient-based optimization of the discrete adjacency matrix under a sparsity constraint S×N². The encoder uses relation-enhanced attention with edge embeddings and masking, while the decoder employs auto-regressive attention constrained to preceding agents. Centralized training with a critic network estimates value functions, and PPO trains the decoder policy.",
+ "results": "CommFormer consistently outperforms robust baseline methods across a variety of cooperative tasks and achieves performance comparable to methods allowing unrestricted information sharing among all agents. The model demonstrates robustness across diverse cooperative scenarios and maintains effectiveness regardless of variations in the number of agents.",
+ "limitations": "The approach assumes a fixed communication architecture pre-inference rather than dynamically adapting during inference. The sparsity parameter S controls the allowed number of edges but requires careful selection. Full evaluation of the architecture gradient is acknowledged as prohibitive due to expensive inner optimization, necessitating an approximation that updates parameters with only a single training step rather than converging the inner optimization.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

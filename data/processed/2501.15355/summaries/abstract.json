@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.15355",
+ "tldr": "The paper proposes ToM-agent, a novel paradigm that empowers LLM-based generative agents to simulate Theory of Mind in open-domain conversations by disentangling beliefs, desires, and intentions (BDIs) from confidence levels and using counterfactual reflection to iteratively update BDI inferences.",
+ "contributions": [
+  "First application of ToM modeling to open-domain conversational interactions by disentangling belief and confidence, extending beyond prior task-specific or narrative-bound studies.",
+  "Zero-shot BDI inference and utterance generation without requiring training on annotated dialogue corpora.",
+  "Counterfactual reflection method that reasons about discrepancies between predicted and real responses to indirectly refine inferred BDIs and confidence levels.",
+  "Empirical validation on empathetic and persuasion dialogue downstream tasks, demonstrating effectiveness in both first-order and second-order ToM."
+ ],
+ "methods": "The ToM-agent consists of three modules: a Self-BDI Aware Module that generates utterances from the agent's own BDIs, a Vanilla BDI Tracking Module that infers top-1 counterpart BDIs, and a CR-based BDI Tracking Module that tracks top-k BDIs with confidence. BDIs are initialized via zero-shot prompting on a dialogue episode. The counterfactual reflection method compares predicted utterances (based on inferred BDIs) with real observed utterances, scores their similarity, and triggers reflection to update BDIs and confidence when discrepancies exist. Second-order ToM judgment is performed by having the agent assess whether the counterpart understood its BDIs.",
+ "results": "The ToM-agent was evaluated on empathetic dialogue and persuasion dialogue downstream tasks. It demonstrated the ability to infer counterparts' unobservable BDIs (first-order ToM) and infer counterparts' understanding of its own BDIs (second-order ToM). The counterfactual reflection-based module improved performance over the vanilla BDI tracking baseline. The paper reports ablation studies with different LLMs and prompting methods.",
+ "limitations": "The study simplifies the setup to two-agent interactions rather than large-scale multi-agent simulations. BDIs are inherently unobservable latent variables, making direct evaluation of BDI accuracy impossible—the method instead relies on utterance-level similarity scores as a proxy. The approach is limited to first-order and second-order ToM only, with higher-order reasoning not addressed. Initial BDI inference is zero-shot based on a single randomly selected episode, which may limit initial accuracy.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:14Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

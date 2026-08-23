@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.13092",
+ "tldr": "TEXT2WORLD is a novel benchmark based on PDDL that evaluates LLMs' ability to generate symbolic world models from textual descriptions, revealing that even the best models struggle with world modeling despite RL-trained reasoning models outperforming others.",
+ "contributions": [
+  "Introduction of TEXT2WORLD, a benchmark with 103 diverse PDDL domains and execution-based multi-criteria evaluation metrics",
+  "Benchmarking of 16 LLMs across 9 model families showing current models still struggle with world modeling",
+  "Demonstration that large reasoning models trained with RL show superior world modeling capabilities",
+  "Exploration of strategies including test-time scaling, error correction, in-context learning, fine-tuning, and agent training to improve performance"
+ ],
+ "methods": "The authors constructed TEXT2WORLD by collecting 1,801 raw PDDL files from public repositories, filtering them through automated pipelines (validation, similarity deduplication, complexity control, token length filtering), and manually curating 103 high-quality domains with natural language descriptions. They evaluated 16 LLMs using metrics including executability (syntax validation), structural similarity (normalized Levenshtein ratio), and component-wise F1 scores for predicates, parameters, preconditions, and effects. They also tested strategies like test-time scaling with error correction, few-shot in-context learning, supervised fine-tuning on synthetic PDDL data, and agent training on trajectory data.",
+ "results": "DeepSeek-R1 achieved the highest performance with F1 scores of 57.6% (preconditions) and 58.8% (effects) without error correction, improving to 65.0% and 67.3% with EC3. Error correction significantly improved performance: GPT-4o-mini executability increased from 48.5% to 72.3% after three correction attempts. ANOVA showed significant improvement with correction attempts (F=27.48, p=0.00012). Claude-3.5-Sonnet achieved over 20% increase in component-wise F1 with in-context learning. Fine-tuned LLaMA-3.1-70B achieved performance comparable to GPT-4o-mini. The benchmark has a low data contamination rate (mu=0.04 vs mu=0.47 in prior works).",
+ "limitations": "Even the best-performing model (DeepSeek-R1) achieves F1 scores below 60% for preconditions and effects. Complete elimination of data contamination remains challenging due to PDDL's widespread use in training data. Some models (e.g., LLaMA-2, LLaMA-3.1 8B variants) had zero executability in zero-shot settings. The contamination analysis using n-gram matching may not capture all forms of data leakage. In-context learning helped some models but hurt others (e.g., GPT-4o-mini performance decreased with few-shot examples).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:30Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

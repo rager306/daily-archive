@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.12951",
+ "tldr": "Retrials without verbalized feedback—a simple mechanism that retries problem-solving attempts upon identifying incorrect answers—often outperform more sophisticated reasoning frameworks like Tree of Thoughts and Reflexion at significantly lower cost.",
+ "contributions": [
+  "Introduction of 'retrials without feedback' as a simple yet effective mechanism for enhancing LLM reasoning",
+  "Demonstration that simpler methods (IO, CoT) with retrials outperform complex reasoning frameworks under constrained budgets",
+  "Challenge to the assumption that more intricate reasoning strategies inherently lead to better performance",
+  "Analysis of temperature's effect on retrial-based cost efficiency"
+ ],
+ "methods": "The authors evaluated four prompting strategies—Standard IO, Chain-of-Thought (CoT), Tree-of-Thoughts (ToT), and Reflexion—under a retrial mechanism on three benchmarks: Game of 24 (100-test-puzzle math reasoning), HumanEval (161 Python programs), and HotpotQA (100 multi-hop QA samples). Each method iteratively retried unsolved samples until a predefined budget was exhausted or all were solved. Experiments used GPT-4o-mini and LLaMA-3.3-70B as base models, with cost measured in USD and success rate/accuracy as quality metrics. A temperature analysis was also conducted for Game of 24 across CoT and ToT methods.",
+ "results": "CoT prompting consistently outperformed complex methods, achieving 94% success rate on Game of 24 with GPT-4o-mini—a result that ToT and Reflexion would require approximately $600 to achieve on GPT-4. For HumanEval and HotpotQA, CoT and IO reached performance plateaus earlier than Game of 24. With GPT-4o-mini, higher temperature values improved success rates, with CoT at temperature 1.0 achieving 100% accuracy at half the allocated budget on Game of 24. On LLaMA-3.3-70B, CoT substantially outperformed IO on Game of 24 and HotpotQA, though ToT slightly outperformed CoT on HotpotQA. Per-sample analysis showed ToT and Reflexion achieved stronger performance with fewer retrials on Game of 24 and HotpotQA, but CoT and IO ultimately surpassed them as retrials increased.",
+ "limitations": [
+  "The method cannot be applied to tasks where answers cannot be directly verified, such as HotpotQA where correct answers are hidden during solving",
+  "For HumanEval, Reflexion and ToT were observed to surpass simpler methods if given more budget, indicating limitations under unconstrained settings",
+  "Temperature analysis for LLaMA-3.3-70B had not yet plateaued, limiting conclusiveness due to the model being approximately three times more expensive than GPT-4o-mini"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

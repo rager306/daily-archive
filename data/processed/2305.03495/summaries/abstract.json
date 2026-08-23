@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.03495",
+ "tldr": "ProTeGi (Prompt Optimization with Textual Gradients) is a nonparametric algorithm that automatically improves LLM prompts by generating natural-language 'gradients' from training data errors and editing prompts in the opposite semantic direction, guided by beam search and bandit selection.",
+ "contributions": [
+  "A general-purpose nonparametric algorithm for automatic prompt optimization that uses discrete improvements to prompts in a directed way via textual 'gradient descent'",
+  "A beam search framework over prompt space with efficient best-arm identification via bandit selection",
+  "Preliminary evaluation across four NLP tasks including the novel problem of LLM jailbreak detection",
+  "Demonstration that ProTeGi can improve initial prompt performance by up to 31% and outperform state-of-the-art baselines by 4-8% on average"
+ ],
+ "methods": "The algorithm assumes access to an initial prompt, training data, and a black-box LLM API. It iteratively samples minibatches of training data, evaluates the prompt, collects errors, and uses an LLM to generate natural-language gradients describing the prompt's flaws. A second LLM then edits the prompt in the opposite semantic direction of each gradient. These gradient descent steps feed into a beam search over prompt candidates, where bandit-based selection (UCB, UCB-E, Successive Rejects, Successive Halving) chooses the most promising candidates each iteration. Monte Carlo paraphrasing expands additional candidates. Experiments were run on GPT-3.5-turbo with beam size 4, minibatch size 64, and 6 optimization steps.",
+ "results": "ProTeGi outperformed all baselines on four datasets (Jailbreak, Ethos, Liar, Sarcasm). On average, it improved over Monte-Carlo baseline by 3.9% and RL baseline by 8.2%, and improved over the original prompt by 15.3%. Performance gains reached up to 31% on individual tasks. Beam search ablation showed improvements over flat enumeration and greedy DFS, with significant gains on Jailbreak and Liar. RLHF-tuned models (GPT-4) dramatically outperformed GPT-3. Learning curves showed all datasets peaked around 3 optimization steps, suggesting early overfitting or local minima. UCB-style bandits consistently outperformed successive rejects-style algorithms despite theoretical expectations.",
+ "limitations": "The process can overfit training data or get caught in local minima after only a few optimization steps (peaked around 3 steps on all datasets). UCB-style algorithms performed better than successive rejects despite theory predicting the opposite, indicating potential mismatches between theoretical assumptions and practice. Lower variance in scoring estimates degrades with fewer evaluations. AutoGPT feedback sometimes reduced starting prompt performance on Jailbreak and Sarcasm. The effectiveness of different optimization techniques varies across NLP tasks. Experimental results are based on a limited preliminary case study with default hyperparameters and no hyperparameter search.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

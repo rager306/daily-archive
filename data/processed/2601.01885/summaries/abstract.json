@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2601.01885",
+ "tldr": "The paper proposes Agentic Memory (AgeMem), a unified framework that integrates long-term and short-term memory management directly into LLM agent policies through tool-based actions trained with a three-stage progressive reinforcement learning strategy.",
+ "contributions": [
+  "Proposes AgeMem, a unified agentic memory framework enabling LLM-based agents to autonomously decide when, what, and how to manage both LTM and STM",
+  "Develops a three-stage progressive RL strategy equipped with step-wise GRPO for effective end-to-end learning of unified memory management",
+  "Conducts comprehensive evaluations across multiple models and long-horizon benchmarks demonstrating robustness and effectiveness"
+ ],
+ "methods": "AgeMem exposes six memory operations as tool-based actions (ADD, UPDATE, DELETE for LTM; RETRIEVE, SUMMARY, FILTER for STM) integrated directly into the agent's policy. Training follows a three-stage curriculum: Stage 1 builds LTM through casual interactions, Stage 2 teaches STM control under distractor noise, and Stage 3 requires coordinated use of both memories for task solving. A step-wise GRPO mechanism propagates terminal rewards backward to all preceding memory decisions for long-range credit assignment, using a composite reward combining task completion, context management, and memory quality signals.",
+ "results": "Experiments on five long-context, reasoning-intensive benchmarks show AgeMem consistently outperforms strong memory-augmented baselines across multiple LLM backbones, achieving improved task performance, higher-quality long-term memory, and more efficient context usage.",
+ "limitations": "The reward function requires tuning of multiple coefficients (w_task, w_context, w_memory) for the composite reward. The staged curriculum introduces artificial separation between LTM and STM learning phases. Memory operations create sparse and discontinuous rewards that challenge standard RL. The approach may still risk discarding rare but crucial details during aggressive summarization or filtering.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

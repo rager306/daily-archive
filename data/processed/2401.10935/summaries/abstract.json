@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.10935",
+ "tldr": "SeeClick is a visual GUI agent that relies solely on screenshots for task automation by enhancing LVLMs with GUI grounding pre-training, addressing the challenge of accurately locating screen elements based on instructions.",
+ "contributions": [
+  "A unified visual GUI agent SeeClick that solely relies on interface screenshots to perform clicking and typing actions across diverse GUI platforms (mobile, desktop, web)",
+  "GUI grounding pre-training strategy to enhance LVLMs' ability to locate screen elements based on instructions",
+  "ScreenSpot benchmark, the first realistic GUI grounding evaluation dataset encompassing over 1200 instructions from iOS, Android, macOS, Windows, and web platforms"
+ ],
+ "methods": "The authors build SeeClick through continual pre-training of Qwen-VL on a 1M dataset composed of web UI grounding data (from ~300k Common Crawl pages), mobile UI data adapted from widget captioning datasets (~20k screenshots, 40k widgets) and RICO, plus general vision-language data from LLaVA. They use LoRA to fine-tune both the visual encoder and LLM for ~10k steps. For data curation, they extract visible text and title-attribute elements from HTML for web grounding, reverse widget captioning for mobile grounding, and include OCR tasks. They also create ScreenSpot by recruiting annotators to collect GUI interfaces across mobile, desktop, and web platforms with bounding boxes for actionable elements.",
+ "results": "SeeClick achieves the best average performance across GUI platforms on ScreenSpot, outperforming both generalist LVLMs (GPT-4V, MiniGPT-v2) and GUI-specific models (CogAgent, Fuyu). On MiniWob, SeeClick surpasses WebGUM with equivalent 2.8K training data and exceeds the visual baseline Pix2Act using less than 0.3% training data, while outperforming the Qwen-VL baseline by nearly 20 percentage points. Results on ScreenSpot and three agent tasks (MiniWob, AITW, Mind2Web) demonstrate that enhanced GUI grounding capacity consistently correlates with improved downstream agent task performance.",
+ "limitations": "SeeClick simplifies the GUI action space to mainly clicking and typing, excluding complex actions like dragging and double-clicking. Limited by the performance of open-source LVLMs, training on agent-specific data is necessary for SeeClick to execute multi-step tasks on mobile and computer interfaces. Jointly training across platforms shows slight performance decline, possibly due to significant differences in interface designs across GUI types.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

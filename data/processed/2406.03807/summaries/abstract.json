@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.03807",
+ "tldr": "Tool-Planner is a task-planning framework that groups tools with similar or identical functionalities into toolkits using SimCSE-based clustering, enabling LLMs to reselect alternative tools within the same toolkit upon errors before resorting to cross-toolkit replanning, thereby improving planning efficiency and success rates.",
+ "contributions": [
+  "Proposed Tool-Planner, a novel framework for task planning and tool invocation based on toolkits rather than individual tools",
+  "Tool clustering method using SimCSE embeddings and k-means++ to group APIs with similar/identical functionalities into toolkits",
+  "A two-level planning exploration strategy: first trying alternative APIs within the same toolkit, then replanning across toolkits only if all fail",
+  "Extensive experiments on ToolBench and APIBench showing state-of-the-art performance on 5 of 6 datasets"
+ ],
+ "methods": "The authors first extract tool documentation and descriptions from APIs, use LLMs to generate brief functionality explanations, and compute tool embeddings via SimCSE. These embeddings are clustered using k-means++ (k=1800 for ToolBench, k=65 for APIBench) into toolkits representing groups of similar tools. For planning, LLMs receive toolkit functionality descriptions via in-context learning to generate chained toolkit-based plans. When a tool error occurs, the framework prioritizes selecting an alternative API within the same toolkit without changing the plan; only if all APIs in a toolkit fail does it trigger cross-toolkit replanning at the toolkit level rather than the API level.",
+ "results": "On ToolBench with GPT-4, Tool-Planner achieves +8.8% pass rate and +9.1% win rate compared to DFSDT (best baseline). On APIBench with GPT-4, it achieves +6.6% pass rate, +14.5% win rate, and -2.1% hallucination rate. For multi-tool instruction tasks (G2 and G3), pass rate increases by +8.9% and win rate by +10.6% on GPT-4. Tool-Planner achieves state-of-the-art performance on 5 out of 6 ToolBench datasets.",
+ "limitations": "The paper notes that the number of identical or similar APIs within a toolkit is limited, so if all APIs in a toolkit fail, cross-toolkit replanning is still required. Additionally, while not extensively discussed, the approach depends on the quality of SimCSE embeddings and k-means++ clustering to produce meaningful tool groupings. No explicit ablation is shown on how clustering quality affects downstream performance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

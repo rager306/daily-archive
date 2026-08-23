@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.00764",
+ "tldr": "AGENTGEN is a framework that automatically synthesizes diverse planning environments and tasks using LLMs, enabling instruction-tuning that significantly enhances the planning capabilities of LLM-based agents.",
+ "contributions": [
+  "Introduction of AGENTGEN, the first framework for automatically generating diverse planning tasks and environments for LLM-based agent training",
+  "Use of an inspiration corpus (LIMA) as context for generating 592 diverse environments via LLMs",
+  "Proposal of a bidirectional evolution method (BI-EVOL) that evolves tasks from both easier and harder directions to create a smoother difficulty curve",
+  "Construction of an agent instruction-tuning dataset with 7,246 high-quality trajectories, demonstrating effectiveness and generalization on both in-domain and out-of-domain tasks"
+ ],
+ "methods": "AGENTGEN operates in two stages: (1) Environment Generation uses an inspiration corpus sampled from diverse text segments to prompt an LLM to generate environment specifications, which are then implemented as code (e.g., PDDL or Python) with iterative validation. An environment library provides in-context examples for continued expansion. (2) Task Generation employs BI-EVOL, where the LLM first generates seed planning tasks zero-shot, then evolves them bidirectionally toward simpler or more complex goals, producing a task set with a smooth difficulty curve. A domain-independent planner (FastDownward) synthesized 7,246 high-quality trajectories from 592 environments, each with 20 tasks, for instruction-tuning Llama-3.1-8B and Llama-3.1-70B models.",
+ "results": "On AgentBoard in-domain tasks, AGENTGEN-tuned Llama-3.1-8B achieved a score of 33.3 versus 3.0 for the raw model (more than tenfold improvement), outperforming GPT-3.5 overall. AGENTGEN-tuned Llama-3.1-70B exceeded GPT-4, setting a new state-of-the-art. In out-of-domain tasks (Alfworld, BabyAI, Jericho), the raw Llama-3.1-8B saw a 10.0% increase in average success rate and the 70B model saw a 3.7% improvement.",
+ "limitations": [
+  "The study notes that existing agent training approaches primarily rely on manually designed environments and tasks, which is labor-intensive; while AGENTGEN addresses this, the evaluation is limited to a specific set of PDDL-based and select out-of-domain benchmarks",
+  "The framework's performance depends on the quality of the inspiration corpus and the underlying LLM used for generation (GPT-4 in experiments)",
+  "Trajectory synthesis relied on a domain-independent planner (FastDownward), which may not generalize to all environment types"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

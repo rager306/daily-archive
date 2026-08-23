@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2212.08073",
+ "tldr": "Constitutional AI trains harmless yet helpful AI assistants using only a set of natural-language principles (a constitution) and AI feedback, eliminating the need for human labels on harmful outputs while reducing evasive responses.",
+ "contributions": [
+  "Demonstrate constitutional methods to train helpful and harmless models without any human feedback labels for harmlessness.",
+  "Show that AI identification of harms improves as language model capabilities increase, and that chain-of-thought reasoning makes evaluations competitive with preference models trained on human feedback.",
+  "Prove that repeated model-generated critiques and revisions progressively reduce harmfulness, and that generating critiques improves harmlessness over direct revision alone.",
+  "Use self-supervised preference labels for reinforcement learning to equal or exceed the performance of models trained with human feedback for harmlessness, as evaluated by crowdworkers."
+ ],
+ "methods": "The Constitutional AI process has two stages. First, a supervised learning phase samples responses from an initial helpful-only model, then generates self-critiques and revisions guided by randomly sampled principles from a constitution, and finetunes the model on the revised responses. Second, a reinforcement learning phase generates response pairs, uses a model to evaluate which is better according to constitutional principles, trains a hybrid human/AI preference model on this AI-generated preference data (mixed with human helpfulness labels), and then performs reinforcement learning from AI feedback (RLAIF) using that preference model as the reward signal.",
+ "results": "The RL-CAI model trained with AI feedback is preferred by crowdworkers over previously collected human-feedback-trained models for harmfulness. Chain-of-thought reasoning significantly improves the ability of pretrained language models to identify harmful behavior, with models larger than 52B expected to become competitive with human-feedback-trained preference models. Repeated critique-and-revision steps progressively reduce harmfulness, and the constitutional approach specifically reduces the evasiveness observed in prior human-feedback-trained assistants.",
+ "limitations": "Scaling AI supervision carries potential downsides and dangers by automating and possibly obscuring decision-making. The method relies on an extreme reduction of human input to only about ten principles, which may not cover all harmful behaviors. While the approach aims to reduce the tension between helpfulness and harmlessness, that tension is not fully eliminated, and the transparency gains from chain-of-thought reasoning depend on the model's ability to follow constitutional principles consistently.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

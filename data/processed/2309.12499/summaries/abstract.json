@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2309.12499",
+ "tldr": "CodePlan is a task-agnostic framework that frames repository-level coding as a planning problem, synthesizing multi-step chains of edits using LLMs guided by incremental dependency analysis, change may-impact analysis, and adaptive planning.",
+ "contributions": [
+  "First formalization of automating repository-level coding tasks using LLMs, requiring analysis and propagation of code change effects across repositories",
+  "A task-agnostic framework (CodePlan) combining incremental dependency analysis, change may-impact analysis, and adaptive planning to synthesize multi-step edit plans for LLMs",
+  "Evaluation on two repository-level tasks: package migration (C#) and temporal code edits (Python), comparing against oracle-guided baselines",
+  "Results showing CodePlan gets 5/6 repositories to pass validity checks while baselines get 0/6"
+ ],
+ "methods": "CodePlan frames repository-level coding as automated planning, maintaining a plan graph (DAG) of edit obligations and a dependency graph tracking syntactic/semantic relations across the repository. It takes a repository, seed edit specifications, an oracle, and an LLM as inputs. For each pending edit node, it extracts a code fragment with surrounding class context, gathers spatial context (related code via static analysis) and temporal context (prior edits along plan graph paths), constructs a prompt, invokes the LLM, merges the result back, and updates the dependency graph. Change classification (modification, addition, deletion) drives a may-impact analysis that identifies affected dependent blocks, which are then added to the plan graph as new or extended edit obligations. This loop continues until the oracle validates the repository.",
+ "results": "Evaluated on package migration (C#) and temporal code edits (Python) across multiple repositories requiring inter-dependent changes to 2-97 files. CodePlan achieved better match with ground truth compared to baselines. CodePlan got 5/6 repositories to pass validity checks (e.g., building without errors and making correct code edits), whereas baselines—which use oracles (build system for C#, static type checker for Python) to iteratively identify and fix errors without planning—could not get any of the repositories to pass.",
+ "limitations": [
+  "Not all changes induce build errors even when they produce behavioral changes (e.g., changing a return value from True to False without changing the return type), which pure oracle-guided approaches miss",
+  "Build systems are agnostic to cause-effect relationships when code breaks, potentially leading to incorrect fixes (e.g., reverting seed changes)",
+  "The paper notes this is a complex problem and only evaluates on two tasks (package migration and temporal code edits); broader task coverage is not demonstrated",
+  "Some proprietary repositories were not released with the data and evaluation scripts"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

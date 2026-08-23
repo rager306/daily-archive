@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.01341",
+ "tldr": "TurnBench is a novel benchmark evaluating multi-turn, multi-step reasoning in LLMs through an interactive code-breaking game, revealing that even the best models significantly lag behind humans, especially under high complexity.",
+ "contributions": [
+  "Proposes TurnBench, a benchmark with 540 game instances across Classic and Nightmare modes at three difficulty levels each for evaluating multi-turn, multi-step reasoning",
+  "Introduces an automated rule-based evaluation method for analyzing intermediate reasoning steps against ground truth",
+  "Benchmarks state-of-the-art LLMs including GPT-o4-mini and Gemini-2.5-Flash alongside human participants",
+  "Releases a dataset with game settings, final answers, interaction logs, and reasoning steps"
+ ],
+ "methods": "TurnBench uses an interactive code-breaking task inspired by the Turing Machine board game, where models must uncover hidden logical/arithmetic rules by making sequential guesses to a three-digit code, receiving PASS/FAIL feedback from verifiers, and integrating clues across multiple rounds. Two modes exist: Classic (direct verifier responses) and Nightmare (secretly remapped verifiers). An automated evaluation pipeline uses an Inference Extractor (Gemini-2.5-Flash) to parse model reasoning and a Judger to classify inferences as Correct, Incorrect, or Include against ground truth. The benchmark was evaluated on 270 Classic and 45 Nightmare scenarios across models including GPT-o4-mini, Gemini-2.5-Flash, DeepSeek-R1, Llama, Mistral, and Qwen variants, plus five human participants with no prior game experience.",
+ "results": "In Classic mode, the best model (gpt-o4-mini-high with CoT) achieved 84% accuracy vs. 100% for the best human and 94% average for humans. With CoT prompting, gpt-o4-mini-high improved from 64% (OA) to 84%, and gpt-4.1 rose from 9% to 69%. In Nightmare mode, performance dropped drastically: gpt-o4-mini-high fell from 84% to 11%, gemini-2.5-flash reached only 13%, while the best human maintained 100% and average humans achieved 94.2%. Once LLMs made an initial error, they struggled to recover; the rate of 'Ended with no final conclusion' after a first incorrect conclusion ranged from 34.85% (gpt-o4-mini-high) to 96.23% (qwen-2.5-7b). Random guess accuracy was only 0.76%.",
+ "limitations": "The Inference Extractor missed 13.7% of applicable conclusions in validation. Smaller standard models struggled significantly despite understanding rules, suggesting complex reasoning requires sufficient model capacity. The automated evaluation was validated on only 120 stratified samples (5% of total), prioritizing failed games.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

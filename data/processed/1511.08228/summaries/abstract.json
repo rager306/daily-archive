@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1511.08228",
+ "tldr": "The Neural GPU is a parallel, convolutional gated recurrent unit architecture that learns algorithmic tasks like binary addition and multiplication from examples and generalizes perfectly to inputs far longer than those seen during training.",
+ "contributions": [
+  "Introducing the Neural GPU, a Turing-complete but highly parallel neural network architecture for learning algorithms",
+  "Demonstrating the first neural network to learn an algorithm (long binary multiplication) whose runtime is superlinear in input size",
+  "Introducing parameter sharing relaxation as a technique for training deep recurrent networks",
+  "Showing that small dropout and gradient noise significantly improve learning and generalization"
+ ],
+ "methods": "The Neural GPU uses convolutional gated recurrent units (CGRU) operating on a 2D mental image tensor of shape [w=4, h=n, m=24]. Input sequences are embedded into the first column and then processed through l=2 layers of CGRUs applied for n time steps. The final output is read from the first column via a linear output matrix. Training uses the Adam optimizer with gradient clipping, parameter sharing relaxation (r=6), dropout on recurrent connections, gradient noise, and curriculum learning. A grid search over 729 hyperparameter configurations was performed for each experiment.",
+ "results": "The Neural GPU achieved zero errors on long binary multiplication trained on up to 20-bit numbers and tested on numbers up to 2000 bits long. It also learned long binary addition with no errors, generalizing beyond training length. By comparison, LSTM+A could not learn binary multiplication at all and generalized to only ~25 bits on addition, while stack-RNNs generalized only to ~100 bits on addition. The same architecture solved copying, reversing, duplicating, and counting tasks with perfect generalization up to 4001 bits after training on lengths up to 41.",
+ "limitations": "Testing was limited by technical implementation constraints to around 2000 bits. The architecture requires extensive grid search (729 runs) to find well-generalizing models. Parameter sharing relaxation increases memory usage when using larger r values. Stack-RNN baselines were trained with a different regime, making direct comparison partially unfair.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

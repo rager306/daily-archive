@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.08806",
+ "tldr": "BrainNav is a bio-inspired spatial cognitive navigation framework that uses a dual-map (coordinate and topological) and dual-orientation (relative and absolute) strategy to reduce spatial hallucinations and improve real-world vision-and-language navigation.",
+ "contributions": [
+  "Proposed BrainNav, the first bio-inspired hierarchical decision system with five neurobiologically-motivated modules: Hippocampal Memory Hub, Visual Cortex Perception Engine, Parietal Spatial Constructor, Prefrontal Decision Center, and Cerebellar Motion Execution Unit.",
+  "Introduced a dual-map dual-orientation navigation framework combining coordinate and topological maps with relative and absolute orientation for multi-level spatial representation.",
+  "Achieved state-of-the-art results without fine-tuning, significantly outperforming existing methods in zero-shot real-world environments."
+ ],
+ "methods": "BrainNav integrates five core modules mimicking biological cognitive functions. The Hippocampal Memory Center retrieves and stores historical trajectories and topological maps for memory recall and path backtracking. The Visual Cortex Perception Engine uses a vision-language model to analyze RGB images from four directions, identifying obstacles, traversable areas, and landmarks while estimating relative distances. The Parietal Spatial Builder maintains a coordinate map (updating candidate points based on agent movement and orientation) and a topological map (graph of nodes and navigable edges). The Prefrontal Decision Center fuses multimodal inputs via an LLM to generate action plans, and the Cerebellar Motion Execution Unit translates high-level commands into precise robot actions using both relative and absolute orientation. The system relies solely on RGB images and GPT-4o, without depth cameras or LiDAR.",
+ "results": "In zero-shot real-world experiments with 200 instructions (100 simple, 100 complex), each repeated three times with random obstacles: BrainNav achieved a 71% success rate and 55% SPL on simple path navigation tasks. For complex tasks, it achieved 87.5% success rate on dynamic obstacle avoidance without radar. Backtracking rate was only 10% versus MapGPT's 75%, with a 73.3% success correction rate when backtracking occurred. Environment interaction tasks had lower performance at 25% success rate. BrainNav consistently outperformed the MapGPT baseline across all complex tasks.",
+ "limitations": [
+  "Environment interaction tasks showed weaker performance (25% success rate), limited by the randomness of human movements and difficulty handling simultaneous following and obstacle avoidance.",
+  "Occasional path redundancy occurs in multi-target search tasks when targets are dispersed.",
+  "Large model spatial reasoning in static scenes may lead to local exploration, reducing efficiency and negatively affecting SPL.",
+  "Relies solely on RGB images without depth sensors, which may limit precision in certain scenarios."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

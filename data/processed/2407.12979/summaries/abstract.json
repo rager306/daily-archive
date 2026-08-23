@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.12979",
+ "tldr": "The paper proposes an automated method for generating PDDL domain and problem files from natural language descriptions using LLMs and environment feedback without human intervention, achieving a 66% average task solve rate across 10 PDDL environments.",
+ "contributions": [
+  "Demonstration that even small modifications to PDDL domains can render plan search infeasible, limiting feedback for in-context updates",
+  "Introduction of an Exploration Walk (EW) metric as a smooth similarity measure between domains by comparing executability of random action sequences",
+  "An EW-guided tree search approach that leverages LLMs to iteratively generate and refine PDDL domain and problem files automatically",
+  "Evaluation on 10 challenging PDDL domains showing outperformance over single-attempt baselines and GPT-4 intrinsic planning"
+ ],
+ "methods": "The method uses LLMs to generate hypothetical PDDL domain descriptions ('mental models') of an environment, then verifies and updates them through environment feedback. An Exploration Walk (EW) metric samples random legal action sequences from one domain and checks their executability in another, providing smooth feedback signals. An EW-guided tree search iteratively generates multiple problem PDDL candidates and refines the domain PDDL based on executability feedback from interacting with the environment, without requiring human intervention or ground-truth PDDL access.",
+ "results": "On 10 PDDL environments, the method achieved an average task solve rate of 66% and average EW score of 0.84, compared to 34% task solve rate and 0.53 EW score for a baseline generating PDDL in a single attempt without refinement, and 29% solve rate by GPT-4 (gpt-4-1106-preview) with chain-of-thought prompting. The method solved 7 out of 10 environments. Random omission experiments showed that on average 14% of terms in domain PDDLs are so critical that removing just one term (k=1) results in plan-not-found errors, rising to ~30% at k=3 omissions.",
+ "limitations": [
+  "Small modifications to PDDL domains can easily render plan search infeasible, limiting feedback for in-context updates",
+  "Errors in domain generation are abundant and hard to trace",
+  "The method requires access to the environment's object list and action interface (API)",
+  "Requires natural language descriptions of both domain and task",
+  "LLMs may struggle with long-horizon reasoning tasks producing cascading errors"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.05036",
+ "tldr": "AVALONBENCH is a benchmark introducing a comprehensive game environment for evaluating multi-agent LLMs playing the strategic social deduction game Resistance Avalon, revealing a significant capability gap between current LLM agents and rule-based baseline bots.",
+ "contributions": [
+  "Introduction of AVALONBENCH, a benchmark based on Resistance Avalon for studying multi-agent game playing of LLM agents",
+  "A game environment that records all players' actions and progresses the game",
+  "Naive AI bots with deterministic rule-based strategies serving as baselines",
+  "Baseline implementations of ReAct-style LLM agents with carefully designed prompts",
+  "Demonstration that current LLM agents lack deduction, persuasion, negotiation, and deception capabilities needed to play Avalon well"
+ ],
+ "methods": "The authors built AVALONBENCH, a game engine for the hidden-identity social deduction game Resistance Avalon. They implemented ReAct-style LLM agents (using GPT-3.5-turbo and Llama2-7B) that generate actions, dialogue, and game history summaries through structured prompts. The pipeline uses a Reason-then-Action paradigm where LLMs receive game rules, role information, summaries, discussion minutes, and action requests, with a separate parser converting outputs into game-readable format. They also implemented four naive rule-based bots (Naive Servant, Naive Minion, Naive Assassin, Naive Merlin) that use only mission outcomes without considering voting or dialogue history.",
+ "results": "ChatGPT playing good-role achieved a win rate of 22.2% against rule-based bots playing evil, while the good-role rule-based bot achieved 38.2% win rate in the same setting. For evil-role, LLM agents achieved 66.7% win rate compared to 61.8% for the rule-based evil bot. These results demonstrate a clear capability gap, with LLMs failing against even simple baseline players.",
+ "limitations": [
+  "Current LLM agents lack deduction, persuasion, negotiation, and deception capabilities required for Avalon",
+  "LLMs fail against even the simplest rule-based baseline players",
+  "Longer context may confine the ability of LLMs to reason and parse through noise",
+  "The Naive Merlin reveals its identity easily through voting patterns",
+  "The paper notes future plans to add voting randomness to the Naive Merlin baseline"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

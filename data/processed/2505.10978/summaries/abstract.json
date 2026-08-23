@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.10978",
+ "tldr": "GiGPO is a novel group-based RL algorithm that introduces fine-grained per-step credit assignment for multi-turn LLM agent training by nesting two levels of relative advantage estimation—episode-level and step-level via anchor state grouping—while preserving critic-free, low-memory, and stable convergence properties.",
+ "contributions": [
+  "Proposing Group-in-Group Policy Optimization (GiGPO), a critic-free RL algorithm with two-level relative advantage estimation for LLM agents",
+  "Introducing an anchor state grouping mechanism that retroactively constructs step-level groups by identifying repeated environment states across trajectories without additional rollouts",
+  "Demonstrating performance gains of >12% on ALFWorld and >9% on WebShop over GRPO, with strong results on search-augmented QA tasks"
+ ],
+ "methods": "GiGPO samples a group of N complete trajectories under identical task and initial-state conditions. At the episode level, it computes macro relative advantages using total returns normalized within the group (similar to GRPO). At the step level, it identifies 'anchor states'—environment states that recur across trajectories—and groups all actions taken from each shared state together, then computes discounted returns and micro relative advantages within each step-level group. The final group-in-group advantage combines both levels: A(a_t^(i)) = A_E(τ_i) + ω·A_S(a_t^(i)), used in a clipped policy optimization objective.",
+ "results": "GiGPO achieves performance gains of >12% on ALFWorld and >9% on WebShop over GRPO using Qwen2.5-1.5B/3B/7B-Instruct. On search-augmented QA tasks, it achieves 42.1% accuracy on the 3B model and 47.2% on the 7B model. These improvements come with <0.002% additional time cost, identical GPU memory overhead, and no extra rollouts compared to GRPO.",
+ "limitations": "The effectiveness of anchor state grouping depends on the presence of repeated states across trajectories; if tasks rarely revisit states, step-level groups may be sparse. The method assumes identical initial states and task conditions across trajectories for meaningful grouping. Long-horizon tasks with very sparse rewards may still face credit assignment challenges despite the two-level structure.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

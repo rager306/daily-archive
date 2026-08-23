@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2512.23044",
+ "tldr": "The paper introduces Video-Browser, an agentic system for open-web video browsing that uses Pyramidal Perception to balance visual fidelity with context efficiency, achieving state-of-the-art results on the new Video-BrowseComp benchmark.",
+ "contributions": [
+  "Formalizing Agentic Video Browsing as a task and introducing Video-BrowseComp, a benchmark of 210 questions across 8 genres with three difficulty levels (explicit retrieval, implicit retrieval, multi-source reasoning)",
+  "Proposing Video-Browser, an agent with Pyramidal Perception that uses metadata filtering and sparse localization before zooming into high-fidelity visual decoding only when necessary",
+  "Demonstrating 37.5% relative improvement and 58.3% token reduction compared to direct visual inference, achieving 26.19% accuracy (a 71.8% relative improvement over search-augmented GPT-5.1)"
+ ],
+ "methods": "Video-Browser is an agentic system composed of three modules: a Planner that decomposes queries into sub-tasks and generates search keywords, a Watcher that uses Pyramidal Perception (semantic filtering via metadata, sparse localization via transcripts and sampled frames, and targeted zoom-in decoding), and an Analyst that performs fine-grained reasoning on accumulated evidence. The system iterates through a feedback loop until evidence is sufficient. The Video-BrowseComp benchmark was constructed via a reverse pipeline starting from video exploration, with two-stage quality control including easy-question filtering and answer uniqueness validation.",
+ "results": "Video-Browser achieves 26.19% overall accuracy (OA) using GPT-5.1, outperforming search-augmented GPT-5.1 (15.24%) by 71.8% relative and the Deep Research baseline o4-mini (22.86%). It reduces total token consumption by 58.3% compared to direct visual inference (32,627 vs. 78,229 tokens with GPT-5.1) and context size to 11,198 tokens vs. 76,955. Calibration error is 38.10, lower than both direct visual inference (50.80) and summarization (51.34). Tool-free models plateau at 19.52% (Gemini-2.5-pro).",
+ "limitations": "The benchmark contains only 210 questions, which limits the scope of evaluation. The Pyramidal Perception approach may miss evidence during sparse localization stages that full visual inference would catch, as the agent must decide which temporal windows to zoom into based on indirect signals. The performance remains relatively low in absolute terms (26.19%), suggesting significant room for improvement on complex multi-source reasoning tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:36Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

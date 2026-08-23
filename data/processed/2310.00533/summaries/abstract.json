@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.00533",
+ "tldr": "SELF is a framework that enables LLMs to autonomously self-improve through iterative self-evolution using language-based feedback, without human intervention or external reward models.",
+ "contributions": [
+  "Introduces SELF (Self-Evolution with Language Feedback) framework for autonomous LLM evolution",
+  "Demonstrates self-refinement can be facilitated in smaller LLMs (Vicuna-7b), previously considered emergent only in top-tier large LLMs",
+  "Shows effectiveness in both mathematical and general domains through experiments"
+ ],
+ "methods": "SELF first teaches meta-skills (self-feedback and self-refinement) via fine-tuning on a curated meta-skill training corpus D_meta using cross-entropy loss. Then, in an iterative self-evolution process, the model generates initial responses from unlabeled prompts, refines them through self-feedback and self-refinement, filters out low-quality data via self-feedback, and uses the refined data for subsequent self-evolution training iterations. The framework also supports self-refinement during inference. The experiments used Vicuna-7b as the base model.",
+ "results": "SELF improved test accuracy by 6.82% on GSM8K and 4.9% on SVAMP in mathematical domains. It increased win rate by 10% on Vicuna testset and 6.9% on Evol-Instruct testset in general domains, compared with typical supervised fine-tuning.",
+ "limitations": "The meta-skill learning phase requires GPT-4 as the language model labeler to construct the initial training corpus. Self-refinement during inference requires multi-turn inference, leading to increased computational overhead. The framework's effectiveness is evaluated only on mathematical and general domains, with limited evidence of generalizability to other domains.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:57Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

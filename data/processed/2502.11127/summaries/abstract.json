@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.11127",
+ "tldr": "G-Safeguard is a topology-guided security framework for LLM-based multi-agent systems that uses graph neural networks to detect adversarial agents on multi-agent utterance graphs and applies topological edge pruning to remediate attacks.",
+ "contributions": [
+  "Pioneer detection and remediation paradigm for adversarial defense in LLM-MAS emphasizing topology-aware diagnosis and intervention",
+  "Introduce G-Safeguard, a topology-guided framework enabling lightweight real-time identification of adversarial entities and contamination-free communication via graph pruning",
+  "Empirical evaluation across various LLM backbones, MAS frameworks, and attack strategies showing effective protection and inductive scalability"
+ ],
+ "methods": "G-Safeguard constructs a multi-agent utterance graph at the end of each dialogue round, encoding both node features (agent utterance history via text embedding models like MiniLM/SentenceBERT) and edge features (interaction history between agent pairs via a permutation-invariant fusion function). Attack detection is formulated as a node classification problem using an edge-featured graph neural network that propagates structural and semantic dependencies to assign attack probability to each agent. Remediation is achieved through targeted edge pruning, excising outgoing edges from identified high-risk agents to suppress propagation of adversarial messages. The model is optimized with a cross-entropy loss over attack labels.",
+ "results": "G-Safeguard blocks 12.50%~33.23% of infections in chain structures and 10%~38.52% in star structures on MMLU. It reduces attack success rate (ASR) by 21.38% and 22.01% for prompt injection on CSQA and MMLU respectively, by 12.67% for tool attacks, and by 16.27% for memory poisoning. In low-connectivity topologies (Chain & Tree), average ASR decreases by ~18.01% for CSQA and ~20.01% for MMLU; in high-connectivity settings, decreases by ~24.74% and ~24.90% respectively. On GSM8K, system performance remains largely unaffected by attackers. G-Safeguard maintains stable performance at scale with 19.50%~39.23% ASR reduction under prompt injection. Recovery exceeds 40% for prompt injection according to the abstract.",
+ "limitations": "The paper is truncated before explicitly stating limitations. The method relies on text embedding quality for graph construction, and the edge pruning intervention removes information flow which may impact legitimate communication. No explicit ablation or failure case analysis is included in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

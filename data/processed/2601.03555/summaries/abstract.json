@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2601.03555",
+ "tldr": "SCRIBE introduces a structured mid-level supervision framework that anchors reward modeling in a curated library of Skill Prototypes, transforming open-ended LLM evaluation into constrained verification for more reliable credit assignment in tool-using language models.",
+ "contributions": [
+  "Formalized a three-level hierarchy for tool-use (high-level planning, mid-level skills, low-level execution) identifying mid-level skills as the optimal point for credit assignment.",
+  "Introduced SCRIBE, which anchors rewards in Skill Prototypes to transform noisy LLM-based evaluation into grounded, rubric-conditioned verification.",
+  "Demonstrated empirical gains on mathematical reasoning and tool-use benchmarks, and characterized a co-evolution where mid-level mastery facilitates high-level strategic planning.",
+  "Showed SCRIBE complements low-level tool optimization, yielding synergistic performance gains."
+ ],
+ "methods": "SCRIBE decomposes training trajectories into structured ⟨subgoal, skill, step⟩ triples using a prompting scheme. A hierarchical clustering approach (HDBSCAN with K-means fallback) groups semantically similar patterns into Skill Prototypes that define checklist-style scoring rubrics with common trap mappings. A lightweight Router (Qwen3-4B-Instruct-2507, trained on ~10k problems from MATH and ToolACE) maps raw rollouts to prototypes with 98.6% retrieval accuracy. A frozen LLM-based judge (GPT-5-mini) then evaluates subgoals against prototype-conditioned rubrics on a 0-3 scale, with calibration via multiple prompt variants and anchor consistency checks. The policy is optimized using GRPO with a reward composition of 0.3 process-level and 0.7 final-answer rewards, plus an adaptive prototype refresh every 1,000 training steps.",
+ "results": "On Qwen3-4B-Instruct-2507, SCRIBE improves MATH500 accuracy to 95.8 (vs. 92.3 for PRM and 90.2 for EGPO) and AIME25 accuracy from 43.3% to 63.3% (vs. 51.7 for PRM). In complex multi-turn tool interactions (BFCL Multi), SCRIBE achieves a 33.3% success rate. The Router achieves 98.6% accuracy in skill prototype retrieval. Initial clustering yields 418 skill clusters for mathematical reasoning and 472 for tool-use, converging to 424 and 503 respectively.",
+ "limitations": "The framework relies on an LLM-based judge (GPT-5-mini) which, despite calibration, may still introduce variability. The Skill Prototype library requires periodic re-clustering (every 1,000 steps) to adapt to distributional shifts. The paper notes that prior LLM-based judges can produce 'hallucinatory' rewards or inconsistent criteria, and while SCRIBE mitigates this, it does not eliminate the fundamental dependency on judge quality. No error analysis or failure mode analysis beyond the stated co-evolution characterization is provided in the excerpt.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

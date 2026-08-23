@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.01716",
+ "tldr": "The Self-Challenging Agent (SCA) framework enables LLM agents to train on high-quality synthetic tasks they generate themselves using a Code-as-Task formalism and reinforcement learning, achieving over two-fold improvement on multi-turn tool-use benchmarks.",
+ "contributions": [
+  "Proposing the Self-Challenging Agent framework where an agent plays two roles: challenger (generates tasks by interacting with tools) and executor (trains on self-generated tasks via RL)",
+  "Introducing Code-as-Task (CaT) formalism, a task representation with instruction, verification function, example solution, and failure cases, all expressed in code for automated quality filtering",
+  "Demonstrating significant improvements in both distillation and self-improvement settings without human-annotated tasks"
+ ],
+ "methods": "The agent first acts as a task challenger, interacting with environment tools to gather information and generate tasks in the Code-as-Task format, which includes an instruction, verification function, example solution, and three failure cases. Tasks are filtered using external code executors to ensure feasibility, verifiability, and non-trivial difficulty. The agent then acts as a task executor, trained via one-step REINFORCE on self-generated tasks. Two training paradigms are explored: self-improvement (same LLM generates and solves tasks) and distillation (stronger Llama-3.1-70B generates demonstration trajectories for a weaker Llama-3.1-8B student).",
+ "results": "In distillation, SCA improved Llama-3.1-8B-Instruct by 20.2% absolute average success rate across 4 environments (32.2% Pass@1 average) using only self-generated data, outperforming PAE baseline. In self-improvement, SCA doubled success rate from 12.0% to 23.5% Pass@1 average, outperforming PAE (12.9%). Experiments covered M3 ToolEval (Calculation, Web Browsing) and Tau-Bench (Retail, Airline) environments using 800 synthetic tasks and 12K rollout trajectories.",
+ "limitations": "Generated task distribution may not exactly match real-world tasks, though common skill-sets allow generalization. The task challenger may sometimes generate infeasible or ambiguous tasks, though CaT filtering mitigates this. PAE baseline produces ambiguous tasks limited to initial environment information. The approach was evaluated on only four environments across two benchmarks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

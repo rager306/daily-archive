@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.17195",
+ "tldr": "The paper proposes Predictive-Decoding, a training-free method that applies Model Predictive Control to reweight LLM generation distributions using foresight trajectories, mitigating myopia and improving planning accuracy in reasoning tasks.",
+ "contributions": [
+  "Diagnostic analysis revealing that ~60% of Llama-3-8B planning on math tasks is myopic, with myopia particularly pronounced in incorrect instances (76.5% of GSM8K errors, 61.8% of MATH errors)",
+  "Demonstration that LLMs struggle to evaluate intermediate steps early, with GPT-3.5-Turbo showing only 0.133 correlation to human ground truth on AlfWorld and Llama3-8B showing calibration error of 0.332 on GSM8K",
+  "Proposal of Predictive-Decoding, a training-free non-myopic generation method using MPC-inspired reweighting with foresight rollouts",
+  "Extensive experiments showing 7.2% improvement on GSM8K and 25.3% on AlfWorld over ReAct, with ~50% of FLOPS of MCTS while outperforming it by 2.4% on GSM8K"
+ ],
+ "methods": "The authors frame LLM planning as trajectory optimization within a POMDP and diagnose myopia by computing a 'myopic gap' between autoregressive actions and globally optimal sequences. They propose Predictive-Decoding, which at each timestep samples K foresight trajectories of length T0, computes weighted probabilities using a softmax over trajectory likelihoods (via sampling-importance-resampling), and selects the next action from the reweighted distribution. The method is training-free and can incorporate either LLM self-evaluation or external heuristic reward models to score foresight trajectories.",
+ "results": "Around 60% of Llama-3-8B examples are myopic on GSM8K and MATH; myopic rate is 76.5% for GSM8K errors and 61.8% for MATH errors. Predictive-Decoding achieves a 7.2% improvement on GSM8K and 25.3% on AlfWorld over ReAct without additional supervision. On GSM8K, it outperforms MCTS by 2.4% and Guided Decoding by 1.4%, using only about 50% of MCTS's FLOPS. Foresight of 3 steps reduced GSM8K calibration error from 0.332 to 0.323. The method shows Pareto superiority over SOTA baselines in inference scaling law experiments.",
+ "limitations": "Foresight is constrained to T0 steps rather than full-horizon optimization, which may limit global optimality. The method's effectiveness depends on the LLM's ability to evaluate future trajectories, which the paper shows is imperfect for intermediate steps. Parallel sampling of K rollouts introduces computational overhead proportional to K and T0. Myopic gap threshold (>0.01) is arbitrary. The approach is evaluated primarily on math and agent tasks, and broader generalization is not established.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

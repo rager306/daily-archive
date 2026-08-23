@@ -3,7 +3,7 @@ paper_id: '2505.24726'
 source:
   code: arxiv
   identity_ref: sources/arxiv/cs-cl/2505.24726/identity.json
-lifecycle: enriched
+lifecycle: summarized
 lifecycle_events:
 - stage: parsed
   recorded_at: '2026-08-23T05:49:38.414711+00:00'
@@ -21,6 +21,10 @@ lifecycle_events:
   recorded_at: '2026-08-23T10:59:12Z'
   actor: openalex-enricher
   evidence_sha256: 1f0cc8fff14587396faf7c238fc867df1805548bf7ea73448f8faa15c3120769
+- stage: summarized
+  recorded_at: '2026-08-23T12:00:11Z'
+  actor: agnes-ai/agnes-2.5-flash
+  evidence_sha256: 71cdcd5692905e236c1f41e18df1aeda0cfe49c42df3d89425e5c195cb46be1b
 artifacts:
   parsed:
     file: parsed/article.json
@@ -119,7 +123,16 @@ artifacts:
     inputs:
     - api.openalex.org (polite pool)
   summaries:
-    not_reached: true
+    file: summaries/abstract.json
+    derived_from:
+    - parsed
+    - enriched
+    sha256: 71cdcd5692905e236c1f41e18df1aeda0cfe49c42df3d89425e5c195cb46be1b
+    built_at: '2026-08-23T12:00:11Z'
+    actor: agnes-ai/agnes-2.5-flash
+    stats:
+      tldr_chars: 296
+      contributions: 4
   quality_signals:
     file: quality_signals.json
     derived_from:

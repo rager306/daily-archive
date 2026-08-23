@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.14205",
+ "tldr": "The paper introduces a parametric World Knowledge Model (WKM) that provides global prior task knowledge and dynamic local state knowledge to guide LLM-based agents during planning, reducing blind trial-and-error and hallucinatory actions. The WKM synthesizes knowledge by comparing expert and sampled trajectories, then augments agent planning through retrieval-constrained action prediction.",
+ "contributions": [
+  "Introducing a parametric World Knowledge Model (WKM) inspired by humans' mental world knowledge model for agent planning",
+  "A self-synthesis approach that steers the agent model to extract task knowledge from the contrast between expert (chosen) and rejected trajectories",
+  "A state knowledge summarization and retrieval-based constraint mechanism that prevents hallucinatory actions during local planning",
+  "Demonstrating superior performance across three real-world simulated datasets (ALFWorld, WebShop, ScienceWorld) with three open-source LLMs (Mistral-7B, Gemma-7B, Llama-3-8B)"
+ ],
+ "methods": "The method consists of four main components. First, an experienced agent is trained on expert trajectories, then explores tasks to generate rejected trajectories. Second, the agent model self-synthesizes task knowledge by comparing chosen and rejected trajectories via prompting. Third, the agent summarizes state knowledge at each planning step from expert trajectories, and action-state-action triplets are collected into a state knowledge base for retrieval. Both models are trained with LoRA sharing the same backbone. At inference, the WKM generates task knowledge to guide global planning, while state knowledge is used as a query for kNN retrieval from the knowledge base; the retrieved action probabilities are combined with the agent model's own probability distribution via a weighted prediction with hyperparameter gamma.",
+ "results": "On ALFWorld, WKM achieves 73.57% on seen tasks and 76.87% on unseen tasks, surpassing GPT-4 (which scored 44.29% seen and 38.05% unseen). On WebShop, WKM improves from 62.76% to 66.64%. WKM reduces hallucinatory actions to 32.86% (seen) and 29.85% (unseen) on ALFWorld, outperforming NAT (45.71%/50.00%), ETO (34.29%/36.57%), and KNOWAGENT (33.57%/44.78%). The method lowers average planning steps compared to baselines. Ablations show task knowledge contributes more than state knowledge overall, and learning from rejected trajectories improves over using expert trajectories alone. Training WKM separately performs better than joint single-model training or using few-shot prompts.",
+ "limitations": [
+  "Inference incurs additional time overhead with an approximate ratio of 2.5:1 compared to the pure agent model due to WKM generation and retrieval",
+  "State knowledge base is built on the training set, which may weaken generalization to unseen tasks (state knowledge impact is more significant on seen than unseen tasks)",
+  "Explicit state knowledge concatenated to context was found to hurt agent planning performance"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

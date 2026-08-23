@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2306.09896",
+ "tldr": "Self-repair is not a silver bullet for code generation; when computational cost is accounted for, performance gains are often modest, vary across data subsets, and sometimes absent entirely. The bottleneck appears to be the model's ability to provide quality feedback on its own code.",
+ "contributions": [
+  "Systematic analysis of Code Llama, GPT-3.5, and GPT-4 self-repair capabilities on HumanEval and APPS benchmarks",
+  "Demonstration that self-repair is more beneficial when more budget is spent on diverse initial samples than on extensive repair",
+  "Evidence that boosting feedback quality with stronger models or humans significantly improves self-repair efficacy"
+ ],
+ "methods": "The authors evaluate self-repair across three models (Code Llama-13b-instruct, GPT-3.5, GPT-4) on Python programming tasks from HumanEval and APPS benchmarks. They implement a four-stage self-repair pipeline: code generation, execution against unit tests, feedback generation, and code repair. Performance is measured using pass@k adapted for repair trees, comparing self-repair against i.i.d. sampling baselines at equivalent compute budgets. They also conduct ablation studies varying the number of initial samples (n_p) versus feedback-repair samples (n_fr), and test boosted feedback configurations using stronger models or human participants.",
+ "results": "On APPS, GPT-3.5 shows marginal gains only for largest n_p values, while GPT-4 beats baselines by up to 8% overall and up to 34% on competition-level problems. On HumanEval, Code Llama achieves up to 10% improvement and GPT-3.5 up to 3%. Self-repair is not always better than i.i.d. sampling, especially at small budgets. Increasing initial sample diversity consistently improves results, while increasing repair candidates often decreases performance. Boosting feedback with stronger models beats both i.i.d. baselines and self-repair configurations. Replacing GPT-4's feedback with human programmer feedback increases pass rate from 33.3% to 52.6% (1.58× improvement).",
+ "limitations": [
+  "Self-repair requires more model invocations, increasing computational cost",
+  "Gains are modest and vary significantly between data subsets",
+  "For weaker models on easier tasks, performance improvements are limited (e.g., GPT-3.5 on HumanEval only 3%)",
+  "Study focused only on Python programming tasks from two benchmarks",
+  "Some configurations (e.g., GPT-4 on HumanEval, CodeLlama on APPS) were deferred to appendix due to brevity"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

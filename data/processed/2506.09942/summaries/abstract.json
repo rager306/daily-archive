@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2506.09942",
+ "tldr": "The paper proposes VERIF, a hybrid verification method combining rule-based code verification for hard constraints and LLM-based verification (QwQ-32B) for soft constraints, enabling effective reinforcement learning with verifiable rewards for instruction following.",
+ "contributions": [
+  "Proposed VERIF, a hybrid verification method using code for hard constraints (length, format, keyword) and large reasoning LLMs for soft constraints (style, content).",
+  "Constructed VERINSTRUCT, a high-quality instruction-following dataset of approximately 22,000 instances with verification signals.",
+  "Demonstrated that RL with VERIF achieves state-of-the-art performance among models of comparable size on instruction-following benchmarks.",
+  "Showed that RL with VERIF preserves general capabilities and generalizes well to unseen constraints.",
+  "Developed a smaller 7B generative verifier for soft constraints achieving comparable RL performance."
+ ],
+ "methods": "The authors propose VERIF, a verification method that splits instruction constraints into hard constraints (verified via automatically generated Python code) and soft constraints (verified online by a large reasoning model, QwQ-32B, using chain-of-thought reasoning). The final reward is the average of hard and soft constraint scores (0 or 1 each). They construct VERINSTRUCT using constraint back-translation to augment existing instructions, auto-synthesize length/format/keyword constraints via code using Qwen2.5-72B-Instruct, and tag soft constraints for LLM verification. RL training is performed using the GRPO algorithm with 16 rollouts per prompt, using the VeRL framework with parallel reward computation.",
+ "results": "The TULU 3 SFT + VERIF model achieves state-of-the-art performance among similarly-sized models, outperforming TULU 3 (trained with ~271k DPO pairs). On IFEval it scores 84.5%, Multi-IF 54.0%, and CFBench 72.0%. The R1-Distill-Qwen-7B + VERIF model improves GSM8K from 87.0% to 90.0% and BBH from 21.5% to 32.2%. General capabilities are preserved: MT-Bench improves from 6.3 to 7.0, and MMLU-Pro remains stable at 36.0%. Ablation shows removing code verification drops IFEval to 76.2%, and removing LLM verification drops it to 74.7%. A 7B generative verifier achieves performance comparable to QwQ-32B.",
+ "limitations": "VERINSTRUCT contains only English, single-turn instruction-following data. The dataset includes only five constraint types (length, keyword, format, content, style), with improvements not observed for Startend and Language constraints (which already achieved 100% accuracy). LLMs perform poorly on keyword (0.08) and length (0.53) constraints without code verification. The approach may benefit from richer and more diverse constraint types in future datasets.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

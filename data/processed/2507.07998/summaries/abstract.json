@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.07998",
+ "tldr": "PyVision is an interactive, multi-turn framework that enables multimodal large language models (MLLMs) to autonomously generate, execute, and iteratively refine Python-based visual tools tailored to specific tasks, significantly outperforming static tool-using approaches on visual reasoning benchmarks.",
+ "contributions": [
+  "PyVision: a multi-turn framework enabling MLLMs to dynamically generate and refine Python-based visual tools",
+  "A taxonomy of dynamically generated tools across four categories plus long-tail operations",
+  "System prompt engineering and runtime environment design for robust multi-turn MLLM-Python interaction",
+  "Quantitative evaluation showing substantial performance gains on multiple visual reasoning benchmarks"
+ ],
+ "methods": "PyVision operates as an agentic multi-turn loop between an MLLM (GPT-4.1 or Claude-4.0-Sonnet) and an isolated Python runtime. The model receives multimodal input, generates Python code to process images, and executes it in subprocesses with cross-turn variable persistence. Output results are fed back into the MLLM's context for iterative refinement until a final answer is produced. The system prompt encodes instructions for code generation, image loading conventions, output formatting, and final answer boxing. Tool types are classified via text embeddings and clustering into a four-category taxonomy.",
+ "results": "PyVision boosts GPT-4.1 by +7.8% on V* and improves Claude-4.0-Sonnet by +31.1% (from 48.1% to 79.2%) on VLMsAreBlind-mini. It also achieves an +8.3% gain on Visual Puzzles. Gains are larger on perception-heavy tasks with perceptually strong models (GPT-4.1) and on abstract reasoning with Claude-4.0-Sonnet. Case studies demonstrate successful handling of Ebbinghaus-like illusions, OCR on small text in complex scenes, contour-based nested square counting, and visual sketching for spatial reasoning.",
+ "limitations": "The paper focuses on two backend models (GPT-4.1 and Claude-4.0-Sonnet); broader model evaluation is not presented. The approach relies on MLLMs with strong coding abilities, which may limit applicability to weaker models. Dynamic code execution introduces potential for crashes or side effects, mitigated by process isolation but not eliminated. The taxonomy was derived post-hoc from inference sessions, which may not capture all tool categories.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.01935",
+ "tldr": "The paper introduces MultiAgentBench, a comprehensive benchmark and MARBLE framework for evaluating LLM-based multi-agent systems across collaborative and competitive scenarios using novel milestone-based KPIs.",
+ "contributions": [
+  "Introduction of MultiAgentBench, a benchmark evaluating LLM-based multi-agent systems across six diverse interactive scenarios capturing both collaborative and competitive dynamics",
+  "Introduction of the MARBLE (Multi-agent cooRdination Backbone with LLM Engine) framework supporting various communication topologies and reasoning strategies",
+  "Proposal of innovative evaluation metrics including milestone-based KPIs, structured planning/communication scores, and a dedicated competition score",
+  "Demonstration of emergent social behaviors in multi-agent coordination"
+ ],
+ "methods": "The authors developed the MARBLE framework with three core modules: an Agent Graph Module that structures inter-agent relationships as directed triples, a Cognitive Module maintaining agent personas and reasoning strategies, and a Coordination Engine orchestrating execution. They designed a benchmark with task-oriented scenarios (research, Minecraft building, database error analysis, coding) and competitive scenarios (Werewolf, Bargaining), segmenting tasks into flexible milestones monitored by an LLM-based detector. They evaluated five models across four coordination protocols (star, chain, tree, graph) and four planning strategies (vanilla prompting, CoT, group discussion, cognitive self-evolving planning).",
+ "results": "gpt-4o-mini achieved the highest average task score, with 84.13% in Research (vs. Meta-Llama-3.1-8B at 80.87% and 70B at 80.80%) and 65.10% in Coding. The graph protocol performed best among coordination protocols in the Research scenario. Cognitive planning improved milestone achievement rates by 3%. Meta-Llama-3.1-70B showed high coordination scores (75.00 in Minecraft) but very low task scores (0.21). Group discussion scored worst across all metrics. Increasing iterations beyond 7 caused coordination degradation, and increasing agents beyond 3 decreased overall KPI.",
+ "limitations": [
+  "Coordination does not compensate for inherent task execution deficiencies (e.g., high CS but near-zero TS in some cases)",
+  "Group discussion underperformed, potentially due to overly large planning groups hindering effectiveness",
+  "Excessive iterations (beyond 7) lead to coordination degradation from communication overhead or conflicting directives",
+  "Increasing agent numbers beyond 3 decreases overall KPI due to increased collaborative complexity",
+  "No single metric fully captures model effectiveness; both task-specific abilities and coordination skills must be considered"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

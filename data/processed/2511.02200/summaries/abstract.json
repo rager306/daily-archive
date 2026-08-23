@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2511.02200",
+ "tldr": "STRMAC is a state-aware routing framework that adaptively selects the most suitable agent at each step in multi-agent collaboration by encoding problem-solving states and agent expertise, trained via contrastive learning with a self-evolving data generation strategy.",
+ "contributions": [
+  "A state-aware routing framework (STRMAC) that uses a lightweight router encoder to encode system states and LLM-based agent embeddings to enable adaptive single-agent selection at each step.",
+  "A self-evolving data generation pipeline that reduces training data collection overhead by 90.1% compared to exhaustive search through solution-aware pruning and router-guided iterative expansion.",
+  "State-of-the-art performance on collaborative reasoning benchmarks, with improvements up to 23.8% over baselines on the EBFC task."
+ ],
+ "methods": "STRMAC employs a trainable lightweight router encoder (mDeBERTaV3-base, 86M parameters) that encodes the current system state (initial query + interaction history) into a latent representation, while each agent's expertise is embedded via a large language model using agent-specific prompts. At each step, the router computes cosine similarity between the state embedding and each agent embedding, then selects the agent with the highest score. The router is trained with a contrastive learning objective that aligns state embeddings with the optimal agent embedding. To address the factorial growth of execution paths, a self-evolving data generation strategy combines solution-aware pruning (early stopping when a correct answer is found) with router-guided iterative expansion, progressively enriching the training set.",
+ "results": "On the PDDP task, STRMAC achieved accuracies of 64.0% (Llama-3.1-70B), 53.2% (Llama-3.1-8B), and 55.3% (Qwen2.5-32B), with improvements of +4.4%, +8.1%, and +1.7% over Random-Chain. On the EBFC task, accuracies were 85.2%, 80.2%, and 72.3%, with improvements of +6.0%, +14.8%, and +23.8% over Random-Chain. The self-evolving data generation reduced the average number of sampled paths per instance to 13.6-170.9 compared to 325.0-1275.1 for exhaustive search, cutting data collection overhead by up to 90.1%.",
+ "limitations": "The paper notes that router training becomes intractable due to factorial growth of execution paths as agent numbers increase, though this is mitigated by the self-evolving data generation. The fixed graph topology limitation is attributed to prior works rather than STRMAC itself. No explicit limitations are stated by the authors for their own method beyond what is addressed by their contributions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

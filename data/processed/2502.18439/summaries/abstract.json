@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.18439",
+ "tldr": "MAPoRL introduces a multi-agent post-co-training paradigm using reinforcement learning to explicitly elicit collaborative behaviors among LLMs, demonstrating that co-training multiple LLMs together yields significantly better collaboration than training individual agents alone.",
+ "contributions": [
+  "Proposes MAPoRL, a new multi-agent post-co-training paradigm with RL for collaborative LLMs",
+  "Introduces Influence-aware Verification Rewards that account for both current answer quality and the agent's impact on future turns",
+  "Provides analytical insights proving single-agent training is insufficient for genuine cooperation",
+  "Demonstrates generalization to unseen domains and explores heterogeneous LLM collaboration"
+ ],
+ "methods": "Multiple LLMs first generate independent responses, then engage in multi-turn discussion within a collaborative debate framework. A verifier evaluates both answers and discussions, assigning scores that reward correctness and incentivize persuasive/corrective interactions. The reward function (Influence-aware Verification Reward) incorporates the expected verifier scores across all turns, weighted by a discount factor γ, capturing both immediate feedback and long-term collaborative impact. Multi-agent PPO is used to optimize policies, with additional reward shaping parameters (α₀, α₁, β₀, β₁) that incentivize critical reasoning, persuasion, and influence on other agents.",
+ "results": "MAPoRL was evaluated on GSM8K, TinyGSM, and ANLI datasets. Training used 7,463 GSM8K samples and 12,800 TinyGSM samples for verifier training, plus 12,800 TinyGSM samples for MAPoRL training, with 1,319 GSM8K test samples. For ANLI, 10,000 examples trained the verifier, 12,800 for MAPoRL, and 1,200 for testing. Experiments show multi-agent co-training boosts collaboration performance across benchmarks with generalization to out-of-domain tasks, while single-agent training alone fails to induce effective collaboration.",
+ "limitations": "The paper notes that previous prompting-only approaches and SFT-based methods (including contemporaneous works Subramaniam et al. and Zhao et al.) were inadequate for true collaboration. Single-agent training is shown insufficient. However, no explicit limitations of MAPoRL itself are stated in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

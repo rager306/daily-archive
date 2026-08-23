@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1706.03741",
+ "tldr": "The paper demonstrates that deep reinforcement learning agents can be trained to solve complex tasks using human preferences between trajectory segments as feedback, without requiring explicit reward functions. As little as ~1% of agent-environment interactions in human comparison form suffice to learn sophisticated behaviors.",
+ "contributions": [
+  "A scalable method for learning reward functions from human pairwise preferences over trajectory segments, enabling deep RL without well-specified reward functions",
+  "Demonstration of learning complex Atari game behaviors and simulated robot locomotion tasks from non-expert human feedback using less than 1% of the agent's environmental interactions",
+  "Successful training of novel complex behaviors (e.g., backflips, driving with traffic flow) with approximately one hour of human time",
+  "Use of asynchronous ensemble-based reward learning combined with policy optimization (A2C for Atari, TRPO for robotics)"
+ ],
+ "methods": "The algorithm maintains a policy network and a reward function estimate, both parameterized by deep neural networks, updated asynchronously through three processes: (1) the policy interacts with the environment to produce trajectories, (2) pairs of trajectory segments (1-2 second clips) are presented to a human who indicates preference, and (3) the reward network is trained via supervised learning to fit the collected comparisons using a Bradley-Terry model. The method uses an ensemble of reward predictors withBagging, validation-based regularization, and a 10% random response correction. Policy optimization uses A2C for Atari games and TRPO for MuJoCo robotics tasks.",
+ "results": "With 700 human labels, the method nearly matches RL performance on all eight MuJoCo simulated robotics tasks. On Atari games, 5,500 queries matched or exceeded RL performance on BeamRider and Pong, and showed substantial learning on most other games. Real human feedback was typically only slightly less effective than synthetic oracle feedback, ranging from half as efficient to equally efficient depending on the task. On the Ant task, human feedback significantly outperformed synthetic feedback due to useful reward shaping from preferring 'upright' trajectories. Noveltask training required approximately one hour of human time.",
+ "limitations": [
+  "Learning with reward functions tends to be less stable with higher variance compared to standard RL",
+  "The query selection strategy based on ensemble prediction variance is described as a crude approximation that in some tasks actually impairs performance",
+  "The approach requires non-expert human feedback which introduces noise (modeled as 10% random responses)",
+  "Some Atari tasks showed more difficulty matching RL performance than the robotics tasks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:42Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.16288",
+ "tldr": "The paper introduces PerLTQA, a dataset of 8,593 QA pairs across 30 characters that combines semantic memory (profiles, social relationships) and episodic memory (events, dialogues) for personalized question answering, along with a three-component framework for memory classification, retrieval, and synthesis.",
+ "contributions": [
+  "Introduction of the PerLTQA dataset containing 141 profiles, 1,339 semantic social relationships, 4,501 events, 3,409 dialogues, and 8,593 memory-related evaluation questions",
+  "Proposal of three subtasks—memory classification, memory retrieval, and memory synthesis—to evaluate LLM memory utilization capabilities",
+  "Demonstration that BERT-based models excel in memory classification, surpassing LLMs like ChatGLM3 and ChatGPT"
+ ],
+ "methods": "The authors generated the PerLTQA dataset using an in-context approach with ChatGPT (gpt-3.5-turbo), starting from diverse seed data sourced from Wikipedia and ChatGPT covering 10 occupational categories, 7 hobby groups, and 49 topic categories. The framework consists of three stages: (1) Memory Classification uses instruction-based LLMs, few-shot LLMs, or a fine-tuned BERT-base classifier to categorize queries as semantic or episodic; (2) Memory Retrieval combines three retrievers (DPR, BM25, Contriever) with classification scores via a re-ranking formula s'i = 0.5 * P(π|mi) + 0.5 * sigmoid(si); (3) Memory Synthesis generates responses using five LLMs (ChatGLM2, ChatGLM3, Qwen-7B, Baichuan2-7B, gpt-3.5-turbo) with re-ranked retrieved memories. Evaluation used precision, recall, F1, accuracy for classification, Recall@K for retrieval, and MAP of memory anchors, correctness, and coherence for synthesis.",
+ "results": "BERT-base achieved the highest weighted precision in memory classification (0.926 precision, 0.854 recall, 0.888 F1, 0.886 accuracy), significantly outperforming all tested LLMs including ChatGLM3 (0.864/0.485/0.538) and gpt-3.5-turbo (0.451/0.407/0.428). In memory synthesis, gpt-3.5-turbo achieved the highest MAP of 0.756 under the full W-MC+R setting with classification and retrieval, followed by Baichuan2-7B (0.736) and Qwen-7B (0.729). Without classification and retrieval (W/o-MC+R), all models dropped dramatically (MAP ~0.13), demonstrating the importance of effective memory integration.",
+ "limitations": "Memory anchors were only manually annotated for a limited set of 30 characters due to intensive labor. The dataset is built using synthetic generation via ChatGPT, which may not fully capture the complexity of real human long-term memories. The study notes that LLMs show varied proficiency in generating memory-based responses even when provided with accurately retrieved memories, indicating ongoing challenges in memory utilization.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

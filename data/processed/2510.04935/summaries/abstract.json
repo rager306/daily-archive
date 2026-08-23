@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.04935",
+ "tldr": "MARS is a co-evolution dual-system framework that jointly optimizes System 1 (fast information processing) and System 2 (deliberate reasoning) through multi-agent reinforcement learning, enabling deep research with external knowledge without supervised fine-tuning.",
+ "contributions": [
+  "Introduction of MARS, a co-evolution dual-system framework that jointly trains System 1 and System 2 with shared trajectory rewards for task-specific information distillation.",
+  "Extension of GRPO to multi-agent RL with three innovations: decoupled gradients for credit assignment, bin-packing for parallel information processing, and advantage-weighted balanced sampling for stable joint optimization.",
+  "Achieving strong results under a Zero RL setting (no SFT) with an 8B model on HLE and 7 knowledge-intensive QA tasks.",
+  "Ablation studies confirming the benefit of co-evolution and each component."
+ ],
+ "methods": "The authors designed a collaborative dual-system framework where System 2 performs deliberate reasoning and invokes external tools (search, Scholar), communicating its 'purpose' to System 1, which distills task-relevant information from tool outputs using bin-packing algorithms (First Fit Decreasing) to chunk variable-length content into optimally-sized parallelizable units. They extended GRPO for multi-agent RL with decoupled gradient computation (System 1 and System 2 receive gradients from non-overlapping token sets despite shared trajectory-level rewards), bin-packing optimization, and advantage-weighted balanced sampling (pre-computing advantages then balancing sample counts between systems). Training was conducted under a 'Zero RL' setting directly from the base model without any SFT or policy distillation.",
+ "results": "MARS (8B) achieves 8.17% accuracy on HLE, outperforming WebThinker (32B with SFT, 6.87%) and approaching Claude 3.7 Sonnet (7.89%). It achieves an average improvement of 8.95% across 7 knowledge-intensive QA tasks over C-3PO, with particularly pronounced gains on multi-hop tasks (+12.2% over C-3PO). Ablations show removing System 1 reduces HLE accuracy by 1.91%, confirming it learns task-relevant distillation rather than acting as a passive summarizer.",
+ "limitations": "The framework relies on LLM evaluators (GPT-4o for HLE, Qwen2.5-72B for other QA tasks) for reward computation, which may introduce evaluator bias. The approach was evaluated on text-only subsets and specific benchmarks, limiting claims about generalization to other domains or modalities.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:18Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.12373",
+ "tldr": "WebCanvas is an online evaluation framework for web agents that addresses the dynamic nature of the web through key-node-based progress-aware evaluation, a live benchmark dataset (Mind2Web-Live with 542 tasks and 2,439 intermediate states), and a sustainable maintenance pipeline. The best agent achieves only 23.1% task success rate and 48.8% completion rate on the live test set.",
+ "contributions": [
+  "WebCanvas: a novel online evaluation framework with progress-aware metrics based on 'key nodes' that capture essential intermediate milestones regardless of path taken",
+  "Mind2Web-Live: a refined dataset of 542 tasks with 2,439 intermediate evaluation states derived from Mind2Web, with ambiguous/expired tasks filtered out",
+  "Lightweight annotation tools, a recording browser plugin, and an open-source agent reasoning framework for community-driven data collection and online evaluation",
+  "Demonstration that models performing well in static offline evaluations (e.g., MindAct) do not necessarily generalize to dynamic online environments"
+ ],
+ "methods": "The authors introduce WebCanvas, an online evaluation framework featuring a novel key-node-based metric that awards step scores when agents reach essential milestones (identified by URL state or element class) regardless of the path taken. They create Mind2Web-Live by sampling 601 tasks from Mind2Web's training set plus all 179 cross-task test set tasks, removing 96 expired and 142 ambiguous tasks, revising 51 instructions, and annotating 542 remaining tasks with 2,439 key nodes. They employ a regular maintenance schedule with automated playback via iMean AI replaySDK and periodic human checks. An open-source agent framework with Planning (ReAct), Observation, Memory, and Reward modules is provided for community use.",
+ "results": "GPT-4-turbo with memory and ReAct achieved the best task success rate of 23.1% and a task completion rate of 48.8% on the Mind2Web-Live test set; Qwen was the best open-sourced model. MindAct-Large, which trained on Mind2Web, did not generalize well to the online environment one year later. Models that outperformed GPT-3.5/GPT-4 in offline testing lagged behind in online evaluation. Agents handled entertainment-domain tasks better than shopping or travel. Only 46 out of 104 test tasks had their final key node as a sufficient condition for task completion. Self-reward modules did not improve performance, but human-labeled reward integration improved agent performance.",
+ "limitations": "Overall agent performance remains low (23.1% success rate), indicating significant room for improvement. IP location variability and browser engine differences can affect results, requiring consistent experimental setups. The self-reward module performs poorly due to overconfidence and accumulated low-quality reward signals in memory. Only 46 of 104 test tasks had their final key node sufficient for task completion, highlighting the inadequacy of outcome-only evaluation. Data maintenance required around half the human effort of initial annotation per task. The framework requires a consistent setup to ensure reliable results across different experimental environments.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

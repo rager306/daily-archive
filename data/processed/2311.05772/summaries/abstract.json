@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2311.05772",
+ "tldr": "ADAPT is a recursive algorithm that dynamically decomposes complex sub-tasks only when the executor LLM fails, using separate planner and executor modules to improve success rates in interactive decision-making tasks.",
+ "contributions": [
+  "Presenting ADAPT, a recursive algorithm that dynamically decomposes complex sub-tasks on an as-needed basis when the executor cannot handle them.",
+  "Demonstrating that ADAPT improves success rates of GPT-3.5 over previous approaches by up to 28.3% on ALFWorld, 27% on WebShop, and 33% on the novel TextCraft dataset.",
+  "Analyzing ADAPT to establish the significance of recursive decomposition and its ability to adapt dynamically to varying LLM capabilities and task complexities."
+ ],
+ "methods": "ADAPT uses a modular approach with separate LLM-based planner and executor modules integrated via a recursive controller program. Given a task, the executor first attempts it directly; if it reports failure using a self-generated success heuristic (outputting 'task completed' or 'task failed'), the planner decomposes the complex sub-task into 3-5 sub-tasks combined with AND or OR logical operators. ADAPT is then recursively called for each sub-task up to a maximum depth d_max (3 for ALFWorld and WebShop, 4 for TextCraft). This continues until tasks succeed or the recursion limit is reached.",
+ "results": "Using GPT-3.5, ADAPT outperforms ReAct by up to 28.3 percentage points on ALFWorld, 27 points on WebShop, and 33 points on TextCraft. Compared to Reflexion, ADAPT yields higher success rates by 14.1%, 9%, and 20% on ALFWorld, WebShop, and TextCraft respectively. ADAPT shows over 4x improvement on 'pick2' tasks in ALFWorld where baselines score below 12%. Analysis confirms that recursive decomposition depth aligns with inherent task complexity and that ADAPT adapts to varying executor capabilities including open-source models like LLaMA-2 and Lemur.",
+ "limitations": "The paper notes that plan-and-execute approaches fail when just one sub-task is too complex, leading to overall task failure, though ADAPT addresses this. ADAPT increases the number of LLM calls compared to single-executor approaches (mitigated by scaling ReAct's iterations comparably). The TextCraft dataset is introduced as a new environment and may not cover all real-world decision-making scenarios. Reflexion uses dedicated memory and natural language feedback yet still underperforms ADAPT, suggesting the adaptive decomposition is critical.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

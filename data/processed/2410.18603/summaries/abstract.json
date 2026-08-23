@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.18603",
+ "tldr": "AgentStore is a scalable platform that dynamically integrates heterogeneous third-party agents via an AgentToken strategy, enabling a specialized generalist computer assistant that more than doubles previous OSWorld performance from 11.21% to 23.85%.",
+ "contributions": [
+  "AgentStore: a scalable platform for dynamically integrating heterogeneous agents to automate OS tasks, with an integration protocol and over 20 agents in the prototype",
+  "MetaAgent with AgentToken: a novel approach encoding enrolled agents as learnable token embeddings appended to the MLLM vocabulary, with single-token routing and multi-token 'Hash Manager' modes for collaboration",
+  "Automated self-instruct training process for AgentToken without requiring manual demonstrations from developers",
+  "State-of-the-art results on three benchmarks, including doubling the OSWorld score"
+ ],
+ "methods": "AgentStore consists of three components: AgentPool (storing heterogeneous agents), AgentEnroll (a standardized integration protocol where developers fill a form describing capabilities, limitations, applications, and demonstrations), and MetaAgent (the core manager). The MetaAgent uses an AgentToken strategy, parameterizing agents as an embedding matrix WA appended to the word token head, enabling it to predict agent tokens as next tokens. For complex tasks, it shifts from single-token to multi-token (TopK) prediction and enters 'Hash Manager' mode to divide tasks into subtasks. AgentTokens are trained using an automated iterative self-instruct process filtered by BERTScore for consistency and diversity, with only WA as tunable parameters.",
+ "results": "On the OSWorld benchmark (369 tasks), AgentStore achieved a success rate of 23.85%, more than doubling the previous best of 11.21%. Experiments on the APPAgent benchmark (45 tasks across 9 mobile apps) also demonstrated adaptability to mobile OS platforms. Over 20 agents with diverse functionalities were integrated into the prototype AgentPool.",
+ "limitations": "The paper notes that existing generalist agents lack specialized abilities and specialized agents cannot generalize across different applications or broader system environments. The proposed method's effectiveness depends on agent documents provided by developers, and while self-instruct reduces the need for manual demonstrations, quality depends on BERTScore filtering thresholds (tau1 and tau2). Performance disparities across specific task categories remain an observed challenge for prior methods that AgentStore aims to address.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

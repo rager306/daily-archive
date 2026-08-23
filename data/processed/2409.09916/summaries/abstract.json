@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2409.09916",
+ "tldr": "SFR-RAG is a 9B-parameter instruction-tuned LLM optimized for faithful contextual comprehension in RAG applications, achieving state-of-the-art results on 3 of 7 ContextualBench benchmarks while significantly outperforming much larger models like Command-R+ (104B).",
+ "contributions": [
+  "SFR-RAG-9B: an instruction-tuned LLM emphasizing context-grounded generation, hallucination minimization, and handling of unanswerable/counterfactual/conflicting contexts",
+  "ContextualBench: a standardized evaluation framework compiling 7 popular RAG benchmarks (HotpotQA, TriviaQA, TruthfulQA, PopQA, 2WikiHopQA, MuSiQue, Natural Questions) with consistent settings",
+  "A novel chat template introducing Thought and Observation roles to separate internal reasoning, external context, and user-friendly responses",
+  "FaithEval resilience demonstrations showing robustness to factual alterations, missing context, and contradictions"
+ ],
+ "methods": "SFR-RAG was fine-tuned via supervised fine-tuning and preference learning on extensive instruction-following data mimicking real-world RAG applications. A novel chat template was introduced with four roles: System (general instructions), User (queries), Observation (external context/tool results), and Thought (internal reasoning/tool syntax), where only Thought and Assistant turns are included in training loss. ContextualBench standardizes evaluation across 7 benchmarks with consistent embedding-based retrieval (top-10 chunks via Cohere embedding where needed) and multiple scoring methods (Exact Match, Easy Match, F1). Resilience was tested using the FaithEval suite across Unknown (facts removed), Conflict (contradicting information), and Counterfactual (fabricated facts) scenarios.",
+ "results": "SFR-RAG-9B achieved state-of-the-art performance in 3 of 7 ContextualBench benchmarks: TruthfulQA (77.45 EM), 2WikiHopQA (79.50 EM), and HotpotQA (65.70 EM), with an average score of 63.44. It outperformed GPT-4o on 2WikiHopQA by nearly 25%, and surpassed Command-R+ (104B) despite having ~10x fewer parameters. On FaithEval, SFR-RAG-9B scored 73.6 on Counterfactual, 60.5 on Unknown, and 59.9 on Conflict, demonstrating greater resilience than GPT-4o and Command-R+. The model also remained competitive on standard benchmarks (MMLU, GSM8K, ARC-C) versus comparable-sized baselines and showed strong function-calling ability.",
+ "limitations": [
+  "Evaluation relies on only 7 benchmarks, which may not fully represent all real-world RAG scenarios",
+  "FaithEval 'Conflict' and 'Counterfactual' results, while showing relative improvement, still have room for enhancement (e.g., Counterfactual score of 73.6 means ~26% error rate)",
+  "The paper does not disclose detailed results for all metrics (EasyM, F1) across every benchmark",
+  "No explicit discussion of computational costs, training data composition details, or potential biases in the synthetic training data"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

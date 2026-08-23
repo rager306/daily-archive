@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.03160",
+ "tldr": "DeepResearcher is a framework for end-to-end RL training of LLM-based deep research agents that interact directly with real-world web search, outperforming both prompt-engineered and RAG-based RL approaches.",
+ "contributions": [
+  "Introduces DeepResearcher, the first comprehensive RL framework for end-to-end training of LLM agents in real web environments",
+  "Overcomes technical challenges of RL scaling with real web search including API rate limits, anti-crawling, network latency, and diverse webpage structures",
+  "Demonstrates substantial improvements over prompt-engineered and RAG-based RL baselines on open-domain tasks",
+  "Identifies emergent cognitive behaviors from end-to-end RL including planning, cross-validation, self-reflection, and honesty",
+  "Open-sources the complete training framework"
+ ],
+ "methods": "DeepResearcher uses Group Relative Policy Optimization (GRPO) to train a Qwen2.5-7B-Instruct backbone model with outcome rewards (F1 score for correct format, -1 penalty for incorrect format). The system employs a multi-agent architecture with a dedicated web browsing agent that reads webpage segments sequentially and extracts relevant information into short-term memory. Training data consists of 80,000 QA examples curated from NaturalQuestions, TriviaQA, HotpotQA, and 2WikiMultiHopQA with contamination detection via pass@10 sampling. Technical challenges including rate limiting, anti-crawling, and high-concurrency requests are addressed through a 50-node distributed CPU server cluster, retry mechanisms, and search result caching.",
+ "results": "DeepResearcher achieves up to 28.9 points improvement over prompt-engineered baselines and up to 7.2 points over RAG-based RL agents on open-domain research tasks. Evaluation spans in-domain benchmarks (NQ, TQ, HotpotQA, 2Wiki) and out-of-domain benchmarks (MuSiQue, Bamboogle, PopQA), with 512 examples sampled from most datasets and all 125 Bamboogle dev samples.",
+ "limitations": "The reward mechanism uses F1 score which is suited for short-answer QA but may be insufficient for long-form answers, requiring more sophisticated reward mechanisms. The approach filters out time-sensitive, highly subjective, and potentially harmful questions from training data. Data contamination detection relies on pass@10 sampling from the base model, which may not catch all cases.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

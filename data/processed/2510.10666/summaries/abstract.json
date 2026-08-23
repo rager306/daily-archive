@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.10666",
+ "tldr": "BrowserAgent is a browser-native web agent that learns directly from real-time Playwright interactions using human-inspired actions (click, scroll, type) with a two-stage SFT+RFT training pipeline and explicit memory mechanism, achieving ~20% improvement over Search-R1 on multi-hop QA despite using only 5.3K training samples.",
+ "contributions": [
+  "A scalable Ray-parallelized orchestration layer enabling 50+ episodes/minute on a 32-core server, overcoming Playwright's low throughput limitation",
+  "A minimal yet expressive set of atomic browser operations (click, hover, press, scroll, type, tab management, URL navigation, stop) that simulate human browsing without additional summarization models",
+  "A two-stage training pipeline (SFT followed by Rejection Fine-Tuning with reasoning path selection) using only 5.3K trajectories",
+  "An explicit memory mechanism storing key conclusions across steps to enable long-horizon multi-hop reasoning up to 30 steps"
+ ],
+ "methods": "BrowserAgent operates directly on raw web pages via Playwright using an accessibility tree observation, interacting through four action categories: page operations (click, hover, press, scroll, type), tab management (new_tab, tab_focus, close_tab), URL navigation (goto, go_back, go_forward), and completion (stop). Training uses 5.3K trajectories sampled from NQ (4K) and HotpotQA (1.3K multi-hop), collected via automated GPT-4.1-assisted multi-turn interaction (up to 6 steps for basic, up to 30 for complex). Stage 1 performs SFT on Qwen2.5-7B-Instruct; Stage 2 samples four answers per question, filters via EM for correct/incorrect pairs, selects the correct answer with the most reasoning steps, mixes with SFT data, and fine-tunes further.",
+ "results": "BrowserAgent-7B achieves approximately 20% improvement over Search-R1-Instruct on multi-hop QA tasks (HotpotQA, 2Wiki, Bamboogle). RFT consistently improves over SFT, especially on multi-hop tasks. The 7B model outperforms the 3B model across all benchmarks. Evaluation used both exact match (EM) and LLM-based consensus judgment (GPT-4.1, Gemini Flash 2.5, Claude Sonnet 3.7) across six benchmarks: NQ, PopQA, HotpotQA, 2WikiMultiHopQA, Musique, and Bamboogle. The system achieves 50+ episodes/minute on a single 32-core server with 64 concurrent Playwright browsers.",
+ "limitations": [
+  "Training dataset is limited to 5.3K trajectories, significantly smaller than prior work",
+  "Evaluation is restricted to a locally deployed 2022 Wikipedia dump, not the full open web",
+  "Context window constraints still require the memory mechanism to cap reasoning at 30 steps",
+  "EM alone may underestimate performance since semantically correct answers differing in surface form are penalized",
+  "Experiments were conducted with 3B and 7B models only due to computational resource constraints"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.14269",
+ "tldr": "DARS is an inference-time compute scaling approach for LLM coding agents that uses depth-first tree traversal with selective branching at key decision points, achieving open-source SOTA performance on SWE-Bench Lite.",
+ "contributions": [
+  "Introduction of DARS, an inference-time compute scaling method achieving open-source SOTA pass@1 rate of 47% on SWE-Bench Lite.",
+  "A patch preference data generation and supervised fine-tuning pipeline to select the most promising solution among multiple attempts.",
+  "Release of the complete codebase, a 500M-token execution feedback critique dataset, model checkpoints (7B, 14B, and 32B), and a trajectory analysis tool."
+ ],
+ "methods": "DARS builds on SWE-Agent by improving its editing capabilities using Aider's diff-based approach and adding new actions (Execute Server, Execute IPython, Search Repo, Undo Edit). During DARS scaling, the agent completes a trajectory in a depth-first manner while storing key decision nodes in a priority queue; after reaching a terminal state, these nodes are expanded by sampling k alternative actions and selecting the best one. Branching is limited to four causal actions (edit, append, create, submit) with second-degree expansion rules to avoid exponential compute. A reviewer LLM then selects the best trajectory based on rubrics for reproduction, fix quality, and potential to introduce new bugs, using supervised-fine-tuned models on a 500M-token dataset.",
+ "results": "DARS achieves a pass@1 rate of 47.0% with Claude 3.5 Sonnet V2 on SWE-Bench Lite, outperforming all listed open-source baselines (e.g., OpenHands CodeAct v2.1 at 41.7%, SWE-Search at 31.0%). Fine-tuned reviewer models show an average increase of 2.6% over vanilla models, with a maximum increase of 4.15% for the 14B model. However, 40% of examples have perfect precision (all patches correct), diminishing the observable fine-tuning gains. The approach uses Num Expansions=2, Expansion Temperature=0.8, 300 iterations, and Max Branch Depth=50.",
+ "limitations": "40% of examples have perfect precision where all patches are correct, reducing measurable gains from fine-tuning. The method is evaluated only on SWE-Bench Lite (300 issues from 12 projects), limiting evidence of generalization. Expansion is capped and uses second-degree rules to control compute, which may sacrifice some exploration. The approach relies on a proprietary model (Claude 3.5 Sonnet V2) combined with open-source components for the best results.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.17372",
+ "tldr": "BehaviorGPT is a fully autoregressive Transformer with only 3M parameters that simulates multi-agent traffic behavior using a Next-Patch Prediction Paradigm (NP3), winning first place in the 2024 Waymo Open Sim Agents Challenge.",
+ "contributions": [
+  "A fully autoregressive homogeneous Transformer architecture for smart agent simulation that eliminates the traditional encoder-decoder separation between history and future",
+  "The Next-Patch Prediction Paradigm (NP3) that prevents trivial shortcuts by training models to reason at the patch level and capture long-range spatial-temporal interactions",
+  "First-place performance in the 2024 Waymo Open Sim Agents Challenge with a realism score of 0.7473 and minADE of 1.4147 using only 3M parameters"
+ ],
+ "methods": "BehaviorGPT uses a fully autoregressive Transformer decoder with homogeneous blocks to process multi-agent trajectory sequences without separating history from future. Each time step is treated as 'current' for motion generation, maximizing data utilization. The model employs a Next-Patch Prediction Paradigm (NP3) where it autoregressively generates trajectory patches containing multiple time steps. It uses relative spacetime representations to symmetrically model patches in space and time, with a triple-attention mechanism comprising temporal self-attention, agent-map cross-attention (with k-NN filtering), and agent-agent self-attention (also with k-NN filtering). The prediction head uses a GRU-based autoregressive RNN to unroll states within each patch, modeling position and velocity as Laplace distributions and yaw as a von Mises distribution across multiple modes.",
+ "results": "BehaviorGPT won first place in the 2024 Waymo Open Sim Agents Challenge with merely 3M parameters, achieving a realism score of 0.7473 and a minADE score of 1.4147, demonstrating superior performance in traffic agent simulation.",
+ "limitations": "The paper notes that naive next-token prediction in autoregressive modeling suffers from compounding errors and causal confusion. Blindsly copying LLM next-token prediction could allow models to achieve low training loss by simply copying the current token as the next one without performing long-range interaction reasoning—addressed by NP3 but not explicitly quantified. The assumption that agents plan motions independently within a patch horizon (Eq. 3) may not capture all inter-agent dependencies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:16Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

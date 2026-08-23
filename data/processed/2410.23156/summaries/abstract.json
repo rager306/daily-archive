@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.23156",
+ "tldr": "The paper introduces Neuro-Symbolic Predicates (NSPs), an online learning approach that combines vision-language model queries with Python-based logical operations to invent abstract world models for robot planning, achieving better sample efficiency, out-of-distribution generalization, and interpretability compared to hierarchical RL, VLM planning, and symbolic baselines.",
+ "contributions": [
+  "Neuro-Symbolic Predicates (NSPs) as a state representation combining perceptually grounded VLM queries and logically rich Python-based computations",
+  "An online algorithm for inventing NSPs through interleaved predicate proposal, selection, HLA learning, and goal-driven exploration",
+  "Three VLM-based predicate invention strategies: Discrimination, Transition Modeling, and Unconditional Generation",
+  "A novel predicate scoring objective based on classification accuracy and simplicity bias for environments without demonstration data",
+  "Evaluation across 5 simulated robotic domains comparing against 6 baseline methods"
+ ],
+ "methods": "The approach learns abstract world models from online interaction without human demonstrations. It interleaves three stages: (1) proposing new NSPs using VLM prompts conditioned on collected planning data or unconditionally for derived predicates, (2) selecting predicates via greedy best-first search using a novel objective combining HLA classification accuracy and simplicity bias, and (3) learning High-Level Actions with preconditions and postconditions using an extended cluster-and-intersect operator learning algorithm. The system explores by generating and executing high-level plans, collecting positive transition segments from successful skill executions and negative samples from failures.",
+ "results": "Evaluated across 5 PyBullet-simulated environments (Cover, Blocks, Coffee, Cover Heavy, Balance) with 7 approaches tested. Test tasks featured more objects and more complex goals than training tasks. The approach achieved better sample complexity, stronger out-of-distribution generalization, and improved interpretability. The planning budget was set to 8 abstract plans for most domains and 100 for Coffee. Results averaged over 5 random seeds with 50 test tasks per seed.",
+ "limitations": [
+  "VLMs are not 100% accurate, requiring additional measures like contextual conditioning and object ID labeling",
+  "The MAPLE baseline could only be evaluated on in-distribution tasks due to inability to handle goals involving more objects than seen during training",
+  "Early in learning, satisficing plans may be scarce, necessitating a custom objective before switching to the demonstration-based Silver et al. objective",
+  "Predicate selection via GBFS may need local hill climbing for larger search spaces",
+  "Results are based on simulated environments only"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

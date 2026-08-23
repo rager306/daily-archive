@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.13964",
+ "tldr": "MDocAgent is a novel multi-modal multi-agent RAG framework for document question answering that uses five specialized agents collaborating across parallel text and image retrieval pipelines, achieving an average improvement of 12.1% over the current state-of-the-art method M3DocRAG.",
+ "contributions": [
+  "A novel multi-agent framework for DocQA that integrates specialized agents for text understanding, image understanding, critical information extraction, and answer synthesis",
+  "Two parallel RAG pipelines using ColBERTv2 for text and ColPali for images with a collaborative multi-agent architecture for cross-modal reasoning",
+  "Demonstration of significant improvements on five benchmarks: MMLongBench, LongDocURL, PaperTab, PaperText, and FetaTab",
+  "Ablation studies validating the contribution of each agent and the importance of multi-modal integration"
+ ],
+ "methods": "MDocAgent operates in five stages: (1) Document pre-processing extracts text via OCR and PDF parsing while preserving pages as images. (2) Multi-modal context retrieval uses ColBERTv2 to retrieve top-k text segments and ColPali to retrieve top-k visually relevant pages. (3) A general agent generates an initial response from combined modalities, and a critical agent extracts key information for specialized agents. (4) A text agent and image agent perform focused analysis within their respective modalities guided by the critical information. (5) A summarizing agent integrates all agent outputs to produce the final answer. The framework uses Llama-3.1-8B-Instruct as the base model for the text agent and Qwen2-VL-7B-Instruct for the other four agents.",
+ "results": "MDocAgent outperforms all baselines across five benchmarks. With top-1 retrieval, it achieves 0.399 on PaperText (surpassing M3DocRAG by 16.7%) and 0.600 on FetaTab (exceeding the second-best by 21.0%). Compared to the best LVLM (Qwen2.5-VL-7B), MDocAgent shows an average improvement of 51.9%, and compared to text-RAG baseline (ColBERTv2+Llama-3.1-8B), an average improvement of 23.7%. It outperforms M3DocRAG by 12.1% on average with top-1 retrieval and by 10.9% with top-4 retrieval. With top-4 retrieval, MDocAgent outperforms Qwen2.5-VL-7B by an average of 73.5%. Ablation studies confirm that removing either the text or image agent results in noticeable performance drops.",
+ "limitations": "Processing entire documents directly can overwhelm computational resources. The system requires 4 NVIDIA H100 GPUs. Existing RAG methods operate in isolation retrieving either text or images without synthesizing across modalities, and this remains a challenge the framework aims to address but may not fully resolve. The paper notes that M3DocRAG performs worse with top-4 retrieval compared to top-1, suggesting difficulties in selectively integrating multiple retrieved documents.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

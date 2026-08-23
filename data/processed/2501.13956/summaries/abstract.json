@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.13956",
+ "tldr": "Zep is a temporally-aware knowledge graph engine called Graphiti that dynamically synthesizes unstructured conversational data and structured business data for AI agent memory, outperforming MemGPT on the DMR benchmark and achieving up to 18.5% accuracy improvement on the more challenging LongMemEval benchmark while reducing response latency by 90%.",
+ "contributions": [
+  "Introduction of Zep, a memory layer service for AI agents powered by Graphiti, a dynamic temporally-aware knowledge graph engine",
+  "A bi-temporal modeling approach tracking both chronological event timelines and transactional ingestion timelines",
+  "A three-tier hierarchical knowledge graph architecture comprising episode, semantic entity, and community subgraphs",
+  "Demonstration of superior performance over MemGPT and baseline approaches on DMR and LongMemEval benchmarks"
+ ],
+ "methods": "Zep ingests raw episodic data (messages, text, JSON) and constructs a temporal knowledge graph through three subgraphs: an episode subgraph storing non-lossy raw data, a semantic entity subgraph for extracted entities and relationships, and a community subgraph using label propagation for high-level concepts. The system employs a bi-temporal model with separate timelines for event chronology and ingestion order, extracting absolute and relative timestamps to track fact validity periods. Memory retrieval uses a three-stage pipeline: hybrid search (cosine similarity, BM25 full-text, and breadth-first graph search), reranking (RRF, MMR, graph-based rerankers, and crossencoders), and a constructor that formats results into text context.",
+ "results": "In the DMR benchmark, Zep achieved 94.8% accuracy with gpt-4-turbo (vs. MemGPT's 93.4%) and 98.2% with gpt-4o-mini. Baseline full-conversation context achieved 94.4% with gpt-4-turbo and 98.0% with gpt-4o-mini. On the LongMemEval benchmark, Zep achieved accuracy improvements of up to 18.5% while reducing response latency by 90% compared to baseline implementations. The full-conversation baseline at 94.4% on DMR highlighted the benchmark's limitation since conversations contain only 60 messages fitting within context windows.",
+ "limitations": "The DMR benchmark is limited to single-turn fact-retrieval questions with ambiguous phrasing and does not represent real-world enterprise use cases. Zep's experiments only retrieved the top 10 nodes and edges and used a subset of the system's full search functionality. Bidirectional traversal between episodes and semantic edges was noted as future work. The dynamic community extension strategy causes communities to gradually diverge from what complete label propagation would generate, requiring periodic refreshes.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

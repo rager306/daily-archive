@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.23595",
+ "tldr": "Multi-Agent Evolve (MAE) is a self-evolving framework where three agent roles (Proposer, Solver, Judge) instantiated from a single LLM co-evolve through reinforcement learning, enabling LLM self-improvement without human-curated data or verifiable rewards across diverse reasoning domains.",
+ "contributions": [
+  "Introduction of Multi-Agent Evolve (MAE), a multi-agent self-evolving framework instantiating three interactive roles (Proposer, Solver, Judge) from a single base LLM with synchronized RL updates, supporting with/without reference settings and quality filtering.",
+  "Design of domain-agnostic self-rewarding mechanisms including Judge-based evaluation, difficulty-aware rewards, and format rewards, eliminating reliance on human-labeled ground truth or external verifiers.",
+  "Empirical demonstration on Qwen2.5-3B-Instruct across mathematics, coding, reasoning, and general knowledge benchmarks, achieving improvements over both base and supervised fine-tuning baselines."
+ ],
+ "methods": "MAE instantiates three cooperative yet competing roles—Proposer, Solver, and Judge—from a single shared LLM backbone. The Proposer generates questions (optionally guided by reference questions sampled from a seed dataset), the Solver attempts to answer them, and the Judge evaluates both question quality and answer correctness using carefully designed rubrics. Rewards are computed as weighted combinations: the Proposer receives quality reward from the Judge plus a difficulty reward (inversely proportional to the Solver's average solve score), while the Solver receives a Judge-based reward for answer quality; both also receive format rewards ensuring properly tagged outputs. Quality filtering discards questions scoring below 0.7. Training uses Task-Relative REINFORCE++ with synchronized parameter updates across all three roles simultaneously.",
+ "results": "On Qwen2.5-3B-Instruct, MAE achieves an average improvement of 4.54% across multiple benchmarks. It outperforms the strong Absolute Zero Reasoner (AZR) baseline even in the minimal zero-reference setting. When initialized with a seed of 967 unlabeled reference questions from real-world datasets (GSM8K, MATH, HumanEval, etc.), performance is further amplified. MAE significantly outperforms standard Supervised Fine-Tuning (SFT) on the same dataset despite SFT relying on ground-truth answers while MAE does not.",
+ "limitations": "The framework relies on LLM-as-judge evaluation, which may introduce inherent biases in self-assessment. The adversarial co-evolution between Proposer and Solver requires careful balancing, as questions that are too easy or too difficult could lead to training instability. The system's effectiveness in the zero-reference setting depends on manually collecting an initial small seed (16 questions), suggesting some minimal human curation is still required to bootstrap the process.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:32Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

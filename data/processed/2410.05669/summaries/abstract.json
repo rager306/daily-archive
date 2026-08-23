@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.05669",
+ "tldr": "The paper introduces ACPBench, a large-scale benchmark of 7 atomic reasoning tasks over 13 planning domains generated from PDDL, revealing a significant gap in LLMs' planning reasoning capabilities, with even GPT-4o achieving only 78.40% accuracy on MCQ questions.",
+ "contributions": [
+  "Identification of 7 reasoning tasks required for efficient planning and introduction of the first large-scale benchmark ACPBench",
+  "Evaluation of OpenAI o1 reasoning models and 22 state-of-the-art language models across different sizes on ACPBench",
+  "Fine-tuning of an 8B parameter model showing performance on par with large models and ability to generalize to unseen domains",
+  "Three ablations: effects of in-context examples and COT, whether ACPBench tasks capture plan generation ability, and how LLM abilities have progressed over time"
+ ],
+ "methods": "ACPBench consists of 7 reasoning tasks (Applicability, Progression, Reachability, Action Reachability, Validation, Justification, Landmarks) across 13 planning domains generated from PDDL. Natural language templates were crafted by 5 researchers. For each task, both boolean and multiple-choice questions are generated using classical planners to produce plans, followed by sampling states and facts. The benchmark was used to evaluate 22 LLMs and OpenAI o1 reasoning models under single-turn Chain-of-Thought prompting with 2-shot examples.",
+ "results": "GPT-4o with COT and 2-shot examples achieved 78.40% accuracy on MCQ questions with a lowest accuracy of 52.50% on the most difficult task. OpenAI o1 preview achieved 87.31% accuracy on average for MCQ questions, with a lowest accuracy of 63.08% on the most difficult task. OpenAI o1 showed significant gains on MCQ questions but no notable progress on boolean questions. Fine-tuning an 8B parameter model resulted in substantial improvements across tasks and demonstrated generalization to previously unseen domains.",
+ "limitations": "There is a significant gap in reasoning capabilities of LLMs for planning tasks, with even the best models struggling on harder tasks (lowest accuracy as low as 52.50% for GPT-4o and 63.08% for OpenAI o1). OpenAI o1 showed no notable progress on boolean questions despite gains on MCQs. Only 10 examples per domain per task were generated for the test set, and some models were run only once due to resource constraints.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.20096",
+ "tldr": "MA-RAG is a training-free, modular multi-agent framework that decomposes complex RAG pipelines into specialized agents (Planner, Step Definer, Extractor, QA Agent) using chain-of-thought prompting, achieving new state-of-the-art results across multi-hop and ambiguous QA benchmarks while outperforming both standalone LLMs and existing RAG methods.",
+ "contributions": [
+  "Introduced MA-RAG, a modular multi-agent framework enabling reasoning-driven RAG via structured collaboration between specialized agents for fine-grained handling of ambiguity and complex queries.",
+  "Demonstrated that MA-RAG operates entirely without model fine-tuning while outperforming or matching strong baselines across multiple QA datasets and LLM backends.",
+  "Showed that agent-specific chain-of-thought reasoning provides interpretable intermediate steps and strong generalization to specialized domains such as biomedical QA without domain-specific fine-tuning."
+ ],
+ "methods": "MA-RAG decomposes the RAG pipeline into four collaborating agents: a Planner that performs query disambiguation and task decomposition into sub-questions, a Step Definer that converts abstract steps into retrievable subqueries conditioned on prior context, an Extractor that filters and aggregates relevant evidence from retrieved passages, and a QA Agent that synthesizes step-specific answers. The system uses on-demand dynamic agent invocation based on query complexity, with dense retrieval via FAISS using a gte-multilingual encoder over Wikipedia chunks. Each agent is guided by chain-of-thought prompting with few-shot examples to enable interpretable intermediate reasoning.",
+ "results": "MA-RAG (Llama3-8B) achieves 52.5 EM on NQ, surpassing Llama3-70B (42.7) and GPT-4 (40.3). MA-RAG (GPT-4o-mini) achieves 59.5 EM on NQ, 87.2 on TriviaQA, 52.1 on HotpotQA, and 47.5 on 2WikimQA, setting new state-of-the-art results. On HotpotQA, MA-RAG averages 2.3 steps per question versus 1.4 on NQ. MA-RAG consistently outperforms strong baselines including ChatQA-1.5, RankRAG, RA-DIT, and REPLUG across all model scales (8B to 70B). Ablation studies show the planner agent is essential for multi-hop reasoning and the extractor agent significantly improves grounding by filtering irrelevant content. MA-RAG also achieves competitive performance on medical QA without domain-specific fine-tuning.",
+ "limitations": [
+  "TriviaQA and FEVER are noted as suboptimal for evaluating RAG effectiveness, as GPT-4 achieves strong performance (84.8 EM and 87.7 Acc respectively) even without retrieval augmentation.",
+  "Multi-hop questions require more steps and LLM calls (averaging 2.3 steps on HotpotQA), increasing inference cost.",
+  "The paper acknowledges that effective context utilization in long-context LLMs remains far below advertised limits, motivating continued reliance on retrieval."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:07Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

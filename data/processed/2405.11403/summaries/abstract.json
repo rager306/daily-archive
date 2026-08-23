@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.11403",
+ "tldr": "MapCoder is a multi-agent prompting framework that replicates the human program synthesis cycle through retrieval, planning, coding, and debugging agents, achieving new state-of-the-art pass@1 results across multiple code generation benchmarks.",
+ "contributions": [
+  "Introduction of MapCoder, a multi-agent code generation approach that mimics the human programming cycle (recalling examples, planning, code generation, debugging).",
+  "An autonomous retrieval agent that generates relevant problem-solving examples without manual crafting or external retrieval models.",
+  "A novel structured pipeline with dynamic agent traversal and a debugging agent that uses only sample I/O without generating additional test cases.",
+  "Comprehensive evaluation across eight benchmarks showing significant improvements over direct prompting and existing methods like Reflexion and AlphaCodium."
+ ],
+ "methods": "MapCoder employs four LLM agents in a cascaded pipeline: a Retrieval Agent that generates k similar problems and their metadata, a Planning Agent that creates step-by-step plans with confidence scores for each retrieved example, a Coding Agent that translates the highest-confidence plan into code, and a Debugging Agent that fixes bugs using sample I/O. The system uses an adaptive traversal schema where code failing sample tests is iteratively debugged up to t times per plan, cycling through plans if needed. Prompts are carefully designed for each agent, incorporating analogical principles and explicit algorithmic guidance. Evaluation uses the Pass@k metric with k=5 for HumanEval and k=3 for other datasets, testing on ChatGPT, GPT-4, Gemini Pro, and Mistral-7B-instruct.",
+ "results": "MapCoder achieves new state-of-the-art pass@1 results: HumanEval 93.9% (GPT-4), MBPP 83.1%, APPS 22.0%, CodeContests 28.5%, and xCodeEval 45.3%. On CodeContest, MapCoder's Pass@5 (35.2% with GPT-4) matches AlphaCodium's Pass@1 (29%). Improvements over direct prompting range from 41.3% to 132.8% on competitive datasets for ChatGPT and 73.7% to 135.1% for GPT-4. The framework consistently outperforms baselines like Reflexion and Self-collaboration across both simple and complex problem sets.",
+ "limitations": "Performance drops are observed with certain self-reflection approaches when AI-generated test cases are incorrect (e.g., 26.3% drop with ChatGPT on HumanEval when replacing GPT-4). The system's effectiveness may vary across different base models, with GPT-4 generally scaling higher than ChatGPT. The complexity of the approach is O(kt), which may involve substantial computational overhead for large k and t values.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:17Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

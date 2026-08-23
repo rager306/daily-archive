@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.19768",
+ "tldr": "T² Agent is a training-free multimodal misinformation detection agent that integrates an extensible toolkit with Monte Carlo Tree Search to dynamically verify content across mixed forgery sources through adaptive exploration and exploitation.",
+ "contributions": [
+  "Proposed T² Agent, a novel misinformation detection agent integrating an extensible toolkit with MCTS, enabling adaptive reasoning across diverse forgery sources through dynamic planning, evidence collection, and structured multi-source validation.",
+  "Designed an extensible toolkit based on modularized, standardized tool templates (web search, forgery detection, consistency analysis, etc.) that facilitates rapid adaptation and seamless integration of new verification capabilities.",
+  "Extended traditional MCTS with a multi-source verification framework that decomposes detection into subtasks targeting specific forgery sources, guided by a dual evaluation function balancing exploration across sources with exploitation of reliable evidence."
+ ],
+ "methods": "T² Agent uses a greedy search-based selector to identify a task-relevant subset of tools from an extensible toolkit (including web searching, forgery detection, consistency analysis, image understanding, etc.), which then serves as the action space for Monte Carlo Tree Search. The MCTS is extended with multi-source verification that decomposes the detection task into subtasks for different forgery sources. A dual reward mechanism combining a reasoning trajectory score (S_T) and a confidence score (S_C) guides the search, with a modified UCT formula and a pruning strategy that terminates branches once a forgery source is confirmed authentic.",
+ "results": "On MMfakebench, T² Agent improves accuracy over the baseline MMDagent by 28.7% with GPT-4-o, achieving a new state-of-the-art. On AMG, T² Agent is competitive with existing training-based approaches. Ablation studies confirm performance gains stem from the MCTS tree search mechanism and tool integration.",
+ "limitations": "The method relies on the capabilities of the underlying LLM/VLM; the greedy search-based tool selector may not always identify the optimal tool subset; and the toolkit, while extensible, is limited to currently defined tools (web search, forgery detection, consistency analysis, image understanding, entity recognition, event detection, counterfactual detection).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:04Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

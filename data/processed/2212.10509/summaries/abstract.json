@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2212.10509",
+ "tldr": "IRCoT is a retrieval method that interleaves chain-of-thought reasoning with iterative retrieval, substantially improving multi-step open-domain QA over one-step question-based retrieval.",
+ "contributions": [
+  "A novel interleaved retrieval method (IRCoT) that uses CoT to guide retrieval and retrieval to improve CoT reasoning, without any additional training",
+  "Demonstrating substantial improvements in both retrieval recall and downstream QA performance across four multi-step ODQA datasets in IID and OOD settings",
+  "Showing that IRCoT reduces factual errors in generated CoT by up to 50%",
+  "Demonstrating effectiveness with both large (175B GPT-3) and much smaller models (Flan-T5 as small as 0.2B) without training"
+ ],
+ "methods": "The authors propose IRCoT, which iteratively alternates between (i) generating the next CoT sentence conditioned on the question and all previously collected paragraphs, and (ii) using the last generated CoT sentence as a query to retrieve additional paragraphs via a BM25 retriever. This loop continues until the CoT reports an answer or a maximum step limit is reached. The final collected paragraphs are then used as context by a separate QA reader, implemented via CoT prompting (GPT-3) or Direct prompting (Flan-T5). Experiments were conducted on HotpotQA, 2WikiMultihopQA, MuSiQue, and IIRC using OpenAI GPT-3 (code-davinci-002) and Flan-T5 models of varying sizes (0.2B to 11B).",
+ "results": "IRCoT improves retrieval recall by 11-21 points over one-step retrieval: +11.3 on HotpotQA, +22.6 on 2WikiMultihopQA, +12.5 on MuSiQue, +21.2 on IIRC (with GPT-3). Downstream QA improves by up to 15 F1 points: +7.1 (HotpotQA), +13.2 (2WikiMultihopQA), +7.1 (MuSiQue) for GPT-3; and +9.4, +15.3, +5.0, +2.5 for Flan-T5-XXL respectively. IRCoT reduces factual errors in CoT by 50% on HotpotQA and 40% on 2WikiMultihopQA. IRCoT with Flan-T5-XL (3B) outperforms GPT-3 (175B) with one-step retrieval. Similar gains are observed in OOD settings. GPT-3 on IIRC showed no QA improvement despite 21-point retrieval gain, likely because relevant knowledge was already in parametric memory.",
+ "limitations": "IRCoT does not improve QA on IIRC with GPT-3 despite significant retrieval gains, suggesting limitations when relevant knowledge is already present in the model's parameters. The approach requires human-written CoT demonstrations (20 per dataset), and direct comparison with related methods (ReAct, SelfAsk, DecomP) is not apples-to-apples due to different knowledge sources, APIs, and LLMs. The maximum number of reasoning steps and paragraph budgets are fixed hyperparameters.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

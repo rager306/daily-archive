@@ -1,0 +1,23 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2404.16130",
+ "tldr": "GraphRAG is a graph-based retrieval-augmented generation approach that enables global sensemaking over entire text corpora by using LLM-extracted knowledge graphs, community detection, and hierarchical community summaries to answer broad questions that conventional vector RAG cannot handle.",
+ "contributions": [
+  "Proposed GraphRAG, a graph-based RAG approach that scales with both the generality of user questions and the quantity of source text",
+  "Developed an adaptive benchmarking approach using LLM-as-a-judge for evaluating global sensemaking without ground-truth answers",
+  "Demonstrated that GraphRAG strongly outperforms vector RAG on global sensemaking questions over datasets in the 1 million token range"
+ ],
+ "methods": "GraphRAG first uses an LLM to extract entities, relationships, and claims from source document text chunks to build a knowledge graph. The graph is then partitioned hierarchically using Leiden community detection, and an LLM generates community-level summaries in a bottom-up manner, recursively incorporating lower-level summaries. Given a query, community summaries are used in parallel to generate partial answers (map step), which are then combined and summarized into a final global answer (reduce step). Evaluation used an adaptive benchmarking approach generating 125 corpus-specific global sensemaking questions per dataset via persona-based LLM prompting, judged by a second LLM using designed criteria.",
+ "results": "On datasets in the 1 million token range, GraphRAG led to substantial improvements over conventional vector RAG baseline for both comprehensiveness and diversity of generated answers when using GPT-4 as the LLM. The improvement was specifically demonstrated on a class of global sensemaking questions targeting broad issues and themes.",
+ "limitations": [
+  "Uses exact string matching for entity matching, though softer matching approaches are noted as possible with minor adjustments",
+  "Chunk size selection involves a recall-precision trade-off: longer chunks reduce LLM calls but suffer degraded recall for information appearing early in chunks",
+  "Evaluation relies on LLM-as-a-judge without gold-standard answers, introducing potential subjectivity"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

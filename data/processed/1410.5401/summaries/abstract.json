@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "1410.5401",
+ "tldr": "Neural Turing Machines (NTMs) extend neural networks by coupling them to an external, addressable memory matrix that can be interacted with via differentiable attentional read and write operations, enabling the system to learn and execute simple algorithms such as copying, sorting, and associative recall.",
+ "contributions": [
+  "Introduction of a memory architecture with selective read and write operations controlled by attention mechanisms",
+  "A combined addressing system using both content-based and location-based addressing for memory access",
+  "Demonstration that NTMs can infer simple algorithms from input-output examples and generalize beyond training data",
+  "Development of a battery of algorithmic tasks (copying, sorting, associative recall) for evaluating the architecture"
+ ],
+ "methods": "The authors designed an NTM architecture consisting of a neural network controller and a differentiable memory matrix. Read operations produce convex combinations of memory rows weighted by attention distributions, while write operations decompose into erase and add steps, both differentiable. Addressing combines content-based mechanisms (cosine similarity between key vectors and memory) and location-based mechanisms (rotational shifts of weightings). Experiments compared NTMs with feedforward controllers, NTMs with LSTM controllers, and standard LSTMs on algorithmic tasks including sequence copying, sorted copying, associative recall, and traversal, using binary targets and cross-entropy loss.",
+ "results": "NTMs successfully inferred simple algorithms such as copying, sorting, and associative recall from input-output examples. The systems were able to generalise well beyond the range of training data, such as copying sequences longer than those seen during training. NTMs with both feedforward and LSTM controllers were tested against standard LSTM networks across a battery of algorithmic problems.",
+ "limitations": [
+  "Feedforward controllers impose a bottleneck where the number of concurrent read/write heads limits computation type (e.g., single read head allows only unary transforms per step)",
+  "Rotation-based location addressing can cause leakage or dispersion of weightings over time if shift weightings are not sharp",
+  "The experiments presented are preliminary, focusing only on simple algorithmic tasks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

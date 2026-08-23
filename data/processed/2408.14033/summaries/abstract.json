@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.14033",
+ "tldr": "MLR-COPILOT is an autonomous machine learning research framework powered by LLM agents that automates the full research pipeline from idea generation to experiment execution and refinement through iterative feedback.",
+ "contributions": [
+  "Introduction of MLR-COPILOT, a systematic three-stage framework for autonomous ML research: idea generation, experiment implementation, and implementation execution",
+  "IdeaAgent, a fine-tuned LLM agent using RL with multi-dimensional feedback (novelty, feasibility, effectiveness) for generating grounded and novel research hypotheses",
+  "ExperimentAgent that translates experimental plans into executable code with optional retrieval of models and datasets from HuggingFace",
+  "Iterative debugging and human-in-the-loop feedback mechanism to refine experiments"
+ ],
+ "methods": "The framework operates in three stages. Stage 1 (IdeaGeneration): IdeaAgent, fine-tuned via RL on 1,000 papers from OpenReview with reward models scoring novelty, feasibility, and effectiveness, generates research methodologies and experimental plans from input papers retrieved via Semantic Scholar API. Stage 2 (Experiment Implementation): ExperimentAgent retrieves prototype code from original papers, optionally retrieves models from HuggingFace model repository and datasets, and adapts code for compatibility. Stage 3 (Implementation Execution): ExperimentAgent runs experiments, provides debugging feedback, and supports iterative refinement with optional human feedback. Evaluation was conducted on five ML research tasks: SemRel, IMDB sentiment analysis, Spaceship-Titanic, ELLIPSE feedback prediction, and Identify-Contrails.",
+ "results": "IdeaAgent outperforms BaseLLM and ResearchAgent in both manual evaluation (5 domain experts, 45 hypotheses, 5-point Likert scale) and automated evaluation (GPT-4 reviewing agent) across clarity, validity, rigor, innovativeness, and generalizability, with lower similarity scores to existing hypotheses indicating more novel contributions. For experiment execution across 8 trials, MLR-COPILOT with Claude-3.7 achieved the highest average improvement of 44.16% over SOTA prototypes with a 50.0% success rate, compared to GPT-4 at 39.74% average improvement with 40% success rate, and Claude-2.1 at 38.0% with 27.5% success rate. The One-Pass Prompting baseline consistently failed across all trials (N/A). Per-task improvements with Claude-3.7: IMDB 76.2%, SemRel 21.5%, ELLIPSE 60.2%, Identify-Contrails 14.5%, Spaceship-Titanic 48.4%.",
+ "limitations": "The current pipeline treats the three stages (idea generation, experiment implementation, and execution) largely as sequential rather than bidirectional; in practice, failed or suboptimal experiments often indicate the need to revisit earlier stages. This limitation is noted as truncating the conclusion section.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

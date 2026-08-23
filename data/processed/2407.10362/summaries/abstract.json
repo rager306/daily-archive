@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2407.10362",
+ "tldr": "The authors introduce LAB-Bench, a benchmark of over 2,400 multiple-choice questions evaluating LLM capabilities on practical biology research tasks such as literature search, figure interpretation, database access, and DNA/protein sequence manipulation, finding that frontier models significantly lag behind human expert biologists, especially on complex multi-step tasks.",
+ "contributions": [
+  "Introduction of LAB-Bench, a dataset of over 2,400 multiple-choice questions covering practical biology research tasks including literature recall (LitQA2), supplementary material lookup (SuppQA), figure interpretation (FigQA), table interpretation (TableQA), database navigation (DbQA), protocol understanding (ProtocolQA), sequence comprehension (SeqQA with 15 subtasks), and 41 human-hard Cloning Scenarios.",
+  "Evaluation of several frontier commercial and open-source models on all benchmarks without tool augmentation, compared against PhD-level human biology researchers.",
+  "Development of a question-generation strategy using frontier models to generate candidate questions, with human revision, to identify the model reasoning null space."
+ ],
+ "methods": "LAB-Bench was constructed using both programmatic and manual strategies: SeqQA and DbQA subtasks were largely generated programmatically, while LitQA2, SuppQA, FigQA, TableQA, ProtocolQA, and Cloning Scenarios were generated manually by authors and contracted biology experts. Models were evaluated using 0-shot chain-of-thought prompting without any tool augmentation (no internet access or external APIs), with the option to decline answering for lack of information. Performance was measured as accuracy (correct/total), precision (correct/attempted), and coverage (attempted/total). A subset of questions was reserved (20%) to monitor contamination, with ~80% made publicly available.",
+ "results": "Claude 3.5 Sonnet outperformed other models on FigQA and TableQA, narrowly surpassing human performance in TableQA precision and equaling human accuracy. All models scored well above random (40% precision) on LitQA2 but many refused to answer, with some attempting below 20% of questions. SuppQA had the lowest coverage across all models. DbQA also saw low coverage and poor accuracy. SeqQA overall precision ranged from 40-50%, with some subtasks like PCR-seq-enzprimers reaching above 90% precision, while subtasks requiring long-sequence manipulation (e.g., PCR-primers-len, RE-seq-numfrags) performed poorly. On Cloning Scenarios, model performance was well below human performance, with Gemini 1.5 Pro and GPT-4-turbo showing notably low coverage and precision. Models often relied on heuristics to eliminate unlikely distractors rather than genuine reasoning.",
+ "limitations": [
+  "Difficulty obtaining reliable human baselines for complex tasks like Cloning Scenarios due to the expertise and time required, suggesting future human baselines may need to rely on 'proofs-of-possibility' rather than direct comparison.",
+  "Multiple-choice format may inflate model performance through test-taking strategies (eliminating unreasonable distractors and guessing) rather than genuine reasoning, necessitating open-answer validation.",
+  "Models without tools performed poorly on tool-dependent tasks (LitQA2, SuppQA, DbQA), indicating that retrieval-augmented systems would likely perform differently.",
+  "Llama-3-70B is non-multimodal and could not be assessed on FigQA and TableQA.",
+  "The initial SeqQA SuppQA was restricted to supplemental text and non-Excel supplemental tables in PDFs."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:39Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

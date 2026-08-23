@@ -1,0 +1,36 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.11061",
+ "tldr": "The paper presents a new accessible implementation of funsearch, an LLM-driven genetic algorithm for mathematical discovery, benchmarking it on three combinatorial problems and finding that it learns generalizable principles beyond its training context.",
+ "contributions": [
+  "An open-source implementation of funsearch designed for working mathematicians without ML expertise or HPC resources, requiring only a Python configuration file and an LLM API key",
+  "New features including non-priority-function program search, Weights & Biases integration, multi-platform LLM support via OpenRouter, parallel processing, and sandboxing safety features",
+  "Benchmarks on three problems (cap-set, narrow-admissible-tuple, no-isosceles) comparing diverse LLMs and analyzing cost-effectiveness",
+  "Demonstration that learned priority functions generalize to grid sizes outside their training range"
+ ],
+ "methods": "Funsearch operates as a genetic algorithm where the population consists of candidate Python scripts (priority functions) scored by an external evaluator. Scripts are selected by score with diversity preservation, grouped into prompt samples fed to an LLM to generate new scripts. The implementation splits the population into islands that evolve independently, periodically merging survivors. Benchmarks were run across multiple LLM providers using a fixed metric of relative tokens (weighted by input/output costs), with 16 samplers and 16 evaluators per run over 2×10^6 relative tokens.",
+ "results": [
+  "For cap-set n=8, the best score achieved was 370 with short reset and 349 with long reset",
+  "For narrow-admissible-tuple k=5000, the best diameter found was 498 (short reset) versus 561 (long reset)",
+  "For no-isosceles n=64, the largest set found was 96 points, compared to PatternBoost's 110 points",
+  "There is little correlation between model cost and effectiveness; the most expensive model (gpt4o) ranked middle for cap-set and worst for narrow-admissible-tuple",
+  "Extended single runs showed little improvement: 8 independent runs of 2×10^6 tokens (total $4) substantially outperformed a single run of 10^8 tokens ($25)",
+  "Trained priority functions outperform random priority even for grid sizes well outside the training range, demonstrating generalization",
+  "Training on multiple values of n did not improve generalization compared to single-n training",
+  "For n=16, the exact optimal no-isosceles set size is 28, but the basic model found 26"
+ ],
+ "limitations": [
+  "Models trained after the original funsearch publication may have incorporated known record-breaking programs into training data, contaminating benchmarks",
+  "LLMs show path-dependence, being overly influenced by their previous choices in the prompt, which limits gains from extended runs",
+  "Results on the no-isosceles problem lag behind PatternBoost, partly due to substantially fewer computational resources devoted",
+  "Basic priority functions fail to achieve optimal results for n >= 12 on the no-isosceles problem",
+  "All trained priority functions consistently favor boundary points regardless of training size, suggesting a structural bias",
+  "Constant priority functions yield poor results on the narrow-admissible-tuple problem setup, limiting exploration"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

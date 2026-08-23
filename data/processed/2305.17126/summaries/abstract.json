@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.17126",
+ "tldr": "LATM is a closed-loop framework where LLMs create their own reusable Python tools for problem-solving, with a powerful model acting as tool maker and a lightweight model as tool user, achieving GPT-4-level performance at significantly reduced inference cost.",
+ "contributions": [
+  "Introducing LATM (LLMs As Tool Makers), a framework where LLMs generate their own reusable tools implemented as Python utility functions",
+  "Demonstrating strategic division of labor: assigning tool-making to powerful models (GPT-4) and tool-using to lightweight models (GPT-3.5 Turbo)",
+  "Proposing a functional cache mechanism that stores tools/APIs instead of natural language responses for recurring tasks"
+ ],
+ "methods": "LATM operates in two stages: tool making and tool using. In tool making, a powerful LLM (e.g., GPT-4) generates Python functions from 3 few-shot demonstrations through three sub-stages: tool proposing (generating code via programming-by-example, retrying up to 3 times on errors), tool verification (running 3 unit tests on validation samples and self-debugging function call issues), and tool wrapping (packaging the function with conversion demonstrations). In tool using, a lightweight LLM (e.g., GPT-3.5 Turbo) receives the wrapped tool and converts natural language queries into function calls at temperature 0.0. A dispatcher LLM routes incoming tasks to either existing cached tools or triggers new tool generation.",
+ "results": "With GPT-4 as tool maker and GPT-3.5 Turbo as tool user, LATM achieves performance equivalent to using GPT-4 for both roles. On Big-Bench tasks: Logical Deduction (5) reached 79.7% vs GPT-4's 86.6%, Tracking Shuffled Objects (5) achieved 99.6% vs 100%, Dyck Language reached 92.2% vs 87.5%, Word Sorting achieved 98.3% vs 99.1%, and Chinese Remainder Theorem and Scheduling Meeting both reached 100%. LATM substantially outperformed CoT prompting with GPT-3.5 Turbo (e.g., +13.3 to +100 percentage points across tasks). GPT-3.5 Turbo as tool user even surpassed GPT-4 as tool user on Dyck Language (92.2% vs 87.5%). Self-correction via error messages occurred in only 2 out of 60 tool-making trials.",
+ "limitations": [
+  "Tool self-correction from error messages was rare (only 2 out of 60 trials)",
+  "GPT-4 as tool user occasionally made errors by superfluously closing brackets in arguments",
+  "Tool-making stage fails if execution or verification exceeds preset retry threshold (3 retries)",
+  "Experiments evaluated on only 6 datasets"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

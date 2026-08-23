@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.15553",
+ "tldr": "Multi-IF is a new benchmark assessing LLMs' ability to follow instructions across multi-turn, multilingual conversations; it reveals that instruction-following accuracy degrades significantly with each turn and underperforms on non-Latin script languages.",
+ "contributions": [
+  "Introduction of Multi-IF, a benchmark expanding IFEval into multi-turn and multilingual instruction following",
+  "A hybrid LLM-plus-human annotation framework for generating and validating 4,501 three-turn conversations across 8 languages",
+  "Evaluation of 14 state-of-the-art LLMs demonstrating that Multi-IF is significantly more challenging than existing single-turn benchmarks"
+ ],
+ "methods": "The authors expanded the English single-turn IFEval dataset into multi-turn prompts by randomly sampling from 30 instruction types per additional turn and using Llama 3.1 405B to generate natural-language prompts. Conflicting instructions across turns were identified by LLM and filtered via human auditing. The resulting English prompts were translated into 7 languages (French, Russian, Hindi, Italian, Portuguese, Spanish, Chinese) using an LLM, then audited and revised by multilingual human annotators. Sensitive content was removed through LLM flagging and human review. Accuracy was measured across four metrics: instruction-level strict, conversation-level strict, instruction-level loose, and conversation-level loose accuracy.",
+ "results": "o1-preview achieved the highest average accuracy of 0.707 at the third turn across all languages, followed by Llama 3.1 405B (0.707) and o1-mini (0.681). All models showed performance degradation per additional turn; o1-preview dropped from 0.877 at turn 1 to 0.707 at turn 3. Non-Latin script languages exhibited higher error rates (Hindi: 0.531, Russian: 0.531, Chinese: 0.531 vs. English: 0.707 for o1-preview). Several models scored below 0.6 by the third turn, including Llama 3.1 8B (0.542), Gemini-1.5 Pro (0.540), Gemini-1.5 Flash (0.496), and Mistral Large 2 (0.548).",
+ "limitations": "Some verifiable instructions (e.g., 'all capital letters') only apply to Western languages and could not be translated, resulting in fewer multilingual prompts. A subset of multi-turn prompts was dropped during sensitive content removal. The benchmark covers only 3 turns per conversation, while real-world interactions often involve 10+ turns.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:24Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.19849",
+ "tldr": "The paper proposes Agentic Reinforced Policy Optimization (ARPO), a novel agentic RL algorithm that uses an entropy-based adaptive rollout mechanism to balance global trajectory sampling and step-level sampling, enabling LLM-based agents to better handle multi-turn tool interactions.",
+ "contributions": [
+  "Proposes ARPO, an agentic RL algorithm tailored for training multi-turn LLM-based agents",
+  "Introduces an entropy-based adaptive rollout mechanism that dynamically balances global and partial sampling based on token entropy changes after tool calls",
+  "Develops an advantage attribution estimation method with hard and soft variants to internalize stepwise tool-use advantage differences",
+  "Demonstrates superior performance across 13 benchmarks while using half the tool-use budget of existing methods"
+ ],
+ "methods": "The authors first conduct preliminary experiments analyzing token entropy distributions in LLM-based agents during tool-use, observing sharp entropy increases in the first 10-50 tokens following tool calls. Based on this, they design ARPO with two core components: (1) An entropy-based adaptive rollout mechanism that performs initial global sampling, then monitors real-time token entropy after each tool invocation, branching additional partial sampling paths when entropy change exceeds a threshold; (2) An advantage attribution estimation that assigns shared advantages to tokens on common reasoning paths and distinct advantages to branched paths, with a soft setting preferred for stability. The algorithm uses a hierarchical reward design incorporating correctness, format, and multi-tool collaboration rewards.",
+ "results": "Experiments across 13 benchmarks in computational reasoning (AIME2024, AIME2025, MATH500, MATH, GSM8K), knowledge-intensive reasoning (HotpotQA, 2WikiMultihopQA, Musique, bamboogle, WebWalker), and deep search (GAIA, HLE, xbench-DeepSearch) demonstrate ARPO's superiority over trajectory-level RL algorithms (GRPO, DAPO, REINFORCE++). ARPO achieves improved performance using only half of the tool-use budget required by existing methods. The soft advantage estimation setting achieves consistently higher rewards with greater stability during training compared to hard advantage estimation.",
+ "limitations": "The paper focuses primarily on algorithmic validation rather than maximizing performance improvements. The evaluation is limited to three specific tools (search engine, web browser agent, code interpreter). The adaptive branching mechanism requires tuning hyperparameters (threshold tau, base probability alpha, stability value beta). Computational complexity is reduced from O(n^G) but remains between O(n log n) and O(n^2).",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:46Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

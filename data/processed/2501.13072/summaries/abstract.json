@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.13072",
+ "tldr": "AdaWM is an adaptive world model-based planning method that identifies whether dynamics model mismatch or policy mismatch dominates finetuning performance degradation, then selectively updates the appropriate component using efficient low-rank adaptation techniques.",
+ "contributions": [
+  "Quantification of the performance gap during finetuning and identification of two root causes: dynamics model mismatch and policy mismatch, with theoretical upper bound on performance drop (Theorem 1)",
+  "Proposal of AdaWM with mismatch identification via TV distance evaluation and alignment-driven finetuning using LoRA-based low-rank adaptation for the dynamics model and weighted convex ensemble decomposition for the policy",
+  "Validation on CARLA demonstrating superior routing success rate and time-to-collision performance compared to model-only, policy-only, and alternating finetuning strategies"
+ ],
+ "methods": "The authors formulate autonomous driving decision-making as an MDP and analyze performance degradation during finetuning of pretrained world model and policy using latent dynamics models. At each finetuning step, AdaWM estimates the TV distance between pretrained and new-task dynamics models and between pretrained and current policies to identify the dominating mismatch. Based on a theoretical criterion derived from Theorem 1, it selectively updates either the dynamics model (using LoRA-based low-rank adaptation where only low-dimensional vectors are updated) or the policy (decomposed into a weighted convex ensemble of sub-units with only weights updated). Experiments are conducted on CARLA driving tasks comparing against alternating, model-only, and policy-only finetuning baselines.",
+ "results": "AdaWM significantly improves finetuning performance on CARLA driving tasks, achieving superior routing success rate (SR) and time-to-collision (TTC). The motivating example shows model-only finetuning demonstrates significantly faster recovery compared to alternating and policy-only strategies when transitioning from right turns to left turns at intersections. Existing supervised learning methods (VAD, UniAD) lack online finetuning, while single-focused RL strategies underperform compared to AdaWM's adaptive approach.",
+ "limitations": [
+  "Theoretical analysis relies on Assumptions 1-3 (bounded weight matrices, Lipschitz policies and reward functions) that may not fully hold in complex real-world driving scenarios",
+  "TV distance estimation uses approximations (D_TV(P||P̃) ≈ ||P(x,a)-P̃(x,a)||_1) that may not perfectly capture true distribution shift",
+  "The simplified selection criterion reduces computational complexity but may sacrifice some theoretical precision",
+  "Performance bound depends on E_max (prediction error on pretraining task) and E_P (TV distance between transition probabilities), whose practical tightness is unverified"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

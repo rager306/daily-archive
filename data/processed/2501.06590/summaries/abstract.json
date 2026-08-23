@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.06590",
+ "tldr": "ChemAgent is a framework that improves LLM performance on chemical reasoning by maintaining a dynamic, self-updating library of decomposed sub-tasks and solutions organized into three memory types: planning, execution, and knowledge.",
+ "contributions": [
+  "Introduction of ChemAgent, a novel framework with a dynamic library system for LLM-based chemical reasoning",
+  "Three-component memory structure (planning, execution, and knowledge memory) stored in a structured tree-based format",
+  "Self-improving mechanism that continuously enriches the library with new sub-tasks and solutions during runtime",
+  "An Evaluation & Refinement module that corrects solutions and restructures sub-tasks when needed"
+ ],
+ "methods": "ChemAgent decomposes complex chemical problems into hierarchical sub-tasks using Planning Memory for high-level strategies, then retrieves relevant Execution Memory units based on cosine similarity computed via Llama3 embeddings. During library construction from the development set, sub-tasks are ranked by difficulty and filtered by confidence thresholds. Three memory types are used: Planning Memory (high-level strategies), Execution Memory (structured problem-solution pairs), and Knowledge Memory (fundamental formulas and principles). The system dynamically updates its library by adding newly solved sub-tasks, and an Evaluation & Refinement module verifies solutions against knowledge memory and restructuring plans when sub-tasks fail.",
+ "results": "On four SciBench chemical reasoning datasets (QUAN, CHEMMC, ATKINS, MATTER), ChemAgent with GPT-4 achieved average accuracy of 57.16%, compared to 19.48% for direct reasoning (37% improvement) and 47.66% for StructChem (10% improvement, up to 15% maximum). The largest single-dataset gain was 46% on CHEMMC (28.21 vs 74.36). Memory contribution alone yielded a 2.90% average improvement. Performance gains were more pronounced for stronger models: GPT-4 showed greater enhancements than GPT-3.5. With Llama 3.1-70b, ChemAgent achieved 42.52% average vs 29.48% direct reasoning. With Qwen 2.5-72b, it reached 53.58% vs 43.47%.",
+ "limitations": "The improvement degree varies across datasets of different sizes. The system relies on the development set for initial library construction, potentially limiting generalization beyond similar problem distributions. The evaluation shows that while memory consistently helps, the Evaluation & Refinement module's benefit is more pronounced with stronger base models. Results on open-source models (Llama 3.1-7b) showed notably lower absolute accuracy compared to proprietary models.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:01Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

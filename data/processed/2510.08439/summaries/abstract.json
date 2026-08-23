@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.08439",
+ "tldr": "xRouter is a toolcalling-based routing system trained end-to-end with reinforcement learning that balances cost and performance by learning when to answer directly or delegate to external models, eliminating hand-engineered routing rules.",
+ "contributions": [
+  "A cost-aware reinforcement learning framework for multi-model LLM orchestration",
+  "An explicit cost-performance reward function (R_final = R_binary × (K - λC)) that gates reward on task success while penalizing cost",
+  "An open implementation covering the full RL training and evaluation pipeline",
+  "Empirical insights into learned routing behavior across diverse benchmarks"
+ ],
+ "methods": "The router (a fine-tuned Qwen2.5-7B-Instruct) observes queries and decides whether to answer directly or invoke external models via tool calls. It is trained using the DAPO (GRPO-style) algorithm with a success-gated, cost-aware reward. Training data comes from the Reasoning360 benchmark stratified by difficulty (easy/medium/hard) and augmented with simple queries. A model pool of 13 models across capability tiers (e.g., GPT-5, Gemini-2.5-Pro, GPT-OSS series) is available for offloading. Cost accounting tracks per-turn and per-episode spend, normalized by a configurable per-turn cap.",
+ "results": "xRouter achieves 80-90% of GPT-5's accuracy while consuming less than one-fifth of the cost on GPQA. The moderate cost penalty setting (λ=2) yielded the most balanced cost-performance trade-off across benchmarks. xRouter-7B variants maintained strong results across AIME25 and LiveBench without retraining, demonstrating generalization. Higher expenditure did not necessarily improve performance, and extreme λ values imposed overly rigid constraints that reduced accuracy.",
+ "limitations": [
+  "Small open models struggle to elicit sophisticated orchestration behaviors",
+  "The non-monotonic relationship between λ and performance makes tuning sensitive",
+  "Fan-out and call depth are deliberately limited to control latency and cost, potentially restricting complex multi-model coordination",
+  "The router's cost utility can appear lower than cheap open-source models because those models have significantly lower API prices, even if they achieve lower overall accuracy"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

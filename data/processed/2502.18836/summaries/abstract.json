@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.18836",
+ "tldr": "REALM-Bench introduces a benchmark suite of 14 planning and scheduling problems designed to evaluate multi-agent systems under dynamic, real-world conditions with disruptions, scalability, and multi-agent coordination requirements.",
+ "contributions": [
+  "14 benchmark problems spanning 10 P-series (general planning) and 4 J-series (Job-Shop Scheduling Problem) variants, progressing from static single-agent tasks to dynamic multi-agent coordination under severe disruptions",
+  "Standardized evaluation metrics combining planning quality (goal satisfaction, solution completeness) and planning optimality (makespan minimization, resource efficiency)",
+  "Integration support for five major LLM-agent frameworks (LangGraph, AutoGen, CrewAI, Swarm, ALAS) and six+ LLM families",
+  "Open-source release with public leaderboards, automated result aggregation, and extensibility for community contributions"
+ ],
+ "methods": "The authors designed 14 benchmark scenarios across five difficulty tiers, each scalable along three dimensions: number of parallel planning threads, complexity of inter-dependencies, and frequency of unexpected disruptions. Problems include campus navigation (P1), campus tour scheduling (P2), urban ridesharing (P3/P4), wedding reunion logistics (P5), Thanksgiving dinner planning (P6/P9 with disruptions), disaster relief logistics (P7/P8), and global supply chain for data center GPU deployment (P10). The JSSP problems range from basic sequential (J1) to large-scale with stochastic delays and material disruptions (J4). Each problem supports small-to-large instance scaling while maintaining tractability for evaluation.",
+ "results": "The paper describes 15 comparison methods tested including Random, LPT, SPT, STPT, MPSR, DRL-Liu, GP, GEP, LSO, SPT/TWKR, DRL-Chen, DRL-Zhang, and baseline implementations using GPT-4o, Claude-3.7, DeepSeek-R1, LangGraph, AutoGen, CrewAI, and Swarm. A key finding is that current LLM-based systems fail to leverage early disruption notices—for example, when a flight delay is communicated at 10 AM for a 1 PM arrival, existing LLM solutions do not adapt until 1 PM, missing the window for earlier intervention. The results section was truncated in the provided text, so detailed numerical results are not available.",
+ "limitations": [
+  "LLMs are inherently stateless, making it difficult for them to track previous scheduling events and adapt plans in real-time",
+  "Current LLM-based systems fail to react proactively to early disruption notifications, only responding at originally scheduled times",
+  "Existing benchmarks evaluated lacked dynamic complexity, transaction properties, and long-lived episode support—gaps this benchmark addresses but which remain challenges for system designers",
+  "Dynamic disruptions such as machine breakdowns, power outages, and material shortages require sophisticated reactive planning that current systems struggle with"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:37Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

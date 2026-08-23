@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.04588",
+ "tldr": "ZEROSEARCH is a novel reinforcement learning framework that incentivizes LLMs to use real search engines by simulating search with an LLM during training, eliminating API costs and document quality instability while achieving comparable or superior performance to real search-based methods.",
+ "contributions": [
+  "Proposed ZEROSEARCH, a novel RL framework that incentivizes LLM search capabilities without interacting with real search engines during training",
+  "Introduced supervised fine-tuning to transform an LLM into a retrieval module capable of generating both useful and noisy documents, with a curriculum-based rollout mechanism that progressively degrades document quality to elicit reasoning ability",
+  "Demonstrated that a 3B simulation LLM can effectively incentivize search capabilities, a 7B simulator achieves performance comparable to real search, and a 14B simulator surpasses it; ZEROSEARCH generalizes across base and instruction-tuned models and is compatible with REINFORCE, PPO, and GRPO",
+  "Achieved zero API cost while outperforming real search engine-based baselines across in-domain and out-of-domain datasets"
+ ],
+ "methods": "The authors propose using an LLM as a simulated search engine instead of real search APIs. First, they perform lightweight supervised fine-tuning (SFT) on an LLM to make it generate both useful and noisy documents in response to queries, distinguished through prompt design. During RL training, they employ a curriculum-based rollout strategy where the probability of generating noisy documents increases progressively over training steps according to an exponential schedule p_i = p_s + b^(i/m - 1)(p_e - p_s), with default b=4. A loss masking mechanism is applied so gradients are only computed on policy-generated tokens, not document tokens from the simulation LLM. The reward function uses F1 score between prediction and ground truth to avoid reward hacking from exact match. Experiments use Qwen-2.5 (3B, 7B) and LLaMA-3.2-3B models trained with REINFORCE, PPO, or GRPO, evaluating on NQ, TriviaQA, PopQA, HotpotQA, 2WikiMultiHopQA, MuSiQue, and Bamboogle.",
+ "results": "ZEROSEARCH consistently outperforms all baselines including real search engine-based Search-R1 across seven datasets. A fine-tuned 3B simulation LLM effectively incentivizes policy model capabilities. A 7B fine-tuned simulation engine achieves performance comparable to Google Search, while a 14B simulator surpasses it. ZEROSEARCH generalizes well across both base and instruction-tuned models of various parameter sizes and is compatible with REINFORCE, PPO, and GRPO. Reward curves show ZEROSEARCH initially lags but eventually surpasses Search-R1 with less fluctuation. The method incurs zero API cost.",
+ "limitations": "The paper notes that applying the same optimization procedure uniformly across both policy-generated and externally generated document tokens leads to training instability, addressed by loss masking. The effectiveness depends on the quality and parameter size of the simulation LLM, with smaller models (3B) being less effective than larger ones. The curriculum rollout introduces hyperparameters (p_s, p_e, b) that control the noise schedule. Out-of-domain evaluation is mentioned but specific quantitative results are not fully reported in the provided text.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:38Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

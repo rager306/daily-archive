@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2205.11916",
+ "tldr": "Large language models can perform multi-step reasoning in a zero-shot manner by simply adding 'Let's think step by step' before answering, without requiring few-shot examples.",
+ "contributions": [
+  "Proposed Zero-shot-CoT, a task-agnostic prompting method using the single template 'Let's think step by step' to elicit chain-of-thought reasoning",
+  "Demonstrated that LLMs have untapped zero-shot reasoning capabilities across diverse benchmarks",
+  "Provided a strong minimal zero-shot baseline for challenging reasoning tasks",
+  "Showed prompt robustness across 16 different trigger templates and task types"
+ ],
+ "methods": "The authors propose a two-stage prompting approach: first, use the trigger sentence 'Let's think step by step' to generate a reasoning path from the LLM; second, use a follow-up prompt to extract the final answer in the required format. Experiments were conducted on 12 datasets spanning arithmetic (MultiArith, GSM8K, AQUA-RAT, SVAMP, SingleEq, AddSub), symbolic reasoning (Last Letter, Coin Flip), commonsense reasoning (CommonsenseQA, StrategyQA), and logical reasoning (Date Understanding, Tracking Shuffled Objects). They evaluated 17 models ranging from 0.3B to 540B parameters, primarily using InstructGPT (text-davinci-002) and PaLM (540B), with greedy decoding throughout.",
+ "results": "Zero-shot-CoT significantly outperformed standard zero-shot prompting on arithmetic and symbolic/logical tasks. On MultiArith with text-davinci-002, accuracy increased from 17.7% to 78.7%; on GSM8K from 10.4% to 40.7%. With PaLM 540B, Zero-shot-CoT achieved 66.1% on MultiArith (vs. 25.5% zero-shot) and 43.0% on GSM8K (vs. 12.5% zero-shot). Adding self-consistency to PaLM 540B reached 89.0% on MultiArith and 70.1% on GSM8K. Performance gains scaled with model size. No improvements were observed on commonsense reasoning tasks (CommonsenseQA, StrategyQA). Misleading or irrelevant templates did not improve performance, while 'Let's think step by step' was the best among 16 tested templates.",
+ "limitations": "Performance gains were not observed on commonsense reasoning tasks. Smaller models showed limited effectiveness of chain-of-thought reasoning. The method requires prompting the LLM twice (two-stage prompting), unlike Few-shot-CoT. Error analysis showed Zero-shot-CoT sometimes outputs unnecessary reasoning steps after reaching correct predictions, changing the answer to incorrect ones, and occasionally fails to start reasoning, merely rephrasing the input question. Prompt selection significantly affects performance, and automatic template creation remains an open question.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

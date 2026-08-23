@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2606.11188v1",
+ "tldr": "ARM is a discrete representation-based autoregressive model that unifies image understanding, generation, and editing within a single 7B next-token prediction framework, augmented by reinforcement learning that also induces cross-task synergy.",
+ "contributions": [
+  "A unified discrete visual tokenizer trained with four complementary objectives (caption loss, pixel reconstruction loss, sigmoid contrastive loss, and feature distillation loss) that preserves both language-aligned semantics and high-fidelity appearance details.",
+  "A 7B autoregressive large multimodal model trained over large-scale interleaved text and visual token sequences for unified vision-language perception and generation.",
+  "Application of Group Relative Policy Optimization (GRPO) with GPT-based reward models to align the model for text-to-image generation and instruction-guided editing.",
+  "Demonstration of cross-task synergy: RL optimization for generation and editing consistently benefits the other task while preserving understanding performance."
+ ],
+ "methods": "The authors first train a discrete visual tokenizer built on a frozen SigLIP2-SO400M-512 encoder with FSQ quantization (65K codebook) and stacked attention projection modules, supervised with four losses: caption cross-entropy against a frozen Qwen2.5-0.5B, pixel-space diffusion transformer reconstruction loss, sigmoid contrastive alignment with SigLIP2 text embeddings, and feature distillation to preserve original visual features. They then train a 7B autoregressive model (initialized from Qwen2.5-7B) over 2.5T pre-training tokens plus 2.5T continual training tokens on interleaved multimodal data, followed by 0.2B tokens of SFT. Finally, they apply GRPO reinforcement learning using GPT-o3 as reward model for text-to-image generation and GPT-4.1 for editing, optimizing only the visual token prediction layer.",
+ "results": "ARM achieves 87.3 on POPE and 40.2 on MMMU, outperforming prior discrete unified models (Emu3, VILA-U) and matching continuous counterparts. For image generation, ARM reaches 0.91 on GenEval and 0.56 on WISE, with RL improving GenEval to 0.93 and WISE to 0.56. On image editing, ARM achieves a G_O score of 6.68 on GEdit-Bench-EN full set, up from 5.75 after RL. Cross-task synergy is observed: RL for generation improves editing and vice versa. Ablation shows that all four loss components are necessary—using only caption and pixel losses yields low ImageNet zero-shot accuracy and poor codebook utilization.",
+ "limitations": "Discrete visual tokenization inherently risks losing fine-grained perceptual cues compared to continuous representations, though ARM narrows this gap. There is a trade-off between semantic regularization and pixel reconstruction fidelity: the sigmoid loss improves semantic clustering but slightly hurts PSNR. The model relies on a separate high-capacity latent diffusion decoder (FLUX.1[Dev]) for detokenization, introducing architectural complexity. Additionally, strong decoders are needed to fully realize the quality encoded in visual tokens, as weaker decoders exhibit more texture blur and character distortions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:48Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

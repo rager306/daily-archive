@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.00461",
+ "tldr": "The paper proposes an Ultrasound Embodied Intelligence system that integrates large language models with domain-specific knowledge and APIs to enable ultrasound robots to understand verbal commands and autonomously perform dynamic scanning procedures.",
+ "contributions": [
+  "An ultrasound operation knowledge database augmented with domain knowledge enabling precise motion planning for LLMs",
+  "A dynamic ultrasound scanning strategy based on a think-observe-execute (ReAct-inspired) prompt engineering framework",
+  "Ultrasound API Retrieval (UAR) and Robotic Handbook Retrieval (RHR) methods for improved tool and procedure selection"
+ ],
+ "methods": "The system uses a bge-large-en-v1.5 embedding model with FAISS for cosine similarity-based retrieval from a knowledge database containing 522 robotic handbook instances and 622 ultrasound API instances. UAR retrieves relevant ultrasound APIs, while RHR retrieves procedural handbook entries. These are incorporated into an assistant prompt, and the robot executes tasks through a cyclical Observation-Thought-Action mechanism inspired by ReAct, iterating until the scan task is completed. Experiments were evaluated over 20 repetitions across various human body parts.",
+ "results": "The adapted embedding model outperformed the baseline bge-large: UAR achieved Recall@1 of 0.86 vs 0.82, Recall@3 of 0.96 vs 0.94, Recall@10 of 0.99 vs 0.97; RHR achieved Recall@1 of 0.88 vs 0.76, Recall@3 of 0.97 vs 0.95, Recall@10 of 0.98 vs 0.97. Ablation showed LLMs+UAR achieved 35% first-step success (FS) and 0% overall validation (OV), while adding RHR reached 100% FS and 80% OV. Among tested LLMs, Mixtral-8x7B-Instruct-v0.1 achieved the highest performance at 70% FS and 45% OV, compared to Qwen1.5B at 30%/0% and Llama2-7B at 50%/10%.",
+ "limitations": "The dataset used for training is synthetic, comprising 522 robotic handbook instances and 622 ultrasound API instances. Success rates across various LLMs remain modest, with even the best model (Mixtral-8x7B) achieving only 45% overall validation success. The system's performance on diverse real-world clinical scenarios and body parts was not fully demonstrated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

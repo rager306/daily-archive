@@ -1,0 +1,26 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.13660",
+ "tldr": "GDP-ZERO is a zero-training dialogue policy planner that uses Open-Loop Monte Carlo Tree Search prompted with a large language model to perform goal-oriented dialogue planning, evaluated on the PersuasionForGood task.",
+ "contributions": [
+  "Introducing GDP-ZERO, an algorithm-focused dialogue policy planner that requires no model training by prompting an LLM to simulate user/system responses, evaluate task progress, and predict policy priors during Open-Loop MCTS",
+  "Treating dialogue policy planning as a stochastic MDP rather than deterministic, using open-loop search to reduce compounding simulation errors",
+  "Demonstrating that GDP-ZERO outperforms ChatGPT and RAP (state-of-the-art on P4G) in both static and interactive evaluations on the PersuasionForGood persuasion task"
+ ],
+ "methods": "GDP-ZERO formulates goal-oriented dialogue planning as a Markov Decision Process and uses Open-Loop MCTS to search for optimal dialogue acts at decision time without any training. It prompts a large language model (ChatGPT) to act as four components during tree search: a policy prior (generating next dialogue act distributions via sampling), a user simulator, a system model, and a value function (estimating task success probability by simulating whether the user would donate). Each tree node represents a sequence of dialogue actions, and system/user utterances are regenerated during traversal rather than stored, reducing compounding errors. The algorithm iteratively performs selection (using PUCT), expansion, evaluation, and backpropagation, then selects the best action based on visit counts and extracts the highest-valued response from a simulation cache.",
+ "results": "GDP-ZERO responses were preferred over ChatGPT in up to 59.32% of pairwise static comparisons. In interactive human evaluations via Amazon Mechanical Turk (40 GDP-ZERO, 35 ChatGPT, 36 RAP results), GDP-ZERO achieved the best performance across all persuasiveness metrics, surpassing both direct ChatGPT prompting and RAP, the previous state-of-the-art on PersuasionForGood. Generative approaches using ChatGPT were preferred over human ground truth responses approximately 90% of the time. Performance improved with increased simulation count n.",
+ "limitations": [
+  "Runtime is a significant limitation: exhaustive tree search increases simulation time, which may affect user experience; in experiments, GDP-ZERO was restricted to planning on 7 dialogue acts with n=10, k=3, taking approximately 35 seconds per turn",
+  "Simulation quality depends on LLM generation reliability; issues with controllable generation can cause mismatches between planned dialogue actions and generated utterances, requiring larger k values that further increase runtime",
+  "Only evaluated on the PersuasionForGood dataset, limiting evidence of generalization to other goal-oriented tasks",
+  "ChatGPT may favor responses with higher unique token counts, potentially biasing static evaluation results",
+  "Adapting GDP-ZERO to task-oriented dialogues with hierarchical policies (e.g., Multi-Woz) could be inefficient due to massive action spaces",
+  "Potential for misuse in unethical applications such as scamming, given the goal-agnostic nature of the approach"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:26Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

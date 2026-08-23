@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.20020",
+ "tldr": "The paper introduces Gemini Robotics, a family of embodied AI models built on Gemini 2.0, comprising Gemini Robotics-ER (a VLM with enhanced embodied reasoning) and Gemini Robotics (a VLA model capable of directly controlling real-world robots for dexterous manipulation tasks).",
+ "contributions": [
+  "ERQA: an open-source benchmark with 400 VQA-style questions evaluating embodied reasoning across spatial, trajectory, action, state estimation, pointing, multi-view, and task reasoning",
+  "Gemini Robotics-ER: a VLM extending Gemini's multimodal reasoning into the physical world with enhanced spatial and temporal understanding, including object detection, pointing, trajectory/grasp prediction, and 3D bounding box estimation",
+  "Gemini Robotics: a state-of-the-art Vision-Language-Action (VLA) generalist model that connects embodied reasoning priors to high-frequency dexterous robot control",
+  "Optional specialization stage enabling adaptation to long-horizon dexterous tasks, few-shot learning from as few as 100 demonstrations, and novel robot embodiments (bi-arm platform, high-DOF humanoid)",
+  "Discussion of safety considerations and responsible development guidelines for VLAs"
+ ],
+ "methods": "The work builds on the Gemini 2.0 foundation model, first evaluating its innate embodied reasoning on the newly introduced ERQA benchmark (400 multiple-choice questions across spatial, trajectory, and multi-view reasoning categories). They then introduce Gemini Robotics-ER, a variant with enhanced embodied reasoning capabilities including grasp prediction. Finally, they present Gemini Robotics, a VLA model created by integrating robot action data with strong embodied reasoning priors, enabling direct low-level robot control. An optional specialization fine-tuning stage is applied for dexterous tasks, few-shot adaptation, and novel robot embodiments.",
+ "results": "Gemini 2.0 Flash and Pro Experimental achieve state-of-the-art results on ERQA, RealworldQA, and BLINK benchmarks in their respective model classes. ERQA is noted as the most challenging of the three benchmarks. Chain-of-Thought prompting significantly improves performance. Gemini Robotics can solve long-horizon dexterous tasks such as folding an origami fox or playing cards, learn new short-horizon tasks from as few as 100 demonstrations, and generalize to unseen environments and novel robot embodiments. Gemini Robotics-ER surpasses Molmo on two of three pointing subtasks. Gemini 2.0 can predict metric 3D bounding boxes from monocular images, perform multi-view correspondence across dramatically different views, and predict top-down grasps represented as (y, x, θ).",
+ "limitations": "Gemini 2.0 cannot perform complex motion planning such as obstacle avoidance, though it can generate useful trajectories grounded in observations. The ERQA benchmark consists of only 400 questions. Some embodied reasoning capabilities are described as nascent and require further grounding through robot action data for full robotic deployment.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:00Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2403.03031",
+ "tldr": "ConAgents is a cooperative and interactive agents framework that coordinates three specialized agents (grounding, execution, review) with two communication protocols to improve LLM-based tool use, achieving up to 14% higher success rate than baselines.",
+ "contributions": [
+  "Propose ConAgents, a cooperative and interactive agents framework that coordinates three specialized agents with two communication protocols for tool learning tasks",
+  "Propose specialized action distillation (SPAN) to effectively enable open-source models to work with ConAgents",
+  "Demonstrate superiority of ConAgents through both automatic and human evaluation on two benchmarks"
+ ],
+ "methods": "ConAgents decomposes tool-use workflows into three specialized agents: a grounding agent for task decomposition and tool planning, an execution agent for generating executable code to invoke tools, and a review agent for providing feedback and calibrating incorrect actions. Two communication protocols are introduced: automatic interaction alternates between planning-review and execution-review phases iteratively, while adaptive interaction triggers the review agent only when runtime errors occur. For open-source models, specialized action distillation (SPAN) synthesizes a dataset by sampling 2,919 diverse tasks from ToolBench, generating solutions with GPT-4-based agents, and distilling the trajectories into separate student models using LoRA parameter-efficient tuning with only 500 training examples.",
+ "results": "ConAgents outperforms state-of-the-art baselines with a 6% average improvement in Success Rate on ToolBench and RestBench. Using GPT-3.5-turbo as backbone, ConAgents achieves 79.00% Success Rate on RestBench-TMDB and 75.00% on Spotify with automatic interaction. The method improves over vanilla ReAct and ToolLLM baselines significantly. With the open-source Mistral-8x7B backbone, action distillation pushes Success Rate from 47.00% to 51.00% on TMDB. Human evaluation shows ConAgents achieves 0.08~0.12 improvement in Executability over baselines, with inter-annotator Kappa statistics of 0.75 (Executability) and 0.71 (Utility). Ablation studies show removing review-to-grounding interaction causes a 2.50 average decline in Success Rate, removing review-to-execution causes obvious decreases, and replacing dynamic review with static code-compiler feedback causes a 4.12 average decrease in Success Rate.",
+ "limitations": [
+  "Open-source models (e.g., Mistral-8x7B) struggle with the modularized agent flow when directly prompted without distillation",
+  "The distillation approach relies on GPT-4 to generate high-quality training trajectories, making it dependent on a powerful closed-source model",
+  "The approach was evaluated on only two benchmarks (ToolBench and RestBench)",
+  "The method requires parameter-efficient tuning (LoRA) for open-source models to achieve strong performance, adding training overhead"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:56Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2306.06070",
+ "tldr": "MIND2WEB introduces the first dataset for developing and evaluating generalist web agents that can follow language instructions to complete complex tasks on real-world websites across diverse domains, with over 2,000 tasks from 137 websites spanning 31 domains.",
+ "contributions": [
+  "Introduces MIND2WEB, the first dataset for generalist web agents with diverse domains, real-world websites, and broad interaction patterns",
+  "Proposes MINDACT, a two-stage model combining a small LM for candidate element filtering and an LLM for action prediction",
+  "Demonstrates that filtering HTML with a small LM significantly improves LLM effectiveness and efficiency for web agent tasks"
+ ],
+ "methods": "The authors collected over 2,000 open-ended tasks from 137 websites across 31 domains, with crowdsourced action sequences annotated via Playwright-based tools. They propose MINDACT, a two-stage framework: first, a fine-tuned small cross-encoder LM ranks webpage elements to produce a top-k candidate pool; second, an LLM selects from these candidates using a multi-choice QA formulation and predicts the corresponding action (Click, Type, or Select Option).",
+ "results": "MINDACT significantly outperforms modeling strategies commonly adopted by prior work. It demonstrates decent generalization to websites and entire domains never seen during training, working with both open-source LLMs (Flan-T5 through fine-tuning) and closed-source LLMs (GPT-3.5-turbo and GPT-4 through in-context learning). The authors note substantial room for improvement towards truly generalizable agents.",
+ "limitations": "Raw HTML of real-world websites contains thousands of elements (averaging over 1,000 per page), making direct feeding into LLMs infeasible or cost-prohibitive. While MINDACT shows decent performance, there is still substantial room to improve towards truly generalizable agents. The dataset was limited to US-popular websites across 5 top-level domains.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

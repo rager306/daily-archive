@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.14684",
+ "tldr": "REPOGRAPH is a plug-in module that constructs a repository-level code graph with line-level nodes and dependency edges, enhancing existing AI software engineering frameworks by providing structured, repository-wide navigation and context.",
+ "contributions": [
+  "Proposing REPOGRAPH, a graph-based structured representation of entire code repositories at line level with definition and reference nodes connected by invoke and contain edges",
+  "Demonstrating REPOGRAPH as a flexible plug-in integrable into both procedural and agent-based frameworks",
+  "Achieving a new state-of-the-art among open-source frameworks on SWE-bench with an average relative improvement of 32.8%",
+  "Validating transferability on the CrossCodeEval benchmark"
+ ],
+ "methods": "REPOGRAPH is constructed in three steps: (1) Code line parsing via tree-sitter AST to identify function/class definitions and references while filtering noisy non-code files; (2) Project-dependent relation filtering to exclude global (Python built-ins/standard libraries) and local (third-party library) relations, retaining only repository-specific dependencies; (3) Graph organization where nodes represent code lines classified as 'def' or 'ref' and edges are either E_contain or E_invoke. For integration, k-hop ego-graphs centered on search terms are retrieved, flattened, and supplied as context in procedural frameworks or as an additional action in agent frameworks.",
+ "results": "REPOGRAPH was integrated with four existing methods across two research lines (procedural: RAG/BM25 and Agentless; agent-based: SWE-agent and AutoCodeRover) and evaluated on SWE-bench-Lite. It achieved an average relative improvement of 32.8% across all systems, establishing a new state-of-the-art among open-source frameworks. Transferability was also verified on CrossCodeEval. Systematic analysis of different sub-graph retrieval algorithms and integration methods was conducted alongside error analyses.",
+ "limitations": "The paper does not explicitly state limitations. However, evident limitations include: reliance on tree-sitter parsing which may struggle with certain language constructs or dynamically generated code; the filtering step excludes global and third-party relations, potentially missing cross-module dependencies introduced by external packages; and the approach focuses primarily on Python code based on the examples and language-specific filtering criteria described.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:22Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

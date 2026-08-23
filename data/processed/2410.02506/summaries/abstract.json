@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.02506",
+ "tldr": "The paper identifies communication redundancy in LLM-based multi-agent systems and proposes AgentPrune, a one-shot pruning framework that transforms the communication topology into a sparse, token-economical graph while maintaining comparable performance.",
+ "contributions": [
+  "First formal identification and definition of the Communication Redundancy issue in LLM-based multi-agent pipelines",
+  "A spatial-temporal graph paradigm to model and analyze multi-agent communication topologies",
+  "AgentPrune: a plug-and-play pruning framework using a trainable low-rank-guided graph mask for one-shot sparsification",
+  "Demonstration of adversarial robustness against agent-targeted attacks"
+ ],
+ "methods": "The authors model multi-agent communication as a spatial-temporal graph where agents are nodes, intra-dialogue exchanges form spatial edges, and inter-dialogue message passing forms temporal edges. They introduce differentiable graph masks S_S and S_T applied to the adjacency matrices, optimizing them via policy gradient for distribution approximation and nuclear norm minimization for low-rank sparsity. After K' training rounds (K' << K), they perform one-shot magnitude pruning using TopK selection to derive a sparse binary mask, which constrains all subsequent agent interactions.",
+ "results": "AgentPrune achieves comparable MMLU performance at $5.6 cost versus $43.7 for state-of-the-art topologies. It integrates into AutoGen and GPTSwarm with 28.1%–72.8% token reduction. It defends against two types of agent adversarial attacks with 3.5%–10.8% performance improvement. Random pruning of 10%–30% of connections in dense topologies (MacNet, LLM-Debate) yielded up to 2.83% performance gain, empirically confirming communication redundancy.",
+ "limitations": "The method requires the number of agents to exceed three and the communication structure to be moderately organized (chain or direct-output structures are too simple to apply). The one-shot pruning is performed after only K' << K rounds, meaning the pruned topology is fixed for the remainder of execution and cannot adapt dynamically. The framework's effectiveness depends on the quality of the initial graph mask training, and the DAG constraint on spatial edges may limit certain communication patterns.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:06Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

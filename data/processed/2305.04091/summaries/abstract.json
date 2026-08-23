@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.04091",
+ "tldr": "The paper proposes Plan-and-Solve (PS) Prompting, a zero-shot chain-of-thought method that improves LLM reasoning by first having the model devise a plan to divide a task into subtasks and then execute those subtasks step by step, with an extended PS+ variant adding detailed calculation instructions.",
+ "contributions": [
+  "Proposing Plan-and-Solve (PS) Prompting to address missing-step errors in Zero-shot-CoT",
+  "Introducing PS+ prompting with additional detailed instructions to reduce calculation errors",
+  "Evaluating the approach on 10 datasets across arithmetic, commonsense, and symbolic reasoning",
+  "Demonstrating that zero-shot PS+/PS outperforms Zero-shot-CoT consistently and matches or exceeds few-shot CoT on some datasets"
+ ],
+ "methods": "The authors propose a two-step zero-shot prompting approach using GPT-3 (text-davinci-003). Step 1 replaces the standard 'Let's think step by step' trigger with instructions to 'first understand the problem and devise a plan' and then 'carry out the plan step by step.' PS+ adds further instructions to 'extract relevant variables and their corresponding numerals' and 'calculate intermediate results.' Step 2 uses an answer extraction prompt. Experiments cover 10 datasets: six arithmetic (GSM8K, SVAMP, MultiArith, AddSub, AQuA, SingleEq), two commonsense (CommonsenseQA, StrategyQA), and two symbolic (Last Letter, Coin Flip).",
+ "results": "PS+ consistently outperforms Zero-shot-CoT across all arithmetic datasets by at least 5% (except GSM8K with 2.9% improvement). PS+ achieves 76.7% average accuracy on arithmetic reasoning, slightly below Manual-CoT's 77.6% but above Auto-CoT's 75.9%. PS+ outperforms Zero-shot-PoT on 5 of 6 arithmetic datasets. Error analysis on GSM8K shows PS+ reduces calculation errors from 7% to 5% and missing-step errors from 12% to 7% compared to Zero-shot-CoT. Semantic misunderstanding errors remain at 27% for both Zero-shot-CoT and PS+. On commonsense reasoning, PS+ underperforms Few-Shot-CoT(Manual).",
+ "limitations": "Semantic misunderstanding errors (27%) are not addressed by PS+ prompting. GSM8K shows a smaller improvement (2.9%) potentially due to its linguistic complexity. The comparison with few-shot methods is acknowledged as potentially unfair. The method does not improve performance on commonsense reasoning datasets compared to few-shot baselines.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

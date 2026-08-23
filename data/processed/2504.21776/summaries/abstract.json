@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.21776",
+ "tldr": "WebThinker is a deep research agent that empowers large reasoning models to autonomously search the web, navigate pages, and interleave reasoning with report drafting in real time, achieving significant improvements over existing methods on complex reasoning and scientific report generation benchmarks.",
+ "contributions": [
+  "WebThinker framework that integrates a Deep Web Explorer module and an Autonomous Think-Search-and-Draft strategy",
+  "RL-based iterative online Direct Preference Optimization (DPO) training strategy for optimizing research tool utilization",
+  "Extensive evaluation showing WebThinker outperforms proprietary systems including Grok3 and Gemini2.0 on report generation tasks",
+  "Demonstrated adaptability across different LRM backbones (DeepSeek-R1 7B/14B/32B)"
+ ],
+ "methods": "WebThinker uses a Deep Web Explorer module that enables LRMs to autonomously search, navigate web pages by clicking interactive elements, and extract relevant information when encountering knowledge gaps. It also employs an Autonomous Think-Search-and-Draft strategy where the LRM interleaves reasoning, web exploration, and report writing using three specialized tools: drafting sections, checking the report, and editing the report. The model is trained via iterative online DPO, constructing preference pairs from sampled reasoning trajectories based on correctness, tool efficiency, and thinking conciseness.",
+ "results": "WebThinker-32B-RL surpasses Search-o1 by 21.9% on GAIA and 36.2% on HLE. It outperforms DeepSeek-R1-671B and RAG-Qwen2.5-72B across all benchmarks. On WebWalkerQA, WebThinker-32B-Base improves by +22.9% over prior methods. On HLE, RL-trained WebThinker improves by +21.5% over its Base version and surpasses o3-mini (High). For report generation, WebThinker-32B-RL achieves an average score of 8.4 on the Glaive dataset, outperforming Gemini2.0 Deep Research (7.9) and Grok3 DeeperSearch (6.5). WebThinker-R1-7B achieved relative gains of 174.4% (GAIA) and 422.6% (WebWalkerQA) over direct generation. Ablation studies show RL training improves average problem-solving from 42.1 (Base) to 44.9, and removing Deep Web Explorer degrades performance to 38.3 average.",
+ "limitations": "RL training has minimal impact on report generation quality, as the base framework is already effective. The approach uses Bing Web Search API and Crawl4AI for web crawling, which may limit generalizability. The paper notes that standard RAG shows inconsistent gains on complex HLE tasks requiring deep integration of reasoning and search. The backbone used is QwQ-32B, and performance on larger or different models beyond those tested is not evaluated.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

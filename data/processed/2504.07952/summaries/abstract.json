@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2504.07952",
+ "tldr": "Dynamic Cheatsheet (DC) is a lightweight, non-parametric framework that endows black-box LLMs with persistent, evolving external memory at inference time, enabling test-time learning through selective curation of reusable strategies, code snippets, and heuristics without modifying model weights.",
+ "contributions": [
+  "Introduced Dynamic Cheatsheet (DC), a test-time learning framework that gives LLMs adaptive, self-curated memory during inference",
+  "Proposed two variants: DC-Cu (cumulative memory updates after generation) and DC-RS (adds retrieval of past input-output pairs before memory curation)",
+  "Demonstrated substantial performance gains across diverse benchmarks including math exams, puzzles, and domain-specific tasks",
+  "Showed that selective memory curation significantly outperforms naive full-history appending while avoiding context ballooning"
+ ],
+ "methods": "DC consists of two core modules: a solution generator that produces candidate answers conditioned on current memory, and a memory curator that updates the external memory store after each query based on correctness, generalizability, and compactness—without access to ground-truth labels. DC-Cu cumulatively expands memory after each response, while DC-RS first retrieves the top-k most similar past input-output pairs, then curates memory before generating the final answer. Both variants operate entirely on top of black-box API models with no gradient-based parameter updates.",
+ "results": "Claude 3.5 Sonnet's AIME 2024 accuracy more than doubled from 23% to 50%; AIME 2020-2024 rose from 6.7% to 40.6%. GPT-4o's Game of 24 performance increased from 10% to 99% after discovering and reusing a Python brute-force solver. Both GPT-4o and Claude reached 98-100% on Math Equation Balancer (up from ~45-50%). Claude improved 9.1% on GPQA-Diamond (59.6% to 68.7%) and up to 8% on MMLU-Pro Engineering and Physics. DC-Cu achieved highest scores on AIME 2024 and 2025.",
+ "limitations": "Smaller models such as GPT-4o-mini benefit only marginally because they generate too few correct solutions to populate memory with reliable strategies, and they struggle to refine stored content. Retrieval-based adaptation success depends on model-specific generation and curation capabilities—GPT-4o saw only slight gains on GPQA-Diamond and even slight decreases on MMLU-Pro, partly because retrieved suboptimal examples can introduce confusion. DC amplifies strengths of capable models but cannot fix foundational reasoning gaps.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

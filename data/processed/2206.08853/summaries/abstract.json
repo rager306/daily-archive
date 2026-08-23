@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2206.08853",
+ "tldr": "MINEDOJO introduces a framework for building open-ended embodied agents in Minecraft, combining thousands of benchmark tasks, an internet-scale multimodal knowledge base, and a novel learning algorithm using a pre-trained video-language model (MINECLIP) as a learned reward function.",
+ "contributions": [
+  "A simulation platform with thousands of diverse open-ended tasks (1,581 programmatic + 1,560 creative), featuring unified observation/action spaces and support for all three Minecraft worlds (Overworld, Nether, End).",
+  "An internet-scale multimodal knowledge base comprising 730K+ YouTube videos, 6K+ Wiki pages, and 340K+ Reddit posts.",
+  "A novel agent learning algorithm (MINECLIP) using a contrastive video-language model pre-trained on YouTube data, serving as an open-vocabulary, multi-task reward function for reinforcement learning."
+ ],
+ "methods": "The authors built MINEDOJO on top of the MineRL codebase, standardizing observation and action spaces across tasks and unlocking all three Minecraft worlds. They collected a massive knowledge base by scraping 730K YouTube videos (33 years, 2.2B transcript words), 6,735 Wiki pages, and 340K+ Reddit posts. For agent training, they developed MINECLIP, a contrastive video-language model trained on 640K video-text pairs from the YouTube database, using InfoNCE loss. MINECLIP combines a pretrained OpenAI CLIP text encoder with a video encoder (frame-wise image encoder plus temporal aggregator over 16 frames) and residual CLIP Adapters. During RL training, MINECLIP's correlation score serves as a dense reward function without manual reward engineering. Creative tasks were scaled via task mining from YouTube tutorials (1,042 tasks) and GPT-3 generation (302 tasks).",
+ "results": "The agent solves the majority of 12 experimental tasks using the learned MINECLIP reward model. It achieves competitive performance to agents trained with manually engineered dense-shaping rewards and outperforms them in some cases, with up to 73% improvement in success rates. For Creative tasks lacking simple success criteria, the agent performs well without special modifications. The learned evaluation metric shows high agreement with human judgment on a subset of tasks (Table 2). MINECLIP significantly outperforms the CLIP OpenAI method across all Creative tasks.",
+ "limitations": [
+  "The knowledge base includes low-quality and potentially toxic content, requiring filtering measures.",
+  "Wiki and Reddit data are not used in the current experiments despite being collected.",
+  "The learned reward model incurs non-trivial computational overhead during RL training.",
+  "The task suite size for Creative tasks (1,560) was manually curated plus GPT-3 generated and may not capture the full diversity of open-ended capabilities.",
+  "The agent is a proof-of-concept; it was tested on only 12 tasks."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

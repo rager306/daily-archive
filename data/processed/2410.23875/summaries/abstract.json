@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.23875",
+ "tldr": "Plan-on-Graph (PoG) is a novel self-correcting adaptive planning paradigm for KG-augmented LLMs that decomposes questions into sub-objectives, adaptively explores reasoning paths, and reflects to self-correct erroneous paths, addressing limitations of fixed-breadth and unidirectional exploration in existing approaches.",
+ "contributions": [
+  "Proposed Plan-on-Graph (PoG), the first KG-augmented LLM paradigm to incorporate a reflection mechanism for self-correction and adaptive KG exploration",
+  "Designed three mechanisms—Guidance (decomposing questions into sub-objectives with conditions), Memory (recording subgraph, reasoning paths, and sub-objective status), and Reflection (determining whether to self-correct and which entities to backtrack to)",
+  "Conducted extensive experiments on three real-world KGQA datasets (CWQ, WebQSP, GrailQA) demonstrating effectiveness and efficiency"
+ ],
+ "methods": "PoG first decomposes questions into multiple sub-objectives containing conditions via semantic analysis to guide adaptive exploration. It then iteratively explores reasoning paths in the KG through a two-step process (relation exploration and entity exploration) using an adaptive strategy with flexible breadth rather than fixed limits. Memory is dynamically updated to store the searched subgraph, reasoning paths, and sub-objective status. Finally, a reflection mechanism evaluates whether current information is sufficient and determines if self-correction (backtracking to specific entities) is needed before continuing or providing an answer.",
+ "results": "PoG achieves the best performance across all three datasets (CWQ, WebQSP, GrailQA). It substantially outperforms the SOTA prompting baseline ToG. When using GPT-4, PoG exceeds all fine-tuned KG-augmented LLM baselines. Even with GPT-3.5, PoG surpasses all fine-tuned methods on GrailQA and outperforms other methods on the zero-shot subset of GrailQA by a large margin.",
+ "limitations": "Existing entities rely on pre-identified topic entities from annotated datasets. The LLM may forget partial conditions during reasoning (which PoG aims to mitigate via memory and sub-objective tracking). The approach's effectiveness depends on the underlying LLM's reasoning capability for path exploration correctness.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

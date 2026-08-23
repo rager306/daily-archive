@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2305.00633",
+ "tldr": "The paper proposes a stepwise self-evaluation guided stochastic beam search decoding algorithm that calibrates multi-step reasoning chains in LLMs by combining language model probability with a self-evaluation correctness confidence score, reducing error accumulation across reasoning steps.",
+ "contributions": [
+  "A stepwise self-evaluation mechanism that uses the same LLM to judge the correctness of each reasoning step based on prior context",
+  "A constrained stochastic beam search decoding approach integrating self-evaluation guidance with temperature-controlled randomness to balance exploration and exploitation",
+  "Demonstration of significant improvements on arithmetic, symbolic, and commonsense reasoning benchmarks over baselines with comparable computational budgets",
+  "Analysis showing the method is more beneficial for longer reasoning chains and that both generation confidence and correctness confidence are important for performance"
+ ],
+ "methods": "The authors formulate reasoning chain generation as a stepwise decoding problem where each step is a semantically integrated sequence of tokens. They define a constraint function C(st, s1:t-1) that uses few-shot prompted LLM self-evaluation (as multiple-choice questioning) to score the correctness confidence of each reasoning step. The decoding objective combines language model probability and correctness confidence as E(s1:T) = Π_t P_LM^λ(s_t|x,s1:t-1) * C^{1-λ}(s_t), with λ=0.5. They then apply stochastic beam search with beam size k, sampling n candidates per beam and selecting via a temperature-scaled distribution, with optional temperature decay (τ → ατ) to mitigate error accumulation.",
+ "results": "On GSM8K, the method achieves 85.5% accuracy (vs 80.4% baseline) with Codex; on AQuA, 64.2% (vs 58.6%); on StrategyQA, 77.2% (vs 73.2%). Absolute improvements of 5.3%, 8.3%, and 0.7% on GSM8K, AQuA, and SVAMP respectively with PAL. With Llama-2 (13B), the method outperforms self-consistency under equivalent computational budgets (e.g., 46.1% vs 41.8% on GSM8K at 12.6k vs 13.9k tokens). Performance gains increase with reasoning chain length on GSM8K and StrategyQA. Removing either confidence component degrades GSM8K performance (to 74.5% when λ=1 or 77.1% when λ=0).",
+ "limitations": "Computational cost overhead of about 3x compared to self-consistency baseline on GSM8K. The method lags behind CoT baseline on commonsense reasoning tasks (e.g., Sporting Understanding) due to shorter reasoning chains weakening stepwise self-evaluation. Performance gains are limited when baseline performance is already high (e.g., Object Counting at 96.7%) due to reduced diversity in LLM generations. Effectiveness decreases as the model's own confidence increases, making calibration more challenging.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:21Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

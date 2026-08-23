@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.18454",
+ "tldr": "The paper introduces Hybrid Reasoning Policy Optimization (HRPO), a reinforcement learning-based approach that enables LLMs to perform hybrid latent reasoning by integrating prior hidden states into sampled tokens through a learnable gating mechanism, without requiring chain-of-thought (CoT) trajectories.",
+ "contributions": [
+  "Introducing HRPO, the first RL-based approach for hybrid reasoning that empowers LLMs to autonomously develop latent reasoning capabilities",
+  "Designing a gating mechanism that preserves LLM generative abilities by initially prioritizing sampled token embeddings and progressively incorporating continuous representations",
+  "Mitigating the need for CoT annotations and expensive multi-stage training by leveraging LLMs' inherent reasoning patterns",
+  "Demonstrating superior performance across knowledge and reasoning benchmarks with compact Qwen 1.5B and 3B models"
+ ],
+ "methods": "HRPO uses a gating mechanism to blend sampled discrete token embeddings with projected hidden states from previous steps. Hidden states are projected into the embedding space via weighted interpolation using output probabilities, ensuring differentiability and alignment with the model's native input distribution. The gating variable a_t starts near 1 (prioritizing token embeddings) and learns to incorporate hidden state features as training progresses. Policy optimization is performed via on-policy RL using outcome-based rewards, group-relative advantage estimation (generating g hybrid rollouts per query and standardizing rewards), and KL regularization against a reference model. The hybrid trajectories are used for a single gradient update to maintain on-policy constraints.",
+ "results": "On knowledge benchmarks, HRPO with Qwen2.5-3B achieves 0.380 exact match, outperforming the strongest 7B RAG baseline by 4.5%. The 1.5B variant averages 0.337, surpassing PPO by 3.0%. On STEM benchmarks, HRPO with 3B backbone achieves 0.700 average accuracy, matching the best 7B baseline on four of five datasets. The 1.5B HRPO averages 0.617, outperforming the 7B leader on MATH by 2.0%, and achieves record-high accuracies for sub-7B models on MATH (0.613) and MATH500 (0.630). HRPO consistently outperforms RL baselines, with GRPO underperforming PPO by 4.6% on 1.5B but exceeding it by 1.6% on 3B.",
+ "limitations": "The approach shows diminishing average gains at larger model sizes (3B vs 1.5B), suggesting HRPO is more beneficial for smaller models. Direct use of raw hidden states without projection degrades generation quality, producing nonsensical rollouts with zero reward. Interpolation-based latent reasoning without gating eventually causes reward collapse due to excessive noise from irrelevant tokens. GRPO underperforms PPO on smaller backbones, likely due to sparser rewards and limited sampled trajectories.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

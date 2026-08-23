@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.05199",
+ "tldr": "An AI system using the Hopper algorithm generates novel polytopes with extremal properties, producing new counterexamples and bounds on three classical geometry problems, including the Hirsch conjecture.",
+ "contributions": [
+  "Introduction of the Hopper algorithm, an AI-guided multi-agent approach for generating polytopes with specific extremal structures",
+  "Generation of over a million new 5-dimensional prismatoids with width 6, finding the smallest known counterexample to the Hirsch conjecture (24 vertices, dimension 19)",
+  "New bounds for the longest monotone path problem and discovery of previously unknown neighbourly polytopes that are not cyclic",
+  "Demonstration that AI-generated polytopes are fundamentally different from human-constructed ones"
+ ],
+ "methods": "The system uses a population of AI agents operating via a work-stealing strategy on a shared repository of polytope examples. Each agent uses the Hopper algorithm: it computes hyperplanes through subsets of vertices, feeds them through a transformer-based neural network (the 'brain') that predicts the likelihood of each hyperplane being part of a successful 'hop region', samples constraints to form a region, inscribes the largest ball within it, and 'hops' vertices to the center to generate candidate polytopes. Agents optimize fitness functions (continuous approximations of target properties), with multi-objective optimization across up to 10 fitness functions to avoid local minima. The neural network is trained online from agent experience.",
+ "results": "For the Hirsch conjecture: found the smallest counterexample with 24 vertices in dimension 19 (beating the previous 25-vertex bound), with only 12 points in each base facet and width 6. None of 100 sampled AI-generated polytopes could be explained by the bipartite directed graph criterion that accounts for all human constructions. For the longest monotone path problem: achieved f(9,5)=30 (tight bound), improved lower bounds for (10,5) to 41, (11,5) to 55, and achieved f(9,6)=29 (tight). For neighbourly polytopes: found many previously unknown non-cyclic neighbourly polytopes for (n,d) pairs from (10,6) to (13,8).",
+ "limitations": "Naive addition and subtraction of vertices leads to degenerate behavior (polytopes collapsing to simplices or growing indefinitely), requiring custom heuristics (uptick/downtick rules). Many pre-selection procedures rely on float representations rather than exact arithmetic. The approach requires careful selection of fitness functions, though multi-objective optimization helps navigate this.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:31Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

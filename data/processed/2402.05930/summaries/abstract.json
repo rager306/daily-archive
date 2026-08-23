@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.05930",
+ "tldr": "The paper introduces WEBLINX, a large-scale benchmark of 2337 expert demonstrations across 155 real-world websites for conversational web navigation, and shows that smaller finetuned text-only models outperform larger multimodal LLMs but all finetuned models struggle to generalize to unseen websites.",
+ "contributions": [
+  "Introduction of WEBLINX, a large-scale benchmark of 2337 demonstrations across 155 real-world websites with 100K interactions and average 43 turns per demonstration",
+  "A suite of action-specific evaluation metrics combining intent match, IoU for elements, and F1/chrF for text",
+  "Dense Markup Ranking (DMR), a retrieval-inspired method to efficiently prune HTML pages by ranking relevant elements",
+  "Extensive experiments across 19 models showing smaller finetuned decoders surpass zero-shot and multimodal LLMs, but all struggle to generalize"
+ ],
+ "methods": "The authors collected 2337 human expert demonstrations of conversational web navigation across 155 real-world websites from 15 geographic areas, recording full action sequences, DOM trees, screenshots, and chat interactions. They designed Dense Markup Ranking (DMR), a dual-encoder approach based on MiniLM that ranks and prunes HTML elements by comparing each element to the action history, running 5x faster than prior cross-encoder methods at ~183ms per turn. Models were trained and evaluated using a suite of metrics including intent match, IoU for element actions, chrF/URLF for text actions, and an overall micro-averaged turn-level score, with separate in-distribution and four out-of-distribution test splits.",
+ "results": "GPT-4V achieved the best zero-shot overall score of 10.4 on TESTOOD, but was surpassed by finetuned models: S-LLaMA (2.7B) scored 25.0, Llama-2 13B scored 25.2, Pix2Act scored 16.9, and MindAct scored 20.9 on TESTOOD. Notably, the smaller S-LLaMA outperformed the much larger Fuyu (8B), which scored 20.0 despite being pretrained on browser screenshots. On TESTIID, S-LLaMA achieved 37.4, Llama-2 13B achieved 37.0, and Fuyu achieved 30.9. All finetuned models struggled to generalize to unseen websites and scenarios like no-visual interactions with instructors.",
+ "limitations": "All finetuned models fail to generalize to unseen websites, different geographic locations, and scenarios where the instructor lacks visual access. GPT-4V lacks situational awareness and makes obvious blunders. Even the best finetuned models fail in simple cases such as clicking non-existing links or failing to change language in translation apps. DMR trades slightly lower recall for 5x speed improvement over prior approaches.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:47Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

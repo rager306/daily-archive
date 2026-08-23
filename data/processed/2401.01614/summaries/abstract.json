@@ -1,0 +1,35 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.01614",
+ "tldr": "GPT-4V can serve as a strong generalist web agent when its textual plans are grounded into actions, achieving 51.1% task success on live websites under oracle grounding—substantially outperforming text-only LLMs—but element grounding remains a major bottleneck with a 20-30% gap to oracle performance.",
+ "contributions": [
+  "Proposed SEEACT, a generalist web agent that leverages LMMs (especially GPT-4V) for integrated visual understanding and web action",
+  "Evaluated on the MIND2WEB benchmark with both standard offline evaluation and a new online evaluation tool for live websites",
+  "Explored and compared three grounding strategies: element attributes, textual choices, and image annotation",
+  "Demonstrated that set-of-mark prompting fails on complex webpage screenshots and that HTML+visual grounding is most effective"
+ ],
+ "methods": "The authors propose SEEACT, a two-stage pipeline where GPT-4V first generates textual action descriptions from webpage screenshots (action generation), then converts those descriptions into executable browser events via element grounding (action grounding). Three grounding strategies were evaluated: (1) grounding via element attributes using heuristic DOM search, (2) grounding via textual choices using a DeBERTa-base cross-encoder to rank top-50 candidates clustered into groups of 17, and (3) grounding via image annotation with bounding boxes and index labels. An oracle grounding baseline using human annotation was also developed. Offline evaluation used MIND2WEB, and online evaluation was conducted on live websites using Playwright.",
+ "results": [
+  "With oracle grounding, SEEACT with GPT-4V completed 51.1% of tasks on live websites, compared to 13.3% for GPT-4 and 8.9% for FLAN-T5",
+  "Step success rates under oracle grounding: 61.9%, 65.0%, and 62.1% across Cross-Task, Cross-Website, and Cross-Domain splits respectively",
+  "Grounding via textual choices (SEEACT Choice) was the best non-oracle strategy, improving over text-only GPT-4 by 6.8%, 5.7%, and 12.3% step success rate across the three settings",
+  "Image annotation (set-of-mark) suffered severe hallucination on webpage screenshots due to GPT-4V's weakness in understanding image details and relative spatial locations",
+  "There is a 20-30% gap between the best grounding strategy and oracle grounding",
+  "ICL shows better generalization to unseen websites, while SFT has an edge on websites seen during training",
+  "Fine-tuned BLIP-2-T5 did not show noticeable gains over FLAN-T5 despite additional visual input"
+ ],
+ "limitations": [
+  "Element grounding remains a major bottleneck with a substantial 20-30% gap to oracle grounding",
+  "Set-of-mark / image annotation prompting causes severe hallucination on complex webpage screenshots",
+  "Element attribute grounding is limited by heuristic-based localization and elements without text",
+  "Smaller LMMs like BLIP-2 benefit little from visual input for web navigation tasks",
+  "Online evaluation was restricted to non-login tasks for ethical compliance",
+  "Offline evaluation uses cached websites which may differ from live sites, creating discrepancies"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.22025",
+ "tldr": "UI-AGILE improves GUI agent grounding through three training-stage RFT enhancements (simple thinking, continuous reward, cropping-based resampling) and one inference-stage method (decomposed grounding with selection), achieving state-of-the-art results on ScreenSpot-Pro and ScreenSpot-v2.",
+ "contributions": [
+  "Simple Thinking strategy that balances reasoning length during training to reconcile the trade-off between grounding accuracy and agent planning ability.",
+  "Continuous grounding reward function using Chebyshev distance from the predicted point to the bounding box center, replacing binary reward for precise localization.",
+  "Cropping-based resampling strategy that dynamically simplifies difficult training samples by cropping screenshots to mitigate sparse reward during RFT.",
+  "Decomposed grounding with selection inference method that breaks high-resolution screenshots into overlapping sub-images, generates candidates, and uses a VLM to select the best match."
+ ],
+ "methods": "The authors propose four methodological contributions built on Qwen2.5-VL, trained on approximately 9K samples for 2 epochs using data from UI-R1, GUI-R1, Aguvis, and Grounding-R1. During training, they (1) apply a 'Simple Thinking' reward function with an ideal reasoning length range using a cosine-shaped non-linear penalty to avoid under-thinking or over-thinking, (2) use a continuous exponential reward based on Chebyshev distance from predicted coordinates to the ground-truth bounding box center for precise localization, and (3) employ cropping-based resampling that scans for valid crops containing the ground-truth bbox when all generations receive zero reward. During inference, they decompose high-resolution screenshots into overlapping sub-images, independently ground each sub-image to collect candidate points, extract element images from candidates, and use a VLM-based Yes/No classifier to adjudicate the best match.",
+ "results": "On ScreenSpot-Pro, UI-AGILE-7B with decomposed grounding achieves 48.7% average accuracy, a 23% improvement over the best baseline (JEDI-7B). UI-AGILE-3B achieves 45.0% and UI-AGILE-7B achieves 59.2% without decomposed grounding. Decomposed grounding provides plug-and-play improvements across existing models: OS-Atlas-7B improves from 18.9 to 33.1 (+75.1%), Aguvis-7B from 20.4 to 36.5 (+78.9%), and UI-TARS-7B from 35.7 to 41.9. The VLM selection accuracy is approximately 87% (inferred from pass@4 metrics). Models were trained on only ~9K examples for 2 epochs and still surpass RFT baselines like UI-R1-E (33.5%) and GUI-R1-7B (32.1%).",
+ "limitations": [
+  "Trained on a relatively small dataset of approximately 9K samples for only 2 epochs, which may limit generalization.",
+  "The decomposed grounding selection stage has imperfect accuracy (~87%), capping overall improvement.",
+  "The method requires multiple forward passes during inference, introducing additional overhead despite theoretical computational savings from reduced sequence length in self-attention.",
+  "The cropping-based resampling uses a predefined scaling factor that may not be optimal across all task types."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:51Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

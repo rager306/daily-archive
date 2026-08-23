@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.11782",
+ "tldr": "G-Designer is an adaptive, efficient, and robust solution that dynamically designs task-aware, customized communication topologies for multi-agent LLM systems using a variational graph auto-encoder, outperforming static topology designs while significantly reducing token overhead.",
+ "contributions": [
+  "Proposed MACP (Multi-agent Communication Protocol), the first protocol regulating multi-agent topology design across performance, adaptability, and robustness.",
+  "Introduced G-Designer, a VGAE-based designer that encodes agents and a task-specific virtual node to decode task-adaptive, sparse communication topologies.",
+  "Demonstrated through six benchmarks that G-Designer is high-performing, task-adaptive (reducing token consumption up to 95.33%), and adversarially robust (only 0.3% accuracy drop)."
+ ],
+ "methods": "G-Designer models the multi-agent system as a directed graph where each agent node is encoded using a lightweight text embedding model based on its base LLM, role, and plugins. A task-specific virtual node (encoding the query Q) is added and bidirectionally connected to all agents, with an anchor topology (user-defined or LLM-generated) serving as a structural prior. A variational graph auto-encoder with two-layer GCNs encodes the network into latent representations, and a decoder first sketches a dense graph via sigmoid activation, then refines it into a sparse topology using regularization that enforces similarity to the anchor and sparsity via nuclear norm minimization. The resulting topology guides K rounds of multi-agent dialogue to produce a final answer.",
+ "results": "On MMLU, G-Designer achieves 84.50% accuracy, surpassing state-of-the-art topologies by 0.20%–4.10%. On HumanEval, it achieves pass@1 of 89.90%. Token consumption is reduced by up to 95.33% on HumanEval and 92.24% on MMLU (1.5e+5 vs. 2.6e+6 tokens for baselines). Against adversarial attacks, accuracy drops by only 0.3%. Experiments span six benchmarks.",
+ "limitations": "The anchor topology used as a starting point is described as 'often simple and sub-optimal,' implying dependence on the quality of the initial structure. The node encoder relies on lightweight text embedding models, which may limit representation capacity. The variational (stochastic) nature of the graph auto-encoder could introduce variability in decoded topologies.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:19Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

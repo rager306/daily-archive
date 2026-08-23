@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.12130",
+ "tldr": "The paper proposes ARMAP, a framework that automatically learns reward models from agent-environment interactions without human annotations, which are then integrated with planning algorithms to improve LLM-based agents' multi-step decision-making across diverse domains.",
+ "contributions": [
+  "An automated method to learn multi-modal reward models without relying on state-of-the-art LLMs or human annotations",
+  "A pipeline that synthesizes training data by having LLM agents navigate environments, refining task instructions from trajectories, and generating negative trajectories",
+  "Integration of learned reward models with multiple planning algorithms (best of n, Reflexion, MCTS) to enhance agent performance",
+  "Demonstration of strong generalizability across web agents, mathematical reasoning, and scientific discovery domains"
+ ],
+ "methods": "The framework first uses an LLM-based agent (Llama3-70b-instruct) to navigate environments randomly, generating diverse action trajectories. An LLM then summarizes each trajectory and proposes a refined task instruction that the trajectory actually accomplishes. The LLM also modifies specific actions to generate negative trajectories that fail to meet the task requirements. These triplets (refined task intent, positive trajectory, negative trajectory) are used to fine-tune a lightweight VILA vision-language reward model with a cross-entropy loss that distinguishes good from bad trajectories. The trained reward model is then combined with planning algorithms including best-of-n sampling, Reflexion, and Monte Carlo Tree Search during inference.",
+ "results": "The framework was evaluated on three benchmark environments: Webshop (online shopping), ScienceWorld (embodied science experiments, both seen and unseen splits), and Game of 24 (mathematical reasoning on 100 challenging puzzles). The learned reward model consistently improved LLM agent performance across all benchmarks when combined with various planning algorithms. The paper claims strong generalizability across web agents, mathematical reasoning, and scientific discovery domains, demonstrating that the reward model enables more controllable generation during inference through customized reward targets.",
+ "limitations": "The paper is truncated before presenting full quantitative results and ablation studies. Potential limitations evident from the methodology include: (1) reliance on an LLM (Llama3-70b-instruct) for synthesizing task instructions and negative trajectories, which may propagate errors; (2) the reward model is trained on synthetically generated data rather than real human-annotated data, potentially limiting fidelity; (3) the approach requires environment access for trajectory collection, which may not be available for all real-world scenarios; (4) computational cost of running an LLM agent for data generation and fine-tuning a VILA backbone model.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:33Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

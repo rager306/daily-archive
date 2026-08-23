@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2406.12276",
+ "tldr": "CODENAV is an LLM agent that navigates and directly uses source code from unseen repositories (code-use) to solve user queries, avoiding the need for manual tool registration required by traditional tool-use approaches. It is found to be competitive with tool-use upper bounds on three benchmarks.",
+ "contributions": [
+  "Introduction of a novel code-use paradigm for LLM agents to directly use real-world code bases instead of manually registered tools",
+  "Proposal of CODENAV, a single-agent, multi-environment interaction framework formulating code-use as multi-step interaction between a single LLM agent, stateful retrieval, and code execution environments",
+  "Demonstration of minimal gap between code-use and tool-use upper bounds on m&m's, M3 TOOLEVAL, and API-BANK benchmarks without requiring arduous tool registration",
+  "Study of the effect of library/tool description richness on code-use performance",
+  "Investigation of the advantage of source code retrieval versus function signatures or docstrings alone",
+  "Three qualitative case studies demonstrating code-use agents solving complex queries with real-world codebases"
+ ],
+ "methods": "CODENAV is a single-agent, multi-environment framework where an LLM agent iterates between a retrieval environment and a code execution environment. The retrieval environment indexes the entire codebase using Elasticsearch, parsing functions, classes, imports, and assignments as individual documents with metadata (code type, file path, line numbers). The agent issues boolean search queries, and results are re-ranked by heuristics (prioritizing functions/classes, de-prioritizing imports/assignments) with persistent memory to avoid resurfacing past retrievals. The execution environment runs generated code via Python exec() in a shared global_variables namespace, with optional linting (flake8), type-checking (mypy), and formatting (black). The agent produces structured XML actions containing thought, type, and content, and iterates until a done action is issued or a maximum step limit is reached.",
+ "results": "On three tool-use benchmarks adapted for code-use (m&m's, M3 TOOLEVAL, and API-BANK), CODENAV is competitive with the tool-use upper bound despite not having access to privileged, hand-crafted tool descriptions. Tool-use serves as an upper bound since those agents have comprehensive registered tool information that code-use agents lack. Three qualitative case studies demonstrated CODENAV can follow complex multi-step queries, recover from execution errors, run iterative searches to understand code snippet usage, and format results per user instructions (e.g., visualizing computations as webpages). The paper also studies the effect of varying tool/library description richness and finds that source code retrieval provides advantages over signature/docstring-only retrieval.",
+ "limitations": [
+  "Tool-use still holds an upper bound advantage due to privileged access to comprehensive, hand-crafted tool descriptions and usage examples",
+  "The approach requires a high-level library description (README or equivalent) to guide the agent, even though this is less labor-intensive than per-tool registration",
+  "The evaluation on benchmarks is limited to three existing tool-use benchmarks adapted for code-use, rather than native code-use benchmarks",
+  "The paper notes the results 'fall short of demonstrating the full potential of code-use' and supplements with only three qualitative case studies"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:27Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

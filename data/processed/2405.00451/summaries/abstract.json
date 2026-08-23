@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.00451",
+ "tldr": "The paper proposes an iterative preference learning framework that combines Monte Carlo Tree Search (MCTS) for step-level preference collection with Direct Preference Optimization (DPO) to improve LLM reasoning, showing significant accuracy gains on arithmetic and commonsense reasoning tasks.",
+ "contributions": [
+  "An iterative preference learning algorithm (MCTS-DPO) that uses MCTS look-ahead to decompose instance-level rewards into granular step-level preference signals",
+  "Combination of outcome validation and stepwise self-evaluation to enhance consistency in intermediate reasoning steps",
+  "Theoretical analysis proving that on-policy (online) sampling is critical, showing offline settings can fail with high probability when the sampling policy diverges from the current policy",
+  "Extensive evaluation on arithmetic (GSM8K, MATH) and commonsense reasoning tasks demonstrating substantial improvements over baselines"
+ ],
+ "methods": "Starting from an initial SFT policy (Mistral-7B trained on ~540K math/coding problems), the algorithm iteratively collects step-level preference data via MCTS. MCTS generates response trees where Q-values are computed using a reward function combining outcome correctness (1/-1/0) and stepwise self-evaluation confidence scores. At each tree depth, candidate steps with highest and lowest Q-values are labeled as positive and negative preferences. The policy is then updated using conservative DPO with adaptive label smoothing based on MCTS visit counts. This online loop repeats for M iterations, each time using the updated policy for sampling.",
+ "results": "On GSM8K, the approach achieves 81.8% accuracy (+5.9% over Mistral-7B SFT baseline). On MATH, it reaches 34.7% accuracy (+5.8%). On ARC-C, it achieves 76.4% accuracy (+15.8%). The online iterative framework is shown to outperform its offline variant. Theoretical results prove that offline preference learning can fail with high probability (Theorem 3.1), while the online setting converges to optimal policy given sufficient iterations (Theorem 3.2, where π_θ(y*|x) = 1 if M ≥ n+1).",
+ "limitations": "The method's performance depends on the quality of self-evaluation as a critic, which could introduce noise into preference labels. The theoretical analysis shows offline settings can fail when the sampling policy differs too much from the current policy (ε can approach 0), implying sensitivity to distributional shift. The approach requires multiple MCTS rollouts per iteration, increasing computational cost compared to single-pass methods. The paper notes it uses conservative DPO to handle noise in Q-value-based preference labels, suggesting label uncertainty is an inherent limitation.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:11Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

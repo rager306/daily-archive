@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.16823",
+ "tldr": "GPTSwarm unifies LLM-based agent systems by representing them as optimizable computational graphs, with automatic optimizers that refine node-level prompts and improve inter-agent orchestration through edge optimization.",
+ "contributions": [
+  "Unifying language agent systems as optimizable computational graphs",
+  "An open-source framework for constructing arbitrary agent systems by recombining fundamental operations",
+  "Development of node and edge optimization methods for automatic prompt and orchestration improvement",
+  "Validation on benchmarks including MMLU, Mini Crosswords, HumanEval, and GAIA"
+ ],
+ "methods": "The framework models single agents as directed acyclic computational graphs where nodes implement LLM queries, tool use, or function calls, and edges define execution topology. Multiple agents are composed into swarm-level composite graphs with cross-agent communication edges. Edge optimization reformulates discrete DAG selection as continuous optimization over probabilistic edge distributions, solved via REINFORCE algorithm with gradient ascent. Node optimization iteratively updates individual node prompts using input-output histories and a prompt improvement function, treating other prompts as fixed.",
+ "results": "On MMLU, edge optimization eliminated adversarial agents and restored performance to baseline; in collaborative settings with 7 diverse IO agents, optimized swarms improved by 2.1% ± 1.1% over baseline. On Mini Crosswords, REINFORCE optimization achieved 0.575(±0.0275) accuracy after 10 iterations, surpassing the initial distribution's 0.465(±0.0509), while control graphs with matched edge density achieved only 0.510(±0.0552).",
+ "limitations": "Denser graphs require more computational resources. The edge search space is combinatorially complex (2^d configurations for d potential edges). Node optimization assumes prompts can be updated individually with others fixed, which may not capture all interactions. The utility function is non-differentiable due to LLM tokenization.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.15047",
+ "tldr": "PiFlow is an information-theoretic framework that guides multi-agent scientific discovery through Min-Max optimization of scientific principles, balancing exploitation and exploration to systematically reduce uncertainty. It achieves 31.18%–41.73% higher discovery efficiency and 5.6× faster time-to-solution across nanomaterials, biomolecules, and superconductors.",
+ "contributions": [
+  "A novel principle-aware scientific discovery paradigm built on an information-theoretic foundation with sublinear regret convergence guarantees O(√T)",
+  "PiFlow as a Plug-and-Play module that integrates with existing multi-agent systems to enable focused, principle-guided hypothesis exploration",
+  "Extensive empirical evaluation across three distinct scientific domains (nanohelix optimization, molecular bio-activity optimization, superconductor optimization) demonstrating broad applicability and significant performance gains over state-of-the-art baselines"
+ ],
+ "methods": "PiFlow operates as a strategic director for a Hypothesis-Validation loop in an LLM-based multi-agent system. It uses Min-Max optimization (Eq. 1) to select scientific principles that balance cumulative regret minimization (exploitation) and mutual information maximization (exploration), with a trade-off parameter λ. High-potential principles are identified from growing principle-outcome pair records and assigned scores that partition principles into refine, validate, or explore actions. Since exact information gain computation is intractable, Semantic Embedding Distance is used as a computationally efficient proxy. The system was evaluated across three domains using high-fidelity surrogate models (r² = 0.98 for nanohelix, r² = 0.91 for both molecular bio-activity and superconductor tasks) as replacements for real-world lab experiments, with QwenMax as the base LLM.",
+ "results": "PiFlow improves discovery efficiency by 31.18%–41.73% and solution quality by 12.47%–31.72% against state-of-the-art baselines (ReAct, MPO, Vanilla Agent, AI Researcher, AI Scientist v2). It achieves a 5.6× speedup in time-to-solution while reducing token consumption by up to 27% compared to vanilla agents. In the superconductor optimization task, PiFlow achieved 65.41% Solution Quality and 49.86% AUC on average, outperforming baselines that remained stuck (e.g., transitioning only from Bi₂Sr₂Ca₄Cu₈O₁8 to Bi₂Sr₂Ca₄Cu₈O₁9). The framework exhibits oscillatory exploration patterns consistent with its active principle-aware strategy.",
+ "limitations": "Experiments rely on high-fidelity surrogate models deployed locally rather than real-world laboratory validation, which may not fully capture experimental noise and practical constraints. The system requires an initial evidence-collection phase before PiFlow's Min-Max optimization can activate and begin steering exploration.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:49Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

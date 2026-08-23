@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2205.10625",
+ "tldr": "Least-to-most prompting decomposes complex problems into simpler subproblems and solves them sequentially, enabling LLMs to generalize to problems harder than the demonstration examples.",
+ "contributions": [
+  "Proposed least-to-most prompting as a novel few-shot prompting strategy for enabling easy-to-hard generalization in large language models",
+  "Demonstrated that LLMs with this method can solve compositional generalization benchmark SCAN with only 14 exemplars, matching specialized neural-symbolic models trained on 15,000+ examples",
+  "Showed strong generalization on symbolic manipulation, compositional generalization, and math reasoning tasks without any training or fine-tuning"
+ ],
+ "methods": "The method uses two stages of few-shot prompting with no training: (1) decomposition, where the model breaks a complex problem into a series of simpler subproblems, and (2) subproblem solving, where each subproblem is solved sequentially, with answers to previous subproblems informing later ones. Experiments used GPT-3 models (code-davinci-002, text-davinci-002, code-davinci-001) on three benchmarks: last-letter-concatenation (symbolic manipulation), SCAN (compositional generalization), and GSM8K/DROP (math reasoning).",
+ "results": "On SCAN length split, least-to-most prompting achieved 99.7% accuracy with code-davinci-002 using only 14 exemplars, versus 16.2% for chain-of-thought. For last-letter-concatenation with lists of length 12, least-to-most achieved 74.0% versus 38.4% for chain-of-thought with 8 exemplars. On DROP (non-football), least-to-most achieved 82.45% versus 74.77% for chain-of-thought. On GSM8K, it improved from 60.87% to 62.39% overall, and from 39.07% to 45.23% on problems requiring 5+ steps.",
+ "limitations": "Least-to-most prompting does not achieve 100% accuracy; for long lists in symbolic manipulation, errors are mostly concatenation mistakes (dropping or adding letters). On GSM8K, improvements are modest overall. Most SCAN failures (13 out of ~200) involve misinterpretation of 'twice'/'thrice' after 'around' or misinterpreting 'after' as 'and'.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

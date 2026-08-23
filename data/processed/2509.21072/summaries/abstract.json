@@ -1,0 +1,18 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.21072",
+ "tldr": "Recon-Act is a self-evolving multi-agent browser-use framework where a Reconnaissance Team analyzes failed and successful trajectories to generate generalized tools (hints or rule-based codes) that are registered to the Action Team, improving adaptability to unseen websites and long-horizon task solvability.",
+ "contributions": [
+  "Proposal of Recon-Act, a self-evolving browser-use agent framework centered on a reconnaissance-action dual-team collaboration, formalizing reconnaissance operations that distill key observations from information-dense web pages through limited exploratory actions.",
+  "State-of-the-art performance on the VisualWebArena dataset at Level 3 configuration, surpassing the previous best by 2.74% overall and by 6.97% on the Shopping subdomain."
+ ],
+ "methods": "The system comprises two teams: a Reconnaissance Team (Analyst and Coder) and an Action Team (Master, Tool Manager, Execution Agent). During training, the Analyst performs contrastive step-level analysis of erroneous and successful trajectories using reconnaissance tools (get URL, image, SOM observations), infers root causes of failure, and proposes remedial strategies; the Coder then translates these into executable tool code. Tools are registered in two modes—Hint (returns signals to the Execution Agent) and Decision (directly emits actions)—and conformed to a unified parameter schema. The Action Team invokes these tools during inference via Playwright API for browser interaction. The pipeline operates in iterative Rollout, Evaluate, Generate, Update cycles until no further improvement is observed.",
+ "results": "On the VisualWebArena dataset (~910 queries across classifieds, shopping, and reddit domains), Recon-Act achieves an overall success rate of 36.48%, surpassing the previous best (Yu et al., 2025) by 2.74%. On Shopping, it achieves 39.27%, outperforming the prior best of 32.30% by +6.97%. On Classifieds (41.00%) and Reddit (28.70%), it trails current baselines by only 1.68% and 1.56% respectively. Improvements over earlier methods such as Koh et al. (2024b), Gu et al. (2025a), and Sarch et al. (2025a) are typically above 10%.",
+ "limitations": "The system currently reaches only Level 3 of a proposed 6-level roadmap, with human-in-the-loop intervention required for the Analyst and Tool Manager components. The gap to human performance remains. A manually authored cold-start training set of fewer than 10 examples per domain was used rather than random-walk-based autonomous exploration, which may limit generalizability. The automatic code merge process during tool registration is noted as the most challenging aspect.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

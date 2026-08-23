@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.05257",
+ "tldr": "The paper introduces MemoryAgentBench, a benchmark evaluating LLM memory agents across four competencies—accurate retrieval, test-time learning, long-range understanding, and selective forgetting—by transforming datasets into incremental multi-turn interactions.",
+ "contributions": [
+  "Constructed a comprehensive benchmark by reconstructing existing long-context datasets and creating two new datasets (EventQA and FactConsolidation) covering four distinct memory competencies",
+  "Provided a unified evaluation framework with an open-source codebase and datasets",
+  "Conducted an empirical study evaluating diverse memory agents including commercial systems (MIRIX, MemGPT), long-context agents, and RAG agents"
+ ],
+ "methods": "The authors identified four core memory competencies based on classic memory and cognitive science theories. They reconstructed existing long-context datasets (e.g., ∞-Bench, LongMemEval) into multi-turn dialogue format with incremental chunk injection, and created two new datasets: EventQA (for accurate retrieval over temporal narratives, built via a fully automated pipeline from novels) and FactConsolidation (for selective forgetting, using counterfactual edit pairs from MQUAKE at lengths up to 262K tokens). Three categories of agents were evaluated: Long-Context Agents (FIFO context window), RAG Agents (Simple, Embedding-based, Structure-Augmented), and Agentic Memory Agents (iterative retrieval loops). Commercial agents like MemGPT and MIRIX were also tested.",
+ "results": "MemoryAgentBench covers 2071 samples across 103K–1.44M token contexts. Empirical results reveal that current methods fall short of mastering all four competencies. Long-context agents are constrained by hard context limits (e.g., 128K tokens). RAG-based methods face challenges with ambiguous queries, multi-hop reasoning, and long-range comprehension when questions require integrating knowledge beyond top-k retrieved passages. The paper notes that existing memory agents, although effective in some tasks, still face significant challenges in certain aspects.",
+ "limitations": "Existing benchmarks either use limited context lengths or are designed for static long-context settings rather than the incremental, multi-turn nature of memory agents. No prior benchmark covers all four competencies. LongMemEval has limited topical diversity and less realistic interaction patterns. The benchmark itself may not fully capture all real-world memory agent scenarios, and parametric memory systems remain less capable than proprietary API-based solutions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:40Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

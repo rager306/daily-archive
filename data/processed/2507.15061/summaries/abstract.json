@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2507.15061",
+ "tldr": "WebShaper is a formalization-driven data synthesis framework for information-seeking agents that uses set-theoretic Knowledge Projections to systematically generate high-quality training data, achieving state-of-the-art performance among open-sourced IS agents on GAIA and WebWalkerQA benchmarks.",
+ "contributions": [
+  "Introduce WebShaper, a formalization-driven data synthesis method for information-seeking agents grounded in a proposed set-theoretic task formalization",
+  "Propose an agentic Expander that iteratively generates and validates questions aligned with the formalization",
+  "Construct the WebShaper dataset and demonstrate through experiments that models trained with it consistently outperform baselines on GAIA and WebWalkerQA benchmarks"
+ ],
+ "methods": "The authors propose a set-theoretic formalization of information-seeking tasks using Knowledge Projections (KP), defined as R(V) = {u | ∃v ∈ V, (u,v) ∈ R or (v,u) ∈ R}, with R-Union and Intersection operations. Data synthesis begins by constructing 18k seed questions via random walks on a Wikipedia graph and LLM-based generation, filtered through 5 rollouts with WebDancer. These seeds are then expanded through a multi-step agentic process using an Expander agent built on ReAct, which retrieves knowledge via Search and Summarize tools, constructs sub-questions, and validates them using QwQ. A layer-wise expansion strategy prevents redundancy and reasoning shortcuts. The final dataset of 5,000 trajectories is used for supervised fine-tuning and GRPO-based reinforcement learning.",
+ "results": "WebShaper achieves state-of-the-art performance among all open-sourced information-seeking agents on both the GAIA and WebWalkerQA benchmarks. The dataset includes 18k seed questions and 5,000 curated trajectories for training. Ablation discussions confirm the validity of each module in the method.",
+ "limitations": "The paper does not explicitly enumerate limitations, but evident limitations include: (1) the formalization complexity (recursive KP compositions) is challenging for models to interpret during synthesis, requiring the KP representation workaround; (2) seed quality depends on Wikipedia coverage, potentially limiting domain diversity; (3) the expansion relies on external retrieval tools (Google Search) which may introduce noise or be constrained by web availability; (4) the approach uses only QwQ as the validation model, which may not generalize to all question types.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:00:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

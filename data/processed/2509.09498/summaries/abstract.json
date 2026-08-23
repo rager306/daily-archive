@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2509.09498",
+ "tldr": "SEDM transforms memory from a passive repository into an active, self-optimizing component for multi-agent systems by integrating verifiable write admission, a self-scheduling memory controller, and cross-domain knowledge diffusion, improving reasoning accuracy while reducing token overhead.",
+ "contributions": [
+  "Proposed SEDM, a novel framework that introduces self-contained execution contexts (SCECs) for reproducible admission and utility-based memory weighting, transforming memory into an adaptive, verifiable, and continuously improving component.",
+  "Designed a self-scheduling memory controller that selectively manages memory at retrieval time and continuously refines the repository through consolidation, redundancy suppression, and progressive evolution.",
+  "Conducted extensive evaluations on LoCoMo, FEVER, and HotpotQA benchmarks, demonstrating consistent improvements in task accuracy with significantly reduced token overhead."
+ ],
+ "methods": "SEDM operates through three integrated modules. First, SCEC-based verifiable write admission packages each task execution into a Self-Contained Execution Context containing inputs, outputs, tool summaries, seeds, and configuration hashes, then performs environment-free A/B replay to estimate marginal utility; only items with positive composite scores (balancing reward gains against latency and token costs) are admitted with initial weights. Second, a self-scheduling memory controller uses admission-derived weights combined with semantic similarity to score candidates at retrieval time, while also maintaining the repository by updating weights from observed outcomes, merging near duplicates, and pruning harmful entries. Third, cross-domain knowledge diffusion abstracts admitted items into conservative general forms via rule-governed placeholder replacement, which are then re-validated in other tasks through the same SCEC-compatible procedures.",
+ "results": "SEDM consistently improves task accuracy while significantly reducing token overhead compared to no-memory and G-Memory baselines across LoCoMo, FEVER, and HotpotQA benchmarks. Ablation studies confirm that both the verifiable admission mechanism and the self-scheduling controller contribute progressively to the gains, with the controller playing a key role in constraining prompt growth without sacrificing accuracy. Cross-domain evaluation shows that factual knowledge distilled from FEVER notably boosts performance on HotpotQA, demonstrating transferable knowledge diffusion.",
+ "limitations": "The admission process depends on empirical reward signals measured within SCECs, which may not fully capture utility in all task types or environments. Cross-domain generalization relies on conservative abstraction with scaled-down initial weights (alpha < 1), suggesting cautious knowledge transfer. The system's effectiveness is tied to the quality of A/B replay evidence, and the approach requires building SCECs with all necessary execution context, which adds setup overhead.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:05Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

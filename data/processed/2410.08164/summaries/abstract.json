@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2410.08164",
+ "tldr": "Agent S is an open agentic framework that enables MLLM-based GUI agents to autonomously solve complex, multi-step desktop tasks through experience-augmented hierarchical planning and an Agent-Computer Interface, achieving new state-of-the-art results on OSWorld with an 83.6% relative improvement.",
+ "contributions": [
+  "Introduction of Agent S, a framework integrating experience-augmented hierarchical planning, self-supervised continual memory update, and an Agent-Computer Interface for MLLM-based GUI agents",
+  "Experience-augmented hierarchical planning method using external web knowledge and internal narrative/episodic memory to decompose complex tasks into executable subtasks",
+  "Extension of the ACI concept to GUI agents, providing a bounded action space of language-based primitives (e.g., click(element_id)) with vision-augmented accessibility tree grounding",
+  "Extensive experiments on OSWorld establishing new state-of-the-art, plus demonstration of cross-OS generalizability on WindowsAgentArena"
+ ],
+ "methods": "Agent S uses a hierarchical planning architecture with a Manager module that retrieves external web knowledge via Perplexica Search and similar task summaries from Narrative Memory to decompose tasks into subtasks, and Worker modules that retrieve step-by-step subtask experiences from Episodic Memory to execute each subtask. A Self-Evaluator generates textual reward summaries after task completion, which are stored in Narrative Memory (full task summaries) or Episodic Memory (subtask strategies). Memory is bootstrapped via self-supervised exploration on synthetically generated tasks and continuously updated during inference. The Agent-Computer Interface (ACI) provides a dual-input strategy combining screenshots for salient observations and an OCR-augmented accessibility tree with unique integer tags for precise element grounding, constraining the agent to a bounded discrete action space of primitives like click, type, and hotkey with one action per time step.",
+ "results": "On OSWorld, Agent S improved from 11.21% to 20.58% success rate, an 83.6% relative improvement, establishing new state-of-the-art. It showed consistent improvements across all five task categories (Office, Daily, Professional, Workflow). On WindowsAgentArena, performance improved from 13.3% to 18.2% without any explicit adaptation, demonstrating broad generalizability across operating systems.",
+ "limitations": "The paper truncates before fully detailing limitations; however, the approach relies on MLLMs (GPT-4o, Claude-3-Sonnet) whose slow, discrete-time response paradigm is inherently mismatched with real-time GUI dynamics. The system depends on accessibility trees and OCR for grounding, which may fail on non-standard or dynamically rendered interfaces. Self-supervised exploration for memory bootstrapping is limited to the task distributions present in existing benchmarks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:15Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

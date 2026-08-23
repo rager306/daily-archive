@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2508.14040",
+ "tldr": "COMPUTERRL is a framework for autonomous desktop intelligence that combines an API-GUI interaction paradigm, distributed RL infrastructure, and Entropulse training strategy to achieve 48.9% accuracy on the OSWorld benchmark, outperforming state-of-the-art models.",
+ "contributions": [
+  "Proposed API-GUI paradigm unifying programmatic API calls with direct GUI interaction for machine-oriented desktop control",
+  "Built a distributed RL infrastructure supporting thousands of parallel virtual desktop environments with AgentBench compatibility",
+  "Introduced Entropulse, a training strategy alternating RL with SFT to mitigate entropy collapse and KL divergence during extended training"
+ ],
+ "methods": "COMPUTERRL uses an LLM-based automated workflow to generate application APIs (requirement analysis, implementation, test case generation) and integrates them with GUI actions. A stable Ubuntu environment was built using qemu-in-docker containers, gRPC-based multi-node clustering, and centralized resource orchestration, supporting thousands of concurrent environments. Training uses a fully asynchronous RL framework (AgentRL) with step-level Group Relative Policy Optimization (GRPO) and rule-based verifiable rewards. A cold start is performed via behavior cloning on 180k+ successful trajectories collected from multiple LLMs across 8k tasks. Entropulse periodically interleaves SFT on curated successful rollouts (high quality, diversity from heterogeneous policies) with RL phases to restore exploration capacity.",
+ "results": "AUTOGLM-OS-9B achieved 48.9% accuracy on OSWorld, outperforming OpenAI CUA o3 (42.9%), UI-TARS-1.5 (42.5%), and Claude Sonnet 4 (30.7%). API-GUI achieved 26.2% average success vs. 11.2% for GUI-only (134% improvement). OfficeWorld results: 30.0% (Calculator), 58.3% (Spreadsheet), 41.7% (Presentation), 43.3% (Writer) with GLM-4.1V-9B-Thinking. BC alone reached 31.9%, RL1 reached 42.0%, and RL2 after Entropulse reached 45.8%. Agents use at most 1/3 of the steps required by strongest baselines.",
+ "limitations": "API ecosystem is currently limited to Ubuntu applications and requires manual task examples for API generation. Entropy collapse and KL divergence accumulation remain challenges during extended RL training (addressed but not eliminated by Entropulse). Reliance on human-annotated evaluation functions for reward design. Performance gains plateau after hundreds of training steps without Entropulse intervention.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

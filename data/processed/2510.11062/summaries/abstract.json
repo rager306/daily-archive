@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.11062",
+ "tldr": "The paper introduces AT-GRPO, an agent-and-turn-wise grouped reinforcement learning algorithm and training system that enables effective on-policy RL training for multi-agent LLM systems, achieving large performance gains across planning, coding, math, and game domains.",
+ "contributions": [
+  "AT-GRPO algorithm: an agent-and-turn-wise grouped RL method adapting group-relative policy optimization for multi-agent settings",
+  "A novel MAS training system supporting concurrent on-policy RL for both single-policy and multi-policy training across diverse workflows",
+  "Demonstration of consistent performance gains across game, planning, coding, and math domains",
+  "Analysis showing RL reinforces role-specific specialization and that the choice between role-sharing and role-specialized policies depends on task characteristics"
+ ],
+ "methods": "The authors design AT-GRPO, which extends GRPO to MAS via three key ideas: (1) tree-structured sampling—K candidate actions are sampled per agent per turn, with the highest-reward candidate greedily selected for environment progression; (2) agent-and-turn-wise grouping—experiences are grouped by agent and turn within each environment instance using a hash-based group key, ensuring prompts are identical within each group for valid advantage comparison; (3) agent-wise credit assignment—each agent's reward is a weighted combination of a global team reward and a role-specific local reward. A novel training system is built with independent GPU resource pools per policy (each containing a RolloutWorker and UpdateWorker), CPU-based EnvWorkers for sandboxed environment execution, and a Router that dispatches experiences to the correct policy's UpdateWorker.",
+ "results": "On long-horizon planning tasks, AT-GRPO boosts accuracy from a 14.0–47.0% single-agent RL baseline to 96.0–99.5%. On coding benchmarks, average improvements range from 3.87% to 7.62% (e.g., +25.0% relative on LiveCodeBench with Qwen3-1.7B, +84.0% on Sokoban with Qwen3-8B). On math benchmarks, average gains range from 9.0% to 17.93%. Role-specialized policies help in the coding domain (average +3.05 accuracy with Qwen3-1.7B), while role-sharing policies can be superior in math due to functional overlap between roles (e.g., 39.60% shared vs. 35.20% per-role on OlympiadBench with Qwen3-1.7B). Directly applying standard GRPO to MAS often causes performance degradation.",
+ "limitations": "Directly applying standard GRPO to MAS can result in performance degradation. Single-agent RL trained in isolation yields only limited improvement compared to collaborative MAS training. For coding and math domains, gains are smaller, potentially due to performance saturation from extensive pre-training on common domains and the diversity of problems posing greater challenge for RL improvement. The choice between role-sharing and role-specialized policies involves a trade-off: specialization fosters deep skills but prevents access to other roles' training data.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:25Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

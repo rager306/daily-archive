@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2308.15272",
+ "tldr": "AutoDroid is an LLM-powered mobile task automation system that combines large language model commonsense knowledge with app-specific domain knowledge obtained through automated dynamic analysis, enabling arbitrary task automation on Android without manual effort.",
+ "contributions": [
+  "First work on enhancing mobile task automation by combining LLMs and app-specific knowledge, including building a new benchmark for memory-augmented Android task automation.",
+  "A novel functionality-aware UI representation method converting GUI to simplified HTML, a simulated task synthesis method for augmenting LLMs with app knowledge via UI Transition Graph exploration, and multi-granularity LLM query optimization techniques to reduce cost.",
+  "Comprehensive evaluation demonstrating effectiveness with 71.3% task completion success rate (GPT-4), 36.4%-39.7% improvement over baselines, and 51.7% reduction in query cost."
+ ],
+ "methods": "AutoDroid operates in two stages. In the offline stage, it randomly explores target Android apps to build a UI Transition Graph (UTG) memory, then synthesizes simulated tasks from the UTG to generate task completion knowledge. In the online stage, a prompt generator creates prompts combining the user's natural language task, a simplified HTML representation of the current GUI state, and relevant app knowledge retrieved from the App Memory. The LLM predicts discrete UI actions (tap, input, or task completion signaled by id=-1). A privacy filter removes sensitive information before querying the LLM, and a Task Executor parses, verifies, and optionally seeks user confirmation before executing actions on the device.",
+ "results": "On a benchmark of 158 manually labeled tasks across 13 open-source Android apps, AutoDroid achieved a 71.3% task completion success rate with GPT-4, with each action selected at 90.9% accuracy. Compared to baselines powered by off-the-shelf LLMs, task completion rates improved by 36.4% to 39.7%, and average LLM query cost was reduced by 51.7%. Experiments used both online LLMs (GPT-3.5, GPT-4) and on-device open-source LLMs (Vicuna).",
+ "limitations": "The approach assumes apps are available for automated analysis (random exploration, crawling, code analysis), which may not hold for all black-box apps. The system requires manual labeling of ground-truth task steps for benchmark evaluation. LLMs cannot directly handle GUI and require text conversion, which may lose information. Querying LLMs remains costly and compute-intensive despite optimization. The agent was observed not to proactively scroll on scrollable interfaces, potentially missing content below the visible area.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:52Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

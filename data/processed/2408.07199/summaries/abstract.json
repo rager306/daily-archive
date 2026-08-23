@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2408.07199",
+ "tldr": "Agent Q combines Monte Carlo Tree Search (MCTS) with a self-critique mechanism and off-policy Direct Preference Optimization (DPO) to enable LLM agents to learn from both successful and unsuccessful trajectories, significantly improving multi-step reasoning in interactive web environments.",
+ "contributions": [
+  "A framework combining guided MCTS search, AI self-critique feedback, and iterative off-policy DPO fine-tuning for autonomous web agents",
+  "Demonstration that learning from both successful and unsuccessful trajectories improves generalization in complex multi-step reasoning tasks",
+  "Empirical validation on WebShop benchmark and real-world booking scenarios showing substantial performance gains over baselines",
+  "Scaling search-based self-supervised data collection to realistic agent settings with offline reinforcement learning"
+ ],
+ "methods": "The authors introduce Agent Q, which uses Monte Carlo Tree Search (MCTS) with UCB1 heuristic to explore action trajectories over web pages, generating both successful and unsuccessful paths. A feedback language model provides AI self-critique at each node to serve as intermediate reward signals, addressing sparse environment rewards. Preference pairs are constructed by combining MCTS Q-values and AI feedback scores, then used to fine-tune the policy via an off-policy variant of Direct Preference Optimization (DPO) using a replay buffer that eliminates the need for a separate reference model during training. The agent operates under a POMDP formulation with a ReAct-style architecture including planning, reasoning, environment actions, and explanation actions.",
+ "results": "In the WebShop environment, Agent Q consistently outperforms behavior cloning and reinforcement fine-tuning baselines, beating average human performance when equipped with online search. On a real-world booking website using LLaMA-3 70B as the base model, zero-shot success rate improved from 18.6% to 81.7% (a 340% relative increase) after a single day of autonomous data collection, and further to 95.4% with online search capability.",
+ "limitations": [
+  "Online autonomous search on the web can produce weak or unsafe agents that make risky behaviors in sensitive settings like bank transfers and information sharing",
+  "The approach requires the capability to rollback actions, which is not always possible in online realistic settings",
+  "LLM agents still struggle to generalize in interactive multi-step environments as they are not native-trained for such applications",
+  "Even strong models like GPT-4 continue to face challenges in these settings"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

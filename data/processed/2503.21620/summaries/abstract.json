@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2503.21620",
+ "tldr": "UI-R1 is the first framework applying rule-based reinforcement learning to enhance GUI action prediction in multimodal LLMs, achieving significant improvements using only 136 training samples through a novel action-based reward function.",
+ "contributions": [
+  "Proposes UI-R1, the first framework to apply DeepSeek-R1 style rule-based RL to GUI action prediction tasks",
+  "Designs a rule-based action reward function combining action type reward, coordinate accuracy reward, and format reward",
+  "Demonstrates data efficiency by training on only 136+ high-quality mobile samples selected via a three-stage selection process based on difficulty, diversity, and quality",
+  "Develops UI-R1-E-3B, an optimized version that removes reasoning steps for fast and accurate grounding"
+ ],
+ "methods": "The authors apply Group Relative Policy Optimization (GRPO) to a 3B-parameter MLLM (Qwen2.5-VL-3B) using a rule-based reward function composed of three components: action type reward (binary correctness of predicted action type among Click, Scroll, Back, Open App, Input Text), coordinate accuracy reward (whether predicted click coordinate falls within ground truth bounding box), and format reward (correct use of <think> and <answer> tags). For efficient reasoning, they also train UI-R1-E-3B in two stages—DAST (difficulty-adaptive training with length reward) and NOTHINK (removing <think> tags entirely)—over 4 epochs each. Training data was curated from 136 samples selected from ScreenSpot mobile and AndroidControl datasets.",
+ "results": "UI-R1-3B achieves average accuracy gains of 22.1% on ScreenSpot, 6.0% on ScreenSpot-Pro, and 12.7% on ANDROIDCONTROL over the base Qwen2.5-VL-3B model. It delivers competitive performance compared to larger 7B models such as OS-Atlas-7B, which was trained via supervised fine-tuning on 76K samples. UI-R1-E-3B achieves state-of-the-art performance with faster grounding. Experiments showed that agents producing reasoning processes outperform those directly outputting actions by approximately 6%.",
+ "limitations": "The method was evaluated primarily on mobile-domain tasks with only 136 training samples. The action space covers five action types, excluding rare actions like Wait and Long Press. The out-of-domain generalization improvements, while notable, still show limitations compared to commercial models like Claude (Claude-computer-use). The NOTHINK version demonstrates that reasoning is not essential for simpler tasks like GUI grounding, suggesting potential limitations in handling more complex multi-step instructions.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:03Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

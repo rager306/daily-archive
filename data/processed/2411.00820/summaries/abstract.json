@@ -1,0 +1,27 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2411.00820",
+ "tldr": "AutoGLM is a series of foundation agents built on the ChatGLM family that autonomously controls digital devices through GUIs in web browsers and Android environments, achieving state-of-the-art results on multiple benchmarks through an intermediate interface design and self-evolving online curriculum reinforcement learning.",
+ "contributions": [
+  "Design of an intermediate interface that disentangles planning and grounding behaviors in foundation GUI agents",
+  "Development of a self-evolving online curriculum reinforcement learning framework (WebRL) enabling robust error recovery",
+  "Demonstration of deployable agent systems for both web browsing (Qingyan Browser Plugin) and Android control (AccessibilityService-based app)",
+  "Significant performance improvements over proprietary models: 55.2% vs 18.2% on VAB-WebArena-Lite and 36.2% vs 31.2% on AndroidLab"
+ ],
+ "methods": "AutoGLM is built on the ChatGLM model family and trained using a combination of pre-training with weakly supervised decision-making signals, behavior cloning from expert trajectories, and self-evolving online curriculum reinforcement learning. The key architectural insight involves an intermediate interface that separates the agent into a planner (which issues flexible, high-level instructions) and a grounder (which maps those instructions to precise GUI element coordinates). For RL, approximately 1,000 BC data samples from VisualAgentBench are augmented online through mutation (self-evolving instructions), filtered by a critic, and used iteratively with KL-constrained policy updates and actor confidence-filtered experience replay to address policy distribution drift.",
+ "results": "On VAB-WebArena-Lite, AutoGLM achieves 55.2% success rate (improving to 59.1% with a second attempt), outperforming GPT-4o at 18.2%. On OpenTable real-world booking tasks, AutoGLM achieves 96.2% SR, exceeding GPT-4o (62.6%) and Agent Q (81.7%). On AndroidLab, AutoGLM achieves 36.2% SR, surpassing GPT-4o (31.2%) and Claude-3.5-Sonnet (29.0%). In human evaluation on common Chinese Android apps (WeChat, Meituan, Taobao, etc.), AutoGLM achieves 89.7% SR. Intermediate interface design improves proprietary models significantly: gpt-4o visual goes from 18.2% to 27.3% (+9.1%), and gpt-4-vision-preview visual goes from 18.8% to 36.4% (+17.6%).",
+ "limitations": [
+  "Scarcity of high-quality decision-making trajectory data in pre-training corpora",
+  "Behavior cloning agents fail to learn error recovery when trained on oracle trajectories",
+  "Policy distribution drift during progressive curriculum training requires careful mitigation (KL-constrained updates)",
+  "Reinforcement learning efficiency is limited by simulator parallelism constraints and memory-intensive Android Virtual Devices",
+  "Strict function-based action formatting leads to stubborn monotonous sampling even at high temperatures",
+  "AUTOGLM cannot yet solve all tasks perfectly, though partially completed tasks remain useful for users"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2412.08261",
+ "tldr": "FLIP is a flow-centric model-based planning framework that uses image flows as general-purpose action representations, enabling long-horizon planning for robot manipulation from only language and vision inputs. It combines a flow generation action module, a flow-conditioned video generation dynamics module, and a vision-language value module to search for optimal plans in flow and video spaces.",
+ "contributions": [
+  "A flow-centric world model with three modules (flow generation, flow-conditioned video generation, and vision-language value learning) trained purely from language-annotated video data for general-purpose manipulation",
+  "A novel finetuning strategy for LIV on long-horizon imperfect videos by replacing adjacent frames with adjacent short-horizon video clips as state units, producing smoother value curves",
+  "Model-based beam-search planning that progressively searches flow and video spaces to synthesize long-horizon plans",
+  "A plan-conditioned low-level policy that uses generated flow and video plans to guide real robot execution",
+  "Demonstration of interactive world model properties, zero-shot transfer ability, and scalability across diverse benchmarks"
+ ],
+ "methods": "FLIP trains a conditional VAE with transformer architecture as the flow generation action module, predicting relative displacements (delta scale and direction) for uniformly sampled dense grid query points using off-the-shelf Co-Tracker on short-horizon video clips. A latent video diffusion model based on DiT serves as the dynamics module, using a mixed conditioning mechanism with cross-attention for flow conditions and AdaLN-Zero for global language/timestep conditions. The value module uses a finetuned LIV model with cosine similarity between image and language encodings. Planning employs beam search (Algorithm 1): at each step, the action module proposes A flow candidates, the dynamics module generates corresponding short-horizon videos, and the value module selects the highest-value plan, with periodic replacement of the lowest-beam by the highest-beam to prevent exploitative routes. A low-level diffusion policy is trained on few action-labeled demonstrations conditioned on flow and video plans.",
+ "results": "FLIP was evaluated on LIBERO-LONG (10 long-horizon table-top tasks in simulation, trained on 50×10 videos at 128×128 resolution), FMB benchmark (1K single-object multi-stage videos), and real-world tasks including cloth folding, unfolding, and Bridge-V2. The method can synthesize long-horizon videos (≥200 frames) and performs model-based planning across diverse objects, robots, and tasks. The generated flow and video plans guide low-level policy training for both simulation and real-world execution. FLIP demonstrates interactive world model properties, zero-shot transfer ability, and scalability. The three modules each outperform their respective baselines (Wen et al., 2023; Zhu et al., 2024; Ma et al., 2023).",
+ "limitations": "Long-horizon imperfect videos cause jagged value curves when fine-tuning LIV with the original objective, as tasks do not progress smoothly (e.g., robot arm may hesitate). Direct autoregressive long-horizon video generation suffers from compounding errors. Query point selection is non-trivial: using only initial-frame points fails when objects appear/disappear in long videos, and segmentation-based ROI selection is difficult without human assistance for diverse scenes.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:57:44Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16282",
+ "tldr": "ARPO enables effective end-to-end policy optimization for GUI agents using GRPO with an experience replay buffer, significantly improving in-domain task success rates in sparse-reward desktop environments.",
+ "contributions": [
+  "An end-to-end policy optimization approach for training GUI agents in multi-turn, multi-modal environments using GRPO",
+  "A task selection strategy that filters for valuable tasks capable of producing successful rollouts under baseline agents",
+  "An experience replay buffer that retains successful trajectories to enhance sample efficiency and stabilize training in sparse-reward settings",
+  "Demonstration that RL substantially improves in-domain performance while offering only moderate generalization to out-of-domain tasks"
+ ],
+ "methods": "The authors build a vision-language GUI agent on the UI-Tars-1.5 (7B) base model with up to 15 images and 64K context length to process full GUI trajectories. They employ a distributed rollout system with 256 parallel virtual environments on OSWorld, using Group Relative Policy Optimization (GRPO) for end-to-end policy optimization with a binary trajectory reward and action format penalty. A task selection strategy curates 128 valuable tasks from OSWorld, and an experience replay buffer stores successful per-task trajectories to inject into GRPO groups when all sampled rollouts fail.",
+ "results": "ARPO achieves a 29.9% success rate on standard OSWorld and 23.8% on OSWorld Hard, improving over the UI-Tars-1.5 base model by 6.4% and 5.6% respectively. In-domain success rises from 68.8% (GRPO) to 81.25% (ARPO), a 12.5% absolute improvement. Out-of-domain performance sees modest gains: ARPO scores 56.3% versus 55.2% for the base model. The replay buffer achieves a higher average trajectory reward of 0.75 vs 0.65 without it. ARPO outperforms offline preference methods, scoring 27.3% vs 26.0% (GRPO), 24.6% (KTO), 22.4% (DPO), and 21.8% (reject sampling).",
+ "limitations": "RL training delivers strong gains on in-domain tasks but only moderate generalization improvements on out-of-domain tasks. Successful rollouts are rare in sparse-reward GUI environments. Training requires significant compute with 256 parallel environments. Strong generalization still depends on broader task diversity and larger-scale training compute.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:54Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

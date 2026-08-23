@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2302.00923",
+ "tldr": "The paper proposes Multimodal-CoT, a two-stage framework that fuses vision and language modalities to improve chain-of-thought reasoning in language models under 1 billion parameters, achieving state-of-the-art performance on ScienceQA.",
+ "contributions": [
+  "First study of CoT reasoning across modalities in scientific peer-reviewed literature",
+  "A two-stage fine-tuning framework that separates rationale generation and answer inference by fusing vision and language representations",
+  "Analysis showing why naive CoT fails in 1B-models and how incorporating vision features mitigates hallucination and boosts convergence"
+ ],
+ "methods": "The authors propose Multimodal-CoT, a two-stage framework. In stage one, a language model (T5, under 1B parameters) generates a reasoning rationale conditioned on both text input (question, context, options) and vision input (image features extracted via ViT). In stage two, the generated rationale is concatenated with the original language input, and the same model architecture infers the final answer. Vision features are fused with language representations using a single-head attention network followed by a gated fusion mechanism before decoding.",
+ "results": "On ScienceQA, Multimodal-CoT achieves state-of-the-art performance with a model under 1 billion parameters. Rationale generation reaches a RougeL score of 93.46% (vs. 90.73% without vision). Answer accuracy improves to 85.31% (vs. 78.57% without vision). The approach corrects 60.7% of hallucination mistakes observed in the baseline. Using image captions only yields marginal gains of +0.80%, while vision features provide substantially better results. Without CoT, the baseline achieves 81.63% accuracy; adding reasoning in a single stage causes a 12.31% drop (to 69.32%).",
+ "limitations": "The approach focuses only on vision and language modalities, excluding other modalities like audio. The model achieves strong results on ScienceQA but the paper does not report state-of-the-art results on A-OKVQA in the provided excerpt. The method requires fine-tuning a model rather than leveraging prompting-based approaches, which may limit transferability to scenarios without training data.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:02Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

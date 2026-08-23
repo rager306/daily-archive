@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.15107",
+ "tldr": "StepSearch is a reinforcement learning framework that augments PPO with token-level process rewards (information gain and redundancy penalties) and step-wise search-key rewards to train LLMs for multi-hop search-based QA, significantly outperforming global-reward RL baselines.",
+ "contributions": [
+  "A novel MuSiQue-based data pipeline generating 60k filtered sub-question search keywords for multi-hop retrieval training.",
+  "StepSearch: a step-wise RL framework augmenting PPO with token-level rewards combining information gain and redundancy penalties for both query formulation and document retrieval.",
+  "State-of-the-art performance on multi-hop QA benchmarks, outperforming standard RL baselines with only 19k training data."
+ ],
+ "methods": "The authors construct a fine-grained multi-turn QA dataset from MuSiQue by using GPT-4o to decompose questions into subquestion-answer pairs and derive search queries, filtering queries that return valid results in at least half of M search sources. LLMs are trained iteratively in a think-search-answer loop using a minimalist prompt template with three CoT demonstration pairs. The StePPO algorithm combines standard PPO with a global reward (format correctness + answer F1) and two step-wise rewards: a search-key reward (word-level F1 between emitted queries and reference keywords) and a token-level process reward computed as information gain minus redundancy penalty across retrieved documents.",
+ "results": "StepSearch achieves absolute improvements of 11.2% (3B) and 4.2% (7B) over search-with-RL baselines using only 19k training data. It outperforms baselines by 5.7%, 9.1%, 10.0%, and 15.2% absolutely across diverse multi-hop QA benchmarks (HotpotQA, 2WikiMultiHopQA, MuSiQue, Bamboogle). StePPO drives high-quality, low-cost generation with higher accuracy in fewer rounds and shorter outputs. The method shows particularly prominent advantages on smaller 3B models and exhibits robust out-of-domain adaptability using only ~0.35% of the retrieval database. Redundancy penalty alone does not optimize search ability but enhances information gain; search-key rewards improve convergence speed but may cause hallucination/reward collapse without process supervision.",
+ "limitations": "Evaluation is restricted to text-only QA, leaving generalization to multimodal inputs untested. Experiments were conducted only at modest parameter scales (3B and 7B); scaling to 14B or 32B may exacerbate reward collapse and unstable training dynamics. The method uses only 19k training data from MuSiQue, and its performance with larger training data comparable to Search-R1 remains unknown.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

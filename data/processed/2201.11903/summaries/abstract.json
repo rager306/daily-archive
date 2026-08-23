@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2201.11903",
+ "tldr": "Chain-of-thought prompting—providing intermediate reasoning steps as few-shot exemplars—elicits multi-step reasoning in sufficiently large language models (~100B+ parameters), dramatically improving performance on arithmetic, commonsense, and symbolic reasoning tasks without finetuning.",
+ "contributions": [
+  "Introducing chain-of-thought prompting as a simple method to elicit reasoning in off-the-shelf large language models",
+  "Demonstrating that chain-of-thought reasoning is an emergent ability that appears at model scales of approximately 100B parameters",
+  "Showing PaLM 540B with chain-of-thought prompting achieves state-of-the-art results on GSM8K, SVAMP, and MAWPS without finetuning",
+  "Extending chain-of-thought prompting beyond arithmetic to commonsense and symbolic reasoning tasks, including out-of-distribution length generalization"
+ ],
+ "methods": "The authors evaluated five large language models (GPT-3, LaMDA, PaLM, UL2, Codex) ranging from 350M to 540B parameters on arithmetic (GSM8K, SVAMP, ASDiv, AQuA, MAWPS), commonsense (CSQA, StrategyQA, Date Understanding, Sports Understanding, SayCan), and symbolic reasoning (last letter concatenation, coin flip) benchmarks. They compared standard few-shot prompting against chain-of-thought prompting, where each exemplar includes a natural language reasoning trace before the final answer. Eight manually composed chain-of-thought exemplars were used for most tasks. Ablation studies tested equation-only prompting, variable compute via dot sequences, and chain-of-thought-after-answer variants. Robustness was tested across different annotators, exemplar sets, and exemplar orders.",
+ "results": "Chain-of-thought prompting is an emergent ability: it does not help models below ~100B parameters and only yields gains at larger scales. For GSM8K, performance more than doubled for the largest GPT and PaLM models. PaLM 540B with chain-of-thought prompting achieved new state-of-the-art on GSM8K, SVAMP, and MAWPS without finetuning, and reached within 2% of state-of-the-art on AQuA and ASDiv. On commonsense reasoning, PaLM 540B outperformed prior state-of-the-art on StrategyQA (75.6% vs 69.4%) and surpassed an unaided sports enthusiast on Sports Understanding (95.4% vs 84%). For symbolic reasoning with PaLM 540B, chain-of-thought prompting led to almost 100% solve rates in-domain and enabled length generalization to longer sequences where standard prompting failed. Manual analysis of LaMDA 137B chains of thought on GSM8K found that among correct final answers, all generated chains were logically correct except two; among incorrect answers, 46% of chains were almost correct barring minor errors and 54% had major semantic or coherence errors.",
+ "limitations": [
+  "It remains an open question whether the neural network is actually 'reasoning' or merely emulating human thought processes",
+  "Manual annotation of chain-of-thought exemplars does not scale to finetuning settings, though synthetic data generation or zero-shot generalization could potentially address this",
+  "There is no guarantee of correct reasoning paths, which can lead to errors in the generated chains of thought"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:53:50Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

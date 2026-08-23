@@ -1,0 +1,24 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2402.01030",
+ "tldr": "CodeAct proposes using executable Python code as a unified action space for LLM agents, enabling dynamic self-correction and multi-tool composition, outperforming text/JSON-based action formats by up to 20% on complex tasks.",
+ "contributions": [
+  "CodeAct framework: consolidating LLM agent actions into executable Python code with integrated interpreter for dynamic multi-turn revision",
+  "M3 ToolEval: a new benchmark of 82 human-curated tasks requiring multi-tool composition in multi-turn interactions",
+  "CodeActInstruct: a 7k multi-turn instruction-tuning dataset for agent-environment interactions",
+  "CodeActAgent: open-source LLM agents finetuned from LLaMA-2 and Mistral-7B that improve on agent tasks without compromising general capabilities"
+ ],
+ "methods": "The authors evaluated 17 LLMs (open-source and proprietary) on API-Bank and their newly curated M3 ToolEval benchmark, comparing CodeAct against text and JSON action formats. On API-Bank, models generated single atomic tool calls in each format. On M3 ToolEval, models could generate fully functional Python code with control/data flow for tasks spanning web browsing, finance, travel planning, science, and information processing. They also collected CodeActInstruct (7k trajectories from repurposed datasets: HotpotQA, APPS, MATH, WikiTableQuestion, ALFWorld) with down-sampling to keep challenging instances, then fine-tuned LLaMA-2 and Mistral-7B on a mixture of CodeActInstruct and general conversation data.",
+ "results": "CodeAct achieved up to 20% absolute improvement in success rate over baselines on M3 ToolEval while requiring up to 30% fewer actions. GPT-4-1106-preview achieved a 20.7% absolute improvement over the next best format (text) with 2.1 fewer average turns. CodeAct outperformed baselines on 12 out of 17 LLMs for success rate and on 12 out of 17 for average turns. On API-Bank (atomic tool use), CodeAct achieved comparable or better performance for most LLMs. The best open-source model achieved 13.4% success vs. 74.4% for GPT-4-1106-preview on M3 ToolEval. CodeActInstruct fine-tuning improved agent task performance without compromising general capabilities (knowledge QA, coding, instruction following).",
+ "limitations": [
+  "Large performance gap between open-source (best: 13.4%) and closed-source (GPT-4: 74.4%) models on M3 ToolEval, attributed to open-source models' weak task-solving capability and difficulty following complex instructions without demonstration in zero-shot settings",
+  "Simple prompts were used without few-shot demonstrations to test zero-shot ability, which may not reflect practical usage where demonstrations are available",
+  "CodeAct benefits (control/data flow) were ablated on basic atomic tool tasks (API-Bank), suggesting advantages are most prominent on complex multi-tool composition tasks"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:45Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

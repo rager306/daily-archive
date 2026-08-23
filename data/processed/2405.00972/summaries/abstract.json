@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2405.00972",
+ "tldr": "CACTUS is an LLM-based intelligent agent that integrates cheminformatics tools to improve reasoning and problem-solving in chemistry and molecular discovery. Evaluation across multiple open-source 7B-parameter models shows that CACTUS significantly outperforms baseline LLMs, with Gemma-7b and Mistral-7b achieving the highest accuracy regardless of prompting strategy.",
+ "contributions": [
+  "Development of CACTUS, an LLM-powered cheminformatics agent built on LangChain that combines external chemical tools with open-source LLMs.",
+  "Integration of ten cheminformatics tools covering molecular descriptors, ADME estimates, and structural/toxicity alerts.",
+  "Benchmarking of CACTUS on a 1000-question chemistry dataset using five 7B-parameter open-source LLMs.",
+  "Demonstration that domain-specific prompting improves qualitative question accuracy and that smaller models can run effectively on consumer-grade hardware."
+ ],
+ "methods": "CACTUS was implemented using LangChain's custom MRKL agent framework with a zero-shot agent class and the ReAct reasoning approach. The agent was equipped with ten cheminformatics tools wrapping libraries such as RDKit and SciPy, along with interfaces to PubChem, ChEMBL, and ZINC. The system was evaluated on a benchmark of 1000 chemistry questions (500 qualitative and 500 quantitative) using five 7B-parameter open-source models: Gemma-7b, Falcon-7b, MPT-7b, Llama2-7b, and Mistral-7b. Performance was assessed under both minimal and domain-specific prompting strategies, and hardware efficiency was tested across different NVIDIA GPUs including A100 80GB, V100, and RTX 2080 Ti.",
+ "results": "Gemma-7b and Mistral-7b achieved the highest accuracy across all question types regardless of prompting strategy. Domain-specific prompting significantly improved accuracy on qualitative questions, especially for models like Falcon-7b that showed larger performance gaps between minimal and domain prompts. Smaller models such as Phi2 and OLMo-1b were successfully deployed on consumer-grade hardware (e.g., RTX 2080 Ti) without significant loss in usability. Each of the ten tool types was evaluated 100 times within the combined dataset.",
+ "limitations": [
+  "The agent currently accepts only SMILES string input; future versions aim to support additional identifiers such as compound names, InChI keys, and CAS numbers.",
+  "The evaluation did not differentiate between incorrect tool usage and simply providing a wrong answer.",
+  "Additional formatted text sometimes appeared after correct answers, requiring programmatic post-processing or further prompt engineering.",
+  "Performance variability across models indicates that some LLMs may require more fine-tuned or domain-specific prompting to reach their full potential."
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:56:13Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

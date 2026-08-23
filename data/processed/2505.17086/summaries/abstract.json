@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.17086",
+ "tldr": "The paper proposes Mujica-MyGO, a framework combining a multi-agent RAG system (Mujica) that decomposes multi-turn interactions to mitigate long-context issues, with a minimalist RL algorithm (MyGO) that post-trains LLMs without in-context learning demonstrations.",
+ "contributions": [
+  "Mujica (Multi-hop Joint Intelligence for Complex Question Answering): a multi-agent RAG workflow with Planner and Worker modules that decomposes multi-turn interactions into cooperative sub-interactions, mitigating the long-context problem",
+  "MyGO (Minimalist Policy Gradient Optimization): a lightweight RL algorithm that avoids reward weighting, importance sampling, and token clipping, using trajectory sampling from near-optimal distributions with MLE-based policy updates",
+  "Theoretical convergence guarantees for MyGO to the optimal policy",
+  "Empirical evaluation across diverse QA benchmarks covering text corpora and knowledge graphs"
+ ],
+ "methods": "Mujica uses a Planner-Worker architecture where the Planner decomposes complex questions into subquestions organized as a DAG and iteratively queries a Worker, which acts as a mini-RAG system retrieving passages and returning concise summaries. This keeps the Planner's context clean and summary-based. For post-training without SFT data, MyGO separates sampling and training into two phases: it samples trajectories with rewards above a dynamic threshold K (asymptotically approximating the optimal policy), then optimizes via standard cross-entropy/MLE loss, implementable within existing SFT frameworks. The algorithm avoids PPO/GRPO components like value networks and importance sampling.",
+ "results": "Mujica-MyGO achieves superior performance across diverse question-answering benchmarks covering both text corpora and knowledge graphs (open-domain multi-hop QA). Specific numerical results are truncated in the provided text.",
+ "limitations": "The system relies on the availability of successful trajectories that well-prompted LLMs can generate; the approach may be less feasible for reward landscapes where successful trajectories are rare. Training inefficiency and instability remain significant challenges when training LLMs. The provided text is truncated, preventing complete results reporting.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:58Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

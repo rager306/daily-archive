@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2310.12823",
+ "tldr": "AgentTuning is a method that instruction-tunes LLMs using a curated dataset of interaction trajectories (AgentInstruct) combined with general-domain data via hybrid training, enabling open-source Llama 2-based models to match GPT-3.5 on unseen agent tasks without compromising general capabilities.",
+ "contributions": [
+  "AgentInstruct dataset: 1,866 high-quality interaction trajectories with Chain-of-Thought rationales across 6 agent tasks",
+  "Hybrid instruction-tuning strategy mixing agent and general data to enhance agent abilities while preserving generalization",
+  "AgentLM models (7B, 13B, 70B) that are open-sourced as alternatives to commercial LLMs for agent tasks",
+  "Analysis showing general data is crucial for agent task generalization; training solely on agent data degrades performance"
+ ],
+ "methods": "The authors constructed AgentInstruct by generating instructions from six agent tasks (ALFWorld, WebShop, Mind2Web, Knowledge Graph, Operating System, Database), using GPT-4 as agents to produce interaction trajectories with ReAct-style Chain-of-Thought reasoning, and filtering for high-quality trajectories based on reward scores (all but Mind2Web required r=1; Mind2Web used r≥3). They then performed supervised fine-tuning on Llama 2 (7B, 13B, 70B chat) using a mixture of the 1,866 agent trajectories and 57,096 general-domain conversations from ShareGPT, with an optimal mixing ratio of η=0.2 for agent data.",
+ "results": "AgentLM-70B is comparable to GPT-3.5 on unseen held-out agent tasks without compromising general NLP performance (MMLU, GSM8K, HumanEval, MT-Bench). On some held-in tasks, AgentLM-13B and 70B even surpassed GPT-4. Improvements on held-out tasks reached up to 170% over Llama 2. Models trained on filtered trajectories significantly outperformed those trained on unfiltered trajectories (held-in: 1.96 vs 1.34; held-out: 0.65 vs 0.47). Error analysis showed AgentTuning drastically reduced invalid actions, repetitions, and refusals. Training solely on agent data led to declining generalization performance.",
+ "limitations": "The AgentInstruct dataset is relatively small (1,866 trajectories). The dataset construction relies entirely on GPT-4/GPT-3.5 for instruction generation and trajectory creation, introducing potential bias. While AgentLM-70B matches GPT-3.5, it still lags behind GPT-4 on several tasks.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:20Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

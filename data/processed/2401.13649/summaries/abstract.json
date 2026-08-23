@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2401.13649",
+ "tldr": "VisualWebArena is a benchmark of 910 visually grounded web tasks across Classifieds, Shopping, and Reddit environments that evaluates multimodal agents, revealing that the best VLM agents achieve only 16.4% success versus 88.7% for humans.",
+ "contributions": [
+  "Introduction of VisualWebArena with 910 realistic visually grounded tasks across three web environments (Classifieds as new, Shopping and Reddit inherited from WebArena), where 25.2% of tasks include input images",
+  "Extensive benchmarking of SOTA LLM and VLM agents showing VLMs outperform text-based LLMs but still significantly lag behind human performance at 88.7%",
+  "Proposal of a new Set-of-Marks (SoM) VLM agent that simplifies the action space and substantially outperforms baseline LLM agents, especially on visually complex sites"
+ ],
+ "methods": "The authors built VisualWebArena as a self-hosted, reproducible web environment modeled as a POMDP with deterministic transitions. They curated 910 tasks using 6 graduate student annotators who wrote 314 unique intent templates (averaging 2.9 tasks per template), with 5.1% (46 tasks) designed as unachievable. Tasks span three environments: a new Classifieds site with 65,955 listings using OSClass CMS, a Shopping site with Amazon-scraped data, and a Reddit site with 31,464 posts. Evaluation uses execution-based reward functions including exact_match, must_include, fuzzy_match, must_exclude, eval_vqa (using BLIP-2-T5XL), and eval_fuzzy_image_match (using SSIM). Agents were tested with 3 in-context examples and compared against human performance from 7 college students on a 230-task sample.",
+ "results": "The best VLM agents achieved a 16.4% success rate on VisualWebArena, significantly below human performance of 88.7%. Open-source models like LLaMA-2-70B and IDEFICS-80B achieved near 0% success on medium/hard tasks but non-zero performance on easy tasks. Human failure modes included minor errors (e.g., adding to cart instead of wishlist) and giving up on exhaustive search tasks after 5-10 minutes. The proposed SoM agent substantially outperformed other baseline LLM agents, especially on visually complex sites.",
+ "limitations": "Human judgment in task difficulty annotation may introduce deviations from the formal visual/reasoning complexity classification. Many open-source models achieve near-zero performance on medium and hard tasks, limiting useful signal for development. The benchmark's current best VLM agents achieve only 16.4% success versus 88.7% human performance, indicating a large capability gap. Some tasks were intentionally designed as unachievable (5.1%), testing early termination but also reflecting real-world scenarios where tasks cannot be completed.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:55:41Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

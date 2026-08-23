@@ -1,0 +1,21 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2303.06689",
+ "tldr": "The paper proposes a self-planning code generation approach using LLMs that decomposes complex intents into structured planning steps before implementing code, improving Pass@1 by up to 25.4% over direct generation and 11.9% over Chain-of-Thought.",
+ "contributions": [
+  "First to introduce planning-based approach (Code CoT) to code generation",
+  "Self-planning approach using few-shot prompting without training or annotated plan corpus",
+  "Two-phase framework: planning phase followed by implementation phase",
+  "Empirical validation across multiple benchmarks (MBPP, HumanEval) and programming languages (Python, Java, Go, JavaScript)",
+  "Human evaluation showing improved correctness, readability, and robustness"
+ ],
+ "methods": "The approach uses few-shot prompting with only k labeled intent-plan examples to guide the LLM through two phases. In the planning phase, the LLM decomposes the intent into a numbered list of concise, imperative sub-steps. In the implementation phase, the plan is appended to the intent as input, and the LLM generates code step by step following the plan. The prompts are crafted following principles: numbered list format, single easily implementable sub-tasks starting with verbs, concise high-level steps, and support for conditional/looping keywords.",
+ "results": "Self-planning achieved up to 25.4% relative improvement in Pass@1 over direct code generation and up to 11.9% over Code CoT. It outperformed models like AlphaCode (1.1B), Incoder (6.7B), CodeGeeX (13B), CodeGen-Mono (16.1B), and PaLM Coder (560B) when using code-davinci-002 as the base model. Self-planning is an emergent ability on large enough LLMs but benefits most LLMs. Ground-truth planning showed an upper bound improvement of over 50% on HumanEval and over 30% on MBPP-sanitized. Pass@k results showed self-planning maintained diversity as sample size increased, unlike Code CoT whose diversity decreased rapidly.",
+ "limitations": "Self-planning requires a powerful base model (code-davinci-002 used). Some MBPP-sanitized problems have insufficient intent information for effective planning, even for humans. CodeBLEU scores were slightly lower than baselines, attributed to reference code not representing the only valid solution. Only one plan was obtained via greedy search without exploring alternative plans. About 3% of ground-truth plans had poorly described steps.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:54:09Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

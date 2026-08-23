@@ -1,0 +1,19 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.13299",
+ "tldr": "The paper introduces ACCELMAT, an LLM-based multi-agent framework that generates and refines material discovery hypotheses under specific goals and constraints, evaluated on a novel benchmark dataset MATDESIGN curated from 50 recent journal publications.",
+ "contributions": [
+  "Creation of MATDESIGN, a novel benchmark dataset with goals, constraints, materials, and methods extracted from 50 research papers published in January 2024",
+  "Development of ACCELMAT, an LLM-based agentic framework for generating and refining material discovery and design hypotheses",
+  "Proposal of a scalable dual-metric evaluation framework (Closeness and Quality) for assessing generated hypotheses"
+ ],
+ "methods": "The authors curated MATDESIGN from 50 papers published in January 2024 in journals like Nature and Nature Communications, ensuring ground truth content is beyond LLM training cutoffs. They designed ACCELMAT, a four-component multi-agent system: a Hypotheses Generator (GPT-4o) that proposes 20 hypotheses, three Critic Agents (GPT-4o, Claude-3.5-Sonnet, Gemini-1.5-Flash) that evaluate alignment with goals and constraints, a Summarizer Agent (GPT-4o) that consolidates feedback, and an Evaluation Agent (OpenAI-o1-preview) that scores hypotheses. Three configurations were tested: baseline without feedback, iterative feedback refinement (up to 5 cycles), and knowledge graph-enhanced generation using MatKG.",
+ "results": "The knowledge graph + feedback configuration achieved the highest performance: 86% concept overlap, 88% property overlap, and 66% keyword matching on Closeness; and 88% alignment, 86% plausibility, 82% innovation, 92% testability, 86% feasibility, and 92% impact on Quality. The no-feedback baseline scored lowest at 70% concept overlap, 74% property overlap, and 66% keyword matching, with Quality scores of 76-86% across criteria.",
+ "limitations": "Keyword matching scores remained low (66%) across all configurations, indicating difficulty in precisely matching specific material names, chemical compounds, and synthesis methods. Existing benchmarks (MaScQA, ChemLLMBench) were noted as limited to graduate-level subdomains and vulnerable to data leakage from pretraining corpora, suggesting evaluation methodology is still evolving. The Knowledge Graph configuration relies on MatKG, whose coverage may limit applicability to domains not well-represented in that graph.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:12Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

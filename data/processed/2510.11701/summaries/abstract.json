@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2510.11701",
+ "tldr": "This paper systematically investigates reinforcement learning for agentic reasoning across data, algorithm, and reasoning mode, finding that real end-to-end trajectories, exploration-friendly techniques (clip higher, overlong reward shaping, entropy maintenance), and fewer deliberate tool calls significantly improve performance.",
+ "contributions": [
+  "Comprehensive investigation of RL in agentic reasoning from three perspectives: data, algorithm, and reasoning mode",
+  "Release of a high-quality real end-to-end agentic SFT dataset and a high-quality RL dataset",
+  "A strong baseline model DemyAgent-4B achieving SOTA-level performance on challenging benchmarks",
+  "Empirical insights showing 4B-sized models can outperform 32B-sized models in agentic reasoning"
+ ],
+ "methods": "The authors conducted systematic experiments using Qwen3-4B-Instruct-2507 and Qwen2.5-7B-Instruct models across four benchmarks (AIME2024/AIME2025, GPQA-Diamond, LiveCodeBench-v6). They compared real end-to-end trajectories versus synthetic stitch-style trajectories for SFT initialization, evaluated three GRPO-based recipes (GRPO-TCR with token-level loss, GRPO-SCR with sequence-level loss, and GRPO-T baseline), and investigated loss aggregation granularity, clipping strategies (clip higher vs conservative), overlong reward shaping, and KL divergence penalties. They also constructed model-aware RL datasets by filtering problems based on rollout accuracy to create difficulty-stratified sets.",
+ "results": "Real trajectories yielded Qwen3-4B at 29.97% average@32, 72.88% pass@32, and 45.22% maj@32 on AIME2025 versus below 10% average@32 for synthetic data. GRPO-TCR achieved 70.93%/68.13% on AIME2024/2025 within 450 steps, while GRPO-T reached only 54.7%/40.93%, with GRPO-TCR matching performance in just 100 steps (25% of training computation). Token-level loss outperformed sequence-level by 3.95% on AIME24 and 3.86% on AIME25 for stronger models. Diverse datasets sustained higher policy entropy. Model-aware datasets helped Qwen2.5-7B break its performance bottleneck.",
+ "limitations": "The study focuses primarily on GRPO-based algorithms, limiting generalizability to other RL frameworks. Some techniques like token-level loss showed benefits mainly for models with stronger initial performance and exploration ability, suggesting potential limitations for weaker base models. The analysis is truncated before full discussion of entropy mechanisms and complete exploration-exploitation dynamics.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T12:01:29Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

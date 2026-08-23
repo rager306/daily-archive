@@ -1,0 +1,25 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2501.13122",
+ "tldr": "The paper explores zero-shot self-verification of LLM-generated reasoning steps without fine-tuning or few-shot exemplars, introducing the COT STEP prompt for structured step decomposition and two zero-shot verification prompts (R-prompt and COTR-prompt).",
+ "contributions": [
+  "COT STEP: a novel zero-shot prompt that structures reasoning into numbered steps for automatic decomposition",
+  "Two zero-shot verification prompts (R-prompt and COTR-prompt) for LLM-based self-verification of reasoning steps",
+  "A scoring mechanism combining generation probability and verification prediction for reasoning step correctness",
+  "Evaluation of verifier scores in selecting answers via Self-Consistency and step-level greedy search"
+ ],
+ "methods": "The authors design a COT STEP prompt that primes models to generate numbered reasoning steps (Step 1:, Step 2:, etc.) for easy decomposition. They create two verification prompts—R-prompt (direct Yes/No) and COTR-prompt (chain-of-thought variant)—to verify each reasoning step's correctness. Verification scores combine the generation log-probability (C1) and the verifier's answer probability (C2), averaged and exponentiated. They evaluate on GSM8K (mathematical) and CSQA (commonsense) datasets using SOLAR 10.7B and Phi-3 Mini models, testing prompts with and without self-consistency (20 samples, temperature 0.8).",
+ "results": "COT STEP maintains competitive performance against existing zero-shot prompts, being the best performer for SOLAR without self-consistency. COTR-prompt consistently outperforms R-prompt for mathematical reasoning (GSM8K), while R-prompt shows high bias toward predicting correctness. Verification performance is poor on commonsense reasoning (CSQA). Using verifier scores with Self-Consistency shows limited benefit: for GSM8K with SOLAR, COT STEP+SC achieves 84.91% accuracy, with Filter and Weighted variants performing similarly. The benefit of verifier-guided search vanishes when self-consistency is used.",
+ "limitations": [
+  "Self-verification performs poorly on commonsense reasoning tasks (CSQA), likely because CoT reasoning is distributionally non-standard for such tasks",
+  "The benefit of using verifier scores in guiding reasoning vanishes when self-consistency is employed",
+  "The evaluation uses automatically generated ground-truth labels based on answer matching rather than step-level human annotations",
+  "Experiments primarily focus on two openly-licensed models (SOLAR and Phi-3), with additional results only in the appendix"
+ ],
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:08Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

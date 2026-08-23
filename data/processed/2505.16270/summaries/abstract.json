@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2505.16270",
+ "tldr": "Transformer Copilot introduces a Mistake Log that tracks a Pilot model's errors during fine-tuning, and uses an auxiliary Copilot model to rectify the Pilot's logits at inference time, improving performance by up to 34.5% across 12 benchmarks with marginal computational overhead.",
+ "contributions": [
+  "Introduction of the Mistake Log concept to systematically track the model's learning behavior and recurring errors throughout fine-tuning",
+  "A novel Copilot model design initialized from the Pilot's decoder module that learns to predict token-level probability discrepancies",
+  "A joint training paradigm where the Copilot continuously learns from the evolving Mistake Log alongside the Pilot",
+  "A fused inference paradigm where the Copilot rectifies the Pilot's logits to enhance generation"
+ ],
+ "methods": "The authors define a Mistake Log containing three components: input representations (Questions), internal hidden state representations from the Pilot model (Rationales), and token-level prediction errors computed as the discrepancy between predicted and ground-truth distributions (Mistakes). During joint training, the Pilot is updated via standard cross-entropy loss while the Copilot is trained simultaneously using RMSE loss to predict the token-level discrepancies from sampled Mistake Log entries. At inference, the Copilot auto-regressively predicts error distributions, and its output is added to the Pilot's logits via a rectification formula p_tilde = p + lambda * f_C, where lambda controls correction strength. The Copilot uses modified cross-attention for encoder-decoder Pilots and alternating self-attention/cross-attention for decoder-only Pilots.",
+ "results": "Experiments on 12 benchmarks spanning commonsense reasoning (PIQA, HellaSwag, WinoGrande, BoolQ, SIQA, OpenbookQA), arithmetic reasoning (AQuA, GSM8K, MAWPS, SVAMP), and recommendation (Beauty, LastFM) show consistent improvements up to 34.5%. A lightweight T-Copilot-small delivers a 6.5% improvement on arithmetic when paired with FLAN-T5-large. T-Copilot-3B enables LLaMA-3.2-3B to outperform LLaMA-3.1-8B with 2B fewer total parameters, and Qwen2.5-7B to surpass Qwen2.5-14B with 4B fewer parameters. The method also outperforms layer/adapter expansion baselines including MoE models, MergeKit, and TIES.",
+ "limitations": "The approach requires maintaining and storing the Mistake Log throughout fine-tuning, adding memory overhead. At inference, both the Pilot and Copilot models must run, introducing additional computational cost—described as marginal but non-zero. The rectification relies on a tunable hyperparameter lambda that requires proper setting for optimal performance.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:59:55Z",
+  "binding": "paper-summary-generate-default"
+ }
+}

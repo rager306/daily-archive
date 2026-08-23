@@ -1,0 +1,20 @@
+{
+ "schema_version": "summary-node.v1",
+ "paper_id": "2502.14282",
+ "tldr": "PC-Agent is a hierarchical multi-agent framework with an Active Perception Module and reflection-based dynamic decision-making for automating complex intra- and inter-app workflows on PCs, achieving a 32% absolute improvement in task success rate over prior state-of-the-art methods on the proposed PC-Eval benchmark.",
+ "contributions": [
+  "Active Perception Module (APM) combining accessibility tree extraction and MLLM-driven intention understanding with OCR for refined perception of interactive elements and text on PC screens",
+  "Hierarchical multi-agent collaboration architecture decomposing decisions into Instruction-Subtask-Action levels using Manager, Progress, Decision, and Reflection agents",
+  "Reflection-based dynamic decision-making mechanism for bottom-up error detection and adjustment",
+  "PC-Eval benchmark comprising 25 complex instructions across 8 popular PC applications with 79 interdependent subtasks"
+ ],
+ "methods": "The APM extracts interactive element locations and descriptions via the pywinauto accessibility tree and annotates them on screenshots in a SoM manner; for text, an MLLM-driven intention understanding agent identifies target text ranges followed by OCR for precise localization. The hierarchical architecture decomposes instructions into parameterized subtasks managed by a Manager Agent that handles inter-subtask dependencies through a communication hub. A Progress Agent tracks per-subtask operation history, a Decision Agent generates step-by-step actions using Chain-of-Thought reasoning within a constrained action space (click, type, select, drag, scroll, shortcut, stop), and a Reflection Agent observes screen changes before and after each action to provide corrective feedback.",
+ "results": "PC-Agent achieves a 32% absolute improvement in task success rate over previous state-of-the-art methods on PC-Eval. On a GUI grounding example, APM achieves 88.0% accuracy compared to Claude 3.5's 24.0% (Figure 1). The single agent (GPT-4o) achieved instruction-level SR of 8% versus subtask-level SR of 41.8%, highlighting the difficulty of inter-subtask dependencies that PC-Agent addresses.",
+ "limitations": "The benchmark relies on human evaluation rather than automatic evaluation because creating separate scripts for each subtask across different applications and pages would be prohibitively costly. The framework depends on MLLMs (e.g., GPT-4o, Claude-3.5) which can still exhibit hallucinations and limited reasoning capabilities, particularly in long operation sequences where a single error can cause task failure.",
+ "provenance": {
+  "model": "agnes-ai/agnes-2.5-flash",
+  "prompt_sha256": "fed3ccc6143459b22bf599c407db601b6725b0a23b3237da2df97e55a5c30bfe",
+  "fetched_at": "2026-08-23T11:58:34Z",
+  "binding": "paper-summary-generate-default"
+ }
+}
